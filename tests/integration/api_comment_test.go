@@ -174,14 +174,28 @@ func TestAPIGetSystemUserComment(t *testing.T) {
 }
 
 func TestAPIEditComment(t *testing.T) {
+	defer tests.AddFixtures("tests/integration/fixtures/TestAPIComment/")()
 	defer tests.PrepareTestEnv(t)()
 	const newCommentBody = "This is the new comment body"
 
-	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{},
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 1008},
 		unittest.Cond("type = ?", issues_model.CommentTypeComment))
 	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: comment.IssueID})
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
 	repoOwner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+
+	t.Run("UnrelatedCommentID", func(t *testing.T) {
+		// Using the ID of a comment that does not belong to the repository must fail
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
+		repoOwner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+		token := getUserToken(t, repoOwner.Name, auth_model.AccessTokenScopeWriteIssue)
+		urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/issues/comments/%d?token=%s",
+			repoOwner.Name, repo.Name, comment.ID, token)
+		req := NewRequestWithValues(t, "PATCH", urlStr, map[string]string{
+			"body": newCommentBody,
+		})
+		MakeRequest(t, req, http.StatusNotFound)
+	})
 
 	token := getUserToken(t, repoOwner.Name, auth_model.AccessTokenScopeWriteIssue)
 	urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/issues/comments/%d?token=%s",
