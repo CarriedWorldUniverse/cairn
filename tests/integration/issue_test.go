@@ -244,6 +244,8 @@ func TestIssueCommentUpdate(t *testing.T) {
 		"content": modifiedContent,
 	})
 	session.MakeRequest(t, req, http.StatusNotFound)
+	commentIdentical := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: commentID})
+	assert.Equal(t, comment1, commentIdentical.Content)
 
 	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/comments/%d", "user2", "repo1", commentID), map[string]string{
 		"_csrf":   GetCSRF(t, session, issueURL),
