@@ -124,6 +124,9 @@ func TestAPICommentReactions(t *testing.T) {
 			Reaction: "+1",
 		})
 		MakeRequest(t, req, http.StatusNotFound)
+
+		req = NewRequestf(t, "GET", urlStr)
+		MakeRequest(t, req, http.StatusNotFound)
 	})
 
 	// Add allowed reaction
