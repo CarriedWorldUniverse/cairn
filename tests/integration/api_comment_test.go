@@ -174,10 +174,11 @@ func TestAPIGetSystemUserComment(t *testing.T) {
 }
 
 func TestAPIEditComment(t *testing.T) {
+	defer tests.AddFixtures("tests/integration/fixtures/TestAPIComment/")()
 	defer tests.PrepareTestEnv(t)()
 	const newCommentBody = "This is the new comment body"
 
-	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 8},
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 1008},
 		unittest.Cond("type = ?", issues_model.CommentTypeComment))
 	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: comment.IssueID})
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
