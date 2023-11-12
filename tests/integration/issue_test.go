@@ -255,6 +255,73 @@ func TestIssueCommentUpdate(t *testing.T) {
 
 	comment = unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: commentID})
 	assert.Equal(t, modifiedContent, comment.Content)
+
+	historyBefore := unittest.AssertExistsAndLoadBean(t, &issues_model.ContentHistory{CommentID: commentID})
+	assert.Equal(t, comment1, historyBefore.ContentText)
+	assert.False(t, historyBefore.IsDeleted)
+
+	softDelete := fmt.Sprintf("content-history/soft-delete?comment_id=%d&history_id=%d", commentID, historyBefore.ID)
+
+	// Using the ID of a comment that does not belong to the repository must fail
+	{
+		session5 := loginUser(t, "user5")
+		otherIssueURL := testNewIssue(t, session5, "user5", "repo4", "Other Title", "Other Description")
+
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", otherIssueURL, softDelete), map[string]string{
+			"_csrf": GetCSRF(t, session5, otherIssueURL),
+		})
+		session5.MakeRequest(t, req, http.StatusNotFound)
+	}
+
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", issueURL, softDelete), map[string]string{
+		"_csrf": GetCSRF(t, session, issueURL),
+	})
+	session.MakeRequest(t, req, http.StatusOK)
+
+	historyAfter := unittest.AssertExistsAndLoadBean(t, &issues_model.ContentHistory{ID: historyBefore.ID})
+	assert.True(t, historyAfter.IsDeleted)
+}
+
+func TestIssueContentUpdate(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	session := loginUser(t, "user2")
+	content1 := "Content one"
+	issueURL, issue := testIssueWithBean(t, "user2", 1, "Title", content1)
+	modifiedContent := content1 + "MODIFIED"
+
+	req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/content", issueURL), map[string]string{
+		"_csrf":   GetCSRF(t, session, issueURL),
+		"content": modifiedContent,
+	})
+	session.MakeRequest(t, req, http.StatusOK)
+
+	issue = unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: issue.ID})
+	assert.Equal(t, modifiedContent, issue.Content)
+
+	historyBefore := unittest.AssertExistsAndLoadBean(t, &issues_model.ContentHistory{IssueID: issue.ID})
+	assert.Equal(t, content1, historyBefore.ContentText)
+	assert.False(t, historyBefore.IsDeleted)
+
+	softDelete := fmt.Sprintf("content-history/soft-delete?history_id=%d", historyBefore.ID)
+
+	// Using the ID of a comment that does not belong to the repository must fail
+	session5 := loginUser(t, "user5")
+	otherIssueURL := testNewIssue(t, session5, "user5", "repo4", "Other Title", "Other Description")
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", otherIssueURL, softDelete), map[string]string{
+		"_csrf": GetCSRF(t, session5, otherIssueURL),
+	})
+	session5.MakeRequest(t, req, http.StatusNotFound)
+	historyIdentical := unittest.AssertExistsAndLoadBean(t, &issues_model.ContentHistory{ID: historyBefore.ID})
+	assert.Equal(t, content1, historyIdentical.ContentText)
+	assert.False(t, historyIdentical.IsDeleted)
+
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", issueURL, softDelete), map[string]string{
+		"_csrf": GetCSRF(t, session, issueURL),
+	})
+	session.MakeRequest(t, req, http.StatusOK)
+
+	historyAfter := unittest.AssertExistsAndLoadBean(t, &issues_model.ContentHistory{ID: historyBefore.ID})
+	assert.True(t, historyAfter.IsDeleted)
 }
 
 func TestIssueReaction(t *testing.T) {
