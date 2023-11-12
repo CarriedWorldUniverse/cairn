@@ -261,17 +261,28 @@ func TestIssueCommentUpdate(t *testing.T) {
 	assert.False(t, historyBefore.IsDeleted)
 
 	softDelete := fmt.Sprintf("content-history/soft-delete?comment_id=%d&history_id=%d", commentID, historyBefore.ID)
+	detail := fmt.Sprintf("content-history/detail?comment_id=%d&history_id=%d", commentID, historyBefore.ID)
 
 	// Using the ID of a comment that does not belong to the repository must fail
 	{
 		session5 := loginUser(t, "user5")
 		otherIssueURL := testNewIssue(t, session5, "user5", "repo4", "Other Title", "Other Description")
 
+		req = NewRequestWithValues(t, "GET", fmt.Sprintf("%s/%s", otherIssueURL, detail), map[string]string{
+			"_csrf": GetCSRF(t, session5, otherIssueURL),
+		})
+		session5.MakeRequest(t, req, http.StatusNotFound)
+
 		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", otherIssueURL, softDelete), map[string]string{
 			"_csrf": GetCSRF(t, session5, otherIssueURL),
 		})
 		session5.MakeRequest(t, req, http.StatusNotFound)
 	}
+
+	req = NewRequestWithValues(t, "GET", fmt.Sprintf("%s/%s", issueURL, detail), map[string]string{
+		"_csrf": GetCSRF(t, session, issueURL),
+	})
+	session.MakeRequest(t, req, http.StatusOK)
 
 	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/%s", issueURL, softDelete), map[string]string{
 		"_csrf": GetCSRF(t, session, issueURL),
