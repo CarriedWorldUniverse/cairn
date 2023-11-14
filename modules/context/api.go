@@ -197,20 +197,13 @@ func (ctx *APIContext) SetLinkHeader(total, pageSize int) {
 	}
 }
 
-func getOtpHeader(header http.Header) string {
-	otpHeader := header.Get("X-Gitea-OTP")
-	if forgejoHeader := header.Get("X-Forgejo-OTP"); forgejoHeader != "" {
-		otpHeader = forgejoHeader
-	}
-	return otpHeader
-}
-
 // CheckForOTP validates OTP
 func (ctx *APIContext) CheckForOTP() {
 	if skip, ok := ctx.Data["SkipLocalTwoFA"]; ok && skip.(bool) {
 		return // Skip 2FA
 	}
 
+	otpHeader := ctx.Req.Header.Get("X-Gitea-OTP")
 	twofa, err := auth.GetTwoFactorByUID(ctx.Doer.ID)
 	if err != nil {
 		if auth.IsErrTwoFactorNotEnrolled(err) {
@@ -219,7 +212,7 @@ func (ctx *APIContext) CheckForOTP() {
 		ctx.Error(http.StatusInternalServerError, "GetTwoFactorByUID", err)
 		return
 	}
-	ok, err := twofa.ValidateTOTP(getOtpHeader(ctx.Req.Header))
+	ok, err := twofa.ValidateTOTP(otpHeader)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "ValidateTOTP", err)
 		return
