@@ -158,6 +158,7 @@ func TestBlockUserFromOrganization(t *testing.T) {
 // and as a blocked user and are handled cleanly after the blocking has taken
 // place.
 func TestBlockActions(t *testing.T) {
+	defer tests.AddFixtures("tests/integration/fixtures/TestBlockActions/")()
 	defer tests.PrepareTestEnv(t)()
 
 	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -264,7 +265,7 @@ func TestBlockActions(t *testing.T) {
 		t.Run("On a comment", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			comment := unittest.AssertExistsAndLoadBean(t, &issue_model.Comment{ID: 8, PosterID: doer.ID, IssueID: issue4.ID})
+			comment := unittest.AssertExistsAndLoadBean(t, &issue_model.Comment{ID: 1008, PosterID: doer.ID, IssueID: issue4.ID})
 
 			session := loginUser(t, blockedUser.Name)
 
