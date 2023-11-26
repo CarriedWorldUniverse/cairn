@@ -3037,11 +3037,6 @@ func DeleteComment(ctx *context.Context) {
 		return
 	}
 
-	if comment.Issue.RepoID != ctx.Repo.Repository.ID {
-		ctx.NotFound("CompareRepoID", issues_model.ErrCommentNotExist{})
-		return
-	}
-
 	if !ctx.IsSigned || (ctx.Doer.ID != comment.PosterID && !ctx.Repo.CanWriteIssuesOrPulls(comment.Issue.IsPull)) {
 		ctx.Error(http.StatusForbidden)
 		return
