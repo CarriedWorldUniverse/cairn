@@ -186,19 +186,9 @@ func changeIssueCommentReaction(ctx *context.APIContext, form api.EditReactionOp
 		return
 	}
 
-	if err = comment.LoadIssue(ctx); err != nil {
+	err = comment.LoadIssue(ctx)
+	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "comment.LoadIssue() failed", err)
-		return
-	}
-
-	if comment.Issue.RepoID != ctx.Repo.Repository.ID {
-		ctx.NotFound()
-		return
-	}
-
-	if !ctx.Repo.CanReadIssuesOrPulls(comment.Issue.IsPull) {
-		ctx.NotFound()
-		return
 	}
 
 	if comment.Issue.IsLocked && !ctx.Repo.CanWriteIssuesOrPulls(comment.Issue.IsPull) {
