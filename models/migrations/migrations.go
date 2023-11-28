@@ -544,7 +544,7 @@ func EnsureUpToDate(x *xorm.Engine) error {
 		return fmt.Errorf(`Current database version %d is not equal to the expected version %d. Please run "forgejo [--config /path/to/app.ini] migrate" to update the database version`, currentDB, expected)
 	}
 
-	return nil
+	return forgejo_migrations.EnsureUpToDate(x)
 }
 
 // Migrate database to current version
