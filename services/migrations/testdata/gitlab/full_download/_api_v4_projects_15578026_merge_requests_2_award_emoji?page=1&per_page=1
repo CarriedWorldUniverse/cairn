@@ -1,0 +1,30 @@
+Content-Type: application/json
+X-Content-Type-Options: nosniff
+Cf-Cache-Status: MISS
+Link: <https://gitlab.com/api/v4/projects/15578026/merge_requests/2/award_emoji?id=15578026&merge_request_iid=2&page=2&per_page=1>; rel="next", <https://gitlab.com/api/v4/projects/15578026/merge_requests/2/award_emoji?id=15578026&merge_request_iid=2&page=1&per_page=1>; rel="first", <https://gitlab.com/api/v4/projects/15578026/merge_requests/2/award_emoji?id=15578026&merge_request_iid=2&page=2&per_page=1>; rel="last"
+X-Total: 2
+Cf-Ray: 82d2bae97fef36e0-FRA
+X-Gitlab-Meta: {"correlation_id":"a03d58b947b8fc6eaa1f702a4da99cb8","version":"1"}
+X-Per-Page: 1
+Strict-Transport-Security: max-age=31536000
+Referrer-Policy: strict-origin-when-cross-origin
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+X-Frame-Options: SAMEORIGIN
+Server: cloudflare
+Set-Cookie: _cfuvid=Y1.tZj_8_Ypf7nCIz3MuECuo4mMp2XGQH3QUuYMsf50-1701175758616-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Etag: W/"798718b23a2ec66b16cce20cb7155116"
+Vary: Origin, Accept-Encoding
+X-Page: 1
+X-Prev-Page: 
+X-Runtime: 0.147890
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=%2BvzfARP%2F9AEt96t12WX5y2oM%2B%2B7FroI2hLNRG1pNVzCcie35th7z04cfqSJGe4FKKz1BYV5JGqY83AbCnKS%2BHq5IGFKUhI2DQokiIm%2Fi4pRQnXNBOAVgdbuJD5NT%2FuzgLNROkq7inQo%3D"}],"group":"cf-nel","max_age":604800}
+X-Next-Page: 2
+X-Total-Pages: 2
+Gitlab-Lb: haproxy-main-19-lb-gprd
+Date: Tue, 28 Nov 2023 12:49:18 GMT
+Content-Security-Policy: default-src 'none'
+Gitlab-Sv: api-gke-us-east1-c
+Cache-Control: max-age=0, private, must-revalidate
+X-Request-Id: a03d58b947b8fc6eaa1f702a4da99cb8
+
+[{"id":5541414,"name":"thumbsup","user":{"id":4575606,"username":"real6543","name":"6543","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/4575606/avatar.png","web_url":"https://gitlab.com/real6543"},"created_at":"2020-09-02T23:42:34.310Z","updated_at":"2020-09-02T23:42:34.310Z","awardable_id":43524600,"awardable_type":"MergeRequest","url":null}]

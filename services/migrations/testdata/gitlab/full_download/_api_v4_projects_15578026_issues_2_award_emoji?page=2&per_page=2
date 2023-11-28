@@ -1,0 +1,30 @@
+X-Page: 2
+Date: Tue, 28 Nov 2023 12:49:16 GMT
+Cf-Cache-Status: MISS
+Server: cloudflare
+Cf-Ray: 82d2badaf87c36e0-FRA
+Cache-Control: max-age=0, private, must-revalidate
+X-Content-Type-Options: nosniff
+X-Prev-Page: 1
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+Set-Cookie: _cfuvid=oMXmuUzJyrMWnL7AZ6Rv_LEdPzTtTDXYj5QeS2aWgMk-1701175756551-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Vary: Origin, Accept-Encoding
+X-Gitlab-Meta: {"correlation_id":"c870b177189ee30c89f8a2a9b4e73dd1","version":"1"}
+X-Request-Id: c870b177189ee30c89f8a2a9b4e73dd1
+Content-Security-Policy: default-src 'none'
+Link: <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=1&per_page=2>; rel="prev", <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=3&per_page=2>; rel="next", <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=1&per_page=2>; rel="first", <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=3&per_page=2>; rel="last"
+X-Frame-Options: SAMEORIGIN
+X-Per-Page: 2
+X-Runtime: 0.127639
+X-Total: 6
+Etag: W/"d16c513b32212d9286fce6f53340c1cf"
+Referrer-Policy: strict-origin-when-cross-origin
+X-Next-Page: 3
+Strict-Transport-Security: max-age=31536000
+Gitlab-Lb: haproxy-main-36-lb-gprd
+Gitlab-Sv: api-gke-us-east1-b
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=%2FI0CdRwNeg7W0N4yZ3QhDC3KMI8IjKMzE6bBxxqRFc6PHF2Ch%2BTeGF2V6is9KAA5oiX4gUEk%2BYmceKQAWx2LoTkixvqjkFN7ygCEAfh44HwZ%2FM7pxUGD7uUUAycRKNhFNhfMQCyikpM%3D"}],"group":"cf-nel","max_age":604800}
+Content-Type: application/json
+X-Total-Pages: 3
+
+[{"id":3009632,"name":"laughing","user":{"id":1241334,"username":"lafriks","name":"Lauris BH","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/1241334/avatar.png","web_url":"https://gitlab.com/lafriks"},"created_at":"2019-11-28T08:47:14.381Z","updated_at":"2019-11-28T08:47:14.381Z","awardable_id":27687706,"awardable_type":"Issue","url":null},{"id":3009634,"name":"tada","user":{"id":1241334,"username":"lafriks","name":"Lauris BH","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/1241334/avatar.png","web_url":"https://gitlab.com/lafriks"},"created_at":"2019-11-28T08:47:18.254Z","updated_at":"2019-11-28T08:47:18.254Z","awardable_id":27687706,"awardable_type":"Issue","url":null}]

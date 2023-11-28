@@ -1,0 +1,23 @@
+X-Request-Id: 39d7aa2a51e4d9f37a03e96b680351e0
+Cf-Cache-Status: MISS
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+Etag: W/"19aa54b7d4531bd5ab98282e0b772f20"
+Vary: Origin, Accept-Encoding
+Strict-Transport-Security: max-age=31536000
+Referrer-Policy: strict-origin-when-cross-origin
+Set-Cookie: _cfuvid=XhF1L3bWZC2inu9yZkro76aF91u9GJJBnoqyOdufOyI-1701175759569-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+X-Frame-Options: SAMEORIGIN
+X-Gitlab-Meta: {"correlation_id":"39d7aa2a51e4d9f37a03e96b680351e0","version":"1"}
+Cache-Control: max-age=0, private, must-revalidate
+Gitlab-Lb: haproxy-main-45-lb-gprd
+Gitlab-Sv: api-gke-us-east1-b
+Server: cloudflare
+Cf-Ray: 82d2baeeed7736e0-FRA
+Date: Tue, 28 Nov 2023 12:49:19 GMT
+Content-Type: application/json
+X-Runtime: 0.255470
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=Gw2KB2oAUyBAoAywnQOt9gnd75FsNNUzAPhzeoPPOYadqEe5fRn1fO8HfI1Arzg%2FFCJlErmAPT1%2Fpru2pqknOR%2BWglTuwSXc4rqB6JMkVKr2clNqtc8bQtQWpYWPSzKk3ah%2BaNm0SeE%3D"}],"group":"cf-nel","max_age":604800}
+Content-Security-Policy: default-src 'none'
+X-Content-Type-Options: nosniff
+
+{"id":43486906,"iid":1,"project_id":15578026,"title":"Update README.md","description":"add warning to readme","state":"merged","created_at":"2019-11-28T08:54:41.034Z","updated_at":"2019-11-28T16:02:08.377Z","merge_status":"can_be_merged","approved":true,"approvals_required":0,"approvals_left":0,"require_password_to_approve":false,"approved_by":[{"user":{"id":527793,"username":"axifive","name":"Alexey Terentyev","state":"active","locked":false,"avatar_url":"https://secure.gravatar.com/avatar/06683cd6b2e2c2ce0ab00fb80cc0729f?s=80\u0026d=identicon","web_url":"https://gitlab.com/axifive"}},{"user":{"id":4102996,"username":"zeripath","name":"zeripath","state":"active","locked":false,"avatar_url":"https://secure.gravatar.com/avatar/1ae18535c2b1aed798da090448997248?s=80\u0026d=identicon","web_url":"https://gitlab.com/zeripath"}}],"suggested_approvers":[],"approvers":[],"approver_groups":[],"user_has_approved":false,"user_can_approve":false,"approval_rules_left":[],"has_approval_rules":true,"merge_request_approvers_available":false,"multiple_approval_rules_available":false,"invalid_approvers_rules":[]}

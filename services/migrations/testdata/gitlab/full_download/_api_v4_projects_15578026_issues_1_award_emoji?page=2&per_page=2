@@ -1,0 +1,32 @@
+Link: <https://gitlab.com/api/v4/projects/15578026/issues/1/award_emoji?id=15578026&issue_iid=1&page=1&per_page=2>; rel="first", <https://gitlab.com/api/v4/projects/15578026/issues/1/award_emoji?id=15578026&issue_iid=1&page=1&per_page=2>; rel="last"
+Vary: Origin, Accept-Encoding
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+X-Content-Type-Options: nosniff
+X-Gitlab-Meta: {"correlation_id":"f20460891555dcf146d340bc54a11b6d","version":"1"}
+Referrer-Policy: strict-origin-when-cross-origin
+Server: cloudflare
+Date: Tue, 28 Nov 2023 12:49:15 GMT
+X-Page: 2
+X-Per-Page: 2
+Gitlab-Sv: api-gke-us-east1-d
+Cf-Cache-Status: MISS
+Content-Length: 2
+Content-Security-Policy: default-src 'none'
+X-Frame-Options: SAMEORIGIN
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=Bkk22CNDQrv7p4D3Bv61f2WkW%2BWU1E3RioJZfjI%2BPxqDwi5NRfqpkRR795HhnUvCND5Sbk9cWJnET5ewf7YSCIpRBjsuxeG8sb2iRg4lkEOYTxiJphQ7EEbqaZh8Bxj3U3pcUezUjgk%3D"}],"group":"cf-nel","max_age":604800}
+Set-Cookie: _cfuvid=x26H_NQHx0V8bDfYro78pCd.h0i8fyYb8Vlqpq324ZM-1701175755696-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Type: application/json
+X-Next-Page: 
+X-Total-Pages: 1
+Cf-Ray: 82d2bad66c0336e0-FRA
+Cache-Control: max-age=0, private, must-revalidate
+X-Prev-Page: 
+Accept-Ranges: bytes
+X-Request-Id: f20460891555dcf146d340bc54a11b6d
+X-Runtime: 0.289453
+X-Total: 2
+Strict-Transport-Security: max-age=31536000
+Gitlab-Lb: haproxy-main-11-lb-gprd
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+
+[]

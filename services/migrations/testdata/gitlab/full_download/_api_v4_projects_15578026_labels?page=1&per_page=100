@@ -1,0 +1,30 @@
+Content-Type: application/json
+Content-Security-Policy: default-src 'none'
+X-Total: 9
+Referrer-Policy: strict-origin-when-cross-origin
+Cf-Cache-Status: MISS
+X-Runtime: 0.181345
+Set-Cookie: _cfuvid=tqgklLOiSYdxU.Rdf6ibHODgg3IHELmncXoiqglyFi8-1701175753621-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Server: cloudflare
+X-Gitlab-Meta: {"correlation_id":"f7dd6b0d5b6d5a817cc078222a55edd3","version":"1"}
+Gitlab-Lb: haproxy-main-11-lb-gprd
+Cache-Control: max-age=0, private, must-revalidate
+Link: <https://gitlab.com/api/v4/projects/15578026/labels?id=15578026&include_ancestor_groups=true&page=1&per_page=100&with_counts=false>; rel="first", <https://gitlab.com/api/v4/projects/15578026/labels?id=15578026&include_ancestor_groups=true&page=1&per_page=100&with_counts=false>; rel="last"
+X-Prev-Page: 
+Gitlab-Sv: api-gke-us-east1-d
+X-Frame-Options: SAMEORIGIN
+X-Next-Page: 
+X-Page: 1
+X-Per-Page: 100
+X-Request-Id: f7dd6b0d5b6d5a817cc078222a55edd3
+X-Total-Pages: 1
+Strict-Transport-Security: max-age=31536000
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+Cf-Ray: 82d2baca3f9336e0-FRA
+Etag: W/"5a3fb9bc7b1018070943f4aa1353f8b6"
+Vary: Origin, Accept-Encoding
+X-Content-Type-Options: nosniff
+Date: Tue, 28 Nov 2023 12:49:13 GMT
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=vBPSME6dCCR0uB6BtpQoxmGck36BNkbw%2FrKW1HdGJUMqb%2BUg2SDK2svgh8Ep9oouUPVRiv2wxThIeNRPuypD32GLZR%2BongLpjwLN1LLypMkr5dbRBzcYdBuQ5gKPT9s7dEx1K6fITxE%3D"}],"group":"cf-nel","max_age":604800}
+
+[{"id":12959095,"name":"bug","description":null,"description_html":"","text_color":"#FFFFFF","color":"#d9534f","subscribed":false,"priority":null,"is_project_label":true},{"id":12959097,"name":"confirmed","description":null,"description_html":"","text_color":"#FFFFFF","color":"#d9534f","subscribed":false,"priority":null,"is_project_label":true},{"id":12959096,"name":"critical","description":null,"description_html":"","text_color":"#FFFFFF","color":"#d9534f","subscribed":false,"priority":null,"is_project_label":true},{"id":12959100,"name":"discussion","description":null,"description_html":"","text_color":"#FFFFFF","color":"#428bca","subscribed":false,"priority":null,"is_project_label":true},{"id":12959098,"name":"documentation","description":null,"description_html":"","text_color":"#1F1E24","color":"#f0ad4e","subscribed":false,"priority":null,"is_project_label":true},{"id":12959554,"name":"duplicate","description":null,"description_html":"","text_color":"#FFFFFF","color":"#7F8C8D","subscribed":false,"priority":null,"is_project_label":true},{"id":12959102,"name":"enhancement","description":null,"description_html":"","text_color":"#FFFFFF","color":"#5cb85c","subscribed":false,"priority":null,"is_project_label":true},{"id":12959101,"name":"suggestion","description":null,"description_html":"","text_color":"#FFFFFF","color":"#428bca","subscribed":false,"priority":null,"is_project_label":true},{"id":12959099,"name":"support","description":null,"description_html":"","text_color":"#1F1E24","color":"#f0ad4e","subscribed":false,"priority":null,"is_project_label":true}]

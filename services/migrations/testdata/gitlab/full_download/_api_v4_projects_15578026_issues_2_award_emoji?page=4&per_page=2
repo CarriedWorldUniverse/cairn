@@ -1,0 +1,32 @@
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=31536000
+Gitlab-Sv: api-gke-us-east1-b
+Content-Type: application/json
+X-Total: 6
+X-Total-Pages: 3
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+X-Next-Page: 
+X-Page: 4
+X-Runtime: 0.084379
+X-Frame-Options: SAMEORIGIN
+X-Request-Id: 3236d6ec6845224f284a741528203ece
+Cf-Ray: 82d2bae1df9036e0-FRA
+Cache-Control: max-age=0, private, must-revalidate
+X-Gitlab-Meta: {"correlation_id":"3236d6ec6845224f284a741528203ece","version":"1"}
+Accept-Ranges: bytes
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=KylRcRbE8E7pfR1zdRiqiCe5Tq%2FCqFKgyO01E7o9yLEtU1tW7Xi2PGPau9SZasTalmgkxUeyKWymp%2BE2ClVxldnQom%2BpoAMgccEtFGhHWOTsNyfiI%2B0NbOpytx%2Bf1%2BZLyf0vV84%2FuSQ%3D"}],"group":"cf-nel","max_age":604800}
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+Cf-Cache-Status: MISS
+Link: <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=1&per_page=2>; rel="first", <https://gitlab.com/api/v4/projects/15578026/issues/2/award_emoji?id=15578026&issue_iid=2&page=3&per_page=2>; rel="last"
+X-Per-Page: 2
+X-Prev-Page: 
+Referrer-Policy: strict-origin-when-cross-origin
+Gitlab-Lb: haproxy-main-33-lb-gprd
+Date: Tue, 28 Nov 2023 12:49:17 GMT
+Content-Length: 2
+Vary: Origin, Accept-Encoding
+Set-Cookie: _cfuvid=aeqVJxNjrsFvkPxbn5RmHE1mf1qsFlHnDXahuXTl4FU-1701175757309-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Security-Policy: default-src 'none'
+Server: cloudflare
+
+[]

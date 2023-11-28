@@ -1,0 +1,23 @@
+Content-Security-Policy: default-src 'none'
+Vary: Origin, Accept-Encoding
+X-Content-Type-Options: nosniff
+Gitlab-Lb: haproxy-main-31-lb-gprd
+Set-Cookie: _cfuvid=gGLTCQ.DBiLTAaGLmVcffUW2lZvY.zMxk5xBKUQHLPM-1701175752131-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Server: cloudflare
+Cf-Ray: 82d2bac1be3636e0-FRA
+Content-Type: application/json
+Cache-Control: max-age=0, private, must-revalidate
+Etag: W/"4648d4a6bf714a790516932423329284"
+X-Frame-Options: SAMEORIGIN
+Gitlab-Sv: api-gke-us-east1-c
+X-Request-Id: 27484ae5219156b31c1cc83893083969
+Strict-Transport-Security: max-age=31536000
+Referrer-Policy: strict-origin-when-cross-origin
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=kdjyYWvTDoPNQ4iBJJYS%2Fjbs5F20wM3pU2b9NaqMkiYLRy66lnlp00bppZl2fJOmp4xVD7WF0aDBG5UPGTSdRmAs%2BJUfFxgcX9mrehewmVftcwk6iUKdCqZA9xVIMEC5qiGi0f1bAEg%3D"}],"group":"cf-nel","max_age":604800}
+Date: Tue, 28 Nov 2023 12:49:12 GMT
+X-Gitlab-Meta: {"correlation_id":"27484ae5219156b31c1cc83893083969","version":"1"}
+X-Runtime: 0.044589
+Cf-Cache-Status: MISS
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+
+{"version":"16.7.0-pre","revision":"25ffee8ef90","kas":{"enabled":true,"externalUrl":"wss://kas.gitlab.com","version":"v16.7.0-rc2"},"enterprise":true}
