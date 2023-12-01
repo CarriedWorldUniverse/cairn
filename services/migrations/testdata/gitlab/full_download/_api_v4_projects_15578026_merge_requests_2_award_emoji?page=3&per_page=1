@@ -1,0 +1,32 @@
+Set-Cookie: _cfuvid=Kdqgfjzfy0DbIhYqXh_7uBzUHX9Jv0pPisJFLQXIrVg-1701175759167-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Security-Policy: default-src 'none'
+X-Gitlab-Meta: {"correlation_id":"5f864445eae9bc04ffe7ed09402cca0c","version":"1"}
+X-Per-Page: 1
+Accept-Ranges: bytes
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=zGsr%2BOFk2NbQGZlTUyA7C9HA8iLUvecAlrACaCR%2BhodJsskFtUYZRGQ6a2u9%2FTm8L0wv4ZhHGaD4jbGIBJTyjEmLpOEwmxY%2Bv9C%2BOR6cehuRfI%2Bbn1lWaBquuotpnRzVPvPRcDAzTnI%3D"}],"group":"cf-nel","max_age":604800}
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+Vary: Origin, Accept-Encoding
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Cf-Cache-Status: MISS
+Link: <https://gitlab.com/api/v4/projects/15578026/merge_requests/2/award_emoji?id=15578026&merge_request_iid=2&page=1&per_page=1>; rel="first", <https://gitlab.com/api/v4/projects/15578026/merge_requests/2/award_emoji?id=15578026&merge_request_iid=2&page=2&per_page=1>; rel="last"
+X-Frame-Options: SAMEORIGIN
+X-Total-Pages: 2
+Date: Tue, 28 Nov 2023 12:49:19 GMT
+Cache-Control: max-age=0, private, must-revalidate
+Strict-Transport-Security: max-age=31536000
+Content-Length: 2
+X-Total: 2
+Server: cloudflare
+Cf-Ray: 82d2baed6c0236e0-FRA
+Content-Type: application/json
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+X-Next-Page: 
+Gitlab-Lb: haproxy-main-34-lb-gprd
+X-Page: 3
+X-Prev-Page: 
+X-Request-Id: 5f864445eae9bc04ffe7ed09402cca0c
+X-Runtime: 0.092640
+Gitlab-Sv: api-gke-us-east1-c
+
+[]

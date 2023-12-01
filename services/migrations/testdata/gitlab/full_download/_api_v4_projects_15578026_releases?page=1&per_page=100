@@ -1,0 +1,30 @@
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: default-src 'none'
+Etag: W/"5440b41f88cf08eff25ed0f01b672b6c"
+X-Next-Page: 
+X-Total: 1
+Link: <https://gitlab.com/api/v4/projects/15578026/releases?id=15578026&order_by=released_at&page=1&per_page=100&sort=desc>; rel="first", <https://gitlab.com/api/v4/projects/15578026/releases?id=15578026&order_by=released_at&page=1&per_page=100&sort=desc>; rel="last"
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=btZ1m94fXWqfBgsZQR%2FOZ0DQyIKl3Z%2FsE4BqWylbeVfH90wqFEHh0ppa7qoqWjvrYLU4NXSXIKRzKSqQWwlo%2BsWY8uA%2F50yds8tQKf%2BQZGls66SdyHN6PDz3mpnUvQuqq%2F1Q8xURUEI%3D"}],"group":"cf-nel","max_age":604800}
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+X-Content-Type-Options: nosniff
+X-Per-Page: 100
+X-Request-Id: 7f7348d2dbae86671a1696b37412e15a
+Set-Cookie: _cfuvid=xIo7QFSlYPXO7zvrYz0Zx_952rFkLYu7YM7OxFu15M0-1701175754703-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Type: application/json
+X-Page: 1
+X-Total-Pages: 1
+Cf-Ray: 82d2bacc49c036e0-FRA
+Cache-Control: max-age=0, private, must-revalidate
+X-Frame-Options: SAMEORIGIN
+Server: cloudflare
+X-Prev-Page: 
+Cf-Cache-Status: MISS
+Date: Tue, 28 Nov 2023 12:49:14 GMT
+Vary: Origin, Accept-Encoding
+X-Gitlab-Meta: {"correlation_id":"7f7348d2dbae86671a1696b37412e15a","version":"1"}
+X-Runtime: 0.803723
+Strict-Transport-Security: max-age=31536000
+Gitlab-Lb: haproxy-main-09-lb-gprd
+Gitlab-Sv: api-gke-us-east1-b
+
+[{"name":"First Release","tag_name":"v0.9.99","description":"A test release","created_at":"2019-11-28T09:09:48.840Z","released_at":"2019-11-28T09:09:48.836Z","upcoming_release":false,"author":{"id":1241334,"username":"lafriks","name":"Lauris BH","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/1241334/avatar.png","web_url":"https://gitlab.com/lafriks"},"commit":{"id":"0720a3ec57c1f843568298117b874319e7deee75","short_id":"0720a3ec","created_at":"2019-11-28T08:49:16.000+00:00","parent_ids":["93ea21ce45d35690c35e80961d239645139e872c"],"title":"Add new file","message":"Add new file","author_name":"Lauris BH","author_email":"lauris@nix.lv","authored_date":"2019-11-28T08:49:16.000+00:00","committer_name":"Lauris BH","committer_email":"lauris@nix.lv","committed_date":"2019-11-28T08:49:16.000+00:00","trailers":{},"web_url":"https://gitlab.com/gitea/test_repo/-/commit/0720a3ec57c1f843568298117b874319e7deee75"},"commit_path":"/gitea/test_repo/-/commit/0720a3ec57c1f843568298117b874319e7deee75","tag_path":"/gitea/test_repo/-/tags/v0.9.99","assets":{"count":4,"sources":[{"format":"zip","url":"https://gitlab.com/gitea/test_repo/-/archive/v0.9.99/test_repo-v0.9.99.zip"},{"format":"tar.gz","url":"https://gitlab.com/gitea/test_repo/-/archive/v0.9.99/test_repo-v0.9.99.tar.gz"},{"format":"tar.bz2","url":"https://gitlab.com/gitea/test_repo/-/archive/v0.9.99/test_repo-v0.9.99.tar.bz2"},{"format":"tar","url":"https://gitlab.com/gitea/test_repo/-/archive/v0.9.99/test_repo-v0.9.99.tar"}],"links":[]},"evidences":[{"sha":"89f1223473ee01f192a83d0cb89f4d1eac1de74f01ad","filepath":"https://gitlab.com/gitea/test_repo/-/releases/v0.9.99/evidences/52147.json","collected_at":"2019-11-28T09:09:48.888Z"}],"_links":{"closed_issues_url":"https://gitlab.com/gitea/test_repo/-/issues?release_tag=v0.9.99\u0026scope=all\u0026state=closed","closed_merge_requests_url":"https://gitlab.com/gitea/test_repo/-/merge_requests?release_tag=v0.9.99\u0026scope=all\u0026state=closed","merged_merge_requests_url":"https://gitlab.com/gitea/test_repo/-/merge_requests?release_tag=v0.9.99\u0026scope=all\u0026state=merged","opened_issues_url":"https://gitlab.com/gitea/test_repo/-/issues?release_tag=v0.9.99\u0026scope=all\u0026state=opened","opened_merge_requests_url":"https://gitlab.com/gitea/test_repo/-/merge_requests?release_tag=v0.9.99\u0026scope=all\u0026state=opened","self":"https://gitlab.com/gitea/test_repo/-/releases/v0.9.99"}}]

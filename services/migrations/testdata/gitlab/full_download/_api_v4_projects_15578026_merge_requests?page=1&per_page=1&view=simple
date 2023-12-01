@@ -1,0 +1,30 @@
+X-Page: 1
+X-Runtime: 0.080106
+Cf-Cache-Status: MISS
+Content-Type: application/json
+Etag: W/"14f72c1f555b0e6348d338190e9e4839"
+Vary: Origin, Accept-Encoding
+X-Frame-Options: SAMEORIGIN
+Link: <https://gitlab.com/api/v4/projects/15578026/merge_requests?id=15578026&order_by=created_at&page=2&per_page=1&sort=desc&state=all&view=simple&with_labels_details=false&with_merge_status_recheck=false>; rel="next", <https://gitlab.com/api/v4/projects/15578026/merge_requests?id=15578026&order_by=created_at&page=1&per_page=1&sort=desc&state=all&view=simple&with_labels_details=false&with_merge_status_recheck=false>; rel="first", <https://gitlab.com/api/v4/projects/15578026/merge_requests?id=15578026&order_by=created_at&page=2&per_page=1&sort=desc&state=all&view=simple&with_labels_details=false&with_merge_status_recheck=false>; rel="last"
+X-Per-Page: 1
+X-Prev-Page: 
+X-Total-Pages: 2
+Gitlab-Lb: haproxy-main-34-lb-gprd
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+X-Next-Page: 2
+Cache-Control: max-age=0, private, must-revalidate
+X-Gitlab-Meta: {"correlation_id":"c2b2e764848cdb6ecf4d8a7d7c922688","version":"1"}
+Gitlab-Sv: api-gke-us-east1-c
+Server: cloudflare
+Content-Security-Policy: default-src 'none'
+Set-Cookie: _cfuvid=M3EZpj9mLuYTgMFWWmkkBGvWpVgZ61toE.mNUK37CMo-1701175757911-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Date: Tue, 28 Nov 2023 12:49:17 GMT
+X-Content-Type-Options: nosniff
+X-Request-Id: c2b2e764848cdb6ecf4d8a7d7c922688
+X-Total: 2
+Strict-Transport-Security: max-age=31536000
+Referrer-Policy: strict-origin-when-cross-origin
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=E1Jc0rth%2F2ypS8ir3R%2F4jcUkjOQ42zmaLRUbfdSeHVSKN%2B0F1ilpTeJnxPxgHEtezhKAfhP3unfGLgTyU26LAM45wY3Z%2BYsy9h4zFONERT2DZJ1OnIVBtUytMxGydtA1udhaKGg%2F3GI%3D"}],"group":"cf-nel","max_age":604800}
+Cf-Ray: 82d2bae59c2b36e0-FRA
+
+[{"id":43524600,"iid":2,"project_id":15578026,"title":"Test branch","description":"do not merge this PR","state":"opened","created_at":"2019-11-28T15:56:54.104Z","updated_at":"2020-04-19T19:24:21.108Z","web_url":"https://gitlab.com/gitea/test_repo/-/merge_requests/2"}]

@@ -1,0 +1,30 @@
+Cache-Control: max-age=0, private, must-revalidate
+Cf-Ray: 82d2bac82d2d36e0-FRA
+X-Request-Id: 06597dd0fd8d77bd6e3876f985a4f847
+X-Total: 2
+Referrer-Policy: strict-origin-when-cross-origin
+Nel: {"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}
+X-Next-Page: 
+Set-Cookie: _cfuvid=DJncZbrWf4Pj5gJ6t20ry9vG7xD9rEkKh0Xc5MepOic-1701175753285-0-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+X-Per-Page: 100
+Gitlab-Sv: api-gke-us-east1-b
+Cf-Cache-Status: MISS
+X-Content-Type-Options: nosniff
+X-Runtime: 0.175518
+Server: cloudflare
+Content-Type: application/json
+Link: <https://gitlab.com/api/v4/projects/15578026/milestones?id=15578026&include_parent_milestones=false&page=1&per_page=100&state=all>; rel="first", <https://gitlab.com/api/v4/projects/15578026/milestones?id=15578026&include_parent_milestones=false&page=1&per_page=100&state=all>; rel="last"
+X-Gitlab-Meta: {"correlation_id":"06597dd0fd8d77bd6e3876f985a4f847","version":"1"}
+X-Page: 1
+Strict-Transport-Security: max-age=31536000
+Gitlab-Lb: haproxy-main-21-lb-gprd
+Date: Tue, 28 Nov 2023 12:49:13 GMT
+Content-Security-Policy: default-src 'none'
+Vary: Origin, Accept-Encoding
+X-Frame-Options: SAMEORIGIN
+X-Prev-Page: 
+Etag: W/"c8e2d3a5f05ee29c58b665c86684f9f9"
+X-Total-Pages: 1
+Report-To: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=Hcs6%2BZ%2BCvPTYwKVmytWNkDQViuU9NMqNg5p1%2Fu7fAnVHqMcfKleFoBeF0%2B9P0%2Fv%2B7AJYmGBYX133zwHkYq0ZpiffQTHXsN%2F5DwMpcbSZ%2BTUwJtQW6HNDWetWrsid027TzuBpO4XA%2FkM%3D"}],"group":"cf-nel","max_age":604800}
+
+[{"id":1082927,"iid":2,"project_id":15578026,"title":"1.1.0","description":"","state":"active","created_at":"2019-11-28T08:42:44.575Z","updated_at":"2019-11-28T08:42:44.575Z","due_date":null,"start_date":null,"expired":false,"web_url":"https://gitlab.com/gitea/test_repo/-/milestones/2"},{"id":1082926,"iid":1,"project_id":15578026,"title":"1.0.0","description":"","state":"closed","created_at":"2019-11-28T08:42:30.301Z","updated_at":"2019-11-28T15:57:52.401Z","due_date":null,"start_date":null,"expired":false,"web_url":"https://gitlab.com/gitea/test_repo/-/milestones/1"}]
