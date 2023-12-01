@@ -4,7 +4,9 @@
 package integration
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	auth_model "code.gitea.io/gitea/models/auth"
@@ -296,4 +298,87 @@ func TestUserLocationMapLink(t *testing.T) {
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	htmlDoc := NewHTMLParser(t, resp.Body)
 	htmlDoc.AssertElement(t, `a[href="https://example/foo/A%2Fb"]`, true)
+}
+
+func TestPagination(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	// Force pagination to almost always happen.
+	defer test.MockVariableValue(&setting.UI.IssuePagingNum, 1)()
+
+	session := loginUser(t, "user2")
+
+	// Pagination links can be seen multiple times, due to 'last' or 'next' having
+	// the same link, so take that into consideration when writing asserts.
+	t.Run("Issues", func(t *testing.T) {
+		t.Run("No selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", "/issues")
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(`.pagination a.navigation[href="/issues?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels="]`)
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+		t.Run("Selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			escapedQuery := url.QueryEscape("[3,5]")
+			req := NewRequest(t, "GET", "/issues?repos="+escapedQuery)
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/issues?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels="]`, escapedQuery))
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+	})
+
+	t.Run("Pulls", func(t *testing.T) {
+		t.Run("No selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", "/pulls")
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(`.pagination a.navigation[href="/pulls?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels="]`)
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+		t.Run("Selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			escapedQuery := url.QueryEscape("[1,3]")
+			req := NewRequest(t, "GET", "/pulls?repos="+escapedQuery)
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/pulls?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels="]`, escapedQuery))
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+	})
+
+	t.Run("Milestones", func(t *testing.T) {
+		t.Run("No selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			escapedQuery := url.QueryEscape("[42,1]")
+			req := NewRequest(t, "GET", "/milestones")
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/milestones?page=2&q=&repos=%s&sort=&state=open"]`, escapedQuery))
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+		t.Run("Selected repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			escapedQuery := url.QueryEscape("[1]")
+			req := NewRequest(t, "GET", "/milestones?repos="+escapedQuery)
+			resp := session.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/milestones?page=2&q=&repos=%s&sort=&state=open"]`, escapedQuery))
+			assert.GreaterOrEqual(t, sel.Length(), 1)
+		})
+	})
 }

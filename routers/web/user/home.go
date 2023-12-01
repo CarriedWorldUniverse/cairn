@@ -315,9 +315,18 @@ func Milestones(ctx *context.Context) {
 	ctx.Data["RepoIDs"] = repoIDs
 	ctx.Data["IsShowClosed"] = isShowClosed
 
+	// Convert []int64 to string
+	reposParam, err := json.Marshal(repoIDs)
+	if err != nil {
+		ctx.ServerError("json.Marshal", err)
+		return
+	}
+
+	ctx.Data["ReposParam"] = string(reposParam)
+
 	pager := context.NewPagination(pagerCount, setting.UI.IssuePagingNum, page, 5)
 	pager.AddParam(ctx, "q", "Keyword")
-	pager.AddParam(ctx, "repos", "RepoIDs")
+	pager.AddParam(ctx, "repos", "ReposParam")
 	pager.AddParam(ctx, "sort", "SortType")
 	pager.AddParam(ctx, "state", "State")
 	ctx.Data["Page"] = pager
@@ -690,7 +699,11 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	}
 
 	// Convert []int64 to string
-	reposParam, _ := json.Marshal(opts.RepoIDs)
+	reposParam, err := json.Marshal(selectedRepoIDs)
+	if err != nil {
+		ctx.ServerError("json.Marshal", err)
+		return
+	}
 
 	ctx.Data["ReposParam"] = string(reposParam)
 
