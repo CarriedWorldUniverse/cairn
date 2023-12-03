@@ -59,7 +59,7 @@ func mailNewUser(ctx context.Context, u *user_model.User, lang string, tos []str
 		"Subject":  subject,
 		"Body":     body,
 		"Language": locale.Language(),
-		"locale":   locale,
+		"Locale":   locale,
 		"Str2html": templates.Str2html,
 	}
 
