@@ -295,6 +295,10 @@ func Milestones(ctx *context.Context) {
 		return !showRepoIds.Contains(v)
 	})
 
+	// This is to ensure that testing the expected pagination link is stable.
+	// As there's no guarantee of order.
+	slices.Sort(repoIDs)
+
 	var pagerCount int
 	if isShowClosed {
 		ctx.Data["State"] = "closed"
