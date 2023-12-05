@@ -6,6 +6,7 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -307,6 +308,15 @@ func TestPagination(t *testing.T) {
 
 	session := loginUser(t, "user2")
 
+	assertHref := func(t *testing.T, resp *httptest.ResponseRecorder, expectedHref string) {
+		t.Helper()
+
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		href, ok := htmlDoc.Find(".pagination a.item").Not(".active").Not(".navigation").Attr("href")
+		assert.True(t, ok)
+		assert.EqualValues(t, expectedHref, href)
+	}
+
 	// Pagination links can be seen multiple times, due to 'last' or 'next' having
 	// the same link, so take that into consideration when writing asserts.
 	t.Run("Issues", func(t *testing.T) {
@@ -316,9 +326,7 @@ func TestPagination(t *testing.T) {
 			req := NewRequest(t, "GET", "/issues")
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(`.pagination a.navigation[href="/issues?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels="]`)
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, "/issues?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels=")
 		})
 		t.Run("Selected repositories", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
@@ -327,9 +335,7 @@ func TestPagination(t *testing.T) {
 			req := NewRequest(t, "GET", "/issues?repos="+escapedQuery)
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/issues?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels="]`, escapedQuery))
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, fmt.Sprintf(`/issues?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels=`, escapedQuery))
 		})
 	})
 
@@ -340,9 +346,7 @@ func TestPagination(t *testing.T) {
 			req := NewRequest(t, "GET", "/pulls")
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(`.pagination a.navigation[href="/pulls?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels="]`)
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, "/pulls?page=2&q=&type=your_repositories&repos=%5B%5D&sort=recentupdate&state=open&labels=")
 		})
 		t.Run("Selected repositories", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
@@ -351,9 +355,7 @@ func TestPagination(t *testing.T) {
 			req := NewRequest(t, "GET", "/pulls?repos="+escapedQuery)
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/pulls?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels="]`, escapedQuery))
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, fmt.Sprintf("/pulls?page=2&q=&type=your_repositories&repos=%s&sort=recentupdate&state=open&labels=", escapedQuery))
 		})
 	})
 
@@ -361,13 +363,10 @@ func TestPagination(t *testing.T) {
 		t.Run("No selected repositories", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			escapedQuery := url.QueryEscape("[42,1]")
 			req := NewRequest(t, "GET", "/milestones")
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/milestones?page=2&q=&repos=%s&sort=&state=open"]`, escapedQuery))
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, fmt.Sprintf(`/milestones?page=2&q=&repos=%s&sort=&state=open`, url.QueryEscape("[1,42]")))
 		})
 		t.Run("Selected repositories", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
@@ -376,9 +375,7 @@ func TestPagination(t *testing.T) {
 			req := NewRequest(t, "GET", "/milestones?repos="+escapedQuery)
 			resp := session.MakeRequest(t, req, http.StatusOK)
 
-			htmlDoc := NewHTMLParser(t, resp.Body)
-			sel := htmlDoc.Find(fmt.Sprintf(`.pagination a.navigation[href="/milestones?page=2&q=&repos=%s&sort=&state=open"]`, escapedQuery))
-			assert.GreaterOrEqual(t, sel.Length(), 1)
+			assertHref(t, resp, fmt.Sprintf(`/milestones?page=2&q=&repos=%s&sort=&state=open`, escapedQuery))
 		})
 	})
 }
