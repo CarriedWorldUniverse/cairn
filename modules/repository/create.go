@@ -167,11 +167,7 @@ func getDirectorySize(path string) (int64, error) {
 			}
 			return err
 		}
-
-		fileName := info.Name()
-		// Ignore temporary Git files as they will like be missing once info.Info is
-		// called and cause a disrupt to the whole operation.
-		if info.IsDir() || strings.HasSuffix(fileName, ".lock") || strings.HasPrefix(filepath.Base(fileName), "tmp_graph") {
+		if info.IsDir() {
 			return nil
 		}
 		f, err := info.Info()
