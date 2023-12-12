@@ -89,7 +89,7 @@ endif
 VERSION = ${GITEA_VERSION}
 
 # SemVer
-FORGEJO_VERSION := 5.0.7+0-gitea-1.20.6
+FORGEJO_VERSION := 5.0.8+0-gitea-1.20.6
 
 LDFLAGS := $(LDFLAGS) -X "main.MakeVersion=$(MAKE_VERSION)" -X "main.Version=$(GITEA_VERSION)" -X "main.Tags=$(TAGS)" -X "code.gitea.io/gitea/routers/api/forgejo/v1.ForgejoVersion=$(FORGEJO_VERSION)" -X "main.ForgejoVersion=$(FORGEJO_VERSION)"
 
