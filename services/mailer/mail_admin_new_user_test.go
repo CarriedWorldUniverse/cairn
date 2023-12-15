@@ -57,8 +57,6 @@ func TestAdminNotificationMail_test(t *testing.T) {
 	}
 
 	setting.MailService = &mailService
-	setting.Domain = "localhost"
-	setting.AppSubURL = "http://localhost"
 
 	// test with SEND_NOTIFICATION_EMAIL_ON_NEW_USER enabled
 	setting.Admin.SendNotificationEmailOnNewUser = true
@@ -77,8 +75,9 @@ func TestAdminNotificationMail_test(t *testing.T) {
 	sa = func(msgs ...*Message) {
 		assert.Equal(t, len(msgs), 1, "Test provides only one admin user, so only one email must be sent")
 		assert.Equal(t, msgs[0].To, users[0].Email, "checks if the recipient is the admin of the instance")
-		manageUserURL := "/admin/users/" + strconv.FormatInt(users[1].ID, 10)
+		manageUserURL := setting.AppURL + "admin/users/" + strconv.FormatInt(users[1].ID, 10)
 		assert.Contains(t, msgs[0].Body, manageUserURL)
+		assert.Contains(t, msgs[0].Body, users[1].HTMLURL())
 		assert.Contains(t, msgs[0].Body, translatedKey, "the .Locale translates to nothing")
 		assert.Contains(t, msgs[0].Body, users[1].Name, "user name of the newly created user")
 		for _, untranslated := range []string{"mail.admin", "admin.users"} {

@@ -51,16 +51,17 @@ func MailNewUser(ctx context.Context, u *user_model.User) {
 func mailNewUser(ctx context.Context, u *user_model.User, lang string, tos []string) {
 	locale := translation.NewLocale(lang)
 
+	manageUserURL := setting.AppURL + "admin/users/" + strconv.FormatInt(u.ID, 10)
 	subject := locale.Tr("mail.admin.new_user.subject", u.Name)
-	manageUserURL := setting.AppSubURL + "/admin/users/" + strconv.FormatInt(u.ID, 10)
 	body := locale.Tr("mail.admin.new_user.text", manageUserURL)
 	mailMeta := map[string]any{
-		"NewUser":  u,
-		"Subject":  subject,
-		"Body":     body,
-		"Language": locale.Language(),
-		"Locale":   locale,
-		"Str2html": templates.Str2html,
+		"NewUser":    u,
+		"NewUserUrl": u.HTMLURL(),
+		"Subject":    subject,
+		"Body":       body,
+		"Language":   locale.Language(),
+		"Locale":     locale,
+		"Str2html":   templates.Str2html,
 	}
 
 	var mailBody bytes.Buffer
