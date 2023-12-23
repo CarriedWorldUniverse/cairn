@@ -424,7 +424,7 @@ func handleSchedules(
 			TriggerUserID: input.Doer.ID,
 			Ref:           input.Repo.DefaultBranch,
 			CommitSHA:     commit.ID.String(),
-			Event:         input.Event,
+			Event:         webhook_module.HookEventType(api.HookScheduleCreated),
 			EventPayload:  string(p),
 			Specs:         schedules,
 			Content:       dwf.Content,
