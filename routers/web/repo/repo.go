@@ -421,7 +421,7 @@ func Download(ctx *context.Context) {
 	if err != nil {
 		if errors.Is(err, archiver_service.ErrUnknownArchiveFormat{}) {
 			ctx.Error(http.StatusBadRequest, err.Error())
-		} else if errors.Is(err, archiver_service.RepoRefNotFoundError{}) {
+		} else if errors.Is(err, archiver_service.RepoRefNotFoundError{}) || git.IsErrNotExist(err) {
 			ctx.Error(http.StatusNotFound, err.Error())
 		} else {
 			ctx.ServerError("archiver_service.NewRequest", err)

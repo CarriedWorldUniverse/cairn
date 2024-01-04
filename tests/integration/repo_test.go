@@ -720,3 +720,12 @@ func TestRenamedFileHistory(t *testing.T) {
 		htmlDoc.AssertElement(t, ".ui.bottom.attached.header", false)
 	})
 }
+
+func TestArchiveRequest(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+
+	req := NewRequest(t, "GET", "/user2/repo1/archive/a480fe666d6f550787b6cc85047b966d1f8d6bbf.zip")
+	session.MakeRequest(t, req, http.StatusNotFound)
+}
