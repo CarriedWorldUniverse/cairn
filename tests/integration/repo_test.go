@@ -729,3 +729,20 @@ func TestArchiveRequest(t *testing.T) {
 	req := NewRequest(t, "GET", "/user2/repo1/archive/a480fe666d6f550787b6cc85047b966d1f8d6bbf.zip")
 	session.MakeRequest(t, req, http.StatusNotFound)
 }
+
+func TestCommitView(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Non-existent commit", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", "/user2/repo1/commit/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		MakeRequest(t, req, http.StatusNotFound)
+		req.Header.Add("Accept", "text/html")
+		resp := MakeRequest(t, req, http.StatusNotFound)
+
+		// Really ensure that 404 is being sent back.
+		doc := NewHTMLParser(t, resp.Body)
+		doc.AssertElement(t, `[aria-label="Page Not Found"]`, true)
+	})
+}
