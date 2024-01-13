@@ -136,7 +136,7 @@ func loadOneBranch(ctx context.Context, repo *repo_model.Repository, dbBranch *g
 		var err error
 		divergence, err = files_service.CountDivergingCommits(ctx, repo, git.BranchPrefix+branchName)
 		if err != nil {
-			log.Error("CountDivergingCommits: %v", err)
+			return nil, fmt.Errorf("CountDivergingCommits: %v", err)
 		}
 	}
 
