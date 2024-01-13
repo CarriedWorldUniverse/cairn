@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2024 The Forgejo Authors c/o Codeberg e.V.. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package integration
@@ -10,8 +11,11 @@ import (
 	"strings"
 	"testing"
 
+	"code.gitea.io/gitea/models/db"
 	git_model "code.gitea.io/gitea/models/git"
+	repo_model "code.gitea.io/gitea/models/repo"
 	"code.gitea.io/gitea/models/unittest"
+	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/setting"
 	"code.gitea.io/gitea/modules/test"
 	"code.gitea.io/gitea/modules/translation"
@@ -158,4 +162,24 @@ func TestCreateBranchInvalidCSRF(t *testing.T) {
 		"Bad Request: invalid CSRF token",
 		strings.TrimSpace(htmlDoc.doc.Find(".ui.message").Text()),
 	)
+}
+
+func TestDatabaseMissingABranch(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, URL *url.URL) {
+		session := loginUser(t, "user2")
+
+		// Create two branches
+		testCreateBranch(t, session, "user2", "repo1", "branch/master", "will-be-present", http.StatusSeeOther)
+		testCreateBranch(t, session, "user2", "repo1", "branch/master", "will-be-missing", http.StatusSeeOther)
+
+		// Delete one branch from git only, leaving it in the database
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		cmd := git.NewCommand(db.DefaultContext, "branch", "-D").AddDynamicArguments("will-be-missing")
+		_, _, err := cmd.RunStdString(&git.RunOpts{Dir: repo.RepoPath()})
+		assert.NoError(t, err)
+
+		// Verify that loading the repo's branches page works still
+		req := NewRequest(t, "GET", "/user2/repo1/branches")
+		session.MakeRequest(t, req, http.StatusOK)
+	})
 }
