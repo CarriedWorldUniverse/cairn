@@ -100,7 +100,13 @@ func LoadBranches(ctx context.Context, repo *repo_model.Repository, gitRepo *git
 	for i := range dbBranches {
 		branch, err := loadOneBranch(ctx, repo, dbBranches[i], &rules, repoIDToRepo, repoIDToGitRepo)
 		if err != nil {
-			return nil, nil, 0, fmt.Errorf("loadOneBranch: %v", err)
+			log.Error("loadOneBranch() on repo #%d, branch '%s' failed: %v", repo.ID, dbBranches[i].Name, err)
+
+			// TODO: Ideally, we would only do this if the branch doesn't exist
+			// anymore. That is not practical to check here currently, so we do
+			// this for all kinds of errors.
+			totalNumOfBranches--
+			continue
 		}
 
 		branches = append(branches, branch)
