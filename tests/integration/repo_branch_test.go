@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -15,10 +16,13 @@ import (
 	git_model "code.gitea.io/gitea/models/git"
 	repo_model "code.gitea.io/gitea/models/repo"
 	"code.gitea.io/gitea/models/unittest"
+	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/git"
+	"code.gitea.io/gitea/modules/graceful"
 	"code.gitea.io/gitea/modules/setting"
 	"code.gitea.io/gitea/modules/test"
 	"code.gitea.io/gitea/modules/translation"
+	repo_service "code.gitea.io/gitea/services/repository"
 	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -166,11 +170,16 @@ func TestCreateBranchInvalidCSRF(t *testing.T) {
 
 func TestDatabaseMissingABranch(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, URL *url.URL) {
+		adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{IsAdmin: true})
 		session := loginUser(t, "user2")
 
 		// Create two branches
 		testCreateBranch(t, session, "user2", "repo1", "branch/master", "will-be-present", http.StatusSeeOther)
 		testCreateBranch(t, session, "user2", "repo1", "branch/master", "will-be-missing", http.StatusSeeOther)
+
+		// Run the repo branch sync, to ensure the db and git agree.
+		err2 := repo_service.AddAllRepoBranchesToSyncQueue(graceful.GetManager().ShutdownContext(), adminUser.ID)
+		assert.NoError(t, err2)
 
 		// Delete one branch from git only, leaving it in the database
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -178,8 +187,29 @@ func TestDatabaseMissingABranch(t *testing.T) {
 		_, _, err := cmd.RunStdString(&git.RunOpts{Dir: repo.RepoPath()})
 		assert.NoError(t, err)
 
-		// Verify that loading the repo's branches page works still
+		// Verify that loading the repo's branches page works still, and that it
+		// reports at least three branches (master, will-be-present, and
+		// will-be-missing).
 		req := NewRequest(t, "GET", "/user2/repo1/branches")
-		session.MakeRequest(t, req, http.StatusOK)
+		resp := session.MakeRequest(t, req, http.StatusOK)
+		doc := NewHTMLParser(t, resp.Body)
+		firstBranchCount, _ := strconv.Atoi(doc.Find(".repository-menu a[href*='/branches'] b").Text())
+		assert.GreaterOrEqual(t, firstBranchCount, 3)
+
+		// Run the repo branch sync again
+		err2 = repo_service.AddAllRepoBranchesToSyncQueue(graceful.GetManager().ShutdownContext(), adminUser.ID)
+		assert.NoError(t, err2)
+
+		// Verify that loading the repo's branches page works still, and that it
+		// reports one branch less than the first time.
+		//
+		// NOTE: This assumes that the branch counter on the web UI is out of
+		// date before the sync. If that problem gets resolved, we'll have to
+		// find another way to test that the syncing works.
+		req = NewRequest(t, "GET", "/user2/repo1/branches")
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		doc = NewHTMLParser(t, resp.Body)
+		secondBranchCount, _ := strconv.Atoi(doc.Find(".repository-menu a[href*='/branches'] b").Text())
+		assert.Equal(t, firstBranchCount-1, secondBranchCount)
 	})
 }
