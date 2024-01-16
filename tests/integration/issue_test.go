@@ -700,34 +700,6 @@ func TestIssuePinMove(t *testing.T) {
 	assert.EqualValues(t, newPosition, issue.PinOrder)
 }
 
-func TestAbsoluteReferenceURL(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
-	session := loginUser(t, "user2")
-
-	issue1 := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 1})
-	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue1.RepoID})
-
-	req := NewRequest(t, "GET", fmt.Sprintf("%s/issues/%d", repo.FullName(), issue1.Index))
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	htmlDoc := NewHTMLParser(t, resp.Body)
-
-	t.Run("Issue", func(t *testing.T) {
-		defer tests.PrintCurrentTest(t)()
-
-		referenceURL, ok := htmlDoc.Find(".reference-issue").Attr("data-reference")
-		assert.True(t, ok)
-		assert.EqualValues(t, setting.AppURL+"user2/repo1/issues/1#issue-1", referenceURL)
-	})
-
-	t.Run("Comment", func(t *testing.T) {
-		defer tests.PrintCurrentTest(t)()
-
-		referenceURL, ok := htmlDoc.Find(`[id^="issuecomment"] .reference-issue`).Attr("data-reference")
-		assert.True(t, ok)
-		assert.EqualValues(t, setting.AppURL+"user2/repo1/issues/1#issuecomment-2", referenceURL)
-	})
-}
-
 func TestGetContentHistory(t *testing.T) {
 	defer tests.AddFixtures("tests/integration/fixtures/TestGetContentHistory/")()
 	defer tests.PrepareTestEnv(t)()

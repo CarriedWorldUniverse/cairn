@@ -5,9 +5,9 @@
 	<div class="menu">
 		{{$referenceUrl := ""}}
 		{{if .issue}}
-			{{$referenceUrl = printf "%s#%s" .ctxData.Issue.HTMLURL .item.HashTag}}
+			{{$referenceUrl = printf "%s#%s" .ctxData.Issue.Link .item.HashTag}}
 		{{else}}
-			{{$referenceUrl = printf "%s/files#%s" .ctxData.Issue.HTMLURL .item.HashTag}}
+			{{$referenceUrl = printf "%s/files#%s" .ctxData.Issue.Link .item.HashTag}}
 		{{end}}
 		<div class="item context js-aria-clickable" data-clipboard-text-type="url" data-clipboard-text="{{$referenceUrl}}">{{ctx.Locale.Tr "repo.issues.context.copy_link"}}</div>
 		{{if and .ctxData.IsSigned (not .ctxData.Repository.IsArchived)}}
