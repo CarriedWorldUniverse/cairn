@@ -48,10 +48,15 @@ import (
 	_ "code.gitea.io/gitea/modules/session" // to registers all internal adapters
 
 	"gitea.com/go-chi/captcha"
+	"github.com/NYTimes/gziphandler"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/klauspost/compress/gzhttp"
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+const (
+	// GzipMinSize represents min size to compress for the body size of response
+	GzipMinSize = 1400
 )
 
 // CorsHandler return a http handler who set CORS options if enabled by config
@@ -224,11 +229,11 @@ func Routes() *web.Route {
 	var mid []any
 
 	if setting.EnableGzip {
-		wrapper, err := gzhttp.NewWrapper(gzhttp.RandomJitter(32, 0, false))
+		h, err := gziphandler.GzipHandlerWithOpts(gziphandler.MinSize(GzipMinSize))
 		if err != nil {
-			log.Fatal("gzhttp.NewWrapper failed: %v", err)
+			log.Fatal("GzipHandlerWithOpts failed: %v", err)
 		}
-		mid = append(mid, wrapper)
+		mid = append(mid, h)
 	}
 
 	if setting.Service.EnableCaptcha {
