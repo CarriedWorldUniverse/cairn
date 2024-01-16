@@ -19,6 +19,7 @@ var (
 	SecretKey                          string
 	InternalToken                      string // internal access token
 	LogInRememberDays                  int
+	CookieUserName                     string
 	CookieRememberName                 string
 	ReverseProxyAuthUser               string
 	ReverseProxyAuthEmail              string
@@ -103,6 +104,7 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	sec := rootCfg.Section("security")
 	InstallLock = HasInstallLock(rootCfg)
 	LogInRememberDays = sec.Key("LOGIN_REMEMBER_DAYS").MustInt(7)
+	CookieUserName = sec.Key("COOKIE_USERNAME").MustString("gitea_awesome")
 	SecretKey = loadSecret(sec, "SECRET_KEY_URI", "SECRET_KEY")
 	if SecretKey == "" {
 		// FIXME: https://github.com/go-gitea/gitea/issues/16832

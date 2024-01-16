@@ -54,7 +54,8 @@ func Home(ctx *context.Context) {
 	}
 
 	// Check auto-login.
-	if len(ctx.GetSiteCookie(setting.CookieRememberName)) != 0 {
+	uname := ctx.GetSiteCookie(setting.CookieUserName)
+	if len(uname) != 0 {
 		ctx.Redirect(setting.AppSubURL + "/user/login")
 		return
 	}

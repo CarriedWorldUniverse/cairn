@@ -4,6 +4,8 @@
 package util
 
 import (
+	"crypto/aes"
+	"crypto/rand"
 	"fmt"
 	"os"
 	"testing"
@@ -34,4 +36,22 @@ func TestCopyFile(t *testing.T) {
 	dstContent, err := os.ReadFile(dstFile)
 	assert.NoError(t, err)
 	assert.Equal(t, testContent, dstContent)
+}
+
+func TestAESGCM(t *testing.T) {
+	t.Parallel()
+
+	key := make([]byte, aes.BlockSize)
+	_, err := rand.Read(key)
+	assert.NoError(t, err)
+
+	plaintext := []byte("this will be encrypted")
+
+	ciphertext, err := AESGCMEncrypt(key, plaintext)
+	assert.NoError(t, err)
+
+	decrypted, err := AESGCMDecrypt(key, ciphertext)
+	assert.NoError(t, err)
+
+	assert.Equal(t, plaintext, decrypted)
 }

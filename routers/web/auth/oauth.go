@@ -1122,7 +1122,8 @@ func handleOAuth2SignIn(ctx *context.Context, source *auth.Source, u *user_model
 	// we can't sign the user in just yet. Instead, redirect them to the 2FA authentication page.
 	if !needs2FA {
 		if err := updateSession(ctx, nil, map[string]any{
-			"uid": u.ID,
+			"uid":   u.ID,
+			"uname": u.Name,
 		}); err != nil {
 			ctx.ServerError("updateSession", err)
 			return

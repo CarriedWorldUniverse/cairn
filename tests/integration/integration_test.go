@@ -17,7 +17,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -300,12 +299,6 @@ func loginUser(t testing.TB, userName string) *TestSession {
 
 func loginUserWithPassword(t testing.TB, userName, password string) *TestSession {
 	t.Helper()
-
-	return loginUserWithPasswordRemember(t, userName, password, false)
-}
-
-func loginUserWithPasswordRemember(t testing.TB, userName, password string, rememberMe bool) *TestSession {
-	t.Helper()
 	req := NewRequest(t, "GET", "/user/login")
 	resp := MakeRequest(t, req, http.StatusOK)
 
@@ -314,7 +307,6 @@ func loginUserWithPasswordRemember(t testing.TB, userName, password string, reme
 		"_csrf":     doc.GetCSRF(),
 		"user_name": userName,
 		"password":  password,
-		"remember":  strconv.FormatBool(rememberMe),
 	})
 	resp = MakeRequest(t, req, http.StatusSeeOther)
 
