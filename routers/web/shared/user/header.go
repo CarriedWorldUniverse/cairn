@@ -45,10 +45,8 @@ func PrepareContextForProfileBigAvatar(ctx *context.Context) {
 
 	if len(ctx.ContextUser.Description) != 0 {
 		content, err := markdown.RenderString(&markup.RenderContext{
-			URLPrefix: ctx.Repo.RepoLink,
-			Metas:     map[string]string{"mode": "document"},
-			GitRepo:   ctx.Repo.GitRepo,
-			Ctx:       ctx,
+			Metas: map[string]string{"mode": "document"},
+			Ctx:   ctx,
 		}, ctx.ContextUser.Description)
 		if err != nil {
 			ctx.ServerError("RenderString", err)
@@ -85,7 +83,7 @@ func PrepareContextForProfileBigAvatar(ctx *context.Context) {
 	}
 }
 
-func FindUserProfileReadme(ctx *context.Context) (profileGitRepo *git.Repository, profileReadmeBlob *git.Blob, profileClose func()) {
+func FindUserProfileReadme(ctx *context.Context) (profileDbRepo *repo_model.Repository, profileGitRepo *git.Repository, profileReadmeBlob *git.Blob, profileClose func()) {
 	profileDbRepo, err := repo_model.GetRepositoryByName(ctx.ContextUser.ID, ".profile")
 	if err == nil && !profileDbRepo.IsEmpty && !profileDbRepo.IsPrivate {
 		if profileGitRepo, err = git.OpenRepository(ctx, profileDbRepo.RepoPath()); err != nil {
@@ -98,7 +96,7 @@ func FindUserProfileReadme(ctx *context.Context) (profileGitRepo *git.Repository
 			}
 		}
 	}
-	return profileGitRepo, profileReadmeBlob, func() {
+	return profileDbRepo, profileGitRepo, profileReadmeBlob, func() {
 		if profileGitRepo != nil {
 			_ = profileGitRepo.Close()
 		}
@@ -108,7 +106,7 @@ func FindUserProfileReadme(ctx *context.Context) (profileGitRepo *git.Repository
 func RenderUserHeader(ctx *context.Context) {
 	prepareContextForCommonProfile(ctx)
 
-	_, profileReadmeBlob, profileClose := FindUserProfileReadme(ctx)
+	_, _, profileReadmeBlob, profileClose := FindUserProfileReadme(ctx)
 	defer profileClose()
 	ctx.Data["HasProfileReadme"] = profileReadmeBlob != nil
 }
