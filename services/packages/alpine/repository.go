@@ -230,6 +230,9 @@ func buildPackagesIndex(ctx context.Context, ownerID int64, repoVersion *package
 		if len(pd.FileMetadata.Provides) > 0 {
 			fmt.Fprintf(&buf, "p:%s\n", strings.Join(pd.FileMetadata.Provides, " "))
 		}
+		if pd.FileMetadata.InstallIf != "" {
+			fmt.Fprintf(&buf, "i:%s\n", pd.FileMetadata.InstallIf)
+		}
 		fmt.Fprint(&buf, "\n")
 	}
 
