@@ -22,6 +22,7 @@ import (
 	container_module "code.gitea.io/gitea/modules/packages/container"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
+	"code.gitea.io/gitea/modules/test"
 	"code.gitea.io/gitea/tests"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -106,6 +107,14 @@ func TestPackageContainer(t *testing.T) {
 			req = NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL))
 			addTokenAuthHeader(req, anonymousToken)
 			MakeRequest(t, req, http.StatusOK)
+
+			defer test.MockVariableValue(&setting.Service.RequireSignInView, true)()
+
+			req = NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL))
+			MakeRequest(t, req, http.StatusUnauthorized)
+
+			req = NewRequest(t, "GET", fmt.Sprintf("%sv2/token", setting.AppURL))
+			MakeRequest(t, req, http.StatusUnauthorized)
 		})
 
 		t.Run("User", func(t *testing.T) {
