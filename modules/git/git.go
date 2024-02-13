@@ -34,7 +34,8 @@ var (
 	DefaultContext context.Context
 
 	// SupportProcReceive version >= 2.29.0
-	SupportProcReceive bool
+	SupportProcReceive  bool
+	InvertedGitFlushEnv bool // 2.43.1
 
 	gitVersion *version.Version
 )
@@ -186,6 +187,8 @@ func InitFull(ctx context.Context) (err error) {
 	}
 	SupportProcReceive = CheckGitVersionAtLeast("2.29") == nil
 
+	InvertedGitFlushEnv = CheckGitVersionEqual("2.43.1") == nil
+
 	if setting.LFS.StartServer {
 		if CheckGitVersionAtLeast("2.1.2") != nil {
 			return errors.New("LFS server support requires Git >= 2.1.2")
@@ -310,6 +313,21 @@ func CheckGitVersionAtLeast(atLeast string) error {
 	}
 	if gitVersion.Compare(atLeastVersion) < 0 {
 		return fmt.Errorf("installed git binary version %s is not at least %s", gitVersion.Original(), atLeast)
+	}
+	return nil
+}
+
+// CheckGitVersionEqual checks if the git version is equal to the constraint version.
+func CheckGitVersionEqual(equal string) error {
+	if _, err := loadGitVersion(); err != nil {
+		return err
+	}
+	atLeastVersion, err := version.NewVersion(equal)
+	if err != nil {
+		return err
+	}
+	if !gitVersion.Equal(atLeastVersion) {
+		return fmt.Errorf("installed git binary version %s is not equal to %s", gitVersion.Original(), equal)
 	}
 	return nil
 }
