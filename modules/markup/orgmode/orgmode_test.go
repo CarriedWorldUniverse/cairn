@@ -36,12 +36,56 @@ func TestRender_StandardLinks(t *testing.T) {
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 
-	googleRendered := "<p><a href=\"https://google.com/\" title=\"https://google.com/\">https://google.com/</a></p>"
-	test("[[https://google.com/]]", googleRendered)
+	// No BranchPath or TreePath set.
+	test("[[file:comfy][comfy]]",
+		`<p><a href="http://localhost:3000/gogits/gogs/comfy" title="comfy">comfy</a></p>`)
+
+	test("[[https://google.com/]]",
+		`<p><a href="https://google.com/" title="https://google.com/">https://google.com/</a></p>`)
 
 	lnk := util.URLJoin(AppSubURL, "WikiPage")
 	test("[[WikiPage][WikiPage]]",
 		"<p><a href=\""+lnk+"\" title=\"WikiPage\">WikiPage</a></p>")
+}
+
+func TestRender_BaseLinks(t *testing.T) {
+	setting.AppURL = AppURL
+	setting.AppSubURL = AppSubURL
+
+	testBranch := func(input, expected string) {
+		buffer, err := RenderString(&markup.RenderContext{
+			Ctx: git.DefaultContext,
+			Links: markup.Links{
+				Base:       setting.AppSubURL,
+				BranchPath: "branch/main",
+			},
+		}, input)
+		assert.NoError(t, err)
+		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
+	}
+
+	testBranchTree := func(input, expected string) {
+		buffer, err := RenderString(&markup.RenderContext{
+			Ctx: git.DefaultContext,
+			Links: markup.Links{
+				Base:       setting.AppSubURL,
+				BranchPath: "branch/main",
+				TreePath:   "deep/nested/folder",
+			},
+		}, input)
+		assert.NoError(t, err)
+		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
+	}
+
+	testBranch("[[file:comfy][comfy]]",
+		`<p><a href="http://localhost:3000/gogits/gogs/src/branch/main/comfy" title="comfy">comfy</a></p>`)
+	testBranchTree("[[file:comfy][comfy]]",
+		`<p><a href="http://localhost:3000/gogits/gogs/src/branch/main/deep/nested/folder/comfy" title="comfy">comfy</a></p>`)
+
+	testBranch("[[file:./src][./src/]]",
+		`<p><a href="http://localhost:3000/gogits/gogs/src/branch/main/src" title="./src/">./src/</a></p>`)
+	testBranchTree("[[file:./src][./src/]]",
+		`<p><a href="http://localhost:3000/gogits/gogs/src/branch/main/deep/nested/folder/src" title="./src/">./src/</a></p>`)
 }
 
 func TestRender_Media(t *testing.T) {
