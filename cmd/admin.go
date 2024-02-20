@@ -428,6 +428,12 @@ func runRegenerateHooks(_ *cli.Context) error {
 	if err := initDB(ctx); err != nil {
 		return err
 	}
+
+	// Detection of ProcReceive support relies on Git module being initialized.
+	if err := git.InitFull(ctx); err != nil {
+		return err
+	}
+
 	return repo_service.SyncRepositoryHooks(graceful.GetManager().ShutdownContext())
 }
 
