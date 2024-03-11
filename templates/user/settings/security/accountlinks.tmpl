@@ -27,10 +27,11 @@
 		</div>
 		{{range $loginSource, $provider := .AccountLinks}}
 			<div class="flex-item">
-				{{$providerData := index $.OAuth2Providers $loginSource.Name}}
-				<div class="flex-item-leading">
-					{{$providerData.IconHTML 20}}
-				</div>
+				{{with index $.OAuth2Providers $loginSource.Name}}
+					<div class="flex-item-leading">
+						{{.IconHTML 20}}
+					</div>
+				{{end}}
 				<div class="flex-item-main">
 					<span class="flex-item-title" data-tooltip-content="{{$provider}}">
 						{{$loginSource.Name}}
