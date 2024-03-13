@@ -176,7 +176,7 @@ func getForkRepository(ctx *context.Context) *repo_model.Repository {
 		ctx.Data["ContextUser"] = orgs[0]
 	} else {
 		ctx.Data["CanForkRepo"] = false
-		ctx.Flash.Error(ctx.Tr("repo.fork_no_valid_owners"), true)
+		ctx.RenderWithErr(ctx.Tr("repo.fork_no_valid_owners"), tplFork, nil)
 		return nil
 	}
 
