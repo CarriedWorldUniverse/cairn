@@ -71,7 +71,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/lib/pq v1.10.9
 	github.com/markbates/goth v1.78.0
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/meilisearch/meilisearch-go v0.25.1
 	github.com/mholt/archiver/v3 v3.5.1
