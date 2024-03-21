@@ -220,7 +220,7 @@ func TestCreateDeleteRefEvent(t *testing.T) {
 		assert.NotEmpty(t, repo)
 
 		// enable actions
-		err = repo_service.UpdateRepositoryUnits(db.DefaultContext, repo, []repo_model.RepoUnit{{
+		err = repo_model.UpdateRepositoryUnits(repo, []repo_model.RepoUnit{{
 			RepoID: repo.ID,
 			Type:   unit_model.TypeActions,
 		}}, nil)
