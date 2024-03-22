@@ -133,11 +133,13 @@ func WebhookNew(ctx *context.Context) {
 	}
 
 	hookType := ctx.Params(":type")
-	if webhook_service.GetWebhookHandler(hookType) == nil {
+	handler := webhook_service.GetWebhookHandler(hookType)
+	if handler == nil {
 		ctx.NotFound("GetWebhookHandler", nil)
 		return
 	}
 	ctx.Data["HookType"] = hookType
+	ctx.Data["WebhookHandler"] = handler
 	ctx.Data["BaseLink"] = orCtx.LinkNew
 	ctx.Data["BaseLinkNew"] = orCtx.LinkNew
 	ctx.Data["WebhookList"] = webhook_service.List()
@@ -196,6 +198,7 @@ func WebhookCreate(ctx *context.Context) {
 	ctx.Data["PageIsSettingsHooksNew"] = true
 	ctx.Data["Webhook"] = webhook.Webhook{HookEvent: &webhook_module.HookEvent{}}
 	ctx.Data["HookType"] = hookType
+	ctx.Data["WebhookHandler"] = handler
 
 	orCtx, err := getOwnerRepoCtx(ctx)
 	if err != nil {
@@ -362,6 +365,7 @@ func checkWebhook(ctx *context.Context) (*ownerRepoCtx, *webhook.Webhook) {
 
 	if handler := webhook_service.GetWebhookHandler(w.Type); handler != nil {
 		ctx.Data["HookMetadata"] = handler.Metadata(w)
+		ctx.Data["WebhookHandler"] = handler
 	}
 
 	ctx.Data["History"], err = w.History(ctx, 1)
