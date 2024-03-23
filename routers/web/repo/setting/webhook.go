@@ -45,6 +45,7 @@ func WebhookList(ctx *context.Context) {
 	ctx.Data["PageIsSettingsHooks"] = true
 	ctx.Data["BaseLink"] = ctx.Repo.RepoLink + "/settings/hooks"
 	ctx.Data["BaseLinkNew"] = ctx.Repo.RepoLink + "/settings/hooks"
+	ctx.Data["WebhookList"] = webhook_service.List()
 	ctx.Data["Description"] = ctx.Tr("repo.settings.hooks_desc", "https://forgejo.org/docs/latest/user/webhooks/")
 
 	ws, err := db.Find[webhook.Webhook](ctx, webhook.ListWebhookOptions{RepoID: ctx.Repo.Repository.ID})
@@ -139,6 +140,7 @@ func WebhookNew(ctx *context.Context) {
 	ctx.Data["HookType"] = hookType
 	ctx.Data["BaseLink"] = orCtx.LinkNew
 	ctx.Data["BaseLinkNew"] = orCtx.LinkNew
+	ctx.Data["WebhookList"] = webhook_service.List()
 
 	ctx.HTML(http.StatusOK, orCtx.NewTemplate)
 }
@@ -202,6 +204,7 @@ func WebhookCreate(ctx *context.Context) {
 	}
 	ctx.Data["BaseLink"] = orCtx.LinkNew
 	ctx.Data["BaseLinkNew"] = orCtx.LinkNew
+	ctx.Data["WebhookList"] = webhook_service.List()
 
 	if ctx.HasError() {
 		// pre-fill the form with the submitted data
@@ -336,6 +339,7 @@ func checkWebhook(ctx *context.Context) (*ownerRepoCtx, *webhook.Webhook) {
 	}
 	ctx.Data["BaseLink"] = orCtx.Link
 	ctx.Data["BaseLinkNew"] = orCtx.LinkNew
+	ctx.Data["WebhookList"] = webhook_service.List()
 
 	var w *webhook.Webhook
 	if orCtx.RepoID > 0 {
