@@ -445,6 +445,9 @@ async function onEditContent(event) {
       e.preventDefault();
       saveAndRefresh(dz, $dropzone);
     });
+    $editContentZone.on('ce-quick-submit', () => {
+      $editContentZone.find('.save.button').trigger('click');
+    });
   } else {
     comboMarkdownEditor = getComboMarkdownEditor($editContentZone.find('.combo-markdown-editor'));
   }
