@@ -31,7 +31,7 @@ require (
 	github.com/editorconfig/editorconfig-core-go/v2 v2.6.1
 	github.com/emersion/go-imap v1.2.1
 	github.com/emirpasic/gods v1.18.1
-	github.com/felixge/fgprof v0.9.3
+	github.com/felixge/fgprof v0.9.4
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gliderlabs/ssh v0.3.7
 	github.com/go-ap/activitypub v0.0.0-20231114162308-e219254dc5c9
@@ -44,7 +44,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-ldap/ldap/v3 v3.4.6
-	github.com/go-sql-driver/mysql v1.8.0
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/go-swagger/go-swagger v0.30.5
 	github.com/go-testfixtures/testfixtures/v3 v3.10.0
 	github.com/go-webauthn/webauthn v0.10.0
@@ -53,7 +53,7 @@ require (
 	github.com/gogs/go-gogs-client v0.0.0-20210131175652-1d7215cd8d85
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/go-github/v57 v57.0.0
-	github.com/google/pprof v0.0.0-20240117000934-35fc243c5815
+	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/feeds v1.1.2
 	github.com/gorilla/sessions v1.2.2
@@ -74,7 +74,7 @@ require (
 	github.com/meilisearch/meilisearch-go v0.26.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/microcosm-cc/bluemonday v1.0.26
-	github.com/minio/minio-go/v7 v7.0.66
+	github.com/minio/minio-go/v7 v7.0.69
 	github.com/msteinert/pam v1.2.0
 	github.com/nektos/act v0.2.52
 	github.com/niklasfasching/go-org v1.7.0
