@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"code.gitea.io/gitea/modules/log"
 )
 
 var (
@@ -61,6 +63,11 @@ func LoadDBSetting() {
 func loadDBSetting(rootCfg ConfigProvider) {
 	sec := rootCfg.Section("database")
 	Database.Type = DatabaseType(sec.Key("DB_TYPE").String())
+
+	if Database.Type.IsMSSQL() {
+		log.Error("Your Forgejo instance uses Microsoft SQL Server as its database which is scheduled for removal in v8.0. Please file an issue https://codeberg.org/forgejo/forgejo/issues/new to get help migrating to another database. Waiting 60 seconds before starting Forgejo")
+		time.Sleep(time.Second * 60)
+	}
 
 	Database.Host = sec.Key("HOST").String()
 	Database.Name = sec.Key("NAME").String()
