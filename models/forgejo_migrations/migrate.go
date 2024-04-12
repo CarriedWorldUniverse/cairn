@@ -58,6 +58,9 @@ var migrations = []*Migration{
 	NewMigration("Add the `apply_to_admins` column to the `protected_branch` table", forgejo_v1_22.AddApplyToAdminsSetting),
 	// v9 -> v10
 	NewMigration("Add pronouns to user", forgejo_v1_22.AddPronounsToUser),
+	// v11 -> v12
+	// it is a v7.0 migration backport see https://codeberg.org/forgejo/forgejo/pulls/3165#issuecomment-1755941
+	NewMigration("Add the `created` column to the `issue` table", forgejo_v1_22.AddCreatedToIssue),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.
