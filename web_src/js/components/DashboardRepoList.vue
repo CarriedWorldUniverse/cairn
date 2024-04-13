@@ -454,7 +454,7 @@ export default sfc; // activate the IDE's Vue plugin
       </div>
     </div>
     <div v-if="!isOrganization" v-show="tab === 'organizations'" class="ui tab active list dashboard-orgs">
-      <div v-if="organizations.length" class="ui attached table segment tw-rounded-b">
+      <div v-if="organizations.length" class="ui attached table segment tw-rounded">
         <ul class="repo-owner-name-list">
           <li class="tw-flex tw-items-center tw-py-2" v-for="org in organizations" :key="org.name">
             <a class="repo-list-link muted" :href="subUrl + '/' + encodeURIComponent(org.name)">
