@@ -8,29 +8,20 @@ import (
 	"testing"
 
 	"code.gitea.io/gitea/models/db"
+	repo_model "code.gitea.io/gitea/models/repo"
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
-	"code.gitea.io/gitea/modules/git"
+	repo_module "code.gitea.io/gitea/modules/repository"
 	repo_service "code.gitea.io/gitea/services/repository"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestGitPush(t *testing.T) {
-	onGiteaRun(t, testGitPush)
+func TestOptionsGitPush(t *testing.T) {
+	onGiteaRun(t, testOptionsGitPush)
 }
 
-func testGitPush(t *testing.T, u *url.URL) {
-	t.Run("Push branch with options", func(t *testing.T) {
-		runTestGitPush(t, u, func(t *testing.T, gitPath string) {
-			branchName := "branch-with-options"
-			doGitCreateBranch(gitPath, branchName)(t)
-			doGitPushTestRepository(gitPath, "origin", branchName, "-o", "repo.private=true", "-o", "repo.template=true")(t)
-		})
-	})
-}
-
-func runTestGitPush(t *testing.T, u *url.URL, gitOperation func(t *testing.T, gitPath string)) {
+func testOptionsGitPush(t *testing.T, u *url.URL) {
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	repo, err := repo_service.CreateRepository(db.DefaultContext, user, user, repo_service.CreateRepoOptions{
 		Name:          "repo-to-push",
@@ -46,22 +37,59 @@ func runTestGitPush(t *testing.T, u *url.URL, gitOperation func(t *testing.T, gi
 
 	doGitInitTestRepository(gitPath)(t)
 
-	oldPath := u.Path
-	oldUser := u.User
-	defer func() {
-		u.Path = oldPath
-		u.User = oldUser
-	}()
 	u.Path = repo.FullName() + ".git"
 	u.User = url.UserPassword(user.LowerName, userPassword)
-
 	doGitAddRemote(gitPath, "origin", u)(t)
 
-	gitRepo, err := git.OpenRepository(git.DefaultContext, gitPath)
-	require.NoError(t, err)
-	defer gitRepo.Close()
+	{
+		// owner sets private & template to true via push options
+		branchName := "branch1"
+		doGitCreateBranch(gitPath, branchName)(t)
+		doGitPushTestRepository(gitPath, "origin", branchName, "-o", "repo.private=true", "-o", "repo.template=true")(t)
+		repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, "repo-to-push")
+		require.NoError(t, err)
+		require.True(t, repo.IsPrivate)
+		require.True(t, repo.IsTemplate)
+	}
 
-	gitOperation(t, gitPath)
+	{
+		// owner sets private & template to false via push options
+		branchName := "branch2"
+		doGitCreateBranch(gitPath, branchName)(t)
+		doGitPushTestRepository(gitPath, "origin", branchName, "-o", "repo.private=false", "-o", "repo.template=false")(t)
+		repo, err = repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, "repo-to-push")
+		require.NoError(t, err)
+		require.False(t, repo.IsPrivate)
+		require.False(t, repo.IsTemplate)
+	}
+
+	{
+		// create a collaborator with write access
+		collaborator := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5})
+		u.User = url.UserPassword(collaborator.LowerName, userPassword)
+		doGitAddRemote(gitPath, "collaborator", u)(t)
+		repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, "repo-to-push")
+		require.NoError(t, err)
+		repo_module.AddCollaborator(db.DefaultContext, repo, collaborator)
+	}
+
+	{
+		// collaborator with write access is allowed to push
+		branchName := "branch3"
+		doGitCreateBranch(gitPath, branchName)(t)
+		doGitPushTestRepository(gitPath, "collaborator", branchName)(t)
+	}
+
+	{
+		// collaborator with write access fails to change private & template via push options
+		branchName := "branch4"
+		doGitCreateBranch(gitPath, branchName)(t)
+		doGitPushTestRepositoryFail(gitPath, "collaborator", branchName, "-o", "repo.private=true", "-o", "repo.template=true")(t)
+		repo, err = repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, "repo-to-push")
+		require.NoError(t, err)
+		require.False(t, repo.IsPrivate)
+		require.False(t, repo.IsTemplate)
+	}
 
 	require.NoError(t, repo_service.DeleteRepositoryDirectly(db.DefaultContext, user, user.ID, repo.ID))
 }

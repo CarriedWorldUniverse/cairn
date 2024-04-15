@@ -101,6 +101,57 @@ func (ctx *preReceiveContext) AssertCreatePullRequest() bool {
 	return true
 }
 
+func (ctx *preReceiveContext) canChangeSettings() bool {
+	if !ctx.loadPusherAndPermission() {
+		return false
+	}
+
+	perm, err := access_model.GetUserRepoPermission(ctx, ctx.Repo.Repository, ctx.user)
+	if err != nil {
+		return false
+	}
+	if !perm.IsOwner() && !perm.IsAdmin() {
+		return false
+	}
+
+	if ctx.Repo.Repository.IsFork {
+		return false
+	}
+
+	return true
+}
+
+func (ctx *preReceiveContext) assertChangeSettings() bool {
+	opts := web.GetForm(ctx).(*private.HookOptions)
+
+	if len(opts.GitPushOptions) == 0 {
+		return true
+	}
+
+	_, hasPrivateOpt := opts.GitPushOptions[private.GitPushOptionRepoPrivate]
+	_, hasTemplateOpt := opts.GitPushOptions[private.GitPushOptionRepoTemplate]
+
+	if !hasPrivateOpt && !hasTemplateOpt {
+		// If neither `repo.private` nor `repo.template` is present in
+		// the push options, we're good to go without further permission
+		// checking.
+		return true
+	}
+
+	// Either `repo.private` or `repo.template` is among the push options,
+	// do some permission checks.
+	if !ctx.canChangeSettings() {
+		if ctx.Written() {
+			return false
+		}
+		ctx.JSON(http.StatusForbidden, private.Response{
+			UserMsg: "Permission denied for changing repo settings.",
+		})
+		return false
+	}
+	return true
+}
+
 // HookPreReceive checks whether a individual commit is acceptable
 func HookPreReceive(ctx *gitea_context.PrivateContext) {
 	opts := web.GetForm(ctx).(*private.HookOptions)
@@ -109,6 +160,10 @@ func HookPreReceive(ctx *gitea_context.PrivateContext) {
 		PrivateContext: ctx,
 		env:            generateGitEnv(opts), // Generate git environment for checking commits
 		opts:           opts,
+	}
+
+	if !ourCtx.assertChangeSettings() {
+		return
 	}
 
 	// Iterate across the provided old commit IDs
