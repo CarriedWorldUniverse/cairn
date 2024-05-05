@@ -185,6 +185,11 @@
   text-overflow: ellipsis;
 }
 
+/* path for 7.0 */
+.issue-content .commit-summary {
+  white-space: unset;
+}
+
 .commit-header .commit-summary,
 td .commit-summary {
   white-space: normal;
