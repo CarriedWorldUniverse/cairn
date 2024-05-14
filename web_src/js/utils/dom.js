@@ -16,6 +16,15 @@ function elementsCall(el, func, ...args) {
   }
 }
 
+function applyElemsCallback(elems, fn) {
+  if (fn) {
+    for (const el of elems) {
+      fn(el);
+    }
+  }
+  return elems;
+}
+
 /**
  * @param el string (selector), Node, NodeList, HTMLCollection, Array or jQuery
  * @param force force=true to show or force=false to hide, undefined to toggle
@@ -53,6 +62,10 @@ export function isElemHidden(el) {
 
 export function queryElemSiblings(el, selector) {
   return Array.from(el.parentNode.children).filter((child) => child !== el && child.matches(selector));
+}
+
+export function queryElems(selector, fn) {
+  return applyElemsCallback(document.querySelectorAll(selector), fn);
 }
 
 export function onDomReady(cb) {
