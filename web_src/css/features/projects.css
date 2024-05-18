@@ -37,6 +37,16 @@
   line-height: 1.25 !important;
   color: inherit !important;
   cursor: inherit;
+  min-width: 0;
+}
+
+.project-column-title-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-column-header > .dropdown {
+  flex-shrink: 0;
 }
 
 .project-column > .cards {
