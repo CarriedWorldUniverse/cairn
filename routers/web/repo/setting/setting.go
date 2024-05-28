@@ -543,7 +543,13 @@ func SettingsPost(ctx *context.Context) {
 
 		mirror_service.AddPullMirrorToQueue(repo.ID)
 
-		ctx.Flash.Info(ctx.Tr("repo.settings.pull_mirror_sync_in_progress", repo.OriginalURL))
+		sanitizedOriginalURL, err := util.SanitizeURL(repo.OriginalURL)
+		if err != nil {
+			ctx.ServerError("SanitizeURL", err)
+			return
+		}
+
+		ctx.Flash.Info(ctx.Tr("repo.settings.pull_mirror_sync_in_progress", sanitizedOriginalURL))
 		ctx.Redirect(repo.Link() + "/settings")
 
 	case "push-mirror-sync":
