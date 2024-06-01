@@ -32,6 +32,7 @@ import (
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/test"
 	"code.gitea.io/gitea/modules/translation"
+	"code.gitea.io/gitea/services/forms"
 	"code.gitea.io/gitea/services/pull"
 	files_service "code.gitea.io/gitea/services/repository/files"
 	webhook_service "code.gitea.io/gitea/services/webhook"
@@ -671,6 +672,152 @@ func TestPullMergeIndexerNotifier(t *testing.T) {
 		DecodeJSON(t, searchIssuesResp, &apiIssuesAfter)
 		if assert.Len(t, apiIssuesAfter, 1) {
 			assert.Equal(t, issue.ID, apiIssuesAfter[0].ID)
+		}
+	})
+}
+
+func TestPullMergeBranchProtect(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		admin := "user1"
+		owner := "user5"
+		notOwner := "user4"
+		repo := "repo4"
+
+		dstPath := t.TempDir()
+
+		u.Path = fmt.Sprintf("%s/%s.git", owner, repo)
+		u.User = url.UserPassword(owner, userPassword)
+
+		t.Run("Clone", doGitClone(dstPath, u))
+
+		for _, testCase := range []struct {
+			name          string
+			doer          string
+			expectedCode  map[string]int
+			filename      string
+			protectBranch parameterProtectBranch
+		}{
+			{
+				name:         "SuccessAdminNotEnoughMergeRequiredApprovals",
+				doer:         admin,
+				expectedCode: map[string]int{"api": http.StatusOK, "web": http.StatusOK},
+				filename:     "branch-data-file-",
+				protectBranch: parameterProtectBranch{
+					"required_approvals": "1",
+					"apply_to_admins":    "true",
+				},
+			},
+			{
+				name:         "FailOwnerProtectedFile",
+				doer:         owner,
+				expectedCode: map[string]int{"api": http.StatusMethodNotAllowed, "web": http.StatusBadRequest},
+				filename:     "protected-file-",
+				protectBranch: parameterProtectBranch{
+					"protected_file_patterns": "protected-file-*",
+					"apply_to_admins":         "true",
+				},
+			},
+			{
+				name:         "OwnerProtectedFile",
+				doer:         owner,
+				expectedCode: map[string]int{"api": http.StatusOK, "web": http.StatusOK},
+				filename:     "protected-file-",
+				protectBranch: parameterProtectBranch{
+					"protected_file_patterns": "protected-file-*",
+					"apply_to_admins":         "false",
+				},
+			},
+			{
+				name:         "FailNotOwnerProtectedFile",
+				doer:         notOwner,
+				expectedCode: map[string]int{"api": http.StatusMethodNotAllowed, "web": http.StatusBadRequest},
+				filename:     "protected-file-",
+				protectBranch: parameterProtectBranch{
+					"protected_file_patterns": "protected-file-*",
+				},
+			},
+			{
+				name:         "FailOwnerNotEnoughMergeRequiredApprovals",
+				doer:         owner,
+				expectedCode: map[string]int{"api": http.StatusMethodNotAllowed, "web": http.StatusBadRequest},
+				filename:     "branch-data-file-",
+				protectBranch: parameterProtectBranch{
+					"required_approvals": "1",
+					"apply_to_admins":    "true",
+				},
+			},
+			{
+				name:         "SuccessOwnerNotEnoughMergeRequiredApprovals",
+				doer:         owner,
+				expectedCode: map[string]int{"api": http.StatusOK, "web": http.StatusOK},
+				filename:     "branch-data-file-",
+				protectBranch: parameterProtectBranch{
+					"required_approvals": "1",
+					"apply_to_admins":    "false",
+				},
+			},
+			{
+				name:         "FailNotOwnerNotEnoughMergeRequiredApprovals",
+				doer:         notOwner,
+				expectedCode: map[string]int{"api": http.StatusMethodNotAllowed, "web": http.StatusBadRequest},
+				filename:     "branch-data-file-",
+				protectBranch: parameterProtectBranch{
+					"required_approvals": "1",
+					"apply_to_admins":    "false",
+				},
+			},
+			{
+				name:         "SuccessNotOwner",
+				doer:         notOwner,
+				expectedCode: map[string]int{"api": http.StatusOK, "web": http.StatusOK},
+				filename:     "branch-data-file-",
+				protectBranch: parameterProtectBranch{
+					"required_approvals": "0",
+				},
+			},
+		} {
+			mergeWith := func(t *testing.T, ctx APITestContext, apiOrWeb string, expectedCode int, pr int64) {
+				switch apiOrWeb {
+				case "api":
+					ctx.ExpectedCode = expectedCode
+					doAPIMergePullRequestForm(t, ctx, owner, repo, pr,
+						&forms.MergePullRequestForm{
+							MergeMessageField: "doAPIMergePullRequest Merge",
+							Do:                string(repo_model.MergeStyleMerge),
+							ForceMerge:        true,
+						})
+					ctx.ExpectedCode = 0
+				case "web":
+					testPullMergeForm(t, ctx.Session, expectedCode, owner, repo, fmt.Sprintf("%d", pr), optionsPullMerge{
+						"do":          string(repo_model.MergeStyleMerge),
+						"force_merge": "true",
+					})
+				default:
+					panic(apiOrWeb)
+				}
+			}
+			for _, withAPIOrWeb := range []string{"api", "web"} {
+				t.Run(testCase.name+" "+withAPIOrWeb, func(t *testing.T) {
+					branch := testCase.name + "-" + withAPIOrWeb
+					unprotected := branch + "-unprotected"
+					doGitCheckoutBranch(dstPath, "master")(t)
+					doGitCreateBranch(dstPath, branch)(t)
+					doGitPushTestRepository(dstPath, "origin", branch)(t)
+
+					ctx := NewAPITestContext(t, owner, repo, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+					doProtectBranch(ctx, branch, testCase.protectBranch)(t)
+
+					ctx = NewAPITestContext(t, testCase.doer, "not used", auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+					ctx.Username = owner
+					ctx.Reponame = repo
+					_, err := generateCommitWithNewData(littleSize, dstPath, "user2@example.com", "User Two", testCase.filename)
+					assert.NoError(t, err)
+					doGitPushTestRepository(dstPath, "origin", branch+":"+unprotected)(t)
+					pr, err := doAPICreatePullRequest(ctx, owner, repo, branch, unprotected)(t)
+					assert.NoError(t, err)
+					mergeWith(t, ctx, withAPIOrWeb, testCase.expectedCode[withAPIOrWeb], pr.Index)
+				})
+			}
 		}
 	})
 }
