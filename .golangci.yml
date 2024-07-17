@@ -43,7 +43,6 @@ linters-settings:
   gocritic:
     disabled-checks:
       - ifElseChain
-      - singleCaseSwitch # Every time this occurred in the code, there  was no other way.
   revive:
     severity: error
     rules:
