@@ -6,7 +6,6 @@
   "dependencies": {
     "@citation-js/core": "0.7.9",
     "@citation-js/plugin-bibtex": "0.7.9",
-    "@citation-js/plugin-csl": "0.7.9",
     "@citation-js/plugin-software-formats": "0.6.1",
     "@claviska/jquery-minicolors": "2.3.6",
     "@github/markdown-toolbar-element": "2.2.3",
