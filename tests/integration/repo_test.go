@@ -995,3 +995,21 @@ func TestViewRepoOpenWith(t *testing.T) {
 		testOpenWith([]string{"test://"})
 	})
 }
+
+func TestFileHistoryPager(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Normal page number", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", "/user2/repo1/commits/branch/master/README.md?page=1")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Too high page number", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", "/user2/repo1/commits/branch/master/README.md?page=9999")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+}
