@@ -60,7 +60,7 @@ LABEL maintainer="contact@forgejo.org" \
       org.opencontainers.image.source="https://codeberg.org/forgejo/forgejo" \
       org.opencontainers.image.version="${RELEASE_VERSION}" \
       org.opencontainers.image.vendor="Forgejo" \
-      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later" \
       org.opencontainers.image.title="Forgejo. Beyond coding. We forge." \
       org.opencontainers.image.description="Forgejo is a self-hosted lightweight software forge. Easy to install and low maintenance, it just does the job."
 
