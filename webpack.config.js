@@ -56,7 +56,7 @@ if (isProduction) {
       const licenseText = (licenseFile && !licenseFile.toLowerCase().includes('readme')) ? readFileSync(licenseFile) : '[no license file]';
       return {name: packageName, licenseName: licenses, body: formatLicenseText(licenseText)};
     });
-    const modules = [...goModules, ...jsModules].sort((a, b) => a.name.localeCompare(b.name));
+    const modules = [...goModules, ...jsModules];
     const licenseTxt = modules.map(({name, licenseName, body}) => {
       const title = licenseName ? `${name} - ${licenseName}` : name;
       return `${line}\n${title}\n${line}\n${body}`;
