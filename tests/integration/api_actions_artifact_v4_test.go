@@ -18,6 +18,7 @@ import (
 	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,7 +36,7 @@ func TestActionsArtifactV4UploadSingleFile(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact", toProtoJSON(&actions.CreateArtifactRequest{
@@ -82,7 +83,7 @@ func TestActionsArtifactV4UploadSingleFileWrongChecksum(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact", toProtoJSON(&actions.CreateArtifactRequest{
@@ -126,7 +127,7 @@ func TestActionsArtifactV4UploadSingleFileWithRetentionDays(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact", toProtoJSON(&actions.CreateArtifactRequest{
@@ -174,7 +175,7 @@ func TestActionsArtifactV4DownloadSingle(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts", toProtoJSON(&actions.ListArtifactsRequest{
@@ -209,7 +210,7 @@ func TestActionsArtifactV4Delete(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// delete artifact by name
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/DeleteArtifact", toProtoJSON(&actions.DeleteArtifactRequest{

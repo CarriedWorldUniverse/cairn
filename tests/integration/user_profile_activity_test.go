@@ -27,7 +27,7 @@ func TestUserProfileActivity(t *testing.T) {
 		// The hint may contain "Configure" link with an anchor. Verify that it works.
 		response := userRegular.MakeRequest(t, NewRequest(t, "GET", "/user/settings"), http.StatusOK)
 		page := NewHTMLParser(t, response.Body)
-		assert.True(t, page.Find(".checkbox#keep-activity-private").Length() > 0)
+		assert.Positive(t, page.Find(".checkbox#keep-activity-private").Length())
 
 		// = Public =
 
@@ -86,7 +86,7 @@ func testUser2ActivityVisibility(t *testing.T, session *TestSession, hint string
 
 	// Check that the current tab is displayed and is active regardless of it's actual availability
 	// For example, on /<user> it wouldn't be available to guest, but it should be still present on /<user>?tab=activity
-	assert.True(t, page.Find("overflow-menu .active.item[href='/user2?tab=activity']").Length() > 0)
+	assert.Positive(t, page.Find("overflow-menu .active.item[href='/user2?tab=activity']").Length())
 }
 
 // testUser2ActivityButtonsAvailability check visibility of Public activity tab on main profile page

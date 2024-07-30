@@ -9,6 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // HTMLDoc struct
@@ -20,7 +21,7 @@ type HTMLDoc struct {
 func NewHTMLParser(t testing.TB, body *bytes.Buffer) *HTMLDoc {
 	t.Helper()
 	doc, err := goquery.NewDocumentFromReader(body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	return &HTMLDoc{doc: doc}
 }
 
