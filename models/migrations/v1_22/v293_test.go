@@ -11,6 +11,7 @@ import (
 	"code.gitea.io/gitea/models/project"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_CheckProjectColumnsConsistency(t *testing.T) {
@@ -21,24 +22,24 @@ func Test_CheckProjectColumnsConsistency(t *testing.T) {
 		return
 	}
 
-	assert.NoError(t, CheckProjectColumnsConsistency(x))
+	require.NoError(t, CheckProjectColumnsConsistency(x))
 
 	// check if default board was added
 	var defaultBoard project.Board
 	has, err := x.Where("project_id=? AND `default` = ?", 1, true).Get(&defaultBoard)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, has)
 	assert.Equal(t, int64(1), defaultBoard.ProjectID)
 	assert.True(t, defaultBoard.Default)
 
 	// check if multiple defaults, previous were removed and last will be kept
 	expectDefaultBoard, err := project.GetBoard(db.DefaultContext, 2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int64(2), expectDefaultBoard.ProjectID)
 	assert.False(t, expectDefaultBoard.Default)
 
 	expectNonDefaultBoard, err := project.GetBoard(db.DefaultContext, 3)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int64(2), expectNonDefaultBoard.ProjectID)
 	assert.True(t, expectNonDefaultBoard.Default)
 }

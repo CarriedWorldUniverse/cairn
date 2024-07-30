@@ -114,5 +114,4 @@ func serveContent(w http.ResponseWriter, req *http.Request, fi os.FileInfo, modt
 	}
 
 	httpcache.ServeContentWithCacheControl(w, req, fi.Name(), modtime, content)
-	return
 }

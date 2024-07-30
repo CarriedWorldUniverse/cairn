@@ -16,6 +16,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func resultFilenames(t testing.TB, doc *HTMLDoc) []string {
@@ -40,7 +41,7 @@ func testSearchRepo(t *testing.T, indexer bool) {
 	defer test.MockVariableValue(&setting.Indexer.RepoIndexerEnabled, indexer)()
 
 	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "repo1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if indexer {
 		code_indexer.UpdateRepoIndexer(repo)
@@ -52,7 +53,7 @@ func testSearchRepo(t *testing.T, indexer bool) {
 	defer test.MockVariableValue(&setting.Indexer.ExcludePatterns, setting.IndexerGlobFromString("**/y/**"))()
 
 	repo, err = repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "glob")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if indexer {
 		code_indexer.UpdateRepoIndexer(repo)

@@ -13,6 +13,7 @@ import (
 	"code.gitea.io/gitea/modules/markup"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRenderCSV(t *testing.T) {
@@ -28,14 +29,14 @@ func TestRenderCSV(t *testing.T) {
 		var buf strings.Builder
 		err := render.Render(&markup.RenderContext{Ctx: git.DefaultContext},
 			strings.NewReader(k), &buf)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.EqualValues(t, v, buf.String())
 	}
 
 	t.Run("fallbackRender", func(t *testing.T) {
 		var buf bytes.Buffer
 		err := render.fallbackRender(strings.NewReader("1,<a>\n2,<b>"), bufio.NewWriter(&buf))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		want := "<pre>1,&lt;a&gt;\n2,&lt;b&gt;</pre>"
 		assert.Equal(t, want, buf.String())
 	})

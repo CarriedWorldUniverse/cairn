@@ -12,6 +12,7 @@ import (
 	"code.gitea.io/gitea/modules/json"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -46,10 +47,10 @@ const composerContent = `{
 
 func TestLicenseUnmarshal(t *testing.T) {
 	var l Licenses
-	assert.NoError(t, json.NewDecoder(strings.NewReader(`["MIT"]`)).Decode(&l))
+	require.NoError(t, json.NewDecoder(strings.NewReader(`["MIT"]`)).Decode(&l))
 	assert.Len(t, l, 1)
 	assert.Equal(t, "MIT", l[0])
-	assert.NoError(t, json.NewDecoder(strings.NewReader(`"MIT"`)).Decode(&l))
+	require.NoError(t, json.NewDecoder(strings.NewReader(`"MIT"`)).Decode(&l))
 	assert.Len(t, l, 1)
 	assert.Equal(t, "MIT", l[0])
 }
@@ -69,7 +70,7 @@ func TestParsePackage(t *testing.T) {
 
 		cp, err := ParsePackage(bytes.NewReader(data), int64(len(data)))
 		assert.Nil(t, cp)
-		assert.ErrorIs(t, err, ErrMissingComposerFile)
+		require.ErrorIs(t, err, ErrMissingComposerFile)
 	})
 
 	t.Run("MissingComposerFileInRoot", func(t *testing.T) {
@@ -77,7 +78,7 @@ func TestParsePackage(t *testing.T) {
 
 		cp, err := ParsePackage(bytes.NewReader(data), int64(len(data)))
 		assert.Nil(t, cp)
-		assert.ErrorIs(t, err, ErrMissingComposerFile)
+		require.ErrorIs(t, err, ErrMissingComposerFile)
 	})
 
 	t.Run("InvalidComposerFile", func(t *testing.T) {
@@ -85,14 +86,14 @@ func TestParsePackage(t *testing.T) {
 
 		cp, err := ParsePackage(bytes.NewReader(data), int64(len(data)))
 		assert.Nil(t, cp)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
 		data := createArchive("composer.json", composerContent)
 
 		cp, err := ParsePackage(bytes.NewReader(data), int64(len(data)))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, cp)
 	})
 }
@@ -101,18 +102,18 @@ func TestParseComposerFile(t *testing.T) {
 	t.Run("InvalidPackageName", func(t *testing.T) {
 		cp, err := ParseComposerFile(strings.NewReader(`{}`))
 		assert.Nil(t, cp)
-		assert.ErrorIs(t, err, ErrInvalidName)
+		require.ErrorIs(t, err, ErrInvalidName)
 	})
 
 	t.Run("InvalidPackageVersion", func(t *testing.T) {
 		cp, err := ParseComposerFile(strings.NewReader(`{"name": "gitea/composer-package", "version": "1.a.3"}`))
 		assert.Nil(t, cp)
-		assert.ErrorIs(t, err, ErrInvalidVersion)
+		require.ErrorIs(t, err, ErrInvalidVersion)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
 		cp, err := ParseComposerFile(strings.NewReader(composerContent))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, cp)
 
 		assert.Equal(t, name, cp.Name)

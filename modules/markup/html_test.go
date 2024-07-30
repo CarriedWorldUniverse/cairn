@@ -51,7 +51,7 @@ func TestRender_Commits(t *testing.T) {
 			},
 			Metas: localMetas,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 
@@ -105,7 +105,7 @@ func TestRender_CrossReferences(t *testing.T) {
 			},
 			Metas: localMetas,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 
@@ -151,7 +151,7 @@ func TestRender_links(t *testing.T) {
 				Base: markup.TestRepoURL,
 			},
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 	// Text that should be turned into URL
@@ -253,7 +253,7 @@ func TestRender_email(t *testing.T) {
 				Base: markup.TestRepoURL,
 			},
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(res))
 	}
 	// Text that should be turned into email link
@@ -326,7 +326,7 @@ func TestRender_emoji(t *testing.T) {
 				Base: markup.TestRepoURL,
 			},
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 
@@ -392,7 +392,7 @@ func TestRender_ShortLinks(t *testing.T) {
 				BranchPath: "master",
 			},
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(buffer)))
 		buffer, err = markdown.RenderString(&markup.RenderContext{
 			Ctx: git.DefaultContext,
@@ -402,7 +402,7 @@ func TestRender_ShortLinks(t *testing.T) {
 			Metas:  localMetas,
 			IsWiki: true,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expectedWiki), strings.TrimSpace(string(buffer)))
 	}
 
@@ -505,7 +505,7 @@ func TestRender_RelativeImages(t *testing.T) {
 			},
 			Metas: localMetas,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(buffer)))
 		buffer, err = markdown.RenderString(&markup.RenderContext{
 			Ctx: git.DefaultContext,
@@ -515,7 +515,7 @@ func TestRender_RelativeImages(t *testing.T) {
 			Metas:  localMetas,
 			IsWiki: true,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expectedWiki), strings.TrimSpace(string(buffer)))
 	}
 
@@ -551,7 +551,7 @@ func Test_ParseClusterFuzz(t *testing.T) {
 		},
 		Metas: localMetas,
 	}, strings.NewReader(data), &res)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotContains(t, res.String(), "<html")
 
 	data = "<!DOCTYPE html>\n<A><maTH><tr><MN><bodY ÿ><temPlate></template><tH><tr></A><tH><d<bodY "
@@ -565,7 +565,7 @@ func Test_ParseClusterFuzz(t *testing.T) {
 		Metas: localMetas,
 	}, strings.NewReader(data), &res)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotContains(t, res.String(), "<html")
 }
 
@@ -589,7 +589,7 @@ func TestPostProcess_RenderDocument(t *testing.T) {
 			},
 			Metas: localMetas,
 		}, strings.NewReader(input), &res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(res.String()))
 	}
 
@@ -629,7 +629,7 @@ func TestIssue16020(t *testing.T) {
 		Ctx:   git.DefaultContext,
 		Metas: localMetas,
 	}, strings.NewReader(data), &res)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, data, res.String())
 }
 
@@ -645,7 +645,7 @@ func BenchmarkEmojiPostprocess(b *testing.B) {
 			Ctx:   git.DefaultContext,
 			Metas: localMetas,
 		}, strings.NewReader(data), &res)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 	}
 }
 
@@ -664,7 +664,7 @@ func TestFuzz(t *testing.T) {
 
 	err := markup.PostProcess(&renderContext, strings.NewReader(s), io.Discard)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestIssue18471(t *testing.T) {
@@ -676,7 +676,7 @@ func TestIssue18471(t *testing.T) {
 		Metas: localMetas,
 	}, strings.NewReader(data), &res)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "<a href=\"http://domain/org/repo/compare/783b039...da951ce\" class=\"compare\"><code class=\"nohighlight\">783b039...da951ce</code></a>", res.String())
 }
 
@@ -712,7 +712,7 @@ func TestRender_FilePreview(t *testing.T) {
 			RelativePath: ".md",
 			Metas:        metas,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
 	}
 

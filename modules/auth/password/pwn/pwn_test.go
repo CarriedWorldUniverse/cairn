@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var client = New(WithHTTP(&http.Client{
@@ -26,26 +27,26 @@ func TestMain(m *testing.M) {
 func TestPassword(t *testing.T) {
 	// Check input error
 	_, err := client.CheckPassword("", false)
-	assert.ErrorIs(t, err, ErrEmptyPassword, "blank input should return ErrEmptyPassword")
+	require.ErrorIs(t, err, ErrEmptyPassword, "blank input should return ErrEmptyPassword")
 
 	// Should fail
 	fail := "password1234"
 	count, err := client.CheckPassword(fail, false)
 	assert.NotEmpty(t, count, "%s should fail as a password", fail)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should fail (with padding)
 	failPad := "administrator"
 	count, err = client.CheckPassword(failPad, true)
 	assert.NotEmpty(t, count, "%s should fail as a password", failPad)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Checking for a "good" password isn't going to be perfect, but we can give it a good try
 	// with hopefully minimal error. Try five times?
 	assert.Condition(t, func() bool {
 		for i := 0; i <= 5; i++ {
 			count, err = client.CheckPassword(testPassword(), false)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if count == 0 {
 				return true
 			}
@@ -57,7 +58,7 @@ func TestPassword(t *testing.T) {
 	assert.Condition(t, func() bool {
 		for i := 0; i <= 5; i++ {
 			count, err = client.CheckPassword(testPassword(), true)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if count == 0 {
 				return true
 			}

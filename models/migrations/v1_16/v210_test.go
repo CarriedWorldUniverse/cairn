@@ -10,6 +10,7 @@ import (
 	"code.gitea.io/gitea/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"xorm.io/xorm/schemas"
 )
 
@@ -57,19 +58,17 @@ func Test_RemigrateU2FCredentials(t *testing.T) {
 
 	// Run the migration
 	if err := RemigrateU2FCredentials(x); err != nil {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return
 	}
 
 	expected := []ExpectedWebauthnCredential{}
-	if err := x.Table("expected_webauthn_credential").Asc("id").Find(&expected); !assert.NoError(t, err) {
-		return
-	}
+	err := x.Table("expected_webauthn_credential").Asc("id").Find(&expected)
+	require.NoError(t, err)
 
 	got := []ExpectedWebauthnCredential{}
-	if err := x.Table("webauthn_credential").Select("id, credential_id").Asc("id").Find(&got); !assert.NoError(t, err) {
-		return
-	}
+	err = x.Table("webauthn_credential").Select("id, credential_id").Asc("id").Find(&got)
+	require.NoError(t, err)
 
 	assert.EqualValues(t, expected, got)
 }

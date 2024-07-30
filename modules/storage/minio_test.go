@@ -13,6 +13,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMinioStorageIterator(t *testing.T) {
@@ -107,5 +108,5 @@ func TestS3StorageBadRequest(t *testing.T) {
 		}
 	}
 	_, err := NewStorage(setting.MinioStorageType, cfg)
-	assert.ErrorContains(t, err, message)
+	require.ErrorContains(t, err, message)
 }

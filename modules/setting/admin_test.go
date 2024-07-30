@@ -9,6 +9,7 @@ import (
 	"code.gitea.io/gitea/modules/container"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_loadAdminFrom(t *testing.T) {
@@ -20,11 +21,11 @@ func Test_loadAdminFrom(t *testing.T) {
   USER_DISABLED_FEATURES = a,b
 	`
 	cfg, err := NewConfigProviderFromData(iniStr)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	loadAdminFrom(cfg)
 
-	assert.EqualValues(t, true, Admin.DisableRegularOrgCreation)
+	assert.True(t, Admin.DisableRegularOrgCreation)
 	assert.EqualValues(t, "z", Admin.DefaultEmailNotification)
-	assert.EqualValues(t, true, Admin.SendNotificationEmailOnNewUser)
+	assert.True(t, Admin.SendNotificationEmailOnNewUser)
 	assert.EqualValues(t, container.SetOf("a", "b"), Admin.UserDisabledFeatures)
 }

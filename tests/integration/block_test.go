@@ -264,7 +264,7 @@ func TestBlockActions(t *testing.T) {
 			var respBody reactionResponse
 			DecodeJSON(t, resp, &respBody)
 
-			assert.EqualValues(t, true, respBody.Empty)
+			assert.True(t, respBody.Empty)
 		})
 
 		t.Run("On a comment", func(t *testing.T) {
@@ -283,7 +283,7 @@ func TestBlockActions(t *testing.T) {
 			var respBody reactionResponse
 			DecodeJSON(t, resp, &respBody)
 
-			assert.EqualValues(t, true, respBody.Empty)
+			assert.True(t, respBody.Empty)
 		})
 	})
 
