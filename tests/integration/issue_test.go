@@ -318,7 +318,7 @@ Description`)
 
 	// Issues list should show the correct numbers of checked and total checkboxes
 	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "repo1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req = NewRequestf(t, "GET", "%s/issues", repo.Link())
 	resp = MakeRequest(t, req, http.StatusOK)
 
