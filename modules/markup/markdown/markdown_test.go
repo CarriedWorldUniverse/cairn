@@ -1221,7 +1221,7 @@ func TestCallout(t *testing.T) {
 		buffer, err := markdown.RenderString(&markup.RenderContext{
 			Ctx: git.DefaultContext,
 		}, input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(buffer)))
 	}
 
