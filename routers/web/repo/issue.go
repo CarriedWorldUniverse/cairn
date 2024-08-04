@@ -57,6 +57,8 @@ import (
 	issue_service "code.gitea.io/gitea/services/issue"
 	pull_service "code.gitea.io/gitea/services/pull"
 	repo_service "code.gitea.io/gitea/services/repository"
+
+	"gitea.com/go-chi/binding"
 )
 
 const (
@@ -2218,10 +2220,20 @@ func UpdateIssueTitle(ctx *context.Context) {
 		ctx.Error(http.StatusForbidden)
 		return
 	}
-
 	title := ctx.FormTrim("title")
-	if len(title) == 0 {
-		ctx.Error(http.StatusNoContent)
+	if util.IsEmptyString(title) {
+		ctx.Error(http.StatusBadRequest, "Title cannot be empty or spaces")
+		return
+	}
+
+	// Creating a CreateIssueForm with the title so that we can validate the max title length
+	i := forms.CreateIssueForm{
+		Title: title,
+	}
+
+	bindingErr := binding.RawValidate(i)
+	if bindingErr.Has(binding.ERR_MAX_SIZE) {
+		ctx.Error(http.StatusBadRequest, "Title cannot be longer than 255 characters")
 		return
 	}
 
