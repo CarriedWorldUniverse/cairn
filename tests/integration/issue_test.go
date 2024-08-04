@@ -1005,6 +1005,66 @@ func TestUpdateIssueDeadline(t *testing.T) {
 	assert.EqualValues(t, "2022-04-06", apiIssue.Deadline.Format("2006-01-02"))
 }
 
+func TestUpdateIssueTitle(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	issueBefore := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 1})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issueBefore.RepoID})
+	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+
+	require.NoError(t, issueBefore.LoadAttributes(db.DefaultContext))
+	assert.Equal(t, "issue1", issueBefore.Title)
+
+	issueTitleUpdateTests := []struct {
+		title            string
+		expectedHTTPCode int
+	}{
+		{
+			title:            "normal-title",
+			expectedHTTPCode: http.StatusOK,
+		},
+		{
+			title:            "extra-long-title-with-exactly-255-chars-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			expectedHTTPCode: http.StatusOK,
+		},
+		{
+			title:            "",
+			expectedHTTPCode: http.StatusBadRequest,
+		},
+		{
+			title:            " ",
+			expectedHTTPCode: http.StatusBadRequest,
+		},
+		{
+			title:            "extra-long-title-over-255-chars-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			expectedHTTPCode: http.StatusBadRequest,
+		},
+	}
+
+	session := loginUser(t, owner.Name)
+	issueURL := fmt.Sprintf("%s/%s/issues/%d", owner.Name, repo.Name, issueBefore.Index)
+	urlStr := issueURL + "/title"
+
+	for _, issueTitleUpdateTest := range issueTitleUpdateTests {
+		req := NewRequestWithValues(t, "POST", urlStr, map[string]string{
+			"title": issueTitleUpdateTest.title,
+			"_csrf": GetCSRF(t, session, issueURL),
+		})
+
+		resp := session.MakeRequest(t, req, issueTitleUpdateTest.expectedHTTPCode)
+
+		// JSON data is received only if the request succeeds
+		if issueTitleUpdateTest.expectedHTTPCode == http.StatusOK {
+			issueAfter := struct {
+				Title string `json:"title"`
+			}{}
+
+			DecodeJSON(t, resp, &issueAfter)
+			assert.EqualValues(t, issueTitleUpdateTest.title, issueAfter.Title)
+		}
+	}
+}
+
 func TestIssueReferenceURL(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	session := loginUser(t, "user2")
