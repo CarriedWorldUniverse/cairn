@@ -170,7 +170,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v6
           release-notes: "${{ steps.release-notes.outputs.value }}"
           binary-name: forgejo
-          binary-path: /app/gitea/gitea
+          binary-path: /app/gitea/forgejo-cli
           override: "${{ steps.release-info.outputs.override }}"
           verify-labels: "maintainer=contact@forgejo.org,org.opencontainers.image.version=${{ steps.release-info.outputs.version }}"
           verbose: ${{ vars.VERBOSE || secrets.VERBOSE || 'false' }}
