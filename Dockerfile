@@ -103,5 +103,6 @@ CMD ["/bin/s6-svscan", "/etc/s6"]
 COPY --from=build-env /tmp/local /
 RUN cd /usr/local/bin ; ln -s gitea forgejo
 COPY --from=build-env /go/src/code.gitea.io/gitea/gitea /app/gitea/gitea
+RUN ln /app/gitea/gitea /app/gitea/forgejo-cli
 COPY --from=build-env /go/src/code.gitea.io/gitea/environment-to-ini /usr/local/bin/environment-to-ini
 COPY --from=build-env /go/src/code.gitea.io/gitea/contrib/autocompletion/bash_autocomplete /etc/profile.d/gitea_bash_autocomplete.sh
