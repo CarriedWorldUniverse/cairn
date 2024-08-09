@@ -1,6 +1,6 @@
 <div class="divider"></div>
 <details class="collapsible">
-  <summary class="tw-py-2"> {{ctx.Locale.Tr "repo.pulls.cmd_instruction_hint"}} </summary>
+	<summary class="tw-py-2"> {{ctx.Locale.Tr "repo.pulls.cmd_instruction_hint"}} </summary>
 	<div><h3>{{ctx.Locale.Tr "repo.pulls.cmd_instruction_checkout_title"}}</h3>{{ctx.Locale.Tr "repo.pulls.cmd_instruction_checkout_desc"}}</div>
 	{{$localBranch := .PullRequest.HeadBranch}}
 	{{if ne .PullRequest.HeadRepo.ID .PullRequest.BaseRepo.ID}}

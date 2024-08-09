@@ -30,9 +30,9 @@ jobs:
 
       - name: apt install jq
         run: |
-         export DEBIAN_FRONTEND=noninteractive
-         apt-get update -qq
-         apt-get -q install -y -qq jq
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get -q install -y -qq jq
 
       - name: release-notes-assistant preview
         run: |
