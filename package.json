@@ -31,7 +31,7 @@
     "katex": "0.16.11",
     "mermaid": "10.9.1",
     "mini-css-extract-plugin": "2.9.0",
-    "minimatch": "9.0.5",
+    "minimatch": "10.0.1",
     "monaco-editor": "0.50.0",
     "monaco-editor-webpack-plugin": "7.1.0",
     "pdfobject": "2.3.0",
