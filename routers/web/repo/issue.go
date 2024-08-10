@@ -3299,12 +3299,6 @@ func ChangeIssueReaction(ctx *context.Context) {
 			log.Info("CreateIssueReaction: %s", err)
 			break
 		}
-		// Reload new reactions
-		issue.Reactions = nil
-		if err = issue.LoadAttributes(ctx); err != nil {
-			log.Info("issue.LoadAttributes: %s", err)
-			break
-		}
 
 		log.Trace("Reaction for issue created: %d/%d/%d", ctx.Repo.Repository.ID, issue.ID, reaction.ID)
 	case "unreact":
@@ -3313,16 +3307,16 @@ func ChangeIssueReaction(ctx *context.Context) {
 			return
 		}
 
-		// Reload new reactions
-		issue.Reactions = nil
-		if err := issue.LoadAttributes(ctx); err != nil {
-			log.Info("issue.LoadAttributes: %s", err)
-			break
-		}
-
 		log.Trace("Reaction for issue removed: %d/%d", ctx.Repo.Repository.ID, issue.ID)
 	default:
 		ctx.NotFound(fmt.Sprintf("Unknown action %s", ctx.Params(":action")), nil)
+		return
+	}
+
+	// Reload new reactions
+	issue.Reactions = nil
+	if err := issue.LoadAttributes(ctx); err != nil {
+		ctx.ServerError("ChangeIssueReaction.LoadAttributes", err)
 		return
 	}
 
@@ -3406,12 +3400,6 @@ func ChangeCommentReaction(ctx *context.Context) {
 			log.Info("CreateCommentReaction: %s", err)
 			break
 		}
-		// Reload new reactions
-		comment.Reactions = nil
-		if err = comment.LoadReactions(ctx, ctx.Repo.Repository); err != nil {
-			log.Info("comment.LoadReactions: %s", err)
-			break
-		}
 
 		log.Trace("Reaction for comment created: %d/%d/%d/%d", ctx.Repo.Repository.ID, comment.Issue.ID, comment.ID, reaction.ID)
 	case "unreact":
@@ -3420,16 +3408,16 @@ func ChangeCommentReaction(ctx *context.Context) {
 			return
 		}
 
-		// Reload new reactions
-		comment.Reactions = nil
-		if err = comment.LoadReactions(ctx, ctx.Repo.Repository); err != nil {
-			log.Info("comment.LoadReactions: %s", err)
-			break
-		}
-
 		log.Trace("Reaction for comment removed: %d/%d/%d", ctx.Repo.Repository.ID, comment.Issue.ID, comment.ID)
 	default:
 		ctx.NotFound(fmt.Sprintf("Unknown action %s", ctx.Params(":action")), nil)
+		return
+	}
+
+	// Reload new reactions
+	comment.Reactions = nil
+	if err = comment.LoadReactions(ctx, ctx.Repo.Repository); err != nil {
+		ctx.ServerError("ChangeCommentReaction.LoadReactions", err)
 		return
 	}
 
