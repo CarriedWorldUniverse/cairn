@@ -46,7 +46,7 @@ func TestPullRequestTargetEvent(t *testing.T) {
 		defer f()
 
 		// create the forked repo
-		forkedRepo, err := repo_service.ForkRepository(git.DefaultContext, user2, org3, repo_service.ForkRepoOptions{
+		forkedRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, user2, org3, repo_service.ForkRepoOptions{
 			BaseRepo:    baseRepo,
 			Name:        "forked-repo-pull-request-target",
 			Description: "test pull-request-target event",

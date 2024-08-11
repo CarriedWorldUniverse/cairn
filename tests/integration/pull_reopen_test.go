@@ -70,7 +70,7 @@ func TestPullrequestReopen(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create an head repository.
-		headRepo, err := repo_service.ForkRepository(git.DefaultContext, user2, org26, repo_service.ForkRepoOptions{
+		headRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, user2, org26, repo_service.ForkRepoOptions{
 			BaseRepo: baseRepo,
 			Name:     "reopen-head",
 		})

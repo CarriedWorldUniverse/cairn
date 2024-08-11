@@ -85,7 +85,7 @@ func TestAPIPullUpdateByRebase(t *testing.T) {
 func createOutdatedPR(t *testing.T, actor, forkOrg *user_model.User) *issues_model.PullRequest {
 	baseRepo, _, _ := CreateDeclarativeRepo(t, actor, "repo-pr-update", nil, nil, nil)
 
-	headRepo, err := repo_service.ForkRepository(git.DefaultContext, actor, forkOrg, repo_service.ForkRepoOptions{
+	headRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, actor, forkOrg, repo_service.ForkRepoOptions{
 		BaseRepo:    baseRepo,
 		Name:        "repo-pr-update",
 		Description: "desc",

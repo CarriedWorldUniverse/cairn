@@ -294,7 +294,7 @@ func ForkPost(ctx *context.Context) {
 		}
 	}
 
-	repo, err := repo_service.ForkRepository(ctx, ctx.Doer, ctxUser, repo_service.ForkRepoOptions{
+	repo, err := repo_service.ForkRepositoryAndUpdates(ctx, ctx.Doer, ctxUser, repo_service.ForkRepoOptions{
 		BaseRepo:     forkRepo,
 		Name:         form.RepoName,
 		Description:  form.Description,
