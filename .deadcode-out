@@ -260,6 +260,11 @@ code.gitea.io/gitea/modules/web
 code.gitea.io/gitea/modules/web/middleware
 	DeleteLocaleCookie
 
+code.gitea.io/gitea/modules/zstd
+	NewWriter
+	Writer.Write
+	Writer.Close
+
 code.gitea.io/gitea/routers/web
 	NotFound
 
