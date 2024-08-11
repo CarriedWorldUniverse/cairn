@@ -53,13 +53,14 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 	}()
 
 	/*
-	 The output is like this ( "^@" means \x00):
+	 The output is like this ("^@" means \x00; the first number denotes the line,
+	 the second number denotes the column of the first match in line):
 
 	 HEAD:.air.toml
-	 6^@bin = "gitea"
+	 6^@8^@bin = "gitea"
 
 	 HEAD:.changelog.yml
-	 2^@repo: go-gitea/gitea
+	 2^@10^@repo: go-gitea/gitea
 	*/
 	var results []*GrepResult
 	cmd := NewCommand(ctx, "grep",
