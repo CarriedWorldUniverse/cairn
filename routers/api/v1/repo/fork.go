@@ -148,16 +148,16 @@ func CreateFork(ctx *context.APIContext) {
 		name = *form.Name
 	}
 
-	fork, err := repo_service.ForkRepository(ctx, ctx.Doer, forker, repo_service.ForkRepoOptions{
+	fork, err := repo_service.ForkRepositoryAndUpdates(ctx, ctx.Doer, forker, repo_service.ForkRepoOptions{
 		BaseRepo:    repo,
 		Name:        name,
 		Description: repo.Description,
 	})
 	if err != nil {
 		if errors.Is(err, util.ErrAlreadyExist) || repo_model.IsErrReachLimitOfRepo(err) {
-			ctx.Error(http.StatusConflict, "ForkRepository", err)
+			ctx.Error(http.StatusConflict, "ForkRepositoryAndUpdates", err)
 		} else {
-			ctx.Error(http.StatusInternalServerError, "ForkRepository", err)
+			ctx.Error(http.StatusInternalServerError, "ForkRepositoryAndUpdates", err)
 		}
 		return
 	}

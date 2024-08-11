@@ -376,7 +376,7 @@ func TestPullView_CodeOwner(t *testing.T) {
 
 		t.Run("Forked Repo Pull Request", func(t *testing.T) {
 			user5 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5})
-			forkedRepo, err := repo_service.ForkRepository(db.DefaultContext, user2, user5, repo_service.ForkRepoOptions{
+			forkedRepo, err := repo_service.ForkRepositoryAndUpdates(db.DefaultContext, user2, user5, repo_service.ForkRepoOptions{
 				BaseRepo: repo,
 				Name:     "test_codeowner_fork",
 			})

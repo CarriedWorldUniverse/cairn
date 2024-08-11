@@ -23,7 +23,7 @@ func TestForkRepository(t *testing.T) {
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 13})
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
 
-	fork, err := ForkRepository(git.DefaultContext, user, user, ForkRepoOptions{
+	fork, err := ForkRepositoryAndUpdates(git.DefaultContext, user, user, ForkRepoOptions{
 		BaseRepo:    repo,
 		Name:        "test",
 		Description: "test",
@@ -39,7 +39,7 @@ func TestForkRepository(t *testing.T) {
 	setting.Repository.AllowForkWithoutMaximumLimit = false
 	// user has reached maximum limit of repositories
 	user.MaxRepoCreation = 0
-	fork2, err := ForkRepository(git.DefaultContext, user, user, ForkRepoOptions{
+	fork2, err := ForkRepositoryAndUpdates(git.DefaultContext, user, user, ForkRepoOptions{
 		BaseRepo:    repo,
 		Name:        "test",
 		Description: "test",
