@@ -63,8 +63,9 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 	 2^@10^@repo: go-gitea/gitea
 	*/
 	var results []*GrepResult
+	// -I skips binary files
 	cmd := NewCommand(ctx, "grep",
-		"--null", "--break", "--heading", "--column",
+		"-I", "--null", "--break", "--heading", "--column",
 		"--fixed-strings", "--line-number", "--ignore-case", "--full-name")
 	cmd.AddOptionValues("--context", fmt.Sprint(opts.ContextLineNumber))
 	if opts.MatchesPerFile > 0 {
