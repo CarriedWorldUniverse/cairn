@@ -33,7 +33,6 @@ jobs:
             if test $published_at_seconds -le $too_old_seconds ; then
               echo "$version was published more than $old ago ($published_at <= $too_old) and will be removed"
               curl -X DELETE -sS "$url/api/v1/repos/forgejo-integration/forgejo/releases/tags/$version"
-              curl -X DELETE -sS "$url/api/v1/repos/forgejo-integration/forgejo/tags/$version"
             else
               echo "$version was published less than $old ago"
             fi
