@@ -98,6 +98,31 @@ func TestGrepSearch(t *testing.T) {
 	assert.Empty(t, res)
 }
 
+func TestGrepNoBinary(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := InitRepository(DefaultContext, tmpDir, false, Sha1ObjectFormat.Name())
+	require.NoError(t, err)
+
+	gitRepo, err := openRepositoryWithDefaultContext(tmpDir)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	require.NoError(t, os.WriteFile(path.Join(tmpDir, "BINARY"), []byte("I AM BINARY\n\x00\nYOU WON'T SEE ME"), 0o666))
+	require.NoError(t, os.WriteFile(path.Join(tmpDir, "TEXT"), []byte("I AM NOT BINARY\nYOU WILL SEE ME"), 0o666))
+
+	err = AddChanges(tmpDir, true)
+	require.NoError(t, err)
+
+	err = CommitChanges(tmpDir, CommitChangesOptions{Message: "Binary and text files"})
+	require.NoError(t, err)
+
+	res, err := GrepSearch(context.Background(), gitRepo, "BINARY", GrepOptions{})
+	require.NoError(t, err)
+	assert.Len(t, res, 1)
+	assert.Equal(t, "TEXT", res[0].Filename)
+}
+
 func TestGrepLongFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
