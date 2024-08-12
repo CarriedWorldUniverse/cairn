@@ -105,6 +105,7 @@
       "matchDepNames": [
         "node",
         "docker.io/node",
+        "code.forgejo.org/oci/node",
         "docker.io/library/node"
       ],
       "groupName": "nodejs packages",
