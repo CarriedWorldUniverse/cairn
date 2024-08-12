@@ -61,3 +61,10 @@ func TestCommandString(t *testing.T) {
 	cmd = NewCommandContextNoGlobals(context.Background(), "url: https://a:b@c/")
 	assert.EqualValues(t, cmd.prog+` "url: https://sanitized-credential@c/"`, cmd.toString(true))
 }
+
+func TestGrepOnlyFunction(t *testing.T) {
+	cmd := NewCommand(context.Background(), "anything-but-grep")
+	assert.Panics(t, func() {
+		cmd.AddGitGrepExpression("whatever")
+	})
+}
