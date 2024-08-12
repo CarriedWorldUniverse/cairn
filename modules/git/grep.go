@@ -27,12 +27,20 @@ type GrepResult struct {
 	HighlightedRanges [][3]int
 }
 
+type grepMode int
+
+const (
+	FixedGrepMode grepMode = iota
+	FixedAnyGrepMode
+	RegExpGrepMode
+)
+
 type GrepOptions struct {
 	RefName           string
 	MaxResultLimit    int
 	MatchesPerFile    int
 	ContextLineNumber int
-	IsFuzzy           bool
+	Mode              grepMode
 	PathSpec          []setting.Glob
 }
 
@@ -75,11 +83,16 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 	// -I skips binary files
 	cmd := NewCommand(ctx, "grep",
 		"-I", "--null", "--break", "--heading", "--column",
-		"--fixed-strings", "--line-number", "--ignore-case", "--full-name")
+		"--line-number", "--ignore-case", "--full-name")
+	if opts.Mode == RegExpGrepMode {
+		cmd.AddArguments("--perl-regexp")
+	} else {
+		cmd.AddArguments("--fixed-strings")
+	}
 	cmd.AddOptionValues("--context", fmt.Sprint(opts.ContextLineNumber))
 	cmd.AddOptionValues("--max-count", fmt.Sprint(opts.MatchesPerFile))
 	words := []string{search}
-	if opts.IsFuzzy {
+	if opts.Mode == FixedAnyGrepMode {
 		words = strings.Fields(search)
 	}
 	for _, word := range words {
