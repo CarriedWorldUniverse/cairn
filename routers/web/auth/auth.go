@@ -408,7 +408,7 @@ func HandleSignOut(ctx *context.Context) {
 // SignOut sign out from login status
 func SignOut(ctx *context.Context) {
 	if ctx.Doer != nil {
-		eventsource.GetManager().SendMessageBlocking(ctx.Doer.ID, &eventsource.Event{
+		eventsource.GetManager().SendMessage(ctx.Doer.ID, &eventsource.Event{
 			Name: "logout",
 			Data: ctx.Session.ID(),
 		})
