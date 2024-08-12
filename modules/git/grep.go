@@ -76,7 +76,7 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 		words = strings.Fields(search)
 	}
 	for _, word := range words {
-		cmd.AddOptionValues("-e", strings.TrimLeft(word, "-"))
+		cmd.AddGitGrepExpression(word)
 	}
 
 	// pathspec
