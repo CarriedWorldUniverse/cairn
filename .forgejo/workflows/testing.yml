@@ -207,7 +207,7 @@ jobs:
       ldap:
         image: docker.io/gitea/test-openldap:latest
       pgsql:
-        image: 'docker.io/postgres:15'
+        image: 'code.forgejo.org/oci/postgres:15'
         env:
           POSTGRES_DB: test
           POSTGRES_PASSWORD: postgres
