@@ -68,9 +68,8 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 		"-I", "--null", "--break", "--heading", "--column",
 		"--fixed-strings", "--line-number", "--ignore-case", "--full-name")
 	cmd.AddOptionValues("--context", fmt.Sprint(opts.ContextLineNumber))
-	if opts.MatchesPerFile > 0 {
-		cmd.AddOptionValues("--max-count", fmt.Sprint(opts.MatchesPerFile))
-	}
+	opts.MatchesPerFile = cmp.Or(opts.MatchesPerFile, 20)
+	cmd.AddOptionValues("--max-count", fmt.Sprint(opts.MatchesPerFile))
 	words := []string{search}
 	if opts.IsFuzzy {
 		words = strings.Fields(search)
