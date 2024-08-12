@@ -38,7 +38,7 @@ jobs:
       )
     runs-on: docker
     container:
-      image: 'docker.io/node:20-bookworm'
+      image: 'code.forgejo.org/oci/node:20-bookworm'
     steps:
       - name: event info
         run: |
