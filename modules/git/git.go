@@ -186,12 +186,12 @@ func InitFull(ctx context.Context) (err error) {
 		globalCommandArgs = append(globalCommandArgs, "-c", "credential.helper=")
 	}
 	SupportProcReceive = CheckGitVersionAtLeast("2.29") == nil
-	SupportHashSha256 = CheckGitVersionAtLeast("2.42") == nil && !isGogit
+	SupportHashSha256 = CheckGitVersionAtLeast("2.42") == nil
 	SupportCheckAttrOnBare = CheckGitVersionAtLeast("2.40") == nil
 	if SupportHashSha256 {
 		SupportedObjectFormats = append(SupportedObjectFormats, Sha256ObjectFormat)
 	} else {
-		log.Warn("sha256 hash support is disabled - requires Git >= 2.42. Gogit is currently unsupported")
+		log.Warn("sha256 hash support is disabled - requires Git >= 2.42")
 	}
 
 	InvertedGitFlushEnv = CheckGitVersionEqual("2.43.1") == nil
