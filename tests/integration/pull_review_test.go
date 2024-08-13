@@ -19,6 +19,7 @@ import (
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/git"
+	"code.gitea.io/gitea/modules/gitrepo"
 	"code.gitea.io/gitea/modules/test"
 	issue_service "code.gitea.io/gitea/services/issue"
 	repo_service "code.gitea.io/gitea/services/repository"
@@ -412,6 +413,12 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 		// Have user1 create a fork of repo1.
 		testRepoFork(t, user1Session, "user2", "repo1", "user1", "repo1")
 
+		baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "user2", Name: "repo1"})
+		forkedRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "user1", Name: "repo1"})
+		baseGitRepo, err := gitrepo.OpenRepository(db.DefaultContext, baseRepo)
+		require.NoError(t, err)
+		defer baseGitRepo.Close()
+
 		t.Run("Submit approve/reject review on merged PR", func(t *testing.T) {
 			// Create a merged PR (made by user1) in the upstream repo1.
 			testEditFile(t, user1Session, "user1", "repo1", "master", "README.md", "Hello, World (Edited)\n")
@@ -420,16 +427,26 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 			assert.EqualValues(t, "pulls", elem[3])
 			testPullMerge(t, user1Session, elem[1], elem[2], elem[4], repo_model.MergeStyleMerge, false)
 
+			// Get the commit SHA
+			pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{
+				BaseRepoID: baseRepo.ID,
+				BaseBranch: "master",
+				HeadRepoID: forkedRepo.ID,
+				HeadBranch: "master",
+			})
+			sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+			require.NoError(t, err)
+
 			// Grab the CSRF token.
 			req := NewRequest(t, "GET", path.Join(elem[1], elem[2], "pulls", elem[4]))
 			resp = user2Session.MakeRequest(t, req, http.StatusOK)
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			// Submit an approve review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], "", "approve", http.StatusUnprocessableEntity)
+			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
 
 			// Submit a reject review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], "", "reject", http.StatusUnprocessableEntity)
+			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
 		})
 
 		t.Run("Submit approve/reject review on closed PR", func(t *testing.T) {
@@ -440,16 +457,26 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 			assert.EqualValues(t, "pulls", elem[3])
 			testIssueClose(t, user1Session, elem[1], elem[2], elem[4])
 
+			// Get the commit SHA
+			pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{
+				BaseRepoID: baseRepo.ID,
+				BaseBranch: "master",
+				HeadRepoID: forkedRepo.ID,
+				HeadBranch: "a-test-branch",
+			})
+			sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+			require.NoError(t, err)
+
 			// Grab the CSRF token.
 			req := NewRequest(t, "GET", path.Join(elem[1], elem[2], "pulls", elem[4]))
 			resp = user2Session.MakeRequest(t, req, http.StatusOK)
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			// Submit an approve review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], "", "approve", http.StatusUnprocessableEntity)
+			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
 
 			// Submit a reject review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], "", "reject", http.StatusUnprocessableEntity)
+			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
 		})
 	})
 }
