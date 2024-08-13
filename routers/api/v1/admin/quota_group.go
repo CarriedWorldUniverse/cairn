@@ -220,7 +220,7 @@ func RemoveUserFromQuotaGroup(ctx *context.APIContext) {
 	//   required: true
 	// - name: username
 	//   in: path
-	//   description: username of the user to add to the quota group
+	//   description: username of the user to remove from the quota group
 	//   type: string
 	//   required: true
 	// responses:
@@ -255,12 +255,12 @@ func SetUserQuotaGroups(ctx *context.APIContext) {
 	// parameters:
 	// - name: username
 	//   in: path
-	//   description: username of the user to add to the quota group
+	//   description: username of the user to modify the quota groups from
 	//   type: string
 	//   required: true
 	// - name: groups
 	//   in: body
-	//   description: quota group to remove a user from
+	//   description: list of groups that the user should be a member of
 	//   schema:
 	//     "$ref": "#/definitions/SetUserQuotaGroupsOptions"
 	//   required: true
@@ -405,7 +405,7 @@ func RemoveRuleFromQuotaGroup(ctx *context.APIContext) {
 	// parameters:
 	// - name: quotagroup
 	//   in: path
-	//   description: quota group to add a rule to
+	//   description: quota group to remove a rule from
 	//   type: string
 	//   required: true
 	// - name: quotarule
