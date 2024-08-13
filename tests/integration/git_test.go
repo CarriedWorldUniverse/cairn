@@ -825,6 +825,9 @@ func doCreateAgitFlowPull(dstPath string, ctx *APITestContext, baseBranch, headB
 			if !assert.NotEmpty(t, pr1) {
 				return
 			}
+			assert.Equal(t, 1, pr1.CommitsAhead)
+			assert.Equal(t, 0, pr1.CommitsBehind)
+
 			prMsg, err := doAPIGetPullRequest(*ctx, ctx.Username, ctx.Reponame, pr1.Index)(t)
 			require.NoError(t, err)
 
@@ -845,6 +848,8 @@ func doCreateAgitFlowPull(dstPath string, ctx *APITestContext, baseBranch, headB
 			if !assert.NotEmpty(t, pr2) {
 				return
 			}
+			assert.Equal(t, 1, pr2.CommitsAhead)
+			assert.Equal(t, 0, pr2.CommitsBehind)
 			prMsg, err = doAPIGetPullRequest(*ctx, ctx.Username, ctx.Reponame, pr2.Index)(t)
 			require.NoError(t, err)
 
@@ -902,6 +907,14 @@ func doCreateAgitFlowPull(dstPath string, ctx *APITestContext, baseBranch, headB
 
 			assert.False(t, prMsg.HasMerged)
 			assert.Equal(t, commit, prMsg.Head.Sha)
+
+			pr1 = unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{
+				HeadRepoID: repo.ID,
+				Flow:       issues_model.PullRequestFlowAGit,
+				Index:      pr1.Index,
+			})
+			assert.Equal(t, 2, pr1.CommitsAhead)
+			assert.Equal(t, 0, pr1.CommitsBehind)
 
 			_, _, err = git.NewCommand(git.DefaultContext, "push", "origin").AddDynamicArguments("HEAD:refs/for/master/test/" + headBranch).RunStdString(&git.RunOpts{Dir: dstPath})
 			require.NoError(t, err)
