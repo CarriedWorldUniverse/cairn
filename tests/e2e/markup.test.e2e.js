@@ -1,5 +1,6 @@
 // @ts-check
-import {test, expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './utils_e2e.js';
 
 test('markup with #xyz-mode-only', async ({page}) => {
   const response = await page.goto('/user2/repo1/issues/1');

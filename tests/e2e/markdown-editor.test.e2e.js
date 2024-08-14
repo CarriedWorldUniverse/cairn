@@ -1,6 +1,6 @@
 // @ts-check
-import {expect, test} from '@playwright/test';
-import {load_logged_in_context, login_user} from './utils_e2e.js';
+import {expect} from '@playwright/test';
+import {test, load_logged_in_context, login_user} from './utils_e2e.js';
 
 test.beforeAll(async ({browser}, workerInfo) => {
   await login_user(browser, workerInfo, 'user2');
