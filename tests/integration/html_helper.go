@@ -42,7 +42,7 @@ func (doc *HTMLDoc) AssertDropdown(t testing.TB, name string) *goquery.Selection
 	t.Helper()
 
 	dropdownGroup := doc.Find(fmt.Sprintf(".dropdown:has(input[name='%s'])", name))
-	assert.Equal(t, 1, dropdownGroup.Length(), fmt.Sprintf("%s dropdown does not exist", name))
+	assert.Equal(t, 1, dropdownGroup.Length(), "%s dropdown does not exist", name)
 	return dropdownGroup
 }
 
@@ -60,13 +60,13 @@ func (doc *HTMLDoc) AssertDropdownHasSelectedOption(t testing.TB, dropdownName, 
 	dropdownGroup := doc.AssertDropdown(t, dropdownName)
 
 	selectedValue, _ := dropdownGroup.Find(fmt.Sprintf("input[name='%s']", dropdownName)).Attr("value")
-	assert.Equal(t, expectedValue, selectedValue, fmt.Sprintf("%s dropdown doesn't have expected value selected", dropdownName))
+	assert.Equal(t, expectedValue, selectedValue, "%s dropdown doesn't have expected value selected", dropdownName)
 
 	dropdownValues := dropdownGroup.Find(".menu [data-value]").Map(func(i int, s *goquery.Selection) string {
 		value, _ := s.Attr("data-value")
 		return value
 	})
-	assert.Contains(t, dropdownValues, expectedValue, fmt.Sprintf("%s dropdown doesn't have an option with expected value", dropdownName))
+	assert.Contains(t, dropdownValues, expectedValue, "%s dropdown doesn't have an option with expected value", dropdownName)
 }
 
 // Find gets the descendants of each element in the current set of
