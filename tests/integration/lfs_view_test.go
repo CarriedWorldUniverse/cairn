@@ -111,6 +111,19 @@ func TestLFSRender(t *testing.T) {
 		doc := NewHTMLParser(t, resp.Body).doc
 		assert.Equal(t, 1, doc.Find(`.sha.label[href="/user2/lfs/commit/73cf03db6ece34e12bf91e8853dc58f678f2f82d"]`).Length(), "could not find link to commit")
 	})
+
+	// check that an invalid lfs entry defaults to plaintext
+	t.Run("Invalid", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", "/user2/lfs/src/branch/master/invalid")
+		resp := session.MakeRequest(t, req, http.StatusOK)
+
+		doc := NewHTMLParser(t, resp.Body).doc
+
+		content := doc.Find("div.file-view").Text()
+		assert.Contains(t, content, "oid sha256:9d178b5f15046343fd32f451df93acc2bdd9e6373be478b968e4cad6b6647351")
+	})
 }
 
 // TestLFSLockView tests the LFS lock view on settings page of repositories
