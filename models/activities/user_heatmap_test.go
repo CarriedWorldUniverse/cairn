@@ -4,7 +4,6 @@
 package activities_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -92,7 +91,7 @@ func TestGetUserHeatmapDataByUser(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, actions, contributions, "invalid action count: did the test data became too old?")
 		assert.Equal(t, count, int64(contributions))
-		assert.Equal(t, tc.CountResult, contributions, fmt.Sprintf("testcase '%s'", tc.desc))
+		assert.Equal(t, tc.CountResult, contributions, tc.desc)
 
 		// Test JSON rendering
 		jsonData, err := json.Marshal(heatmap)
