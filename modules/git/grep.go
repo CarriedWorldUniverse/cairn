@@ -35,6 +35,12 @@ type GrepOptions struct {
 	PathSpec          []setting.Glob
 }
 
+func (opts *GrepOptions) ensureDefaults() {
+	opts.RefName = cmp.Or(opts.RefName, "HEAD")
+	opts.MaxResultLimit = cmp.Or(opts.MaxResultLimit, 50)
+	opts.MatchesPerFile = cmp.Or(opts.MatchesPerFile, 20)
+}
+
 func hasPrefixFold(s, t string) bool {
 	if len(s) < len(t) {
 		return false
@@ -52,6 +58,8 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 		_ = stdoutWriter.Close()
 	}()
 
+	opts.ensureDefaults()
+
 	/*
 	 The output is like this ("^@" means \x00; the first number denotes the line,
 	 the second number denotes the column of the first match in line):
@@ -68,7 +76,6 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 		"-I", "--null", "--break", "--heading", "--column",
 		"--fixed-strings", "--line-number", "--ignore-case", "--full-name")
 	cmd.AddOptionValues("--context", fmt.Sprint(opts.ContextLineNumber))
-	opts.MatchesPerFile = cmp.Or(opts.MatchesPerFile, 20)
 	cmd.AddOptionValues("--max-count", fmt.Sprint(opts.MatchesPerFile))
 	words := []string{search}
 	if opts.IsFuzzy {
@@ -89,9 +96,8 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 	for _, expr := range setting.Indexer.ExcludePatterns {
 		files = append(files, ":^"+expr.Pattern())
 	}
-	cmd.AddDynamicArguments(cmp.Or(opts.RefName, "HEAD")).AddDashesAndList(files...)
+	cmd.AddDynamicArguments(opts.RefName).AddDashesAndList(files...)
 
-	opts.MaxResultLimit = cmp.Or(opts.MaxResultLimit, 50)
 	stderr := bytes.Buffer{}
 	err = cmd.Run(&RunOpts{
 		Dir:    repo.Path,
