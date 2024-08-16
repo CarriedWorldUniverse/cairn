@@ -35,11 +35,22 @@ func Code(ctx *context.Context) {
 	language := ctx.FormTrim("l")
 	keyword := ctx.FormTrim("q")
 
-	isFuzzy := ctx.FormOptionalBool("fuzzy").ValueOrDefault(true)
+	isFuzzy := true
+	if mode := ctx.FormTrim("mode"); len(mode) > 0 {
+		isFuzzy = mode == "fuzzy"
+	} else {
+		isFuzzy = ctx.FormOptionalBool("fuzzy").ValueOrDefault(true)
+	}
 
 	ctx.Data["Keyword"] = keyword
 	ctx.Data["Language"] = language
+	ctx.Data["CodeSearchOptions"] = []string{"exact", "fuzzy"}
 	ctx.Data["IsFuzzy"] = isFuzzy
+	if isFuzzy {
+		ctx.Data["CodeSearchMode"] = "fuzzy"
+	} else {
+		ctx.Data["CodeSearchMode"] = "exact"
+	}
 	ctx.Data["PageIsViewCode"] = true
 
 	if keyword == "" {
