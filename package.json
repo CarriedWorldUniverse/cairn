@@ -62,7 +62,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "4.3.0",
     "@playwright/test": "1.46.0",
     "@stoplight/spectral-cli": "6.11.1",
-    "@stylistic/eslint-plugin-js": "2.6.2",
+    "@stylistic/eslint-plugin-js": "2.6.4",
     "@stylistic/stylelint-plugin": "3.0.0",
     "@vitejs/plugin-vue": "5.1.1",
     "@vitest/coverage-v8": "2.0.5",
