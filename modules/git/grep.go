@@ -82,12 +82,12 @@ func GrepSearch(ctx context.Context, repo *Repository, search string, opts GrepO
 	var results []*GrepResult
 	// -I skips binary files
 	cmd := NewCommand(ctx, "grep",
-		"-I", "--null", "--break", "--heading", "--column",
+		"-I", "--null", "--break", "--heading",
 		"--line-number", "--ignore-case", "--full-name")
 	if opts.Mode == RegExpGrepMode {
 		cmd.AddArguments("--perl-regexp")
 	} else {
-		cmd.AddArguments("--fixed-strings")
+		cmd.AddArguments("--fixed-strings", "--column")
 	}
 	cmd.AddOptionValues("--context", fmt.Sprint(opts.ContextLineNumber))
 	cmd.AddOptionValues("--max-count", fmt.Sprint(opts.MatchesPerFile))

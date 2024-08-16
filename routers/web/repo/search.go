@@ -27,7 +27,7 @@ const (
 
 func searchModeFromString(s string) searchMode {
 	switch s {
-	case "fuzzy":
+	case "fuzzy", "union":
 		return FuzzySearchMode
 	case "regexp":
 		return RegExpSearchMode
@@ -65,7 +65,7 @@ func Search(ctx *context.Context) {
 	ctx.Data["Language"] = language
 	ctx.Data["IsFuzzy"] = mode == FuzzySearchMode
 	ctx.Data["IsRegExp"] = mode == RegExpSearchMode
-	ctx.Data["SearchMode"] = mode.String()
+	ctx.Data["CodeSearchMode"] = mode.String()
 	ctx.Data["PageIsViewCode"] = true
 
 	if keyword == "" {
@@ -102,6 +102,7 @@ func Search(ctx *context.Context) {
 		} else {
 			ctx.Data["CodeIndexerUnavailable"] = !code_indexer.IsAvailable(ctx)
 		}
+		ctx.Data["CodeSearchOptions"] = []string{"exact", "fuzzy"}
 	} else {
 		grepOpt := git.GrepOptions{
 			ContextLineNumber: 1,
@@ -110,6 +111,7 @@ func Search(ctx *context.Context) {
 		switch mode {
 		case FuzzySearchMode:
 			grepOpt.Mode = git.FixedAnyGrepMode
+			ctx.Data["CodeSearchMode"] = "union"
 		case RegExpSearchMode:
 			grepOpt.Mode = git.RegExpGrepMode
 		}
@@ -133,6 +135,7 @@ func Search(ctx *context.Context) {
 				Lines: code_indexer.HighlightSearchResultCode(r.Filename, r.LineNumbers, r.HighlightedRanges, strings.Join(r.LineCodes, "\n")),
 			})
 		}
+		ctx.Data["CodeSearchOptions"] = []string{"exact", "union", "regexp"}
 	}
 
 	ctx.Data["CodeIndexerDisabled"] = !setting.Indexer.RepoIndexerEnabled
