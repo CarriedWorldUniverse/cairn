@@ -58,6 +58,11 @@ export async function load_logged_in_context(browser, workerInfo, user) {
   return context;
 }
 
+export async function login({browser}, workerInfo) {
+  const context = await load_logged_in_context(browser, workerInfo, 'user2');
+  return await context.newPage();
+}
+
 export async function save_visual(page) {
   // Optionally include visual testing
   if (process.env.VISUAL_TEST) {
