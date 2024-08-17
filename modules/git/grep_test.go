@@ -98,6 +98,31 @@ func TestGrepSearch(t *testing.T) {
 	assert.Empty(t, res)
 }
 
+func TestGrepDashesAreFine(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := InitRepository(DefaultContext, tmpDir, false, Sha1ObjectFormat.Name())
+	require.NoError(t, err)
+
+	gitRepo, err := openRepositoryWithDefaultContext(tmpDir)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	require.NoError(t, os.WriteFile(path.Join(tmpDir, "with-dashes"), []byte("--"), 0o666))
+	require.NoError(t, os.WriteFile(path.Join(tmpDir, "without-dashes"), []byte(".."), 0o666))
+
+	err = AddChanges(tmpDir, true)
+	require.NoError(t, err)
+
+	err = CommitChanges(tmpDir, CommitChangesOptions{Message: "Dashes are cool sometimes"})
+	require.NoError(t, err)
+
+	res, err := GrepSearch(context.Background(), gitRepo, "--", GrepOptions{})
+	require.NoError(t, err)
+	assert.Len(t, res, 1)
+	assert.Equal(t, "with-dashes", res[0].Filename)
+}
+
 func TestGrepNoBinary(t *testing.T) {
 	tmpDir := t.TempDir()
 
