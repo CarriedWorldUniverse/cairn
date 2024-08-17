@@ -6,7 +6,7 @@ export function initCompWebHookEditor() {
     return;
   }
 
-  for (const input of document.querySelectorAll('.events.checkbox input')) {
+  for (const input of document.querySelectorAll('label.events input')) {
     input.addEventListener('change', function () {
       if (this.checked) {
         showElem('.events.fields');
@@ -14,7 +14,7 @@ export function initCompWebHookEditor() {
     });
   }
 
-  for (const input of document.querySelectorAll('.non-events.checkbox input')) {
+  for (const input of document.querySelectorAll('label.non-events input')) {
     input.addEventListener('change', function () {
       if (this.checked) {
         hideElem('.events.fields');
