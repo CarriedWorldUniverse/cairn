@@ -90,6 +90,7 @@ func (g *GitHubCalloutTransformer) Transform(node *ast.Document, reader text.Rea
 			firstParagraph.Parent().InsertBefore(firstParagraph.Parent(), firstParagraph, attentionParagraph)
 			firstParagraph.RemoveChild(firstParagraph, firstTextNode)
 			firstParagraph.RemoveChild(firstParagraph, secondTextNode)
+			firstParagraph.RemoveChild(firstParagraph, thirdTextNode)
 		}
 		return ast.WalkContinue, nil
 	})
