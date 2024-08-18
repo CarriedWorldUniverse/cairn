@@ -50,7 +50,7 @@ jobs:
           discovery.type: single-node
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
       minio:
-        image: docker.io/bitnami/minio:2024.8.3
+        image: docker.io/bitnami/minio:2024.8.17
         options: >-
           --hostname gitea.minio
         env:
@@ -200,7 +200,7 @@ jobs:
       image: 'code.forgejo.org/oci/node:20-bookworm'
     services:
       minio:
-        image: docker.io/bitnami/minio:2024.8.3
+        image: docker.io/bitnami/minio:2024.8.17
         env:
           MINIO_ROOT_USER: 123456
           MINIO_ROOT_PASSWORD: 12345678
