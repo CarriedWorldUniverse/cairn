@@ -122,8 +122,7 @@ func (p *RedisProvider) Init(maxlifetime int64, configs string) (err error) {
 	uri := nosql.ToRedisURI(configs)
 
 	for k, v := range uri.Query() {
-		switch k {
-		case "prefix":
+		if k == "prefix" {
 			p.prefix = v[0]
 		}
 	}
