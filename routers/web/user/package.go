@@ -208,8 +208,7 @@ func ViewPackageVersion(ctx *context.Context) {
 		groups := make(container.Set[string])
 		for _, f := range pd.Files {
 			for _, pp := range f.Properties {
-				switch pp.Name {
-				case arch_model.PropertyDistribution:
+				if pp.Name == arch_model.PropertyDistribution {
 					groups.Add(pp.Value)
 				}
 			}
