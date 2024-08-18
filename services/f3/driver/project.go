@@ -96,7 +96,7 @@ func (o *project) FromFormat(content f3.Interface) {
 func (o *project) Get(ctx context.Context) bool {
 	node := o.GetNode()
 	o.Trace("%s", node.GetID())
-	id := f3_util.ParseInt(string(node.GetID()))
+	id := node.GetID().Int64()
 	u, err := repo_model.GetRepositoryByID(ctx, id)
 	if repo_model.IsErrRepoNotExist(err) {
 		return false
@@ -166,7 +166,7 @@ func (o *project) Put(ctx context.Context) generic.NodeID {
 		o.forgejoProject = repo
 		o.Trace("project created %d", o.forgejoProject.ID)
 	}
-	return generic.NodeID(fmt.Sprintf("%d", o.forgejoProject.ID))
+	return generic.NewNodeID(o.forgejoProject.ID)
 }
 
 func (o *project) Delete(ctx context.Context) {

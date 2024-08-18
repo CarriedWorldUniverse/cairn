@@ -3,7 +3,7 @@ module code.gitea.io/gitea
 go 1.22.5
 
 require (
-	code.forgejo.org/f3/gof3/v3 v3.4.0
+	code.forgejo.org/f3/gof3/v3 v3.7.0
 	code.forgejo.org/forgejo/reply v1.0.2
 	code.gitea.io/actions-proto-go v0.4.0
 	code.gitea.io/gitea-vet v0.2.3
@@ -95,7 +95,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/valyala/fastjson v1.6.4
-	github.com/xanzy/go-gitlab v0.96.0
+	github.com/xanzy/go-gitlab v0.106.0
 	github.com/yohcop/openid-go v1.0.1
 	github.com/yuin/goldmark v1.7.4
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
