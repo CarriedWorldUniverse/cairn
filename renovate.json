@@ -52,7 +52,7 @@
     {
       "description": "Require dashboard approval for some deps",
       "matchDepNames": [
-        "bitnami/minio",
+        "docker.io/bitnami/minio",
         "github.com/go-ap/activitypub",
         "github.com/nektos/act",
         "gitea.com/gitea/act"
