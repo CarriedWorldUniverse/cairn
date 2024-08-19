@@ -761,7 +761,7 @@ func UsernameSubRoute(ctx *context.Context) {
 		}
 		// check view permissions
 		if !user_model.IsUserVisibleToViewer(ctx, ctx.ContextUser, ctx.Doer) {
-			ctx.NotFound("user", fmt.Errorf(ctx.ContextUser.Name))
+			ctx.NotFound("User not visible", nil)
 			return false
 		}
 		return true

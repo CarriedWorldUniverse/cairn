@@ -5,6 +5,7 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -52,15 +53,15 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 	remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
 
 	deletePushMirrors := repo_model.DeletePushMirrors
-	deletePushMirrorsError := "deletePushMirrorsError"
+	deletePushMirrorsError := errors.New("deletePushMirrorsError")
 	deletePushMirrorsFail := func(ctx context.Context, opts repo_model.PushMirrorOptions) error {
-		return fmt.Errorf(deletePushMirrorsError)
+		return deletePushMirrorsError
 	}
 
 	addPushMirrorRemote := mirror_service.AddPushMirrorRemote
-	addPushMirrorRemoteError := "addPushMirrorRemoteError"
+	addPushMirrorRemoteError := errors.New("addPushMirrorRemoteError")
 	addPushMirrorRemoteFail := func(ctx context.Context, m *repo_model.PushMirror, addr string) error {
-		return fmt.Errorf(addPushMirrorRemoteError)
+		return addPushMirrorRemoteError
 	}
 
 	for _, testCase := range []struct {
@@ -81,7 +82,7 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 		},
 		{
 			name:        "fail to add and delete",
-			message:     deletePushMirrorsError,
+			message:     deletePushMirrorsError.Error(),
 			status:      http.StatusInternalServerError,
 			mirrorCount: 1,
 			setup: func() {
@@ -91,7 +92,7 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 		},
 		{
 			name:        "fail to add",
-			message:     addPushMirrorRemoteError,
+			message:     addPushMirrorRemoteError.Error(),
 			status:      http.StatusInternalServerError,
 			mirrorCount: 0,
 			setup: func() {
