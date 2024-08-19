@@ -1,26 +1,20 @@
 {{$isNew:=or .PageIsSettingsHooksNew .PageIsAdminDefaultHooksNew .PageIsAdminSystemHooksNew}}
 <div class="field">
-	<h4>{{ctx.Locale.Tr "repo.settings.event_desc"}}</h4>
-	<div class="grouped event type fields">
-		<div class="field">
-			<div class="ui radio non-events checkbox">
-				<input name="events" type="radio" value="push_only" {{if or $isNew .Webhook.PushOnly}}checked{{end}}>
-				<label>{{ctx.Locale.Tr "repo.settings.event_push_only"}}</label>
-			</div>
-		</div>
-		<div class="field">
-			<div class="ui radio non-events checkbox">
-				<input name="events" type="radio" value="send_everything" {{if .Webhook.SendEverything}}checked{{end}}>
-				<label>{{ctx.Locale.Tr "repo.settings.event_send_everything"}}</label>
-			</div>
-		</div>
-		<div class="field">
-			<div class="ui radio events checkbox">
-				<input name="events" type="radio" value="choose_events" {{if .Webhook.ChooseEvents}}checked{{end}}>
-				<label>{{ctx.Locale.Tr "repo.settings.event_choose"}}</label>
-			</div>
-		</div>
-	</div>
+	<fieldset class="event type">
+		<legend>{{ctx.Locale.Tr "repo.settings.event_desc"}}</legend>
+		<label class="non-events">
+			<input name="events" type="radio" value="push_only" {{if or $isNew .Webhook.PushOnly}}checked{{end}}>
+			{{ctx.Locale.Tr "repo.settings.event_push_only"}}
+		</label>
+		<label class="non-events">
+			<input name="events" type="radio" value="send_everything" {{if .Webhook.SendEverything}}checked{{end}}>
+			{{ctx.Locale.Tr "repo.settings.event_send_everything"}}
+		</label>
+		<label class="events">
+			<input name="events" type="radio" value="choose_events" {{if .Webhook.ChooseEvents}}checked{{end}}>
+			{{ctx.Locale.Tr "repo.settings.event_choose"}}
+		</label>
+	</fieldset>
 
 	<div class="events fields ui grid {{if not .Webhook.ChooseEvents}}tw-hidden{{end}}">
 		<!-- Repository Events -->
@@ -270,20 +264,18 @@
 
 <div class="divider"></div>
 
-<div class="inline field">
-	<div class="ui checkbox">
+<fieldset>
+	<label>
 		<input name="active" type="checkbox" {{if or $isNew .Webhook.IsActive}}checked{{end}}>
-		<label>{{ctx.Locale.Tr "repo.settings.active"}}</label>
+		{{ctx.Locale.Tr "repo.settings.active"}}
 		<span class="help">{{ctx.Locale.Tr "repo.settings.active_helper"}}</span>
-	</div>
-</div>
-<div class="field">
+	</label>
 	{{if $isNew}}
 		<button class="ui primary button">{{ctx.Locale.Tr "repo.settings.add_webhook"}}</button>
 	{{else}}
 		<button class="ui primary button">{{ctx.Locale.Tr "repo.settings.update_webhook"}}</button>
 		<a class="ui red delete-button button" data-url="{{.BaseLink}}/delete" data-id="{{.Webhook.ID}}">{{ctx.Locale.Tr "repo.settings.delete_webhook"}}</a>
 	{{end}}
-</div>
+</fieldset>
 
 {{template "repo/settings/webhook/delete_modal" .}}
