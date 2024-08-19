@@ -117,7 +117,7 @@ func TestDelayWriter(t *testing.T) {
 	defer test.MockVariableValue(&setting.InternalToken, "Random")()
 	defer test.MockVariableValue(&setting.InstallLock, true)()
 	defer test.MockVariableValue(&setting.Git.VerbosePush, true)()
-	require.NoError(t, os.Setenv("SSH_ORIGINAL_COMMAND", "true"))
+	t.Setenv("SSH_ORIGINAL_COMMAND", "true")
 
 	// Setup the Stdin.
 	f, err := os.OpenFile(t.TempDir()+"/stdin", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666)
