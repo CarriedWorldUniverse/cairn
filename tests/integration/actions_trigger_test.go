@@ -375,7 +375,7 @@ func TestCreateDeleteRefEvent(t *testing.T) {
 			Title:      "add workflow",
 			RepoID:     repo.ID,
 			Event:      "delete",
-			Ref:        "main",
+			Ref:        "refs/heads/main",
 			WorkflowID: "createdelete.yml",
 			CommitSHA:  branch.CommitID,
 		})
@@ -390,7 +390,7 @@ func TestCreateDeleteRefEvent(t *testing.T) {
 			Title:      "add workflow",
 			RepoID:     repo.ID,
 			Event:      "delete",
-			Ref:        "main",
+			Ref:        "refs/heads/main",
 			WorkflowID: "createdelete.yml",
 			CommitSHA:  branch.CommitID,
 		})
