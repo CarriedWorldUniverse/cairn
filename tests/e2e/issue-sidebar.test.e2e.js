@@ -1,15 +1,10 @@
 // @ts-check
 import {expect} from '@playwright/test';
-import {test, login_user, load_logged_in_context} from './utils_e2e.js';
+import {test, login_user, login} from './utils_e2e.js';
 
 test.beforeAll(async ({browser}, workerInfo) => {
   await login_user(browser, workerInfo, 'user2');
 });
-
-async function login({browser}, workerInfo) {
-  const context = await load_logged_in_context(browser, workerInfo, 'user2');
-  return await context.newPage();
-}
 
 // belongs to test: Pull: Toggle WIP
 const prTitle = 'pull5';
