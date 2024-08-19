@@ -14,16 +14,15 @@ test('repo webhook settings', async ({browser}, workerInfo) => {
   await expect(response?.status()).toBe(200);
 
   await page.locator('input[name="events"][value="choose_events"]').click();
-  await expect(page.locator('.events.fields')).toBeVisible();
+  await expect(page.locator('.hide-unless-checked')).toBeVisible();
+
+  // check accessibility including the custom events (now visible) part
+  await validate_form({page}, 'fieldset');
 
   await page.locator('input[name="events"][value="push_only"]').click();
-  await expect(page.locator('.events.fields')).toBeHidden();
+  await expect(page.locator('.hide-unless-checked')).toBeHidden();
   await page.locator('input[name="events"][value="send_everything"]').click();
-  await expect(page.locator('.events.fields')).toBeHidden();
-
-  // restrict to improved semantic HTML, the rest of the page fails the accessibility check
-  // only execute when the ugly part is hidden - would benefit from refactoring, too
-  await validate_form({page}, 'fieldset');
+  await expect(page.locator('.hide-unless-checked')).toBeHidden();
 });
 
 test('repo branch protection settings', async ({browser}, workerInfo) => {
