@@ -62,6 +62,7 @@
     {
       "description": "Schedule some deps less frequently",
       "matchDepNames": [
+        "code.forgejo.org/f3/gof3/v3",
         "github.com/google/pprof",
         "github.com/golangci/misspell/cmd/misspell"
       ],
