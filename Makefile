@@ -268,6 +268,7 @@ help:
 	@echo " - tidy                             run go mod tidy"
 	@echo " - test[\#TestSpecificName]         run unit test"
 	@echo " - test-sqlite[\#TestSpecificName]  run integration test for sqlite"
+	@echo " - reproduce-build\#version         build a reproducible binary for the specified release version"
 
 ###
 # Check system and environment requirements
@@ -889,6 +890,26 @@ release-sources: | $(DIST_DIRS)
 .PHONY: release-docs
 release-docs: | $(DIST_DIRS) docs
 	tar -czf $(DIST)/release/gitea-docs-$(VERSION).tar.gz -C ./docs .
+
+.PHONY: reproduce-build
+reproduce-build:
+# Start building the Dockerfile with the RELEASE_VERSION tag set. GOPROXY is set
+# for convience, because the default of the Dockerfile is `direct` which can be
+# quite slow.
+	@docker build --build-arg="RELEASE_VERSION=$(RELEASE_VERSION)" --build-arg="GOPROXY=$(shell $(GO) env GOPROXY)" --tag "forgejo-reproducibility" .
+	@id=$$(docker create forgejo-reproducibility); \
+	docker cp $$id:/app/gitea/gitea ./forgejo; \
+	docker rm -v $$id; \
+	docker image rm forgejo-reproducibility:latest
+
+.PHONY: reproduce-build\#%
+reproduce-build\#%:
+	@git switch -d "$*"
+# All the current variables are based on information before the git checkout happened.
+# Call the makefile again, so these variables are correct and can be used for building
+# a reproducible binary. Always execute git switch -, to go back to the previous branch.
+	@make reproduce-build; \
+	(code=$$?; git switch -; exit $${code})
 
 ###
 # Dependency management
