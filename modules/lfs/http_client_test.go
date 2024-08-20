@@ -156,7 +156,7 @@ func TestHTTPClientDownload(t *testing.T) {
 	hc := &http.Client{Transport: RoundTripFunc(func(req *http.Request) *http.Response {
 		assert.Equal(t, "POST", req.Method)
 		assert.Equal(t, MediaType, req.Header.Get("Content-type"))
-		assert.Equal(t, MediaType, req.Header.Get("Accept"))
+		assert.Equal(t, AcceptHeader, req.Header.Get("Accept"))
 
 		var batchRequest BatchRequest
 		err := json.NewDecoder(req.Body).Decode(&batchRequest)
@@ -264,7 +264,7 @@ func TestHTTPClientUpload(t *testing.T) {
 	hc := &http.Client{Transport: RoundTripFunc(func(req *http.Request) *http.Response {
 		assert.Equal(t, "POST", req.Method)
 		assert.Equal(t, MediaType, req.Header.Get("Content-type"))
-		assert.Equal(t, MediaType, req.Header.Get("Accept"))
+		assert.Equal(t, AcceptHeader, req.Header.Get("Accept"))
 
 		var batchRequest BatchRequest
 		err := json.NewDecoder(req.Body).Decode(&batchRequest)
