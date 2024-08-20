@@ -179,43 +179,47 @@ func TestRepoViewFileLines(t *testing.T) {
 				TreePath:      "test-4",
 				ContentReader: strings.NewReader("Really two\nlines\n"),
 			},
+			{
+				Operation:     "create",
+				TreePath:      "empty",
+				ContentReader: strings.NewReader(""),
+			},
+			{
+				Operation:     "create",
+				TreePath:      "seemingly-empty",
+				ContentReader: strings.NewReader("\n"),
+			},
 		})
 		defer f()
 
-		t.Run("No EOL", func(t *testing.T) {
-			defer tests.PrintCurrentTest(t)()
-
-			req := NewRequest(t, "GET", repo.Link()+"/src/branch/main/test-1")
+		testEOL := func(t *testing.T, filename string, hasEOL bool) {
+			t.Helper()
+			req := NewRequestf(t, "GET", "%s/src/branch/main/%s", repo.Link(), filename)
 			resp := MakeRequest(t, req, http.StatusOK)
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			fileInfo := htmlDoc.Find(".file-info").Text()
-			assert.Contains(t, fileInfo, "No EOL")
+			if hasEOL {
+				assert.NotContains(t, fileInfo, "No EOL")
+			} else {
+				assert.Contains(t, fileInfo, "No EOL")
+			}
+		}
 
-			req = NewRequest(t, "GET", repo.Link()+"/src/branch/main/test-3")
-			resp = MakeRequest(t, req, http.StatusOK)
-			htmlDoc = NewHTMLParser(t, resp.Body)
+		t.Run("No EOL", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
 
-			fileInfo = htmlDoc.Find(".file-info").Text()
-			assert.Contains(t, fileInfo, "No EOL")
+			testEOL(t, "test-1", false)
+			testEOL(t, "test-3", false)
 		})
 
 		t.Run("With EOL", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			req := NewRequest(t, "GET", repo.Link()+"/src/branch/main/test-2")
-			resp := MakeRequest(t, req, http.StatusOK)
-			htmlDoc := NewHTMLParser(t, resp.Body)
-
-			fileInfo := htmlDoc.Find(".file-info").Text()
-			assert.NotContains(t, fileInfo, "No EOL")
-
-			req = NewRequest(t, "GET", repo.Link()+"/src/branch/main/test-4")
-			resp = MakeRequest(t, req, http.StatusOK)
-			htmlDoc = NewHTMLParser(t, resp.Body)
-
-			fileInfo = htmlDoc.Find(".file-info").Text()
-			assert.NotContains(t, fileInfo, "No EOL")
+			testEOL(t, "test-2", true)
+			testEOL(t, "test-4", true)
+			testEOL(t, "empty", true)
+			testEOL(t, "seemingly-empty", true)
 		})
 	})
 }
