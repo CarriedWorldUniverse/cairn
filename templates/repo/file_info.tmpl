@@ -9,7 +9,7 @@
 			{{.NumLines}} {{ctx.Locale.TrN .NumLines "repo.line" "repo.lines"}}
 		</div>
 	{{end}}
-	{{if and .HasTrailingEOLSet (not .HasTrailingEOL)}}
+	{{if .HasNoTrailingEOL}}
 		<div class="file-info-entry" data-tooltip-content="{{ctx.Locale.Tr "repo.no_eol.tooltip"}}">
 			{{ctx.Locale.Tr "repo.no_eol.text"}}
 		</div>

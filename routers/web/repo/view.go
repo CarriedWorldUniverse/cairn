@@ -562,15 +562,16 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 			//   empty: 0 lines; "a": 1 line; "a\n": 1 line; "a\nb": 2 lines;
 			//   When rendering, the last empty line is not rendered in U and isn't counted towards the number of lines.
 			//   To tell users that the file not contains a trailing EOL, text with a tooltip is displayed in the file header.
+			//   Trailing EOL is only considered if the file has content.
 			// This NumLines is only used for the display on the UI: "xxx lines"
-			hasTrailingEOL := bytes.HasSuffix(buf, []byte{'\n'})
-			ctx.Data["HasTrailingEOL"] = hasTrailingEOL
-			ctx.Data["HasTrailingEOLSet"] = true
 			if len(buf) == 0 {
 				ctx.Data["NumLines"] = 0
 			} else {
+				hasNoTrailingEOL := !bytes.HasSuffix(buf, []byte{'\n'})
+				ctx.Data["HasNoTrailingEOL"] = hasNoTrailingEOL
+
 				numLines := bytes.Count(buf, []byte{'\n'})
-				if !hasTrailingEOL {
+				if hasNoTrailingEOL {
 					numLines++
 				}
 				ctx.Data["NumLines"] = numLines
