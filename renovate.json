@@ -4,8 +4,6 @@
     "config:best-practices",
     ":approveMajorUpdates",
     ":maintainLockFilesWeekly",
-    "group:postcss",
-    "group:linters",
     "schedule:daily",
     "schedule:automergeDaily",
     "local>forgejo-contrib/forgejo-renovate//go.json"
@@ -124,6 +122,18 @@
       "matchPackageNames": [
         "golang.org/x/tools{/,}**"
       ]
+    },
+    {
+      "description": "Group linter minor and patch updates",
+      "extends": ["packages:linters"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "linters"
+    },
+    {
+      "description": "Group postcss minor and patch updates",
+      "extends": ["packages:postcss"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "postcss"
     },
     {
       "description": "Split minor and patch updates",
