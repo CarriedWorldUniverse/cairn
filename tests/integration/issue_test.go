@@ -1106,17 +1106,33 @@ func TestCommitRefComment(t *testing.T) {
 func TestIssueFilterNoFollow(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
-	req := NewRequest(t, "GET", "/user2/repo1/issues")
-	resp := MakeRequest(t, req, http.StatusOK)
-	htmlDoc := NewHTMLParser(t, resp.Body)
-
 	// Check that every link in the filter list has rel="nofollow".
-	filterLinks := htmlDoc.Find(".issue-list-toolbar-right a[href*=\"?q=\"]")
-	assert.Positive(t, filterLinks.Length())
-	filterLinks.Each(func(i int, link *goquery.Selection) {
-		rel, has := link.Attr("rel")
-		assert.True(t, has)
-		assert.Equal(t, "nofollow", rel)
+	t.Run("Issue lists", func(t *testing.T) {
+		req := NewRequest(t, "GET", "/user2/repo1/issues")
+		resp := MakeRequest(t, req, http.StatusOK)
+		htmlDoc := NewHTMLParser(t, resp.Body)
+
+		filterLinks := htmlDoc.Find(".issue-list-toolbar-right a[href*=\"?q=\"], .labels-list a[href*=\"?q=\"]")
+		assert.Positive(t, filterLinks.Length())
+		filterLinks.Each(func(i int, link *goquery.Selection) {
+			rel, has := link.Attr("rel")
+			assert.True(t, has)
+			assert.Equal(t, "nofollow", rel)
+		})
+	})
+
+	t.Run("Issue page", func(t *testing.T) {
+		req := NewRequest(t, "GET", "/user2/repo1/issues/1")
+		resp := MakeRequest(t, req, http.StatusOK)
+		htmlDoc := NewHTMLParser(t, resp.Body)
+
+		filterLinks := htmlDoc.Find(".timeline .labels-list a[href*=\"?labels=\"], .issue-content-right .labels-list a[href*=\"?labels=\"]")
+		assert.Positive(t, filterLinks.Length())
+		filterLinks.Each(func(i int, link *goquery.Selection) {
+			rel, has := link.Attr("rel")
+			assert.True(t, has)
+			assert.Equal(t, "nofollow", rel)
+		})
 	})
 }
 
