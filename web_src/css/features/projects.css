@@ -80,7 +80,6 @@
   white-space: nowrap;
   overflow: scroll;
   cursor: default;
-  scroll-snap-type: x mandatory;
   text-align: center;
 }
 
@@ -89,7 +88,6 @@
   max-height: 50px;
   border-radius: var(--border-radius);
   text-align: left;
-  scroll-snap-align: center;
   margin-right: 2px;
   aspect-ratio: 1;
 }
