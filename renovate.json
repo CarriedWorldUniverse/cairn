@@ -224,6 +224,14 @@
       ]
     },
     {
+      "description": "Bump go.mod directive versions",
+      "matchDatasources": ["golang-version"],
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
+      "matchDepNames": ["go"],
+      "rangeStrategy": "bump"
+    },
+    {
       "description": "Disable actions/cascading-pr for now <https://github.com/renovatebot/renovate/issues/28120>",
       "matchDepNames": [
         "actions/cascading-pr"
