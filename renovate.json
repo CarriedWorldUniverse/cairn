@@ -35,11 +35,12 @@
     {
       "description": "Require approval for go and python minor version",
       "matchDepNames": [
-        "go",
-        "python",
-        "golang",
-        "docker.io/golang",
+        "code.forgejo.org/oci/golang",
         "docker.io/library/golang",
+        "docker.io/golang",
+        "go",
+        "golang",
+        "python",
         "mcr.microsoft.com/devcontainers/go"
       ],
       "matchUpdateTypes": [
@@ -92,20 +93,22 @@
     {
       "description": "Group golang packages",
       "matchDepNames": [
+        "code.forgejo.org/oci/golang",
+        "docker.io/library/golang",
+        "docker.io/golang",
         "go",
         "golang",
-        "docker.io/golang",
-        "docker.io/library/golang"
+        "mcr.microsoft.com/devcontainers/go"
       ],
       "groupName": "golang packages"
     },
     {
       "description": "Group nodejs packages",
       "matchDepNames": [
-        "node",
-        "docker.io/node",
         "code.forgejo.org/oci/node",
-        "docker.io/library/node"
+        "docker.io/library/node",
+        "docker.io/node",
+        "node"
       ],
       "groupName": "nodejs packages",
       "versionCompatibility": "^(?<version>[^-]+)(?<compatibility>-.*)?$",
@@ -139,11 +142,13 @@
     {
       "description": "Split minor and patch updates",
       "matchDepNames": [
-        "docker.io/golang",
+        "code.forgejo.org/oci/golang",
         "docker.io/library/golang",
+        "docker.io/golang",
         "github.com/urfave/cli/v2",
         "go",
         "golang",
+        "mcr.microsoft.com/devcontainers/go",
         "python",
         "swagger-ui-dist",
         "vue"
