@@ -12,7 +12,12 @@ fieldset label {
   display: block;
 }
 
-form fieldset label .help {
+fieldset label:has(input[type="text"]),
+fieldset label:has(input[type="number"]) {
+  font-weight: var(--font-weight-medium);
+}
+
+fieldset .help {
   font-weight: var(--font-weight-normal);
   display: block !important; /* overrides another rule in this file, remove when obsolete */
 }
@@ -23,9 +28,22 @@ fieldset input[type="radio"] {
   vertical-align: initial !important; /* overrides a semantic.css rule, remove when obsolete */
 }
 
-fieldset label:has(input[type="text"]),
-fieldset label:has(input[type="number"]) {
-  font-weight: var(--font-weight-medium);
+@media (min-width: 768px) {
+  .optionmatrix input[type="radio"] {
+    margin: 0;
+  }
+
+  /* center columns except first */
+  .optionmatrix td + td, .optionmatrix th + th {
+    min-width: 10em;
+    text-align: center !important; /* overrides table.css "inherit" rule */
+  }
+}
+
+/* if an element with class "hide-unless-checked" follows a label
+ * that has no checked input, it will be hidden.*/
+label:not(:has(input:checked)) + .hide-unless-checked {
+  display: none;
 }
 
 .ui.input textarea,
@@ -493,14 +511,6 @@ textarea:focus,
 
 .ui.form .field > .selection.dropdown {
   min-width: 14em; /* matches the default min width */
-}
-
-.new.webhook form .help {
-  margin-left: 25px;
-}
-
-.new.webhook .events.fields .column {
-  padding-left: 40px;
 }
 
 .githook textarea {
