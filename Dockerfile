@@ -36,7 +36,7 @@ WORKDIR ${GOPATH}/src/code.gitea.io/gitea
 RUN make clean
 RUN make frontend
 RUN go build contrib/environment-to-ini/environment-to-ini.go && xx-verify environment-to-ini
-RUN make RELEASE_VERSION=$RELEASE_VERSION GOFLAGS="-trimpath" LDFLAGS="-buildid=" go-check generate-backend static-executable && xx-verify gitea
+RUN LDFLAGS="-buildid=" make RELEASE_VERSION=$RELEASE_VERSION GOFLAGS="-trimpath" go-check generate-backend static-executable && xx-verify gitea
 
 # Copy local files
 COPY docker/root /tmp/local
