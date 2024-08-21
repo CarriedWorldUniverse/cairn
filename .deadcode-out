@@ -170,6 +170,11 @@ code.gitea.io/gitea/modules/json
 	StdJSON.NewDecoder
 	StdJSON.Indent
 
+code.gitea.io/gitea/modules/keying
+	DeriveKey
+	Key.Encrypt
+	Key.Decrypt
+
 code.gitea.io/gitea/modules/markup
 	GetRendererByType
 	RenderString
