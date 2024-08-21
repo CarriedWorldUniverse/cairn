@@ -14,12 +14,11 @@ test('org team settings', async ({browser}, workerInfo) => {
   await expect(response?.status()).toBe(200);
 
   await page.locator('input[name="permission"][value="admin"]').click();
-  await expect(page.locator('.team-units')).toBeHidden();
-
-  // we are validating the form here, because the now hidden part has accessibility issues anyway
-  // this should be moved up or down once they are fixed.
-  await validate_form({page});
+  await expect(page.locator('.hide-unless-checked')).toBeHidden();
 
   await page.locator('input[name="permission"][value="read"]').click();
-  await expect(page.locator('.team-units')).toBeVisible();
+  await expect(page.locator('.hide-unless-checked')).toBeVisible();
+
+  // we are validating the form here to include the part that could be hidden
+  await validate_form({page});
 });
