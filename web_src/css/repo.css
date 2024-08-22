@@ -1577,11 +1577,6 @@ td .commit-summary {
   height: 30px;
 }
 
-.repository .diff-box .header:not(.resolved-placeholder) {
-  display: flex;
-  align-items: center;
-}
-
 .repository .diff-box .header:not(.resolved-placeholder) .file {
   min-width: 0;
 }
