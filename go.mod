@@ -28,7 +28,7 @@ require (
 	github.com/chi-middleware/proxy v1.1.1
 	github.com/djherbis/buffer v1.2.0
 	github.com/djherbis/nio/v3 v3.0.1
-	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5
+	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707
 	github.com/dustin/go-humanize v1.0.1
 	github.com/editorconfig/editorconfig-core-go/v2 v2.6.2
 	github.com/emersion/go-imap v1.2.1
