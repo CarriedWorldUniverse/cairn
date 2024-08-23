@@ -31,6 +31,18 @@ test('repo branch protection settings', async ({browser}, workerInfo) => {
   const response = await page.goto('/user2/repo1/settings/branches/edit');
   await expect(response?.status()).toBe(200);
 
-  // not yet accessible :(
-  // await validate_form({page}, 'fieldset');
+  await validate_form({page}, 'fieldset');
+
+  // verify header is new
+  await expect(page.locator('h4')).toContainText('new');
+  await page.locator('input[name="rule_name"]').fill('testrule');
+  await page.getByText('Save rule').click();
+  // verify header is in edit mode
+  await page.waitForLoadState('networkidle');
+  await page.getByText('Edit').click();
+  await expect(page.locator('h4')).toContainText('Protection rules for branch');
+  // delete the rule for the next test
+  await page.goBack();
+  await page.getByText('Delete rule').click();
+  await page.getByText('Yes').click();
 });

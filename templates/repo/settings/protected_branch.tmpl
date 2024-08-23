@@ -1,7 +1,11 @@
 {{template "repo/settings/layout_head" (dict "ctxData" . "pageClass" "repository settings branches")}}
 	<div class="repo-setting-content">
 		<h4 class="ui top attached header">
-			{{ctx.Locale.Tr "repo.settings.branch_protection" .Rule.RuleName}}
+			{{if .Rule.RuleName}}
+				{{ctx.Locale.Tr "repo.settings.branch_protection" .Rule.RuleName}}
+			{{else}}
+				{{ctx.Locale.Tr "repo.settings.protect_new_rule"}}
+			{{end}}
 		</h4>
 		<form class="ui form attached segment" action="{{.Link}}" method="post">
 			{{.CsrfTokenHtml}}
