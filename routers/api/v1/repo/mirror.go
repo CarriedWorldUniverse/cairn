@@ -350,6 +350,11 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 		return
 	}
 
+	if mirrorOption.UseSSH && (mirrorOption.RemoteUsername != "" || mirrorOption.RemotePassword != "") {
+		ctx.Error(http.StatusBadRequest, "CreatePushMirror", "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_passoword'")
+		return
+	}
+
 	address, err := forms.ParseRemoteAddr(mirrorOption.RemoteAddress, mirrorOption.RemoteUsername, mirrorOption.RemotePassword)
 	if err == nil {
 		err = migrations.IsMigrateURLAllowed(address, ctx.ContextUser)
@@ -365,7 +370,7 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 		return
 	}
 
-	remoteAddress, err := util.SanitizeURL(mirrorOption.RemoteAddress)
+	remoteAddress, err := util.SanitizeURL(address)
 	if err != nil {
 		ctx.ServerError("SanitizeURL", err)
 		return
@@ -380,9 +385,27 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 		RemoteAddress: remoteAddress,
 	}
 
+	var plainPrivateKey []byte
+	if mirrorOption.UseSSH {
+		publicKey, privateKey, err := util.GenerateSSHKeypair()
+		if err != nil {
+			ctx.ServerError("GenerateSSHKeypair", err)
+			return
+		}
+		plainPrivateKey = privateKey
+		pushMirror.PublicKey = string(publicKey)
+	}
+
 	if err = db.Insert(ctx, pushMirror); err != nil {
 		ctx.ServerError("InsertPushMirror", err)
 		return
+	}
+
+	if mirrorOption.UseSSH {
+		if err = pushMirror.SetPrivatekey(ctx, plainPrivateKey); err != nil {
+			ctx.ServerError("SetPrivatekey", err)
+			return
+		}
 	}
 
 	// if the registration of the push mirrorOption fails remove it from the database

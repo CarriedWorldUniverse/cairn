@@ -7,21 +7,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
+	asymkey_model "code.gitea.io/gitea/models/asymkey"
 	auth_model "code.gitea.io/gitea/models/auth"
 	"code.gitea.io/gitea/models/db"
 	repo_model "code.gitea.io/gitea/models/repo"
+	"code.gitea.io/gitea/models/unit"
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
+	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/test"
 	"code.gitea.io/gitea/services/migrations"
 	mirror_service "code.gitea.io/gitea/services/mirror"
 	repo_service "code.gitea.io/gitea/services/repository"
+	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -129,4 +138,131 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 			}
 		})
 	}
+}
+
+func TestAPIPushMirrorSSH(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		defer test.MockVariableValue(&setting.SSH.RootPath, t.TempDir())()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
+		assert.False(t, srcRepo.HasWiki())
+		session := loginUser(t, user.Name)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+		pushToRepo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+			Name:         optional.Some("push-mirror-test"),
+			AutoInit:     optional.Some(false),
+			EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),
+		})
+		defer f()
+
+		sshURL := fmt.Sprintf("ssh://%s@%s/%s.git", setting.SSH.User, net.JoinHostPort(setting.SSH.ListenHost, strconv.Itoa(setting.SSH.ListenPort)), pushToRepo.FullName())
+
+		t.Run("Mutual exclusive", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/push_mirrors", srcRepo.FullName()), &api.CreatePushMirrorOption{
+				RemoteAddress:  sshURL,
+				Interval:       "8h",
+				UseSSH:         true,
+				RemoteUsername: "user",
+				RemotePassword: "password",
+			}).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusBadRequest)
+
+			var apiError api.APIError
+			DecodeJSON(t, resp, &apiError)
+			assert.EqualValues(t, "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_passoword'", apiError.Message)
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			var pushMirror *repo_model.PushMirror
+			t.Run("Adding", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/push_mirrors", srcRepo.FullName()), &api.CreatePushMirrorOption{
+					RemoteAddress: sshURL,
+					Interval:      "8h",
+					UseSSH:        true,
+				}).AddTokenAuth(token)
+				MakeRequest(t, req, http.StatusOK)
+
+				pushMirror = unittest.AssertExistsAndLoadBean(t, &repo_model.PushMirror{RepoID: srcRepo.ID})
+				assert.NotEmpty(t, pushMirror.PrivateKey)
+				assert.NotEmpty(t, pushMirror.PublicKey)
+			})
+
+			publickey := pushMirror.GetPublicKey()
+			t.Run("Publickey", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/push_mirrors", srcRepo.FullName())).AddTokenAuth(token)
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				var pushMirrors []*api.PushMirror
+				DecodeJSON(t, resp, &pushMirrors)
+				assert.Len(t, pushMirrors, 1)
+				assert.EqualValues(t, publickey, pushMirrors[0].PublicKey)
+			})
+
+			t.Run("Add deploy key", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/keys", pushToRepo.FullName()), &api.CreateKeyOption{
+					Title:    "push mirror key",
+					Key:      publickey,
+					ReadOnly: false,
+				}).AddTokenAuth(token)
+				MakeRequest(t, req, http.StatusCreated)
+
+				unittest.AssertExistsAndLoadBean(t, &asymkey_model.DeployKey{Name: "push mirror key", RepoID: pushToRepo.ID})
+			})
+
+			t.Run("Synchronize", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				req := NewRequest(t, "POST", fmt.Sprintf("/api/v1/repos/%s/push_mirrors-sync", srcRepo.FullName())).AddTokenAuth(token)
+				MakeRequest(t, req, http.StatusOK)
+			})
+
+			t.Run("Check mirrored content", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+				sha := "1032bbf17fbc0d9c95bb5418dabe8f8c99278700"
+
+				req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/commits?limit=1", srcRepo.FullName())).AddTokenAuth(token)
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				var commitList []*api.Commit
+				DecodeJSON(t, resp, &commitList)
+
+				assert.Len(t, commitList, 1)
+				assert.EqualValues(t, sha, commitList[0].SHA)
+
+				assert.Eventually(t, func() bool {
+					req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/commits?limit=1", srcRepo.FullName())).AddTokenAuth(token)
+					resp := MakeRequest(t, req, http.StatusOK)
+
+					var commitList []*api.Commit
+					DecodeJSON(t, resp, &commitList)
+
+					return len(commitList) != 0 && commitList[0].SHA == sha
+				}, time.Second*30, time.Second)
+			})
+
+			t.Run("Check known host keys", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				knownHosts, err := os.ReadFile(filepath.Join(setting.SSH.RootPath, "known_hosts"))
+				require.NoError(t, err)
+
+				publicKey, err := os.ReadFile(setting.SSH.ServerHostKeys[0] + ".pub")
+				require.NoError(t, err)
+
+				assert.Contains(t, string(knownHosts), string(publicKey))
+			})
+		})
+	})
 }
