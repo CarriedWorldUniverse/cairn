@@ -18,6 +18,7 @@ package keying
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
@@ -43,6 +44,9 @@ func Init(ikm []byte) {
 // Specifies the context for which a subkey should be derived for.
 // This must be a hardcoded string and must not be arbitrarily constructed.
 type Context string
+
+// Used for the `push_mirror` table.
+var ContextPushMirror Context = "pushmirror"
 
 // Derive *the* key for a given context, this is a determistic function. The
 // same key will be provided for the same context.
@@ -108,4 +112,14 @@ func (k *Key) Decrypt(ciphertext, additionalData []byte) ([]byte, error) {
 	nonce, ciphertext := ciphertext[:aeadNonceSize], ciphertext[aeadNonceSize:]
 
 	return e.Open(nil, nonce, ciphertext, additionalData)
+}
+
+// ColumnAndID generates a context that can be used as additional context for
+// encrypting and decrypting data. It requires the column name and the row ID
+// (this requires to be known beforehand). Be careful when using this, as the
+// table name isn't part of this context. This means it's not bound to a
+// particular table. The table should be part of the context that the key was
+// derived for, in which case it binds through that.
+func ColumnAndID(column string, id int64) []byte {
+	return binary.BigEndian.AppendUint64(append([]byte(column), ':'), uint64(id))
 }

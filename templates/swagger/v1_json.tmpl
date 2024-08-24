@@ -21529,6 +21529,10 @@
         "sync_on_commit": {
           "type": "boolean",
           "x-go-name": "SyncOnCommit"
+        },
+        "use_ssh": {
+          "type": "boolean",
+          "x-go-name": "UseSSH"
         }
       },
       "x-go-package": "code.gitea.io/gitea/modules/structs"
@@ -25324,6 +25328,10 @@
           "type": "string",
           "format": "date-time",
           "x-go-name": "LastUpdateUnix"
+        },
+        "public_key": {
+          "type": "string",
+          "x-go-name": "PublicKey"
         },
         "remote_address": {
           "type": "string",

@@ -478,8 +478,7 @@ func SettingsPost(ctx *context.Context) {
 			ctx.ServerError("UpdateAddress", err)
 			return
 		}
-
-		remoteAddress, err := util.SanitizeURL(form.MirrorAddress)
+		remoteAddress, err := util.SanitizeURL(address)
 		if err != nil {
 			ctx.ServerError("SanitizeURL", err)
 			return
@@ -638,6 +637,12 @@ func SettingsPost(ctx *context.Context) {
 			return
 		}
 
+		if form.PushMirrorUseSSH && (form.PushMirrorUsername != "" || form.PushMirrorPassword != "") {
+			ctx.Data["Err_PushMirrorUseSSH"] = true
+			ctx.RenderWithErr(ctx.Tr("repo.mirror_denied_combination"), tplSettingsOptions, &form)
+			return
+		}
+
 		address, err := forms.ParseRemoteAddr(form.PushMirrorAddress, form.PushMirrorUsername, form.PushMirrorPassword)
 		if err == nil {
 			err = migrations.IsMigrateURLAllowed(address, ctx.Doer)
@@ -654,7 +659,7 @@ func SettingsPost(ctx *context.Context) {
 			return
 		}
 
-		remoteAddress, err := util.SanitizeURL(form.PushMirrorAddress)
+		remoteAddress, err := util.SanitizeURL(address)
 		if err != nil {
 			ctx.ServerError("SanitizeURL", err)
 			return
@@ -668,9 +673,28 @@ func SettingsPost(ctx *context.Context) {
 			Interval:      interval,
 			RemoteAddress: remoteAddress,
 		}
+
+		var plainPrivateKey []byte
+		if form.PushMirrorUseSSH {
+			publicKey, privateKey, err := util.GenerateSSHKeypair()
+			if err != nil {
+				ctx.ServerError("GenerateSSHKeypair", err)
+				return
+			}
+			plainPrivateKey = privateKey
+			m.PublicKey = string(publicKey)
+		}
+
 		if err := db.Insert(ctx, m); err != nil {
 			ctx.ServerError("InsertPushMirror", err)
 			return
+		}
+
+		if form.PushMirrorUseSSH {
+			if err := m.SetPrivatekey(ctx, plainPrivateKey); err != nil {
+				ctx.ServerError("SetPrivatekey", err)
+				return
+			}
 		}
 
 		if err := mirror_service.AddPushMirrorRemote(ctx, m, address); err != nil {
