@@ -2,8 +2,8 @@ cloud.google.com/go/compute/metadata v0.3.0 h1:Tz+eQXMEqDIKRsmY3cHTL6FVaynIjX2Qx
 cloud.google.com/go/compute/metadata v0.3.0/go.mod h1:zFmK7XCadkQkj6TtorcaGlCW1hT1fIilQDwofLpJ20k=
 code.forgejo.org/f3/gof3/v3 v3.4.0 h1:60LOo47tAKvr9nVu2qqNjbgRnCKeKx68mRMRBo/hIuA=
 code.forgejo.org/f3/gof3/v3 v3.4.0/go.mod h1:9v7foN46KlEr5gywOSQPn1k5BVpPeuBozsLKlgOQ3YM=
-code.forgejo.org/forgejo/act v1.21.1 h1:y/3KKpG0IG3tHFPhWDrI941zVcLbtwVJCRK3BPI8hpo=
-code.forgejo.org/forgejo/act v1.21.1/go.mod h1:UxZWRYqQG2Yj4+4OqfGWW5a3HELwejyWFQyU7F1jUD8=
+code.forgejo.org/forgejo/act v1.21.2 h1:LERMtDNZDFXOYYYSU7Yduyyz7sN0t/Xnc1wFlupweiE=
+code.forgejo.org/forgejo/act v1.21.2/go.mod h1:+PcvJ9iv+NTFeJSh79ra9Jbk9l0vvyA9D9me5/dbxYM=
 code.forgejo.org/forgejo/archiver/v3 v3.5.1 h1:UmmbA7D5550uf71SQjarmrn6yKwOGxtEjb3jaYYtmSE=
 code.forgejo.org/forgejo/archiver/v3 v3.5.1/go.mod h1:e3dqJ7H78uzsRSEACH1joayhuSyhnonssnDhppzS1L4=
 code.forgejo.org/forgejo/reply v1.0.2 h1:dMhQCHV6/O3L5CLWNTol+dNzDAuyCK88z4J/lCdgFuQ=
