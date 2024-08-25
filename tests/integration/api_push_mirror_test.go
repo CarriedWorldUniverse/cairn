@@ -152,7 +152,7 @@ func TestAPIPushMirrorSSH(t *testing.T) {
 		assert.False(t, srcRepo.HasWiki())
 		session := loginUser(t, user.Name)
 		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
-		pushToRepo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+		pushToRepo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
 			Name:         optional.Some("push-mirror-test"),
 			AutoInit:     optional.Some(false),
 			EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),

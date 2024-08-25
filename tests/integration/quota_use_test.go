@@ -1018,7 +1018,7 @@ func createQuotaWebEnv(t *testing.T) *quotaWebEnv {
 		user.Session = loginUser(t, userName)
 
 		// Create a repository for the user
-		repo, _, _ := CreateDeclarativeRepoWithOptions(t, user.User, DeclarativeRepoOptions{})
+		repo, _, _ := tests.CreateDeclarativeRepoWithOptions(t, user.User, tests.DeclarativeRepoOptions{})
 		user.Repo = repo
 
 		// Create a quota group for them
@@ -1058,7 +1058,7 @@ func createQuotaWebEnv(t *testing.T) *quotaWebEnv {
 
 		// Create a repository for the org
 		orgUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: org.Org.ID})
-		repo, _, _ := CreateDeclarativeRepoWithOptions(t, orgUser, DeclarativeRepoOptions{})
+		repo, _, _ := tests.CreateDeclarativeRepoWithOptions(t, orgUser, tests.DeclarativeRepoOptions{})
 		org.Repo = repo
 
 		// Create a quota group for them

@@ -18,11 +18,15 @@ import (
 
 	"code.gitea.io/gitea/models/db"
 	packages_model "code.gitea.io/gitea/models/packages"
+	repo_model "code.gitea.io/gitea/models/repo"
+	unit_model "code.gitea.io/gitea/models/unit"
 	"code.gitea.io/gitea/models/unittest"
+	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/base"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/graceful"
 	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/process"
 	repo_module "code.gitea.io/gitea/modules/repository"
 	"code.gitea.io/gitea/modules/setting"
@@ -30,7 +34,12 @@ import (
 	"code.gitea.io/gitea/modules/testlogger"
 	"code.gitea.io/gitea/modules/util"
 	"code.gitea.io/gitea/routers"
+	repo_service "code.gitea.io/gitea/services/repository"
+	files_service "code.gitea.io/gitea/services/repository/files"
+	wiki_service "code.gitea.io/gitea/services/wiki"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -303,4 +312,141 @@ func AddFixtures(dirs ...string) func() {
 			Dirs: dirs,
 		},
 	)
+}
+
+type DeclarativeRepoOptions struct {
+	Name          optional.Option[string]
+	EnabledUnits  optional.Option[[]unit_model.Type]
+	DisabledUnits optional.Option[[]unit_model.Type]
+	Files         optional.Option[[]*files_service.ChangeRepoFile]
+	WikiBranch    optional.Option[string]
+	AutoInit      optional.Option[bool]
+	IsTemplate    optional.Option[bool]
+}
+
+func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts DeclarativeRepoOptions) (*repo_model.Repository, string, func()) {
+	t.Helper()
+
+	// Not using opts.Name.ValueOrDefault() here to avoid unnecessarily
+	// generating an UUID when a name is specified.
+	var repoName string
+	if opts.Name.Has() {
+		repoName = opts.Name.Value()
+	} else {
+		repoName = uuid.NewString()
+	}
+
+	var autoInit bool
+	if opts.AutoInit.Has() {
+		autoInit = opts.AutoInit.Value()
+	} else {
+		autoInit = true
+	}
+
+	// Create the repository
+	repo, err := repo_service.CreateRepository(db.DefaultContext, owner, owner, repo_service.CreateRepoOptions{
+		Name:          repoName,
+		Description:   "Temporary Repo",
+		AutoInit:      autoInit,
+		Gitignores:    "",
+		License:       "WTFPL",
+		Readme:        "Default",
+		DefaultBranch: "main",
+		IsTemplate:    opts.IsTemplate.Value(),
+	})
+	require.NoError(t, err)
+	assert.NotEmpty(t, repo)
+
+	// Populate `enabledUnits` if we have any enabled.
+	var enabledUnits []repo_model.RepoUnit
+	if opts.EnabledUnits.Has() {
+		units := opts.EnabledUnits.Value()
+		enabledUnits = make([]repo_model.RepoUnit, len(units))
+
+		for i, unitType := range units {
+			enabledUnits[i] = repo_model.RepoUnit{
+				RepoID: repo.ID,
+				Type:   unitType,
+			}
+		}
+	}
+
+	// Adjust the repo units according to our parameters.
+	if opts.EnabledUnits.Has() || opts.DisabledUnits.Has() {
+		err := repo_service.UpdateRepositoryUnits(db.DefaultContext, repo, enabledUnits, opts.DisabledUnits.ValueOrDefault(nil))
+		require.NoError(t, err)
+	}
+
+	// Add files, if any.
+	var sha string
+	if opts.Files.Has() {
+		assert.True(t, autoInit, "Files cannot be specified if AutoInit is disabled")
+		files := opts.Files.Value()
+
+		resp, err := files_service.ChangeRepoFiles(git.DefaultContext, repo, owner, &files_service.ChangeRepoFilesOptions{
+			Files:     files,
+			Message:   "add files",
+			OldBranch: "main",
+			NewBranch: "main",
+			Author: &files_service.IdentityOptions{
+				Name:  owner.Name,
+				Email: owner.Email,
+			},
+			Committer: &files_service.IdentityOptions{
+				Name:  owner.Name,
+				Email: owner.Email,
+			},
+			Dates: &files_service.CommitDateOptions{
+				Author:    time.Now(),
+				Committer: time.Now(),
+			},
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp)
+
+		sha = resp.Commit.SHA
+	}
+
+	// If there's a Wiki branch specified, create a wiki, and a default wiki page.
+	if opts.WikiBranch.Has() {
+		// Set the wiki branch in the database first
+		repo.WikiBranch = opts.WikiBranch.Value()
+		err := repo_model.UpdateRepositoryCols(db.DefaultContext, repo, "wiki_branch")
+		require.NoError(t, err)
+
+		// Initialize the wiki
+		err = wiki_service.InitWiki(db.DefaultContext, repo)
+		require.NoError(t, err)
+
+		// Add a new wiki page
+		err = wiki_service.AddWikiPage(db.DefaultContext, owner, repo, "Home", "Welcome to the wiki!", "Add a Home page")
+		require.NoError(t, err)
+	}
+
+	// Return the repo, the top commit, and a defer-able function to delete the
+	// repo.
+	return repo, sha, func() {
+		_ = repo_service.DeleteRepository(db.DefaultContext, owner, repo, false)
+	}
+}
+
+func CreateDeclarativeRepo(t *testing.T, owner *user_model.User, name string, enabledUnits, disabledUnits []unit_model.Type, files []*files_service.ChangeRepoFile) (*repo_model.Repository, string, func()) {
+	t.Helper()
+
+	var opts DeclarativeRepoOptions
+
+	if name != "" {
+		opts.Name = optional.Some(name)
+	}
+	if enabledUnits != nil {
+		opts.EnabledUnits = optional.Some(enabledUnits)
+	}
+	if disabledUnits != nil {
+		opts.DisabledUnits = optional.Some(disabledUnits)
+	}
+	if files != nil {
+		opts.Files = optional.Some(files)
+	}
+
+	return CreateDeclarativeRepoWithOptions(t, owner, opts)
 }

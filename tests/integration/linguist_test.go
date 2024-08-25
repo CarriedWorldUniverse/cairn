@@ -34,7 +34,7 @@ func TestLinguistSupport(t *testing.T) {
 
 			user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
-			repo, sha, f := CreateDeclarativeRepo(t, user2, "", nil, nil,
+			repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "", nil, nil,
 				[]*files_service.ChangeRepoFile{
 					{
 						Operation:     "create",
