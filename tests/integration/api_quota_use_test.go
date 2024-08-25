@@ -292,7 +292,7 @@ func prepareQuotaEnv(t *testing.T, username string) *quotaEnv {
 	env.cleanups = append(env.cleanups, userCleanup)
 
 	// Create a repository
-	repo, _, repoCleanup := CreateDeclarativeRepoWithOptions(t, env.User.User, DeclarativeRepoOptions{})
+	repo, _, repoCleanup := tests.CreateDeclarativeRepoWithOptions(t, env.User.User, tests.DeclarativeRepoOptions{})
 	env.Repo = repo
 	env.cleanups = append(env.cleanups, repoCleanup)
 
@@ -487,7 +487,7 @@ func testAPIQuotaEnforcement(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		// Create a template repository
-		template, _, cleanup := CreateDeclarativeRepoWithOptions(t, env.User.User, DeclarativeRepoOptions{
+		template, _, cleanup := tests.CreateDeclarativeRepoWithOptions(t, env.User.User, tests.DeclarativeRepoOptions{
 			IsTemplate: optional.Some(true),
 		})
 		defer cleanup()
@@ -524,7 +524,7 @@ func testAPIQuotaEnforcement(t *testing.T) {
 
 	t.Run("#/repos/{username}/{reponame}", func(t *testing.T) {
 		// Lets create a new repo to play with.
-		repo, _, repoCleanup := CreateDeclarativeRepoWithOptions(t, env.User.User, DeclarativeRepoOptions{})
+		repo, _, repoCleanup := tests.CreateDeclarativeRepoWithOptions(t, env.User.User, tests.DeclarativeRepoOptions{})
 		defer repoCleanup()
 
 		// Drop the quota to 0
@@ -1209,7 +1209,7 @@ func testAPIQuotaEnforcement(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
 				// Create a repository to transfer
-				repo, _, cleanup := CreateDeclarativeRepoWithOptions(t, env.User.User, DeclarativeRepoOptions{})
+				repo, _, cleanup := tests.CreateDeclarativeRepoWithOptions(t, env.User.User, tests.DeclarativeRepoOptions{})
 				defer cleanup()
 
 				// Initiate repo transfer
@@ -1244,7 +1244,7 @@ func testAPIQuotaEnforcement(t *testing.T) {
 				defer env.SetRuleLimit(t, "deny-all", -1)()
 
 				// Create a repository to transfer
-				repo, _, cleanup := CreateDeclarativeRepoWithOptions(t, env.User.User, DeclarativeRepoOptions{})
+				repo, _, cleanup := tests.CreateDeclarativeRepoWithOptions(t, env.User.User, tests.DeclarativeRepoOptions{})
 				defer cleanup()
 
 				// Initiate repo transfer

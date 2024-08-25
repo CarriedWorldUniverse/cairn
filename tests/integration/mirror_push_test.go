@@ -167,7 +167,7 @@ func TestSSHPushMirror(t *testing.T) {
 		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
 		assert.False(t, srcRepo.HasWiki())
 		sess := loginUser(t, user.Name)
-		pushToRepo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+		pushToRepo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
 			Name:         optional.Some("push-mirror-test"),
 			AutoInit:     optional.Some(false),
 			EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),

@@ -47,7 +47,7 @@ func createRepoAndGetContext(t *testing.T, files []string, deleteMdReadme bool) 
 	}
 
 	// README.md is already added by auto init
-	repo, _, f := CreateDeclarativeRepo(t, user, "readmetest", []unit_model.Type{unit_model.TypeCode}, nil, changeFiles)
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "readmetest", []unit_model.Type{unit_model.TypeCode}, nil, changeFiles)
 
 	ctx, _ := contexttest.MockContext(t, "user1/readmetest")
 	ctx.SetParams(":id", fmt.Sprint(repo.ID))
@@ -158,7 +158,7 @@ func TestRepoView_FindReadme(t *testing.T) {
 func TestRepoViewFileLines(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
-		repo, _, f := CreateDeclarativeRepo(t, user, "file-lines", []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
+		repo, _, f := tests.CreateDeclarativeRepo(t, user, "file-lines", []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
 			{
 				Operation:     "create",
 				TreePath:      "test-1",

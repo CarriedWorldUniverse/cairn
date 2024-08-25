@@ -323,7 +323,7 @@ func TestUserHints(t *testing.T) {
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
 
 	// Create a known-good repo, with only one unit enabled
-	repo, _, f := CreateDeclarativeRepo(t, user, "", []unit_model.Type{
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{
 		unit_model.TypeCode,
 	}, []unit_model.Type{
 		unit_model.TypePullRequests,

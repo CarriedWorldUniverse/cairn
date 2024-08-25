@@ -338,7 +338,7 @@ func TestIssueDependencies(t *testing.T) {
 	session := loginUser(t, owner.Name)
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue)
 
-	repo, _, f := CreateDeclarativeRepoWithOptions(t, owner, DeclarativeRepoOptions{})
+	repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, owner, tests.DeclarativeRepoOptions{})
 	defer f()
 
 	createIssue := func(t *testing.T, title string) api.Issue {
@@ -1200,7 +1200,7 @@ func TestIssueForm(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user2.Name)
-		repo, _, f := CreateDeclarativeRepo(t, user2, "",
+		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "",
 			[]unit_model.Type{unit_model.TypeCode, unit_model.TypeIssues}, nil,
 			[]*files_service.ChangeRepoFile{
 				{
@@ -1250,7 +1250,7 @@ func TestIssueUnsubscription(t *testing.T) {
 		defer tests.PrepareTestEnv(t)()
 
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
-		repo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+		repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
 			AutoInit: optional.Some(false),
 		})
 		defer f()
