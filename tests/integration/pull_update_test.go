@@ -19,6 +19,7 @@ import (
 	pull_service "code.gitea.io/gitea/services/pull"
 	repo_service "code.gitea.io/gitea/services/repository"
 	files_service "code.gitea.io/gitea/services/repository/files"
+	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,7 +84,7 @@ func TestAPIPullUpdateByRebase(t *testing.T) {
 }
 
 func createOutdatedPR(t *testing.T, actor, forkOrg *user_model.User) *issues_model.PullRequest {
-	baseRepo, _, _ := CreateDeclarativeRepo(t, actor, "repo-pr-update", nil, nil, nil)
+	baseRepo, _, _ := tests.CreateDeclarativeRepo(t, actor, "repo-pr-update", nil, nil, nil)
 
 	headRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, actor, forkOrg, repo_service.ForkRepoOptions{
 		BaseRepo:    baseRepo,

@@ -29,6 +29,7 @@ import (
 	release_service "code.gitea.io/gitea/services/release"
 	repo_service "code.gitea.io/gitea/services/repository"
 	files_service "code.gitea.io/gitea/services/repository/files"
+	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestPullRequestTargetEvent(t *testing.T) {
 		org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})  // owner of the forked repo
 
 		// create the base repo
-		baseRepo, _, f := CreateDeclarativeRepo(t, user2, "repo-pull-request-target",
+		baseRepo, _, f := tests.CreateDeclarativeRepo(t, user2, "repo-pull-request-target",
 			[]unit_model.Type{unit_model.TypeActions}, nil, nil,
 		)
 		defer f()
@@ -197,7 +198,7 @@ func TestSkipCI(t *testing.T) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		// create the repo
-		repo, _, f := CreateDeclarativeRepo(t, user2, "skip-ci",
+		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "skip-ci",
 			[]unit_model.Type{unit_model.TypeActions}, nil,
 			[]*files_service.ChangeRepoFile{
 				{
@@ -403,7 +404,7 @@ func TestWorkflowDispatchEvent(t *testing.T) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		// create the repo
-		repo, sha, f := CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
+		repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
 			[]unit_model.Type{unit_model.TypeActions}, nil,
 			[]*files_service.ChangeRepoFile{
 				{

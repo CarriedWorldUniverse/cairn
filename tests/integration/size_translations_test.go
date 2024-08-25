@@ -14,6 +14,7 @@ import (
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
 	files_service "code.gitea.io/gitea/services/repository/files"
+	"code.gitea.io/gitea/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestDataSizeTranslation(t *testing.T) {
 		session := loginUser(t, testUser)
 
 		// Create test repo
-		testRepo, _, f := CreateDeclarativeRepo(t, user2, testRepoName, nil, nil,
+		testRepo, _, f := tests.CreateDeclarativeRepo(t, user2, testRepoName, nil, nil,
 			[]*files_service.ChangeRepoFile{
 				{
 					Operation:     "create",

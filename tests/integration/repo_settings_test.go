@@ -51,7 +51,7 @@ func TestRepoAddMoreUnitsHighlighting(t *testing.T) {
 	unit_model.LoadUnitConfig()
 
 	// Create a known-good repo, with some units disabled.
-	repo, _, f := CreateDeclarativeRepo(t, user, "", []unit_model.Type{
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{
 		unit_model.TypeCode,
 		unit_model.TypePullRequests,
 		unit_model.TypeProjects,
@@ -142,7 +142,7 @@ func TestRepoAddMoreUnits(t *testing.T) {
 	unit_model.LoadUnitConfig()
 
 	// Create a known-good repo, with all units enabled.
-	repo, _, f := CreateDeclarativeRepo(t, user, "", []unit_model.Type{
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{
 		unit_model.TypeCode,
 		unit_model.TypePullRequests,
 		unit_model.TypeProjects,

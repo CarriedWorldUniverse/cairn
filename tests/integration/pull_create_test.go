@@ -126,7 +126,7 @@ func TestPullCreateWithPullTemplate(t *testing.T) {
 				}
 			}
 
-			repo, _, deferrer := CreateDeclarativeRepo(t, baseUser, "", nil, nil, changeOps)
+			repo, _, deferrer := tests.CreateDeclarativeRepo(t, baseUser, "", nil, nil, changeOps)
 
 			return repo, deferrer
 		}
