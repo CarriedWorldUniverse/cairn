@@ -30,7 +30,7 @@ func TestCodeOwner(t *testing.T) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		// Create the repo.
-		repo, _, f := CreateDeclarativeRepo(t, user2, "",
+		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "",
 			[]unit_model.Type{unit_model.TypePullRequests}, nil,
 			[]*files_service.ChangeRepoFile{
 				{

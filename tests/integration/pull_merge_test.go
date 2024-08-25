@@ -42,6 +42,7 @@ import (
 	commitstatus_service "code.gitea.io/gitea/services/repository/commitstatus"
 	files_service "code.gitea.io/gitea/services/repository/files"
 	webhook_service "code.gitea.io/gitea/services/webhook"
+	"code.gitea.io/gitea/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -496,7 +497,7 @@ func TestConflictChecking(t *testing.T) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		// Create new clean repo to test conflict checking.
-		baseRepo, _, f := CreateDeclarativeRepo(t, user, "conflict-checking", nil, nil, nil)
+		baseRepo, _, f := tests.CreateDeclarativeRepo(t, user, "conflict-checking", nil, nil, nil)
 		defer f()
 
 		// create a commit on new branch.

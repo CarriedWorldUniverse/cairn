@@ -167,7 +167,7 @@ func TestRepoActivityOnlyCodeUnitWithNonEmptyRepo(t *testing.T) {
 	unit_model.LoadUnitConfig()
 
 	// Create a repo, with only code unit enabled.
-	repo, _, f := CreateDeclarativeRepo(t, user, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
 	defer f()
 
 	req := NewRequest(t, "GET", fmt.Sprintf("%s/activity", repo.Link()))

@@ -37,7 +37,7 @@ func TestPullrequestReopen(t *testing.T) {
 		org26 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 26})
 
 		// Create an base repository.
-		baseRepo, _, f := CreateDeclarativeRepo(t, user2, "reopen-base",
+		baseRepo, _, f := tests.CreateDeclarativeRepo(t, user2, "reopen-base",
 			[]unit_model.Type{unit_model.TypePullRequests}, nil, nil,
 		)
 		defer f()

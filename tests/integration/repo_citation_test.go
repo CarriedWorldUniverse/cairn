@@ -28,7 +28,7 @@ func TestCitation(t *testing.T) {
 		t.Run("No citation", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			repo, _, f := CreateDeclarativeRepo(t, user, "citation-no-citation", []unit_model.Type{unit_model.TypeCode}, nil, nil)
+			repo, _, f := tests.CreateDeclarativeRepo(t, user, "citation-no-citation", []unit_model.Type{unit_model.TypeCode}, nil, nil)
 			defer f()
 
 			testCitationButtonExists(t, session, repo, "", false)
@@ -70,7 +70,7 @@ func testCitationButtonExists(t *testing.T, session *TestSession, repo *repo_mod
 }
 
 func createRepoWithEmptyFile(t *testing.T, user *user_model.User, repoName, fileName string) (*repo_model.Repository, func()) {
-	repo, _, f := CreateDeclarativeRepo(t, user, repoName, []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, repoName, []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
 		{
 			Operation: "create",
 			TreePath:  fileName,

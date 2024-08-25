@@ -296,7 +296,7 @@ func TestAPISetWikiGlobalEditability(t *testing.T) {
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
 
 	// Create a new repository for testing purposes
-	repo, _, f := CreateDeclarativeRepo(t, user, "", []unit_model.Type{
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{
 		unit_model.TypeCode,
 		unit_model.TypeWiki,
 	}, nil, nil)
@@ -389,7 +389,7 @@ func TestAPIWikiNonMasterBranch(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
-	repo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+	repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
 		WikiBranch: optional.Some("main"),
 	})
 	defer f()

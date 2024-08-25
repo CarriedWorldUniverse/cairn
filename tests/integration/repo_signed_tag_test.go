@@ -29,7 +29,7 @@ func TestRepoSSHSignedTags(t *testing.T) {
 
 	// Preparations
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
-	repo, _, f := CreateDeclarativeRepo(t, user, "", nil, nil, nil)
+	repo, _, f := tests.CreateDeclarativeRepo(t, user, "", nil, nil, nil)
 	defer f()
 
 	// Set up an SSH key for the tagger

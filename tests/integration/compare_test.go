@@ -224,7 +224,7 @@ func TestCompareCodeExpand(t *testing.T) {
 		owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 
 		// Create a new repository, with a file that has many lines
-		repo, _, f := CreateDeclarativeRepoWithOptions(t, owner, DeclarativeRepoOptions{
+		repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, owner, tests.DeclarativeRepoOptions{
 			Files: optional.Some([]*files_service.ChangeRepoFile{
 				{
 					Operation:     "create",
