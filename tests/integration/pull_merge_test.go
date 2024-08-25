@@ -1034,10 +1034,10 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 		t.Run("Clone", doGitClone(dstPath, u))
 
 		err := os.WriteFile(path.Join(dstPath, "test_file"), []byte("## test content"), 0o666)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = git.AddChanges(dstPath, true)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = git.CommitChanges(dstPath, git.CommitChangesOptions{
 			Committer: &git.Signature{
@@ -1052,7 +1052,7 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 			},
 			Message: "Testing commit 1",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		stderrBuf := &bytes.Buffer{}
 
@@ -1063,7 +1063,7 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 			AddArguments("-o").
 			AddDynamicArguments(`description="This PR is a test pull request which created with agit"`).
 			Run(&git.RunOpts{Dir: dstPath, Stderr: stderrBuf})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Contains(t, stderrBuf.String(), setting.AppURL+"user2/repo1/pulls/6")
 
@@ -1093,12 +1093,12 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 		user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		// first time insert automerge record, return true
 		scheduled, err := automerge.ScheduleAutoMerge(db.DefaultContext, user1, pr, repo_model.MergeStyleMerge, "auto merge test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, scheduled)
 
 		// second time insert automerge record, return false because it does exist
 		scheduled, err = automerge.ScheduleAutoMerge(db.DefaultContext, user1, pr, repo_model.MergeStyleMerge, "auto merge test")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, scheduled)
 
 		// reload pr again
@@ -1108,11 +1108,11 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 
 		// update commit status to success, then it should be merged automatically
 		baseGitRepo, err := gitrepo.OpenRepository(db.DefaultContext, baseRepo)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		masterCommitID, err := baseGitRepo.GetBranchCommitID("master")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		baseGitRepo.Close()
 		defer func() {
 			testResetRepo(t, baseRepo.RepoPath(), "master", masterCommitID)
@@ -1123,7 +1123,7 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 			TargetURL: "https://gitea.com",
 			Context:   "gitea/actions",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		time.Sleep(2 * time.Second)
 
