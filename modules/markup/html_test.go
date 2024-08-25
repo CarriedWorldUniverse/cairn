@@ -688,10 +688,10 @@ func TestRender_FilePreview(t *testing.T) {
 			require.NoError(t, err)
 			defer gitRepo.Close()
 
-			commit, err := gitRepo.GetCommit("HEAD")
+			commit, err := gitRepo.GetCommit(commitSha)
 			require.NoError(t, err)
 
-			blob, err := commit.GetBlobByPath("path/to/file.go")
+			blob, err := commit.GetBlobByPath(filePath)
 			require.NoError(t, err)
 
 			return blob, nil
@@ -768,6 +768,38 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
 				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`</tr>`+
+				`</tbody>`+
+				`</table>`+
+				`</div>`+
+				`</div>`+
+				`<p></p>`,
+			map[string]string{
+				"user": "gogits",
+				"repo": "gogs2",
+			},
+		)
+	})
+	t.Run("single-line", func(t *testing.T) {
+		testRender(
+			util.URLJoin(markup.TestRepoURL, "src", "commit", "4c1aaf56bcb9f39dcf65f3f250726850aed13cd6", "single-line.txt")+"#L1",
+			`<p></p>`+
+				`<div class="file-preview-box">`+
+				`<div class="header">`+
+				`<div>`+
+				`<a href="http://localhost:3000/gogits/gogs/" rel="nofollow">gogits/gogs</a> – `+
+				`<a href="http://localhost:3000/gogits/gogs/src/commit/4c1aaf56bcb9f39dcf65f3f250726850aed13cd6/single-line.txt#L1" class="muted" rel="nofollow">single-line.txt</a>`+
+				`</div>`+
+				`<span class="text small grey">`+
+				`Line 1 in <a href="http://localhost:3000/gogits/gogs/src/commit/4c1aaf56bcb9f39dcf65f3f250726850aed13cd6" class="text black" rel="nofollow">gogits/gogs@4c1aaf5</a>`+
+				`</span>`+
+				`</div>`+
+				`<div class="ui table">`+
+				`<table class="file-preview">`+
+				`<tbody>`+
+				`<tr>`+
+				`<td class="lines-num"><span data-line-number="1"></span></td>`+
+				`<td class="lines-code chroma"><code class="code-inner">A`+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
