@@ -8,6 +8,8 @@ code.forgejo.org/forgejo/archiver/v3 v3.5.1 h1:UmmbA7D5550uf71SQjarmrn6yKwOGxtEj
 code.forgejo.org/forgejo/archiver/v3 v3.5.1/go.mod h1:e3dqJ7H78uzsRSEACH1joayhuSyhnonssnDhppzS1L4=
 code.forgejo.org/forgejo/reply v1.0.2 h1:dMhQCHV6/O3L5CLWNTol+dNzDAuyCK88z4J/lCdgFuQ=
 code.forgejo.org/forgejo/reply v1.0.2/go.mod h1:RyZUfzQLc+fuLIGjTSQWDAJWPiL4WtKXB/FifT5fM7U=
+code.forgejo.org/go-chi/captcha v0.0.0-20240827192619-ac88f17cdd8e h1:8hqxBSf1M5JavIhz/Rgx3BP8kkwtCe2SP6AVTE6jjm8=
+code.forgejo.org/go-chi/captcha v0.0.0-20240827192619-ac88f17cdd8e/go.mod h1:yxZHJ6up9d/mQUu8NHHoCtJj5VcyB+5ArkUY45Hp3hE=
 code.forgejo.org/go-chi/session v0.0.0-20240825010209-bd25d509c8bf h1:gJRuqEPd3/U0/1YM+uSgbC/fpR8qrcMdvT6E7eSetyM=
 code.forgejo.org/go-chi/session v0.0.0-20240825010209-bd25d509c8bf/go.mod h1:PcnIg89MAhO1yExkw1QXXNDiPssVdCsMmwUo67g7GD4=
 code.gitea.io/actions-proto-go v0.4.0 h1:OsPBPhodXuQnsspG1sQ4eRE1PeoZyofd7+i73zCwnsU=
@@ -30,8 +32,6 @@ gitea.com/go-chi/binding v0.0.0-20240430071103-39a851e106ed h1:EZZBtilMLSZNWtHHc
 gitea.com/go-chi/binding v0.0.0-20240430071103-39a851e106ed/go.mod h1:E3i3cgB04dDx0v3CytCgRTTn9Z/9x891aet3r456RVw=
 gitea.com/go-chi/cache v0.2.0 h1:E0npuTfDW6CT1yD8NMDVc1SK6IeRjfmRL2zlEsCEd7w=
 gitea.com/go-chi/cache v0.2.0/go.mod h1:iQlVK2aKTZ/rE9UcHyz9pQWGvdP9i1eI2spOpzgCrtE=
-gitea.com/go-chi/captcha v0.0.0-20240315150714-fb487f629098 h1:p2ki+WK0cIeNQuqjR98IP2KZQKRzJJiV7aTeMAFwaWo=
-gitea.com/go-chi/captcha v0.0.0-20240315150714-fb487f629098/go.mod h1:LjzIOHlRemuUyO7WR12fmm18VZIlCAaOt9L3yKw40pk=
 gitea.com/lunny/levelqueue v0.4.2-0.20230414023320-3c0159fe0fe4 h1:IFT+hup2xejHqdhS7keYWioqfmxdnfblFDTGoOwcZ+o=
 gitea.com/lunny/levelqueue v0.4.2-0.20230414023320-3c0159fe0fe4/go.mod h1:HBqmLbz56JWpfEGG0prskAV97ATNRoj5LDmPicD22hU=
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a h1:lSA0F4e9A2NcQSqGqTOXqu2aRi/XEQxDCBwM8yJtE6s=
