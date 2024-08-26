@@ -52,8 +52,13 @@ func createRepoAndGetContext(t *testing.T, files []string, deleteMdReadme bool) 
 	ctx, _ := contexttest.MockContext(t, "user1/readmetest")
 	ctx.SetParams(":id", fmt.Sprint(repo.ID))
 	contexttest.LoadRepo(t, ctx, repo.ID)
+	contexttest.LoadGitRepo(t, ctx)
 	contexttest.LoadRepoCommit(t, ctx)
-	return ctx, f
+
+	return ctx, func() {
+		f()
+		ctx.Repo.GitRepo.Close()
+	}
 }
 
 func TestRepoView_FindReadme(t *testing.T) {
