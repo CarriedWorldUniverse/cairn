@@ -300,6 +300,7 @@
 														<label for="push_mirror_password">{{ctx.Locale.Tr "password"}}</label>
 														<input id="push_mirror_password" name="push_mirror_password" type="password" value="{{.push_mirror_password}}" autocomplete="off">
 													</div>
+													{{if .CanUseSSHMirroring}}
 													<div class="inline field {{if .Err_PushMirrorUseSSH}}error{{end}}">
 														<div class="ui checkbox df ac">
 															<input id="push_mirror_use_ssh" name="push_mirror_use_ssh" type="checkbox" {{if .push_mirror_use_ssh}}checked{{end}}>
@@ -307,6 +308,7 @@
 															<span class="help tw-block">{{ctx.Locale.Tr "repo.mirror_use_ssh.helper"}}
 														</div>
 													</div>
+													{{end}}
 												</div>
 											</details>
 											<div class="field">

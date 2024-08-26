@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -157,6 +158,11 @@ func doRemovePushMirror(ctx APITestContext, address, username, password string, 
 }
 
 func TestSSHPushMirror(t *testing.T) {
+	_, err := exec.LookPath("ssh")
+	if err != nil {
+		t.Skip("SSH executable not present")
+	}
+
 	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
@@ -192,6 +198,36 @@ func TestSSHPushMirror(t *testing.T) {
 
 			errMsg := htmlDoc.Find(".ui.negative.message").Text()
 			assert.Contains(t, errMsg, "Cannot use public key and password based authentication in combination.")
+		})
+
+		inputSelector := `input[id="push_mirror_use_ssh"]`
+
+		t.Run("SSH not available", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			defer test.MockVariableValue(&git.HasSSHExecutable, false)()
+
+			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
+				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
+				"action":               "push-mirror-add",
+				"push_mirror_address":  sshURL,
+				"push_mirror_use_ssh":  "true",
+				"push_mirror_interval": "0",
+			})
+			resp := sess.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			errMsg := htmlDoc.Find(".ui.negative.message").Text()
+			assert.Contains(t, errMsg, "SSH authentication isn't available.")
+
+			htmlDoc.AssertElement(t, inputSelector, false)
+		})
+
+		t.Run("SSH available", func(t *testing.T) {
+			req := NewRequest(t, "GET", fmt.Sprintf("/%s/settings", srcRepo.FullName()))
+			resp := sess.MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			htmlDoc.AssertElement(t, inputSelector, true)
 		})
 
 		t.Run("Normal", func(t *testing.T) {
