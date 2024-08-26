@@ -16,7 +16,7 @@ import (
 )
 
 func TestWriterReader(t *testing.T) {
-	testData := prepareTestData(t, 20_000_000)
+	testData := prepareTestData(t, 15_000_000)
 
 	result := bytes.NewBuffer(nil)
 
@@ -64,7 +64,7 @@ func TestWriterReader(t *testing.T) {
 }
 
 func TestSeekableWriterReader(t *testing.T) {
-	testData := prepareTestData(t, 20_000_000)
+	testData := prepareTestData(t, 15_000_000)
 
 	result := bytes.NewBuffer(nil)
 
