@@ -300,12 +300,4 @@ replace github.com/shurcooL/vfsgen => github.com/lunny/vfsgen v0.0.0-20220105142
 
 replace github.com/nektos/act => code.forgejo.org/forgejo/act v1.21.2
 
-exclude github.com/gofrs/uuid v3.2.0+incompatible
-
-exclude github.com/gofrs/uuid v4.0.0+incompatible
-
-exclude github.com/goccy/go-json v0.4.11
-
-exclude github.com/satori/go.uuid v1.2.0
-
 replace github.com/mholt/archiver/v3 => code.forgejo.org/forgejo/archiver/v3 v3.5.1
