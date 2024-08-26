@@ -15,8 +15,8 @@ import (
 	"code.gitea.io/gitea/modules/recaptcha"
 	"code.gitea.io/gitea/modules/setting"
 	"code.gitea.io/gitea/modules/turnstile"
-	mc "gitea.com/go-chi/cache"
 
+	mc "code.forgejo.org/go-chi/cache"
 	"code.forgejo.org/go-chi/captcha"
 )
 

@@ -15,7 +15,7 @@ import (
 	"code.gitea.io/gitea/modules/log"
 	"code.gitea.io/gitea/modules/test"
 
-	"gitea.com/go-chi/cache"
+	"code.forgejo.org/go-chi/cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
