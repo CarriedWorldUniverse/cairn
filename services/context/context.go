@@ -27,8 +27,8 @@ import (
 	"code.gitea.io/gitea/modules/web/middleware"
 	web_types "code.gitea.io/gitea/modules/web/types"
 
+	"code.forgejo.org/go-chi/cache"
 	"code.forgejo.org/go-chi/session"
-	"gitea.com/go-chi/cache"
 )
 
 // Render represents a template render

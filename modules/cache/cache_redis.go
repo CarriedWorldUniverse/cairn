@@ -11,7 +11,7 @@ import (
 	"code.gitea.io/gitea/modules/graceful"
 	"code.gitea.io/gitea/modules/nosql"
 
-	"gitea.com/go-chi/cache"
+	"code.forgejo.org/go-chi/cache"
 	"github.com/redis/go-redis/v9"
 )
 

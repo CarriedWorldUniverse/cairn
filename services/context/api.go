@@ -24,7 +24,7 @@ import (
 	"code.gitea.io/gitea/modules/web"
 	web_types "code.gitea.io/gitea/modules/web/types"
 
-	"gitea.com/go-chi/cache"
+	"code.forgejo.org/go-chi/cache"
 )
 
 // APIContext is a specific context for API service
