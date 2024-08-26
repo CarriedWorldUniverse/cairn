@@ -25,6 +25,14 @@ jobs:
           go-version-file: "go.mod"
       - run: make deps-backend deps-tools
       - run: make --always-make -j$(nproc) lint-backend tidy-check swagger-check fmt-check swagger-validate # ensure the "go-licenses" make target runs
+      - run: |
+          make backend
+        env:
+          TAGS: bindata
+      - uses: actions/cache@v4
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
   frontend-checks:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
     runs-on: docker
@@ -80,7 +88,13 @@ jobs:
           ./release-notes-assistant.sh test_main
       - run: |
           su forgejo -c 'make deps-backend'
-      - run: |
+      - uses: actions/cache/restore@v4
+        id: cache-backend
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
+      - if: steps.cache-backend.outputs.cache-hit != 'true'
+        run: |
           su forgejo -c 'make backend'
         env:
           TAGS: bindata
@@ -135,7 +149,13 @@ jobs:
           apt-get update -qq
       - run: |
           su forgejo -c 'make deps-backend'
-      - run: |
+      - uses: actions/cache/restore@v4
+        id: cache-backend
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
+      - if: steps.cache-backend.outputs.cache-hit != 'true'
+        run: |
           su forgejo -c 'make backend'
         env:
           TAGS: bindata
@@ -182,7 +202,13 @@ jobs:
           chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
-      - run: |
+      - uses: actions/cache/restore@v4
+        id: cache-backend
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
+      - if: steps.cache-backend.outputs.cache-hit != 'true'
+        run: |
           su forgejo -c 'make backend'
         env:
           TAGS: bindata
@@ -190,7 +216,6 @@ jobs:
           su forgejo -c 'make test-mysql-migration test-mysql'
         timeout-minutes: 50
         env:
-          TAGS: bindata
           USE_REPO_TEST_DIR: 1
   test-pgsql:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
@@ -231,7 +256,13 @@ jobs:
           chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
-      - run: |
+      - uses: actions/cache/restore@v4
+        id: cache-backend
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
+      - if: steps.cache-backend.outputs.cache-hit != 'true'
+        run: |
           su forgejo -c 'make backend'
         env:
           TAGS: bindata
@@ -239,7 +270,6 @@ jobs:
           su forgejo -c 'make test-pgsql-migration test-pgsql'
         timeout-minutes: 50
         env:
-          TAGS: bindata
           RACE_ENABLED: true
           USE_REPO_TEST_DIR: 1
           TEST_LDAP: 1
@@ -269,7 +299,13 @@ jobs:
           chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
-      - run: |
+      - uses: actions/cache/restore@v4
+        id: cache-backend
+        with:
+          path: '/workspace/forgejo/forgejo/gitea'
+          key: backend-build-${{ github.sha }}
+      - if: steps.cache-backend.outputs.cache-hit != 'true'
+        run: |
           su forgejo -c 'make backend'
         env:
           TAGS: bindata sqlite sqlite_unlock_notify
@@ -277,7 +313,7 @@ jobs:
           su forgejo -c 'make test-sqlite-migration test-sqlite'
         timeout-minutes: 50
         env:
-          TAGS: bindata sqlite sqlite_unlock_notify
+          TAGS: sqlite sqlite_unlock_notify
           RACE_ENABLED: true
           TEST_TAGS: sqlite sqlite_unlock_notify
           USE_REPO_TEST_DIR: 1
