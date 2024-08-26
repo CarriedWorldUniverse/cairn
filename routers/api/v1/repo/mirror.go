@@ -13,6 +13,7 @@ import (
 	"code.gitea.io/gitea/models/db"
 	repo_model "code.gitea.io/gitea/models/repo"
 	"code.gitea.io/gitea/models/unit"
+	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/util"
@@ -347,6 +348,11 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 	interval, err := time.ParseDuration(mirrorOption.Interval)
 	if err != nil || (interval != 0 && interval < setting.Mirror.MinInterval) {
 		ctx.Error(http.StatusBadRequest, "CreatePushMirror", err)
+		return
+	}
+
+	if mirrorOption.UseSSH && !git.HasSSHExecutable {
+		ctx.Error(http.StatusBadRequest, "CreatePushMirror", "SSH authentication not available.")
 		return
 	}
 
