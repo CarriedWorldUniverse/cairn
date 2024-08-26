@@ -12,11 +12,11 @@ import (
 
 	repo_model "code.gitea.io/gitea/models/repo"
 	"code.gitea.io/gitea/models/unittest"
+	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/gitrepo"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
-	"code.gitea.io/gitea/services/contexttest"
 	files_service "code.gitea.io/gitea/services/repository/files"
 
 	"github.com/stretchr/testify/assert"
@@ -247,16 +247,8 @@ func getExpectedFileResponseForRepofilesUpdate(commitID, filename, lastCommitSHA
 func TestChangeRepoFilesForCreate(t *testing.T) {
 	// setup
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		ctx, _ := contexttest.MockContext(t, "user2/repo1")
-		ctx.SetParams(":id", "1")
-		contexttest.LoadRepo(t, ctx, 1)
-		contexttest.LoadRepoCommit(t, ctx)
-		contexttest.LoadUser(t, ctx, 2)
-		contexttest.LoadGitRepo(t, ctx)
-		defer ctx.Repo.GitRepo.Close()
-
-		repo := ctx.Repo.Repository
-		doer := ctx.Doer
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		opts := getCreateRepoFilesOptions(repo)
 
 		// test
@@ -284,16 +276,8 @@ func TestChangeRepoFilesForCreate(t *testing.T) {
 func TestChangeRepoFilesForUpdate(t *testing.T) {
 	// setup
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		ctx, _ := contexttest.MockContext(t, "user2/repo1")
-		ctx.SetParams(":id", "1")
-		contexttest.LoadRepo(t, ctx, 1)
-		contexttest.LoadRepoCommit(t, ctx)
-		contexttest.LoadUser(t, ctx, 2)
-		contexttest.LoadGitRepo(t, ctx)
-		defer ctx.Repo.GitRepo.Close()
-
-		repo := ctx.Repo.Repository
-		doer := ctx.Doer
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		opts := getUpdateRepoFilesOptions(repo)
 
 		// test
@@ -318,16 +302,8 @@ func TestChangeRepoFilesForUpdate(t *testing.T) {
 func TestChangeRepoFilesForUpdateWithFileMove(t *testing.T) {
 	// setup
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		ctx, _ := contexttest.MockContext(t, "user2/repo1")
-		ctx.SetParams(":id", "1")
-		contexttest.LoadRepo(t, ctx, 1)
-		contexttest.LoadRepoCommit(t, ctx)
-		contexttest.LoadUser(t, ctx, 2)
-		contexttest.LoadGitRepo(t, ctx)
-		defer ctx.Repo.GitRepo.Close()
-
-		repo := ctx.Repo.Repository
-		doer := ctx.Doer
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		opts := getUpdateRepoFilesOptions(repo)
 		opts.Files[0].FromTreePath = "README.md"
 		opts.Files[0].TreePath = "README_new.md" // new file name, README_new.md
@@ -369,16 +345,8 @@ func TestChangeRepoFilesForUpdateWithFileMove(t *testing.T) {
 func TestChangeRepoFilesWithoutBranchNames(t *testing.T) {
 	// setup
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		ctx, _ := contexttest.MockContext(t, "user2/repo1")
-		ctx.SetParams(":id", "1")
-		contexttest.LoadRepo(t, ctx, 1)
-		contexttest.LoadRepoCommit(t, ctx)
-		contexttest.LoadUser(t, ctx, 2)
-		contexttest.LoadGitRepo(t, ctx)
-		defer ctx.Repo.GitRepo.Close()
-
-		repo := ctx.Repo.Repository
-		doer := ctx.Doer
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		opts := getUpdateRepoFilesOptions(repo)
 		opts.OldBranch = ""
 		opts.NewBranch = ""
@@ -405,15 +373,8 @@ func TestChangeRepoFilesForDelete(t *testing.T) {
 func testDeleteRepoFiles(t *testing.T, u *url.URL) {
 	// setup
 	unittest.PrepareTestEnv(t)
-	ctx, _ := contexttest.MockContext(t, "user2/repo1")
-	ctx.SetParams(":id", "1")
-	contexttest.LoadRepo(t, ctx, 1)
-	contexttest.LoadRepoCommit(t, ctx)
-	contexttest.LoadUser(t, ctx, 2)
-	contexttest.LoadGitRepo(t, ctx)
-	defer ctx.Repo.GitRepo.Close()
-	repo := ctx.Repo.Repository
-	doer := ctx.Doer
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 	opts := getDeleteRepoFilesOptions(repo)
 
 	t.Run("Delete README.md file", func(t *testing.T) {
@@ -444,16 +405,9 @@ func TestChangeRepoFilesForDeleteWithoutBranchNames(t *testing.T) {
 func testDeleteRepoFilesWithoutBranchNames(t *testing.T, u *url.URL) {
 	// setup
 	unittest.PrepareTestEnv(t)
-	ctx, _ := contexttest.MockContext(t, "user2/repo1")
-	ctx.SetParams(":id", "1")
-	contexttest.LoadRepo(t, ctx, 1)
-	contexttest.LoadRepoCommit(t, ctx)
-	contexttest.LoadUser(t, ctx, 2)
-	contexttest.LoadGitRepo(t, ctx)
-	defer ctx.Repo.GitRepo.Close()
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 
-	repo := ctx.Repo.Repository
-	doer := ctx.Doer
 	opts := getDeleteRepoFilesOptions(repo)
 	opts.OldBranch = ""
 	opts.NewBranch = ""
@@ -474,16 +428,8 @@ func testDeleteRepoFilesWithoutBranchNames(t *testing.T, u *url.URL) {
 func TestChangeRepoFilesErrors(t *testing.T) {
 	// setup
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		ctx, _ := contexttest.MockContext(t, "user2/repo1")
-		ctx.SetParams(":id", "1")
-		contexttest.LoadRepo(t, ctx, 1)
-		contexttest.LoadRepoCommit(t, ctx)
-		contexttest.LoadUser(t, ctx, 2)
-		contexttest.LoadGitRepo(t, ctx)
-		defer ctx.Repo.GitRepo.Close()
-
-		repo := ctx.Repo.Repository
-		doer := ctx.Doer
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 
 		t.Run("bad branch", func(t *testing.T) {
 			opts := getUpdateRepoFilesOptions(repo)
