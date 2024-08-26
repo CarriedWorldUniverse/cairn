@@ -92,6 +92,7 @@ func SettingsCtxData(ctx *context.Context) {
 		return
 	}
 	ctx.Data["PushMirrors"] = pushMirrors
+	ctx.Data["CanUseSSHMirroring"] = git.HasSSHExecutable
 }
 
 // Units show a repositorys unit settings page
@@ -640,6 +641,11 @@ func SettingsPost(ctx *context.Context) {
 		if form.PushMirrorUseSSH && (form.PushMirrorUsername != "" || form.PushMirrorPassword != "") {
 			ctx.Data["Err_PushMirrorUseSSH"] = true
 			ctx.RenderWithErr(ctx.Tr("repo.mirror_denied_combination"), tplSettingsOptions, &form)
+			return
+		}
+
+		if form.PushMirrorUseSSH && !git.HasSSHExecutable {
+			ctx.RenderWithErr(ctx.Tr("repo.mirror_use_ssh.not_available"), tplSettingsOptions, &form)
 			return
 		}
 

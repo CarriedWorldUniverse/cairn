@@ -38,6 +38,8 @@ var (
 	InvertedGitFlushEnv    bool // 2.43.1
 	SupportCheckAttrOnBare bool // >= 2.40
 
+	HasSSHExecutable bool
+
 	gitVersion *version.Version
 )
 
@@ -202,6 +204,10 @@ func InitFull(ctx context.Context) (err error) {
 		}
 		globalCommandArgs = append(globalCommandArgs, "-c", "filter.lfs.required=", "-c", "filter.lfs.smudge=", "-c", "filter.lfs.clean=")
 	}
+
+	// Detect the presence of the ssh executable in $PATH.
+	_, err = exec.LookPath("ssh")
+	HasSSHExecutable = err == nil
 
 	return syncGitConfig()
 }
