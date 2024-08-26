@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	code.forgejo.org/f3/gof3/v3 v3.7.0
 	code.forgejo.org/forgejo/reply v1.0.2
+	code.forgejo.org/go-chi/captcha v0.0.0-20240827192619-ac88f17cdd8e
 	code.forgejo.org/go-chi/session v0.0.0-20240825010209-bd25d509c8bf
 	code.gitea.io/actions-proto-go v0.4.0
 	code.gitea.io/gitea-vet v0.2.3
@@ -13,7 +14,6 @@ require (
 	connectrpc.com/connect v1.16.2
 	gitea.com/go-chi/binding v0.0.0-20240430071103-39a851e106ed
 	gitea.com/go-chi/cache v0.2.0
-	gitea.com/go-chi/captcha v0.0.0-20240315150714-fb487f629098
 	gitea.com/lunny/levelqueue v0.4.2-0.20230414023320-3c0159fe0fe4
 	github.com/42wim/sshsig v0.0.0-20211121163825-841cf5bbc121
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
