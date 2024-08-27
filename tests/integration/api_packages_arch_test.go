@@ -92,7 +92,7 @@ MZDP1PBie6GqDV2GuPz+0XXmul/ds+XysG19HIkKbJ+cQKp5o7Y0tI7EHM8GhwMl7MjgpQGj5nuv
 0u2hqt4NXPNYqaMm9bFnnIUxEN82HgNWBcXf2baWKOdGzPzCuWg2fAM4zxHnBWcimxLXiJgaI8mU
 J/QqTPWE0nJf1PW/J9yFQVR1Xo0TJyiX8/ObwmbqUPpxRGjKlYRBvn0jbTdUAENBSn+QVcASRGFE
 SB9OM2B8Bg4jR/oojs8Beoq7zbIblgAAAACfRtXvhmznOgABzgSAGAAAKklb4rHEZ/sCAAAAAARZ
-Wg==`), // this is tar.xz file
+Wg==`),
 		"otherZST": unPack(`
 KLUv/QRYbRMABuOHS9BSNQdQ56F+xNFoV3CijY54JYt3VqV1iUU3xmj00y2pyBOCuokbhDYpvNsj
 ZJeCxqH+nQFpMf4Wa92okaZoF4eH6HsXXCBo+qy3Fn4AigBgAEaYrLCQEuAom6YbHyuKZAFYksqi
@@ -105,7 +105,7 @@ gTi+jXrXWOe5P/jZxOeod/287v6JljzNP99RNM0a+/x4ljz3LNV2t5v9qHfW2Pyg24u54zSfObWX
 Y9bYrCTHtwdfPPPOYiU5fvB5FssfNN2V5EIPfg9LnM+JhtVEO8+FZw5LXA068YNPhimu9sHPQiWv
 qc6fE9BTnxIe/LTKatab+WYu7T74uWNRxJW5W5Ux0bDLuG1ioCwjg4DvGgBcgB8cUDHJ1RQ89neE
 wvjbNUMiIZdo5hbHgEpANwMkDnL0Jr7kVFg+0pZKjBkmklNgBH1YI8dQOAAKbr6EF5wYM80KWnAd
-nYARrByncQ==`), // this is zstd file
+nYARrByncQ==`),
 		"otherGZ": unPack(`
 H4sIAAAAAAAAA9PzDQlydWWgKTAwMDAzMVEA0UCAThsYGBuZKRiamBmbm5qZGJqbKBgYGpobGzMo
 GNDWWRBQWlySWAR0SlF+fgk+dYTk0T03RIB8NweEwVx71tDviIFA60O75Rtc5s+9YbxteUHzhUWi
@@ -118,7 +118,7 @@ KpSkFpcYgfhJicUIfkVKYkkikAcUL6ksSLUF0iA1QDOAgkDj9Qx0DUECKanFyVBNCgWJydmJ6alc
 pUU5QKGMkpKCYit9/dSKxNyCnFS95Pxcfa6k0sycFKDRIIsMzQ0tTS2NDSxMuKA6QWaH5mXn5Zfn
 KQRAhbiKM6tAqg24EouSM4CMxLxKrpzM5NQ8sGuTgUkgP5crOT8vDShYAhSpKs7gKijKL8sEOg2k
 HMhNSS1IzUsBcpJAPFAwwUXSM0u4BjoaR8EoGAWjgGQAAILFeyQADAAA
-`), // this is tar.gz file
+`),
 	}
 
 	t.Run("RepositoryKey", func(t *testing.T) {
@@ -280,8 +280,8 @@ HMhNSS1IzUsBcpJAPFAwwUXSM0u4BjoaR8EoGAWjgGQAAILFeyQADAAA
 		})
 
 		for tp, key := range map[string]string{
-			"XZ":  "otherXZ",
 			"GZ":  "otherGZ",
+			"XZ":  "otherXZ",
 			"ZST": "otherZST",
 		} {
 			t.Run(fmt.Sprintf("Upload%s[%s]", tp, group), func(t *testing.T) {
@@ -289,12 +289,16 @@ HMhNSS1IzUsBcpJAPFAwwUXSM0u4BjoaR8EoGAWjgGQAAILFeyQADAAA
 				req := NewRequestWithBody(t, "PUT", groupURL, bytes.NewReader(pkgs[key])).
 					AddBasicAuth(user.Name)
 				MakeRequest(t, req, http.StatusCreated)
+
+				req = NewRequest(t, "GET", groupURL+"/x86_64/test2-1.0.0-1-any.pkg.tar."+strings.ToLower(tp))
+				resp := MakeRequest(t, req, http.StatusOK)
+				require.Equal(t, pkgs[key], resp.Body.Bytes())
+
 				req = NewRequestWithBody(t, "DELETE", groupURL+"/test2/1.0.0-1", nil).
 					AddBasicAuth(user.Name)
 				MakeRequest(t, req, http.StatusNoContent)
 			})
 		}
-
 	}
 }
 
