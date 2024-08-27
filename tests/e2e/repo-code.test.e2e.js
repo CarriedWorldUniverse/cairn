@@ -51,3 +51,29 @@ test('Line Range Selection', async ({browser}, workerInfo) => {
   await page.goto(`${filePath}#L1-L100`);
   await assertSelectedLines(page, ['1', '2', '3']);
 });
+
+test('Readable diff', async ({page}, workerInfo) => {
+  // remove this when the test covers more (e.g. accessibility scans or interactive behaviour)
+  test.skip(workerInfo.project.name !== 'firefox', 'This currently only tests the backend-generated HTML code and it is not necessary to test with multiple browsers.');
+  const expectedDiffs = [
+    {id: 'testfile-2', removed: 'e', added: 'a'},
+    {id: 'testfile-3', removed: 'allo', added: 'ola'},
+    {id: 'testfile-4', removed: 'hola', added: 'native'},
+    {id: 'testfile-5', removed: 'native', added: 'ubuntu-latest'},
+    {id: 'testfile-6', added: '- runs-on: '},
+    {id: 'testfile-7', removed: 'ubuntu', added: 'debian'},
+  ];
+  for (const thisDiff of expectedDiffs) {
+    const response = await page.goto('/user2/diff-test/commits/branch/main');
+    await expect(response?.status()).toBe(200); // Status OK
+    await page.getByText(`Patch: ${thisDiff.id}`).click();
+    if (thisDiff.removed) {
+      await expect(page.getByText(thisDiff.removed, {exact: true})).toHaveClass(/removed-code/);
+      await expect(page.getByText(thisDiff.removed, {exact: true})).toHaveCSS('background-color', 'rgb(252, 165, 165)');
+    }
+    if (thisDiff.added) {
+      await expect(page.getByText(thisDiff.added, {exact: true})).toHaveClass(/added-code/);
+      await expect(page.getByText(thisDiff.added, {exact: true})).toHaveCSS('background-color', 'rgb(134, 239, 172)');
+    }
+  }
+});

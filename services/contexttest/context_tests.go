@@ -136,14 +136,15 @@ func LoadRepoCommit(t *testing.T, ctx gocontext.Context) {
 		assert.FailNow(t, "context is not *context.Context or *context.APIContext")
 	}
 
-	gitRepo, err := gitrepo.OpenRepository(ctx, repo.Repository)
-	require.NoError(t, err)
-	defer gitRepo.Close()
-	branch, err := gitRepo.GetHEADBranch()
+	if repo.GitRepo == nil {
+		assert.FailNow(t, "must call LoadGitRepo")
+	}
+
+	branch, err := repo.GitRepo.GetHEADBranch()
 	require.NoError(t, err)
 	assert.NotNil(t, branch)
 	if branch != nil {
-		repo.Commit, err = gitRepo.GetBranchCommit(branch.Name)
+		repo.Commit, err = repo.GitRepo.GetBranchCommit(branch.Name)
 		require.NoError(t, err)
 	}
 }
@@ -176,10 +177,20 @@ func LoadOrganization(t *testing.T, ctx gocontext.Context, orgID int64) {
 
 // LoadGitRepo load a git repo into a test context. Requires that ctx.Repo has
 // already been populated.
-func LoadGitRepo(t *testing.T, ctx *context.Context) {
-	require.NoError(t, ctx.Repo.Repository.LoadOwner(ctx))
+func LoadGitRepo(t *testing.T, ctx gocontext.Context) {
+	var repo *context.Repository
+	switch ctx := ctx.(type) {
+	case *context.Context:
+		repo = ctx.Repo
+	case *context.APIContext:
+		repo = ctx.Repo
+	default:
+		assert.FailNow(t, "context is not *context.Context or *context.APIContext")
+	}
+
+	require.NoError(t, repo.Repository.LoadOwner(ctx))
 	var err error
-	ctx.Repo.GitRepo, err = gitrepo.OpenRepository(ctx, ctx.Repo.Repository)
+	repo.GitRepo, err = gitrepo.OpenRepository(ctx, repo.Repository)
 	require.NoError(t, err)
 }
 

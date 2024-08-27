@@ -60,7 +60,10 @@ func mergeLanguageStats(stats map[string]int64) map[string]int64 {
 func (repo *Repository) GetLanguageStats(commitID string) (map[string]int64, error) {
 	// We will feed the commit IDs in order into cat-file --batch, followed by blobs as necessary.
 	// so let's create a batch stdin and stdout
-	batchStdinWriter, batchReader, cancel := repo.CatFileBatch(repo.Ctx)
+	batchStdinWriter, batchReader, cancel, err := repo.CatFileBatch(repo.Ctx)
+	if err != nil {
+		return nil, err
+	}
 	defer cancel()
 
 	writeID := func(id string) error {

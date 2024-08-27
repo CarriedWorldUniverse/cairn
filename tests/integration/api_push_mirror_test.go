@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -23,6 +24,7 @@ import (
 	"code.gitea.io/gitea/models/unit"
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
+	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
@@ -141,6 +143,11 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 }
 
 func TestAPIPushMirrorSSH(t *testing.T) {
+	_, err := exec.LookPath("ssh")
+	if err != nil {
+		t.Skip("SSH executable not present")
+	}
+
 	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
@@ -176,6 +183,22 @@ func TestAPIPushMirrorSSH(t *testing.T) {
 			var apiError api.APIError
 			DecodeJSON(t, resp, &apiError)
 			assert.EqualValues(t, "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_passoword'", apiError.Message)
+		})
+
+		t.Run("SSH not available", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			defer test.MockVariableValue(&git.HasSSHExecutable, false)()
+
+			req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/push_mirrors", srcRepo.FullName()), &api.CreatePushMirrorOption{
+				RemoteAddress: sshURL,
+				Interval:      "8h",
+				UseSSH:        true,
+			}).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusBadRequest)
+
+			var apiError api.APIError
+			DecodeJSON(t, resp, &apiError)
+			assert.EqualValues(t, "SSH authentication not available.", apiError.Message)
 		})
 
 		t.Run("Normal", func(t *testing.T) {
