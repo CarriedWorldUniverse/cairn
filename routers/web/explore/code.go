@@ -35,11 +35,9 @@ func Code(ctx *context.Context) {
 	language := ctx.FormTrim("l")
 	keyword := ctx.FormTrim("q")
 
-	isFuzzy := true
+	isFuzzy := ctx.FormOptionalBool("fuzzy").ValueOrDefault(true)
 	if mode := ctx.FormTrim("mode"); len(mode) > 0 {
 		isFuzzy = mode == "fuzzy"
-	} else {
-		isFuzzy = ctx.FormOptionalBool("fuzzy").ValueOrDefault(true)
 	}
 
 	ctx.Data["Keyword"] = keyword
