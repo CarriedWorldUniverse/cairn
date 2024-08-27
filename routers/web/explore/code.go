@@ -45,7 +45,6 @@ func Code(ctx *context.Context) {
 	ctx.Data["Keyword"] = keyword
 	ctx.Data["Language"] = language
 	ctx.Data["CodeSearchOptions"] = []string{"exact", "fuzzy"}
-	ctx.Data["IsFuzzy"] = isFuzzy
 	if isFuzzy {
 		ctx.Data["CodeSearchMode"] = "fuzzy"
 	} else {
