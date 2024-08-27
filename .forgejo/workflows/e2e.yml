@@ -22,7 +22,7 @@ jobs:
           go-version-file: "go.mod"
       - run: |
           apt-get -qq update
-          apt-get -qq install -q sudo
+          apt-get -qq install -q sudo git git-lfs
           sed -i -e 's/%sudo.*/%sudo   ALL=(ALL:ALL) NOPASSWD:ALL/' /etc/sudoers
           git config --add safe.directory '*'
           adduser --quiet --comment forgejo --disabled-password forgejo
@@ -30,6 +30,8 @@ jobs:
           chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-frontend frontend deps-backend'
+      - run: |
+          su forgejo -c 'make backend'
       - run: |
           su forgejo -c 'make generate test-e2e-sqlite'
         timeout-minutes: 40

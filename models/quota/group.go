@@ -230,9 +230,9 @@ func (g *Group) Evaluate(used Used, forSubject LimitSubject) (bool, bool) {
 }
 
 func (gl *GroupList) Evaluate(used Used, forSubject LimitSubject) bool {
-	// If there are no groups, default to success:
+	// If there are no groups, use the configured defaults:
 	if gl == nil || len(*gl) == 0 {
-		return true
+		return EvaluateDefault(used, forSubject)
 	}
 
 	for _, group := range *gl {

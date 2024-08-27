@@ -15,7 +15,7 @@ import (
 	"code.gitea.io/gitea/routers"
 	"code.gitea.io/gitea/tests"
 
-	"gitea.com/go-chi/session"
+	"code.forgejo.org/go-chi/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
