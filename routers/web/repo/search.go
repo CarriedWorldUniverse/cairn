@@ -63,8 +63,6 @@ func Search(ctx *context.Context) {
 
 	ctx.Data["Keyword"] = keyword
 	ctx.Data["Language"] = language
-	ctx.Data["IsFuzzy"] = mode == FuzzySearchMode
-	ctx.Data["IsRegExp"] = mode == RegExpSearchMode
 	ctx.Data["CodeSearchMode"] = mode.String()
 	ctx.Data["PageIsViewCode"] = true
 
