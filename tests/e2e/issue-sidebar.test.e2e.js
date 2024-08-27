@@ -51,6 +51,22 @@ test('Pull: Toggle WIP', async ({browser}, workerInfo) => {
   // remove again
   await click_toggle_wip({page});
   await check_wip({page}, false);
+  // check maximum title length is handled gracefully
+  const maxLenStr = prTitle + 'a'.repeat(240);
+  await page.locator('#issue-title-edit-show').click();
+  await page.locator('#issue-title-editor input').fill(maxLenStr);
+  await page.getByText('Save').click();
+  await page.waitForLoadState('networkidle');
+  await click_toggle_wip({page});
+  await check_wip({page}, true);
+  await click_toggle_wip({page});
+  await check_wip({page}, false);
+  await expect(page.locator('h1')).toContainText(maxLenStr);
+  // restore original title
+  await page.locator('#issue-title-edit-show').click();
+  await page.locator('#issue-title-editor input').fill(prTitle);
+  await page.getByText('Save').click();
+  await check_wip({page}, false);
 });
 
 test('Issue: Labels', async ({browser}, workerInfo) => {
