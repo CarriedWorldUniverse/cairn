@@ -481,7 +481,8 @@ func SettingsPost(ctx *context.Context) {
 		}
 		remoteAddress, err := util.SanitizeURL(address)
 		if err != nil {
-			ctx.ServerError("SanitizeURL", err)
+			ctx.Data["Err_MirrorAddress"] = true
+			handleSettingRemoteAddrError(ctx, err, form)
 			return
 		}
 		pullMirror.RemoteAddress = remoteAddress
@@ -667,7 +668,8 @@ func SettingsPost(ctx *context.Context) {
 
 		remoteAddress, err := util.SanitizeURL(address)
 		if err != nil {
-			ctx.ServerError("SanitizeURL", err)
+			ctx.Data["Err_PushMirrorAddress"] = true
+			handleSettingRemoteAddrError(ctx, err, form)
 			return
 		}
 
