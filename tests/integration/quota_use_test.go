@@ -548,6 +548,42 @@ func TestGitQuotaEnforcement(t *testing.T) {
 	})
 }
 
+func TestQuotaConfigDefault(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		env := createQuotaWebEnv(t)
+		defer env.Cleanup()
+
+		t.Run("with config-based default", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			defer test.MockVariableValue(&setting.Quota.Default.Total, 0)()
+
+			env.As(t, env.Users.Ungrouped).
+				With(Context{
+					Payload: &Payload{
+						"uid":       env.Users.Ungrouped.ID().AsString(),
+						"repo_name": "quota-config-default",
+					},
+				}).
+				PostToPage("/repo/create").
+				ExpectStatus(http.StatusRequestEntityTooLarge)
+		})
+
+		t.Run("without config-based default", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			env.As(t, env.Users.Ungrouped).
+				With(Context{
+					Payload: &Payload{
+						"uid":       env.Users.Ungrouped.ID().AsString(),
+						"repo_name": "quota-config-default",
+					},
+				}).
+				PostToPage("/repo/create").
+				ExpectStatus(http.StatusSeeOther)
+		})
+	})
+}
+
 /**********************
  * Here be dragons!   *
  *                    *
@@ -568,6 +604,7 @@ type quotaWebEnv struct {
 type quotaWebEnvUsers struct {
 	Limited     quotaWebEnvUser
 	Contributor quotaWebEnvUser
+	Ungrouped   quotaWebEnvUser
 }
 
 type quotaWebEnvOrgs struct {
@@ -1005,8 +1042,7 @@ func createQuotaWebEnv(t *testing.T) *quotaWebEnv {
 
 	// *** helpers ***
 
-	// Create a user, its quota group & rule
-	makeUser := func(t *testing.T, limit int64) quotaWebEnvUser {
+	makeUngroupedUser := func(t *testing.T) quotaWebEnvUser {
 		t.Helper()
 
 		user := quotaWebEnvUser{}
@@ -1020,6 +1056,16 @@ func createQuotaWebEnv(t *testing.T) *quotaWebEnv {
 		// Create a repository for the user
 		repo, _, _ := tests.CreateDeclarativeRepoWithOptions(t, user.User, tests.DeclarativeRepoOptions{})
 		user.Repo = repo
+
+		return user
+	}
+
+	// Create a user, its quota group & rule
+	makeUser := func(t *testing.T, limit int64) quotaWebEnvUser {
+		t.Helper()
+
+		user := makeUngroupedUser(t)
+		userName := user.User.Name
 
 		// Create a quota group for them
 		group, err := quota_model.CreateGroup(db.DefaultContext, userName)
@@ -1094,6 +1140,8 @@ func createQuotaWebEnv(t *testing.T) *quotaWebEnv {
 	env.Users.Contributor = makeUser(t, int64(0))
 	env.Orgs.Limited = makeOrg(t, env.Users.Limited.User, int64(0))
 	env.Orgs.Unlimited = makeOrg(t, env.Users.Limited.User, int64(-1))
+
+	env.Users.Ungrouped = makeUngroupedUser(t)
 
 	return &env
 }
