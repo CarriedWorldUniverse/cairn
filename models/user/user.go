@@ -711,11 +711,11 @@ func createUser(ctx context.Context, u *User, createdByAdmin bool, overwriteDefa
 	}
 
 	if createdByAdmin {
-		if err := ValidateEmailForAdmin(u.Email); err != nil {
+		if err := validation.ValidateEmailForAdmin(u.Email); err != nil {
 			return err
 		}
 	} else {
-		if err := ValidateEmail(u.Email); err != nil {
+		if err := validation.ValidateEmail(u.Email); err != nil {
 			return err
 		}
 	}
@@ -879,7 +879,7 @@ func (u User) Validate() []string {
 	if err := ValidateUser(&u); err != nil {
 		result = append(result, err.Error())
 	}
-	if err := ValidateEmail(u.Email); err != nil {
+	if err := validation.ValidateEmail(u.Email); err != nil {
 		result = append(result, err.Error())
 	}
 	return result
