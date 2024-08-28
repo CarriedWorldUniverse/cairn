@@ -95,9 +95,9 @@ func testSearchRepo(t *testing.T, indexer bool) {
 		testSearch(t, "/user2/glob/search?q=file5&mode=union&page=1", []string{}, indexer)
 	}
 
-	testSearch(t, "/user2/glob/search?q=file3&page=1&mode=fuzzy", []string{"x/b.txt"}, indexer)
-	testSearch(t, "/user2/glob/search?q=file4&page=1&mode=fuzzy", []string{}, indexer)
-	testSearch(t, "/user2/glob/search?q=file5&page=1&mode=fuzzy", []string{}, indexer)
+	testSearch(t, "/user2/glob/search?q=file3&page=1&mode=exact", []string{"x/b.txt"}, indexer)
+	testSearch(t, "/user2/glob/search?q=file4&page=1&mode=exact", []string{}, indexer)
+	testSearch(t, "/user2/glob/search?q=file5&page=1&mode=exact", []string{}, indexer)
 }
 
 func testSearch(t *testing.T, url string, expected []string, indexer bool) {
