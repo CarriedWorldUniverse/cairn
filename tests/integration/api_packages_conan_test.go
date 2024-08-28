@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	auth_model "code.gitea.io/gitea/models/auth"
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/models/packages"
 	conan_model "code.gitea.io/gitea/models/packages/conan"
@@ -222,6 +223,45 @@ func TestPackageConan(t *testing.T) {
 			resp := MakeRequest(t, req, http.StatusOK)
 
 			assert.Equal(t, "revisions", resp.Header().Get("X-Conan-Server-Capabilities"))
+		})
+
+		t.Run("Token Scope Authentication", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			session := loginUser(t, user.Name)
+
+			testCase := func(t *testing.T, scope auth_model.AccessTokenScope, expectedStatusCode int) {
+				t.Helper()
+
+				token := getTokenForLoggedInUser(t, session, scope)
+
+				req := NewRequest(t, "GET", fmt.Sprintf("%s/v1/users/authenticate", url)).
+					AddTokenAuth(token)
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				body := resp.Body.String()
+				assert.NotEmpty(t, body)
+
+				recipeURL := fmt.Sprintf("%s/v1/conans/%s/%s/%s/%s", url, "TestScope", version1, "testing", channel1)
+
+				req = NewRequestWithJSON(t, "POST", fmt.Sprintf("%s/upload_urls", recipeURL), map[string]int64{
+					conanfileName: 64,
+					"removed.txt": 0,
+				}).AddTokenAuth(token)
+				MakeRequest(t, req, expectedStatusCode)
+			}
+
+			t.Run("Read permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeReadPackage, http.StatusUnauthorized)
+			})
+
+			t.Run("Write permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeWritePackage, http.StatusOK)
+			})
 		})
 
 		token := ""
@@ -481,6 +521,43 @@ func TestPackageConan(t *testing.T) {
 
 		token := ""
 
+		t.Run("Token Scope Authentication", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			session := loginUser(t, user.Name)
+
+			testCase := func(t *testing.T, scope auth_model.AccessTokenScope, expectedStatusCode int) {
+				t.Helper()
+
+				token := getTokenForLoggedInUser(t, session, scope)
+
+				req := NewRequest(t, "GET", fmt.Sprintf("%s/v2/users/authenticate", url)).
+					AddTokenAuth(token)
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				body := resp.Body.String()
+				assert.NotEmpty(t, body)
+
+				recipeURL := fmt.Sprintf("%s/v2/conans/%s/%s/%s/%s/revisions/%s", url, "TestScope", version1, "testing", channel1, revision1)
+
+				req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/files/%s", recipeURL, conanfileName), strings.NewReader("Doesn't need to be valid")).
+					AddTokenAuth("Bearer " + body)
+				MakeRequest(t, req, expectedStatusCode)
+			}
+
+			t.Run("Read permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeReadPackage, http.StatusUnauthorized)
+			})
+
+			t.Run("Write permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeWritePackage, http.StatusCreated)
+			})
+		})
+
 		t.Run("Authenticate", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
@@ -512,7 +589,7 @@ func TestPackageConan(t *testing.T) {
 
 				pvs, err := packages.GetVersionsByPackageType(db.DefaultContext, user.ID, packages.TypeConan)
 				require.NoError(t, err)
-				assert.Len(t, pvs, 2)
+				assert.Len(t, pvs, 3)
 			})
 		})
 
