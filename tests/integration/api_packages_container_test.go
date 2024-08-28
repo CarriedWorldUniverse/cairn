@@ -78,6 +78,7 @@ func TestPackageContainer(t *testing.T) {
 	indexManifestContent := `{"schemaVersion":2,"mediaType":"` + oci.MediaTypeImageIndex + `","manifests":[{"mediaType":"application/vnd.docker.distribution.manifest.v2+json","digest":"` + manifestDigest + `","platform":{"os":"linux","architecture":"arm","variant":"v7"}},{"mediaType":"` + oci.MediaTypeImageManifest + `","digest":"` + untaggedManifestDigest + `","platform":{"os":"linux","architecture":"arm64","variant":"v8"}}]}`
 
 	anonymousToken := ""
+	readUserToken := ""
 	userToken := ""
 
 	t.Run("Authenticate", func(t *testing.T) {
@@ -140,6 +141,30 @@ func TestPackageContainer(t *testing.T) {
 			req = NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL)).
 				AddTokenAuth(userToken)
 			MakeRequest(t, req, http.StatusOK)
+
+			// Token that should enforce the read scope.
+			t.Run("Read scope", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				session := loginUser(t, user.Name)
+				token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadPackage)
+
+				req := NewRequest(t, "GET", fmt.Sprintf("%sv2/token", setting.AppURL))
+				req.SetBasicAuth(user.Name, token)
+
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				tokenResponse := &TokenResponse{}
+				DecodeJSON(t, resp, &tokenResponse)
+
+				assert.NotEmpty(t, tokenResponse.Token)
+
+				readUserToken = fmt.Sprintf("Bearer %s", tokenResponse.Token)
+
+				req = NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL)).
+					AddTokenAuth(readUserToken)
+				MakeRequest(t, req, http.StatusOK)
+			})
 		})
 	})
 
@@ -161,6 +186,10 @@ func TestPackageContainer(t *testing.T) {
 
 				req := NewRequest(t, "POST", fmt.Sprintf("%s/blobs/uploads", url)).
 					AddTokenAuth(anonymousToken)
+				MakeRequest(t, req, http.StatusUnauthorized)
+
+				req = NewRequest(t, "POST", fmt.Sprintf("%s/blobs/uploads", url)).
+					AddTokenAuth(readUserToken)
 				MakeRequest(t, req, http.StatusUnauthorized)
 
 				req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", url, unknownDigest), bytes.NewReader(blobContent)).
@@ -315,6 +344,11 @@ func TestPackageContainer(t *testing.T) {
 
 						req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", url, tag), strings.NewReader(manifestContent)).
 							AddTokenAuth(anonymousToken).
+							SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+						MakeRequest(t, req, http.StatusUnauthorized)
+
+						req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", url, tag), strings.NewReader(manifestContent)).
+							AddTokenAuth(readUserToken).
 							SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
 						MakeRequest(t, req, http.StatusUnauthorized)
 
@@ -520,6 +554,10 @@ func TestPackageContainer(t *testing.T) {
 
 				req = NewRequest(t, "HEAD", fmt.Sprintf("%s/blobs/%s", url, blobDigest)).
 					AddTokenAuth(anonymousToken)
+				MakeRequest(t, req, http.StatusOK)
+
+				req = NewRequest(t, "HEAD", fmt.Sprintf("%s/blobs/%s", url, blobDigest)).
+					AddTokenAuth(readUserToken)
 				MakeRequest(t, req, http.StatusOK)
 			})
 
