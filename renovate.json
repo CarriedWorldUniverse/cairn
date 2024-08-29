@@ -18,13 +18,13 @@
   "packageRules": [
     {
       "description": "Require approval for python minor version",
-      "matchDepNames": ["python"],
+      "matchPackageNames": ["containerbase/python-prebuild", "python"],
       "matchUpdateTypes": ["minor"],
       "dependencyDashboardApproval": true
     },
     {
       "description": "Require dashboard approval for some deps",
-      "matchDepNames": [
+      "matchPackageNames": [
         "docker.io/bitnami/minio",
         "github.com/go-ap/activitypub",
         "github.com/nektos/act",
@@ -34,7 +34,7 @@
     },
     {
       "description": "Schedule some deps less frequently",
-      "matchDepNames": [
+      "matchPackageNames": [
         "code.forgejo.org/f3/gof3/v3",
         "github.com/google/pprof",
         "github.com/golangci/misspell/cmd/misspell"
@@ -43,7 +43,7 @@
     },
     {
       "description": "elasticsearch CI images are published about once a month and do not use semantic versioning or short tags",
-      "matchDepNames": ["elasticsearch"],
+      "matchPackageNames": ["elasticsearch"],
       "extends": ["schedule:quarterly"]
     },
     {
@@ -58,7 +58,7 @@
     },
     {
       "description": "Group nodejs packages",
-      "matchDepNames": [
+      "matchPackageNames": [
         "code.forgejo.org/oci/node",
         "docker.io/library/node",
         "docker.io/node",
@@ -83,7 +83,8 @@
     },
     {
       "description": "Split minor and patch updates",
-      "matchDepNames": [
+      "matchPackageNames": [
+        "containerbase/python-prebuild",
         "github.com/urfave/cli/v2",
         "python",
         "swagger-ui-dist",
@@ -93,7 +94,11 @@
     },
     {
       "description": "Automerge patch updates",
-      "matchDepNames": ["vue", "github.com/urfave/cli/v2", "swagger-ui-dist"],
+      "matchPackageNames": [
+        "vue",
+        "github.com/urfave/cli/v2",
+        "swagger-ui-dist"
+      ],
       "matchUpdateTypes": ["patch"],
       "automerge": true
     },
@@ -131,35 +136,34 @@
     {
       "description": "Automerge some packages when CI succeeds",
       "extends": ["packages:linters", "packages:test"],
-      "matchDepNames": [
+      "matchPackageNames": [
+        "@eslint-community/**",
+        "@playwright/**",
+        "@stoplight/spectral-cli",
+        "@stylistic/**",
+        "djlint",
         "github.com/editorconfig-checker/editorconfig-checker/v2/cmd/editorconfig-checker",
         "github.com/golangci/golangci-lint/cmd/golangci-lint",
         "github.com/go-testfixtures/testfixtures",
         "github.com/PuerkitoBio/goquery",
         "happy-dom",
         "markdownlint-cli",
+        "mcr.microsoft.com/devcontainers/**",
         "mvdan.cc/gofumpt",
         "updates",
         "vite-string-plugin",
         "@vue/test-utils"
       ],
-      "automerge": true,
-      "matchPackageNames": [
-        "@eslint-community/**",
-        "@playwright/**",
-        "@stoplight/spectral-cli",
-        "@stylistic/**",
-        "mcr.microsoft.com/devcontainers/**"
-      ]
+      "automerge": true
     },
     {
       "description": "Hold back on some package updates for a few days",
-      "matchDepNames": ["monaco-editor"],
+      "matchPackageNames": ["monaco-editor"],
       "minimumReleaseAge": "30 days"
     },
     {
       "description": "disallow `eslint-plugin-no-use-extend-native` v0.6.0+, requires eslint v9",
-      "matchDepNames": ["eslint-plugin-no-use-extend-native"],
+      "matchPackageNames": ["eslint-plugin-no-use-extend-native"],
       "allowedVersions": "<0.6.0"
     },
     {
