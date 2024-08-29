@@ -51,7 +51,7 @@ import (
 
 	_ "code.gitea.io/gitea/modules/session" // to registers all internal adapters
 
-	"gitea.com/go-chi/captcha"
+	"code.forgejo.org/go-chi/captcha"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/klauspost/compress/gzhttp"
@@ -254,7 +254,7 @@ func Routes() *web.Route {
 
 	if setting.Service.EnableCaptcha {
 		// The captcha http.Handler should only fire on /captcha/* so we can just mount this on that url
-		routes.Methods("GET,HEAD", "/captcha/*", append(mid, captcha.Captchaer(context.GetImageCaptcha()))...)
+		routes.Methods("GET,HEAD", "/captcha/*", append(mid, captcha.Server(captcha.StdWidth, captcha.StdHeight).ServeHTTP)...)
 	}
 
 	if setting.Metrics.Enabled {
