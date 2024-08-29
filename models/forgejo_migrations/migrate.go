@@ -80,6 +80,8 @@ var migrations = []*Migration{
 	NewMigration("Creating Quota-related tables", CreateQuotaTables),
 	// v21 -> v22
 	NewMigration("Add SSH keypair to `pull_mirror` table", AddSSHKeypairToPushMirror),
+	// v22 -> v23
+	NewMigration("Add `legacy` to `web_authn_credential` table", AddLegacyToWebAuthnCredential),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.

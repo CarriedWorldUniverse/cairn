@@ -56,13 +56,23 @@ func TestWebAuthnCredential_UpdateLargeCounter(t *testing.T) {
 	unittest.AssertExistsIf(t, true, &auth_model.WebAuthnCredential{ID: 1, SignCount: 0xffffffff})
 }
 
+func TestWebAuthenCredential_UpdateFromLegacy(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	cred := unittest.AssertExistsAndLoadBean(t, &auth_model.WebAuthnCredential{ID: 1, Legacy: true})
+	cred.Legacy = false
+	cred.BackupEligible = true
+	cred.BackupState = true
+	require.NoError(t, cred.UpdateFromLegacy(db.DefaultContext))
+	unittest.AssertExistsIf(t, true, &auth_model.WebAuthnCredential{ID: 1, BackupEligible: true, BackupState: true}, "legacy = false")
+}
+
 func TestCreateCredential(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
-	res, err := auth_model.CreateCredential(db.DefaultContext, 1, "WebAuthn Created Credential", &webauthn.Credential{ID: []byte("Test")})
+	res, err := auth_model.CreateCredential(db.DefaultContext, 1, "WebAuthn Created Credential", &webauthn.Credential{ID: []byte("Test"), Flags: webauthn.CredentialFlags{BackupEligible: true, BackupState: true}})
 	require.NoError(t, err)
 	assert.Equal(t, "WebAuthn Created Credential", res.Name)
 	assert.Equal(t, []byte("Test"), res.CredentialID)
 
-	unittest.AssertExistsIf(t, true, &auth_model.WebAuthnCredential{Name: "WebAuthn Created Credential", UserID: 1})
+	unittest.AssertExistsIf(t, true, &auth_model.WebAuthnCredential{Name: "WebAuthn Created Credential", UserID: 1, BackupEligible: true, BackupState: true}, "legacy = false")
 }
