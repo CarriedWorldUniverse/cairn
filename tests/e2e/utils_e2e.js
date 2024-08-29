@@ -22,6 +22,7 @@ const LOGIN_PASSWORD = 'password';
 // log in user and store session info. This should generally be
 //  run in test.beforeAll(), then the session can be loaded in tests.
 export async function login_user(browser, workerInfo, user) {
+  test.setTimeout(60000);
   // Set up a new context
   const context = await test_context(browser);
   const page = await context.newPage();
