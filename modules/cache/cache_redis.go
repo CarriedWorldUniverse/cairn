@@ -12,12 +12,11 @@ import (
 	"code.gitea.io/gitea/modules/nosql"
 
 	"code.forgejo.org/go-chi/cache"
-	"github.com/redis/go-redis/v9"
 )
 
 // RedisCacher represents a redis cache adapter implementation.
 type RedisCacher struct {
-	c          redis.UniversalClient
+	c          nosql.RedisClient
 	prefix     string
 	hsetName   string
 	occupyMode bool
