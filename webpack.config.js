@@ -1,6 +1,6 @@
 import fastGlob from 'fast-glob';
 import wrapAnsi from 'wrap-ansi';
-import licenseChecker from 'license-checker-rseidelsohn';
+import {init as licenseChecker} from 'license-checker-rseidelsohn';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import {VueLoaderPlugin} from 'vue-loader';
@@ -33,7 +33,7 @@ for (const path of glob('web_src/css/themes/*.css')) {
 const isProduction = env.NODE_ENV !== 'development';
 
 if (isProduction) {
-  licenseChecker.init({
+  licenseChecker({
     start: baseDirectory,
     production: true,
     onlyAllow: 'Apache-2.0; 0BSD; BSD-2-Clause; BSD-3-Clause; BlueOak-1.0.0; MIT; ISC; Unlicense; CC-BY-4.0',
