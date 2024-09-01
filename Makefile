@@ -1003,7 +1003,7 @@ generate-gitignore:
 
 .PHONY: generate-gomock
 generate-gomock:
-	$(GO) run $(GOMOCK_PACKAGE) -package mock -destination ./modules/queue/mock/redisuniversalclient.go  github.com/redis/go-redis/v9 UniversalClient
+	$(GO) run $(GOMOCK_PACKAGE) -package mock -destination ./modules/queue/mock/redisuniversalclient.go code.gitea.io/gitea/modules/nosql RedisClient
 
 .PHONY: generate-images
 generate-images: | node_modules
