@@ -22,6 +22,7 @@ test('External Release Attachments', async ({browser, isMobile}, workerInfo) => 
   await page.click('.button.small.primary');
 
   // Fill out form and create new release
+  await expect(page).toHaveURL('/user2/repo2/releases/new');
   await page.fill('input[name=tag_name]', '2.0');
   await page.fill('input[name=title]', '2.0');
   await page.click('#add-external-link');
@@ -33,6 +34,7 @@ test('External Release Attachments', async ({browser, isMobile}, workerInfo) => 
   await page.click('.button.small.primary');
 
   // Validate release page and click edit
+  await expect(page).toHaveURL('/user2/repo2/releases');
   await expect(page.locator('.download[open] li')).toHaveCount(3);
   await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test');
   await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://forgejo.org/');
@@ -40,6 +42,7 @@ test('External Release Attachments', async ({browser, isMobile}, workerInfo) => 
   await page.locator('.octicon-pencil').first().click();
 
   // Validate edit page and edit the release
+  await expect(page).toHaveURL('/user2/repo2/releases/edit/2.0');
   await expect(page.locator('.attachment_edit:visible')).toHaveCount(2);
   await expect(page.locator('.attachment_edit:visible').nth(0)).toHaveValue('Test');
   await expect(page.locator('.attachment_edit:visible').nth(1)).toHaveValue('https://forgejo.org/');
@@ -53,6 +56,7 @@ test('External Release Attachments', async ({browser, isMobile}, workerInfo) => 
   await page.click('.button.small.primary');
 
   // Validate release page and click edit
+  await expect(page).toHaveURL('/user2/repo2/releases');
   await expect(page.locator('.download[open] li')).toHaveCount(4);
   await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test2');
   await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://gitea.io/');
@@ -62,6 +66,8 @@ test('External Release Attachments', async ({browser, isMobile}, workerInfo) => 
   await page.locator('.octicon-pencil').first().click();
 
   // Delete release
+  await expect(page).toHaveURL('/user2/repo2/releases/edit/2.0');
   await page.click('.delete-button');
   await page.click('.button.ok');
+  await expect(page).toHaveURL('/user2/repo2/releases');
 });
