@@ -1,6 +1,6 @@
 module code.gitea.io/gitea
 
-go 1.23.0
+go 1.23.1
 
 require (
 	code.forgejo.org/f3/gof3/v3 v3.7.0
