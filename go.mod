@@ -1,6 +1,6 @@
 module code.gitea.io/gitea
 
-go 1.22.3
+go 1.22.7
 
 require (
 	code.forgejo.org/forgejo/reply v1.0.1
