@@ -6,6 +6,10 @@ A [patch or minor release](https://semver.org/spec/v2.0.0.html) (e.g. upgrading 
 
 The release notes of each release [are available in the corresponding milestone](https://codeberg.org/forgejo/forgejo/milestones), starting with [Forgejo 7.0.7](https://codeberg.org/forgejo/forgejo/milestone/7683) and [Forgejo 8.0.1](https://codeberg.org/forgejo/forgejo/milestone/7682).
 
+## 8.0.3
+
+The Forgejo v8.0.3 release notes are [available in the v8.0.3 milestone](https://codeberg.org/forgejo/forgejo/milestone/8231).
+
 ## 8.0.2
 
 The Forgejo v8.0.2 release notes are [available in the v8.0.2 milestone](https://codeberg.org/forgejo/forgejo/milestone/7728).
@@ -150,6 +154,10 @@ A [companion blog post](https://forgejo.org/2024-07-release-v8-0/) provides addi
   - [PR](https://codeberg.org/forgejo/forgejo/pulls/2982): <!--number 2982 --><!--number--><!--description -->3 April updates<!--description-->
   - [PR](https://codeberg.org/forgejo/forgejo/pulls/2937): <!--number 2937 --><!--number--><!--description -->31 March updates<!--description-->
 <!--end release-notes-assistant-->
+
+## 7.0.9
+
+The Forgejo v7.0.9 release notes are [available in the v7.0.9 milestone](https://codeberg.org/forgejo/forgejo/milestone/8232).
 
 ## 7.0.8
 
