@@ -111,32 +111,29 @@
 			<div class="divider"></div>
 			<div class="ui">
 				<div>
-					{{if not .PageIsEditRelease}}
-						<div class="tag-message field">
-							<div class="ui checkbox">
+					<fieldset>
+						{{if not .PageIsEditRelease}}
+							<label>
 								<input type="checkbox" name="add_tag_msg">
-								<label><strong>{{ctx.Locale.Tr "repo.release.add_tag_msg"}}</strong></label>
-							</div>
-						</div>
-					{{else}}
-						<input type="hidden" name="add_tag_msg" value="false">
-					{{end}}
-					<div class="prerelease field">
-						<div class="ui checkbox">
+								{{ctx.Locale.Tr "repo.release.add_tag_msg"}}
+								<span class="help"></span>
+							</label>
+						{{else}}
+							<input type="hidden" name="add_tag_msg" value="false">
+						{{end}}
+						<label>
 							<input type="checkbox" name="prerelease" {{if .prerelease}}checked{{end}}>
-							<label><strong>{{ctx.Locale.Tr "repo.release.prerelease_desc"}}</strong></label>
-						</div>
-					</div>
-					<span class="help">{{ctx.Locale.Tr "repo.release.prerelease_helper"}}</span>
-					{{if not .DisableDownloadSourceArchives}}
-						<div class="field">
-							<div class="ui checkbox">
+							{{ctx.Locale.Tr "repo.release.prerelease_desc"}}
+							<span class="help">{{ctx.Locale.Tr "repo.release.prerelease_helper"}}</span>
+						</label>
+						{{if not .DisableDownloadSourceArchives}}
+							<label>
 								<input type="checkbox" name="hide_archive_links" {{if .hide_archive_links}}checked{{end}}>
-								<label><strong>{{ctx.Locale.Tr "repo.release.hide_archive_links"}}</strong></label>
-							</div>
-						</div>
-						<span class="help">{{ctx.Locale.Tr "repo.release.hide_archive_links_helper"}}</span>
-					{{end}}
+								{{ctx.Locale.Tr "repo.release.hide_archive_links"}}
+								<span class="help">{{ctx.Locale.Tr "repo.release.hide_archive_links_helper"}}</span>
+							</label>
+						{{end}}
+					</fieldset>
 					<div class="divider tw-mt-0"></div>
 					<div class="tw-flex tw-justify-end button-row">
 						{{if .PageIsEditRelease}}
