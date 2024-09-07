@@ -7,7 +7,7 @@ require (
 	code.forgejo.org/forgejo/reply v1.0.2
 	code.forgejo.org/go-chi/cache v0.0.0-20240827192127-5331da376831
 	code.forgejo.org/go-chi/captcha v0.0.0-20240827192619-ac88f17cdd8e
-	code.forgejo.org/go-chi/session v0.0.0-20240825010209-bd25d509c8bf
+	code.forgejo.org/go-chi/session v0.0.0-20240905153124-557e3de77cd2
 	code.gitea.io/actions-proto-go v0.4.0
 	code.gitea.io/gitea-vet v0.2.3
 	code.gitea.io/sdk/gitea v0.17.1
