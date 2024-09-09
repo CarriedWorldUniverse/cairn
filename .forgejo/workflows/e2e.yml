@@ -8,6 +8,9 @@ on:
       - .forgejo/workflows/e2e.yml
       - tests/e2e/**
       - web_src/js/**
+      - web_src/css/form.css
+      - templates/webhook/shared-settings.tmpl
+      - templates/org/team/new.tmpl
 
 jobs:
   test-e2e:
