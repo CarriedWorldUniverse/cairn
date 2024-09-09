@@ -21,15 +21,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// first entry represents filename
+// the following entries define the full file content over time
 type FileChanges [][]string
 
 // put your Git repo declarations in here
 // feel free to amend the helper function below or use the raw variant directly
 func DeclareGitRepos(t *testing.T) func() {
-	var cleanupFunctions []func()
-	cleanupFunctions = append(cleanupFunctions, newRepo(t, 2, "diff-test", FileChanges{
-		{"testfile", "hello", "hallo", "hola", "native", "ubuntu-latest", "- runs-on: ubuntu-latest", "- runs-on: debian-latest"},
-	}))
+	cleanupFunctions := []func(){
+		newRepo(t, 2, "diff-test", FileChanges{
+			{"testfile", "hello", "hallo", "hola", "native", "ubuntu-latest", "- runs-on: ubuntu-latest", "- runs-on: debian-latest"},
+		}),
+		// add your repo declarations here
+	}
 
 	return func() {
 		for _, cleanup := range cleanupFunctions {
