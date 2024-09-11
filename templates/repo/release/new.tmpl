@@ -99,9 +99,9 @@
 						{{ctx.Locale.Tr "remove"}}
 					</a>
 				</div>
-				<a class="ui mini button tw-float-right tw-mb-4 tw-mt-2" id="add-external-link">
+				<button type="button" class="ui mini button tw-float-right tw-mb-4 tw-mt-2" id="add-external-link">
 					{{ctx.Locale.Tr "repo.release.add_external_asset"}}
-				</a>
+				</button>
 				{{if .IsAttachmentEnabled}}
 					<div class="field">
 						{{template "repo/upload" .}}
@@ -116,7 +116,6 @@
 							<label>
 								<input type="checkbox" name="add_tag_msg">
 								{{ctx.Locale.Tr "repo.release.add_tag_msg"}}
-								<span class="help"></span>
 							</label>
 						{{else}}
 							<input type="hidden" name="add_tag_msg" value="false">
