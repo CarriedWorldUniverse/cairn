@@ -2,6 +2,12 @@
 // SPDX-License-Identifier: MIT
 // @ts-check
 
+// @watch start
+// templates/user/auth/**
+// templates/user/settings/**
+// web_src/js/features/user-**
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, load_logged_in_context} from './utils_e2e.js';
 

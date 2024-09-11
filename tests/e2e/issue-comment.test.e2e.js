@@ -1,4 +1,11 @@
 // @ts-check
+
+// @watch start
+// web_src/js/features/comp/**
+// web_src/js/features/repo-**
+// templates/repo/issue/view_content/*
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, login} from './utils_e2e.js';
 
