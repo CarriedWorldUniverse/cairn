@@ -1,4 +1,15 @@
 // @ts-check
+
+// @watch start
+// models/repo/attachment.go
+// modules/structs/attachment.go
+// routers/web/repo/**
+// services/attachment/**
+// services/release/**
+// templates/repo/release/**
+// web_src/js/features/repo-release.js
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, save_visual, load_logged_in_context} from './utils_e2e.js';
 import {validate_form} from './shared/forms.js';
