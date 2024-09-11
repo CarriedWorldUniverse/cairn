@@ -118,9 +118,8 @@ jobs:
           - image: docker.io/bitnami/redis:7.2
             port: 6379
           # redict
-          # Uncomment when https://codeberg.org/redict/redict-containers/issues/32 is fixed
-          #- image: registry.redict.io/redict:7.3.0-scratch
-          #  port: 6379
+          - image: registry.redict.io/redict:7.3.0-scratch
+            port: 6379
           # valkey
           - image: docker.io/bitnami/valkey:7.2
             port: 6379
