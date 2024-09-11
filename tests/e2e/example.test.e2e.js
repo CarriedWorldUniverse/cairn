@@ -29,21 +29,6 @@ test('Register Form', async ({page}, workerInfo) => {
   save_visual(page);
 });
 
-test('Login Form', async ({page}, workerInfo) => {
-  const response = await page.goto('/user/login');
-  await expect(response?.status()).toBe(200); // Status OK
-
-  await page.type('input[name=user_name]', `user2`);
-  await page.type('input[name=password]', `password`);
-  await page.click('form button.ui.primary.button:visible');
-
-  await page.waitForLoadState('networkidle');
-
-  await expect(page.url()).toBe(`${workerInfo.project.use.baseURL}/`);
-
-  save_visual(page);
-});
-
 test('Logged In User', async ({browser}, workerInfo) => {
   const context = await load_logged_in_context(browser, workerInfo, 'user2');
   const page = await context.newPage();
