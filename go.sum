@@ -8,8 +8,8 @@ code.forgejo.org/forgejo/archiver/v3 v3.5.1 h1:UmmbA7D5550uf71SQjarmrn6yKwOGxtEj
 code.forgejo.org/forgejo/archiver/v3 v3.5.1/go.mod h1:e3dqJ7H78uzsRSEACH1joayhuSyhnonssnDhppzS1L4=
 code.forgejo.org/forgejo/reply v1.0.2 h1:dMhQCHV6/O3L5CLWNTol+dNzDAuyCK88z4J/lCdgFuQ=
 code.forgejo.org/forgejo/reply v1.0.2/go.mod h1:RyZUfzQLc+fuLIGjTSQWDAJWPiL4WtKXB/FifT5fM7U=
-code.forgejo.org/go-chi/cache v0.0.0-20240827192127-5331da376831 h1:812D1XgK0Fis/Fy5XetCMBMRlI+BYjgNDh71GAUJ1DY=
-code.forgejo.org/go-chi/cache v0.0.0-20240827192127-5331da376831/go.mod h1:OVlZ/TqDYJ+RUJ+R+J+OLxtlyjo3pbjBeK7LAWAB+Vk=
+code.forgejo.org/go-chi/cache v0.0.0-20240912103640-dcb08fba860d h1:nOu/2GX571t4intmtfvpctS148OqsBYrGUySVm93ifc=
+code.forgejo.org/go-chi/cache v0.0.0-20240912103640-dcb08fba860d/go.mod h1:OVlZ/TqDYJ+RUJ+R+J+OLxtlyjo3pbjBeK7LAWAB+Vk=
 code.forgejo.org/go-chi/captcha v0.0.0-20240905153133-df43b9250ed5 h1:A7P1liXCpJBHEJ5KIDsF0ujnQ8FQ/aX1UixTW0vGrDQ=
 code.forgejo.org/go-chi/captcha v0.0.0-20240905153133-df43b9250ed5/go.mod h1:YLOsiln/arX3egGtxG4QNp49G2CIqP9pqD2VL56obLc=
 code.forgejo.org/go-chi/session v0.0.0-20240905153124-557e3de77cd2 h1:Ht2myT1qf4YbLcO/W3pQaWTn6PPdKz0tM5tnqMOz/Cg=

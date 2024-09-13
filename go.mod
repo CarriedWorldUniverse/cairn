@@ -5,7 +5,7 @@ go 1.23.1
 require (
 	code.forgejo.org/f3/gof3/v3 v3.7.0
 	code.forgejo.org/forgejo/reply v1.0.2
-	code.forgejo.org/go-chi/cache v0.0.0-20240827192127-5331da376831
+	code.forgejo.org/go-chi/cache v0.0.0-20240912103640-dcb08fba860d
 	code.forgejo.org/go-chi/captcha v0.0.0-20240905153133-df43b9250ed5
 	code.forgejo.org/go-chi/session v0.0.0-20240905153124-557e3de77cd2
 	code.gitea.io/actions-proto-go v0.4.0
