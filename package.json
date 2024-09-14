@@ -62,7 +62,7 @@
     "@axe-core/playwright": "4.10.0",
     "@eslint-community/eslint-plugin-eslint-comments": "4.4.0",
     "@playwright/test": "1.47.1",
-    "@stoplight/spectral-cli": "6.11.1",
+    "@stoplight/spectral-cli": "6.13.0",
     "@stylistic/eslint-plugin-js": "2.8.0",
     "@stylistic/stylelint-plugin": "3.0.1",
     "@vitejs/plugin-vue": "5.1.3",
