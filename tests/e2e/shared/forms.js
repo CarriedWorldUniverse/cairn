@@ -1,5 +1,5 @@
 import {expect} from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import {AxeBuilder} from '@axe-core/playwright';
 
 export async function validate_form({page}, scope) {
   scope ??= 'form';
