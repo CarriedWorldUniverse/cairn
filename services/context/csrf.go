@@ -30,8 +30,9 @@ import (
 )
 
 const (
-	CsrfHeaderName = "X-Csrf-Token"
-	CsrfFormName   = "_csrf"
+	CsrfHeaderName  = "X-Csrf-Token"
+	CsrfFormName    = "_csrf"
+	CsrfErrorString = "Invalid CSRF token."
 )
 
 // CSRFProtector represents a CSRF protector and is used to get the current token and validate the token.
@@ -144,7 +145,7 @@ func (c *csrfProtector) validateToken(ctx *Context, token string) {
 		c.DeleteCookie(ctx)
 		// currently, there should be no access to the APIPath with CSRF token. because templates shouldn't use the `/api/` endpoints.
 		// FIXME: distinguish what the response is for: HTML (web page) or JSON (fetch)
-		http.Error(ctx.Resp, "Invalid CSRF token.", http.StatusBadRequest)
+		http.Error(ctx.Resp, CsrfErrorString, http.StatusBadRequest)
 	}
 }
 
