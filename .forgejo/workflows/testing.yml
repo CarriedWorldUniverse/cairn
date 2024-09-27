@@ -20,9 +20,7 @@ jobs:
           ${{ toJSON(github) }}
           EOF
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
+      - uses: ./.forgejo/workflows/composite/setup-env
       - run: make deps-backend deps-tools
       - run: make --always-make -j$(nproc) lint-backend tidy-check swagger-check fmt-check swagger-validate # ensure the "go-licenses" make target runs
       - run: |
@@ -67,13 +65,7 @@ jobs:
           MINIO_ROOT_PASSWORD: 12345678
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
-      - run: |
-          git config --add safe.directory '*'
-          adduser --quiet --comment forgejo --disabled-password forgejo
-          chown -R forgejo:forgejo .
+      - uses: ./.forgejo/workflows/composite/setup-env
       - name: install git >= 2.42
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -132,13 +124,7 @@ jobs:
         options: ${{ matrix.cacher.options }}
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
-      - run: |
-          git config --add safe.directory '*'
-          adduser --quiet --comment forgejo --disabled-password forgejo
-          chown -R forgejo:forgejo .
+      - uses: ./.forgejo/workflows/composite/setup-env
       - name: install git >= 2.42
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -184,9 +170,7 @@ jobs:
           MYSQL_EXTRA_FLAGS: --innodb-adaptive-flushing=OFF --innodb-buffer-pool-size=4G --innodb-log-buffer-size=128M --innodb-flush-log-at-trx-commit=0 --innodb-flush-log-at-timeout=30 --innodb-flush-method=nosync --innodb-fsync-threshold=1000000000
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
+      - uses: ./.forgejo/workflows/composite/setup-env
       - name: install dependencies & git >= 2.42
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -195,11 +179,6 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - name: setup user and permissions
-        run: |
-          git config --add safe.directory '*'
-          adduser --quiet --comment forgejo --disabled-password forgejo
-          chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
       - uses: actions/cache/restore@v4
@@ -238,9 +217,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
+      - uses: ./.forgejo/workflows/composite/setup-env
       - name: install dependencies & git >= 2.42
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -249,11 +226,6 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - name: setup user and permissions
-        run: |
-          git config --add safe.directory '*'
-          adduser --quiet --comment forgejo --disabled-password forgejo
-          chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
       - uses: actions/cache/restore@v4
@@ -281,9 +253,7 @@ jobs:
       image: 'code.forgejo.org/oci/node:20-bookworm'
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
+      - uses: ./.forgejo/workflows/composite/setup-env
       - name: install dependencies & git >= 2.42
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -292,11 +262,6 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - name: setup user and permissions
-        run: |
-          git config --add safe.directory '*'
-          adduser --quiet --comment forgejo --disabled-password forgejo
-          chown -R forgejo:forgejo .
       - run: |
           su forgejo -c 'make deps-backend'
       - uses: actions/cache/restore@v4
@@ -330,8 +295,6 @@ jobs:
       image: 'code.forgejo.org/oci/node:20-bookworm'
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v3
-      - uses: https://code.forgejo.org/actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
+      - uses: ./.forgejo/workflows/composite/setup-env
       - run: make deps-backend deps-tools
       - run: make security-check
