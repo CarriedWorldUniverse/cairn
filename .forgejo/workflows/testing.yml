@@ -21,16 +21,9 @@ jobs:
           EOF
       - uses: https://code.forgejo.org/actions/checkout@v3
       - uses: ./.forgejo/workflows/composite/setup-env
-      - run: make deps-backend deps-tools
-      - run: make --always-make -j$(nproc) lint-backend tidy-check swagger-check fmt-check swagger-validate # ensure the "go-licenses" make target runs
-      - run: |
-          make backend
-        env:
-          TAGS: bindata
-      - uses: actions/cache@v4
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
+      - run: su forgejo -c 'make deps-backend deps-tools'
+      - run: su forgejo -c 'make --always-make -j$(nproc) lint-backend tidy-check swagger-check fmt-check swagger-validate' # ensure the "go-licenses" make target runs
+      - uses: ./.forgejo/workflows/composite/build-backend
   frontend-checks:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
     runs-on: docker
@@ -78,18 +71,7 @@ jobs:
         run: |
           apt-get -q install -qq -y jq
           ./release-notes-assistant.sh test_main
-      - run: |
-          su forgejo -c 'make deps-backend'
-      - uses: actions/cache/restore@v4
-        id: cache-backend
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
-      - if: steps.cache-backend.outputs.cache-hit != 'true'
-        run: |
-          su forgejo -c 'make backend'
-        env:
-          TAGS: bindata
+      - uses: ./.forgejo/workflows/composite/build-backend
       - run: |
           su forgejo -c 'make test-backend test-check'
         timeout-minutes: 50
@@ -133,18 +115,7 @@ jobs:
           apt-get -q install -qq -y git
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - run: |
-          su forgejo -c 'make deps-backend'
-      - uses: actions/cache/restore@v4
-        id: cache-backend
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
-      - if: steps.cache-backend.outputs.cache-hit != 'true'
-        run: |
-          su forgejo -c 'make backend'
-        env:
-          TAGS: bindata
+      - uses: ./.forgejo/workflows/composite/build-backend
       - run: |
           su forgejo -c 'make test-remote-cacher test-check'
         timeout-minutes: 50
@@ -179,18 +150,7 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - run: |
-          su forgejo -c 'make deps-backend'
-      - uses: actions/cache/restore@v4
-        id: cache-backend
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
-      - if: steps.cache-backend.outputs.cache-hit != 'true'
-        run: |
-          su forgejo -c 'make backend'
-        env:
-          TAGS: bindata
+      - uses: ./.forgejo/workflows/composite/build-backend
       - run: |
           su forgejo -c 'make test-mysql-migration test-mysql'
         timeout-minutes: 50
@@ -226,18 +186,7 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - run: |
-          su forgejo -c 'make deps-backend'
-      - uses: actions/cache/restore@v4
-        id: cache-backend
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
-      - if: steps.cache-backend.outputs.cache-hit != 'true'
-        run: |
-          su forgejo -c 'make backend'
-        env:
-          TAGS: bindata
+      - uses: ./.forgejo/workflows/composite/build-backend
       - run: |
           su forgejo -c 'make test-pgsql-migration test-pgsql'
         timeout-minutes: 50
@@ -262,18 +211,7 @@ jobs:
           apt-get install --no-install-recommends -qq -y git git-lfs
           rm /etc/apt/sources.list.d/testing.list
           apt-get update -qq
-      - run: |
-          su forgejo -c 'make deps-backend'
-      - uses: actions/cache/restore@v4
-        id: cache-backend
-        with:
-          path: '/workspace/forgejo/forgejo/gitea'
-          key: backend-build-${{ github.sha }}
-      - if: steps.cache-backend.outputs.cache-hit != 'true'
-        run: |
-          su forgejo -c 'make backend'
-        env:
-          TAGS: bindata sqlite sqlite_unlock_notify
+      - uses: ./.forgejo/workflows/composite/build-backend
       - run: |
           su forgejo -c 'make test-sqlite-migration test-sqlite'
         timeout-minutes: 50
