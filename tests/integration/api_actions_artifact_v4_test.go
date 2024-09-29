@@ -181,7 +181,7 @@ func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact", toProtoJSON(&actions.CreateArtifactRequest{
@@ -208,7 +208,7 @@ func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing
 
 	// verify that the exploit didn't work
 	_, err = storage.Actions.Stat("myfile")
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	// upload artifact blockList
 	blockList := &actions.BlockList{
@@ -217,7 +217,7 @@ func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing
 		},
 	}
 	rawBlockList, err := xml.Marshal(blockList)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req = NewRequestWithBody(t, "PUT", blockListURL, bytes.NewReader(rawBlockList))
 	MakeRequest(t, req, http.StatusCreated)
 
@@ -244,7 +244,7 @@ func TestActionsArtifactV4UploadSingleFileWithChunksOutOfOrder(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// acquire artifact upload url
 	req := NewRequestWithBody(t, "POST", "/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact", toProtoJSON(&actions.CreateArtifactRequest{
@@ -282,7 +282,7 @@ func TestActionsArtifactV4UploadSingleFileWithChunksOutOfOrder(t *testing.T) {
 		},
 	}
 	rawBlockList, err := xml.Marshal(blockList)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req = NewRequestWithBody(t, "PUT", blockListURL, bytes.NewReader(rawBlockList))
 	MakeRequest(t, req, http.StatusCreated)
 
