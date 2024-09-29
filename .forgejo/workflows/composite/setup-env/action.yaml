@@ -1,0 +1,11 @@
+runs:
+  using: "composite"
+  steps:
+    - uses: https://code.forgejo.org/actions/setup-go@v4
+      with:
+        go-version-file: "go.mod"
+    - name: setup user and permissions
+      run: |
+        git config --add safe.directory '*'
+        adduser --quiet --comment forgejo --disabled-password forgejo
+        chown -R forgejo:forgejo .
