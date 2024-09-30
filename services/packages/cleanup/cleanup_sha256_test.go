@@ -38,7 +38,6 @@ func TestCleanupSHA256(t *testing.T) {
 			Type:      packages.TypeContainer,
 		}
 		_, err := db.GetEngine(ctx).Insert(&p)
-		// package_version").Where("version = ?", multiTag).Update(&packages_model.PackageVersion{MetadataJSON: `corrupted "manifests":[{ bad`})
 		require.NoError(t, err)
 
 		var metadata string
