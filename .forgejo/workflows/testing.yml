@@ -94,6 +94,8 @@ jobs:
       image: 'code.forgejo.org/oci/playwright:latest'
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 20
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: "Restore frontend build"
         uses: actions/cache/restore@v4
@@ -106,11 +108,17 @@ jobs:
         run: |
           su forgejo -c 'make deps-frontend frontend'
       - uses: ./.forgejo/workflows-composite/build-backend
+      - name: Get changed files
+        id: changed-files
+        uses: https://code.forgejo.org/fossdd/changed-files@v45
+        with:
+          separator: '\n'
       - run: |
           su forgejo -c 'make generate test-e2e-sqlite'
         timeout-minutes: 40
         env:
           USE_REPO_TEST_DIR: 1
+          CHANGED_FILES: ${{steps.changed-files.outputs.all_changed_files}}
   test-remote-cacher:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
     runs-on: docker
