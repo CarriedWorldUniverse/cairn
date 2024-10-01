@@ -6,7 +6,7 @@ runs:
     - uses: actions/cache@v4
       id: cache-backend
       with:
-        path: '/workspace/forgejo/forgejo/gitea'
+        path: ${{github.workspace}}/gitea
         key: backend-build-${{ github.sha }}
     - if: steps.cache-backend.outputs.cache-hit != 'true'
       run: |
