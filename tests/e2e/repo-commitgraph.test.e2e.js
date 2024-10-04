@@ -1,9 +1,23 @@
 // @ts-check
+
+// @watch start
+// templates/repo/graph.tmpl
+// web_src/css/features/gitgraph.css
+// web_src/js/features/repo-graph.js
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, load_logged_in_context} from './utils_e2e.js';
 
 test.beforeAll(async ({browser}, workerInfo) => {
   await login_user(browser, workerInfo, 'user2');
+});
+
+test('Commit graph overflow', async ({page}) => {
+  await page.goto('/user2/diff-test/graph');
+  await expect(page.getByRole('button', {name: 'Mono'})).toBeInViewport({ratio: 1});
+  await expect(page.getByRole('button', {name: 'Color'})).toBeInViewport({ratio: 1});
+  await expect(page.locator('.selection.search.dropdown')).toBeInViewport({ratio: 1});
 });
 
 test('Switch branch', async ({browser}, workerInfo) => {

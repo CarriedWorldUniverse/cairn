@@ -1,4 +1,10 @@
 // @ts-check
+
+// @watch start
+// templates/repo/wiki/**
+// web_src/css/repo**
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test} from './utils_e2e.js';
 

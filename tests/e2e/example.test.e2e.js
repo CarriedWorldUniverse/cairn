@@ -1,4 +1,11 @@
 // @ts-check
+
+// @watch start
+// templates/user/auth/**
+// web_src/js/features/user-**
+// modules/{user,auth}/**
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, save_visual} from './utils_e2e.js';
 
