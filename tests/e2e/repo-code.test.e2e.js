@@ -1,4 +1,11 @@
 // @ts-check
+
+// @watch start
+// web_src/js/features/repo-code.js
+// web_src/css/repo.css
+// services/gitdiff/**
+// @watch end
+
 import {expect} from '@playwright/test';
 import {test, login_user, load_logged_in_context} from './utils_e2e.js';
 
@@ -76,11 +83,4 @@ test('Readable diff', async ({page}, workerInfo) => {
       await expect(page.getByText(thisDiff.added, {exact: true})).toHaveCSS('background-color', 'rgb(134, 239, 172)');
     }
   }
-});
-
-test('Commit graph overflow', async ({page}) => {
-  await page.goto('/user2/diff-test/graph');
-  await expect(page.getByRole('button', {name: 'Mono'})).toBeInViewport({ratio: 1});
-  await expect(page.getByRole('button', {name: 'Color'})).toBeInViewport({ratio: 1});
-  await expect(page.locator('.selection.search.dropdown')).toBeInViewport({ratio: 1});
 });

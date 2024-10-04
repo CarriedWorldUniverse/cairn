@@ -36,6 +36,17 @@ jobs:
       - run: make checks-frontend
       - run: make test-frontend-coverage
       - run: make frontend
+      - name: Install zstd for cache saving
+        # works around https://github.com/actions/cache/issues/1169, because the
+        # consuming job has zstd and doesn't restore the cache otherwise
+        run: |
+          apt-get update -qq
+          apt-get -q install -qq -y zstd
+      - name: "Cache frontend build for playwright testing"
+        uses: actions/cache/save@v4
+        with:
+          path: ${{github.workspace}}/public/assets
+          key: frontend-build-${{ github.sha }}
   test-unit:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
     runs-on: docker
@@ -75,10 +86,43 @@ jobs:
           RACE_ENABLED: 'true'
           TAGS: bindata
           TEST_ELASTICSEARCH_URL: http://elasticsearch:9200
-  test-remote-cacher:
+  test-e2e:
     if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
     runs-on: docker
     needs: [backend-checks, frontend-checks]
+    container:
+      image: 'code.forgejo.org/oci/playwright:latest'
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - uses: ./.forgejo/workflows-composite/setup-env
+      - name: "Restore frontend build"
+        uses: actions/cache/restore@v4
+        id: cache-frontend
+        with:
+          path: ${{github.workspace}}/public/assets
+          key: frontend-build-${{ github.sha }}
+      - name: "Build frontend (if not cached)"
+        if: steps.cache-frontend.outputs.cache-hit != 'true'
+        run: |
+          su forgejo -c 'make deps-frontend frontend'
+      - uses: ./.forgejo/workflows-composite/build-backend
+      - name: Get changed files
+        id: changed-files
+        uses: https://code.forgejo.org/fossdd/changed-files@v45
+        with:
+          separator: '\n'
+      - run: |
+          su forgejo -c 'make generate test-e2e-sqlite'
+        timeout-minutes: 40
+        env:
+          USE_REPO_TEST_DIR: 1
+          CHANGED_FILES: ${{steps.changed-files.outputs.all_changed_files}}
+  test-remote-cacher:
+    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    runs-on: docker
+    needs: [backend-checks, frontend-checks, test-unit]
     container:
       image: 'code.forgejo.org/oci/node:20-bookworm'
     strategy:
