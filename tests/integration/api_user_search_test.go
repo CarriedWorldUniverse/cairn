@@ -145,7 +145,7 @@ func TestAPIUserSearchByEmail(t *testing.T) {
 
 	var results SearchResults
 	DecodeJSON(t, resp, &results)
-	assert.Equal(t, 1, len(results.Data))
+	assert.Len(t, results.Data, 1)
 	assert.Equal(t, query, results.Data[0].Email)
 
 	// no login user can not search user with private email
@@ -163,6 +163,6 @@ func TestAPIUserSearchByEmail(t *testing.T) {
 	resp = MakeRequest(t, req, http.StatusOK)
 
 	DecodeJSON(t, resp, &results)
-	assert.Equal(t, 1, len(results.Data))
+	assert.Len(t, results.Data, 1)
 	assert.Equal(t, query, results.Data[0].Email)
 }
