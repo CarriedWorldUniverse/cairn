@@ -14,6 +14,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"gitea.com/go-chi/binding"
+
 	webhook_model "code.gitea.io/gitea/models/webhook"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/json"
@@ -22,6 +24,7 @@ import (
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/util"
 	webhook_module "code.gitea.io/gitea/modules/webhook"
+	gitea_context "code.gitea.io/gitea/services/context"
 	"code.gitea.io/gitea/services/forms"
 	"code.gitea.io/gitea/services/webhook/shared"
 )
@@ -31,13 +34,29 @@ type discordHandler struct{}
 func (discordHandler) Type() webhook_module.HookType { return webhook_module.DISCORD }
 func (discordHandler) Icon(size int) template.HTML   { return shared.ImgIcon("discord.png", size) }
 
-func (discordHandler) UnmarshalForm(bind func(any)) forms.WebhookForm {
-	var form struct {
-		forms.WebhookCoreForm
-		PayloadURL string `binding:"Required;ValidUrl"`
-		Username   string
-		IconURL    string
+type discordForm struct {
+	forms.WebhookCoreForm
+	PayloadURL string `binding:"Required;ValidUrl"`
+	Username   string
+	IconURL    string
+}
+
+var _ binding.Validator = &discordForm{}
+
+// Validate implements binding.Validator.
+func (d *discordForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
+	ctx := gitea_context.GetWebContext(req)
+	if len([]rune(d.IconURL)) > 2048 {
+		errs = append(errs, binding.Error{
+			FieldNames: []string{"IconURL"},
+			Message:    ctx.Locale.TrString("repo.settings.discord_icon_url.exceeds_max_length"),
+		})
 	}
+	return errs
+}
+
+func (discordHandler) UnmarshalForm(bind func(any)) forms.WebhookForm {
+	var form discordForm
 	bind(&form)
 
 	return forms.WebhookForm{
