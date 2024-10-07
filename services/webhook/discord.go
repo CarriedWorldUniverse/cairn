@@ -14,8 +14,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"gitea.com/go-chi/binding"
-
 	webhook_model "code.gitea.io/gitea/models/webhook"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/json"
@@ -27,6 +25,8 @@ import (
 	gitea_context "code.gitea.io/gitea/services/context"
 	"code.gitea.io/gitea/services/forms"
 	"code.gitea.io/gitea/services/webhook/shared"
+
+	"gitea.com/go-chi/binding"
 )
 
 type discordHandler struct{}
@@ -37,8 +37,8 @@ func (discordHandler) Icon(size int) template.HTML   { return shared.ImgIcon("di
 type discordForm struct {
 	forms.WebhookCoreForm
 	PayloadURL string `binding:"Required;ValidUrl"`
-	Username   string
-	IconURL    string
+	Username   string `binding:"Required;MaxSize(80)"`
+	IconURL    string `binding:"ValidUrl"`
 }
 
 var _ binding.Validator = &discordForm{}
@@ -75,7 +75,7 @@ func (discordHandler) UnmarshalForm(bind func(any)) forms.WebhookForm {
 type (
 	// DiscordEmbedFooter for Embed Footer Structure.
 	DiscordEmbedFooter struct {
-		Text string `json:"text"`
+		Text string `json:"text,omitempty"`
 	}
 
 	// DiscordEmbedAuthor for Embed Author Structure
@@ -99,16 +99,16 @@ type (
 		Color       int                 `json:"color"`
 		Footer      DiscordEmbedFooter  `json:"footer"`
 		Author      DiscordEmbedAuthor  `json:"author"`
-		Fields      []DiscordEmbedField `json:"fields"`
+		Fields      []DiscordEmbedField `json:"fields,omitempty"`
 	}
 
 	// DiscordPayload represents
 	DiscordPayload struct {
-		Wait      bool           `json:"wait"`
-		Content   string         `json:"content"`
+		Wait      bool           `json:"-"`
+		Content   string         `json:"-"`
 		Username  string         `json:"username"`
 		AvatarURL string         `json:"avatar_url,omitempty"`
-		TTS       bool           `json:"tts"`
+		TTS       bool           `json:"-"`
 		Embeds    []DiscordEmbed `json:"embeds"`
 	}
 
@@ -341,6 +341,12 @@ func parseHookPullRequestEventType(event webhook_module.HookEventType) (string, 
 }
 
 func (d discordConvertor) createPayload(s *api.User, title, text, url string, color int) DiscordPayload {
+	if len([]rune(title)) > 256 {
+		title = fmt.Sprintf("%.253s...", title)
+	}
+	if len([]rune(text)) > 4096 {
+		text = fmt.Sprintf("%.4093s...", text)
+	}
 	return DiscordPayload{
 		Username:  d.Username,
 		AvatarURL: d.AvatarURL,
