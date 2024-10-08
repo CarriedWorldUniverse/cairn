@@ -103,6 +103,91 @@ test('Issue: Labels', async ({browser}, workerInfo) => {
   await expect(labelList.filter({hasText: 'label1'})).toBeVisible();
 });
 
+test('Issue: Assignees', async ({browser}, workerInfo) => {
+  test.skip(workerInfo.project.name === 'Mobile Safari', 'Unable to get tests working on Safari Mobile, see https://codeberg.org/forgejo/forgejo/pulls/3445#issuecomment-1789636');
+  const page = await login({browser}, workerInfo);
+  // select label list in sidebar only
+  const assigneesList = page.locator('.issue-content-right .assignees.list .selected .item a');
+
+  const response = await page.goto('/org3/repo3/issues/1');
+  await expect(response?.status()).toBe(200);
+  // preconditions
+  await expect(assigneesList.filter({hasText: 'user2'})).toBeVisible();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeHidden();
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeHidden();
+
+  // Clear all assignees
+  await page.locator('.select-assignees-modify.dropdown').click();
+  await page.locator('.select-assignees-modify.dropdown .no-select.item').click();
+  await page.waitForLoadState('networkidle');
+  await expect(assigneesList.filter({hasText: 'user2'})).toBeHidden();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeHidden();
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeVisible();
+
+  // Assign other user (with searchbox)
+  await page.locator('.select-assignees-modify.dropdown').click();
+  await page.type('.select-assignees-modify .menu .search input', 'user4');
+  await expect(page.locator('.select-assignees-modify .menu .item').filter({hasText: 'user2'})).toBeHidden();
+  await expect(page.locator('.select-assignees-modify .menu .item').filter({hasText: 'user4'})).toBeVisible();
+  await page.locator('.select-assignees-modify .menu .item').filter({hasText: 'user4'}).click();
+  await page.locator('.select-assignees-modify.dropdown').click();
+  await page.waitForLoadState('networkidle');
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeVisible();
+
+  // remove user4
+  await page.locator('.select-assignees-modify.dropdown').click();
+  await page.locator('.select-assignees-modify .menu .item').filter({hasText: 'user4'}).click();
+  await page.locator('.select-assignees-modify.dropdown').click();
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeVisible();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeHidden();
+
+  // Test assign me
+  await page.locator('.ui.assignees .select-assign-me').click();
+  await page.waitForLoadState('networkidle');
+  await expect(assigneesList.filter({hasText: 'user2'})).toBeVisible();
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeHidden();
+});
+
+test('New Issue: Assignees', async ({browser}, workerInfo) => {
+  test.skip(workerInfo.project.name === 'Mobile Safari', 'Unable to get tests working on Safari Mobile, see https://codeberg.org/forgejo/forgejo/pulls/3445#issuecomment-1789636');
+  const page = await login({browser}, workerInfo);
+  // select label list in sidebar only
+  const assigneesList = page.locator('.issue-content-right .assignees.list .selected .item');
+
+  const response = await page.goto('/org3/repo3/issues/new');
+  await expect(response?.status()).toBe(200);
+  // preconditions
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeVisible();
+  await expect(assigneesList.filter({hasText: 'user2'})).toBeHidden();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeHidden();
+
+  // Assign other user (with searchbox)
+  await page.locator('.select-assignees.dropdown').click();
+  await page.type('.select-assignees .menu .search input', 'user4');
+  await expect(page.locator('.select-assignees .menu .item').filter({hasText: 'user2'})).toBeHidden();
+  await expect(page.locator('.select-assignees .menu .item').filter({hasText: 'user4'})).toBeVisible();
+  await page.locator('.select-assignees .menu .item').filter({hasText: 'user4'}).click();
+  await page.locator('.select-assignees.dropdown').click();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeVisible();
+
+  // remove user4
+  await page.locator('.select-assignees.dropdown').click();
+  await page.locator('.select-assignees .menu .item').filter({hasText: 'user4'}).click();
+  await page.locator('.select-assignees.dropdown').click();
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeVisible();
+  await expect(assigneesList.filter({hasText: 'user4'})).toBeHidden();
+
+  // Test assign me
+  await page.locator('.ui.assignees .select-assign-me').click();
+  await expect(assigneesList.filter({hasText: 'user2'})).toBeVisible();
+  await expect(page.locator('.ui.assignees.list .item.no-select')).toBeHidden();
+
+  await page.locator('.select-assignees.dropdown').click();
+  await page.fill('.select-assignees .menu .search input', '');
+  await page.locator('.select-assignees.dropdown .no-select.item').click();
+});
+
 test('Issue: Milestone', async ({browser}, workerInfo) => {
   test.skip(workerInfo.project.name === 'Mobile Safari', 'Unable to get tests working on Safari Mobile, see https://codeberg.org/forgejo/forgejo/pulls/3445#issuecomment-1789636');
   const page = await login({browser}, workerInfo);
