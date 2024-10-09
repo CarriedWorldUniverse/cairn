@@ -500,7 +500,7 @@ func TestIssueCommentAttachment(t *testing.T) {
 	link, exists := htmlDoc.doc.Find("#comment-form").Attr("action")
 	assert.True(t, exists, "The template has changed")
 
-	uuid := createAttachment(t, session, repoURL, "image.png", generateImg(), http.StatusOK)
+	uuid := createAttachment(t, session, GetCSRF(t, session, repoURL), repoURL, "image.png", generateImg(), http.StatusOK)
 
 	commentCount := htmlDoc.doc.Find(".comment-list .comment .render-content").Length()
 
