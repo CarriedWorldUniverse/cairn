@@ -51,7 +51,7 @@ func TestAPIUserSearchLoggedIn(t *testing.T) {
 	for _, user := range results.Data {
 		assert.Contains(t, user.UserName, query)
 		assert.NotEmpty(t, user.Email)
-		assert.True(t, user.Visibility == "public")
+		assert.Equal(t, "public", user.Visibility)
 	}
 }
 
