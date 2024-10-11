@@ -45,6 +45,7 @@ type APIContext struct {
 	Package    *Package
 	QuotaGroup *quota_model.Group
 	QuotaRule  *quota_model.Rule
+	PublicOnly bool // Whether the request is for a public endpoint
 }
 
 func init() {
