@@ -38,5 +38,5 @@ func TestMilestonesCount(t *testing.T) {
 	closedCount := htmlDoc.doc.Find("a[data-test-name='closed-issue-count']").Text()
 	assert.Contains(t, closedCount, "1\u00a0Closed")
 
-	assert.Len(t, htmlDoc.doc.Find("a[data-test-name='closed-issue-count']").Nodes, 0)
+	assert.Empty(t, htmlDoc.doc.Find("a[data-test-name='closed-issue-count']").Nodes)
 }
