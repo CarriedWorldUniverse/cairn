@@ -507,21 +507,22 @@ func EditTeamPost(ctx *context.Context) {
 			t.IncludesAllRepositories = includesAllRepositories
 		}
 		t.CanCreateOrgRepo = form.CanCreateOrgRepo
+
+		units := make([]*org_model.TeamUnit, 0, len(unitPerms))
+		for tp, perm := range unitPerms {
+			units = append(units, &org_model.TeamUnit{
+				OrgID:      t.OrgID,
+				TeamID:     t.ID,
+				Type:       tp,
+				AccessMode: perm,
+			})
+		}
+		t.Units = units
 	} else {
 		t.CanCreateOrgRepo = true
 	}
 
 	t.Description = form.Description
-	units := make([]*org_model.TeamUnit, 0, len(unitPerms))
-	for tp, perm := range unitPerms {
-		units = append(units, &org_model.TeamUnit{
-			OrgID:      t.OrgID,
-			TeamID:     t.ID,
-			Type:       tp,
-			AccessMode: perm,
-		})
-	}
-	t.Units = units
 
 	if ctx.HasError() {
 		ctx.HTML(http.StatusOK, tplTeamNew)
