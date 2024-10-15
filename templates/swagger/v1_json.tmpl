@@ -19708,6 +19708,86 @@
       },
       "x-go-package": "code.gitea.io/gitea/modules/structs"
     },
+    "APIForbiddenError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/services/context"
+    },
+    "APIInvalidTopicsError": {
+      "type": "object",
+      "properties": {
+        "invalidTopics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "InvalidTopics"
+        },
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/services/context"
+    },
+    "APINotFound": {
+      "type": "object",
+      "properties": {
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Errors"
+        },
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/services/context"
+    },
+    "APIRepoArchivedError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/services/context"
+    },
+    "APIValidationError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/services/context"
+    },
     "AccessToken": {
       "type": "object",
       "title": "AccessToken represents an API access token.",
@@ -28202,42 +28282,27 @@
     },
     "error": {
       "description": "APIError is error format response",
-      "headers": {
-        "message": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/APIError"
       }
     },
     "forbidden": {
       "description": "APIForbiddenError is a forbidden error response",
-      "headers": {
-        "message": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/APIForbiddenError"
       }
     },
     "invalidTopicsError": {
       "description": "APIInvalidTopicsError is error format response to invalid topics",
-      "headers": {
-        "invalidTopics": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "message": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/APIInvalidTopicsError"
       }
     },
     "notFound": {
-      "description": "APINotFound is a not found empty response"
+      "description": "APINotFound is a not found error response",
+      "schema": {
+        "$ref": "#/definitions/APINotFound"
+      }
     },
     "parameterBodies": {
       "description": "parameterBodies",
@@ -28265,13 +28330,8 @@
     },
     "repoArchivedError": {
       "description": "APIRepoArchivedError is an error that is raised when an archived repo should be modified",
-      "headers": {
-        "message": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/APIRepoArchivedError"
       }
     },
     "string": {
@@ -28282,13 +28342,8 @@
     },
     "validationError": {
       "description": "APIValidationError is error format response related to input validation",
-      "headers": {
-        "message": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/APIValidationError"
       }
     }
   },
