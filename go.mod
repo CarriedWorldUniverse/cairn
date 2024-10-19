@@ -8,7 +8,7 @@ require (
 	code.forgejo.org/forgejo/reply v1.0.2
 	code.forgejo.org/go-chi/cache v0.0.0-20240912103640-dcb08fba860d
 	code.forgejo.org/go-chi/captcha v0.0.0-20240905153133-df43b9250ed5
-	code.forgejo.org/go-chi/session v0.0.0-20240905153124-557e3de77cd2
+	code.forgejo.org/go-chi/session v0.0.0-20241017103059-2a992261fc26
 	code.gitea.io/actions-proto-go v0.4.0
 	code.gitea.io/gitea-vet v0.2.3
 	code.gitea.io/sdk/gitea v0.17.1
@@ -84,7 +84,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pquerna/otp v1.4.0
 	github.com/prometheus/client_golang v1.18.0
-	github.com/redis/go-redis/v9 v9.6.2
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.1
 	github.com/sassoftware/go-rpmutils v0.4.0
