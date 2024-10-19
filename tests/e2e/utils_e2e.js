@@ -80,3 +80,24 @@ export async function save_visual(page) {
     });
   }
 }
+
+// Create a temporary user and login to that user and store session info.
+// This should ideally run on a per test basis.
+export async function create_temp_user(browser, workerInfo, request) {
+  const username = globalThis.crypto.randomUUID();
+  const newUser = await request.post(`/api/v1/admin/users`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${btoa(`user1:${LOGIN_PASSWORD}`)}`,
+    },
+    data: {
+      username,
+      email: `${username}@host.invalid`,
+      password: LOGIN_PASSWORD,
+      must_change_password: false,
+    },
+  });
+  expect(newUser.ok()).toBeTruthy();
+
+  return {context: await login_user(browser, workerInfo, username), username};
+}
