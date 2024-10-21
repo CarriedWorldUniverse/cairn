@@ -6,6 +6,7 @@ on:
     branches:
       - 'forgejo*'
       - 'v*/forgejo*'
+  workflow_dispatch:
 
 jobs:
   backend-checks:
