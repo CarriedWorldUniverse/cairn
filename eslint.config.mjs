@@ -1125,9 +1125,11 @@ export default [{
         allowConditional: true,
       },
     ],
+    'playwright/no-useless-await': [2],
 
     'playwright/prefer-comparison-matcher': [2],
     'playwright/prefer-equality-matcher': [2],
+    'playwright/prefer-native-locators': [2],
     'playwright/prefer-to-contain': [2],
     'playwright/prefer-to-have-length': [2],
     'playwright/require-to-throw-message': [2],
