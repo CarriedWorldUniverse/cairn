@@ -20,7 +20,7 @@ test('repo webhook settings', async ({browser}, workerInfo) => {
   test.skip(workerInfo.project.name === 'Mobile Safari', 'Cannot get it to work - as usual');
   const page = await login({browser}, workerInfo);
   const response = await page.goto('/user2/repo1/settings/hooks/forgejo/new');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
 
   await page.locator('input[name="events"][value="choose_events"]').click();
   await expect(page.locator('.hide-unless-checked')).toBeVisible();
@@ -39,7 +39,7 @@ test.describe('repo branch protection settings', () => {
     test.skip(workerInfo.project.name === 'Mobile Safari', 'Cannot get it to work - as usual');
     const page = await login({browser}, workerInfo);
     const response = await page.goto('/user2/repo1/settings/branches/edit');
-    await expect(response?.status()).toBe(200);
+    expect(response?.status()).toBe(200);
 
     await validate_form({page}, 'fieldset');
 
