@@ -18,7 +18,7 @@ test('WebAuthn register & login flow', async ({browser, request}, workerInfo) =>
 
   // Register a security key.
   let response = await page.goto('/user/settings/security');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
 
   // https://github.com/microsoft/playwright/issues/7276#issuecomment-1516768428
   const cdpSession = await page.context().newCDPSession(page);
@@ -45,7 +45,7 @@ test('WebAuthn register & login flow', async ({browser, request}, workerInfo) =>
 
   // Login.
   response = await page.goto('/user/login');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
 
   await page.getByLabel('Username or email address').fill(username);
   await page.getByLabel('Password').fill('password');
@@ -55,7 +55,7 @@ test('WebAuthn register & login flow', async ({browser, request}, workerInfo) =>
 
   // Cleanup.
   response = await page.goto('/user/settings/security');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
   await page.getByRole('button', {name: 'Remove'}).click();
   await page.getByRole('button', {name: 'Yes'}).click();
   await page.waitForURL(`${workerInfo.project.use.baseURL}/user/settings/security`);

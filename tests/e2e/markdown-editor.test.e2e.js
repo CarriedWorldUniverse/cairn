@@ -19,7 +19,7 @@ test('markdown indentation', async ({browser}, workerInfo) => {
 
   const page = await context.newPage();
   const response = await page.goto('/user2/repo1/issues/new');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
 
   const textarea = page.locator('textarea[name=content]');
   const tab = '    ';
@@ -92,7 +92,7 @@ test('markdown list continuation', async ({browser}, workerInfo) => {
 
   const page = await context.newPage();
   const response = await page.goto('/user2/repo1/issues/new');
-  await expect(response?.status()).toBe(200);
+  expect(response?.status()).toBe(200);
 
   const textarea = page.locator('textarea[name=content]');
   const tab = '    ';
