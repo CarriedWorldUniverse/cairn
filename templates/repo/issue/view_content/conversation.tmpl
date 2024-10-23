@@ -85,7 +85,7 @@
 							</div>
 						</div>
 						<div class="text comment-content">
-							<div class="render-content markup" {{if or $.Permission.IsAdmin $.HasIssuesOrPullsWritePermission (and $.IsSigned (eq $.SignedUserID .PosterID))}}data-can-edit="true"{{end}}>
+							<div id="issuecomment-{{.ID}}-content" class="render-content markup" {{if or $.Permission.IsAdmin $.HasIssuesOrPullsWritePermission (and $.IsSigned (eq $.SignedUserID .PosterID))}}data-can-edit="true"{{end}}>
 							{{if .RenderedContent}}
 								{{.RenderedContent}}
 							{{else}}

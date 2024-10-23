@@ -49,7 +49,9 @@ func TestMain(m *testing.M) {
 
 	err := unittest.InitFixtures(
 		unittest.FixturesOptions{
-			Dir: filepath.Join(filepath.Dir(setting.AppPath), "models/fixtures/"),
+			Dir:  filepath.Join(setting.AppWorkPath, "models/fixtures/"),
+			Base: setting.AppWorkPath,
+			Dirs: []string{"tests/e2e/fixtures/"},
 		},
 	)
 	if err != nil {
