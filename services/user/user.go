@@ -306,6 +306,7 @@ func DeleteInactiveUsers(ctx context.Context, olderThan time.Duration) error {
 			// Ignore users that were set inactive by admin.
 			if models.IsErrUserOwnRepos(err) || models.IsErrUserHasOrgs(err) ||
 				models.IsErrUserOwnPackages(err) || models.IsErrDeleteLastAdminUser(err) {
+				log.Warn("Inactive user %q has repositories, organizations or packages, skipping deletion: %v", u.Name, err)
 				continue
 			}
 			return err
