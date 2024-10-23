@@ -30,7 +30,7 @@ export async function login_user(browser, workerInfo, user) {
   // Route to login page
   // Note: this could probably be done more quickly with a POST
   const response = await page.goto('/user/login');
-  await expect(response?.status()).toBe(200); // Status OK
+  expect(response?.status()).toBe(200); // Status OK
 
   // Fill out form
   await page.type('input[name=user_name]', user);
@@ -39,7 +39,7 @@ export async function login_user(browser, workerInfo, user) {
 
   await page.waitForLoadState('networkidle');
 
-  await expect(page.url(), {message: `Failed to login user ${user}`}).toBe(`${workerInfo.project.use.baseURL}/`);
+  expect(page.url(), {message: `Failed to login user ${user}`}).toBe(`${workerInfo.project.use.baseURL}/`);
 
   // Save state
   await context.storageState({path: `${ARTIFACTS_PATH}/state-${user}-${workerInfo.workerIndex}.json`});
