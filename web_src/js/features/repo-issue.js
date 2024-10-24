@@ -481,6 +481,9 @@ export function initRepoPullRequestReview() {
         });
       }
     }
+  } else if (window.history.scrollRestoration === 'manual') {
+    // reset scrollRestoration to 'auto' if there is no hash in url and we set it to 'manual' before
+    window.history.scrollRestoration = 'auto';
   }
 
   $(document).on('click', '.show-outdated', function (e) {
