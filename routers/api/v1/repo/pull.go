@@ -28,6 +28,7 @@ import (
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/timeutil"
+	"code.gitea.io/gitea/modules/util"
 	"code.gitea.io/gitea/modules/web"
 	"code.gitea.io/gitea/routers/api/v1/utils"
 	asymkey_service "code.gitea.io/gitea/services/asymkey"
@@ -1034,17 +1035,6 @@ func MergePullRequest(ctx *context.APIContext) {
 	log.Trace("Pull request merged: %d", pr.ID)
 
 	if form.DeleteBranchAfterMerge {
-		// Don't cleanup when there are other PR's that use this branch as head branch.
-		exist, err := issues_model.HasUnmergedPullRequestsByHeadInfo(ctx, pr.HeadRepoID, pr.HeadBranch)
-		if err != nil {
-			ctx.ServerError("HasUnmergedPullRequestsByHeadInfo", err)
-			return
-		}
-		if exist {
-			ctx.Status(http.StatusOK)
-			return
-		}
-
 		var headRepo *git.Repository
 		if ctx.Repo != nil && ctx.Repo.Repository != nil && ctx.Repo.Repository.ID == pr.HeadRepoID && ctx.Repo.GitRepo != nil {
 			headRepo = ctx.Repo.GitRepo
@@ -1056,26 +1046,19 @@ func MergePullRequest(ctx *context.APIContext) {
 			}
 			defer headRepo.Close()
 		}
-		if err := pull_service.RetargetChildrenOnMerge(ctx, ctx.Doer, pr); err != nil {
-			ctx.Error(http.StatusInternalServerError, "RetargetChildrenOnMerge", err)
-			return
-		}
-		if err := repo_service.DeleteBranch(ctx, ctx.Doer, pr.HeadRepo, headRepo, pr.HeadBranch); err != nil {
+
+		if err := repo_service.DeleteBranchAfterMerge(ctx, ctx.Doer, pr, headRepo); err != nil {
 			switch {
-			case git.IsErrBranchNotExist(err):
-				ctx.NotFound(err)
 			case errors.Is(err, repo_service.ErrBranchIsDefault):
-				ctx.Error(http.StatusForbidden, "DefaultBranch", fmt.Errorf("can not delete default branch"))
+				ctx.Error(http.StatusForbidden, "DefaultBranch", fmt.Errorf("the head branch is the default branch"))
 			case errors.Is(err, git_model.ErrBranchIsProtected):
-				ctx.Error(http.StatusForbidden, "IsProtectedBranch", fmt.Errorf("branch protected"))
+				ctx.Error(http.StatusForbidden, "IsProtectedBranch", fmt.Errorf("the head branch is protected"))
+			case errors.Is(err, util.ErrPermissionDenied):
+				ctx.Error(http.StatusForbidden, "HeadBranch", fmt.Errorf("insufficient permission to delete head branch"))
 			default:
-				ctx.Error(http.StatusInternalServerError, "DeleteBranch", err)
+				ctx.Error(http.StatusInternalServerError, "DeleteBranchAfterMerge", err)
 			}
 			return
-		}
-		if err := issues_model.AddDeletePRBranchComment(ctx, ctx.Doer, pr.BaseRepo, pr.Issue.ID, pr.HeadBranch); err != nil {
-			// Do not fail here as branch has already been deleted
-			log.Error("DeleteBranch: %v", err)
 		}
 	}
 
