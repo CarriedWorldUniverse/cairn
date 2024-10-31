@@ -76,7 +76,7 @@ jobs:
           url: https://placeholder:${{ secrets.TOKEN_NEXT_DIGEST }}@code.forgejo.org/infrastructure/next-digest
           ref_name: '${{ github.ref_name }}'
           image: 'codeberg.org/forgejo-experimental/forgejo'
-          image_suffix: '-rootless'
+          tag_suffix: '-rootless'
 
       - name: set up go for the DNS update below
         if: vars.ROLE == 'forgejo-experimental' && secrets.OVH_APP_KEY != ''
