@@ -8,8 +8,9 @@
   ],
   "baseBranches": [
     "$default",
-    "/^v[7-9]\\.\\d+/forgejo$/",
-    "/^v\\d\\d+\\.\\d+\\/forgejo$/"
+    "/^v7\\.\\d+/forgejo$/",
+    "/^v9\\.\\d+/forgejo$/",
+    "/^v10\\.\\d+/forgejo$/"
   ],
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths", "npmDedupe"],
   "prConcurrentLimit": 10,
