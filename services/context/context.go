@@ -102,6 +102,7 @@ func NewTemplateContextForWeb(ctx *Context) TemplateContext {
 	tmplCtx := NewTemplateContext(ctx)
 	tmplCtx["Locale"] = ctx.Base.Locale
 	tmplCtx["AvatarUtils"] = templates.NewAvatarUtils(ctx)
+	tmplCtx["DateUtils"] = templates.NewDateUtils(ctx)
 	return tmplCtx
 }
 
