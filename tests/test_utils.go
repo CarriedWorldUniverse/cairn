@@ -226,13 +226,13 @@ func cancelProcesses(t testing.TB, delay time.Duration) {
 
 func PrepareArtifactsStorage(t testing.TB) {
 	// prepare actions artifacts directory and files
-	assert.NoError(t, storage.Clean(storage.ActionsArtifacts))
+	require.NoError(t, storage.Clean(storage.ActionsArtifacts))
 
 	s, err := storage.NewStorage(setting.LocalStorageType, &setting.Storage{
 		Path: filepath.Join(filepath.Dir(setting.AppPath), "tests", "testdata", "data", "artifacts"),
 	})
-	assert.NoError(t, err)
-	assert.NoError(t, s.IterateObjects("", func(p string, obj storage.Object) error {
+	require.NoError(t, err)
+	require.NoError(t, s.IterateObjects("", func(p string, obj storage.Object) error {
 		_, err = storage.Copy(storage.ActionsArtifacts, p, s, p)
 		return err
 	}))

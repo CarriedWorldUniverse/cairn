@@ -126,7 +126,7 @@ func TestActionsArtifactDownload(t *testing.T) {
 		}
 	}
 	assert.NotNil(t, artifactIdx)
-	assert.Equal(t, listResp.Value[artifactIdx].Name, "artifact-download")
+	assert.Equal(t, "artifact-download", listResp.Value[artifactIdx].Name)
 	assert.Contains(t, listResp.Value[artifactIdx].FileContainerResourceURL, "/api/actions_pipeline/_apis/pipelines/workflows/791/artifacts")
 
 	idx := strings.Index(listResp.Value[artifactIdx].FileContainerResourceURL, "/api/actions_pipeline/_apis/pipelines/")
