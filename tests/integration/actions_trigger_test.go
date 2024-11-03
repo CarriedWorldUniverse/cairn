@@ -5,12 +5,14 @@ package integration
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	actions_model "code.gitea.io/gitea/models/actions"
+	auth_model "code.gitea.io/gitea/models/auth"
 	"code.gitea.io/gitea/models/db"
 	git_model "code.gitea.io/gitea/models/git"
 	issues_model "code.gitea.io/gitea/models/issues"
@@ -22,9 +24,11 @@ import (
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/gitrepo"
 	"code.gitea.io/gitea/modules/setting"
+	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/test"
 	webhook_module "code.gitea.io/gitea/modules/webhook"
 	actions_service "code.gitea.io/gitea/services/actions"
+	issue_service "code.gitea.io/gitea/services/issue"
 	pull_service "code.gitea.io/gitea/services/pull"
 	release_service "code.gitea.io/gitea/services/release"
 	repo_service "code.gitea.io/gitea/services/repository"
@@ -34,6 +38,238 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestPullRequestCommitStatus(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the base repo
+		session := loginUser(t, "user2")
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue)
+
+		// prepare the repository
+		files := make([]*files_service.ChangeRepoFile, 0, 10)
+		for _, onType := range []string{
+			"opened",
+			"synchronize",
+			"labeled",
+			"unlabeled",
+			"assigned",
+			"unassigned",
+			"milestoned",
+			"demilestoned",
+			"closed",
+			"reopened",
+		} {
+			files = append(files, &files_service.ChangeRepoFile{
+				Operation: "create",
+				TreePath:  fmt.Sprintf(".forgejo/workflows/%s.yml", onType),
+				ContentReader: strings.NewReader(fmt.Sprintf(`name: %[1]s
+on:
+  pull_request:
+    types:
+      - %[1]s
+jobs:
+  %[1]s:
+    runs-on: docker
+    steps:
+      - run: true
+`, onType)),
+			})
+		}
+		baseRepo, _, f := tests.CreateDeclarativeRepo(t, user2, "repo-pull-request",
+			[]unit_model.Type{unit_model.TypeActions}, nil, files)
+		defer f()
+		baseGitRepo, err := gitrepo.OpenRepository(db.DefaultContext, baseRepo)
+		require.NoError(t, err)
+		defer func() {
+			baseGitRepo.Close()
+		}()
+
+		// prepare the pull request
+		testEditFileToNewBranch(t, session, "user2", "repo-pull-request", "main", "wip-something", "README.md", "Hello, world 1")
+		testPullCreate(t, session, "user2", "repo-pull-request", true, "main", "wip-something", "Commit status PR")
+		pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: baseRepo.ID})
+		require.NoError(t, pr.LoadIssue(db.DefaultContext))
+
+		// prepare the assignees
+		issueURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%s", "user2", "repo-pull-request", fmt.Sprintf("%d", pr.Issue.Index))
+
+		// prepare the labels
+		labelStr := "/api/v1/repos/user2/repo-pull-request/labels"
+		req := NewRequestWithJSON(t, "POST", labelStr, &api.CreateLabelOption{
+			Name:        "mylabel",
+			Color:       "abcdef",
+			Description: "description mylabel",
+		}).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusCreated)
+		label := new(api.Label)
+		DecodeJSON(t, resp, &label)
+		labelURL := fmt.Sprintf("%s/labels", issueURL)
+
+		// prepare the milestone
+		milestoneStr := "/api/v1/repos/user2/repo-pull-request/milestones"
+		req = NewRequestWithJSON(t, "POST", milestoneStr, &api.CreateMilestoneOption{
+			Title: "mymilestone",
+			State: "open",
+		}).AddTokenAuth(token)
+		resp = MakeRequest(t, req, http.StatusCreated)
+		milestone := new(api.Milestone)
+		DecodeJSON(t, resp, &milestone)
+
+		// check that one of the status associated with the commit sha matches both
+		// context & state
+		checkCommitStatus := func(sha, context string, state api.CommitStatusState) bool {
+			commitStatuses, _, err := git_model.GetLatestCommitStatus(db.DefaultContext, pr.BaseRepoID, sha, db.ListOptionsAll)
+			require.NoError(t, err)
+			for _, commitStatus := range commitStatuses {
+				if state == commitStatus.State && context == commitStatus.Context {
+					return true
+				}
+			}
+			return false
+		}
+
+		count := 0
+		for _, testCase := range []struct {
+			onType      string
+			jobID       string
+			doSomething func()
+			action      api.HookIssueAction
+			hasLabel    bool
+		}{
+			{
+				onType:      "opened",
+				doSomething: func() {},
+				action:      api.HookIssueOpened,
+			},
+			{
+				onType: "synchronize",
+				doSomething: func() {
+					testEditFile(t, session, "user2", "repo-pull-request", "wip-something", "README.md", "Hello, world 2")
+				},
+				action: api.HookIssueSynchronized,
+			},
+			{
+				onType: "labeled",
+				doSomething: func() {
+					req := NewRequestWithJSON(t, "POST", labelURL, &api.IssueLabelsOption{
+						Labels: []any{label.ID},
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusOK)
+				},
+				action:   api.HookIssueLabelUpdated,
+				hasLabel: true,
+			},
+			{
+				onType: "unlabeled",
+				doSomething: func() {
+					req := NewRequestWithJSON(t, "PUT", labelURL, &api.IssueLabelsOption{
+						Labels: []any{},
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusOK)
+				},
+				action:   api.HookIssueLabelCleared,
+				hasLabel: true,
+			},
+			{
+				onType: "assigned",
+				doSomething: func() {
+					req := NewRequestWithJSON(t, "PATCH", issueURL, &api.EditIssueOption{
+						Assignees: []string{"user2"},
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusCreated)
+				},
+				action: api.HookIssueAssigned,
+			},
+			{
+				onType: "unassigned",
+				doSomething: func() {
+					req := NewRequestWithJSON(t, "PATCH", issueURL, &api.EditIssueOption{
+						Assignees: []string{},
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusCreated)
+				},
+				action: api.HookIssueUnassigned,
+			},
+			{
+				onType: "milestoned",
+				doSomething: func() {
+					req := NewRequestWithJSON(t, "PATCH", issueURL, &api.EditIssueOption{
+						Milestone: &milestone.ID,
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusCreated)
+				},
+				action: api.HookIssueMilestoned,
+			},
+			{
+				onType: "demilestoned",
+				doSomething: func() {
+					var zero int64
+					req := NewRequestWithJSON(t, "PATCH", issueURL, &api.EditIssueOption{
+						Milestone: &zero,
+					}).AddTokenAuth(token)
+					MakeRequest(t, req, http.StatusCreated)
+				},
+				action: api.HookIssueDemilestoned,
+			},
+			{
+				onType: "closed",
+				doSomething: func() {
+					sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+					require.NoError(t, err)
+					err = issue_service.ChangeStatus(db.DefaultContext, pr.Issue, user2, sha, true)
+					require.NoError(t, err)
+				},
+				action: api.HookIssueClosed,
+			},
+			{
+				onType: "reopened",
+				doSomething: func() {
+					sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+					require.NoError(t, err)
+					err = issue_service.ChangeStatus(db.DefaultContext, pr.Issue, user2, sha, false)
+					require.NoError(t, err)
+				},
+				action: api.HookIssueReOpened,
+			},
+		} {
+			t.Run(testCase.onType, func(t *testing.T) {
+				// trigger the onType event
+				testCase.doSomething()
+				count++
+				context := fmt.Sprintf("%[1]s / %[1]s (pull_request)", testCase.onType)
+
+				// wait for a new ActionRun to be created
+				assert.Eventually(t, func() bool {
+					return count == unittest.GetCount(t, &actions_model.ActionRun{RepoID: baseRepo.ID})
+				}, 30*time.Second, 1*time.Second)
+
+				// verify the expected  ActionRun was created
+				sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+				require.NoError(t, err)
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, WorkflowID: fmt.Sprintf("%s.yml", testCase.onType)})
+
+				assert.Equal(t, sha, actionRun.CommitSHA)
+				assert.Equal(t, actions_module.GithubEventPullRequest, actionRun.TriggerEvent)
+				event, err := actionRun.GetPullRequestEventPayload()
+				if testCase.hasLabel {
+					assert.NotNil(t, event.Label)
+				}
+				require.NoError(t, err)
+				assert.Equal(t, testCase.action, event.Action)
+
+				// verify the expected  ActionRunJob was created and is StatusWaiting
+				job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{JobID: testCase.onType, CommitSHA: sha})
+				assert.Equal(t, actions_model.StatusWaiting, job.Status)
+
+				// verify the commit status changes to CommitStatusSuccess when the job changes to StatusSuccess
+				assert.True(t, checkCommitStatus(sha, context, api.CommitStatusPending))
+				job.Status = actions_model.StatusSuccess
+				actions_service.CreateCommitStatus(db.DefaultContext, job)
+				assert.True(t, checkCommitStatus(sha, context, api.CommitStatusSuccess))
+			})
+		}
+	})
+}
 
 func TestPullRequestTargetEvent(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
