@@ -1159,7 +1159,7 @@ func GetDiff(ctx context.Context, gitRepo *git.Repository, opts *DiffOptions, fi
 			Dir:     repoPath,
 			Stdout:  writer,
 			Stderr:  stderr,
-		}); err != nil {
+		}); err != nil && !git.IsErrCanceledOrKilled(err) {
 			log.Error("error during GetDiff(git diff dir: %s): %v, stderr: %s", repoPath, err, stderr.String())
 		}
 

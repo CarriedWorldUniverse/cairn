@@ -137,9 +137,6 @@ code.gitea.io/gitea/modules/git
 	AddChangesWithArgs
 	CommitChanges
 	CommitChangesWithArgs
-	IsErrExecTimeout
-	ErrExecTimeout.Error
-	ErrUnsupportedVersion.Error
 	SetUpdateHook
 	openRepositoryWithDefaultContext
 	IsTagExist
