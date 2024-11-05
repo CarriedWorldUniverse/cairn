@@ -44,6 +44,7 @@ test('Hyperlink paste behaviour', async ({browser}, workerInfo) => {
   await page.locator('textarea').press('ControlOrMeta+a');
   await page.locator('textarea').press('ControlOrMeta+v');
   await expect(page.locator('textarea')).toHaveValue('https://codeberg.org/forgejo/forgejo#some-anchor');
+  await page.locator('textarea').fill('');
 });
 
 test('Always focus edit tab first on edit', async ({browser}, workerInfo) => {
@@ -67,4 +68,110 @@ test('Always focus edit tab first on edit', async ({browser}, workerInfo) => {
 
   await expect(editTab).toHaveClass(/active/);
   await expect(previewTab).not.toHaveClass(/active/);
+});
+
+test('Quote reply', async ({browser}, workerInfo) => {
+  test.skip(workerInfo.project.name !== 'firefox', 'Uses Firefox specific selection quirks');
+  const page = await login({browser}, workerInfo);
+  const response = await page.goto('/user2/repo1/issues/1');
+  expect(response?.status()).toBe(200);
+
+  const editorTextarea = page.locator('textarea.markdown-text-editor');
+
+  // Full quote.
+  await page.click('#issuecomment-1001 .comment-container .context-menu');
+  await page.click('#issuecomment-1001 .quote-reply');
+
+  await expect(editorTextarea).toHaveValue('@user2 wrote in http://localhost:3003/user2/repo1/issues/1#issuecomment-1001:\n\n' +
+                                           '> ## [](#lorem-ipsum)Lorem Ipsum\n' +
+                                           '> \n' +
+                                           '> I would like to say that **I am not appealed** that it took _so long_ for this `feature` to be [created](https://example.com) \\(e^{\\pi i} + 1 = 0\\)\n' +
+                                           '> \n' +
+                                           '> \\[e^{\\pi i} + 1 = 0\\]\n' +
+                                           '> \n' +
+                                           '> #1\n' +
+                                           '> \n' +
+                                           '> ```js\n' +
+                                           "> console.log('evil')\n" +
+                                           "> alert('evil')\n" +
+                                           '> ```\n' +
+                                           '> \n' +
+                                           '> :+1: :100:\n\n');
+
+  await editorTextarea.fill('');
+
+  // Partial quote.
+  await page.click('#issuecomment-1001 .comment-container .context-menu');
+
+  await page.evaluate(() => {
+    const range = new Range();
+    range.setStart(document.querySelector('#issuecomment-1001-content #user-content-lorem-ipsum').childNodes[1], 6);
+    range.setEnd(document.querySelector('#issuecomment-1001-content p').childNodes[1].childNodes[0], 7);
+
+    const selection = window.getSelection();
+
+    // Add range to window selection
+    selection.addRange(range);
+  });
+
+  await page.click('#issuecomment-1001 .quote-reply');
+
+  await expect(editorTextarea).toHaveValue('@user2 wrote in http://localhost:3003/user2/repo1/issues/1#issuecomment-1001:\n\n' +
+                                           '> ## Ipsum\n' +
+                                           '> \n' +
+                                           '> I would like to say that **I am no**\n\n');
+
+  await editorTextarea.fill('');
+
+  // Another partial quote.
+  await page.click('#issuecomment-1001 .comment-container .context-menu');
+
+  await page.evaluate(() => {
+    const range = new Range();
+    range.setStart(document.querySelector('#issuecomment-1001-content p').childNodes[1].childNodes[0], 7);
+    range.setEnd(document.querySelector('#issuecomment-1001-content p').childNodes[7].childNodes[0], 3);
+
+    const selection = window.getSelection();
+
+    // Add range to window selection
+    selection.addRange(range);
+  });
+
+  await page.click('#issuecomment-1001 .quote-reply');
+
+  await expect(editorTextarea).toHaveValue('@user2 wrote in http://localhost:3003/user2/repo1/issues/1#issuecomment-1001:\n\n' +
+                                           '> **t appealed** that it took _so long_ for this `feature` to be [cre](https://example.com)\n\n');
+
+  await editorTextarea.fill('');
+});
+
+test('Pull quote reply', async ({browser}, workerInfo) => {
+  test.skip(workerInfo.project.name !== 'firefox', 'Uses Firefox specific selection quirks');
+  const page = await login({browser}, workerInfo);
+  const response = await page.goto('/user2/commitsonpr/pulls/1/files');
+  expect(response?.status()).toBe(200);
+
+  const editorTextarea = page.locator('textarea.markdown-text-editor');
+
+  // Full quote with no reply handler being open.
+  await page.click('.comment-code-cloud .context-menu');
+  await page.click('.comment-code-cloud .quote-reply');
+
+  await expect(editorTextarea).toHaveValue('@user2 wrote in http://localhost:3003/user2/commitsonpr/pulls/1/files#issuecomment-1002:\n\n' +
+                                           '> ## [](#lorem-ipsum)Lorem Ipsum\n' +
+                                           '> \n' +
+                                           '> I would like to say that **I am not appealed** that it took _so long_ for this `feature` to be [created](https://example.com) \\(e^{\\pi i} + 1 = 0\\)\n' +
+                                           '> \n' +
+                                           '> \\[e^{\\pi i} + 1 = 0\\]\n' +
+                                           '> \n' +
+                                           '> #1\n' +
+                                           '> \n' +
+                                           '> ```js\n' +
+                                           "> console.log('evil')\n" +
+                                           "> alert('evil')\n" +
+                                           '> ```\n' +
+                                           '> \n' +
+                                           '> :+1: :100:\n\n');
+
+  await editorTextarea.fill('');
 });
