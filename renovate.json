@@ -15,6 +15,7 @@
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths", "npmDedupe"],
   "prConcurrentLimit": 10,
   "osvVulnerabilityAlerts": true,
+  "automergeStrategy": "squash",
   "labels": ["dependency-upgrade"],
   "packageRules": [
     {
