@@ -362,6 +362,7 @@ type IssuePayload struct {
 	Repository *Repository     `json:"repository"`
 	Sender     *User           `json:"sender"`
 	CommitID   string          `json:"commit_id"`
+	Label      *Label          `json:"label,omitempty"`
 }
 
 // JSONPayload encodes the IssuePayload to JSON, with an indentation of two spaces.
@@ -399,6 +400,7 @@ type PullRequestPayload struct {
 	Sender            *User           `json:"sender"`
 	CommitID          string          `json:"commit_id"`
 	Review            *ReviewPayload  `json:"review"`
+	Label             *Label          `json:"label,omitempty"`
 }
 
 // JSONPayload FIXME
