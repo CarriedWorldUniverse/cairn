@@ -128,7 +128,7 @@
     },
     {
       "description": "Disable renovate self-updates for release branches",
-      "matchBaseBranches": ["^v\\d+\\.\\d+\\/forgejo$"],
+      "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
       "matchDatasources": ["docker"],
       "matchPackageNames": [
         "code.forgejo.org/forgejo-contrib/renovate",
