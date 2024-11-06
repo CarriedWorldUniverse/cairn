@@ -6,6 +6,7 @@ require (
 	code.forgejo.org/f3/gof3/v3 v3.7.0
 	code.forgejo.org/forgejo-contrib/go-libravatar v0.0.0-20191008002943-06d1c002b251
 	code.forgejo.org/forgejo/reply v1.0.2
+	code.forgejo.org/go-chi/binding v0.0.0-20241105210225-1f8bf5136720
 	code.forgejo.org/go-chi/cache v0.0.0-20240912103640-dcb08fba860d
 	code.forgejo.org/go-chi/captcha v0.0.0-20240905153133-df43b9250ed5
 	code.forgejo.org/go-chi/session v0.0.0-20241017103059-2a992261fc26
@@ -14,7 +15,6 @@ require (
 	code.gitea.io/sdk/gitea v0.17.1
 	codeberg.org/gusted/mcaptcha v0.0.0-20220723083913-4f3072e1d570
 	connectrpc.com/connect v1.17.0
-	gitea.com/go-chi/binding v0.0.0-20240430071103-39a851e106ed
 	gitea.com/lunny/levelqueue v0.4.2-0.20230414023320-3c0159fe0fe4
 	github.com/42wim/sshsig v0.0.0-20211121163825-841cf5bbc121
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
