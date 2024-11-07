@@ -496,6 +496,7 @@ func ReplaceIssueLabels(ctx context.Context, issue *Issue, labels []*Label, doer
 		}
 	}
 
+	issue.isLabelsLoaded = false
 	issue.Labels = nil
 	if err = issue.LoadLabels(ctx); err != nil {
 		return err
