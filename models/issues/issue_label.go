@@ -205,6 +205,7 @@ func DeleteIssueLabel(ctx context.Context, issue *Issue, label *Label, doer *use
 		return err
 	}
 
+	issue.isLabelsLoaded = false
 	issue.Labels = nil
 	return issue.LoadLabels(ctx)
 }
