@@ -9,7 +9,7 @@ on:
 
 jobs:
   backend-checks:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
       image: 'code.forgejo.org/oci/node:20-bookworm'
@@ -34,7 +34,7 @@ jobs:
           path: '/workspace/forgejo/forgejo/gitea'
           key: backend-build-${{ github.sha }}
   frontend-checks:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
       image: 'code.forgejo.org/oci/node:20-bookworm'
@@ -46,7 +46,7 @@ jobs:
       - run: make test-frontend-coverage
       - run: make frontend
   test-unit:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
@@ -106,7 +106,7 @@ jobs:
           TAGS: bindata
           TEST_ELASTICSEARCH_URL: http://elasticsearch:9200
   test-remote-cacher:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
@@ -167,7 +167,7 @@ jobs:
           TAGS: bindata
           TEST_REDIS_SERVER: cacher:${{ matrix.cacher.port }}
   test-mysql:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
@@ -218,7 +218,7 @@ jobs:
         env:
           USE_REPO_TEST_DIR: 1
   test-pgsql:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
@@ -274,7 +274,7 @@ jobs:
           USE_REPO_TEST_DIR: 1
           TEST_LDAP: 1
   test-sqlite:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
@@ -318,7 +318,7 @@ jobs:
           TEST_TAGS: sqlite sqlite_unlock_notify
           USE_REPO_TEST_DIR: 1
   security-check:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     needs:
       - test-sqlite
