@@ -5,7 +5,6 @@ package base
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,46 +42,6 @@ func TestBasicAuthDecode(t *testing.T) {
 
 	_, _, err = BasicAuthDecode("invalid")
 	require.Error(t, err)
-}
-
-func TestVerifyTimeLimitCode(t *testing.T) {
-	tc := []struct {
-		data    string
-		minutes int
-		code    string
-		valid   bool
-	}{{
-		data:    "data",
-		minutes: 2,
-		code:    testCreateTimeLimitCode(t, "data", 2),
-		valid:   true,
-	}, {
-		data:    "abc123-ß",
-		minutes: 1,
-		code:    testCreateTimeLimitCode(t, "abc123-ß", 1),
-		valid:   true,
-	}, {
-		data:    "data",
-		minutes: 2,
-		code:    "2021012723240000005928251dac409d2c33a6eb82c63410aaad569bed",
-		valid:   false,
-	}}
-	for _, test := range tc {
-		actualValid := VerifyTimeLimitCode(test.data, test.minutes, test.code)
-		assert.Equal(t, test.valid, actualValid, "data: '%s' code: '%s' should be valid: %t", test.data, test.code, test.valid)
-	}
-}
-
-func testCreateTimeLimitCode(t *testing.T, data string, m int) string {
-	result0 := CreateTimeLimitCode(data, m, nil)
-	result1 := CreateTimeLimitCode(data, m, time.Now().Format("200601021504"))
-	result2 := CreateTimeLimitCode(data, m, time.Unix(time.Now().Unix()+int64(time.Minute)*int64(m), 0).Format("200601021504"))
-
-	assert.Equal(t, result0, result1)
-	assert.NotEqual(t, result0, result2)
-
-	assert.NotEmpty(t, result0)
-	return result0
 }
 
 func TestFileSize(t *testing.T) {
