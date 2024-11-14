@@ -11,7 +11,7 @@ on:
 
 jobs:
   test-e2e:
-    if: ${{ !startsWith(vars.ROLE, 'forgejo-') }}
+    if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
       image: 'docker.io/node:20-bookworm'
