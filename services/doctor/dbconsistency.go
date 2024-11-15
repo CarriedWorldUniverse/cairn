@@ -227,6 +227,9 @@ func checkDBConsistency(ctx context.Context, logger log.Logger, autofix bool) er
 		// find redirects without existing user.
 		genericOrphanCheck("Orphaned Redirects without existing redirect user",
 			"user_redirect", "user", "user_redirect.redirect_user_id=`user`.id"),
+		// find authorization tokens without existing user
+		genericOrphanCheck("Authorization token without existing User",
+			"forgejo_auth_token", "user", "forgejo_auth_token.uid=user.id"),
 	)
 
 	for _, c := range consistencyChecks {

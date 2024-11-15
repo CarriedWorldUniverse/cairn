@@ -13,11 +13,14 @@ import (
 
 	"code.gitea.io/gitea/models/db"
 	repo_model "code.gitea.io/gitea/models/repo"
+	"code.gitea.io/gitea/models/unit"
 	"code.gitea.io/gitea/models/unittest"
 	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/gitrepo"
+	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/setting"
+	"code.gitea.io/gitea/modules/test"
 	gitea_context "code.gitea.io/gitea/services/context"
 	doctor "code.gitea.io/gitea/services/doctor"
 	"code.gitea.io/gitea/services/migrations"
@@ -145,4 +148,83 @@ func doRemovePushMirror(ctx APITestContext, address, username, password string, 
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "success")
 	}
+}
+
+func TestPushMirrorSettings(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
+		srcRepo2 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 3})
+		assert.False(t, srcRepo.HasWiki())
+		sess := loginUser(t, user.Name)
+		pushToRepo, _, f := CreateDeclarativeRepoWithOptions(t, user, DeclarativeRepoOptions{
+			Name:         optional.Some("push-mirror-test"),
+			AutoInit:     optional.Some(false),
+			EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),
+		})
+		defer f()
+
+		t.Run("Adding", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo2.FullName()), map[string]string{
+				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo2.FullName())),
+				"action":               "push-mirror-add",
+				"push_mirror_address":  u.String() + pushToRepo.FullName(),
+				"push_mirror_interval": "0",
+			})
+			sess.MakeRequest(t, req, http.StatusSeeOther)
+
+			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
+				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
+				"action":               "push-mirror-add",
+				"push_mirror_address":  u.String() + pushToRepo.FullName(),
+				"push_mirror_interval": "0",
+			})
+			sess.MakeRequest(t, req, http.StatusSeeOther)
+
+			flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
+			assert.NotNil(t, flashCookie)
+			assert.Contains(t, flashCookie.Value, "success")
+		})
+
+		mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, mirrors, 1)
+		mirrorID := mirrors[0].ID
+
+		mirrors, _, err = repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo2.ID, db.ListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, mirrors, 1)
+
+		t.Run("Interval", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			unittest.AssertExistsAndLoadBean(t, &repo_model.PushMirror{ID: mirrorID - 1})
+
+			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
+				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
+				"action":               "push-mirror-update",
+				"push_mirror_id":       strconv.FormatInt(mirrorID-1, 10),
+				"push_mirror_interval": "10m0s",
+			})
+			sess.MakeRequest(t, req, http.StatusNotFound)
+
+			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
+				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
+				"action":               "push-mirror-update",
+				"push_mirror_id":       strconv.FormatInt(mirrorID, 10),
+				"push_mirror_interval": "10m0s",
+			})
+			sess.MakeRequest(t, req, http.StatusSeeOther)
+
+			flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
+			assert.NotNil(t, flashCookie)
+			assert.Contains(t, flashCookie.Value, "success")
+		})
+	})
 }

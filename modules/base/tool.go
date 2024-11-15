@@ -15,12 +15,10 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/log"
-	"code.gitea.io/gitea/modules/setting"
 
 	"github.com/dustin/go-humanize"
 )
@@ -59,67 +57,6 @@ func BasicAuthDecode(encoded string) (string, string, error) {
 	}
 
 	return auth[0], auth[1], nil
-}
-
-// VerifyTimeLimitCode verify time limit code
-func VerifyTimeLimitCode(data string, minutes int, code string) bool {
-	if len(code) <= 18 {
-		return false
-	}
-
-	// split code
-	start := code[:12]
-	lives := code[12:18]
-	if d, err := strconv.ParseInt(lives, 10, 0); err == nil {
-		minutes = int(d)
-	}
-
-	// right active code
-	retCode := CreateTimeLimitCode(data, minutes, start)
-	if retCode == code && minutes > 0 {
-		// check time is expired or not
-		before, _ := time.ParseInLocation("200601021504", start, time.Local)
-		now := time.Now()
-		if before.Add(time.Minute*time.Duration(minutes)).Unix() > now.Unix() {
-			return true
-		}
-	}
-
-	return false
-}
-
-// TimeLimitCodeLength default value for time limit code
-const TimeLimitCodeLength = 12 + 6 + 40
-
-// CreateTimeLimitCode create a time limit code
-// code format: 12 length date time string + 6 minutes string + 40 sha1 encoded string
-func CreateTimeLimitCode(data string, minutes int, startInf any) string {
-	format := "200601021504"
-
-	var start, end time.Time
-	var startStr, endStr string
-
-	if startInf == nil {
-		// Use now time create code
-		start = time.Now()
-		startStr = start.Format(format)
-	} else {
-		// use start string create code
-		startStr = startInf.(string)
-		start, _ = time.ParseInLocation(format, startStr, time.Local)
-		startStr = start.Format(format)
-	}
-
-	end = start.Add(time.Minute * time.Duration(minutes))
-	endStr = end.Format(format)
-
-	// create sha1 encode string
-	sh := sha1.New()
-	_, _ = sh.Write([]byte(fmt.Sprintf("%s%s%s%s%d", data, hex.EncodeToString(setting.GetGeneralTokenSigningSecret()), startStr, endStr, minutes)))
-	encoded := hex.EncodeToString(sh.Sum(nil))
-
-	code := fmt.Sprintf("%s%06d%s", startStr, minutes, encoded)
-	return code
 }
 
 // FileSize calculates the file size and generate user-friendly string.
