@@ -394,6 +394,7 @@ func TestAPIRepoMigrate(t *testing.T) {
 			CloneAddr:   testCase.cloneURL,
 			RepoOwnerID: testCase.userID,
 			RepoName:    testCase.repoName,
+			Wiki:        true,
 		}).AddTokenAuth(token)
 		resp := MakeRequest(t, req, NoExpectedStatus)
 		require.Equalf(t, testCase.expectedStatus, resp.Code, "unexpected status (may be due to throttling): '%v' on url '%s'", resp.Body.String(), testCase.cloneURL)
