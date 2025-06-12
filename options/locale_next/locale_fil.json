@@ -92,5 +92,7 @@
     "followers.outgoing.list.self.none": "Hindi ka sumusunod ng anumang tao.",
     "followers.outgoing.list.none": "Hindi sinusundan ni %s ang sinuman.",
     "editor.textarea.tab_hint": "Naka-indent na ang linya. Pindutin ulit ang <kbd>Tab</kbd> o <kbd>Escape</kbd> para umalis sa editor.",
-    "editor.textarea.shift_tab_hint": "Walang indentation sa linyang ito. Pindutin ang <kbd>Shift</kbd> + <kbd>Tab</kbd> ulit o <kbd>Escape</kbd> para umalis sa editor."
+    "editor.textarea.shift_tab_hint": "Walang indentation sa linyang ito. Pindutin ang <kbd>Shift</kbd> + <kbd>Tab</kbd> ulit o <kbd>Escape</kbd> para umalis sa editor.",
+    "admin.dashboard.cleanup_offline_runners": "Linisin ang mga offline na runner",
+    "settings.visibility.description": "Maaapektuhan ng visibility ng profile ang kakayahan ng iba na i-access ang iyong mga hindi pribadong repositoryo. <a href=\"%s\" target=\"_blank\">Matuto pa</a>"
 }
