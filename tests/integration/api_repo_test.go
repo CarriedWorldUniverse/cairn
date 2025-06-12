@@ -396,6 +396,7 @@ func TestAPIRepoMigrate(t *testing.T) {
 			CloneAddr:   testCase.cloneURL,
 			RepoOwnerID: testCase.userID,
 			RepoName:    testCase.repoName,
+			Wiki:        true,
 		}).AddTokenAuth(token)
 		resp := MakeRequest(t, req, NoExpectedStatus)
 		if resp.Code == http.StatusUnprocessableEntity {
