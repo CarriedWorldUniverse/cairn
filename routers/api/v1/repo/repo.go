@@ -647,7 +647,7 @@ func Edit(ctx *context.APIContext) {
 		return
 	}
 
-	if err := updateRepoUnits(ctx, opts); err != nil {
+	if err := updateRepoUnits(ctx, ctx.Repo.Owner.Name, ctx.Repo.Repository, opts); err != nil {
 		return
 	}
 
@@ -779,10 +779,7 @@ func updateBasicProperties(ctx *context.APIContext, opts api.EditRepoOption) err
 }
 
 // updateRepoUnits updates repo units: Issue settings, Wiki settings, PR settings
-func updateRepoUnits(ctx *context.APIContext, opts api.EditRepoOption) error {
-	owner := ctx.Repo.Owner
-	repo := ctx.Repo.Repository
-
+func updateRepoUnits(ctx *context.APIContext, owner string, repo *repo_model.Repository, opts api.EditRepoOption) error {
 	var units []repo_model.RepoUnit
 	var deleteUnitTypes []unit_model.Type
 
@@ -1045,7 +1042,7 @@ func updateRepoUnits(ctx *context.APIContext, opts api.EditRepoOption) error {
 		}
 	}
 
-	log.Trace("Repository advanced settings updated: %s/%s", owner.Name, repo.Name)
+	log.Trace("Repository advanced settings updated: %s/%s", owner, repo.Name)
 	return nil
 }
 
