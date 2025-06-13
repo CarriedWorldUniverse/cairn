@@ -250,6 +250,23 @@ func GetContents(ctx context.Context, repo *repo_model.Repository, treePath, ref
 	return contentsResponse, nil
 }
 
+// GetBlobsBySHA gets multiple GitBlobs of a repository by sha hash.
+func GetBlobsBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git.Repository, shas []string) ([]*api.GitBlob, error) {
+	if len(shas) > setting.API.MaxResponseItems {
+		shas = shas[:setting.API.MaxResponseItems]
+	}
+
+	blobs := make([]*api.GitBlob, 0, len(shas))
+	for _, sha := range shas {
+		blob, err := GetBlobBySHA(ctx, repo, gitRepo, sha)
+		if err != nil {
+			return nil, err
+		}
+		blobs = append(blobs, blob)
+	}
+	return blobs, nil
+}
+
 // GetBlobBySHA get the GitBlob of a repository using a sha hash.
 func GetBlobBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git.Repository, sha string) (*api.GitBlob, error) {
 	gitBlob, err := gitRepo.GetBlob(sha)
