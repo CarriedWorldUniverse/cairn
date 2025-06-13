@@ -3,8 +3,8 @@
 
 package structs
 
-// GitBlobResponse represents a git blob
-type GitBlobResponse struct {
+// GitBlob represents a git blob
+type GitBlob struct {
 	Content  string `json:"content"`
 	Encoding string `json:"encoding"`
 	URL      string `json:"url"`
