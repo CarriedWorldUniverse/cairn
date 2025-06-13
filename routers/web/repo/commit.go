@@ -16,7 +16,6 @@ import (
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/charset"
@@ -84,7 +83,7 @@ func Commits(ctx *context.Context) {
 		ctx.ServerError("CommitsByRange", err)
 		return
 	}
-	ctx.Data["Commits"] = processGitCommits(ctx, commits)
+	ctx.Data["Commits"] = git_model.ParseCommitsWithStatus(ctx, commits, ctx.Repo.Repository)
 
 	ctx.Data["Username"] = ctx.Repo.Owner.Name
 	ctx.Data["Reponame"] = ctx.Repo.Repository.Name
@@ -202,7 +201,7 @@ func SearchCommits(ctx *context.Context) {
 		return
 	}
 	ctx.Data["CommitCount"] = len(commits)
-	ctx.Data["Commits"] = processGitCommits(ctx, commits)
+	ctx.Data["Commits"] = git_model.ParseCommitsWithStatus(ctx, commits, ctx.Repo.Repository)
 
 	ctx.Data["Keyword"] = query
 	if all {
@@ -267,7 +266,7 @@ func FileHistory(ctx *context.Context) {
 		}
 	}
 
-	ctx.Data["Commits"] = processGitCommits(ctx, commits)
+	ctx.Data["Commits"] = git_model.ParseCommitsWithStatus(ctx, commits, ctx.Repo.Repository)
 
 	ctx.Data["Username"] = ctx.Repo.Owner.Name
 	ctx.Data["Reponame"] = ctx.Repo.Repository.Name
@@ -375,9 +374,6 @@ func Diff(ctx *context.Context) {
 	if err != nil {
 		log.Error("GetLatestCommitStatus: %v", err)
 	}
-	if !ctx.Repo.CanRead(unit_model.TypeActions) {
-		git_model.CommitStatusesHideActionsURL(ctx, statuses)
-	}
 
 	ctx.Data["CommitStatus"] = git_model.CalcCommitStatus(statuses)
 	ctx.Data["CommitStatuses"] = statuses
@@ -454,20 +450,6 @@ func RawDiff(ctx *context.Context) {
 		ctx.ServerError("GetRawDiff", err)
 		return
 	}
-}
-
-func processGitCommits(ctx *context.Context, gitCommits []*git.Commit) []*git_model.SignCommitWithStatuses {
-	commits := git_model.ConvertFromGitCommit(ctx, gitCommits, ctx.Repo.Repository)
-	if !ctx.Repo.CanRead(unit_model.TypeActions) {
-		for _, commit := range commits {
-			if commit.Status == nil {
-				continue
-			}
-			commit.Status.HideActionsURL(ctx)
-			git_model.CommitStatusesHideActionsURL(ctx, commit.Statuses)
-		}
-	}
-	return commits
 }
 
 func SetCommitNotes(ctx *context.Context) {

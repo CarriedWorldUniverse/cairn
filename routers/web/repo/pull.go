@@ -515,9 +515,6 @@ func PrepareMergedViewPullInfo(ctx *context.Context, issue *issues_model.Issue) 
 			ctx.ServerError("GetLatestCommitStatus", err)
 			return nil
 		}
-		if !ctx.Repo.CanRead(unit.TypeActions) {
-			git_model.CommitStatusesHideActionsURL(ctx, commitStatuses)
-		}
 
 		if len(commitStatuses) != 0 {
 			ctx.Data["LatestCommitStatuses"] = commitStatuses
@@ -580,9 +577,6 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 		if err != nil {
 			ctx.ServerError("GetLatestCommitStatus", err)
 			return nil
-		}
-		if !ctx.Repo.CanRead(unit.TypeActions) {
-			git_model.CommitStatusesHideActionsURL(ctx, commitStatuses)
 		}
 
 		if len(commitStatuses) > 0 {
@@ -676,9 +670,6 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 	if err != nil {
 		ctx.ServerError("GetLatestCommitStatus", err)
 		return nil
-	}
-	if !ctx.Repo.CanRead(unit.TypeActions) {
-		git_model.CommitStatusesHideActionsURL(ctx, commitStatuses)
 	}
 
 	if len(commitStatuses) > 0 {
@@ -847,7 +838,7 @@ func ViewPullCommits(ctx *context.Context) {
 	ctx.Data["Username"] = ctx.Repo.Owner.Name
 	ctx.Data["Reponame"] = ctx.Repo.Repository.Name
 
-	commits := processGitCommits(ctx, prInfo.Commits)
+	commits := git_model.ParseCommitsWithStatus(ctx, prInfo.Commits, ctx.Repo.Repository)
 	ctx.Data["Commits"] = commits
 	ctx.Data["CommitCount"] = len(commits)
 

@@ -4,11 +4,9 @@
 package git_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
@@ -245,27 +243,4 @@ func TestFindRepoRecentCommitStatusContexts(t *testing.T) {
 	if assert.Len(t, contexts, 1) {
 		assert.Equal(t, "compliance/lint-backend", contexts[0])
 	}
-}
-
-func TestCommitStatusesHideActionsURL(t *testing.T) {
-	require.NoError(t, unittest.PrepareTestDatabase())
-
-	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
-	run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: 791, RepoID: repo.ID})
-	require.NoError(t, run.LoadAttributes(db.DefaultContext))
-
-	statuses := []*git_model.CommitStatus{
-		{
-			RepoID:    repo.ID,
-			TargetURL: fmt.Sprintf("%s/jobs/%d", run.Link(), run.Index),
-		},
-		{
-			RepoID:    repo.ID,
-			TargetURL: "https://mycicd.org/1",
-		},
-	}
-
-	git_model.CommitStatusesHideActionsURL(db.DefaultContext, statuses)
-	assert.Empty(t, statuses[0].TargetURL)
-	assert.Equal(t, "https://mycicd.org/1", statuses[1].TargetURL)
 }

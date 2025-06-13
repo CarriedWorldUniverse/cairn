@@ -654,7 +654,7 @@ func PrepareCompareDiff(
 		return false
 	}
 
-	commits := processGitCommits(ctx, ci.CompareInfo.Commits)
+	commits := git_model.ParseCommitsWithStatus(ctx, ci.CompareInfo.Commits, ctx.Repo.Repository)
 	ctx.Data["Commits"] = commits
 	ctx.Data["CommitCount"] = len(commits)
 

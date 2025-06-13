@@ -16,7 +16,6 @@ import (
 	activities_model "forgejo.org/models/activities"
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
@@ -610,11 +609,6 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	if err != nil {
 		ctx.ServerError("GetIssuesLastCommitStatus", err)
 		return
-	}
-	if !ctx.Repo.CanRead(unit.TypeActions) {
-		for key := range commitStatuses {
-			git_model.CommitStatusesHideActionsURL(ctx, commitStatuses[key])
-		}
 	}
 
 	// -------------------------------
