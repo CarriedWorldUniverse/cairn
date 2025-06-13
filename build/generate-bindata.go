@@ -113,7 +113,7 @@ type direntry struct {
 }
 
 func generate(fsRoot fs.FS, packageName string, globalTime bool, output io.Writer) error {
-	enc, err := zstd.NewWriter(nil, zstd.WithLowerEncoderMem(true))
+	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 	if err != nil {
 		return err
 	}
