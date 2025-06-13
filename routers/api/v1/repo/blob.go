@@ -30,12 +30,12 @@ func GetBlob(ctx *context.APIContext) {
 	//   required: true
 	// - name: sha
 	//   in: path
-	//   description: sha of the commit
+	//   description: sha of the blob to retrieve
 	//   type: string
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/GitBlobResponse"
+	//     "$ref": "#/responses/GitBlob"
 	//   "400":
 	//     "$ref": "#/responses/error"
 	//   "404":

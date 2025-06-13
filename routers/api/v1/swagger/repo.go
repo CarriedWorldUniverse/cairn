@@ -231,11 +231,11 @@ type swaggerGitTreeResponse struct {
 	Body api.GitTreeResponse `json:"body"`
 }
 
-// GitBlobResponse
-// swagger:response GitBlobResponse
-type swaggerGitBlobResponse struct {
+// GitBlob
+// swagger:response GitBlob
+type swaggerGitBlob struct {
 	// in: body
-	Body api.GitBlobResponse `json:"body"`
+	Body api.GitBlob `json:"body"`
 }
 
 // Commit

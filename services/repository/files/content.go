@@ -250,8 +250,8 @@ func GetContents(ctx context.Context, repo *repo_model.Repository, treePath, ref
 	return contentsResponse, nil
 }
 
-// GetBlobBySHA get the GitBlobResponse of a repository using a sha hash.
-func GetBlobBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git.Repository, sha string) (*api.GitBlobResponse, error) {
+// GetBlobBySHA get the GitBlob of a repository using a sha hash.
+func GetBlobBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git.Repository, sha string) (*api.GitBlob, error) {
 	gitBlob, err := gitRepo.GetBlob(sha)
 	if err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ func GetBlobBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git
 			return nil, err
 		}
 	}
-	return &api.GitBlobResponse{
+	return &api.GitBlob{
 		SHA:      gitBlob.ID.String(),
 		URL:      repo.APIURL() + "/git/blobs/" + url.PathEscape(gitBlob.ID.String()),
 		Size:     gitBlob.Size(),
