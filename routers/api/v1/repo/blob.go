@@ -5,10 +5,53 @@ package repo
 
 import (
 	"net/http"
+	"strings"
 
 	"forgejo.org/services/context"
 	files_service "forgejo.org/services/repository/files"
 )
+
+// GetBlobs gets multiple blobs of a repository.
+func GetBlobs(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/git/blobs repository GetBlobs
+	// ---
+	// summary: Gets multiplbe blobs of a repository.
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: shas
+	//   in: query
+	//   description: a comma separated list of blob-sha (mind the overall URL-length limit of ~2,083 chars)
+	//   type: string
+	//   required: true
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/GitBlobList"
+	//   "400":
+	//     "$ref": "#/responses/error"
+
+	shas := ctx.FormString("shas")
+	if len(shas) == 0 {
+		ctx.Error(http.StatusBadRequest, "", "shas not provided")
+		return
+	}
+
+	if blobs, err := files_service.GetBlobsBySHA(ctx, ctx.Repo.Repository, ctx.Repo.GitRepo, strings.Split(shas, ",")); err != nil {
+		ctx.Error(http.StatusBadRequest, "", err)
+	} else {
+		ctx.JSON(http.StatusOK, blobs)
+	}
+}
 
 // GetBlob get the blob of a repository file.
 func GetBlob(ctx *context.APIContext) {

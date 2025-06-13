@@ -238,6 +238,13 @@ type swaggerGitBlob struct {
 	Body api.GitBlob `json:"body"`
 }
 
+// GitBlobList
+// swagger:response GitBlobList
+type swaggerGitBlobList struct {
+	// in: body
+	Body []api.GitBlob `json:"body"`
+}
+
 // Commit
 // swagger:response Commit
 type swaggerCommit struct {
