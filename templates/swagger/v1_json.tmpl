@@ -7616,6 +7616,49 @@
         }
       }
     },
+    "/repos/{owner}/{repo}/git/blobs": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Gets multiplbe blobs of a repository.",
+        "operationId": "GetBlobs",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "owner of the repo",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "name of the repo",
+            "name": "repo",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "a comma separated list of blob-sha (mind the overall URL-length limit of ~2,083 chars)",
+            "name": "shas",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/GitBlobList"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          }
+        }
+      }
+    },
     "/repos/{owner}/{repo}/git/blobs/{sha}": {
       "get": {
         "produces": [
@@ -7643,7 +7686,7 @@
           },
           {
             "type": "string",
-            "description": "sha of the commit",
+            "description": "sha of the blob to retrieve",
             "name": "sha",
             "in": "path",
             "required": true
@@ -7651,7 +7694,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/GitBlobResponse"
+            "$ref": "#/responses/GitBlob"
           },
           "400": {
             "$ref": "#/responses/error"
@@ -24864,8 +24907,8 @@
       },
       "x-go-package": "forgejo.org/modules/structs"
     },
-    "GitBlobResponse": {
-      "description": "GitBlobResponse represents a git blob",
+    "GitBlob": {
+      "description": "GitBlob represents a git blob",
       "type": "object",
       "properties": {
         "content": {
@@ -29119,10 +29162,19 @@
         "$ref": "#/definitions/GeneralUISettings"
       }
     },
-    "GitBlobResponse": {
-      "description": "GitBlobResponse",
+    "GitBlob": {
+      "description": "GitBlob",
       "schema": {
-        "$ref": "#/definitions/GitBlobResponse"
+        "$ref": "#/definitions/GitBlob"
+      }
+    },
+    "GitBlobList": {
+      "description": "GitBlobList",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/GitBlob"
+        }
       }
     },
     "GitHook": {

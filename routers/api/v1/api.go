@@ -1310,6 +1310,7 @@ func Routes() *web.Route {
 					m.Get("/refs", repo.GetGitAllRefs)
 					m.Get("/refs/*", repo.GetGitRefs)
 					m.Get("/trees/{sha}", repo.GetTree)
+					m.Get("/blobs", repo.GetBlobs)
 					m.Get("/blobs/{sha}", repo.GetBlob)
 					m.Get("/tags/{sha}", repo.GetAnnotatedTag)
 					m.Group("/notes/{sha}", func() {

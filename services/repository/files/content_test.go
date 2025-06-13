@@ -192,12 +192,52 @@ func TestGetBlobBySHA(t *testing.T) {
 	defer gitRepo.Close()
 
 	gbr, err := GetBlobBySHA(db.DefaultContext, repo, gitRepo, "65f1bf27bc3bf70f64657658635e66094edbcb4d")
-	expectedGBR := &api.GitBlobResponse{
+	expectedGBR := &api.GitBlob{
 		Content:  "dHJlZSAyYTJmMWQ0NjcwNzI4YTJlMTAwNDllMzQ1YmQ3YTI3NjQ2OGJlYWI2CmF1dGhvciB1c2VyMSA8YWRkcmVzczFAZXhhbXBsZS5jb20+IDE0ODk5NTY0NzkgLTA0MDAKY29tbWl0dGVyIEV0aGFuIEtvZW5pZyA8ZXRoYW50a29lbmlnQGdtYWlsLmNvbT4gMTQ4OTk1NjQ3OSAtMDQwMAoKSW5pdGlhbCBjb21taXQK",
 		Encoding: "base64",
 		URL:      "https://try.gitea.io/api/v1/repos/user2/repo1/git/blobs/65f1bf27bc3bf70f64657658635e66094edbcb4d",
 		SHA:      "65f1bf27bc3bf70f64657658635e66094edbcb4d",
 		Size:     180,
+	}
+	require.NoError(t, err)
+	assert.Equal(t, expectedGBR, gbr)
+}
+
+func TestGetBlobsBySHA(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
+
+	gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	gbr, err := GetBlobsBySHA(db.DefaultContext, repo, gitRepo, []string{
+		"ea82fc8777a24b07c26b3a4bf4e2742c03733eab", // Home.md
+		"6395b68e1feebb1e4c657b4f9f6ba2676a283c0b", // line.svg
+		"26f842bcad37fa40a1bb34cbb5ee219ee35d863d", // test.xml
+	})
+	expectedGBR := []*api.GitBlob{
+		{
+			Content:  "IyBIb21lIHBhZ2UKClRoaXMgaXMgdGhlIGhvbWUgcGFnZSEK",
+			Encoding: "base64",
+			URL:      "https://try.gitea.io/api/v1/repos/user2/repo2/git/blobs/ea82fc8777a24b07c26b3a4bf4e2742c03733eab",
+			SHA:      "ea82fc8777a24b07c26b3a4bf4e2742c03733eab",
+			Size:     36,
+		},
+		{
+			Content:  "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZwogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHdpZHRoPSIxMjgiCiAgIGhlaWdodD0iMTI4IgogICB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+CgogIDxsaW5lIHgxPSIwIiB5MT0iNyIgeDI9IjEwIiB5Mj0iNyIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KPC9zdmc+",
+			Encoding: "base64",
+			URL:      "https://try.gitea.io/api/v1/repos/user2/repo2/git/blobs/6395b68e1feebb1e4c657b4f9f6ba2676a283c0b",
+			SHA:      "6395b68e1feebb1e4c657b4f9f6ba2676a283c0b",
+			Size:     246,
+		},
+		{
+			Content:  "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHRlc3Q+VGhpcyBpcyBYTUw8L3Rlc3Q+Cg==",
+			Encoding: "base64",
+			URL:      "https://try.gitea.io/api/v1/repos/user2/repo2/git/blobs/26f842bcad37fa40a1bb34cbb5ee219ee35d863d",
+			SHA:      "26f842bcad37fa40a1bb34cbb5ee219ee35d863d",
+			Size:     64,
+		},
 	}
 	require.NoError(t, err)
 	assert.Equal(t, expectedGBR, gbr)
