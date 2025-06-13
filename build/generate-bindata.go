@@ -22,12 +22,19 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-func needsUpdate(dir, filename string) (bool, []byte) {
-	needRegen := false
+func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
-	if err != nil {
-		needRegen = true
+	if err == nil {
+		return true
 	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	panic(err)
+}
+
+func needsUpdate(dir, filename string) (bool, []byte) {
+	needRegen := !fileExists(filename)
 
 	oldHash, err := os.ReadFile(filename + ".hash")
 	if err != nil {
@@ -73,10 +80,14 @@ func main() {
 		useGlobalModTime, _ = strconv.ParseBool(os.Args[4])
 	}
 
-	update, newHash := needsUpdate(dir, filename)
+	if os.Getenv("FORGEJO_GENERATE_SKIP_HASH") == "true" && fileExists(filename) {
+		fmt.Printf("bindata %s already exists and FORGEJO_GENERATE_SKIP_HASH=true\n", packageName)
+		return
+	}
 
+	update, newHash := needsUpdate(dir, filename)
 	if !update {
-		fmt.Printf("bindata for %s already up-to-date\n", packageName)
+		fmt.Printf("bindata %s already exists and the checksum is a match\n", packageName)
 		return
 	}
 
