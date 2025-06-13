@@ -37,13 +37,9 @@ coverage.all
 coverage/
 cpu.out
 
-/modules/migration/bindata.go
 /modules/migration/bindata.go.hash
-/modules/options/bindata.go
 /modules/options/bindata.go.hash
-/modules/public/bindata.go
 /modules/public/bindata.go.hash
-/modules/templates/bindata.go
 /modules/templates/bindata.go.hash
 
 *.db
