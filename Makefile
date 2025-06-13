@@ -129,7 +129,7 @@ WEBPACK_CONFIGS := webpack.config.js tailwind.config.js
 WEBPACK_DEST := public/assets/js/index.js public/assets/css/index.css
 WEBPACK_DEST_ENTRIES := public/assets/js public/assets/css public/assets/fonts
 
-BINDATA_DEST := modules/public/bindata.go modules/options/bindata.go modules/templates/bindata.go
+BINDATA_DEST := modules/migration/bindata.go modules/public/bindata.go modules/options/bindata.go modules/templates/bindata.go
 BINDATA_HASH := $(addsuffix .hash,$(BINDATA_DEST))
 
 GENERATED_GO_DEST := modules/charset/invisible_gen.go modules/charset/ambiguous_gen.go
@@ -325,8 +325,12 @@ clean-all: clean
 	rm -rf $(WEBPACK_DEST_ENTRIES) node_modules
 
 .PHONY: clean
-clean:
-	rm -rf $(EXECUTABLE) $(DIST) $(BINDATA_DEST) $(BINDATA_HASH) \
+clean: clean-no-bindata
+	rm -rf $(BINDATA_DEST) $(BINDATA_HASH)
+
+.PHONY: clean-no-bindata
+clean-no-bindata:
+	rm -rf $(EXECUTABLE) $(DIST) \
 		integrations*.test \
 		e2e*.test \
 		tests/integration/gitea-integration-* \
