@@ -251,10 +251,14 @@ func TestGitAttributeCheckerError(t *testing.T) {
 		cancel()
 
 		ac, err := gitRepo.GitAttributeChecker("8fee858da5796dfb37704761701bb8e800ad9ef3", "linguist-language")
-		require.NoError(t, err)
+		if SupportCheckAttrOnBare {
+			require.NoError(t, err)
 
-		_, err = ac.CheckPath("i-am-a-python.p")
-		require.Error(t, err)
+			_, err = ac.CheckPath("i-am-a-python.p")
+			require.Error(t, err)
+		} else {
+			require.Error(t, err)
+		}
 	})
 
 	t.Run("Cancelled/DuringRun", func(t *testing.T) {

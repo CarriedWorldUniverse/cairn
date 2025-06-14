@@ -59,48 +59,55 @@ func TestGrepSearch(t *testing.T) {
 		},
 	}, res)
 
-	res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{MatchesPerFile: 1})
-	require.NoError(t, err)
-	assert.Equal(t, []*GrepResult{
-		{
-			Filename:          "i-am-a-python.p",
-			LineNumbers:       []int{1},
-			LineCodes:         []string{"## This is a simple file to do a hello world"},
-			HighlightedRanges: [][3]int{{0, 39, 44}},
-		},
-		{
-			Filename:          "java-hello/main.java",
-			LineNumbers:       []int{1},
-			LineCodes:         []string{"public class HelloWorld"},
-			HighlightedRanges: [][3]int{{0, 18, 23}},
-		},
-		{
-			Filename:          "main.vendor.java",
-			LineNumbers:       []int{1},
-			LineCodes:         []string{"public class HelloWorld"},
-			HighlightedRanges: [][3]int{{0, 18, 23}},
-		},
-		{
-			Filename:          "python-hello/hello.py",
-			LineNumbers:       []int{1},
-			LineCodes:         []string{"## This is a simple file to do a hello world"},
-			HighlightedRanges: [][3]int{{0, 39, 44}},
-		},
-	}, res)
+	t.Run("Max count", func(t *testing.T) {
+		if !SupportGrepMaxCount {
+			t.Skip("Skipping, git grep --max-count is not supported")
+			return
+		}
 
-	res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{
-		MatchesPerFile: 1,
-		Filename:       "java-hello/",
+		res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{MatchesPerFile: 1})
+		require.NoError(t, err)
+		assert.Equal(t, []*GrepResult{
+			{
+				Filename:          "i-am-a-python.p",
+				LineNumbers:       []int{1},
+				LineCodes:         []string{"## This is a simple file to do a hello world"},
+				HighlightedRanges: [][3]int{{0, 39, 44}},
+			},
+			{
+				Filename:          "java-hello/main.java",
+				LineNumbers:       []int{1},
+				LineCodes:         []string{"public class HelloWorld"},
+				HighlightedRanges: [][3]int{{0, 18, 23}},
+			},
+			{
+				Filename:          "main.vendor.java",
+				LineNumbers:       []int{1},
+				LineCodes:         []string{"public class HelloWorld"},
+				HighlightedRanges: [][3]int{{0, 18, 23}},
+			},
+			{
+				Filename:          "python-hello/hello.py",
+				LineNumbers:       []int{1},
+				LineCodes:         []string{"## This is a simple file to do a hello world"},
+				HighlightedRanges: [][3]int{{0, 39, 44}},
+			},
+		}, res)
+
+		res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{
+			MatchesPerFile: 1,
+			Filename:       "java-hello/",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, []*GrepResult{
+			{
+				Filename:          "java-hello/main.java",
+				LineNumbers:       []int{1},
+				LineCodes:         []string{"public class HelloWorld"},
+				HighlightedRanges: [][3]int{{0, 18, 23}},
+			},
+		}, res)
 	})
-	require.NoError(t, err)
-	assert.Equal(t, []*GrepResult{
-		{
-			Filename:          "java-hello/main.java",
-			LineNumbers:       []int{1},
-			LineCodes:         []string{"public class HelloWorld"},
-			HighlightedRanges: [][3]int{{0, 18, 23}},
-		},
-	}, res)
 
 	res, err = GrepSearch(t.Context(), repo, "no-such-content", GrepOptions{})
 	require.NoError(t, err)

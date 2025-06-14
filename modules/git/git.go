@@ -38,6 +38,7 @@ var (
 	InvertedGitFlushEnv    bool // 2.43.1
 	SupportCheckAttrOnBare bool // >= 2.40
 	SupportGitMergeTree    bool // >= 2.38
+	SupportGrepMaxCount    bool // >= 2.38
 
 	HasSSHExecutable bool
 
@@ -191,6 +192,7 @@ func InitFull(ctx context.Context) (err error) {
 
 	InvertedGitFlushEnv = CheckGitVersionEqual("2.43.1") == nil
 	SupportGitMergeTree = CheckGitVersionAtLeast("2.38") == nil
+	SupportGrepMaxCount = CheckGitVersionAtLeast("2.38") == nil
 
 	if setting.LFS.StartServer {
 		if CheckGitVersionAtLeast("2.1.2") != nil {
