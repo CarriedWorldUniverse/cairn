@@ -32,10 +32,15 @@ func TestPatchStatus(t *testing.T) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user2.Name)
 
+		var objectFormat optional.Option[string]
+		if git.SupportHashSha256 {
+			objectFormat = optional.Some("sha256")
+		}
+
 		repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user2, tests.DeclarativeRepoOptions{
 			AutoInit:     optional.Some(true),
 			EnabledUnits: optional.Some([]unit_model.Type{unit_model.TypeCode}),
-			ObjectFormat: optional.Some("sha256"),
+			ObjectFormat: objectFormat,
 			Files: optional.Some([]*files_service.ChangeRepoFile{
 				{
 					Operation:     "create",

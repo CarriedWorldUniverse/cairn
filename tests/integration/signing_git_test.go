@@ -42,6 +42,10 @@ func TestInstanceSigning(t *testing.T) {
 		defer test.MockProtect(&setting.Repository.Signing.CRUDActions)()
 
 		t.Run("SSH", func(t *testing.T) {
+			if git.CheckGitVersionAtLeast("2.34") != nil {
+				t.Skip("Skipping, does not support git SSH signing")
+				return
+			}
 			defer tests.PrintCurrentTest(t)()
 
 			pubKeyContent, err := os.ReadFile("tests/integration/ssh-signing-key.pub")

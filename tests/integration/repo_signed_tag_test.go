@@ -25,6 +25,10 @@ import (
 )
 
 func TestRepoSSHSignedTags(t *testing.T) {
+	if git.CheckGitVersionAtLeast("2.34") != nil {
+		t.Skip("Skipping, does not support SSH signing")
+		return
+	}
 	defer tests.PrepareTestEnv(t)()
 
 	// Preparations
