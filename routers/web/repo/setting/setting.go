@@ -64,6 +64,9 @@ func SettingsCtxData(ctx *context.Context) {
 	ctx.Data["DisableNewPushMirrors"] = setting.Mirror.DisableNewPush
 	ctx.Data["DefaultMirrorInterval"] = setting.Mirror.DefaultInterval
 	ctx.Data["MinimumMirrorInterval"] = setting.Mirror.MinInterval
+	ctx.Data["MaxAvatarFileSize"] = setting.Avatar.MaxFileSize
+	ctx.Data["MaxAvatarWidth"] = setting.Avatar.MaxWidth
+	ctx.Data["MaxAvatarHeight"] = setting.Avatar.MaxHeight
 
 	signing, _ := asymkey_service.SigningKey(ctx, ctx.Repo.Repository.RepoPath())
 	ctx.Data["SigningKeyAvailable"] = len(signing) > 0
