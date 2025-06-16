@@ -307,6 +307,19 @@ func TestRender_email(t *testing.T) {
 	test(
 		"email@domain..com",
 		`<p>email@domain..com</p>`)
+
+	// Test fediverse handle
+	test(
+		"@forgejo@floss.social",
+		`<p><a href="https://fedirect.toolforge.org/?id=%40forgejo%40floss.social" rel="nofollow">@forgejo@floss.social</a></p>`)
+
+	test(
+		"!forgejo@programming.dev",
+		`<p><a href="https://fedirect.toolforge.org/?id=%21forgejo%40programming.dev" rel="nofollow">!forgejo@programming.dev</a></p>`)
+
+	test(
+		"@#&@forgejo.org",
+		`<p><a href="https://fedirect.toolforge.org/?id=%40%23%26%40forgejo.org" rel="nofollow">@#&amp;@forgejo.org</a></p>`)
 }
 
 func TestRender_emoji(t *testing.T) {
