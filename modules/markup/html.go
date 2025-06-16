@@ -69,6 +69,10 @@ var (
 	//   https://html.spec.whatwg.org/multipage/input.html#e-mail-state-(type%3Demail)
 	emailRegex = regexp.MustCompile("(?:\\s|^|\\(|\\[)([a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9]{2,}(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+)(?:\\s|$|\\)|\\]|;|,|\\?|!|\\.(\\s|$))")
 
+	// Fediverse handle regex (same as emailRegex but with additonal @ or !
+	// at start)
+	fediRegex = regexp.MustCompile("(?:\\s|^|\\(|\\[)([@!]([a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+)@([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9]{2,}(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+))(?:\\s|$|\\)|\\]|;|,|\\?|!|\\.(\\s|$))")
+
 	// blackfriday extensions create IDs like fn:user-content-footnote
 	blackfridayExtRegex = regexp.MustCompile(`[^:]*:user-content-`)
 
@@ -153,6 +157,7 @@ var defaultProcessors = []processor{
 	issueIndexPatternProcessor,
 	commitCrossReferencePatternProcessor,
 	hashCurrentPatternProcessor,
+	fediAddressProcessor,
 	emailAddressProcessor,
 	emojiProcessor,
 	emojiShortCodeProcessor,
@@ -1233,6 +1238,21 @@ func hashCurrentPatternProcessor(ctx *RenderContext, node *html.Node) {
 		link := util.URLJoin(ctx.Links.Prefix(), ctx.Metas["user"], ctx.Metas["repo"], "commit", hash)
 		replaceContent(node, m[2], m[3], createCodeLink(link, base.ShortSha(hash), "commit"))
 		start = 0
+		node = node.NextSibling.NextSibling
+	}
+}
+
+// fediAddressProcessor replaces raw fediverse handles with toolforge links
+func fediAddressProcessor(ctx *RenderContext, node *html.Node) {
+	next := node.NextSibling
+	for node != nil && node != next {
+		m := fediRegex.FindStringSubmatchIndex(node.Data)
+		if m == nil {
+			return
+		}
+
+		fedihandle := node.Data[m[2]:m[3]]
+		replaceContent(node, m[2], m[3], createLink("https://fedirect.toolforge.org/?id="+url.QueryEscape(fedihandle), fedihandle, "fedihandle"))
 		node = node.NextSibling.NextSibling
 	}
 }
