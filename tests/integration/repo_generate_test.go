@@ -15,6 +15,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/git"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
@@ -43,8 +44,12 @@ func assertRepoCreateForm(t *testing.T, htmlDoc *HTMLDoc, owner *user_model.User
 	// the template menu is loaded client-side, so don't assert the option exists
 	assert.Equal(t, templateID, htmlDoc.GetInputValueByName("repo_template"), "Unexpected repo_template selection")
 
-	for _, name := range []string{"issue_labels", "gitignores", "license", "object_format_name"} {
+	for _, name := range []string{"issue_labels", "gitignores", "license"} {
 		htmlDoc.AssertDropdownHasOptions(t, name)
+	}
+
+	if git.SupportHashSha256 {
+		htmlDoc.AssertDropdownHasOptions(t, "object_format_name")
 	}
 }
 
