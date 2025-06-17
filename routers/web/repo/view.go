@@ -439,8 +439,8 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 			ctx.Data["FileError"] = ctx.Locale.Tr("actions.runs.invalid_workflow_helper", workFlowErr.Error())
 		}
 	} else if slices.Contains([]string{"CODEOWNERS", "docs/CODEOWNERS", ".gitea/CODEOWNERS"}, ctx.Repo.TreePath) {
-		if data, err := blob.GetBlobContent(setting.UI.MaxDisplayFileSize); err == nil {
-			_, warnings := issue_model.GetCodeOwnersFromContent(ctx, data)
+		if rc, size, err := blob.NewTruncatedReader(setting.UI.MaxDisplayFileSize); err == nil {
+			_, warnings := issue_model.GetCodeOwnersFromReader(ctx, rc, size > setting.UI.MaxDisplayFileSize)
 			if len(warnings) > 0 {
 				ctx.Data["FileWarning"] = strings.Join(warnings, "\n")
 			}
