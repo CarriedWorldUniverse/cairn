@@ -440,11 +440,29 @@ func getCommitFileLineCount(commit *git.Commit, filePath string) int {
 	if err != nil {
 		return 0
 	}
-	lineCount, err := blob.GetBlobLineCount()
+	reader, err := blob.DataAsync()
 	if err != nil {
 		return 0
 	}
-	return lineCount
+	defer reader.Close()
+	buf := make([]byte, 32*1024)
+	count := 1
+	lineSep := []byte{'\n'}
+
+	c, err := reader.Read(buf)
+	if c == 0 && err == io.EOF {
+		return 0
+	}
+	for {
+		count += bytes.Count(buf[:c], lineSep)
+		switch {
+		case err == io.EOF:
+			return count
+		case err != nil:
+			return count
+		}
+		c, err = reader.Read(buf)
+	}
 }
 
 // Diff represents a difference between two git trees.
