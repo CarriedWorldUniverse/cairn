@@ -1,7 +1,7 @@
 {{template "base/alert"}}
 {{range .Issue.Comments}}
 	{{if call $.ShouldShowCommentType .Type}}
-		{{$createdStr:= DateUtils.TimeSince .CreatedUnix}}
+		{{$createdStr := HTMLFormat `<a id="%s" href="#%s">%s</a>` .EventTag .HashTag (DateUtils.TimeSince .CreatedUnix)}}
 
 		<!-- 0 = COMMENT, 1 = REOPEN, 2 = CLOSE, 3 = ISSUE_REF, 4 = COMMIT_REF,
 		5 = COMMENT_REF, 6 = PULL_REF, 7 = COMMENT_LABEL, 8 = MILESTONE_CHANGE,
@@ -87,9 +87,9 @@
 				<span class="text grey muted-links">
 					{{template "repo/issue/view_content/comments_authorlink" dict "ctxData" $ "comment" .}}
 					{{if .Issue.IsPull}}
-						{{ctx.Locale.Tr "repo.pulls.reopened_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.pulls.reopened_at" $createdStr}}
 					{{else}}
-						{{ctx.Locale.Tr "repo.issues.reopened_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.issues.reopened_at" $createdStr}}
 					{{end}}
 				</span>
 			</div>
@@ -102,9 +102,9 @@
 				<span class="text grey muted-links">
 					{{template "repo/issue/view_content/comments_authorlink" dict "ctxData" $ "comment" .}}
 					{{if .Issue.IsPull}}
-						{{ctx.Locale.Tr "repo.pulls.closed_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.pulls.closed_at" $createdStr}}
 					{{else}}
-						{{ctx.Locale.Tr "repo.issues.closed_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.issues.closed_at" $createdStr}}
 					{{end}}
 				</span>
 			</div>
@@ -137,14 +137,13 @@
 			{{else if eq .RefAction 2}}
 				{{$refTr = "repo.issues.ref_reopening_from"}}
 			{{end}}
-			{{$createdStr:= DateUtils.TimeSince .CreatedUnix}}
 			<div class="timeline-item event" id="{{.HashTag}}">
 				<span class="badge">{{svg "octicon-bookmark"}}</span>
 				{{template "shared/user/avatarlink" dict "user" .Poster}}
 				{{if eq .RefAction 3}}<del>{{end}}
 				<span class="text grey muted-links">
 					{{template "shared/user/authorlink" .Poster}}
-					{{ctx.Locale.Tr $refTr .EventTag $createdStr (.RefCommentLink ctx) $refFrom}}
+					{{ctx.Locale.Tr $refTr $createdStr (.RefCommentLink ctx) $refFrom}}
 				</span>
 				{{if eq .RefAction 3}}</del>{{end}}
 
@@ -159,9 +158,9 @@
 				<span class="text grey muted-links">
 					{{template "shared/user/authorlink" .Poster}}
 					{{if .Issue.IsPull}}
-						{{ctx.Locale.Tr "repo.pulls.commit_ref_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.pulls.commit_ref_at" $createdStr}}
 					{{else}}
-						{{ctx.Locale.Tr "repo.issues.commit_ref_at" .EventTag $createdStr}}
+						{{ctx.Locale.Tr "repo.issues.commit_ref_at" $createdStr}}
 					{{end}}
 				</span>
 				<div class="detail flex-text-block">
