@@ -712,6 +712,8 @@ func TestGetDiffFull(t *testing.T) {
 
 		assert.Equal(t, ".gitattributes", diff.Files[0].Name)
 		assert.Equal(t, "24139dae656713ba861751fb2c2ac38839349a7a", diff.Files[0].NameHash)
+		assert.Len(t, diff.Files[0].Sections, 2)
+		assert.Equal(t, 4, diff.Files[0].Sections[1].Lines[0].SectionInfo.LeftIdx)
 	})
 }
 
