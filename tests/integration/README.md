@@ -71,11 +71,11 @@ TEST_MYSQL_HOST=localhost:3306 TEST_MYSQL_DBNAME=test?multiStatements=true TEST_
 ### Run pgsql integration tests
 Setup a pgsql database inside docker
 ```
-docker run -e "POSTGRES_DB=test" -e POSTGRES_PASSWORD=postgres -p 5432:5432 --rm --name pgsql postgres:latest #(Ctrl-c to stop the database)
+docker run -e "POSTGRES_DB=test" -e POSTGRES_PASSWORD=postgres POSTGRESQL_FSYNC=off POSTGRESQL_EXTRA_FLAGS="-c full_page_writes=off" -p 5432:5432 --rm --name pgsql data.forgejo.org/oci/bitnami/postgresql:16 #(Ctrl-c to stop the database)
 ```
 Start tests based on the database container
 ```
-TEST_STORAGE_TYPE=local TEST_PGSQL_HOST=localhost:5432 TEST_PGSQL_DBNAME=test TEST_PGSQL_USERNAME=postgres TEST_PGSQL_PASSWORD=postgres make test-pgsql
+TEST_STORAGE_TYPE=local TEST_PGSQL_HOST=localhost:5432 TEST_PGSQL_DBNAME=test TEST_PGSQL_USERNAME=postgres TEST_PGSQL_PASSWORD=postgres make 'test-pgsql#Test'
 ```
 
 ### Running individual tests

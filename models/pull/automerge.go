@@ -10,6 +10,7 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"
 )
 
@@ -58,13 +59,15 @@ func ScheduleAutoMerge(ctx context.Context, doer *user_model.User, pullID int64,
 		return ErrAlreadyScheduledToAutoMerge{PullID: pullID}
 	}
 
-	_, err := db.GetEngine(ctx).Insert(&AutoMerge{
+	scheduledPRM, err := db.GetEngine(ctx).Insert(&AutoMerge{
 		DoerID:                 doer.ID,
 		PullID:                 pullID,
 		MergeStyle:             style,
 		Message:                message,
 		DeleteBranchAfterMerge: deleteBranch,
 	})
+	log.Trace("ScheduleAutoMerge %+v for PR %d", scheduledPRM, pullID)
+
 	return err
 }
 
@@ -81,6 +84,8 @@ func GetScheduledMergeByPullID(ctx context.Context, pullID int64) (bool, *AutoMe
 		return false, nil, err
 	}
 
+	log.Trace("GetScheduledMergeByPullID found %+v for PR %d", scheduledPRM, pullID)
+
 	scheduledPRM.Doer = doer
 	return true, scheduledPRM, nil
 }
@@ -93,6 +98,8 @@ func DeleteScheduledAutoMerge(ctx context.Context, pullID int64) error {
 	} else if !exist {
 		return db.ErrNotExist{Resource: "auto_merge", ID: pullID}
 	}
+
+	log.Trace("DeleteScheduledAutoMerge %+v for PR %d", scheduledPRM, pullID)
 
 	_, err = db.GetEngine(ctx).ID(scheduledPRM.ID).Delete(&AutoMerge{})
 	return err

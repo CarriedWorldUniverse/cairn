@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -20,7 +21,10 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/optional"
+	"forgejo.org/modules/test"
+	pull_service "forgejo.org/services/pull"
 	files_service "forgejo.org/services/repository/files"
+	shared_automerge "forgejo.org/services/shared/automerge"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -50,6 +54,20 @@ func TestPatchStatus(t *testing.T) {
 			}),
 		})
 		defer f()
+
+		testAutomergeQueued := func(t *testing.T, pr *issues_model.PullRequest, expected issues_model.PullRequestStatus) {
+			t.Helper()
+
+			var actual issues_model.PullRequestStatus = -1
+			defer test.MockVariableValue(&shared_automerge.AddToQueueIfMergeable, func(ctx context.Context, pull *issues_model.PullRequest) {
+				actual = pull.Status
+			})()
+
+			pull_service.AddToTaskQueue(t.Context(), pr)
+			assert.Eventually(t, func() bool {
+				return expected == actual
+			}, time.Second*5, time.Millisecond*200)
+		}
 
 		testRepoFork(t, session, "user2", repo.Name, "org3", "forked-repo")
 		forkRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "org3", Name: "forked-repo"})
@@ -91,7 +109,9 @@ func TestPatchStatus(t *testing.T) {
 				require.NoError(t, git.NewCommand(t.Context(), "push", "fork", "HEAD:normal").Run(&git.RunOpts{Dir: dstPath}))
 				testPullCreateDirectly(t, session, repo.OwnerName, repo.Name, repo.DefaultBranch, forkRepo.OwnerName, forkRepo.Name, "normal", "across repo normal")
 
-				test(t, unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "normal"}, "flow = 0"))
+				pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "normal"}, "flow = 0")
+				test(t, pr)
+				testAutomergeQueued(t, pr, issues_model.PullRequestStatusMergeable)
 			})
 
 			t.Run("Same repository", func(t *testing.T) {
@@ -144,7 +164,9 @@ func TestPatchStatus(t *testing.T) {
 				t.Run("Existing", func(t *testing.T) {
 					defer tests.PrintCurrentTest(t)()
 
-					test(t, unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "normal"}, "flow = 0"))
+					pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "normal"}, "flow = 0")
+					test(t, pr)
+					testAutomergeQueued(t, pr, issues_model.PullRequestStatusConflict)
 				})
 
 				t.Run("New", func(t *testing.T) {
