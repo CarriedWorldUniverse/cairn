@@ -107,6 +107,7 @@ func handlePullRequestAutoMerge(pullID int64, sha string) {
 		return
 	}
 	if !exists {
+		log.Trace("GetScheduledMergeByPullID found nothing for PR %d", pullID)
 		return
 	}
 
@@ -202,6 +203,10 @@ func handlePullRequestAutoMerge(pullID int64, sha string) {
 		}
 		log.Error("%-v CheckPullMergeable: %v", pr, err)
 		return
+	}
+
+	if err := pull_model.DeleteScheduledAutoMerge(ctx, pr.ID); err != nil && !db.IsErrNotExist(err) {
+		log.Error("DeleteScheduledAutoMerge[%d]: %v", pr.ID, err)
 	}
 
 	if err := pull_service.Merge(ctx, pr, doer, baseGitRepo, scheduledPRM.MergeStyle, "", scheduledPRM.Message, true); err != nil {
