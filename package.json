@@ -83,7 +83,7 @@
     "eslint-plugin-vitest-globals": "1.5.0",
     "eslint-plugin-vue": "10.2.0",
     "eslint-plugin-vue-scoped-css": "2.10.0",
-    "eslint-plugin-wc": "2.2.1",
+    "eslint-plugin-wc": "3.0.1",
     "globals": "16.1.0",
     "happy-dom": "18.0.0",
     "license-checker-rseidelsohn": "4.4.2",
