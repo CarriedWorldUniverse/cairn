@@ -988,9 +988,6 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 		if err != nil {
 			log.Error("GetLatestCommitStatus: %v", err)
 		}
-		if !ctx.Repo.CanRead(unit.TypeActions) {
-			git_model.CommitStatusesHideActionsURL(ctx, statuses)
-		}
 
 		ctx.Data["CommitStatus"] = git_model.CalcCommitStatus(statuses)
 		ctx.Data["CommitStatuses"] = statuses
