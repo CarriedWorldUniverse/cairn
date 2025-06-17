@@ -30,6 +30,43 @@ func TestViewPulls(t *testing.T) {
 	assert.Equal(t, "Search pulls…", placeholder)
 }
 
+func TestPullViewConversation(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequest(t, "GET", "/user2/commitsonpr/pulls/1")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	t.Run("Commits", func(t *testing.T) {
+		commitLists := htmlDoc.Find(".timeline-item.commits-list")
+		assert.Equal(t, 4, commitLists.Length())
+
+		commits := commitLists.Find(".singular-commit")
+		assert.Equal(t, 10, commits.Length())
+
+		// First one has not been affected by a force push, therefore it's still part of the
+		// PR and should link to the PR-scoped review tab
+		firstCommit := commits.Eq(0)
+		firstCommitMessageHref, _ := firstCommit.Find("a.default-link").Attr("href")
+		firstCommitShaHref, _ := firstCommit.Find("a.sha.label").Attr("href")
+		assert.Equal(t, "/user2/commitsonpr/pulls/1/commits/4ca8bcaf27e28504df7bf996819665986b01c847", firstCommitMessageHref)
+		assert.Equal(t, "/user2/commitsonpr/pulls/1/commits/4ca8bcaf27e28504df7bf996819665986b01c847", firstCommitShaHref)
+
+		// The fifth commit has been overwritten by a force push.
+		// Attempting to view the old one in the review tab won't work:
+		req := NewRequest(t, "GET", "/user2/commitsonpr/pulls/1/commits/3e64625bd6eb5bcba69ac97de6c8f507402df861")
+		MakeRequest(t, req, http.StatusNotFound)
+
+		// Therefore, this commit should link to the non-PR commit view instead
+		fifthCommit := commits.Eq(4)
+		fifthCommitMessageHref, _ := fifthCommit.Find("a.default-link").Attr("href")
+		fifthCommitShaHref, _ := fifthCommit.Find("a.sha.label").Attr("href")
+		assert.Equal(t, "/user2/commitsonpr/commit/3e64625bd6eb5bcba69ac97de6c8f507402df861", fifthCommitMessageHref)
+		assert.Equal(t, "/user2/commitsonpr/commit/3e64625bd6eb5bcba69ac97de6c8f507402df861", fifthCommitShaHref)
+	})
+}
+
 func TestPullManuallyMergeWarning(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 

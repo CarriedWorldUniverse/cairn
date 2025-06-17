@@ -10,13 +10,16 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"html/template"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
 	"forgejo.org/models"
 	activities_model "forgejo.org/models/activities"
+	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	issues_model "forgejo.org/models/issues"
@@ -28,11 +31,13 @@ import (
 	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
+	"forgejo.org/modules/charset"
 	"forgejo.org/modules/emoji"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 	issue_template "forgejo.org/modules/issue/template"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/markup"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
@@ -498,6 +503,7 @@ func PrepareMergedViewPullInfo(ctx *context.Context, issue *issues_model.Issue) 
 			ctx.Data["IsPullRequestBroken"] = true
 			ctx.Data["BaseTarget"] = pull.BaseBranch
 			ctx.Data["NumCommits"] = 0
+			ctx.Data["CommitIDs"] = map[string]bool{}
 			ctx.Data["NumFiles"] = 0
 			return nil
 		}
@@ -507,6 +513,12 @@ func PrepareMergedViewPullInfo(ctx *context.Context, issue *issues_model.Issue) 
 	}
 	ctx.Data["NumCommits"] = len(compareInfo.Commits)
 	ctx.Data["NumFiles"] = compareInfo.NumFiles
+
+	commitIDs := map[string]bool{}
+	for _, commit := range compareInfo.Commits {
+		commitIDs[commit.ID.String()] = true
+	}
+	ctx.Data["CommitIDs"] = commitIDs
 
 	if len(compareInfo.Commits) != 0 {
 		sha := compareInfo.Commits[0].ID.String()
@@ -591,6 +603,7 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 				ctx.Data["IsPullRequestBroken"] = true
 				ctx.Data["BaseTarget"] = pull.BaseBranch
 				ctx.Data["NumCommits"] = 0
+				ctx.Data["CommitIDs"] = map[string]bool{}
 				ctx.Data["NumFiles"] = 0
 				return nil
 			}
@@ -601,6 +614,13 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 
 		ctx.Data["NumCommits"] = len(compareInfo.Commits)
 		ctx.Data["NumFiles"] = compareInfo.NumFiles
+
+		commitIDs := map[string]bool{}
+		for _, commit := range compareInfo.Commits {
+			commitIDs[commit.ID.String()] = true
+		}
+		ctx.Data["CommitIDs"] = commitIDs
+
 		return compareInfo
 	}
 
@@ -659,6 +679,7 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 			}
 			ctx.Data["BaseTarget"] = pull.BaseBranch
 			ctx.Data["NumCommits"] = 0
+			ctx.Data["CommitIDs"] = map[string]bool{}
 			ctx.Data["NumFiles"] = 0
 			return nil
 		}
@@ -736,6 +757,7 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 			ctx.Data["IsPullRequestBroken"] = true
 			ctx.Data["BaseTarget"] = pull.BaseBranch
 			ctx.Data["NumCommits"] = 0
+			ctx.Data["CommitIDs"] = map[string]bool{}
 			ctx.Data["NumFiles"] = 0
 			return nil
 		}
@@ -760,6 +782,13 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 
 	ctx.Data["NumCommits"] = len(compareInfo.Commits)
 	ctx.Data["NumFiles"] = compareInfo.NumFiles
+
+	commitIDs := map[string]bool{}
+	for _, commit := range compareInfo.Commits {
+		commitIDs[commit.ID.String()] = true
+	}
+	ctx.Data["CommitIDs"] = commitIDs
+
 	return compareInfo
 }
 
@@ -919,7 +948,81 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 
 	ctx.Data["IsShowingOnlySingleCommit"] = willShowSpecifiedCommit
 
-	if willShowSpecifiedCommit || willShowSpecifiedCommitRange {
+	if willShowSpecifiedCommit {
+		commitID := specifiedEndCommit
+
+		ctx.Data["CommitID"] = commitID
+
+		var prevCommit, curCommit, nextCommit *git.Commit
+
+		// Iterate in reverse to properly map "previous" and "next" buttons
+		for i := len(prInfo.Commits) - 1; i >= 0; i-- {
+			commit := prInfo.Commits[i]
+
+			if curCommit != nil {
+				nextCommit = commit
+				break
+			}
+
+			if commit.ID.String() == commitID {
+				curCommit = commit
+			} else {
+				prevCommit = commit
+			}
+		}
+
+		if curCommit == nil {
+			ctx.ServerError("Repo.GitRepo.viewPullFiles", git.ErrNotExist{ID: commitID})
+			return
+		}
+
+		ctx.Data["Commit"] = curCommit
+		if prevCommit != nil {
+			ctx.Data["PrevCommitLink"] = path.Join(ctx.Repo.RepoLink, "pulls", strconv.FormatInt(issue.Index, 10), "commits", prevCommit.ID.String())
+		}
+		if nextCommit != nil {
+			ctx.Data["NextCommitLink"] = path.Join(ctx.Repo.RepoLink, "pulls", strconv.FormatInt(issue.Index, 10), "commits", nextCommit.ID.String())
+		}
+
+		statuses, _, err := git_model.GetLatestCommitStatus(ctx, ctx.Repo.Repository.ID, commitID, db.ListOptionsAll)
+		if err != nil {
+			log.Error("GetLatestCommitStatus: %v", err)
+		}
+		if !ctx.Repo.CanRead(unit.TypeActions) {
+			git_model.CommitStatusesHideActionsURL(ctx, statuses)
+		}
+
+		ctx.Data["CommitStatus"] = git_model.CalcCommitStatus(statuses)
+		ctx.Data["CommitStatuses"] = statuses
+
+		verification := asymkey_model.ParseCommitWithSignature(ctx, curCommit)
+		ctx.Data["Verification"] = verification
+		ctx.Data["Author"] = user_model.ValidateCommitWithEmail(ctx, curCommit)
+
+		note := &git.Note{}
+		err = git.GetNote(ctx, ctx.Repo.GitRepo, specifiedEndCommit, note)
+		if err == nil {
+			ctx.Data["NoteCommit"] = note.Commit
+			ctx.Data["NoteAuthor"] = user_model.ValidateCommitWithEmail(ctx, note.Commit)
+			ctx.Data["NoteRendered"], err = markup.RenderCommitMessage(&markup.RenderContext{
+				Links: markup.Links{
+					Base:       ctx.Repo.RepoLink,
+					BranchPath: path.Join("commit", util.PathEscapeSegments(commitID)),
+				},
+				Metas:   ctx.Repo.Repository.ComposeMetas(ctx),
+				GitRepo: ctx.Repo.GitRepo,
+				Ctx:     ctx,
+			}, template.HTMLEscapeString(string(charset.ToUTF8WithFallback(note.Message, charset.ConvertOpts{}))))
+			if err != nil {
+				ctx.ServerError("RenderCommitMessage", err)
+				return
+			}
+		}
+
+		endCommitID = commitID
+		startCommitID = prInfo.MergeBase
+		ctx.Data["IsShowingAllCommits"] = false
+	} else if willShowSpecifiedCommitRange {
 		if len(specifiedEndCommit) > 0 {
 			endCommitID = specifiedEndCommit
 		} else {
@@ -930,6 +1033,7 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 		} else {
 			startCommitID = prInfo.MergeBase
 		}
+
 		ctx.Data["IsShowingAllCommits"] = false
 	} else {
 		endCommitID = headCommitID
@@ -937,10 +1041,10 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 		ctx.Data["IsShowingAllCommits"] = true
 	}
 
-	ctx.Data["Username"] = ctx.Repo.Owner.Name
-	ctx.Data["Reponame"] = ctx.Repo.Repository.Name
 	ctx.Data["AfterCommitID"] = endCommitID
 	ctx.Data["BeforeCommitID"] = startCommitID
+	ctx.Data["Username"] = ctx.Repo.Owner.Name
+	ctx.Data["Reponame"] = ctx.Repo.Repository.Name
 
 	fileOnly := ctx.FormBool("file-only")
 
