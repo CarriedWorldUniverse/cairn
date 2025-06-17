@@ -267,8 +267,13 @@ func Render(ctx *markup.RenderContext, input io.Reader, output io.Writer) error 
 
 // RenderString renders Markdown string to HTML with all specific handling stuff and return string
 func RenderString(ctx *markup.RenderContext, content string) (template.HTML, error) {
+	return RenderReader(ctx, strings.NewReader(content))
+}
+
+// RenderReader renders Markdown io.Reader to HTML with all specific handling stuff and return string
+func RenderReader(ctx *markup.RenderContext, input io.Reader) (template.HTML, error) {
 	var buf strings.Builder
-	if err := Render(ctx, strings.NewReader(content), &buf); err != nil {
+	if err := Render(ctx, input, &buf); err != nil {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
