@@ -766,7 +766,7 @@ func (g *GiteaLocalUploader) newPullRequest(pr *base.PullRequest) (*issues_model
 	issue := issues_model.Issue{
 		RepoID:      g.repo.ID,
 		Repo:        g.repo,
-		Title:       prTitle,
+		Title:       util.TruncateRunes(prTitle, 255),
 		Index:       pr.Number,
 		Content:     pr.Content,
 		MilestoneID: milestoneID,
