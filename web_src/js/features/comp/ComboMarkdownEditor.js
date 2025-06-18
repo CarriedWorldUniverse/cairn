@@ -587,9 +587,7 @@ class ComboMarkdownEditor {
     // Split the newline and prefix addition in two, so that it's two separate undo entries in Firefox
     // Chrome seems to bundle everything together more aggressively, even with prior text input.
     if (document.execCommand('insertText', false, '\n')) {
-      setTimeout(() => {
-        document.execCommand('insertText', false, text);
-      }, 1);
+      document.execCommand('insertText', false, text);
     } else {
       this.textarea.setRangeText(`\n${text}`);
     }
