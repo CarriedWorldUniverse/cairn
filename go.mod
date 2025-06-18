@@ -242,7 +242,7 @@ require (
 
 replace github.com/hashicorp/go-version => github.com/6543/go-version v1.3.1
 
-replace github.com/nektos/act => code.forgejo.org/forgejo/act v1.26.0
+replace github.com/nektos/act => code.forgejo.org/forgejo/act v1.28.0
 
 replace github.com/mholt/archiver/v3 => code.forgejo.org/forgejo/archiver/v3 v3.5.1
 
