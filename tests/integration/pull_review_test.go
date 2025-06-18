@@ -680,6 +680,7 @@ func TestPullRequestReplyMail(t *testing.T) {
 			called := false
 			defer test.MockVariableValue(&mailer.SendAsync, func(msgs ...*mailer.Message) {
 				assert.Len(t, msgs, 2)
+				SortMailerMessages(msgs)
 				assert.Equal(t, "user1@example.com", msgs[0].To)
 				assert.Equal(t, "Re: [user2/repo1] issue2 (PR #2)", msgs[0].Subject)
 				assert.Contains(t, msgs[0].Body, "Notification time!")
@@ -708,6 +709,7 @@ func TestPullRequestReplyMail(t *testing.T) {
 			called := false
 			defer test.MockVariableValue(&mailer.SendAsync, func(msgs ...*mailer.Message) {
 				assert.Len(t, msgs, 2)
+				SortMailerMessages(msgs)
 				assert.Equal(t, "user1@example.com", msgs[0].To)
 				assert.Equal(t, "Re: [user2/repo1] issue2 (PR #2)", msgs[0].Subject)
 				assert.Contains(t, msgs[0].Body, "Notification time 2!")
