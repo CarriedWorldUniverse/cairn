@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -40,6 +41,7 @@ import (
 	"forgejo.org/routers"
 	"forgejo.org/services/auth/source/remote"
 	gitea_context "forgejo.org/services/context"
+	"forgejo.org/services/mailer"
 	user_service "forgejo.org/services/user"
 	"forgejo.org/tests"
 
@@ -693,4 +695,10 @@ func GetHTMLTitle(t testing.TB, session *TestSession, urlStr string) string {
 
 	doc := NewHTMLParser(t, resp.Body)
 	return doc.Find("head title").Text()
+}
+
+func SortMailerMessages(msgs []*mailer.Message) {
+	slices.SortFunc(msgs, func(a, b *mailer.Message) int {
+		return strings.Compare(b.To, a.To)
+	})
 }
