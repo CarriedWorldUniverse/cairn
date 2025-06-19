@@ -150,11 +150,9 @@ func UnitsPost(ctx *context.Context) {
 		})
 		deleteUnitTypes = append(deleteUnitTypes, unit_model.TypeWiki)
 	} else if form.EnableWiki && !form.EnableExternalWiki && !unit_model.TypeWiki.UnitGlobalDisabled() {
-		var wikiPermissions repo_model.UnitAccessMode
+		wikiPermissions := repo_model.UnitAccessModeUnset
 		if form.GloballyWriteableWiki {
 			wikiPermissions = repo_model.UnitAccessModeWrite
-		} else {
-			wikiPermissions = repo_model.UnitAccessModeRead
 		}
 		units = append(units, repo_model.RepoUnit{
 			RepoID:             repo.ID,

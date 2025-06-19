@@ -6,6 +6,8 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
@@ -111,5 +113,106 @@ func TestWikiTOC(t *testing.T) {
 		htmlDoc := NewHTMLParser(t, resp.Body)
 
 		assert.EqualValues(t, "Helpdesk", htmlDoc.Find(".wiki-content-toc a").Text())
+	})
+}
+
+func canEditWiki(t *testing.T, username, url string, canEdit bool) {
+	t.Helper()
+	// t.Parallel()
+
+	req := NewRequest(t, "GET", url)
+
+	var resp *httptest.ResponseRecorder
+	if username != "" {
+		session := loginUser(t, username)
+		resp = session.MakeRequest(t, req, http.StatusOK)
+	} else {
+		resp = MakeRequest(t, req, http.StatusOK)
+	}
+	doc := NewHTMLParser(t, resp.Body)
+	res := doc.Find(`a[href^="` + url + `"]`).Map(func(_ int, el *goquery.Selection) string {
+		return el.AttrOr("href", "")
+	})
+	found := false
+	for _, href := range res {
+		if strings.HasSuffix(href, "?action=_new") {
+			if !canEdit {
+				t.Errorf("unexpected edit link: %s", href)
+			}
+			found = true
+			break
+		}
+	}
+	if canEdit {
+		assert.True(t, found, "could not find ?action=_new link among %v", res)
+	}
+}
+
+func TestWikiPermissions(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("default settings", func(t *testing.T) {
+		t.Run("anonymous", func(t *testing.T) {
+			canEditWiki(t, "", "/user5/repo4/wiki", false)
+		})
+		t.Run("owner", func(t *testing.T) {
+			canEditWiki(t, "user5", "/user5/repo4/wiki", true)
+		})
+		t.Run("collaborator", func(t *testing.T) {
+			canEditWiki(t, "user4", "/user5/repo4/wiki", true)
+			canEditWiki(t, "user29", "/user5/repo4/wiki", true)
+		})
+		t.Run("other user", func(t *testing.T) {
+			canEditWiki(t, "user2", "/user5/repo4/wiki", false)
+		})
+	})
+
+	t.Run("saved unchanged settings", func(t *testing.T) {
+		session := loginUser(t, "user5")
+		csrf := GetCSRF(t, session, "/user5/repo4/settings/units")
+		req := NewRequestWithValues(t, "POST", "/user5/repo4/settings/units", map[string]string{
+			"_csrf":       csrf,
+			"enable_wiki": "on",
+		})
+		session.MakeRequest(t, req, http.StatusSeeOther)
+
+		t.Run("anonymous", func(t *testing.T) {
+			canEditWiki(t, "", "/user5/repo4/wiki", false)
+		})
+		t.Run("owner", func(t *testing.T) {
+			canEditWiki(t, "user5", "/user5/repo4/wiki", true)
+		})
+		t.Run("collaborator", func(t *testing.T) {
+			canEditWiki(t, "user4", "/user5/repo4/wiki", true)
+			canEditWiki(t, "user29", "/user5/repo4/wiki", true)
+		})
+		t.Run("other user", func(t *testing.T) {
+			canEditWiki(t, "user2", "/user5/repo4/wiki", false)
+		})
+	})
+
+	t.Run("globally writable", func(t *testing.T) {
+		session := loginUser(t, "user5")
+		csrf := GetCSRF(t, session, "/user5/repo4/settings/units")
+		req := NewRequestWithValues(t, "POST", "/user5/repo4/settings/units", map[string]string{
+			"_csrf":                   csrf,
+			"enable_wiki":             "on",
+			"globally_writeable_wiki": "on",
+		})
+		session.MakeRequest(t, req, http.StatusSeeOther)
+
+		t.Run("anonymous", func(t *testing.T) {
+			canEditWiki(t, "", "/user5/repo4/wiki", false)
+		})
+		t.Run("owner", func(t *testing.T) {
+			canEditWiki(t, "user5", "/user5/repo4/wiki", true)
+		})
+		t.Run("collaborator", func(t *testing.T) {
+			canEditWiki(t, "user4", "/user5/repo4/wiki", true)
+			canEditWiki(t, "user29", "/user5/repo4/wiki", true)
+		})
+		t.Run("other user", func(t *testing.T) {
+			canEditWiki(t, "user2", "/user5/repo4/wiki", true)
+		})
 	})
 }
