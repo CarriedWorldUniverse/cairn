@@ -92,5 +92,10 @@
     "followers.outgoing.list.self.none": "Du følger ikke nogen.",
     "followers.outgoing.list.none": "%s følger ikke nogen.",
     "editor.textarea.tab_hint": "Linjen er allerede indrykket. Tryk på <kbd>Tab</kbd> igen eller <kbd>Escape</kbd> for at forlade editoren.",
-    "editor.textarea.shift_tab_hint": "Ingen indrykning på denne linje. Tryk på <kbd>Shift</kbd> + <kbd>Tab</kbd> igen eller <kbd>Escape</kbd> for at forlade editoren."
+    "editor.textarea.shift_tab_hint": "Ingen indrykning på denne linje. Tryk på <kbd>Shift</kbd> + <kbd>Tab</kbd> igen eller <kbd>Escape</kbd> for at forlade editoren.",
+    "admin.dashboard.cleanup_offline_runners": "Ryd op offline runners",
+    "settings.visibility.description": "Profilsynlighed påvirker andres adgang til dine ikke-private depoter. <a href=\"%s\" target=\"_blank\">Læs mere</a>",
+    "avatar.constraints_hint": "Brugerdefineret avatar må ikke overstige %[1]s i størrelse eller være større end %[2]dx%[3]d pixels",
+    "repo.diff.commit.next-short": "Næste",
+    "repo.diff.commit.previous-short": "Forrige"
 }
