@@ -94,7 +94,7 @@ test.describe('Pull: Toggle WIP', () => {
 test('Issue: Labels', async ({page}, workerInfo) => {
   test.skip(workerInfo.project.name === 'Mobile Safari', 'Unable to get tests working on Safari Mobile, see https://codeberg.org/forgejo/forgejo/pulls/3445#issuecomment-1789636');
 
-  async function submitLabels({page}: { page: Page }) {
+  async function submitLabels({page}: {page: Page}) {
     const submitted = page.waitForResponse('/user2/repo1/issues/labels');
     await page.locator('textarea').first().click(); // close via unrelated element
     await submitted;
