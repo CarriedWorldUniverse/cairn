@@ -12,7 +12,6 @@ import (
 
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/typesniffer"
-	"forgejo.org/modules/util"
 )
 
 // Blob represents a Git object.
@@ -25,42 +24,25 @@ type Blob struct {
 	repo    *Repository
 }
 
-// DataAsync gets a ReadCloser for the contents of a blob without reading it all.
-// Calling the Close function on the result will discard all unread output.
-func (b *Blob) DataAsync() (io.ReadCloser, error) {
+func (b *Blob) newReader() (*bufio.Reader, int64, func(), error) {
 	wr, rd, cancel, err := b.repo.CatFileBatch(b.repo.Ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, nil, err
 	}
 
 	_, err = wr.Write([]byte(b.ID.String() + "\n"))
 	if err != nil {
 		cancel()
-		return nil, err
+		return nil, 0, nil, err
 	}
 	_, _, size, err := ReadBatchLine(rd)
 	if err != nil {
 		cancel()
-		return nil, err
+		return nil, 0, nil, err
 	}
 	b.gotSize = true
 	b.size = size
-
-	if size < 4096 {
-		bs, err := io.ReadAll(io.LimitReader(rd, size))
-		defer cancel()
-		if err != nil {
-			return nil, err
-		}
-		_, err = rd.Discard(1)
-		return io.NopCloser(bytes.NewReader(bs)), err
-	}
-
-	return &blobReader{
-		rd:     rd,
-		n:      size,
-		cancel: cancel,
-	}, nil
+	return rd, size, cancel, err
 }
 
 // Size returns the uncompressed size of the blob
@@ -91,10 +73,36 @@ func (b *Blob) Size() int64 {
 	return b.size
 }
 
+// DataAsync gets a ReadCloser for the contents of a blob without reading it all.
+// Calling the Close function on the result will discard all unread output.
+func (b *Blob) DataAsync() (io.ReadCloser, error) {
+	rd, size, cancel, err := b.newReader()
+	if err != nil {
+		return nil, err
+	}
+
+	if size < 4096 {
+		bs, err := io.ReadAll(io.LimitReader(rd, size))
+		defer cancel()
+		if err != nil {
+			return nil, err
+		}
+		_, err = rd.Discard(1)
+		return io.NopCloser(bytes.NewReader(bs)), err
+	}
+
+	return &blobReader{
+		rd:     rd,
+		n:      size,
+		cancel: cancel,
+	}, nil
+}
+
 type blobReader struct {
-	rd     *bufio.Reader
-	n      int64
-	cancel func()
+	rd                *bufio.Reader
+	n                 int64 // number of bytes to read
+	additionalDiscard int64 // additional number of bytes to discard
+	cancel            func()
 }
 
 func (b *blobReader) Read(p []byte) (n int, err error) {
@@ -117,7 +125,8 @@ func (b *blobReader) Close() error {
 
 	defer b.cancel()
 
-	if err := DiscardFull(b.rd, b.n+1); err != nil {
+	// discard the unread bytes, the truncated bytes and the trailing newline
+	if err := DiscardFull(b.rd, b.n+b.additionalDiscard+1); err != nil {
 		return err
 	}
 
@@ -131,17 +140,35 @@ func (b *Blob) Name() string {
 	return b.name
 }
 
-// GetBlobContent Gets the limited content of the blob as raw text
+// NewTruncatedReader return a blob-reader which silently truncates when the limit is reached (io.EOF will be returned)
+func (b *Blob) NewTruncatedReader(limit int64) (rc io.ReadCloser, fullSize int64, err error) {
+	r, fullSize, cancel, err := b.newReader()
+	if err != nil {
+		return nil, fullSize, err
+	}
+
+	limit = min(limit, fullSize)
+	return &blobReader{
+		rd:                r,
+		n:                 limit,
+		additionalDiscard: fullSize - limit,
+		cancel:            cancel,
+	}, fullSize, nil
+}
+
+// GetBlobContent Gets the truncated content of the blob as raw text
 func (b *Blob) GetBlobContent(limit int64) (string, error) {
 	if limit <= 0 {
 		return "", nil
 	}
-	dataRc, err := b.DataAsync()
+	rc, fullSize, err := b.NewTruncatedReader(limit)
 	if err != nil {
 		return "", err
 	}
-	defer dataRc.Close()
-	buf, err := util.ReadWithLimit(dataRc, int(limit))
+	defer rc.Close()
+
+	buf := make([]byte, min(fullSize, limit))
+	_, err = io.ReadFull(rc, buf)
 	return string(buf), err
 }
 
