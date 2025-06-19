@@ -14,9 +14,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testIssueCommentChangeEvent(t *testing.T, htmlDoc *HTMLDoc, commentID string, texts, links []string) {
+func testIssueCommentChangeEvent(t *testing.T, htmlDoc *HTMLDoc, commentID, badgeOcticon, avatarTitle, avatarLink string, texts, links []string) {
+	// Check badge octicon
+	badge := htmlDoc.Find("#issuecomment-" + commentID + " .badge svg." + badgeOcticon)
+	assert.Equal(t, 1, badge.Length())
+
+	// Check avatar title
+	avatarImg := htmlDoc.Find("#issuecomment-" + commentID + " img.avatar")
+	if len(avatarTitle) == 0 {
+		assert.Zero(t, avatarImg.Length())
+	} else {
+		assert.Equal(t, 1, avatarImg.Length())
+		title, exists := avatarImg.Attr("title")
+		assert.True(t, exists)
+		assert.Equal(t, avatarTitle, title)
+	}
+
+	// Check avatar link
+	avatarA := htmlDoc.Find("#issuecomment-" + commentID + " a.avatar")
+	if len(avatarLink) == 0 {
+		assert.Zero(t, avatarA.Length())
+	} else {
+		assert.Equal(t, 1, avatarA.Length())
+		href, exists := avatarA.Attr("href")
+		assert.True(t, exists)
+		assert.Equal(t, avatarLink, href)
+	}
+
 	event := htmlDoc.Find("#issuecomment-" + commentID + " .text")
 
+	// Check text content
 	for _, text := range texts {
 		assert.Contains(t, strings.Join(strings.Fields(event.Text()), " "), text)
 	}
@@ -32,8 +59,10 @@ func testIssueCommentChangeEvent(t *testing.T, htmlDoc *HTMLDoc, commentID strin
 		}
 	})
 
+	// Check anchors (id)
 	assert.Equal(t, []string{"event-" + commentID}, ids)
 
+	// Check links (href)
 	issueCommentLink := "#issuecomment-" + commentID
 	found := false
 	for _, link := range links {
@@ -57,24 +86,28 @@ func TestIssueCommentChangeMilestone(t *testing.T) {
 
 	// Add milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2000",
+		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 added this to the milestone1 milestone"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/milestone/1"})
 
 	// Modify milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2001",
+		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 modified the milestone from milestone1 to milestone2"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/milestone/1", "/user2/repo1/milestone/2"})
 
 	// Remove milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2002",
+		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 removed this from the milestone2 milestone"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/milestone/2"})
 
 	// Deleted milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2003",
+		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 added this to the (deleted) milestone"},
 		[]string{"/user1"})
 }
@@ -88,24 +121,28 @@ func TestIssueCommentChangeProject(t *testing.T) {
 
 	// Add project
 	testIssueCommentChangeEvent(t, htmlDoc, "2010",
+		"octicon-project", "User One", "/user1",
 		[]string{"user1 added this to the First project project"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/projects/1"})
 
 	// Modify project
 	testIssueCommentChangeEvent(t, htmlDoc, "2011",
+		"octicon-project", "User One", "/user1",
 		[]string{"user1 modified the project from First project to second project"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/projects/1", "/user2/repo1/projects/2"})
 
 	// Remove project
 	testIssueCommentChangeEvent(t, htmlDoc, "2012",
+		"octicon-project", "User One", "/user1",
 		[]string{"user1 removed this from the second project project"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2/repo1/projects/2"})
 
 	// Deleted project
 	testIssueCommentChangeEvent(t, htmlDoc, "2013",
+		"octicon-project", "User One", "/user1",
 		[]string{"user1 added this to the (deleted) project"},
 		[]string{"/user1"})
 }
@@ -119,28 +156,33 @@ func TestIssueCommentChangeLabel(t *testing.T) {
 
 	// Add multiple labels
 	testIssueCommentChangeEvent(t, htmlDoc, "2020",
+		"octicon-tag", "User One", "/user1",
 		[]string{"user1 added the label1 label2 labels "},
 		[]string{"/user1", "/user2/repo1/issues?labels=1", "/user2/repo1/issues?labels=2"})
 	assert.Empty(t, htmlDoc.Find("#issuecomment-2021 .text").Text())
 
 	// Remove single label
 	testIssueCommentChangeEvent(t, htmlDoc, "2022",
+		"octicon-tag", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 removed the label1 label "},
 		[]string{"/user2", "/user2/repo1/issues?labels=1"})
 
 	// Modify labels (add and remove)
 	testIssueCommentChangeEvent(t, htmlDoc, "2023",
+		"octicon-tag", "User One", "/user1",
 		[]string{"user1 added label1 and removed label2 labels "},
 		[]string{"/user1", "/user2/repo1/issues?labels=1", "/user2/repo1/issues?labels=2"})
 	assert.Empty(t, htmlDoc.Find("#issuecomment-2024 .text").Text())
 
 	// Add single label
 	testIssueCommentChangeEvent(t, htmlDoc, "2025",
+		"octicon-tag", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 added the label2 label "},
 		[]string{"/user2", "/user2/repo1/issues?labels=2"})
 
 	// Remove multiple labels
 	testIssueCommentChangeEvent(t, htmlDoc, "2026",
+		"octicon-tag", "User One", "/user1",
 		[]string{"user1 removed the label1 label2 labels "},
 		[]string{"/user1", "/user2/repo1/issues?labels=1", "/user2/repo1/issues?labels=2"})
 	assert.Empty(t, htmlDoc.Find("#issuecomment-2027 .text").Text())
@@ -155,23 +197,27 @@ func TestIssueCommentChangeAssignee(t *testing.T) {
 
 	// Self-assign
 	testIssueCommentChangeEvent(t, htmlDoc, "2040",
+		"octicon-person", "User One", "/user1",
 		[]string{"user1 self-assigned this"},
 		[]string{"/user1"})
 
 	// Remove other
 	testIssueCommentChangeEvent(t, htmlDoc, "2041",
+		"octicon-person", "User One", "/user1",
 		[]string{"user1 was unassigned by user2"},
 		[]string{"/user1"})
 	// []string{"/user1", "/user2"})
 
 	// Add other
 	testIssueCommentChangeEvent(t, htmlDoc, "2042",
+		"octicon-person", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 was assigned by user1"},
 		[]string{"/user2"})
 	// []string{"/user2", "/user1"})
 
 	// Self-remove
 	testIssueCommentChangeEvent(t, htmlDoc, "2043",
+		"octicon-person", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 removed their assignment"},
 		[]string{"/user2"})
 }
@@ -185,21 +231,25 @@ func TestIssueCommentChangeLock(t *testing.T) {
 
 	// Lock without reason
 	testIssueCommentChangeEvent(t, htmlDoc, "2050",
+		"octicon-lock", "User One", "/user1",
 		[]string{"user1 locked and limited conversation to collaborators"},
 		[]string{"/user1"})
 
 	// Unlock
 	testIssueCommentChangeEvent(t, htmlDoc, "2051",
+		"octicon-key", "User One", "/user1",
 		[]string{"user1 unlocked this conversation"},
 		[]string{"/user1"})
 
 	// Lock with reason
 	testIssueCommentChangeEvent(t, htmlDoc, "2052",
+		"octicon-lock", "User One", "/user1",
 		[]string{"user1 locked as Too heated and limited conversation to collaborators"},
 		[]string{"/user1"})
 
 	// Unlock
 	testIssueCommentChangeEvent(t, htmlDoc, "2053",
+		"octicon-key", "User One", "/user1",
 		[]string{"user1 unlocked this conversation"},
 		[]string{"/user1"})
 }
@@ -213,11 +263,13 @@ func TestIssueCommentChangePin(t *testing.T) {
 
 	// Pin
 	testIssueCommentChangeEvent(t, htmlDoc, "2060",
+		"octicon-pin", "User One", "/user1",
 		[]string{"user1 pinned this"},
 		[]string{"/user1"})
 
 	// Unpin
 	testIssueCommentChangeEvent(t, htmlDoc, "2061",
+		"octicon-pin", "User One", "/user1",
 		[]string{"user1 unpinned this"},
 		[]string{"/user1"})
 }
@@ -231,11 +283,13 @@ func TestIssueCommentChangeOpen(t *testing.T) {
 
 	// Close issue
 	testIssueCommentChangeEvent(t, htmlDoc, "2070",
+		"octicon-circle-slash", "User One", "/user1",
 		[]string{"user1 closed this issue"},
 		[]string{"/user1"})
 
 	// Reopen issue
 	testIssueCommentChangeEvent(t, htmlDoc, "2071",
+		"octicon-dot-fill", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 reopened this issue"},
 		[]string{"/user2"})
 
@@ -245,11 +299,13 @@ func TestIssueCommentChangeOpen(t *testing.T) {
 
 	// Close pull request
 	testIssueCommentChangeEvent(t, htmlDoc, "2072",
+		"octicon-circle-slash", "User One", "/user1",
 		[]string{"user1 closed this pull request"},
 		[]string{"/user1"})
 
 	// Reopen pull request
 	testIssueCommentChangeEvent(t, htmlDoc, "2073",
+		"octicon-dot-fill", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 reopened this pull request"},
 		[]string{"/user2"})
 }
@@ -263,21 +319,25 @@ func TestIssueCommentChangeIssueReference(t *testing.T) {
 
 	// Issue reference from issue
 	testIssueCommentChangeEvent(t, htmlDoc, "2080",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this issue ", "issue5 #4"},
 		[]string{"/user1", "/user2/repo1/issues/4", "#issuecomment-2080", "/user2/repo1/issues/4"})
 
 	// Issue reference from pull
 	testIssueCommentChangeEvent(t, htmlDoc, "2081",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this issue ", "issue2 #2"},
 		[]string{"/user1", "/user2/repo1/pulls/2", "#issuecomment-2081", "/user2/repo1/pulls/2"})
 
 	// Issue reference from issue in different repo
 	testIssueCommentChangeEvent(t, htmlDoc, "2082",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this issue from org3/repo21", "just a normal issue #1"},
 		[]string{"/user1", "/org3/repo21/issues/1", "#issuecomment-2082", "/org3/repo21/issues/1"})
 
 	// Issue reference from pull in different repo
 	testIssueCommentChangeEvent(t, htmlDoc, "2083",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this issue from user12/repo10 ", "pr2 #1"},
 		[]string{"/user1", "/user12/repo10/pulls/1", "#issuecomment-2083", "/user12/repo10/pulls/1"})
 }
@@ -291,21 +351,25 @@ func TestIssueCommentChangePullReference(t *testing.T) {
 
 	// Pull reference from issue
 	testIssueCommentChangeEvent(t, htmlDoc, "2090",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this pull request ", "issue1 #1"},
 		[]string{"/user1", "/user2/repo1/issues/1", "#issuecomment-2090", "/user2/repo1/issues/1"})
 
 	// Pull reference from pull
 	testIssueCommentChangeEvent(t, htmlDoc, "2091",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this pull request ", "issue2 #2"},
 		[]string{"/user1", "/user2/repo1/pulls/2", "#issuecomment-2091", "/user2/repo1/pulls/2"})
 
 	// Pull reference from issue in different repo
 	testIssueCommentChangeEvent(t, htmlDoc, "2092",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this pull request from org3/repo21", "just a normal issue #1"},
 		[]string{"/user1", "/org3/repo21/issues/1", "#issuecomment-2092", "/org3/repo21/issues/1"})
 
 	// Pull reference from pull in different repo
 	testIssueCommentChangeEvent(t, htmlDoc, "2093",
+		"octicon-bookmark", "User One", "/user1",
 		[]string{"user1 referenced this pull request from user12/repo10 ", "pr2 #1"},
 		[]string{"/user1", "/user12/repo10/pulls/1", "#issuecomment-2093", "/user12/repo10/pulls/1"})
 }
