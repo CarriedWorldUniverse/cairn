@@ -1,5 +1,5 @@
 import eslintCommunityEslintPluginEslintComments from '@eslint-community/eslint-plugin-eslint-comments';
-import stylisticEslintPluginJs from '@stylistic/eslint-plugin-js';
+import stylisticEslintPlugin from '@stylistic/eslint-plugin';
 import vitest from '@vitest/eslint-plugin';
 import arrayFunc from 'eslint-plugin-array-func';
 import eslintPluginImportX from 'eslint-plugin-import-x';
@@ -26,7 +26,7 @@ export default tseslint.config(
   {
     plugins: {
       '@eslint-community/eslint-comments': eslintCommunityEslintPluginEslintComments,
-      '@stylistic/js': stylisticEslintPluginJs,
+      '@stylistic': stylisticEslintPlugin,
       '@vitest': vitest,
       'array-func': arrayFunc,
       'no-jquery': noJquery,
@@ -69,62 +69,62 @@ export default tseslint.config(
       '@eslint-community/eslint-comments/no-unused-enable': [2],
       '@eslint-community/eslint-comments/no-use': [0],
       '@eslint-community/eslint-comments/require-description': [0],
-      '@stylistic/js/array-bracket-newline': [0],
-      '@stylistic/js/array-bracket-spacing': [2, 'never'],
-      '@stylistic/js/array-element-newline': [0],
-      '@stylistic/js/arrow-parens': [2, 'always'],
+      '@stylistic/array-bracket-newline': [0],
+      '@stylistic/array-bracket-spacing': [2, 'never'],
+      '@stylistic/array-element-newline': [0],
+      '@stylistic/arrow-parens': [2, 'always'],
 
-      '@stylistic/js/arrow-spacing': [2, {
+      '@stylistic/arrow-spacing': [2, {
         before: true,
         after: true,
       }],
 
-      '@stylistic/js/block-spacing': [0],
+      '@stylistic/block-spacing': [0],
 
-      '@stylistic/js/brace-style': [2, '1tbs', {
+      '@stylistic/brace-style': [2, '1tbs', {
         allowSingleLine: true,
       }],
 
-      '@stylistic/js/comma-dangle': [2, 'always-multiline'],
+      '@stylistic/comma-dangle': [2, 'always-multiline'],
 
-      '@stylistic/js/comma-spacing': [2, {
+      '@stylistic/comma-spacing': [2, {
         before: false,
         after: true,
       }],
 
-      '@stylistic/js/comma-style': [2, 'last'],
-      '@stylistic/js/computed-property-spacing': [2, 'never'],
-      '@stylistic/js/dot-location': [2, 'property'],
-      '@stylistic/js/eol-last': [2],
-      '@stylistic/js/function-call-spacing': [2, 'never'],
-      '@stylistic/js/function-call-argument-newline': [0],
-      '@stylistic/js/function-paren-newline': [0],
-      '@stylistic/js/generator-star-spacing': [0],
-      '@stylistic/js/implicit-arrow-linebreak': [0],
+      '@stylistic/comma-style': [2, 'last'],
+      '@stylistic/computed-property-spacing': [2, 'never'],
+      '@stylistic/dot-location': [2, 'property'],
+      '@stylistic/eol-last': [2],
+      '@stylistic/function-call-spacing': [2, 'never'],
+      '@stylistic/function-call-argument-newline': [0],
+      '@stylistic/function-paren-newline': [0],
+      '@stylistic/generator-star-spacing': [0],
+      '@stylistic/implicit-arrow-linebreak': [0],
 
-      '@stylistic/js/indent': [2, 2, {
+      '@stylistic/indent': [2, 2, {
         ignoreComments: true,
         SwitchCase: 1,
       }],
 
-      '@stylistic/js/key-spacing': [2],
-      '@stylistic/js/keyword-spacing': [2],
-      '@stylistic/js/linebreak-style': [2, 'unix'],
-      '@stylistic/js/lines-around-comment': [0],
-      '@stylistic/js/lines-between-class-members': [0],
-      '@stylistic/js/max-len': [0],
-      '@stylistic/js/max-statements-per-line': [0],
-      '@stylistic/js/multiline-ternary': [0],
-      '@stylistic/js/new-parens': [2],
-      '@stylistic/js/newline-per-chained-call': [0],
-      '@stylistic/js/no-confusing-arrow': [0],
-      '@stylistic/js/no-extra-parens': [0],
-      '@stylistic/js/no-extra-semi': [2],
-      '@stylistic/js/no-floating-decimal': [0],
-      '@stylistic/js/no-mixed-operators': [0],
-      '@stylistic/js/no-mixed-spaces-and-tabs': [2],
+      '@stylistic/key-spacing': [2],
+      '@stylistic/keyword-spacing': [2],
+      '@stylistic/linebreak-style': [2, 'unix'],
+      '@stylistic/lines-around-comment': [0],
+      '@stylistic/lines-between-class-members': [0],
+      '@stylistic/max-len': [0],
+      '@stylistic/max-statements-per-line': [0],
+      '@stylistic/multiline-ternary': [0],
+      '@stylistic/new-parens': [2],
+      '@stylistic/newline-per-chained-call': [0],
+      '@stylistic/no-confusing-arrow': [0],
+      '@stylistic/no-extra-parens': [0],
+      '@stylistic/no-extra-semi': [2],
+      '@stylistic/no-floating-decimal': [0],
+      '@stylistic/no-mixed-operators': [0],
+      '@stylistic/no-mixed-spaces-and-tabs': [2],
 
-      '@stylistic/js/no-multi-spaces': [2, {
+      '@stylistic/no-multi-spaces': [2, {
         ignoreEOLComments: true,
 
         exceptions: {
@@ -132,60 +132,60 @@ export default tseslint.config(
         },
       }],
 
-      '@stylistic/js/no-multiple-empty-lines': [2, {
+      '@stylistic/no-multiple-empty-lines': [2, {
         max: 1,
         maxEOF: 0,
         maxBOF: 0,
       }],
 
-      '@stylistic/js/no-tabs': [2],
-      '@stylistic/js/no-trailing-spaces': [2],
-      '@stylistic/js/no-whitespace-before-property': [2],
-      '@stylistic/js/nonblock-statement-body-position': [2],
-      '@stylistic/js/object-curly-newline': [0],
-      '@stylistic/js/object-curly-spacing': [2, 'never'],
-      '@stylistic/js/object-property-newline': [0],
-      '@stylistic/js/one-var-declaration-per-line': [0],
-      '@stylistic/js/operator-linebreak': [2, 'after'],
-      '@stylistic/js/padded-blocks': [2, 'never'],
-      '@stylistic/js/padding-line-between-statements': [0],
-      '@stylistic/js/quote-props': [0],
+      '@stylistic/no-tabs': [2],
+      '@stylistic/no-trailing-spaces': [2],
+      '@stylistic/no-whitespace-before-property': [2],
+      '@stylistic/nonblock-statement-body-position': [2],
+      '@stylistic/object-curly-newline': [0],
+      '@stylistic/object-curly-spacing': [2, 'never'],
+      '@stylistic/object-property-newline': [0],
+      '@stylistic/one-var-declaration-per-line': [0],
+      '@stylistic/operator-linebreak': [2, 'after'],
+      '@stylistic/padded-blocks': [2, 'never'],
+      '@stylistic/padding-line-between-statements': [0],
+      '@stylistic/quote-props': [0],
 
-      '@stylistic/js/quotes': [2, 'single', {
+      '@stylistic/quotes': [2, 'single', {
         avoidEscape: true,
         allowTemplateLiterals: true,
       }],
 
-      '@stylistic/js/rest-spread-spacing': [2, 'never'],
+      '@stylistic/rest-spread-spacing': [2, 'never'],
 
-      '@stylistic/js/semi': [2, 'always', {
+      '@stylistic/semi': [2, 'always', {
         omitLastInOneLineBlock: true,
       }],
 
-      '@stylistic/js/semi-spacing': [2, {
+      '@stylistic/semi-spacing': [2, {
         before: false,
         after: true,
       }],
 
-      '@stylistic/js/semi-style': [2, 'last'],
-      '@stylistic/js/space-before-blocks': [2, 'always'],
+      '@stylistic/semi-style': [2, 'last'],
+      '@stylistic/space-before-blocks': [2, 'always'],
 
-      '@stylistic/js/space-before-function-paren': [2, {
+      '@stylistic/space-before-function-paren': [2, {
         anonymous: 'ignore',
         named: 'never',
         asyncArrow: 'always',
       }],
 
-      '@stylistic/js/space-in-parens': [2, 'never'],
-      '@stylistic/js/space-infix-ops': [2],
-      '@stylistic/js/space-unary-ops': [2],
-      '@stylistic/js/spaced-comment': [2, 'always'],
-      '@stylistic/js/switch-colon-spacing': [2],
-      '@stylistic/js/template-curly-spacing': [2, 'never'],
-      '@stylistic/js/template-tag-spacing': [2, 'never'],
-      '@stylistic/js/wrap-iife': [2, 'inside'],
-      '@stylistic/js/wrap-regex': [0],
-      '@stylistic/js/yield-star-spacing': [2, 'after'],
+      '@stylistic/space-in-parens': [2, 'never'],
+      '@stylistic/space-infix-ops': [2],
+      '@stylistic/space-unary-ops': [2],
+      '@stylistic/spaced-comment': [2, 'always'],
+      '@stylistic/switch-colon-spacing': [2],
+      '@stylistic/template-curly-spacing': [2, 'never'],
+      '@stylistic/template-tag-spacing': [2, 'never'],
+      '@stylistic/wrap-iife': [2, 'inside'],
+      '@stylistic/wrap-regex': [0],
+      '@stylistic/yield-star-spacing': [2, 'after'],
       'accessor-pairs': [2],
 
       'array-callback-return': [2, {

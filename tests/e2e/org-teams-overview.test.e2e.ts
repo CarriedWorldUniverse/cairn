@@ -31,7 +31,7 @@ const reviewTeamUrl = '/org/org17/teams/review_team';
 const ownersUrl = '/org/org17/teams/owners';
 const adminUrl = '/org/org17/teams/super-user';
 
-const cases: Record<string, { read?: Unit[], write?: Unit[] }> = {
+const cases: Record<string, {read?: Unit[], write?: Unit[]}> = {
   [testTeamUrl]: {write: ['Issues']},
   [reviewTeamUrl]: {read: ['Code']},
 };
