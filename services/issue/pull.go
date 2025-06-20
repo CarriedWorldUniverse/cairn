@@ -43,8 +43,6 @@ type ReviewRequestNotifier struct {
 }
 
 func PullRequestCodeOwnersReview(ctx context.Context, issue *issues_model.Issue, pr *issues_model.PullRequest) ([]*ReviewRequestNotifier, error) {
-	files := []string{"CODEOWNERS", "docs/CODEOWNERS", ".gitea/CODEOWNERS"}
-
 	if pr.IsWorkInProgress(ctx) {
 		return nil, nil
 	}
@@ -72,17 +70,16 @@ func PullRequestCodeOwnersReview(ctx context.Context, issue *issues_model.Issue,
 		return nil, err
 	}
 
-	var data string
-	for _, file := range files {
+	var rules []*issues_model.CodeOwnerRule
+	for _, file := range []string{"CODEOWNERS", "docs/CODEOWNERS", ".gitea/CODEOWNERS"} {
 		if blob, err := commit.GetBlobByPath(file); err == nil {
-			data, err = blob.GetBlobContent(setting.UI.MaxDisplayFileSize)
+			rc, size, err := blob.NewTruncatedReader(setting.UI.MaxDisplayFileSize)
 			if err == nil {
+				rules, _ = issues_model.GetCodeOwnersFromReader(ctx, rc, size > setting.UI.MaxDisplayFileSize)
 				break
 			}
 		}
 	}
-
-	rules, _ := issues_model.GetCodeOwnersFromContent(ctx, data)
 
 	// get the mergebase
 	mergeBase, err := getMergeBase(repo, pr, git.BranchPrefix+pr.BaseBranch, pr.GetGitRefName())
