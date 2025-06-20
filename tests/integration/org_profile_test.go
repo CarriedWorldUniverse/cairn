@@ -19,14 +19,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUserProfile(t *testing.T) {
+func TestOrgProfile(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		checkReadme := func(t *testing.T, title, readmeFilename string, expectedCount int) {
 			t.Run(title, func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
 				// Prepare the test repository
-				user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+				org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
 
 				var ops []*files_service.ChangeRepoFile
 				op := "create"
@@ -46,11 +46,11 @@ func TestUserProfile(t *testing.T) {
 					})
 				}
 
-				_, _, f := tests.CreateDeclarativeRepo(t, user2, ".profile", nil, nil, ops)
+				_, _, f := tests.CreateDeclarativeRepo(t, org3, ".profile", nil, nil, ops)
 				defer f()
 
 				// Perform the test
-				req := NewRequest(t, "GET", "/user2")
+				req := NewRequest(t, "GET", "/org3")
 				resp := MakeRequest(t, req, http.StatusOK)
 
 				doc := NewHTMLParser(t, resp.Body)
@@ -70,9 +70,9 @@ func TestUserProfile(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			// Prepare the test repository
-			user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+			org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
 
-			_, _, f := tests.CreateDeclarativeRepo(t, user2, ".profile", nil, nil, []*files_service.ChangeRepoFile{
+			_, _, f := tests.CreateDeclarativeRepo(t, org3, ".profile", nil, nil, []*files_service.ChangeRepoFile{
 				{
 					Operation: "update",
 					TreePath:  "README.md",
@@ -88,7 +88,7 @@ quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequa
 				defer tests.PrintCurrentTest(t)()
 				defer test.MockVariableValue(&setting.UI.MaxDisplayFileSize, 500)()
 
-				req := NewRequest(t, "GET", "/user2")
+				req := NewRequest(t, "GET", "/org3")
 				resp := MakeRequest(t, req, http.StatusOK)
 				assert.Contains(t, resp.Body.String(), "Ut enim ad minim veniam")
 				assert.Contains(t, resp.Body.String(), "mollit anim id est laborum")
@@ -98,7 +98,7 @@ quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequa
 				defer tests.PrintCurrentTest(t)()
 				defer test.MockVariableValue(&setting.UI.MaxDisplayFileSize, 146)()
 
-				req := NewRequest(t, "GET", "/user2")
+				req := NewRequest(t, "GET", "/org3")
 				resp := MakeRequest(t, req, http.StatusOK)
 				assert.Contains(t, resp.Body.String(), "Ut enim ad minim")
 				assert.NotContains(t, resp.Body.String(), "veniam")

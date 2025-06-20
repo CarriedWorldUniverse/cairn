@@ -5,6 +5,7 @@
 package issues
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -923,37 +924,42 @@ func MergeBlockedByOutdatedBranch(protectBranch *git_model.ProtectedBranch, pr *
 	return protectBranch.BlockOnOutdatedBranch && pr.CommitsBehind > 0
 }
 
-// GetCodeOwnersFromContent returns the code owners configuration
-// Return empty slice if files missing
+// GetCodeOwnersFromReader returns the code owners configuration
 // Return warning messages on parsing errors
 // We're trying to do the best we can when parsing a file.
 // Invalid lines are skipped. Non-existent users and teams too.
-func GetCodeOwnersFromContent(ctx context.Context, data string) ([]*CodeOwnerRule, []string) {
-	if len(data) == 0 {
-		return nil, nil
-	}
+func GetCodeOwnersFromReader(ctx context.Context, rc io.ReadCloser, truncated bool) ([]*CodeOwnerRule, []string) {
+	defer rc.Close()
+	scanner := bufio.NewScanner(rc)
 
-	rules := make([]*CodeOwnerRule, 0)
-	lines := strings.Split(data, "\n")
-	warnings := make([]string, 0)
+	var rules []*CodeOwnerRule
+	var warnings []string
+	line := 0
+	for scanner.Scan() {
+		line++
 
-	for i, line := range lines {
-		tokens := TokenizeCodeOwnersLine(line)
+		tokens := TokenizeCodeOwnersLine(scanner.Text())
 		if len(tokens) == 0 {
 			continue
 		} else if len(tokens) < 2 {
-			warnings = append(warnings, fmt.Sprintf("Line: %d: incorrect format", i+1))
+			warnings = append(warnings, fmt.Sprintf("Line: %d: incorrect format", line))
 			continue
 		}
 		rule, wr := ParseCodeOwnersLine(ctx, tokens)
 		for _, w := range wr {
-			warnings = append(warnings, fmt.Sprintf("Line: %d: %s", i+1, w))
+			warnings = append(warnings, fmt.Sprintf("Line: %d: %s", line, w))
 		}
 		if rule == nil {
 			continue
 		}
 
 		rules = append(rules, rule)
+	}
+	if err := scanner.Err(); err != nil {
+		warnings = append(warnings, err.Error())
+	}
+	if truncated {
+		warnings = append(warnings, fmt.Sprintf("File too big: truncated while on line %d", line))
 	}
 
 	return rules, warnings

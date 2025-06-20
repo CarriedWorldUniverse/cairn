@@ -35,7 +35,7 @@ func TestBlob_Data(t *testing.T) {
 	assert.Equal(t, output, string(data))
 }
 
-func TestBlob_GetBlobContent(t *testing.T) {
+func TestBlob(t *testing.T) {
 	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
 	repo, err := openRepositoryWithDefaultContext(bareRepo1Path)
 	require.NoError(t, err)
@@ -45,30 +45,93 @@ func TestBlob_GetBlobContent(t *testing.T) {
 	testBlob, err := repo.GetBlob("6c493ff740f9380390d5c9ddef4af18697ac9375")
 	require.NoError(t, err)
 
-	r, err := testBlob.GetBlobContent(100)
-	require.NoError(t, err)
-	require.Equal(t, "file2\n", r)
+	t.Run("GetBlobContent", func(t *testing.T) {
+		r, err := testBlob.GetBlobContent(100)
+		require.NoError(t, err)
+		require.Equal(t, "file2\n", r)
 
-	r, err = testBlob.GetBlobContent(-1)
-	require.NoError(t, err)
-	require.Empty(t, r)
+		r, err = testBlob.GetBlobContent(-1)
+		require.NoError(t, err)
+		require.Empty(t, r)
 
-	r, err = testBlob.GetBlobContent(4)
-	require.NoError(t, err)
-	require.Equal(t, "file", r)
+		r, err = testBlob.GetBlobContent(4)
+		require.NoError(t, err)
+		require.Equal(t, "file", r)
 
-	r, err = testBlob.GetBlobContent(6)
-	require.NoError(t, err)
-	require.Equal(t, "file2\n", r)
+		r, err = testBlob.GetBlobContent(6)
+		require.NoError(t, err)
+		require.Equal(t, "file2\n", r)
+	})
 
-	t.Run("non-existing blob", func(t *testing.T) {
-		inexistingBlob, err := repo.GetBlob("00003ff740f9380390d5c9ddef4af18690000000")
+	t.Run("NewTruncatedReader", func(t *testing.T) {
+		// read fewer than available
+		rc, size, err := testBlob.NewTruncatedReader(100)
+		require.NoError(t, err)
+		require.Equal(t, int64(6), size)
+
+		buf := make([]byte, 1)
+		n, err := rc.Read(buf)
+		require.NoError(t, err)
+		require.Equal(t, 1, n)
+		require.Equal(t, "f", string(buf))
+		n, err = rc.Read(buf)
+		require.NoError(t, err)
+		require.Equal(t, 1, n)
+		require.Equal(t, "i", string(buf))
+
+		require.NoError(t, rc.Close())
+
+		// read more than available
+		rc, size, err = testBlob.NewTruncatedReader(100)
+		require.NoError(t, err)
+		require.Equal(t, int64(6), size)
+
+		buf = make([]byte, 100)
+		n, err = rc.Read(buf)
+		require.NoError(t, err)
+		require.Equal(t, 6, n)
+		require.Equal(t, "file2\n", string(buf[:n]))
+
+		n, err = rc.Read(buf)
+		require.Error(t, err)
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, 0, n)
+
+		require.NoError(t, rc.Close())
+
+		// read more than truncated
+		rc, size, err = testBlob.NewTruncatedReader(4)
+		require.NoError(t, err)
+		require.Equal(t, int64(6), size)
+
+		buf = make([]byte, 10)
+		n, err = rc.Read(buf)
+		require.NoError(t, err)
+		require.Equal(t, 4, n)
+		require.Equal(t, "file", string(buf[:n]))
+
+		n, err = rc.Read(buf)
+		require.Error(t, err)
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, 0, n)
+
+		require.NoError(t, rc.Close())
+	})
+
+	t.Run("NonExisting", func(t *testing.T) {
+		nonExistingBlob, err := repo.GetBlob("00003ff740f9380390d5c9ddef4af18690000000")
 		require.NoError(t, err)
 
-		r, err := inexistingBlob.GetBlobContent(100)
+		r, err := nonExistingBlob.GetBlobContent(100)
 		require.Error(t, err)
 		require.IsType(t, ErrNotExist{}, err)
 		require.Empty(t, r)
+
+		rc, size, err := nonExistingBlob.NewTruncatedReader(100)
+		require.Error(t, err)
+		require.IsType(t, ErrNotExist{}, err)
+		require.Empty(t, rc)
+		require.Empty(t, size)
 	})
 }
 
