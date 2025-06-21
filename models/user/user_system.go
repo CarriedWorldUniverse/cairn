@@ -12,6 +12,13 @@ import (
 	"forgejo.org/modules/structs"
 )
 
+// IsSystem returns true if the user has a fixed
+// negative ID, is never stored in the database and
+// is generated on the fly when needed.
+func (u *User) IsSystem() bool {
+	return u.IsGhost() || u.IsActions()
+}
+
 const (
 	GhostUserID        = -1
 	GhostUserName      = "Ghost"
