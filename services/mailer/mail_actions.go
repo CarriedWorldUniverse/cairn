@@ -23,6 +23,10 @@ func MailActionRun(run *actions_model.ActionRun, priorStatus actions_model.Statu
 		return nil
 	}
 
+	if !run.NotifyEmail {
+		return nil
+	}
+
 	user := run.TriggerUser
 	// this happens e.g. when this is a scheduled run
 	if user.IsSystem() {

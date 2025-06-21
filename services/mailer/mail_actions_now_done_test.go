@@ -80,6 +80,7 @@ func TestActionRunNowDoneNotificationMail(t *testing.T) {
 		for _, run := range []*actions_model.ActionRun{run1, run2} {
 			run.TriggerUser = triggerUser
 			run.TriggerUserID = triggerUser.ID
+			run.NotifyEmail = true
 		}
 		repo.Owner = owner
 		repo.OwnerID = owner.ID
@@ -97,6 +98,17 @@ func TestActionRunNowDoneNotificationMail(t *testing.T) {
 		defer MockMailSettings(func(msgs ...*Message) {
 			assert.Fail(t, "no mail should be sent")
 		})()
+		notify_service.ActionRunNowDone(ctx, run2, actions_model.StatusRunning, nil)
+	})
+
+	t.Run("WorkflowEnableEmailNotificationIsFalse", func(t *testing.T) {
+		user := getActionsNowDoneTestUser(t, "new_user1", "new_user1@example.com", "enabled")
+		defer CleanUpUsers(ctx, []*user_model.User{user})
+		assignUsers(user, user)
+		defer MockMailSettings(func(msgs ...*Message) {
+			assert.Fail(t, "no mail should be sent")
+		})()
+		run2.NotifyEmail = false
 		notify_service.ActionRunNowDone(ctx, run2, actions_model.StatusRunning, nil)
 	})
 

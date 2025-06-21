@@ -44,30 +44,35 @@ func (m *mockNotifier) ActionRunNowDone(ctx context.Context, run *actions_model.
 		assert.Equal(m.t, actions_model.StatusSuccess, run.Status)
 		assert.Equal(m.t, actions_model.StatusRunning, priorStatus)
 		assert.Nil(m.t, lastRun)
+		assert.True(m.t, run.NotifyEmail)
 	case 1:
 		assert.Equal(m.t, m.runID, run.ID)
 		assert.Equal(m.t, actions_model.StatusFailure, run.Status)
 		assert.Equal(m.t, actions_model.StatusRunning, priorStatus)
 		assert.Equal(m.t, m.lastRunID, lastRun.ID)
 		assert.Equal(m.t, actions_model.StatusSuccess, lastRun.Status)
+		assert.True(m.t, run.NotifyEmail)
 	case 2:
 		assert.Equal(m.t, m.runID, run.ID)
 		assert.Equal(m.t, actions_model.StatusCancelled, run.Status)
 		assert.Equal(m.t, actions_model.StatusRunning, priorStatus)
 		assert.Equal(m.t, m.lastRunID, lastRun.ID)
 		assert.Equal(m.t, actions_model.StatusFailure, lastRun.Status)
+		assert.True(m.t, run.NotifyEmail)
 	case 3:
 		assert.Equal(m.t, m.runID, run.ID)
 		assert.Equal(m.t, actions_model.StatusSuccess, run.Status)
 		assert.Equal(m.t, actions_model.StatusRunning, priorStatus)
 		assert.Equal(m.t, m.lastRunID, lastRun.ID)
 		assert.Equal(m.t, actions_model.StatusCancelled, lastRun.Status)
+		assert.True(m.t, run.NotifyEmail)
 	case 4:
 		assert.Equal(m.t, m.runID, run.ID)
 		assert.Equal(m.t, actions_model.StatusSuccess, run.Status)
 		assert.Equal(m.t, actions_model.StatusRunning, priorStatus)
 		assert.Equal(m.t, m.lastRunID, lastRun.ID)
 		assert.Equal(m.t, actions_model.StatusSuccess, lastRun.Status)
+		assert.True(m.t, run.NotifyEmail)
 	default:
 		assert.Fail(m.t, "too many notifications")
 	}
@@ -101,6 +106,7 @@ func TestActionNowDoneNotification(t *testing.T) {
 					TreePath:  ".forgejo/workflows/dispatch.yml",
 					ContentReader: strings.NewReader(
 						"name: test\n" +
+							"enable-email-notifications: true\n" +
 							"on: [workflow_dispatch]\n" +
 							"jobs:\n" +
 							"  test:\n" +
