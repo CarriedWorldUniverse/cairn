@@ -16,10 +16,15 @@ import (
 var (
 	changesetFiles     []string
 	changesetAvailable bool
-	globalFullRun      bool
+	globalFullRun      = false
 )
 
 func initChangedFiles() {
+	_, globalFullRun = os.LookupEnv("RUN_ALL")
+	if globalFullRun {
+		log.Info("Full run of all tests requested via RUN_ALL environment.")
+		return
+	}
 	var changes string
 	changes, changesetAvailable = os.LookupEnv("CHANGED_FILES")
 	// the output of the Action seems to actually contain \n and not a newline literal
@@ -44,7 +49,7 @@ func initChangedFiles() {
 	for _, expr := range globalPatterns {
 		fullRunPatterns = append(fullRunPatterns, glob.MustCompile(expr, '.', '/'))
 	}
-	globalFullRun = false
+
 	for _, changedFile := range changesetFiles {
 		for _, pattern := range fullRunPatterns {
 			if pattern.Match(changedFile) {
