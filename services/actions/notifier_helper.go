@@ -345,6 +345,14 @@ func handleWorkflows(
 			Status:            actions_model.StatusWaiting,
 		}
 
+		if workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content)); err == nil {
+			notifications, err := workflow.Notifications()
+			if err != nil {
+				log.Error("Notifications: %w", err)
+			}
+			run.NotifyEmail = notifications
+		}
+
 		need, err := ifNeedApproval(ctx, run, input.Repo, input.Doer)
 		if err != nil {
 			log.Error("check if need approval for repo %d with user %d: %v", input.Repo.ID, input.Doer.ID, err)

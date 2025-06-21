@@ -55,6 +55,7 @@ type ActionRun struct {
 	PreviousDuration time.Duration
 	Created          timeutil.TimeStamp `xorm:"created"`
 	Updated          timeutil.TimeStamp `xorm:"updated"`
+	NotifyEmail      bool
 }
 
 func init() {

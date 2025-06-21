@@ -4,6 +4,7 @@
 package actions
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	webhook_module "forgejo.org/modules/webhook"
 
 	"github.com/nektos/act/pkg/jobparser"
+	act_model "github.com/nektos/act/pkg/model"
 	"xorm.io/builder"
 )
 
@@ -139,6 +141,16 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 		log.Error("GetVariablesOfRun: %v", err)
 		return err
 	}
+
+	workflow, err := act_model.ReadWorkflow(bytes.NewReader(cron.Content))
+	if err != nil {
+		return err
+	}
+	notifications, err := workflow.Notifications()
+	if err != nil {
+		return err
+	}
+	run.NotifyEmail = notifications
 
 	// Parse the workflow specification from the cron schedule
 	workflows, err := jobparser.Parse(cron.Content, jobparser.WithVars(vars))

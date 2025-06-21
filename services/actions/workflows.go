@@ -111,6 +111,11 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		return nil, nil, err
 	}
 
+	notifications, err := wf.Notifications()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	run := &actions_model.ActionRun{
 		Title:         title,
 		RepoID:        repo.ID,
@@ -125,6 +130,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		EventPayload:  string(p),
 		TriggerEvent:  string(webhook.HookEventWorkflowDispatch),
 		Status:        actions_model.StatusWaiting,
+		NotifyEmail:   notifications,
 	}
 
 	vars, err := actions_model.GetVariablesOfRun(ctx, run)
