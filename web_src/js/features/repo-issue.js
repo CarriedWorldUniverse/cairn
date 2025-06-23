@@ -167,6 +167,7 @@ export function initRepoIssueSidebarList() {
     });
   });
 
+  // FIXME: this is broken, see discussion https://codeberg.org/forgejo/forgejo/pulls/8199
   $('.menu .ui.dropdown.label-filter').on('keydown', (e) => {
     if (e.altKey && e.keyCode === 13) {
       const selectedItem = document.querySelector('.menu .ui.dropdown.label-filter .menu .item.selected');
