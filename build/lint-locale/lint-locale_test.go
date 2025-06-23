@@ -37,6 +37,7 @@ func TestLocalizationPolicy(t *testing.T) {
 		assert.Empty(t, checkLocaleContent([]byte("teams.specific_repositories_helper = Members will only have access to repositories explicitly added to the team. Selecting this <strong>will not</strong> automatically remove repositories already added with <i>All repositories</i>.")))
 		assert.Empty(t, checkLocaleContent([]byte("sqlite_helper = File path for the SQLite3 database.<br>Enter an absolute path if you run Forgejo as a service.")))
 		assert.Empty(t, checkLocaleContent([]byte("hi_user_x = Hi <b>%s</b>,")))
+		assert.Empty(t, checkLocaleContent([]byte("key = Press <kbd>Shift</kbd>")))
 
 		assert.Equal(t, []string{"error404: The page you are trying to reach either <strong\x1b[31m title='aaa'\x1b[0m>does not exist</strong> or <strong>you are not authorized</strong> to view it."}, checkLocaleContent([]byte("error404 = The page you are trying to reach either <strong title='aaa'>does not exist</strong> or <strong>you are not authorized</strong> to view it.")))
 	})
