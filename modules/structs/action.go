@@ -78,3 +78,9 @@ type ActionRun struct {
 	// the url of this action run
 	HTMLURL string `json:"html_url"`
 }
+
+// ListActionRunResponse return a list of ActionRun
+type ListActionRunResponse struct {
+	Entries    []*ActionRun `json:"workflow_runs"`
+	TotalCount int64        `json:"total_count"`
+}
