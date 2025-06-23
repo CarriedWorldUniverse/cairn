@@ -11,6 +11,9 @@ import (
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
 
 	"github.com/stretchr/testify/assert"
@@ -220,4 +223,27 @@ func TestRenderLabels(t *testing.T) {
 		"user2/repo1/issues?labels=1")
 	assert.Contains(t, RenderLabels(db.DefaultContext, tr, []*issues_model.Label{label}, "user2/repo1", true),
 		"user2/repo1/pulls?labels=1")
+}
+
+func TestRenderUser(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
+	ghost := user_model.NewGhostUser()
+
+	assert.Contains(t, RenderUser(db.DefaultContext, *user),
+		"<a href='/user2' rel='nofollow'><strong>user2</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *org),
+		"<a href='/org3' rel='nofollow'><strong>org3</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *ghost),
+		"<strong>Ghost</strong>")
+
+	defer test.MockVariableValue(&setting.UI.DefaultShowFullName, true)()
+	assert.Contains(t, RenderUser(db.DefaultContext, *user),
+		"<a href='/user2' rel='nofollow'><strong>&lt; U&lt;se&gt;r Tw&lt;o &gt; &gt;&lt;</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *org),
+		"<a href='/org3' rel='nofollow'><strong>&lt;&lt;&lt;&lt; &gt;&gt; &gt;&gt; &gt; &gt;&gt; &gt; &gt;&gt;&gt; &gt;&gt;</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *ghost),
+		"<strong>Ghost</strong>")
 }

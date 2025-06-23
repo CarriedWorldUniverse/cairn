@@ -205,15 +205,13 @@ func TestIssueCommentChangeAssignee(t *testing.T) {
 	testIssueCommentChangeEvent(t, htmlDoc, "2041",
 		"octicon-person", "User One", "/user1",
 		[]string{"user1 was unassigned by user2"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2"})
+		[]string{"/user1", "/user2"})
 
 	// Add other
 	testIssueCommentChangeEvent(t, htmlDoc, "2042",
 		"octicon-person", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 was assigned by user1"},
-		[]string{"/user2"})
-	// []string{"/user2", "/user1"})
+		[]string{"/user2", "/user1"})
 
 	// Self-remove
 	testIssueCommentChangeEvent(t, htmlDoc, "2043",
