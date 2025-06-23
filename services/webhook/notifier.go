@@ -894,9 +894,16 @@ func (m *webhookNotifier) ActionRunNowDone(ctx context.Context, run *actions_mod
 		Owner:      run.TriggerUser,
 	}
 
+	// The doer is the one whose perspective is used to view this ActionRun.
+	// In the best case we use the user that created the webhook.
+	// Unfortunately we don't know who that was.
+	// So instead we use the repo owner, who is able to create webhooks and allow others to do so by making them repo admins.
+	// This is pretty close to perfect.
+	doer := run.Repo.Owner
+
 	payload := &api.ActionPayload{
-		Run:         convert.ToActionRun(ctx, run),
-		LastRun:     convert.ToActionRun(ctx, lastRun),
+		Run:         convert.ToActionRun(ctx, run, doer),
+		LastRun:     convert.ToActionRun(ctx, lastRun, doer),
 		PriorStatus: priorStatus.String(),
 	}
 

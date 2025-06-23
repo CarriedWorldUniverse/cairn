@@ -463,16 +463,16 @@ type swaggerSyncForkInfo struct {
 	Body []api.SyncForkInfo `json:"body"`
 }
 
-// RepoActionRunList
-// swagger:response RepoActionRunList
-type swaggerRepoActionRunList struct {
+// ActionRunList
+// swagger:response ActionRunList
+type swaggerActionRunList struct {
 	// in:body
-	Body api.ListRepoActionRunResponse `json:"body"`
+	Body api.ListActionRunResponse `json:"body"`
 }
 
-// RepoActionRun
-// swagger:response RepoActionRun
-type swaggerRepoActionRun struct {
+// ActionRun
+// swagger:response ActionRun
+type swaggerActionRun struct {
 	// in:body
-	Body api.RepoActionRun `json:"body"`
+	Body api.ActionRun `json:"body"`
 }
