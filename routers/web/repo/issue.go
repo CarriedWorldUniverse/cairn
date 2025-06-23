@@ -1693,7 +1693,7 @@ func ViewIssue(ctx *context.Context) {
 				return
 			}
 			ghostMilestone := &issues_model.Milestone{
-				ID:   -1,
+				ID:   issues_model.GhostMilestoneID,
 				Name: ctx.Locale.TrString("repo.issues.deleted_milestone"),
 			}
 			if comment.OldMilestoneID > 0 && comment.OldMilestone == nil {

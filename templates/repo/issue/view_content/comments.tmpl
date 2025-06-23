@@ -191,7 +191,31 @@
 				{{template "shared/user/avatarlink" dict "user" .Poster}}
 				<span class="text grey muted-links">
 					{{template "shared/user/authorlink" .Poster}}
-					{{if gt .OldMilestoneID 0}}{{if gt .MilestoneID 0}}{{ctx.Locale.Tr "repo.issues.change_milestone_at" .OldMilestone.Name .Milestone.Name $createdStr}}{{else}}{{ctx.Locale.Tr "repo.issues.remove_milestone_at" .OldMilestone.Name $createdStr}}{{end}}{{else if gt .MilestoneID 0}}{{ctx.Locale.Tr "repo.issues.add_milestone_at" .Milestone.Name $createdStr}}{{end}}
+					{{$newMilestoneDisplayHtml := ""}}
+					{{if gt .MilestoneID 0}}
+						{{if .Milestone.IsGhost}}
+							{{$newMilestoneDisplayHtml = .Milestone.Name}}
+						{{else}}
+							{{$newMilestoneDisplayHtml = HTMLFormat `<a href='%s/milestone/%d' rel='nofollow'>%s</a>` $.RepoLink .MilestoneID .Milestone.Name}}
+						{{end}}
+					{{end}}
+					{{$oldMilestoneDisplayHtml := ""}}
+					{{if gt .OldMilestoneID 0}}
+						{{if .OldMilestone.IsGhost}}
+							{{$oldMilestoneDisplayHtml = .OldMilestone.Name}}
+						{{else}}
+							{{$oldMilestoneDisplayHtml = HTMLFormat `<a href='%s/milestone/%d' rel='nofollow'>%s</a>` $.RepoLink .OldMilestoneID .OldMilestone.Name}}
+						{{end}}
+					{{end}}
+					{{if gt .OldMilestoneID 0}}
+						{{if gt .MilestoneID 0}}
+							{{ctx.Locale.Tr "repo.issues.change_milestone_at" $oldMilestoneDisplayHtml $newMilestoneDisplayHtml $createdStr}}
+						{{else}}
+							{{ctx.Locale.Tr "repo.issues.remove_milestone_at" $oldMilestoneDisplayHtml $createdStr}}
+						{{end}}
+					{{else}}
+						{{ctx.Locale.Tr "repo.issues.add_milestone_at" $newMilestoneDisplayHtml $createdStr}}
+					{{end}}
 				</span>
 			</div>
 		{{else if and (eq .Type 9) (gt .AssigneeID 0)}}
@@ -574,27 +598,33 @@
 				{{template "shared/user/avatarlink" dict "user" .Poster}}
 				<span class="text grey muted-links">
 					{{template "shared/user/authorlink" .Poster}}
-					{{$oldProjectDisplayHtml := "Unknown Project"}}
+					{{$oldProjectDisplayHtml := ""}}
 					{{if .OldProject}}
-						{{$tooltip := ctx.Locale.Tr "projects.deleted.display_name"}}
-						{{if not .OldProject.IsGhost}}
-							{{$tooltip = ctx.Locale.Tr (printf "projects.type-%d.display_name" .OldProject.Type)}}
+						{{if .OldProject.IsGhost}}
+							{{$tooltip := ctx.Locale.Tr "projects.deleted.display_name"}}
+							{{$oldProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .OldProject.Title}}
+						{{else}}
+							{{$tooltip := ctx.Locale.Tr (printf "projects.type-%d.display_name" .OldProject.Type)}}
+							{{$oldProjectDisplayHtml = HTMLFormat `<a href="%s/projects/%d" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` $.RepoLink .OldProjectID $tooltip .OldProject.Title}}
 						{{end}}
-						{{$oldProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .OldProject.Title}}
 					{{end}}
-					{{$newProjectDisplayHtml := "Unknown Project"}}
+					{{$newProjectDisplayHtml := ""}}
 					{{if .Project}}
-						{{$tooltip := ctx.Locale.Tr "projects.deleted.display_name"}}
-						{{if not .Project.IsGhost}}
-							{{$tooltip = ctx.Locale.Tr (printf "projects.type-%d.display_name" .Project.Type)}}
+						{{if .Project.IsGhost}}
+							{{$tooltip := ctx.Locale.Tr "projects.deleted.display_name"}}
+							{{$newProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .Project.Title}}
+						{{else}}
+							{{$tooltip := ctx.Locale.Tr (printf "projects.type-%d.display_name" .Project.Type)}}
+							{{$newProjectDisplayHtml = HTMLFormat `<a href="%s/projects/%d" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` $.RepoLink .ProjectID $tooltip .Project.Title}}
 						{{end}}
-						{{$newProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .Project.Title}}
 					{{end}}
-					{{if and (gt .OldProjectID 0) (gt .ProjectID 0)}}
-						{{ctx.Locale.Tr "repo.issues.change_project_at" $oldProjectDisplayHtml $newProjectDisplayHtml $createdStr}}
-					{{else if gt .OldProjectID 0}}
-						{{ctx.Locale.Tr "repo.issues.remove_project_at" $oldProjectDisplayHtml $createdStr}}
-					{{else if gt .ProjectID 0}}
+					{{if .OldProject}}
+						{{if .Project}}
+							{{ctx.Locale.Tr "repo.issues.change_project_at" $oldProjectDisplayHtml $newProjectDisplayHtml $createdStr}}
+						{{else}}
+							{{ctx.Locale.Tr "repo.issues.remove_project_at" $oldProjectDisplayHtml $createdStr}}
+						{{end}}
+					{{else}}
 						{{ctx.Locale.Tr "repo.issues.add_project_at" $newProjectDisplayHtml $createdStr}}
 					{{end}}
 				</span>

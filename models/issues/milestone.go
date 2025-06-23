@@ -67,6 +67,13 @@ type Milestone struct {
 	TotalTrackedTime int64 `xorm:"-"`
 }
 
+// Ghost milestone is a milestone which has been deleted
+const GhostMilestoneID = -1
+
+func (m *Milestone) IsGhost() bool {
+	return m.ID == GhostMilestoneID
+}
+
 func init() {
 	db.RegisterModel(new(Milestone))
 }

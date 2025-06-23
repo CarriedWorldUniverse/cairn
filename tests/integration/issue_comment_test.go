@@ -88,22 +88,19 @@ func TestIssueCommentChangeMilestone(t *testing.T) {
 	testIssueCommentChangeEvent(t, htmlDoc, "2000",
 		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 added this to the milestone1 milestone"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/milestone/1"})
+		[]string{"/user1", "/user2/repo1/milestone/1"})
 
 	// Modify milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2001",
 		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 modified the milestone from milestone1 to milestone2"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/milestone/1", "/user2/repo1/milestone/2"})
+		[]string{"/user1", "/user2/repo1/milestone/1", "/user2/repo1/milestone/2"})
 
 	// Remove milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2002",
 		"octicon-milestone", "User One", "/user1",
 		[]string{"user1 removed this from the milestone2 milestone"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/milestone/2"})
+		[]string{"/user1", "/user2/repo1/milestone/2"})
 
 	// Deleted milestone
 	testIssueCommentChangeEvent(t, htmlDoc, "2003",
@@ -123,22 +120,19 @@ func TestIssueCommentChangeProject(t *testing.T) {
 	testIssueCommentChangeEvent(t, htmlDoc, "2010",
 		"octicon-project", "User One", "/user1",
 		[]string{"user1 added this to the First project project"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/projects/1"})
+		[]string{"/user1", "/user2/repo1/projects/1"})
 
 	// Modify project
 	testIssueCommentChangeEvent(t, htmlDoc, "2011",
 		"octicon-project", "User One", "/user1",
 		[]string{"user1 modified the project from First project to second project"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/projects/1", "/user2/repo1/projects/2"})
+		[]string{"/user1", "/user2/repo1/projects/1", "/user2/repo1/projects/2"})
 
 	// Remove project
 	testIssueCommentChangeEvent(t, htmlDoc, "2012",
 		"octicon-project", "User One", "/user1",
 		[]string{"user1 removed this from the second project project"},
-		[]string{"/user1"})
-	// []string{"/user1", "/user2/repo1/projects/2"})
+		[]string{"/user1", "/user2/repo1/projects/2"})
 
 	// Deleted project
 	testIssueCommentChangeEvent(t, htmlDoc, "2013",
