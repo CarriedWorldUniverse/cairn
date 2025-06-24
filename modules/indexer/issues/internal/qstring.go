@@ -25,7 +25,7 @@ type Token struct {
 
 func (tk *Token) ParseIssueReference() (int64, error) {
 	term := tk.Term
-	if term[0] == '#' || term[0] == '!' {
+	if len(term) > 1 && (term[0] == '#' || term[0] == '!') {
 		term = term[1:]
 	}
 	return strconv.ParseInt(term, 10, 64)
