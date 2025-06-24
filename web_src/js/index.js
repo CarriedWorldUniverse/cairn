@@ -75,6 +75,7 @@ import {initCopyContent} from './features/copycontent.js';
 import {initCaptcha} from './features/captcha.js';
 import {initRepositoryActionView} from './components/RepoActionView.vue';
 import {initGlobalTooltips} from './modules/tippy.js';
+import {initDropdowns} from './modules/dropdown.ts';
 import {initGiteaFomantic} from './modules/fomantic.js';
 import {onDomReady} from './utils/dom.js';
 import {initRepoIssueList} from './features/repo-issue-list.js';
@@ -103,6 +104,7 @@ onDomReady(() => {
   initGlobalEnterQuickSubmit();
   initGlobalFormDirtyLeaveConfirm();
   initGlobalLinkActions();
+  initDropdowns();
 
   initCommonOrganization();
   initCommonIssueListQuickGoto();
@@ -191,4 +193,7 @@ onDomReady(() => {
   initGltfViewer();
   initScopedAccessTokenCategories();
   initColorPickers();
+
+  // Deactivate CSS-only noJS usability supplements
+  document.body.classList.remove('no-js');
 });

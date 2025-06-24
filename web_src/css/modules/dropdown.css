@@ -1,0 +1,118 @@
+/* This is an implementation of a dropdown menu based on details HTML tag.
+ * It is inspired by https://picocss.com/docs/dropdown.
+ *
+ * NoJS mode could be improved by forcing the same [name] onto all dropdowns, so
+ * that the browser will automatically close all but the one that was just opened
+ * using keyboard. But the code doing that will not be as clean.
+*/
+
+:root details.dropdown {
+  --dropdown-box-shadow: 0 6px 18px var(--color-shadow);
+  --dropdown-item-padding: 0.5rem 0.75rem;
+}
+
+@media (pointer: coarse) {
+  :root details.dropdown {
+    --dropdown-item-padding: 0.75rem 1rem;
+  }
+}
+
+details.dropdown {
+  position: relative;
+}
+
+details.dropdown > summary {
+  /* Optional flex+gap in case summary contains multiple elements */
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  /* Cancel some of default styling */
+  user-select: none;
+  list-style-type: none;
+  /* Main visual properties */
+  border-radius: var(--border-radius);
+  padding: 0.5rem;
+}
+
+details.dropdown > summary:hover,
+details.dropdown > summary + ul > li:hover {
+  background: var(--color-hover);
+}
+
+details.dropdown[open] > summary,
+details.dropdown > summary + ul > li:focus-within {
+  background: var(--color-active);
+}
+
+/* NoJS mode. Creates a virtual fullscreen area. Clicking it closes the dropdown. */
+.no-js details.dropdown[open] > summary::before {
+  z-index: 1;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  inset: 0;
+  background: 0 0;
+  content: "";
+  cursor: default;
+}
+
+details.dropdown > summary + ul {
+  z-index: 99;
+  position: absolute;
+  min-width: max-content;
+  margin: 0;
+  margin-top: 0.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  list-style-type: none;
+  border-radius: var(--border-radius);
+  background: var(--color-body);
+  box-shadow: var(--dropdown-box-shadow);
+  border: 1px solid var(--color-secondary);
+}
+
+details.dropdown > summary + ul > li {
+  width: 100%;
+  background: none;
+}
+
+details.dropdown > summary + ul > li:first-child {
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+details.dropdown > summary + ul > li:last-child {
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* dir-auto option - switch the direction at a width point where most of layout changes occur. */
+/* There's no way to check with CSS if LTR dropdown will fit on screen without JS. */
+@media (max-width: 767.98px) {
+  details.dropdown.dir-auto > summary + ul {
+    inset-inline: 0 auto;
+    direction: rtl;
+  }
+  details.dropdown.dir-auto > summary + ul > li {
+    direction: ltr;
+  }
+}
+/* Note: https://css-tricks.com/css-anchor-positioning-guide/
+*  looks like a great thing but FF still doesn't support it. */
+
+/* Note: dropdown.dir-rtl can be implemented when needed, e.g. for navbar profile dropdown on desktop layout. */
+
+details.dropdown > summary + ul > li > .item {
+  padding: var(--dropdown-item-padding);
+  width: 100%;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  color: var(--color-text);
+  /* Suppress underline - hover is indicated by background color */
+  text-decoration: none;
+}
+
+/* Cancel default styling of button elements */
+details.dropdown > summary + ul > li button {
+  background: none;
+}
