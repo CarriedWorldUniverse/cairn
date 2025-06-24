@@ -6,7 +6,7 @@ body:
 - type: markdown
   attributes:
     value: |
-      **NOTE: If your issue is a security concern, please email <security@forgejo.org> (GPG: `A4676E79`) instead of opening a public issue.**
+      **NOTE: If your issue is a security concern, please email <security@forgejo.org> ([security.txt](https://forgejo.org/.well-known/security.txt)) instead of opening a public issue.**
 - type: markdown
   attributes:
     value: |
