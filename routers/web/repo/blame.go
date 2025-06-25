@@ -82,18 +82,18 @@ func RefBlame(ctx *context.Context) {
 		return
 	}
 
-	ctx.Data["NumLinesSet"] = true
-	ctx.Data["NumLines"], err = blob.GetBlobLineCount()
-	if err != nil {
-		ctx.ServerError("GetBlobLineCount", err)
-		return
-	}
-
 	result, err := performBlame(ctx, ctx.Repo.Commit, ctx.Repo.TreePath, ctx.FormBool("bypass-blame-ignore"))
 	if err != nil {
 		ctx.ServerError("performBlame", err)
 		return
 	}
+
+	ctx.Data["NumLinesSet"] = true
+	numLines := 0
+	for _, p := range result.Parts {
+		numLines += len(p.Lines)
+	}
+	ctx.Data["NumLines"] = numLines
 
 	ctx.Data["UsesIgnoreRevs"] = result.UsesIgnoreRevs
 	ctx.Data["FaultyIgnoreRevsFile"] = result.FaultyIgnoreRevsFile

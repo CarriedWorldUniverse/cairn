@@ -172,33 +172,6 @@ func (b *Blob) GetBlobContent(limit int64) (string, error) {
 	return string(buf), err
 }
 
-// GetBlobLineCount gets line count of the blob
-func (b *Blob) GetBlobLineCount() (int, error) {
-	reader, err := b.DataAsync()
-	if err != nil {
-		return 0, err
-	}
-	defer reader.Close()
-	buf := make([]byte, 32*1024)
-	count := 1
-	lineSep := []byte{'\n'}
-
-	c, err := reader.Read(buf)
-	if c == 0 && err == io.EOF {
-		return 0, nil
-	}
-	for {
-		count += bytes.Count(buf[:c], lineSep)
-		switch {
-		case err == io.EOF:
-			return count, nil
-		case err != nil:
-			return count, err
-		}
-		c, err = reader.Read(buf)
-	}
-}
-
 // GetBlobContentBase64 Reads the content of the blob with a base64 encode and returns the encoded string
 func (b *Blob) GetBlobContentBase64() (string, error) {
 	dataRc, err := b.DataAsync()
