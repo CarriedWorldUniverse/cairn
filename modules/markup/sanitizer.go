@@ -108,6 +108,9 @@ func createDefaultPolicy() *bluemonday.Policy {
 	// Allow classes for emojis
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^emoji$`)).OnElements("img")
 
+	// Allow attributes for images
+	policy.AllowAttrs("loading").Matching(regexp.MustCompile(`^lazy$`)).OnElements("img")
+
 	// Allow icons, emojis, chroma syntax and keyword markup on span
 	policy.AllowAttrs("class").Matching(regexp.MustCompile(`^((icon(\s+[\p{L}\p{N}_-]+)+)|(emoji)|(language-math display)|(language-math inline))$|^([a-z][a-z0-9]{0,2})$|^` + keywordClass + `$`)).OnElements("span")
 	policy.AllowAttrs("data-alias").Matching(regexp.MustCompile(`^[a-zA-Z0-9-_+]+$`)).OnElements("span")
