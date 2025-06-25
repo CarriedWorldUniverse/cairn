@@ -1,3 +1,4 @@
+import {expect, test} from 'vitest';
 import {
   basename, extname, isObject, stripTags, parseIssueHref,
   parseUrl, translateMonth, translateDay, blobToDataURI,
@@ -182,5 +183,5 @@ async function testSleep(ms) {
   await sleep(ms);
   const endTime = Date.now();    // Record the end time
   const actualSleepTime = endTime - startTime;
-  expect(actualSleepTime >= ms).toBeTruthy();
+  expect(actualSleepTime).toBeGreaterThanOrEqual(ms);
 }
