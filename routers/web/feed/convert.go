@@ -25,7 +25,7 @@ import (
 	"forgejo.org/services/context"
 
 	"github.com/gorilla/feeds"
-	"github.com/jaytaylor/html2text"
+	"github.com/inbucket/html2text"
 )
 
 func toBranchLink(ctx *context.Context, act *activities_model.Action) string {
