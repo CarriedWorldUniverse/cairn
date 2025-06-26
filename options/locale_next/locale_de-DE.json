@@ -97,5 +97,10 @@
     "settings.visibility.description": "Die Profilsichtbarkeit beeinflusst die Möglichkeit anderer, auf deine nicht-privaten Repositorys zuzugreifen. <a href=\"%s\" target=\"_blank\">Erfahre mehr</a>",
     "avatar.constraints_hint": "Individuelles Profilbild darf %[1]s in der Größe nicht überschreiten, und nicht größer als %[2]dx%[3]d Pixel sein",
     "repo.diff.commit.next-short": "Nächste",
-    "repo.diff.commit.previous-short": "Vorherige"
+    "repo.diff.commit.previous-short": "Vorherige",
+    "profile.edit.link": "Profil bearbeiten",
+    "feed.atom.link": "Atom-Feed",
+    "keys.ssh.link": "SSH-Schlüssel",
+    "keys.gpg.link": "GPG-Schlüssel",
+    "profile.actions.tooltip": "Mehr Aktionen"
 }
