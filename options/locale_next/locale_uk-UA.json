@@ -105,5 +105,10 @@
     "settings.visibility.description": "Видимість профілю впливає на можливість інших користувачів отримати доступ до ваших неприватних репозиторіїв. <a href=\"%s\" target=\"_blank\">Дізнатися більше</a>",
     "avatar.constraints_hint": "Розмір користувацького аватара не може перевищувати %[1]s або бути більшим за %[2]d×%[3]d пікселів",
     "repo.diff.commit.next-short": "Наступний",
-    "repo.diff.commit.previous-short": "Попередній"
+    "repo.diff.commit.previous-short": "Попередній",
+    "keys.ssh.link": "Ключі SSH",
+    "keys.gpg.link": "Ключі GPG",
+    "profile.edit.link": "Редагувати профіль",
+    "feed.atom.link": "Стрічка Atom",
+    "profile.actions.tooltip": "Більше дій"
 }
