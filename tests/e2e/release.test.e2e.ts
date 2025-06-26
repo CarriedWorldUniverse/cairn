@@ -14,78 +14,100 @@ import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
 
-test.describe.configure({
-  timeout: 30000,
-});
+test.describe('repo branch protection settings', () => {
+  test('External Release Attachments', async ({page, isMobile}, workerInfo) => {
+    test.skip(isMobile || workerInfo.project.name === 'webkit');
 
-test('External Release Attachments', async ({page, isMobile}) => {
-  test.skip(isMobile);
+    // Click "New Release"
+    await page.goto('/user2/repo2/releases');
+    await page.click('.button.small.primary');
 
-  // Click "New Release"
-  await page.goto('/user2/repo2/releases');
-  await page.click('.button.small.primary');
+    // Fill out form and create new release
+    await expect(page).toHaveURL('/user2/repo2/releases/new');
+    await validate_form({page}, 'fieldset');
+    const textarea = page.locator('input[name=tag_name]');
+    await textarea.pressSequentially('2.0');
+    await expect(page.locator('input[name=title]')).toHaveValue('2.0');
+    await page.click('#add-external-link');
+    await page.click('#add-external-link');
+    await page.fill('input[name=attachment-new-name-2]', 'Test');
+    await page.fill('input[name=attachment-new-exturl-2]', 'https://forgejo.org/');
+    await page.click('.remove-rel-attach');
+    await save_visual(page);
+    await page.click('.button.small.primary');
 
-  // Fill out form and create new release
-  await expect(page).toHaveURL('/user2/repo2/releases/new');
-  await validate_form({page}, 'fieldset');
-  const textarea = page.locator('input[name=tag_name]');
-  await textarea.pressSequentially('2.0');
-  await expect(page.locator('input[name=title]')).toHaveValue('2.0');
-  await page.click('#add-external-link');
-  await page.click('#add-external-link');
-  await page.fill('input[name=attachment-new-name-2]', 'Test');
-  await page.fill('input[name=attachment-new-exturl-2]', 'https://forgejo.org/');
-  await page.click('.remove-rel-attach');
-  await save_visual(page);
-  await page.click('.button.small.primary');
+    // Validate release page and click edit
+    await expect(page).toHaveURL('/user2/repo2/releases');
+    await expect(page.locator('.download[open] li')).toHaveCount(3);
 
-  // Validate release page and click edit
-  await expect(page).toHaveURL('/user2/repo2/releases');
-  await expect(page.locator('.download[open] li')).toHaveCount(3);
+    await expect(page.locator('.download[open] li:nth-of-type(1)')).toContainText('Source code (ZIP)');
+    await expect(page.locator('.download[open] li:nth-of-type(1) span[data-tooltip-content]')).toHaveAttribute('data-tooltip-content', 'This attachment is automatically generated.');
+    await expect(page.locator('.download[open] li:nth-of-type(1) a')).toHaveAttribute('href', '/user2/repo2/archive/2.0.zip');
+    await expect(page.locator('.download[open] li:nth-of-type(1) a')).toHaveAttribute('type', 'application/zip');
 
-  await expect(page.locator('.download[open] li:nth-of-type(1)')).toContainText('Source code (ZIP)');
-  await expect(page.locator('.download[open] li:nth-of-type(1) span[data-tooltip-content]')).toHaveAttribute('data-tooltip-content', 'This attachment is automatically generated.');
-  await expect(page.locator('.download[open] li:nth-of-type(1) a')).toHaveAttribute('href', '/user2/repo2/archive/2.0.zip');
-  await expect(page.locator('.download[open] li:nth-of-type(1) a')).toHaveAttribute('type', 'application/zip');
+    await expect(page.locator('.download[open] li:nth-of-type(2)')).toContainText('Source code (TAR.GZ)');
+    await expect(page.locator('.download[open] li:nth-of-type(2) span[data-tooltip-content]')).toHaveAttribute('data-tooltip-content', 'This attachment is automatically generated.');
+    await expect(page.locator('.download[open] li:nth-of-type(2) a')).toHaveAttribute('href', '/user2/repo2/archive/2.0.tar.gz');
+    await expect(page.locator('.download[open] li:nth-of-type(2) a')).toHaveAttribute('type', 'application/gzip');
 
-  await expect(page.locator('.download[open] li:nth-of-type(2)')).toContainText('Source code (TAR.GZ)');
-  await expect(page.locator('.download[open] li:nth-of-type(2) span[data-tooltip-content]')).toHaveAttribute('data-tooltip-content', 'This attachment is automatically generated.');
-  await expect(page.locator('.download[open] li:nth-of-type(2) a')).toHaveAttribute('href', '/user2/repo2/archive/2.0.tar.gz');
-  await expect(page.locator('.download[open] li:nth-of-type(2) a')).toHaveAttribute('type', 'application/gzip');
+    await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test');
+    await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://forgejo.org/');
+    await save_visual(page);
+    await page.locator('.octicon-pencil').first().click();
 
-  await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test');
-  await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://forgejo.org/');
-  await save_visual(page);
-  await page.locator('.octicon-pencil').first().click();
+    // Validate edit page and edit the release
+    await expect(page).toHaveURL('/user2/repo2/releases/edit/2.0');
+    await validate_form({page}, 'fieldset');
+    await expect(page.locator('.attachment_edit:visible')).toHaveCount(2);
+    await expect(page.locator('.attachment_edit:visible').nth(0)).toHaveValue('Test');
+    await expect(page.locator('.attachment_edit:visible').nth(1)).toHaveValue('https://forgejo.org/');
+    await page.locator('.attachment_edit:visible').nth(0).fill('Test2');
+    await page.locator('.attachment_edit:visible').nth(1).fill('https://gitea.io/');
+    await page.click('#add-external-link');
+    await expect(page.locator('.attachment_edit:visible')).toHaveCount(4);
+    await page.locator('.attachment_edit:visible').nth(2).fill('Test3');
+    await page.locator('.attachment_edit:visible').nth(3).fill('https://gitea.com/');
+    await save_visual(page);
+    await page.click('.button.small.primary');
 
-  // Validate edit page and edit the release
-  await expect(page).toHaveURL('/user2/repo2/releases/edit/2.0');
-  await validate_form({page}, 'fieldset');
-  await expect(page.locator('.attachment_edit:visible')).toHaveCount(2);
-  await expect(page.locator('.attachment_edit:visible').nth(0)).toHaveValue('Test');
-  await expect(page.locator('.attachment_edit:visible').nth(1)).toHaveValue('https://forgejo.org/');
-  await page.locator('.attachment_edit:visible').nth(0).fill('Test2');
-  await page.locator('.attachment_edit:visible').nth(1).fill('https://gitea.io/');
-  await page.click('#add-external-link');
-  await expect(page.locator('.attachment_edit:visible')).toHaveCount(4);
-  await page.locator('.attachment_edit:visible').nth(2).fill('Test3');
-  await page.locator('.attachment_edit:visible').nth(3).fill('https://gitea.com/');
-  await save_visual(page);
-  await page.click('.button.small.primary');
+    // Validate release page and click edit
+    await expect(page).toHaveURL('/user2/repo2/releases');
+    await expect(page.locator('.download[open] li')).toHaveCount(4);
+    await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test2');
+    await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://gitea.io/');
+    await expect(page.locator('.download[open] li:nth-of-type(4)')).toContainText('Test3');
+    await expect(page.locator('.download[open] li:nth-of-type(4) a')).toHaveAttribute('href', 'https://gitea.com/');
+    await save_visual(page);
+    await page.locator('.octicon-pencil').first().click();
+  });
 
-  // Validate release page and click edit
-  await expect(page).toHaveURL('/user2/repo2/releases');
-  await expect(page.locator('.download[open] li')).toHaveCount(4);
-  await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test2');
-  await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://gitea.io/');
-  await expect(page.locator('.download[open] li:nth-of-type(4)')).toContainText('Test3');
-  await expect(page.locator('.download[open] li:nth-of-type(4) a')).toHaveAttribute('href', 'https://gitea.com/');
-  await save_visual(page);
-  await page.locator('.octicon-pencil').first().click();
+  test('Release name equals tag name if created from tag', async ({page}) => {
+    await page.goto('/user2/repo2/releases/new?tag=v1.1');
 
-  // Delete release
-  await expect(page).toHaveURL('/user2/repo2/releases/edit/2.0');
-  await page.click('.delete-button');
-  await page.click('.button.ok');
-  await expect(page).toHaveURL('/user2/repo2/releases');
+    await expect(page.locator('input[name=title]')).toHaveValue('v1.1');
+  });
+
+  test('Release name equals release name if edit', async ({page, isMobile}) => {
+    test.skip(isMobile);
+
+    await page.goto('/user2/repo2/releases/new');
+
+    await page.locator('input[name=title]').pressSequentially('v2.0');
+    await page.locator('input[name=tag_name]').pressSequentially('2.0');
+    await page.click('.button.small.primary');
+
+    await page.goto('/user2/repo2/releases/edit/2.0');
+
+    await expect(page.locator('input[name=title]')).toHaveValue('v2.0');
+  });
+
+  test.afterEach(async ({page}) => {
+    // Delete release
+    const response = await page.goto('/user2/repo2/releases/edit/2.0');
+    test.skip(response.status() === 404, 'No release to delete');
+
+    await page.locator('.delete-button').dispatchEvent('click');
+    await page.locator('.button.ok').click();
+    await expect(page).toHaveURL('/user2/repo2/releases');
+  });
 });
