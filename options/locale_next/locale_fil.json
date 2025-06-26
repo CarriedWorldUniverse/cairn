@@ -21,7 +21,7 @@
     "alert.asset_load_failed": "Nabigong i-load ang mga asset file mula sa {path}. Siguraduhin na maa-access ang mga asset file.",
     "install.invalid_lfs_path": "Nabigong gawin ang LFS root sa tinakdang path: %[1]s",
     "alert.range_error": " dapat ay numero sa pagitan ng %[1]s at %[2]s.",
-    "meta.last_line": "Sayori... I love you. — MC from Doki Doki Literature Club",
+    "meta.last_line": "Every day, I imagine a future where I can be with you. In my hand is a pen that will write a poem of me and you. The ink flows down into a dark puddle... Just move your hand, write the way into his heart. But in this world of infinite choices. What will it take just to find that special day? Have I found everybody a fun assignment to do today? When you're here, everything that we do is fun for them anyway... When I can't even read my own feelings. What good are words when a smile says it all? And if this world won't write me an ending... What will it take just for me to have it all? Does my pen only write bitter words for those who are dear to me? Is it love if I take you, or is it love if I set you free? The ink flows down into a dark puddle... How can I write love into reality? If I can't hear the sound of your heartbeat What do you call love in your reality? And in your reality, if I don't know how to love you... I'll leave you be.",
     "mail.actions.successful_run_after_failure": "Na-recover ang workflow na %[1]s sa repositoryong %[2]s",
     "mail.actions.not_successful_run": "Nabigo ang workflow na %[1]s sa repositoryong %[2]s",
     "mail.actions.run_info_previous_status": "Nakaraang Status ng Run: %[1]s",
@@ -94,5 +94,13 @@
     "editor.textarea.tab_hint": "Naka-indent na ang linya. Pindutin ulit ang <kbd>Tab</kbd> o <kbd>Escape</kbd> para umalis sa editor.",
     "editor.textarea.shift_tab_hint": "Walang indentation sa linyang ito. Pindutin ang <kbd>Shift</kbd> + <kbd>Tab</kbd> ulit o <kbd>Escape</kbd> para umalis sa editor.",
     "admin.dashboard.cleanup_offline_runners": "Linisin ang mga offline na runner",
-    "settings.visibility.description": "Maaapektuhan ng visibility ng profile ang kakayahan ng iba na i-access ang iyong mga hindi pribadong repositoryo. <a href=\"%s\" target=\"_blank\">Matuto pa</a>"
+    "settings.visibility.description": "Maaapektuhan ng visibility ng profile ang kakayahan ng iba na i-access ang iyong mga hindi pribadong repositoryo. <a href=\"%s\" target=\"_blank\">Matuto pa</a>",
+    "avatar.constraints_hint": "Hindi maaaring lumagpas sa laking %[1]s o mas malaki sa %[2]dx%[3]d pixel ang custom na avatar",
+    "repo.diff.commit.next-short": "Susunod",
+    "repo.diff.commit.previous-short": "Nakaraan",
+    "profile.edit.link": "I-edit ang profile",
+    "feed.atom.link": "Atom feed",
+    "keys.ssh.link": "Mga SSH key",
+    "keys.gpg.link": "Mga GPG key",
+    "profile.actions.tooltip": "Higit pang mga aksyon"
 }
