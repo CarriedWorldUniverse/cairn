@@ -121,6 +121,12 @@ func SearchIssues(ctx *context.APIContext) {
 	//   description: Number of items per page
 	//   type: integer
 	//   minimum: 0
+	// - name: sort
+	//   in: query
+	//   description: Type of sort
+	//   type: string
+	//   enum: [relevance, latest, oldest, recentupdate, leastupdate, mostcomment, leastcomment, nearduedate, farduedate]
+	//   default: latest
 	// responses:
 	//   "200":
 	//     "$ref": "#/responses/IssueList"
@@ -276,7 +282,7 @@ func SearchIssues(ctx *context.APIContext) {
 		IsClosed:            isClosed,
 		IncludedAnyLabelIDs: includedAnyLabels,
 		MilestoneIDs:        includedMilestones,
-		SortBy:              issue_indexer.SortByCreatedDesc,
+		SortBy:              issue_indexer.ParseSortBy(ctx.FormString("sort"), issue_indexer.SortByCreatedDesc),
 	}
 
 	if since != 0 {
@@ -305,9 +311,10 @@ func SearchIssues(ctx *context.APIContext) {
 		}
 	}
 
-	// FIXME: It's unsupported to sort by priority repo when searching by indexer,
-	//        it's indeed an regression, but I think it is worth to support filtering by indexer first.
-	_ = ctx.FormInt64("priority_repo_id")
+	priorityRepoID := ctx.FormInt64("priority_repo_id")
+	if priorityRepoID > 0 {
+		searchOpt.PriorityRepoID = optional.Some(priorityRepoID)
+	}
 
 	ids, total, err := issue_indexer.SearchIssues(ctx, searchOpt)
 	if err != nil {

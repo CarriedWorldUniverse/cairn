@@ -9,16 +9,23 @@ import (
 	"testing"
 	"time"
 
+	"forgejo.org/models/db"
+	issues_model "forgejo.org/models/issues"
+	repo_model "forgejo.org/models/repo"
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/indexer/stats"
+	"forgejo.org/modules/optional"
+	"forgejo.org/modules/timeutil"
+	issue_service "forgejo.org/services/issue"
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"xorm.io/xorm/convert"
 )
 
 // first entry represents filename
@@ -29,19 +36,34 @@ type FileChanges struct {
 	Versions  []string
 }
 
+// performs additional repo setup as needed
+type SetupRepo func(*user_model.User, *repo_model.Repository)
+
 // put your Git repo declarations in here
 // feel free to amend the helper function below or use the raw variant directly
 func DeclareGitRepos(t *testing.T) func() {
+	now := timeutil.TimeStampNow()
+	postIssue := func(repo *repo_model.Repository, user *user_model.User, age int64, title, content string) {
+		issue := &issues_model.Issue{
+			RepoID:      repo.ID,
+			PosterID:    user.ID,
+			Title:       title,
+			Content:     content,
+			CreatedUnix: now.Add(-age),
+		}
+		require.NoError(t, issue_service.NewIssue(db.DefaultContext, repo, issue, nil, nil, nil))
+	}
+
 	cleanupFunctions := []func(){
-		newRepo(t, 2, "diff-test", []FileChanges{{
+		newRepo(t, 2, "diff-test", nil, []FileChanges{{
 			Filename: "testfile",
 			Versions: []string{"hello", "hallo", "hola", "native", "ubuntu-latest", "- runs-on: ubuntu-latest", "- runs-on: debian-latest"},
-		}}),
-		newRepo(t, 2, "language-stats-test", []FileChanges{{
+		}}, nil),
+		newRepo(t, 2, "language-stats-test", nil, []FileChanges{{
 			Filename: "main.rs",
 			Versions: []string{"fn main() {", "println!(\"Hello World!\");", "}"},
-		}}),
-		newRepo(t, 2, "mentions-highlighted", []FileChanges{
+		}}, nil),
+		newRepo(t, 2, "mentions-highlighted", nil, []FileChanges{
 			{
 				Filename:  "history1.md",
 				Versions:  []string{""},
@@ -52,11 +74,34 @@ func DeclareGitRepos(t *testing.T) func() {
 				Versions:  []string{""},
 				CommitMsg: "Another commit which mentions @user1 in the title\nand @user2 in the text",
 			},
-		}),
-		newRepo(t, 2, "unicode-escaping", []FileChanges{{
+		}, nil),
+		newRepo(t, 2, "unicode-escaping", nil, []FileChanges{{
 			Filename: "a-file",
 			Versions: []string{"{a}{а}"},
-		}}),
+		}}, nil),
+		newRepo(t, 11, "dependency-test", &tests.DeclarativeRepoOptions{
+			UnitConfig: optional.Some(map[unit_model.Type]convert.Conversion{
+				unit_model.TypeIssues: &repo_model.IssuesConfig{
+					EnableDependencies: true,
+				},
+			}),
+		}, []FileChanges{}, func(user *user_model.User, repo *repo_model.Repository) {
+			postIssue(repo, user, 500, "first issue here", "an issue created earlier")
+			postIssue(repo, user, 400, "second issue here (not 1)", "not the right issue, but in the right repo")
+			postIssue(repo, user, 300, "third issue here", "depends on things")
+			postIssue(repo, user, 200, "unrelated issue", "shrug emoji")
+			postIssue(repo, user, 100, "newest issue", "very new")
+		}),
+		newRepo(t, 11, "dependency-test-2", &tests.DeclarativeRepoOptions{
+			UnitConfig: optional.Some(map[unit_model.Type]convert.Conversion{
+				unit_model.TypeIssues: &repo_model.IssuesConfig{
+					EnableDependencies: true,
+				},
+			}),
+		}, []FileChanges{}, func(user *user_model.User, repo *repo_model.Repository) {
+			postIssue(repo, user, 450, "right issue", "an issue containing word right")
+			postIssue(repo, user, 150, "left issue", "an issue containing word left")
+		}),
 		// add your repo declarations here
 	}
 
@@ -67,12 +112,18 @@ func DeclareGitRepos(t *testing.T) func() {
 	}
 }
 
-func newRepo(t *testing.T, userID int64, repoName string, fileChanges []FileChanges) func() {
+func newRepo(t *testing.T, userID int64, repoName string, initOpts *tests.DeclarativeRepoOptions, fileChanges []FileChanges, setup SetupRepo) func() {
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userID})
-	somerepo, _, cleanupFunc := tests.CreateDeclarativeRepo(t, user, repoName,
-		[]unit_model.Type{unit_model.TypeCode, unit_model.TypeIssues}, nil,
-		nil,
-	)
+
+	opts := tests.DeclarativeRepoOptions{}
+	if initOpts != nil {
+		opts = *initOpts
+	}
+	opts.Name = optional.Some(repoName)
+	if !opts.EnabledUnits.Has() {
+		opts.EnabledUnits = optional.Some([]unit_model.Type{unit_model.TypeCode, unit_model.TypeIssues})
+	}
+	somerepo, _, cleanupFunc := tests.CreateDeclarativeRepoWithOptions(t, user, opts)
 
 	var lastCommitID string
 	for _, file := range fileChanges {
@@ -116,6 +167,10 @@ func newRepo(t *testing.T, userID int64, repoName string, fileChanges []FileChan
 
 			lastCommitID = resp.Commit.SHA
 		}
+	}
+
+	if setup != nil {
+		setup(user, somerepo)
 	}
 
 	err := stats.UpdateRepoIndexer(somerepo)

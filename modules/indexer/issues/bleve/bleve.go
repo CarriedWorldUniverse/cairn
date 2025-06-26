@@ -170,7 +170,7 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 
 			if issueID, err := token.ParseIssueReference(); err == nil {
 				idQuery := inner_bleve.NumericEqualityQuery(issueID, "index")
-				idQuery.SetBoost(5.0)
+				idQuery.SetBoost(20.0)
 				innerQ.AddQuery(idQuery)
 			}
 
@@ -195,6 +195,15 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 			repoQueries = append(repoQueries, inner_bleve.BoolFieldQuery(true, "is_public"))
 		}
 		queries = append(queries, bleve.NewDisjunctionQuery(repoQueries...))
+	}
+
+	if options.PriorityRepoID.Has() {
+		eq := inner_bleve.NumericEqualityQuery(options.PriorityRepoID.Value(), "repo_id")
+		eq.SetBoost(10.0)
+		meh := bleve.NewMatchAllQuery()
+		meh.SetBoost(0)
+		should := bleve.NewDisjunctionQuery(eq, meh)
+		queries = append(queries, should)
 	}
 
 	if options.IsPull.Has() {
