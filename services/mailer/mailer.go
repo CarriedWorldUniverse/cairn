@@ -29,7 +29,7 @@ import (
 	notify_service "forgejo.org/services/notify"
 
 	ntlmssp "github.com/Azure/go-ntlmssp"
-	"github.com/jaytaylor/html2text"
+	"github.com/inbucket/html2text"
 	"gopkg.in/gomail.v2"
 )
 
