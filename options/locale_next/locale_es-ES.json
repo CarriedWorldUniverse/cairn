@@ -13,5 +13,8 @@
     "home.welcome.no_activity": "Sin actividad",
     "themes.names.forgejo-auto": "Forgejo (seguir el tema del sistema)",
     "themes.names.forgejo-light": "Forgejo claro",
-    "themes.names.forgejo-dark": "Forgejo oscuro"
+    "themes.names.forgejo-dark": "Forgejo oscuro",
+    "home.explore_repos": "Explorar repositorios",
+    "home.explore_users": "Explorar usuarios",
+    "home.explore_orgs": "Explorar organizaciones"
 }
