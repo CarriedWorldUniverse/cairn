@@ -15,5 +15,8 @@
     "home.explore_users": "Esplora l'utenza",
     "home.explore_orgs": "Esplora le organizzazioni",
     "themes.names.forgejo-light": "Forgejo chiaro",
-    "themes.names.forgejo-dark": "Forgejo scuro"
+    "themes.names.forgejo-dark": "Forgejo scuro",
+    "home.welcome.activity_hint": "Non c'è nulla nel tuo feed. Le tue azioni e le attività dei repositori che segui verranno mostrate qui.",
+    "themes.names.forgejo-auto": "Forgejo (segui le impostazioni di sistema)",
+    "install.invalid_lfs_path": "Non è possibile creare una root LFS nel percorso specificato: %[1]s"
 }
