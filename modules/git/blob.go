@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
 
 	"forgejo.org/modules/log"
@@ -172,33 +173,43 @@ func (b *Blob) GetBlobContent(limit int64) (string, error) {
 	return string(buf), err
 }
 
-// GetBlobContentBase64 Reads the content of the blob with a base64 encode and returns the encoded string
-func (b *Blob) GetBlobContentBase64() (string, error) {
-	dataRc, err := b.DataAsync()
-	if err != nil {
-		return "", err
-	}
-	defer dataRc.Close()
+type BlobTooLargeError struct {
+	Size, Limit int64
+}
 
-	pr, pw := io.Pipe()
-	encoder := base64.NewEncoder(base64.StdEncoding, pw)
+func (b BlobTooLargeError) Error() string {
+	return fmt.Sprintf("blob: content larger than limit (%d > %d)", b.Size, b.Limit)
+}
 
-	go func() {
-		_, err := io.Copy(encoder, dataRc)
-		_ = encoder.Close()
-
-		if err != nil {
-			_ = pw.CloseWithError(err)
-		} else {
-			_ = pw.Close()
+// GetContentBase64 Reads the content of the blob and returns it as base64 encoded string.
+// Returns [BlobTooLargeError] if the (unencoded) content is larger than the limit.
+func (b *Blob) GetContentBase64(limit int64) (string, error) {
+	if b.Size() > limit {
+		return "", BlobTooLargeError{
+			Size:  b.Size(),
+			Limit: limit,
 		}
-	}()
+	}
 
-	out, err := io.ReadAll(pr)
+	rc, size, err := b.NewTruncatedReader(limit)
 	if err != nil {
 		return "", err
 	}
-	return string(out), nil
+	defer rc.Close()
+
+	encoding := base64.StdEncoding
+	buf := bytes.NewBuffer(make([]byte, 0, encoding.EncodedLen(int(size))))
+
+	encoder := base64.NewEncoder(encoding, buf)
+
+	if _, err := io.Copy(encoder, rc); err != nil {
+		return "", err
+	}
+	if err := encoder.Close(); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
 
 // GuessContentType guesses the content type of the blob.

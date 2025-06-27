@@ -5,6 +5,7 @@ package repo
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -506,11 +507,8 @@ func findWikiRepoCommit(ctx *context.APIContext) (*git.Repository, *git.Commit) 
 // given tree entry, encoded with base64. Writes to ctx if an error occurs.
 func wikiContentsByEntry(ctx *context.APIContext, entry *git.TreeEntry) string {
 	blob := entry.Blob()
-	if blob.Size() > setting.API.DefaultMaxBlobSize {
-		return ""
-	}
-	content, err := blob.GetBlobContentBase64()
-	if err != nil {
+	content, err := blob.GetContentBase64(setting.API.DefaultMaxBlobSize)
+	if err != nil && !errors.As(err, &git.BlobTooLargeError{}) {
 		ctx.Error(http.StatusInternalServerError, "GetBlobContentBase64", err)
 		return ""
 	}

@@ -5,6 +5,7 @@ package files
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -273,13 +274,11 @@ func GetBlobBySHA(ctx context.Context, repo *repo_model.Repository, gitRepo *git
 	if err != nil {
 		return nil, err
 	}
-	content := ""
-	if gitBlob.Size() <= setting.API.DefaultMaxBlobSize {
-		content, err = gitBlob.GetBlobContentBase64()
-		if err != nil {
-			return nil, err
-		}
+	content, err := gitBlob.GetContentBase64(setting.API.DefaultMaxBlobSize)
+	if err != nil && !errors.As(err, &git.BlobTooLargeError{}) {
+		return nil, err
 	}
+
 	return &api.GitBlob{
 		SHA:      gitBlob.ID.String(),
 		URL:      repo.APIURL() + "/git/blobs/" + url.PathEscape(gitBlob.ID.String()),
