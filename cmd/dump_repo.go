@@ -82,6 +82,11 @@ wiki, issues, labels, releases, release_assets, milestones, pull_requests, comme
 }
 
 func runDumpRepository(stdCtx context.Context, ctx *cli.Command) error {
+	setupConsoleLogger(log.INFO, log.CanColorStderr, os.Stderr)
+
+	// setting.DisableLoggerInit()
+	setting.LoadSettings() // cannot access skip_tls_verify settings otherwise
+
 	stdCtx, cancel := installSignals(stdCtx)
 	defer cancel()
 
