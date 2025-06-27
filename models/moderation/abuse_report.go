@@ -100,7 +100,7 @@ type AbuseReport struct {
 	// The abuse category selected by the reporter.
 	Category AbuseCategoryType `xorm:"INDEX NOT NULL"`
 	// Remarks provided by the reporter.
-	Remarks string
+	Remarks string `xorm:"VARCHAR(500)"`
 	// The ID of the corresponding shadow-copied content when exists; otherwise null.
 	ShadowCopyID sql.NullInt64      `xorm:"DEFAULT NULL"`
 	CreatedUnix  timeutil.TimeStamp `xorm:"created NOT NULL"`
