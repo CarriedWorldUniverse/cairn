@@ -9,5 +9,15 @@
         "many": "souhaite fusionner %[1]d révision(s) depuis <code>%[2]s</code> vers <code id=\"%[4]s\">%[3]s</code>",
         "other": ""
     },
-    "search.milestone_kind": "Recherche dans les jalons..."
+    "search.milestone_kind": "Recherche dans les jalons…",
+    "home.welcome.no_activity": "Pas d'activité",
+    "home.welcome.activity_hint": "Il n'y a rien dans votre fil d'actualité. Vos actions et activités de vos dépôts que vous suivez s'afficheront ici.",
+    "home.explore_repos": "Explorer les dépôts",
+    "home.explore_users": "Explorer les utilisateurs",
+    "home.explore_orgs": "Explorer les organisations",
+    "incorrect_root_url": "Cette instance Forgejo est configuré pour être servi sur \"%s\". Vous êtes actuellement en train de regarder Forgejo avec une URL différente, ce qui pourrait casser certaines parties de cette application. L'URL canonique est controllée par les administrateurs Forgejo grâce au paramètre ROOT_URL dans le app.ini.",
+    "themes.names.forgejo-auto": "Forgejo (suivre le thème du système)",
+    "themes.names.forgejo-light": "Forgejo clair",
+    "themes.names.forgejo-dark": "Forgejo sombre",
+    "install.invalid_lfs_path": "Impossible de créer le root LFS au chemin spécifié : %[1]s"
 }

@@ -1,5 +1,15 @@
 {
     "repo.pulls.merged_title_desc": "將 %[1]d 次提交從 <code>%[2]s</code> 合併至 <code>%[3]s</code> %[4]s",
     "repo.pulls.title_desc": "請求將 %[1]d 次程式碼提交從 <code>%[2]s</code> 合併至 <code id=\"%[4]s\">%[3]s</code>",
-    "search.milestone_kind": "搜尋里程碑…"
+    "search.milestone_kind": "搜尋里程碑…",
+    "home.welcome.no_activity": "沒有活動",
+    "home.welcome.activity_hint": "您的動態摘要目前沒有任何內容。 您對關注的儲存庫所做的操作與活動將會顯示在這裡。",
+    "home.explore_repos": "探索儲存庫",
+    "home.explore_users": "探索使用者",
+    "home.explore_orgs": "探索組織",
+    "incorrect_root_url": "這個 Forgejo 實例設定為在 \"%s\" 上提供服務。您目前是透過不同的 URL 存取 Forgejo，這可能會導致部分功能無法正常運作。正式的 URL 是由 Forgejo 管理員透過 app.ini 中的 ROOT_URL 設定所控制。",
+    "themes.names.forgejo-auto": "Forgejo（遵循系統主題）",
+    "themes.names.forgejo-light": "Forgejo 淺色",
+    "themes.names.forgejo-dark": "Forgejo 深色",
+    "install.invalid_lfs_path": "無法在指定路徑建立 LFS 根目錄：%[1]s"
 }

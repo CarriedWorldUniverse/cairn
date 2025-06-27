@@ -5,11 +5,11 @@
     "home.welcome.no_activity": "Ei toimintaa",
     "incorrect_root_url": "Tämä Forgejo-instanssi on määritetty toimimaan osoitteessa \"%s\". Tarkastelet tällä hetkellä Forgejoa eri URL-osoitteen kautta, mikä saattaa aiheuttaa sovelluksen osien toimimattomuutta. Virallinen URL-osoite on Forgejo-ylläpitäjien hallinnoima ROOT_URL-asetus app.ini -tiedostossa.",
     "themes.names.forgejo-auto": "Forgejo (käyttöjärjestelmän määrittelemä teema)",
-    "home.welcome.activity_hint": "Syötteelläsi ei ole vielä mitään. Toimintasi ja toiminta repositorioissa joita seuraat ilmaantuu tälle sivulle.",
-    "home.explore_repos": "Tutki repositorioita",
+    "home.welcome.activity_hint": "Syötteelläsi ei ole vielä mitään. Toimenpiteesi ja toimintasi tietovarastoissa, joita seuraat ilmaantuvat tälle sivulle.",
+    "home.explore_repos": "Tutustu tietovarastoihin",
     "home.explore_users": "Tutki käyttäjiä",
     "home.explore_orgs": "Tutki organisaatioita",
     "themes.names.forgejo-light": "Forgejo, vaalea",
     "themes.names.forgejo-dark": "Forgejo, tumma",
-    "install.invalid_lfs_path": "LFS juurta ei voitu luoda polkuun: %[1]s"
+    "install.invalid_lfs_path": "LFS-juurta ei voitu luoda polkuun: %[1]s"
 }

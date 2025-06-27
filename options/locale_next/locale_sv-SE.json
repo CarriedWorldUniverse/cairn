@@ -1,5 +1,15 @@
 {
     "repo.pulls.merged_title_desc": "sammanfogade %[1]d incheckningar från <code>%[2]s</code> in i <code>%[3]s</code> %[4]s",
     "repo.pulls.title_desc": "vill sammanfoga %[1]d incheckningar från <code>s[2]s</code> in i <code id=\"%[4]s\">%[3]s</code>",
-    "search.milestone_kind": "Sök milstolpar..."
+    "search.milestone_kind": "Sök milstolpar…",
+    "home.welcome.no_activity": "Ingen aktivitet",
+    "home.welcome.activity_hint": "Det finns inget i ditt flöde ännu. Dina åtgärder och aktivitet från förråd som du bevakar kommer att visas här.",
+    "home.explore_repos": "Utforska förråd",
+    "home.explore_users": "Utforska användare",
+    "home.explore_orgs": "Utforska organisationer",
+    "incorrect_root_url": "Denna Forgejo-instans är konfigurerad att serveras på \"%s\". Du tittar för närvarande på Forgejo via en annan URL, vilket kan leda till att delar av applikationen bryts. Den kanoniska webbadressen styrs av Forgejo-administratörer via inställningen ROOT_URL i app.ini.",
+    "themes.names.forgejo-auto": "Forgejo (följ systemets tema)",
+    "themes.names.forgejo-light": "Forgejo ljus",
+    "themes.names.forgejo-dark": "Forgejo mörk",
+    "install.invalid_lfs_path": "Det gick inte att skapa LFS-roten på den angivna sökvägen: %[1]s"
 }
