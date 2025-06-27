@@ -104,36 +104,35 @@ func GetAuthorAndCommitterUsers(author, committer *IdentityOptions, doer *user_m
 	// then we use bogus User objects for them to store their FullName and Email.
 	// If only one of the two are provided, we set both of them to it.
 	// If neither are provided, both are the doer.
-	if committer != nil && committer.Email != "" {
-		if doer != nil && strings.EqualFold(doer.Email, committer.Email) {
-			committerUser = doer // the committer is the doer, so will use their user object
-			if committer.Name != "" {
-				committerUser.FullName = committer.Name
+	getUser := func(identity *IdentityOptions) *user_model.User {
+		if identity == nil || identity.Email == "" {
+			return nil
+		}
+
+		if doer != nil && strings.EqualFold(doer.Email, identity.Email) {
+			user := doer // the committer is the doer, so will use their user object
+			if identity.Name != "" {
+				user.FullName = identity.Name
 			}
 			// Use the provided email and not revert to placeholder mail.
-			committerUser.KeepEmailPrivate = false
-		} else {
-			committerUser = &user_model.User{
-				FullName: committer.Name,
-				Email:    committer.Email,
-			}
+			user.KeepEmailPrivate = false
+			return user
+		}
+
+		var id int64
+		if doer != nil {
+			id = doer.ID
+		}
+		return &user_model.User{
+			ID:       id, // Needed to ensure the doer is checked to pass rules for instance signing of CRUD actions.
+			FullName: identity.Name,
+			Email:    identity.Email,
 		}
 	}
-	if author != nil && author.Email != "" {
-		if doer != nil && strings.EqualFold(doer.Email, author.Email) {
-			authorUser = doer // the author is the doer, so will use their user object
-			if authorUser.Name != "" {
-				authorUser.FullName = author.Name
-			}
-			// Use the provided email and not revert to placeholder mail.
-			authorUser.KeepEmailPrivate = false
-		} else {
-			authorUser = &user_model.User{
-				FullName: author.Name,
-				Email:    author.Email,
-			}
-		}
-	}
+
+	committerUser = getUser(committer)
+	authorUser = getUser(author)
+
 	if authorUser == nil {
 		if committerUser != nil {
 			authorUser = committerUser // No valid author was given so use the committer
