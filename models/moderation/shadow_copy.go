@@ -17,7 +17,7 @@ import (
 
 type AbuseReportShadowCopy struct {
 	ID          int64              `xorm:"pk autoincr"`
-	RawValue    string             `xorm:"NOT NULL"`
+	RawValue    string             `xorm:"LONGTEXT NOT NULL"` // A JSON with relevant fields from user, repository, issue or comment table.
 	CreatedUnix timeutil.TimeStamp `xorm:"created NOT NULL"`
 }
 
