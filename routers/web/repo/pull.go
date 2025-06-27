@@ -996,6 +996,13 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 		ctx.Data["Verification"] = verification
 		ctx.Data["Author"] = user_model.ValidateCommitWithEmail(ctx, curCommit)
 
+		if err := asymkey_model.CalculateTrustStatus(verification, ctx.Repo.Repository.GetTrustModel(), func(user *user_model.User) (bool, error) {
+			return repo_model.IsOwnerMemberCollaborator(ctx, ctx.Repo.Repository, user.ID)
+		}, nil); err != nil {
+			ctx.ServerError("CalculateTrustStatus", err)
+			return
+		}
+
 		note := &git.Note{}
 		err = git.GetNote(ctx, ctx.Repo.GitRepo, specifiedEndCommit, note)
 		if err == nil {
