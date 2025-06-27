@@ -116,32 +116,37 @@ func (te *TreeEntry) Type() string {
 	}
 }
 
+// LinkTarget returns the target of the symlink as string.
+func (te *TreeEntry) LinkTarget() (string, error) {
+	if !te.IsLink() {
+		return "", ErrBadLink{te.Name(), "not a symlink"}
+	}
+
+	const symlinkLimit = 4096 // according to git config core.longpaths https://stackoverflow.com/a/22575737
+	blob := te.Blob()
+	if blob.Size() > symlinkLimit {
+		return "", ErrBadLink{te.Name(), "symlink too large"}
+	}
+
+	rc, size, err := blob.NewTruncatedReader(symlinkLimit)
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	buf := make([]byte, int(size))
+	_, err = io.ReadFull(rc, buf)
+	return string(buf), err
+}
+
 // FollowLink returns the entry pointed to by a symlink
 func (te *TreeEntry) FollowLink() (*TreeEntry, string, error) {
-	if !te.IsLink() {
-		return nil, "", ErrBadLink{te.Name(), "not a symlink"}
-	}
-
 	// read the link
-	r, err := te.Blob().DataAsync()
+	lnk, err := te.LinkTarget()
 	if err != nil {
 		return nil, "", err
 	}
-	closed := false
-	defer func() {
-		if !closed {
-			_ = r.Close()
-		}
-	}()
-	buf := make([]byte, te.Size())
-	_, err = io.ReadFull(r, buf)
-	if err != nil {
-		return nil, "", err
-	}
-	_ = r.Close()
-	closed = true
 
-	lnk := string(buf)
 	t := te.ptree
 
 	// traverse up directories
