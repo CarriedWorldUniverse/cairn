@@ -63,6 +63,24 @@ func TestBlob(t *testing.T) {
 		require.Equal(t, "file2\n", r)
 	})
 
+	t.Run("GetContentBase64", func(t *testing.T) {
+		r, err := testBlob.GetContentBase64(100)
+		require.NoError(t, err)
+		require.Equal(t, "ZmlsZTIK", r)
+
+		r, err = testBlob.GetContentBase64(-1)
+		require.ErrorAs(t, err, &BlobTooLargeError{})
+		require.Empty(t, r)
+
+		r, err = testBlob.GetContentBase64(4)
+		require.ErrorAs(t, err, &BlobTooLargeError{})
+		require.Empty(t, r)
+
+		r, err = testBlob.GetContentBase64(6)
+		require.NoError(t, err)
+		require.Equal(t, "ZmlsZTIK", r)
+	})
+
 	t.Run("NewTruncatedReader", func(t *testing.T) {
 		// read fewer than available
 		rc, size, err := testBlob.NewTruncatedReader(100)
