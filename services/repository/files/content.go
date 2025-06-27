@@ -206,7 +206,7 @@ func GetContents(ctx context.Context, repo *repo_model.Repository, treePath, ref
 	} else if entry.IsLink() {
 		contentsResponse.Type = string(ContentTypeLink)
 		// The target of a symlink file is the content of the file
-		targetFromContent, err := entry.Blob().GetBlobContent(1024)
+		targetFromContent, err := entry.LinkTarget()
 		if err != nil {
 			return nil, err
 		}
