@@ -1116,13 +1116,8 @@ func parseCompareInfo(ctx *context.APIContext, form api.CreatePullRequestOption)
 	baseIsBranch := ctx.Repo.GitRepo.IsBranchExist(baseBranch)
 	baseIsTag := ctx.Repo.GitRepo.IsTagExist(baseBranch)
 	if !baseIsCommit && !baseIsBranch && !baseIsTag {
-		// Check for short SHA usage
-		if baseCommit, _ := ctx.Repo.GitRepo.GetCommit(baseBranch); baseCommit != nil {
-			baseBranch = baseCommit.ID.String()
-		} else {
-			ctx.NotFound("BaseNotExist")
-			return nil, nil, nil, "", ""
-		}
+		ctx.NotFound("BaseNotExist")
+		return nil, nil, nil, "", ""
 	}
 
 	headRepo := repo_model.GetForkedRepo(ctx, headUser.ID, baseRepo.ID)
@@ -1203,14 +1198,8 @@ func parseCompareInfo(ctx *context.APIContext, form api.CreatePullRequestOption)
 	headIsBranch := headGitRepo.IsBranchExist(headBranch)
 	headIsTag := headGitRepo.IsTagExist(headBranch)
 	if !headIsCommit && !headIsBranch && !headIsTag {
-		// Check if headBranch is short sha commit hash
-		if headCommit, _ := headGitRepo.GetCommit(headBranch); headCommit != nil {
-			headBranch = headCommit.ID.String()
-		} else {
-			headGitRepo.Close()
-			ctx.NotFound("IsRefExist", nil)
-			return nil, nil, nil, "", ""
-		}
+		ctx.NotFound("IsRefExist", nil)
+		return nil, nil, nil, "", ""
 	}
 
 	headBranchRef := headBranch
