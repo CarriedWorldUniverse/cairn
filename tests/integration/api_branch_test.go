@@ -116,7 +116,7 @@ func testAPICreateBranches(t *testing.T, giteaURL *url.URL) {
 		ctx := NewAPITestContext(t, "user2", "my-noo-repo-"+objectFormat.Name(), auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
 		giteaURL.Path = ctx.GitPath()
 
-		t.Run("CreateRepo", doAPICreateRepository(ctx, false, objectFormat))
+		t.Run("CreateRepo", doAPICreateRepository(ctx, nil, objectFormat))
 		testCases := []struct {
 			OldBranch          string
 			NewBranch          string

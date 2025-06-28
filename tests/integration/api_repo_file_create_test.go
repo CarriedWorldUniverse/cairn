@@ -287,7 +287,14 @@ func TestAPICreateFile(t *testing.T) {
 		// Test creating a file in an empty repository
 		forEachObjectFormat(t, func(t *testing.T, objectFormat git.ObjectFormat) {
 			reponame := "empty-repo-" + objectFormat.Name()
-			doAPICreateRepository(NewAPITestContext(t, "user2", reponame, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser), true, objectFormat)(t)
+			ctx := NewAPITestContext(t, "user2", reponame, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+			opts := &api.CreateRepoOption{
+				Description: "Temporary repo",
+				Name:        ctx.Reponame,
+				Private:     true,
+				Template:    true,
+			}
+			doAPICreateRepository(ctx, opts, objectFormat)(t)
 			createFileOptions = getCreateFileOptions()
 			fileID++
 			treePath = fmt.Sprintf("new/file%d.txt", fileID)

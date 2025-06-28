@@ -415,7 +415,7 @@ func testAPIRepoMigrateConflict(t *testing.T, u *url.URL) {
 		httpContext := baseAPITestContext
 
 		httpContext.Reponame = "repo-tmp-17"
-		t.Run("CreateRepo", doAPICreateRepository(httpContext, false, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
+		t.Run("CreateRepo", doAPICreateRepository(httpContext, nil, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
 
 		user, err := user_model.GetUserByName(db.DefaultContext, httpContext.Username)
 		require.NoError(t, err)
@@ -498,7 +498,7 @@ func testAPIRepoCreateConflict(t *testing.T, u *url.URL) {
 		httpContext := baseAPITestContext
 
 		httpContext.Reponame = "repo-tmp-17"
-		t.Run("CreateRepo", doAPICreateRepository(httpContext, false, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
+		t.Run("CreateRepo", doAPICreateRepository(httpContext, nil, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
 
 		req := NewRequestWithJSON(t, "POST", "/api/v1/user/repos",
 			&api.CreateRepoOption{
