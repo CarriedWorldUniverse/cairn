@@ -231,8 +231,6 @@ Forgejo or set your environment appropriately.`, "")
 		}
 	}
 
-	supportProcReceive := git.CheckGitVersionAtLeast("2.29") == nil
-
 	for scanner.Scan() {
 		// TODO: support news feeds for wiki
 		if isWiki {
@@ -250,31 +248,25 @@ Forgejo or set your environment appropriately.`, "")
 		total++
 		lastline++
 
-		// If the ref is a branch or tag, check if it's protected
-		// if supportProcReceive all ref should be checked because
-		// permission check was delayed
-		if supportProcReceive || refFullName.IsBranch() || refFullName.IsTag() {
-			oldCommitIDs[count] = oldCommitID
-			newCommitIDs[count] = newCommitID
-			refFullNames[count] = refFullName
-			count++
-			fmt.Fprint(out, "*")
+		// All references should be checked because permission check was delayed.
+		oldCommitIDs[count] = oldCommitID
+		newCommitIDs[count] = newCommitID
+		refFullNames[count] = refFullName
+		count++
+		fmt.Fprint(out, "*")
 
-			if count >= hookBatchSize {
-				fmt.Fprintf(out, " Checking %d references\n", count)
+		if count >= hookBatchSize {
+			fmt.Fprintf(out, " Checking %d references\n", count)
 
-				hookOptions.OldCommitIDs = oldCommitIDs
-				hookOptions.NewCommitIDs = newCommitIDs
-				hookOptions.RefFullNames = refFullNames
-				extra := private.HookPreReceive(ctx, username, reponame, hookOptions)
-				if extra.HasError() {
-					return fail(ctx, extra.UserMsg, "HookPreReceive(batch) failed: %v", extra.Error)
-				}
-				count = 0
-				lastline = 0
+			hookOptions.OldCommitIDs = oldCommitIDs
+			hookOptions.NewCommitIDs = newCommitIDs
+			hookOptions.RefFullNames = refFullNames
+			extra := private.HookPreReceive(ctx, username, reponame, hookOptions)
+			if extra.HasError() {
+				return fail(ctx, extra.UserMsg, "HookPreReceive(batch) failed: %v", extra.Error)
 			}
-		} else {
-			fmt.Fprint(out, ".")
+			count = 0
+			lastline = 0
 		}
 		if lastline >= hookBatchSize {
 			fmt.Fprint(out, "\n")
@@ -511,10 +503,6 @@ If you are pushing over SSH you must push with a key managed by
 Forgejo or set your environment appropriately.`, "")
 		}
 		return nil
-	}
-
-	if git.CheckGitVersionAtLeast("2.29") != nil {
-		return fail(ctx, "No proc-receive support", "current git version doesn't support proc-receive.")
 	}
 
 	reader := bufio.NewReader(os.Stdin)

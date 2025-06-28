@@ -183,9 +183,7 @@ func httpBase(ctx *context.Context) *serviceHandler {
 
 		if repoExist {
 			// Because of special ref "refs/for" .. , need delay write permission check
-			if git.SupportProcReceive {
-				accessMode = perm.AccessModeRead
-			}
+			accessMode = perm.AccessModeRead
 
 			if ctx.Data["IsActionsToken"] == true {
 				taskID := ctx.Data["ActionsTaskID"].(int64)

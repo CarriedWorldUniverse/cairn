@@ -771,11 +771,6 @@ func doCreateAgitFlowPull(dstPath string, ctx *APITestContext, headBranch string
 	return func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
-		// skip this test if git version is low
-		if git.CheckGitVersionAtLeast("2.29") != nil {
-			return
-		}
-
 		gitRepo, err := git.OpenRepository(git.DefaultContext, dstPath)
 		require.NoError(t, err)
 

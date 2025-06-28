@@ -193,12 +193,10 @@ func runServ(ctx context.Context, c *cli.Command) error {
 	}
 
 	if len(words) < 2 {
-		if git.CheckGitVersionAtLeast("2.29") == nil {
-			// for AGit Flow
-			if cmd == "ssh_info" {
-				fmt.Print(`{"type":"agit","version":1}`)
-				return nil
-			}
+		// for AGit Flow
+		if cmd == "ssh_info" {
+			fmt.Print(`{"type":"agit","version":1}`)
+			return nil
 		}
 		return fail(ctx, "Too few arguments", "Too few arguments in cmd: %s", cmd)
 	}

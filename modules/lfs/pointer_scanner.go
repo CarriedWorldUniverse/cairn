@@ -39,16 +39,7 @@ func SearchPointerBlobs(ctx context.Context, repo *git.Repository, pointerChan c
 	go pipeline.BlobsLessThan1024FromCatFileBatchCheck(catFileCheckReader, shasToBatchWriter, &wg)
 
 	// 1. Run batch-check on all objects in the repository
-	if git.CheckGitVersionAtLeast("2.6.0") != nil {
-		revListReader, revListWriter := io.Pipe()
-		shasToCheckReader, shasToCheckWriter := io.Pipe()
-		wg.Add(2)
-		go pipeline.CatFileBatchCheck(ctx, shasToCheckReader, catFileCheckWriter, &wg, basePath)
-		go pipeline.BlobsFromRevListObjects(revListReader, shasToCheckWriter, &wg)
-		go pipeline.RevListAllObjects(ctx, revListWriter, &wg, basePath, errChan)
-	} else {
-		go pipeline.CatFileBatchCheckAllObjects(ctx, catFileCheckWriter, &wg, basePath, errChan)
-	}
+	go pipeline.CatFileBatchCheckAllObjects(ctx, catFileCheckWriter, &wg, basePath, errChan)
 	wg.Wait()
 
 	close(pointerChan)
