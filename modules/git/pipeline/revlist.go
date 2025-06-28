@@ -16,26 +16,6 @@ import (
 	"forgejo.org/modules/log"
 )
 
-// RevListAllObjects runs rev-list --objects --all and writes to a pipewriter
-func RevListAllObjects(ctx context.Context, revListWriter *io.PipeWriter, wg *sync.WaitGroup, basePath string, errChan chan<- error) {
-	defer wg.Done()
-	defer revListWriter.Close()
-
-	stderr := new(bytes.Buffer)
-	var errbuf strings.Builder
-	cmd := git.NewCommand(ctx, "rev-list", "--objects", "--all")
-	if err := cmd.Run(&git.RunOpts{
-		Dir:    basePath,
-		Stdout: revListWriter,
-		Stderr: stderr,
-	}); err != nil {
-		log.Error("git rev-list --objects --all [%s]: %v - %s", basePath, err, errbuf.String())
-		err = fmt.Errorf("git rev-list --objects --all [%s]: %w - %s", basePath, err, errbuf.String())
-		_ = revListWriter.CloseWithError(err)
-		errChan <- err
-	}
-}
-
 // RevListObjects run rev-list --objects from headSHA to baseSHA
 func RevListObjects(ctx context.Context, revListWriter *io.PipeWriter, wg *sync.WaitGroup, tmpBasePath, headSHA, baseSHA string, errChan chan<- error) {
 	defer wg.Done()

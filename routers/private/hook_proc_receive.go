@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/private"
 	"forgejo.org/modules/web"
@@ -18,10 +17,6 @@ import (
 // HookProcReceive proc-receive hook - only handles agit Proc-Receive requests at present
 func HookProcReceive(ctx *gitea_context.PrivateContext) {
 	opts := web.GetForm(ctx).(*private.HookOptions)
-	if !git.SupportProcReceive {
-		ctx.Status(http.StatusNotFound)
-		return
-	}
 
 	results, err := agit.ProcReceive(ctx, ctx.Repo.Repository, ctx.Repo.GitRepo, opts)
 	if err != nil {

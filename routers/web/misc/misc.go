@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path"
 
-	"forgejo.org/modules/git"
 	"forgejo.org/modules/httpcache"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
@@ -15,10 +14,6 @@ import (
 )
 
 func SSHInfo(rw http.ResponseWriter, req *http.Request) {
-	if !git.SupportProcReceive {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
 	rw.Header().Set("content-type", "text/json;charset=UTF-8")
 	_, err := rw.Write([]byte(`{"type":"agit","version":1}`))
 	if err != nil {

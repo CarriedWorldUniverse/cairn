@@ -412,11 +412,7 @@ func (c *Commit) GetSubModule(entryname string) (string, error) {
 
 // GetBranchName gets the closest branch name (as returned by 'git name-rev --name-only')
 func (c *Commit) GetBranchName() (string, error) {
-	cmd := NewCommand(c.repo.Ctx, "name-rev")
-	if CheckGitVersionAtLeast("2.13.0") == nil {
-		cmd.AddArguments("--exclude", "refs/tags/*")
-	}
-	cmd.AddArguments("--name-only", "--no-undefined").AddDynamicArguments(c.ID.String())
+	cmd := NewCommand(c.repo.Ctx, "name-rev", "--exclude", "refs/tags/*", "--name-only", "--no-undefined").AddDynamicArguments(c.ID.String())
 	data, _, err := cmd.RunStdString(&RunOpts{Dir: c.repo.Path})
 	if err != nil {
 		// handle special case where git can not describe commit
