@@ -64,7 +64,7 @@ func TestAPILFSMediaType(t *testing.T) {
 
 func createLFSTestRepository(t *testing.T, name string) *repo_model.Repository {
 	ctx := NewAPITestContext(t, "user2", "lfs-"+name+"-repo", auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
-	t.Run("CreateRepo", doAPICreateRepository(ctx, false, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
+	t.Run("CreateRepo", doAPICreateRepository(ctx, nil, git.Sha1ObjectFormat)) // FIXME: use forEachObjectFormat
 
 	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "lfs-"+name+"-repo")
 	require.NoError(t, err)
