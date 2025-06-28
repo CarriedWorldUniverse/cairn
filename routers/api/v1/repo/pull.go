@@ -1202,6 +1202,11 @@ func parseCompareInfo(ctx *context.APIContext, form api.CreatePullRequestOption)
 	}
 
 	headBranchRef := headBranch
+	if headIsBranch {
+		headBranchRef = git.BranchPrefix + headBranch
+	} else if headIsTag {
+		headBranchRef = git.TagPrefix + headBranch
+	}
 
 	compareInfo, err := headGitRepo.GetCompareInfo(repo_model.RepoPath(baseRepo.Owner.Name, baseRepo.Name), baseBranchRef, headBranchRef, false, false)
 	if err != nil {
