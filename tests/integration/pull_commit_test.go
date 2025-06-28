@@ -95,7 +95,7 @@ func TestPullCommitSignature(t *testing.T) {
 		testCtx := NewAPITestContext(t, user.Name, "pull-request-commit-header-signed", auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
 		u.Path = testCtx.GitPath()
 
-		t.Run("Create repository", doAPICreateRepository(testCtx, false, git.Sha1ObjectFormat))
+		t.Run("Create repository", doAPICreateRepository(testCtx, nil, git.Sha1ObjectFormat))
 
 		t.Run("Create commit", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
