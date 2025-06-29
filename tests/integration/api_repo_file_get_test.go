@@ -17,36 +17,40 @@ import (
 )
 
 func TestAPIGetRawFileOrLFS(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
-
-	// Test with raw file
-	req := NewRequest(t, "GET", "/api/v1/repos/user2/repo1/media/README.md")
-	resp := MakeRequest(t, req, http.StatusOK)
-	assert.Equal(t, "# repo1\n\nDescription for repo1", resp.Body.String())
-
-	// Test with LFS
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
-		httpContext := NewAPITestContext(t, "user2", "repo-lfs-test", auth_model.AccessTokenScopeWriteRepository)
-		doAPICreateRepository(httpContext, nil, git.Sha1ObjectFormat, func(t *testing.T, repository api.Repository) { // FIXME: use forEachObjectFormat
-			u.Path = httpContext.GitPath()
-			dstPath := t.TempDir()
+		t.Run("Normal raw file", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
 
-			u.Path = httpContext.GitPath()
-			u.User = url.UserPassword("user2", userPassword)
+			req := NewRequest(t, "GET", "/api/v1/repos/user2/repo1/media/README.md")
+			resp := MakeRequest(t, req, http.StatusOK)
+			assert.Equal(t, "# repo1\n\nDescription for repo1", resp.Body.String())
+		})
 
-			t.Run("Clone", doGitClone(dstPath, u))
+		t.Run("LFS raw file", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
 
-			dstPath2 := t.TempDir()
+			httpContext := NewAPITestContext(t, "user2", "repo-lfs-test", auth_model.AccessTokenScopeWriteRepository)
+			doAPICreateRepository(httpContext, nil, git.Sha1ObjectFormat, func(t *testing.T, repository api.Repository) { // FIXME: use forEachObjectFormat
+				u.Path = httpContext.GitPath()
+				dstPath := t.TempDir()
 
-			t.Run("Partial Clone", doPartialGitClone(dstPath2, u))
+				u.Path = httpContext.GitPath()
+				u.User = url.UserPassword("user2", userPassword)
 
-			lfs, _ := lfsCommitAndPushTest(t, dstPath)
+				t.Run("Clone", doGitClone(dstPath, u))
 
-			reqLFS := NewRequest(t, "GET", "/api/v1/repos/user2/repo1/media/"+lfs)
-			respLFS := MakeRequestNilResponseRecorder(t, reqLFS, http.StatusOK)
-			assert.Equal(t, littleSize, respLFS.Length)
+				dstPath2 := t.TempDir()
 
-			doAPIDeleteRepository(httpContext)
+				t.Run("Partial Clone", doPartialGitClone(dstPath2, u))
+
+				lfs, _ := lfsCommitAndPushTest(t, dstPath)
+
+				reqLFS := NewRequest(t, "GET", "/api/v1/repos/user2/repo1/media/"+lfs)
+				respLFS := MakeRequestNilResponseRecorder(t, reqLFS, http.StatusOK)
+				assert.Equal(t, littleSize, respLFS.Length)
+
+				doAPIDeleteRepository(httpContext)
+			})
 		})
 	})
 }
