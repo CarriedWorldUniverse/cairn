@@ -644,7 +644,11 @@ func RepoAssignment(ctx *Context) context.CancelFunc {
 	ctx.Data["OpenGraphImageURL"] = repo.SummaryCardURL()
 	ctx.Data["OpenGraphImageWidth"] = cardWidth
 	ctx.Data["OpenGraphImageHeight"] = cardHeight
-	ctx.Data["OpenGraphImageAltText"] = ctx.Tr("repo.summary_card_alt", repo.FullName())
+	if util.IsEmptyString(repo.Description) {
+		ctx.Data["OpenGraphImageAltText"] = ctx.Tr("repo.summary_card_alt", repo.FullName())
+	} else {
+		ctx.Data["OpenGraphImageAltText"] = ctx.Tr("og.repo.summary_card.alt_description", repo.FullName(), repo.Description)
+	}
 
 	if repo.IsFork {
 		RetrieveBaseRepo(ctx, repo)
