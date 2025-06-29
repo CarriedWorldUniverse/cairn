@@ -238,7 +238,7 @@ export default {
       activeModules: true,
     }),
     new webpack.ProvidePlugin({ // for htmx extensions
-      htmx: 'htmx.org',
+      htmx: ['htmx.org', 'default'],
     }),
     new DefinePlugin({
       __VUE_OPTIONS_API__: true, // at the moment, many Vue components still use the Vue Options API
