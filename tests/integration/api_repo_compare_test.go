@@ -7,7 +7,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +50,28 @@ func testAPICompareCommits(t *testing.T, objectFormat git.ObjectFormat) {
 					ContentBase64: base64.StdEncoding.EncodeToString([]byte("content " + filename)),
 				})(t)
 			}
+		}
+
+		requireErrorContains := func(t *testing.T, resp *httptest.ResponseRecorder, expected string) {
+			t.Helper()
+
+			type response struct {
+				Message string   `json:"message"`
+				Errors  []string `json:"errors"`
+			}
+			var bodyResp response
+			DecodeJSON(t, resp, &bodyResp)
+
+			if strings.Contains(bodyResp.Message, expected) {
+				return
+			}
+			for _, error := range bodyResp.Errors {
+				if strings.Contains(error, expected) {
+					return
+				}
+			}
+			t.Log(fmt.Sprintf("expected %s in %+v", expected, bodyResp))
+			t.Fail()
 		}
 
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -123,6 +147,14 @@ func testAPICompareCommits(t *testing.T, objectFormat git.ObjectFormat) {
 
 		user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
 		user4Ctx := NewAPITestContext(t, user4.Name, user2repo, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+
+		t.Run("ForkNotFound", func(t *testing.T) {
+			req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/compare/%s...%s:%s", user2.Name, user2repo, "master", user4.Name, user2branchName).
+				AddTokenAuth(user2Ctx.Token)
+			resp := MakeRequest(t, req, http.StatusNotFound)
+			requireErrorContains(t, resp, "user4 does not have a fork of user2/repoA and user2/repoA is not a fork of a repository from user4")
+		})
+
 		t.Run("User4ForksUser2Repository", doAPIForkRepository(user4Ctx, user2.Name))
 		user4branchName := "user4branch"
 		t.Run("CreateUser4RepositoryBranch", newBranchAndFile(user4Ctx, user4, user4branchName, "user4branchfilename.txt"))
@@ -197,6 +229,42 @@ func testAPICompareCommits(t *testing.T, objectFormat git.ObjectFormat) {
 				assert.Equal(t, 1, apiResp.TotalCommits)
 				assert.Len(t, apiResp.Commits, 1)
 				assert.Len(t, apiResp.Files, 1)
+			})
+		}
+
+		t.Run("ForkUserDoesNotExist", func(t *testing.T) {
+			notUser := "notauser"
+			req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/compare/master...%s:branchname", user2.Name, user2repo, notUser).
+				AddTokenAuth(user2Ctx.Token)
+			resp := MakeRequest(t, req, http.StatusNotFound)
+			requireErrorContains(t, resp, fmt.Sprintf("the owner %s does not exist", notUser))
+		})
+
+		t.Run("HeadHasTooManyColon", func(t *testing.T) {
+			req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/compare/master...one:two:many", user2.Name, user2repo).
+				AddTokenAuth(user2Ctx.Token)
+			resp := MakeRequest(t, req, http.StatusNotFound)
+			requireErrorContains(t, resp, fmt.Sprintf("must contain zero or one colon (:) but contains 2"))
+		})
+
+		for _, testCase := range []struct {
+			what     string
+			baseHead string
+		}{
+			{
+				what:     "base",
+				baseHead: "notexists...master",
+			},
+			{
+				what:     "head",
+				baseHead: "master...notexists",
+			},
+		} {
+			t.Run("BaseHeadNotExists "+testCase.what, func(t *testing.T) {
+				req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/compare/%s", user2.Name, user2repo, testCase.baseHead).
+					AddTokenAuth(user2Ctx.Token)
+				resp := MakeRequest(t, req, http.StatusNotFound)
+				requireErrorContains(t, resp, fmt.Sprintf("could not find 'notexists' to be a commit, branch or tag in the %s", testCase.what))
 			})
 		}
 	})
