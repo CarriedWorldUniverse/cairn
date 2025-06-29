@@ -33,20 +33,8 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install git 2.34.1
-        run: |
-          export DEBIAN_FRONTEND=noninteractive
-
-          apt-get update -qq
-          apt-get -q install -y -qq curl ca-certificates
-
-          curl -sS -o git-man.deb http://archive.ubuntu.com/ubuntu/pool/main/g/git/git-man_2.34.1-1ubuntu1_all.deb
-          curl -sS -o git.deb https://archive.ubuntu.com/ubuntu/pool/main/g/git/git_2.34.1-1ubuntu1_amd64.deb
-          curl -sS -o git-lfs.deb https://archive.ubuntu.com/ubuntu/pool/universe/g/git-lfs/git-lfs_3.0.2-1_amd64.deb
-
-          apt-get -q install -y -qq ./git-man.deb
-          apt-get -q install -y -qq ./git.deb
-          apt-get -q install -y -qq ./git-lfs.deb
+      - name: install git 2.34.1 and git-lfs 3.0.2
+        uses: ./.forgejo/workflows-composite/install-minimum-git-version
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-backend test-check'
@@ -64,11 +52,8 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install git 2.30
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git/bullseye git-lfs/bullseye
-          release: bullseye
+      - name: install git 2.34.1 and git-lfs 3.0.2
+        uses: ./.forgejo/workflows-composite/install-minimum-git-version
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-sqlite-migration test-sqlite'
