@@ -186,9 +186,45 @@
   type: 8 # milestone
   poster_id: 1
   issue_id: 1 # in repo_id 1
-  milestone_id: 10 # not exsting milestone
+  milestone_id: 10 # not existing milestone
   old_milestone_id: 0
   created_unix: 946685080
+
+-
+  id: 2004
+  type: 8 # milestone
+  poster_id: 1
+  issue_id: 1 # in repo_id 1
+  milestone_id: 1
+  old_milestone_id: 10 # not existing (ghost) milestone
+  created_unix: 946685085
+
+-
+  id: 2005
+  type: 8 # milestone
+  poster_id: 1
+  issue_id: 1 # in repo_id 1
+  milestone_id: 10 # not existing (ghost) milestone
+  old_milestone_id: 1
+  created_unix: 946685090
+
+-
+  id: 2006
+  type: 8 # milestone
+  poster_id: 1
+  issue_id: 1 # in repo_id 1
+  milestone_id: 11 # not existing (ghost) milestone
+  old_milestone_id: 10 # not existing (ghost) milestone
+  created_unix: 946685095
+
+-
+  id: 2007
+  type: 8 # milestone
+  poster_id: 1
+  issue_id: 1 # in repo_id 1
+  milestone_id: 0
+  old_milestone_id: 11 # not existing (ghost) milestone
+  created_unix: 946685100
 
 -
   id: 2010
