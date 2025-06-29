@@ -43,7 +43,6 @@ func TestMirrorPush(t *testing.T) {
 }
 
 func testMirrorPush(t *testing.T, u *url.URL) {
-	defer tests.PrepareTestEnv(t)()
 	defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 
 	require.NoError(t, migrations.Init())

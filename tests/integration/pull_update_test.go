@@ -89,7 +89,6 @@ func TestAPIPullUpdateByRebase(t *testing.T) {
 
 func TestAPIViewUpdateSettings(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
-		defer tests.PrepareTestEnv(t)()
 		// Create PR to test
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		org26 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 26})
@@ -136,7 +135,6 @@ func TestViewPullUpdateByRebase(t *testing.T) {
 
 func testViewPullUpdate(t *testing.T, updateStyle string) {
 	defer test.MockVariableValue(&setting.Repository.PullRequest.DefaultUpdateStyle, updateStyle)()
-	defer tests.PrepareTestEnv(t)()
 	// Create PR to test
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	org26 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 26})

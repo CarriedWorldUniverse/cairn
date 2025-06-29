@@ -198,9 +198,9 @@ func TestViewRepoWithSymlinks(t *testing.T) {
 
 // TestViewAsRepoAdmin tests PR #2167
 func TestViewAsRepoAdmin(t *testing.T) {
-	for _, user := range []string{"user2", "user4"} {
-		defer tests.PrepareTestEnv(t)()
+	defer tests.PrepareTestEnv(t)()
 
+	for _, user := range []string{"user2", "user4"} {
 		session := loginUser(t, user)
 
 		req := NewRequest(t, "GET", "/user2/repo1.git")

@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -312,9 +313,26 @@ func PrepareCleanPackageData(t testing.TB) {
 	require.NoError(t, storage.Clean(storage.Packages))
 }
 
+// inTestEnv keeps track if we are current inside a test environment, this is
+// used to detect if testing code tries to prepare a test environment more than
+// once.
+var inTestEnv atomic.Bool
+
 func PrepareTestEnv(t testing.TB, skip ...int) func() {
 	t.Helper()
-	deferFn := PrintCurrentTest(t, util.OptionalArg(skip)+1)
+
+	if !inTestEnv.CompareAndSwap(false, true) {
+		t.Fatal("Cannot prepare a test environment if you are already in a test environment. This is a bug in your testing code.")
+	}
+
+	deferPrintCurrentTest := PrintCurrentTest(t, util.OptionalArg(skip)+1)
+	deferFn := func() {
+		deferPrintCurrentTest()
+
+		if !inTestEnv.CompareAndSwap(true, false) {
+			t.Fatal("Tried to leave test environment, but we are no longer in a test environment. This should not happen.")
+		}
+	}
 
 	cancelProcesses(t, 30*time.Second)
 	t.Cleanup(func() { cancelProcesses(t, 0) }) // cancel remaining processes in a non-blocking way
