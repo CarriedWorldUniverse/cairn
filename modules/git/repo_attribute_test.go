@@ -5,7 +5,6 @@ package git
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -197,7 +196,7 @@ func TestGitAttributeCheckerError(t *testing.T) {
 		path := t.TempDir()
 
 		// we can't use unittest.CopyDir because of an import cycle (git.Init in unittest)
-		require.NoError(t, CopyFS(path, os.DirFS(filepath.Join(testReposDir, "language_stats_repo"))))
+		require.NoError(t, os.CopyFS(path, os.DirFS(filepath.Join(testReposDir, "language_stats_repo"))))
 
 		gitRepo, err := openRepositoryWithDefaultContext(path)
 		require.NoError(t, err)
@@ -322,34 +321,5 @@ func TestGitAttributeCheckerError(t *testing.T) {
 
 		_, err = ac.CheckPath("i-am-a-python.p")
 		require.ErrorIs(t, err, fs.ErrClosed)
-	})
-}
-
-// CopyFS is adapted from https://github.com/golang/go/issues/62484
-// which should be available with go1.23
-func CopyFS(dir string, fsys fs.FS) error {
-	return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, _ error) error {
-		targ := filepath.Join(dir, filepath.FromSlash(path))
-		if d.IsDir() {
-			return os.MkdirAll(targ, 0o777)
-		}
-		r, err := fsys.Open(path)
-		if err != nil {
-			return err
-		}
-		defer r.Close()
-		info, err := r.Stat()
-		if err != nil {
-			return err
-		}
-		w, err := os.OpenFile(targ, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666|info.Mode()&0o777)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(w, r); err != nil {
-			w.Close()
-			return fmt.Errorf("copying %s: %v", path, err)
-		}
-		return w.Close()
 	})
 }
