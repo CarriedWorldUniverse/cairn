@@ -312,22 +312,16 @@ func ParseCompareInfo(ctx *context.Context) *common.CompareInfo {
 	baseIsTag := ctx.Repo.GitRepo.IsTagExist(ci.BaseBranch)
 
 	if !baseIsCommit && !baseIsBranch && !baseIsTag {
-		// Check if baseBranch is short sha commit hash
-		if baseCommit, _ := ctx.Repo.GitRepo.GetCommit(ci.BaseBranch); baseCommit != nil {
-			ci.BaseBranch = baseCommit.ID.String()
-			ctx.Data["BaseBranch"] = ci.BaseBranch
-			baseIsCommit = true
-		} else if ci.BaseBranch == ctx.Repo.GetObjectFormat().EmptyObjectID().String() {
+		if ci.BaseBranch == ctx.Repo.GetObjectFormat().EmptyObjectID().String() {
 			if isSameRepo {
 				ctx.Redirect(ctx.Repo.RepoLink + "/compare/" + util.PathEscapeSegments(ci.HeadBranch))
 			} else {
 				ctx.Redirect(ctx.Repo.RepoLink + "/compare/" + util.PathEscapeSegments(ci.HeadRepo.FullName()) + ":" + util.PathEscapeSegments(ci.HeadBranch))
 			}
-			return nil
 		} else {
 			ctx.NotFound("IsRefExist", nil)
-			return nil
 		}
+		return nil
 	}
 	ctx.Data["BaseIsCommit"] = baseIsCommit
 	ctx.Data["BaseIsBranch"] = baseIsBranch
@@ -514,15 +508,8 @@ func ParseCompareInfo(ctx *context.Context) *common.CompareInfo {
 	headIsBranch := ci.HeadGitRepo.IsBranchExist(ci.HeadBranch)
 	headIsTag := ci.HeadGitRepo.IsTagExist(ci.HeadBranch)
 	if !headIsCommit && !headIsBranch && !headIsTag {
-		// Check if headBranch is short sha commit hash
-		if headCommit, _ := ci.HeadGitRepo.GetCommit(ci.HeadBranch); headCommit != nil {
-			ci.HeadBranch = headCommit.ID.String()
-			ctx.Data["HeadBranch"] = ci.HeadBranch
-			headIsCommit = true
-		} else {
-			ctx.NotFound("IsRefExist", nil)
-			return nil
-		}
+		ctx.NotFound("IsRefExist", nil)
+		return nil
 	}
 	ctx.Data["HeadIsCommit"] = headIsCommit
 	ctx.Data["HeadIsBranch"] = headIsBranch
