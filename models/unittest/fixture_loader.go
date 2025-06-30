@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"forgejo.org/modules/container"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,12 +34,14 @@ type loader struct {
 	fixtureFiles []*fixtureFile
 }
 
-func newFixtureLoader(db *sql.DB, dialect string, fixturePaths []string) (*loader, error) {
+func newFixtureLoader(db *sql.DB, dialect string, fixturePaths []string, allTableNames container.Set[string]) (*loader, error) {
 	l := &loader{
 		db:           db,
 		dialect:      dialect,
 		fixtureFiles: []*fixtureFile{},
 	}
+
+	tablesWithoutFixture := allTableNames
 
 	// Load fixtures
 	for _, fixturePath := range fixturePaths {
@@ -60,6 +64,7 @@ func newFixtureLoader(db *sql.DB, dialect string, fixturePaths []string) (*loade
 						return nil, err
 					}
 					l.fixtureFiles = append(l.fixtureFiles, fixtureFile)
+					tablesWithoutFixture.Remove(fixtureFile.name)
 				}
 			}
 		} else {
@@ -69,6 +74,14 @@ func newFixtureLoader(db *sql.DB, dialect string, fixturePaths []string) (*loade
 			}
 			l.fixtureFiles = append(l.fixtureFiles, fixtureFile)
 		}
+	}
+
+	// Even though these tables have no fixtures, they can still be used and ensure
+	// they are cleaned.
+	for table := range tablesWithoutFixture.Seq() {
+		l.fixtureFiles = append(l.fixtureFiles, &fixtureFile{
+			name: table,
+		})
 	}
 
 	return l, nil
@@ -178,13 +191,13 @@ func (l *loader) Load() error {
 	}()
 
 	// Clean the table and re-insert the fixtures.
-	tableDeleted := map[string]struct{}{}
+	tableDeleted := make(container.Set[string])
 	for _, fixture := range l.fixtureFiles {
-		if _, ok := tableDeleted[fixture.name]; !ok {
+		if !tableDeleted.Contains(fixture.name) {
 			if _, err := tx.Exec(fmt.Sprintf("DELETE FROM %s", l.quoteKeyword(fixture.name))); err != nil {
 				return fmt.Errorf("cannot delete table %s: %w", fixture.name, err)
 			}
-			tableDeleted[fixture.name] = struct{}{}
+			tableDeleted.Add(fixture.name)
 		}
 
 		for _, insertSQL := range fixture.insertSQLs {

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"forgejo.org/modules/container"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 
@@ -437,4 +438,13 @@ func GetMasterEngine(x Engine) (*xorm.Engine, error) {
 	}
 
 	return engine, nil
+}
+
+// GetTableNames returns the table name of all registered models.
+func GetTableNames() container.Set[string] {
+	names := make(container.Set[string])
+	for _, table := range tables {
+		names.Add(x.TableName(table))
+	}
+	return names
 }

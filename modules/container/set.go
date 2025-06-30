@@ -74,3 +74,8 @@ func (s Set[T]) Values() []T {
 func (s Set[T]) Seq() iter.Seq[T] {
 	return maps.Keys(s)
 }
+
+// Clone returns a identical shallow copy of this set.
+func (s Set[T]) Clone() Set[T] {
+	return maps.Clone(s)
+}

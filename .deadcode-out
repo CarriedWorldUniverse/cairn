@@ -27,6 +27,7 @@ forgejo.org/models/db
 	TruncateBeans
 	InTransaction
 	DumpTables
+	GetTableNames
 
 forgejo.org/models/dbfs
 	file.renameTo
