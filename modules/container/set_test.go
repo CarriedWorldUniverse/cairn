@@ -47,4 +47,11 @@ func TestSet(t *testing.T) {
 	assert.False(t, s.IsSubset([]string{"key1"}))
 
 	assert.True(t, s.IsSubset([]string{}))
+
+	t.Run("Clone", func(t *testing.T) {
+		clonedSet := s.Clone()
+		clonedSet.Remove("key6")
+		assert.False(t, clonedSet.Contains("key6"))
+		assert.True(t, s.Contains("key6"))
+	})
 }

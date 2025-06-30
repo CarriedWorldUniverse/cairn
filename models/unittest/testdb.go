@@ -217,6 +217,10 @@ type FixturesOptions struct {
 	Files []string
 	Dirs  []string
 	Base  string
+	// By default all registered models are cleaned, even if they do not have
+	// fixture. Enabling this will skip that and only models with fixtures are
+	// considered.
+	SkipCleanRegistedModels bool
 }
 
 // CreateTestEngine creates a memory database and loads the fixture data from fixturesDir

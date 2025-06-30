@@ -95,7 +95,8 @@ func PrepareTestEnv(t *testing.T, skip int, syncModels ...any) (*xorm.Engine, fu
 		t.Logf("initializing fixtures from: %s", fixturesDir)
 		if err := unittest.InitFixtures(
 			unittest.FixturesOptions{
-				Dir: fixturesDir,
+				Dir:                     fixturesDir,
+				SkipCleanRegistedModels: true,
 			}, x); err != nil {
 			t.Errorf("error whilst initializing fixtures from %s: %v", fixturesDir, err)
 			return x, deferFn
