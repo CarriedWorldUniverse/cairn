@@ -4,6 +4,9 @@
 package convert
 
 import (
+	"mime"
+	"path/filepath"
+
 	repo_model "forgejo.org/models/repo"
 	api "forgejo.org/modules/structs"
 )
@@ -20,9 +23,13 @@ func APIAssetDownloadURL(repo *repo_model.Repository, attach *repo_model.Attachm
 	return attach.DownloadURL()
 }
 
-// ToAttachment converts models.Attachment to api.Attachment for API usage
-func ToAttachment(repo *repo_model.Repository, a *repo_model.Attachment) *api.Attachment {
-	return toAttachment(repo, a, WebAssetDownloadURL)
+// ToWebAttachment converts models.Attachment to api.WebAttachment for API usage
+func ToWebAttachment(repo *repo_model.Repository, a *repo_model.Attachment) *api.WebAttachment {
+	attachment := toAttachment(repo, a, WebAssetDownloadURL)
+	return &api.WebAttachment{
+		Attachment: attachment,
+		MimeType:   mime.TypeByExtension(filepath.Ext(attachment.Name)),
+	}
 }
 
 // ToAPIAttachment converts models.Attachment to api.Attachment for API usage

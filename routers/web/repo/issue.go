@@ -3593,9 +3593,9 @@ func GetIssueAttachments(ctx *context.Context) {
 	if ctx.Written() {
 		return
 	}
-	attachments := make([]*api.Attachment, len(issue.Attachments))
+	attachments := make([]*api.WebAttachment, len(issue.Attachments))
 	for i := 0; i < len(issue.Attachments); i++ {
-		attachments[i] = convert.ToAttachment(ctx.Repo.Repository, issue.Attachments[i])
+		attachments[i] = convert.ToWebAttachment(ctx.Repo.Repository, issue.Attachments[i])
 	}
 	ctx.JSON(http.StatusOK, attachments)
 }
@@ -3628,13 +3628,13 @@ func GetCommentAttachments(ctx *context.Context) {
 		return
 	}
 
-	attachments := make([]*api.Attachment, 0)
 	if err := comment.LoadAttachments(ctx); err != nil {
 		ctx.ServerError("LoadAttachments", err)
 		return
 	}
+	attachments := make([]*api.WebAttachment, len(comment.Attachments))
 	for i := 0; i < len(comment.Attachments); i++ {
-		attachments = append(attachments, convert.ToAttachment(ctx.Repo.Repository, comment.Attachments[i]))
+		attachments[i] = convert.ToWebAttachment(ctx.Repo.Repository, comment.Attachments[i])
 	}
 	ctx.JSON(http.StatusOK, attachments)
 }
