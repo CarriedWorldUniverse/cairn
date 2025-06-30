@@ -22,6 +22,12 @@ type Attachment struct {
 	Type string `json:"type"`
 }
 
+// WebAttachment the generic attachment with mime type
+type WebAttachment struct {
+	*Attachment
+	MimeType string `json:"mime_type"`
+}
+
 // EditAttachmentOptions options for editing attachments
 // swagger:model
 type EditAttachmentOptions struct {

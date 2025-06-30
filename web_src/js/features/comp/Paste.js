@@ -82,9 +82,8 @@ class CodeMirrorEditor {
 
 async function handleClipboardImages(editor, dropzone, images, e) {
   const uploadUrl = dropzone.getAttribute('data-upload-url');
-  const filesContainer = dropzone.querySelector('.files');
 
-  if (!dropzone || !uploadUrl || !filesContainer || !images.length) return;
+  if (!dropzone || !uploadUrl || !images.length) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -92,7 +91,7 @@ async function handleClipboardImages(editor, dropzone, images, e) {
   for (const img of images) {
     const name = img.name.slice(0, img.name.lastIndexOf('.'));
 
-    const placeholder = `![${name}](uploading ...)`;
+    const placeholder = `![${name}](uploading...)`;
     editor.insertPlaceholder(placeholder);
 
     const {uuid} = await uploadFile(img, uploadUrl);
@@ -101,12 +100,11 @@ async function handleClipboardImages(editor, dropzone, images, e) {
     const text = `![${name}](${url})`;
     editor.replacePlaceholder(placeholder, text);
 
-    const input = document.createElement('input');
-    input.setAttribute('name', 'files');
-    input.setAttribute('type', 'hidden');
-    input.setAttribute('id', uuid);
-    input.value = uuid;
-    filesContainer.append(input);
+    const attachment = {uuid, name: img.name, browser_download_url: url, size: img.size, type: img.type};
+    dropzone.dropzone.emit('addedfile', attachment);
+    dropzone.dropzone.emit('create-thumbnail', attachment, img);
+    dropzone.dropzone.emit('complete', attachment);
+    dropzone.dropzone.emit('success', attachment, {uuid});
   }
 }
 

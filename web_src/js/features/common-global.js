@@ -208,58 +208,127 @@ export function initGlobalDropzone() {
   }
 }
 
-export function initDropzone(el) {
-  const $dropzone = $(el);
-  const _promise = createDropzone(el, {
-    url: $dropzone.data('upload-url'),
+export async function initDropzone(dropzoneEl, zone = undefined) {
+  if (!dropzoneEl) return;
+
+  let disableRemovedfileEvent = false; // when resetting the dropzone (removeAllFiles), disable the "removedfile" event
+  let fileUuidDict = {}; // to record: if a comment has been saved, then the uploaded files won't be deleted from server when clicking the Remove in the dropzone
+
+  const initFilePreview = (file, data, isReload = false) => {
+    file.uuid = data.uuid;
+    fileUuidDict[file.uuid] = {submitted: isReload};
+    const input = document.createElement('input');
+    input.id = data.uuid;
+    input.name = 'files';
+    input.type = 'hidden';
+    input.value = data.uuid;
+    dropzoneEl.querySelector('.files').append(input);
+
+    // Create a "Copy Link" element, to conveniently copy the image
+    // or file link as Markdown to the clipboard
+    const copyLinkElement = document.createElement('div');
+    copyLinkElement.className = 'tw-text-center';
+    // The a element has a hardcoded cursor: pointer because the default is overridden by .dropzone
+    copyLinkElement.innerHTML = `<a href="#" style="cursor: pointer;">${svg('octicon-copy', 14, 'copy link')} Copy link</a>`;
+    copyLinkElement.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const name = file.name.slice(0, file.name.lastIndexOf('.'));
+      let fileMarkdown = `[${name}](/attachments/${file.uuid})`;
+      if (file.type.startsWith('image/')) {
+        fileMarkdown = `!${fileMarkdown}`;
+      } else if (file.type.startsWith('video/')) {
+        fileMarkdown = `<video src="/attachments/${file.uuid}" title="${htmlEscape(name)}" controls></video>`;
+      }
+      const success = await clippie(fileMarkdown);
+      showTemporaryTooltip(e.target, success ? i18n.copy_success : i18n.copy_error);
+    });
+    file.previewTemplate.append(copyLinkElement);
+  };
+  const updateDropzoneState = () => {
+    if (dropzoneEl.querySelector('.dz-preview')) {
+      dropzoneEl.classList.add('dz-started');
+    } else {
+      dropzoneEl.classList.remove('dz-started');
+    }
+  };
+
+  const dz = await createDropzone(dropzoneEl, {
+    url: dropzoneEl.getAttribute('data-upload-url'),
     headers: {'X-Csrf-Token': csrfToken},
-    maxFiles: $dropzone.data('max-file'),
-    maxFilesize: $dropzone.data('max-size'),
-    acceptedFiles: (['*/*', ''].includes($dropzone.data('accepts'))) ? null : $dropzone.data('accepts'),
+    maxFiles: dropzoneEl.getAttribute('data-max-file'),
+    maxFilesize: dropzoneEl.getAttribute('data-max-size'),
+    acceptedFiles: (['*/*', ''].includes(dropzoneEl.getAttribute('data-accepts')) ? null : dropzoneEl.getAttribute('data-accepts')),
     addRemoveLinks: true,
-    dictDefaultMessage: $dropzone.data('default-message'),
-    dictInvalidFileType: $dropzone.data('invalid-input-type'),
-    dictFileTooBig: $dropzone.data('file-too-big'),
-    dictRemoveFile: $dropzone.data('remove-file'),
+    dictDefaultMessage: dropzoneEl.getAttribute('data-default-message'),
+    dictInvalidFileType: dropzoneEl.getAttribute('data-invalid-input-type'),
+    dictFileTooBig: dropzoneEl.getAttribute('data-file-too-big'),
+    dictRemoveFile: dropzoneEl.getAttribute('data-remove-file'),
     timeout: 0,
     thumbnailMethod: 'contain',
     thumbnailWidth: 480,
     thumbnailHeight: 480,
     init() {
-      this.on('success', (file, data) => {
-        file.uuid = data.uuid;
-        const $input = $(`<input id="${data.uuid}" name="files" type="hidden">`).val(data.uuid);
-        $dropzone.find('.files').append($input);
-        // Create a "Copy Link" element, to conveniently copy the image
-        // or file link as Markdown to the clipboard
-        const copyLinkElement = document.createElement('div');
-        copyLinkElement.className = 'tw-text-center';
-        // The a element has a hardcoded cursor: pointer because the default is overridden by .dropzone
-        copyLinkElement.innerHTML = `<a href="#" style="cursor: pointer;">${svg('octicon-copy', 14, 'copy link')} Copy link</a>`;
-        copyLinkElement.addEventListener('click', async (e) => {
-          e.preventDefault();
-          let fileMarkdown = `[${file.name}](/attachments/${file.uuid})`;
-          if (file.type.startsWith('image/')) {
-            fileMarkdown = `!${fileMarkdown}`;
-          } else if (file.type.startsWith('video/')) {
-            fileMarkdown = `<video src="/attachments/${file.uuid}" title="${htmlEscape(file.name)}" controls></video>`;
+      this.on('success', initFilePreview);
+      this.on('removedfile', async (file) => {
+        document.getElementById(file.uuid)?.remove();
+        if (disableRemovedfileEvent) return;
+        if (dropzoneEl.getAttribute('data-remove-url') && !fileUuidDict[file.uuid].submitted) {
+          try {
+            await POST(dropzoneEl.getAttribute('data-remove-url'), {data: new URLSearchParams({file: file.uuid})});
+          } catch (error) {
+            console.error(error);
           }
-          const success = await clippie(fileMarkdown);
-          showTemporaryTooltip(e.target, success ? i18n.copy_success : i18n.copy_error);
-        });
-        file.previewTemplate.append(copyLinkElement);
-      });
-      this.on('removedfile', (file) => {
-        $(`#${file.uuid}`).remove();
-        if ($dropzone.data('remove-url')) {
-          POST($dropzone.data('remove-url'), {
-            data: new URLSearchParams({file: file.uuid}),
-          });
         }
+        updateDropzoneState();
       });
       this.on('error', function (file, message) {
         showErrorToast(message);
         this.removeFile(file);
+      });
+      this.on('reload', async () => {
+        if (!zone || !dz.removeAllFiles) return;
+        try {
+          const response = await GET(zone.getAttribute('data-attachment-url'));
+          const data = await response.json();
+          // do not trigger the "removedfile" event, otherwise the attachments would be deleted from server
+          disableRemovedfileEvent = true;
+          dz.removeAllFiles(true);
+          dropzoneEl.querySelector('.files').innerHTML = '';
+          for (const element of dropzoneEl.querySelectorAll('.dz-preview')) element.remove();
+          fileUuidDict = {};
+          disableRemovedfileEvent = false;
+
+          for (const attachment of data) {
+            attachment.type = attachment.mime_type;
+            dz.emit('addedfile', attachment);
+            dz.emit('complete', attachment);
+            if (attachment.type.startsWith('image/')) {
+              const imgSrc = `${dropzoneEl.getAttribute('data-link-url')}/${attachment.uuid}`;
+              dz.emit('thumbnail', attachment, imgSrc);
+            }
+            initFilePreview(attachment, {uuid: attachment.uuid}, true);
+            fileUuidDict[attachment.uuid] = {submitted: true};
+          }
+        } catch (error) {
+          console.error(error);
+        }
+        updateDropzoneState();
+      });
+      this.on('create-thumbnail', (attachment, file) => {
+        if (attachment.type && /image.*/.test(attachment.type)) {
+          // When a new issue is created, a thumbnail cannot be fetch, so we need to create it locally.
+          // The implementation is took from the dropzone library (`dropzone.js` > `_processThumbnailQueue()`)
+          dz.createThumbnail(
+            file,
+            dz.options.thumbnailWidth,
+            dz.options.thumbnailHeight,
+            dz.options.thumbnailMethod,
+            true,
+            (dataUrl) => {
+              dz.emit('thumbnail', attachment, dataUrl);
+            },
+          );
+        }
       });
     },
   });

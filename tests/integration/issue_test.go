@@ -629,7 +629,12 @@ func TestIssueCommentAttachment(t *testing.T) {
 	assert.NotEqual(t, 0, id)
 
 	req = NewRequest(t, "GET", fmt.Sprintf("/%s/%s/comments/%d/attachments", "user2", "repo1", id))
-	session.MakeRequest(t, req, http.StatusOK)
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	var attachments []*api.WebAttachment
+	DecodeJSON(t, resp, &attachments)
+	assert.Len(t, attachments, 1)
+	assert.Equal(t, attachments[0].UUID, uuid)
+	assert.Equal(t, "image/png", attachments[0].MimeType)
 
 	// Using the ID of a comment that does not belong to the repository must fail
 	req = NewRequest(t, "GET", fmt.Sprintf("/%s/%s/comments/%d/attachments", "user5", "repo4", id))
