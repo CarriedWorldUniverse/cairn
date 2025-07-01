@@ -57,14 +57,6 @@ func CreateFederatedUser(ctx context.Context, user *User, federatedUser *Federat
 	return committer.Commit()
 }
 
-func (federatedUser *FederatedUser) UpdateFederatedUser(ctx context.Context) error {
-	if _, err := validation.IsValid(federatedUser); err != nil {
-		return err
-	}
-	_, err := db.GetEngine(ctx).ID(federatedUser.ID).Cols("inbox_path").Update(federatedUser)
-	return err
-}
-
 func FindFederatedUser(ctx context.Context, externalID string, federationHostID int64) (*User, *FederatedUser, error) {
 	federatedUser := new(FederatedUser)
 	user := new(User)
@@ -219,7 +211,6 @@ func RemoveFollower(ctx context.Context, followedUser *User, followingUser *Fede
 	return err
 }
 
-// TODO: We should unify Activity-pub-following and classical following (see models/user/follow.go)
 func IsFollowingAp(ctx context.Context, followedUser *User, followingUser *FederatedUser) (bool, error) {
 	if res, err := validation.IsValid(followedUser); !res {
 		return false, err
