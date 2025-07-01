@@ -10,32 +10,42 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"forgejo.org/modules/util"
 )
 
 type FederationServerMockPerson struct {
-	ID     int64
-	Name   string
-	PubKey string
+	ID      int64
+	Name    string
+	PubKey  string
+	PrivKey string
 }
 type FederationServerMockRepository struct {
 	ID int64
 }
+type ApActorMock struct {
+	PrivKey string
+	PubKey  string
+}
 type FederationServerMock struct {
+	ApActor      ApActorMock
 	Persons      []FederationServerMockPerson
 	Repositories []FederationServerMockRepository
 	LastPost     string
 }
 
 func NewFederationServerMockPerson(id int64, name string) FederationServerMockPerson {
+	priv, pub, _ := util.GenerateKeyPair(3072)
 	return FederationServerMockPerson{
-		ID:   id,
-		Name: name,
-		PubKey: `"-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA18H5s7N6ItZUAh9tneII\nIuZdTTa3cZlLa/9ejWAHTkcp3WLW+/zbsumlMrWYfBy2/yTm56qasWt38iY4D6ul\n` +
-			`CPiwhAqX3REvVq8tM79a2CEqZn9ka6vuXoDgBg/sBf/BUWqf7orkjUXwk/U0Egjf\nk5jcurF4vqf1u+rlAHH37dvSBaDjNj6Qnj4OP12bjfaY/yvs7+jue/eNXFHjzN4E\n` +
-			`T2H4B/yeKTJ4UuAwTlLaNbZJul2baLlHelJPAsxiYaziVuV5P+IGWckY6RSerRaZ\nAkc4mmGGtjAyfN9aewe+lNVfwS7ElFx546PlLgdQgjmeSwLX8FWxbPE5A/PmaXCs\n` +
-			`nx+nou+3dD7NluULLtdd7K+2x02trObKXCAzmi5/Dc+yKTzpFqEz+hLNCz7TImP/\ncK//NV9Q+X67J9O27baH9R9ZF4zMw8rv2Pg0WLSw1z7lLXwlgIsDapeMCsrxkVO4\n` +
-			`LXX5AQ1xQNtlssnVoUBqBrvZsX2jUUKUocvZqMGuE4hfAgMBAAE=\n-----END PUBLIC KEY-----\n"`,
+		ID:      id,
+		Name:    name,
+		PubKey:  pub,
+		PrivKey: priv,
 	}
+}
+
+func (p *FederationServerMockPerson) KeyID(host string) string {
+	return fmt.Sprintf("%[1]v/api/v1/activitypub/user-id/%[2]v#main-key", host, p.ID)
 }
 
 func NewFederationServerMockRepository(id int64) FederationServerMockRepository {
@@ -44,22 +54,35 @@ func NewFederationServerMockRepository(id int64) FederationServerMockRepository 
 	}
 }
 
+func NewApActorMock() ApActorMock {
+	priv, pub, _ := util.GenerateKeyPair(1024)
+	return ApActorMock{
+		PrivKey: priv,
+		PubKey:  pub,
+	}
+}
+
+func (u *ApActorMock) KeyID(host string) string {
+	return fmt.Sprintf("%[1]v/api/v1/activitypub/actor#main-key", host)
+}
+
 func (p FederationServerMockPerson) marshal(host string) string {
 	return fmt.Sprintf(`{"@context":["https://www.w3.org/ns/activitystreams","https://w3id.org/security/v1"],`+
-		`"id":"http://%[1]v/api/activitypub/user-id/%[2]v",`+
+		`"id":"http://%[1]v/api/v1/activitypub/user-id/%[2]v",`+
 		`"type":"Person",`+
 		`"icon":{"type":"Image","mediaType":"image/png","url":"http://%[1]v/avatars/1bb05d9a5f6675ed0272af9ea193063c"},`+
 		`"url":"http://%[1]v/%[2]v",`+
-		`"inbox":"http://%[1]v/api/activitypub/user-id/%[2]v/inbox",`+
-		`"outbox":"http://%[1]v/api/activitypub/user-id/%[2]v/outbox",`+
+		`"inbox":"http://%[1]v/api/v1/activitypub/user-id/%[2]v/inbox",`+
+		`"outbox":"http://%[1]v/api/v1/activitypub/user-id/%[2]v/outbox",`+
 		`"preferredUsername":"%[3]v",`+
-		`"publicKey":{"id":"http://%[1]v/api/activitypub/user-id/%[2]v#main-key",`+
-		`"owner":"http://%[1]v/api/activitypub/user-id/%[2]v",`+
-		`"publicKeyPem":%[4]v}}`, host, p.ID, p.Name, p.PubKey)
+		`"publicKey":{"id":"http://%[1]v/api/v1/activitypub/user-id/%[2]v#main-key",`+
+		`"owner":"http://%[1]v/api/v1/activitypub/user-id/%[2]v",`+
+		`"publicKeyPem":%[4]q}}`, host, p.ID, p.Name, p.PubKey)
 }
 
 func NewFederationServerMock() *FederationServerMock {
 	return &FederationServerMock{
+		ApActor: NewApActorMock(),
 		Persons: []FederationServerMockPerson{
 			NewFederationServerMockPerson(15, "stargoose1"),
 			NewFederationServerMockPerson(30, "stargoose2"),
@@ -71,8 +94,18 @@ func NewFederationServerMock() *FederationServerMock {
 	}
 }
 
+func (mock *FederationServerMock) recordLastPost(t *testing.T, req *http.Request) {
+	buf := new(strings.Builder)
+	_, err := io.Copy(buf, req.Body)
+	if err != nil {
+		t.Errorf("Error reading body: %q", err)
+	}
+	mock.LastPost = strings.ReplaceAll(buf.String(), req.Host, "DISTANT_FEDERATION_HOST")
+}
+
 func (mock *FederationServerMock) DistantServer(t *testing.T) *httptest.Server {
 	federatedRoutes := http.NewServeMux()
+
 	federatedRoutes.HandleFunc("/.well-known/nodeinfo",
 		func(res http.ResponseWriter, req *http.Request) {
 			// curl -H "Accept: application/json" https://federated-repo.prod.meissa.de/.well-known/nodeinfo
@@ -87,30 +120,28 @@ func (mock *FederationServerMock) DistantServer(t *testing.T) *httptest.Server {
 				`"protocols":["activitypub"],"services":{"inbound":[],"outbound":["rss2.0"]},`+
 				`"openRegistrations":true,"usage":{"users":{"total":14,"activeHalfyear":2}},"metadata":{}}`)
 		})
+
 	for _, person := range mock.Persons {
 		federatedRoutes.HandleFunc(fmt.Sprintf("/api/v1/activitypub/user-id/%v", person.ID),
 			func(res http.ResponseWriter, req *http.Request) {
 				// curl -H "Accept: application/json" https://federated-repo.prod.meissa.de/api/v1/activitypub/user-id/2
 				fmt.Fprint(res, person.marshal(req.Host))
 			})
-	}
-	for _, repository := range mock.Repositories {
-		federatedRoutes.HandleFunc(fmt.Sprintf("/api/v1/activitypub/repository-id/%v/inbox", repository.ID),
+		federatedRoutes.HandleFunc(fmt.Sprintf("POST /api/v1/activitypub/user-id/%v/inbox", person.ID),
 			func(res http.ResponseWriter, req *http.Request) {
-				if req.Method != "POST" {
-					t.Errorf("POST expected at: %q", req.URL.EscapedPath())
-				}
-				buf := new(strings.Builder)
-				_, err := io.Copy(buf, req.Body)
-				if err != nil {
-					t.Errorf("Error reading body: %q", err)
-				}
-				mock.LastPost = buf.String()
+				mock.recordLastPost(t, req)
+			})
+	}
+
+	for _, repository := range mock.Repositories {
+		federatedRoutes.HandleFunc(fmt.Sprintf("POST /api/v1/activitypub/repository-id/%v/inbox", repository.ID),
+			func(res http.ResponseWriter, req *http.Request) {
+				mock.recordLastPost(t, req)
 			})
 	}
 	federatedRoutes.HandleFunc("/",
 		func(res http.ResponseWriter, req *http.Request) {
-			t.Errorf("Unhandled request: %q", req.URL.EscapedPath())
+			t.Errorf("Unhandled %v request: %q", req.Method, req.URL.EscapedPath())
 		})
 	federatedSrv := httptest.NewServer(federatedRoutes)
 	return federatedSrv
