@@ -182,11 +182,11 @@ func (u *User) BeforeUpdate() {
 		u.MaxRepoCreation = -1
 	}
 
-	// Organization does not need email
-	u.Email = strings.ToLower(u.Email)
+	// Ensure AvatarEmail is set for non-organization users, because organization
+	// are not required to have a email set.
 	if !u.IsOrganization() {
 		if len(u.AvatarEmail) == 0 {
-			u.AvatarEmail = u.Email
+			u.AvatarEmail = strings.ToLower(u.Email)
 		}
 	}
 
