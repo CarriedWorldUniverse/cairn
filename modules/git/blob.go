@@ -220,7 +220,7 @@ func (b *Blob) GuessContentType() (typesniffer.SniffedType, error) {
 	}
 	defer r.Close()
 
-	return typesniffer.DetectContentTypeFromReader(r)
+	return typesniffer.DetectContentTypeFromReader(r, b.Name())
 }
 
 // GetBlob finds the blob object in the repository.

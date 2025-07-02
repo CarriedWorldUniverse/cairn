@@ -291,7 +291,7 @@ func LFSFileGet(ctx *context.Context) {
 	}
 	buf = buf[:n]
 
-	st := typesniffer.DetectContentType(buf)
+	st := typesniffer.DetectContentType(buf, "")
 	ctx.Data["IsTextFile"] = st.IsText()
 	isRepresentableAsText := st.IsRepresentableAsText()
 

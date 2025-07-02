@@ -99,7 +99,7 @@ func setServeHeadersByFile(r *http.Request, w http.ResponseWriter, filePath stri
 		Filename: path.Base(filePath),
 	}
 
-	sniffedType := typesniffer.DetectContentType(mineBuf)
+	sniffedType := typesniffer.DetectContentType(mineBuf, opts.Filename)
 
 	// the "render" parameter came from year 2016: 638dd24c, it doesn't have clear meaning, so I think it could be removed later
 	isPlain := sniffedType.IsText() || r.FormValue("render") != ""

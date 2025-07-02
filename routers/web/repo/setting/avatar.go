@@ -45,7 +45,7 @@ func UpdateAvatarSetting(ctx *context.Context, form forms.AvatarForm) error {
 	if err != nil {
 		return fmt.Errorf("io.ReadAll: %w", err)
 	}
-	st := typesniffer.DetectContentType(data)
+	st := typesniffer.DetectContentType(data, "")
 	if !st.IsImage() || st.IsSvgImage() {
 		return errors.New(ctx.Locale.TrString("settings.uploaded_avatar_not_a_image"))
 	}

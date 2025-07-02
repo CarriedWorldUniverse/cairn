@@ -41,7 +41,7 @@ func RenderFile(ctx *context.Context) {
 	n, _ := util.ReadAtMost(dataRc, buf)
 	buf = buf[:n]
 
-	st := typesniffer.DetectContentType(buf)
+	st := typesniffer.DetectContentType(buf, blob.Name())
 	isTextFile := st.IsText()
 
 	rd := charset.ToUTF8WithFallbackReader(io.MultiReader(bytes.NewReader(buf), dataRc), charset.ConvertOpts{})
