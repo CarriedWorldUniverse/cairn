@@ -4,16 +4,10 @@
 package forgejo_migrations //nolint:revive
 
 import (
-	"forgejo.org/modules/timeutil"
-
 	"xorm.io/xorm"
 )
 
-func AddIndexToActionRunStopped(x *xorm.Engine) error {
-	type ActionRun struct {
-		ID      int64
-		Stopped timeutil.TimeStamp `xorm:"index"`
-	}
-
-	return x.Sync(&ActionRun{})
+// see https://codeberg.org/forgejo/forgejo/issues/8373
+func NoopAddIndexToActionRunStopped(x *xorm.Engine) error {
+	return nil
 }
