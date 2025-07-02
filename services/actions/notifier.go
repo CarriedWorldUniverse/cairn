@@ -788,7 +788,7 @@ func (n *actionsNotifier) MigrateRepository(ctx context.Context, doer, u *user_m
 // the ActionRun of the same workflow that finished before priorRun/updatedRun.
 func sendActionRunNowDoneNotificationIfNeeded(ctx context.Context, priorRun, updatedRun *actions_model.ActionRun) error {
 	if !priorRun.Status.IsDone() && updatedRun.Status.IsDone() {
-		lastRun, err := actions_model.GetRunBefore(ctx, updatedRun.RepoID, updatedRun.Stopped)
+		lastRun, err := actions_model.GetRunBefore(ctx, updatedRun)
 		if err != nil && !errors.Is(err, util.ErrNotExist) {
 			return err
 		}
