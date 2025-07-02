@@ -177,7 +177,7 @@ func (b *Indexer) addUpdate(ctx context.Context, batchWriter git.WriteCloserErro
 	fileContents, err := io.ReadAll(io.LimitReader(batchReader, size))
 	if err != nil {
 		return err
-	} else if !typesniffer.DetectContentType(fileContents).IsText() {
+	} else if !typesniffer.DetectContentType(fileContents, update.Filename).IsText() {
 		// FIXME: UTF-16 files will probably fail here
 		// Even if the file is not recognized as a "text file", we could still put its name into the indexers to make the filename become searchable, while leave the content to empty.
 		fileContents = nil

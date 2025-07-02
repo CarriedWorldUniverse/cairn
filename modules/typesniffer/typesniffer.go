@@ -124,7 +124,7 @@ func (ct SniffedType) GetMimeType() string {
 }
 
 // DetectContentType extends http.DetectContentType with more content types. Defaults to text/unknown if input is empty.
-func DetectContentType(data []byte) SniffedType {
+func DetectContentType(data []byte, filename string) SniffedType {
 	if len(data) == 0 {
 		return SniffedType{"text/unknown"}
 	}
@@ -176,6 +176,13 @@ func DetectContentType(data []byte) SniffedType {
 		}
 	}
 
+	if ct == "application/octet-stream" &&
+		filename != "" &&
+		!strings.HasSuffix(strings.ToUpper(filename), ".LCOM") &&
+		bytes.Contains(data, []byte("(DEFINE-FILE-INFO ")) {
+		ct = "text/vnd.interlisp"
+	}
+
 	// GLTF is unsupported by http.DetectContentType
 	// hexdump -n 4 -C glTF.glb
 	if bytes.HasPrefix(data, []byte("glTF")) {
@@ -186,7 +193,7 @@ func DetectContentType(data []byte) SniffedType {
 }
 
 // DetectContentTypeFromReader guesses the content type contained in the reader.
-func DetectContentTypeFromReader(r io.Reader) (SniffedType, error) {
+func DetectContentTypeFromReader(r io.Reader, filename string) (SniffedType, error) {
 	buf := make([]byte, sniffLen)
 	n, err := util.ReadAtMost(r, buf)
 	if err != nil {
@@ -194,5 +201,5 @@ func DetectContentTypeFromReader(r io.Reader) (SniffedType, error) {
 	}
 	buf = buf[:n]
 
-	return DetectContentType(buf), nil
+	return DetectContentType(buf, filename), nil
 }
