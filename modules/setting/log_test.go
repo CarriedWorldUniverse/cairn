@@ -44,6 +44,7 @@ func TestLogConfigDefault(t *testing.T) {
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "info",
 		"Prefix": "",
@@ -83,6 +84,7 @@ logger.xorm.MODE =
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "info",
 		"Prefix": "",
@@ -121,6 +123,7 @@ MODE = console
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "info",
 		"Prefix": "",
@@ -168,6 +171,7 @@ ACCESS = file
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "info",
 		"Prefix": "",
@@ -191,6 +195,7 @@ ACCESS = file
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "none",
 		"Level": "info",
 		"Prefix": "",
@@ -257,6 +262,7 @@ STDERR = true
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "warn",
 		"Prefix": "",
@@ -270,6 +276,7 @@ STDERR = true
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "error",
 		"Prefix": "",
@@ -287,6 +294,7 @@ STDERR = true
 		"BufferLen": 10000,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "none",
 		"Level": "warn",
 		"Prefix": "",
@@ -323,6 +331,7 @@ MODE = file
 LEVEL = error
 STACKTRACE_LEVEL = fatal
 EXPRESSION = filter
+EXCLUSION = not
 FLAGS = medfile
 PREFIX = "[Prefix] "
 FILE_NAME = file-xxx.log
@@ -341,6 +350,7 @@ COMPRESSION_LEVEL = 4
 		"BufferLen": 10,
 		"Colorize": false,
 		"Expression": "",
+		"Exclusion": "",
 		"Flags": "stdflags",
 		"Level": "info",
 		"Prefix": "",
@@ -360,6 +370,7 @@ COMPRESSION_LEVEL = 4
 		"BufferLen": 10,
 		"Colorize": false,
 		"Expression": "filter",
+		"Exclusion": "not",
 		"Flags": "medfile",
 		"Level": "error",
 		"Prefix": "[Prefix] ",

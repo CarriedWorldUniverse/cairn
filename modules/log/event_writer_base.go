@@ -68,6 +68,14 @@ func (b *EventWriterBaseImpl) Run(ctx context.Context) {
 		}
 	}
 
+	var exclusionRegexp *regexp.Regexp
+	if b.Mode.Exclusion != "" {
+		var err error
+		if exclusionRegexp, err = regexp.Compile(b.Mode.Exclusion); err != nil {
+			FallbackErrorf("unable to compile exclusion %q for writer %q: %v", b.Mode.Exclusion, b.Name, err)
+		}
+	}
+
 	handlePaused := func() {
 		if pause := b.GetPauseChan(); pause != nil {
 			select {
@@ -92,6 +100,13 @@ func (b *EventWriterBaseImpl) Run(ctx context.Context) {
 				fileLineCaller := fmt.Sprintf("%s:%d:%s", event.Origin.Filename, event.Origin.Line, event.Origin.Caller)
 				matched := exprRegexp.MatchString(fileLineCaller) || exprRegexp.MatchString(event.Origin.MsgSimpleText)
 				if !matched {
+					continue
+				}
+			}
+			if exclusionRegexp != nil {
+				fileLineCaller := fmt.Sprintf("%s:%d:%s", event.Origin.Filename, event.Origin.Line, event.Origin.Caller)
+				matched := exclusionRegexp.MatchString(fileLineCaller) || exclusionRegexp.MatchString(event.Origin.MsgSimpleText)
+				if matched {
 					continue
 				}
 			}

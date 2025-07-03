@@ -143,3 +143,19 @@ func TestLoggerExpressionFilter(t *testing.T) {
 
 	assert.Equal(t, []string{"foo\n", "foo bar\n", "by filename\n"}, w1.GetLogs())
 }
+
+func TestLoggerExclusionFilter(t *testing.T) {
+	logger := NewLoggerWithWriters(t.Context(), "test")
+
+	w1 := newDummyWriter("dummy-1", DEBUG, 0)
+	w1.Mode.Exclusion = "foo.*"
+	logger.AddWriters(w1)
+
+	logger.Info("foo")
+	logger.Info("bar")
+	logger.Info("foo bar")
+	logger.SendLogEvent(&Event{Level: INFO, Filename: "foo.go", MsgSimpleText: "by filename"})
+	logger.Close()
+
+	assert.Equal(t, []string{"bar\n"}, w1.GetLogs())
+}

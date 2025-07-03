@@ -45,6 +45,11 @@ func defaultLoggingFlags() []cli.Flag {
 			Usage:   "Matching expression for the logger",
 		},
 		&cli.StringFlag{
+			Name:    "exclusion",
+			Aliases: []string{"x"},
+			Usage:   "Exclusion for the logger",
+		},
+		&cli.StringFlag{
 			Name:    "prefix",
 			Aliases: []string{"p"},
 			Usage:   "Prefix for the logger",
@@ -285,6 +290,9 @@ func commonAddLogger(ctx context.Context, c *cli.Command, mode string, vals map[
 	}
 	if len(c.String("expression")) > 0 {
 		vals["expression"] = c.String("expression")
+	}
+	if len(c.String("exclusion")) > 0 {
+		vals["exclusion"] = c.String("exclusion")
 	}
 	if len(c.String("prefix")) > 0 {
 		vals["prefix"] = c.String("prefix")
