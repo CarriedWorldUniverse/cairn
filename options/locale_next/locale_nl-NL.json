@@ -92,5 +92,16 @@
     "watch.list.none": "Niemand houdt deze repo in de gaten.",
     "followers.incoming.list.self.none": "Niemand volgt uw profiel.",
     "followers.incoming.list.none": "Deze gebruiker wordt door niemand gevolgd.",
-    "followers.outgoing.list.self.none": "U volgt niemand."
+    "followers.outgoing.list.self.none": "U volgt niemand.",
+    "settings.visibility.description": "Profielzichtbaarheid beïnvloedt de mogelijkheid van anderen om toegang te krijgen tot je niet-privé repositories. <a href=\"%s\" target=\"_blank\">Lees meer</a>",
+    "repo.diff.commit.next-short": "Volgende",
+    "admin.dashboard.cleanup_offline_runners": "Offline runners opruimen",
+    "keys.ssh.link": "SSH sleutels",
+    "keys.gpg.link": "GPG sleutels",
+    "profile.actions.tooltip": "Meer acties",
+    "profile.edit.link": "Profiel bewerken",
+    "feed.atom.link": "Atom-feed",
+    "repo.diff.commit.previous-short": "Vorige",
+    "avatar.constraints_hint": "Eigen avatars mogen niet groter zijn dan %[1]s in grootte of groter zijn dan %[2]dx%[3]d pixels",
+    "og.repo.summary_card.alt_description": "Samenvattingsoverzicht van repositorie %[1]s, omschreven als: %[2]s"
 }

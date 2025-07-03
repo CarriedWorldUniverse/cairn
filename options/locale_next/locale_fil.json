@@ -102,5 +102,6 @@
     "feed.atom.link": "Atom feed",
     "keys.ssh.link": "Mga SSH key",
     "keys.gpg.link": "Mga GPG key",
-    "profile.actions.tooltip": "Higit pang mga aksyon"
+    "profile.actions.tooltip": "Higit pang mga aksyon",
+    "og.repo.summary_card.alt_description": "Card ng pangkalahatang ideya ng repositoryong %[1]s, inilalarawan bilang: %[2]s"
 }
