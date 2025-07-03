@@ -133,6 +133,7 @@ func loadLogModeByName(rootCfg ConfigProvider, loggerName, modeName string) (wri
 	writerMode.StacktraceLevel = log.LevelFromString(ConfigInheritedKeyString(sec, "STACKTRACE_LEVEL", Log.StacktraceLogLevel.String()))
 	writerMode.Prefix = ConfigInheritedKeyString(sec, "PREFIX")
 	writerMode.Expression = ConfigInheritedKeyString(sec, "EXPRESSION")
+	writerMode.Exclusion = ConfigInheritedKeyString(sec, "EXCLUSION")
 	// flags are updated and set below
 
 	switch writerType {

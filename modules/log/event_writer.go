@@ -26,6 +26,7 @@ type WriterMode struct {
 	Flags    Flags
 
 	Expression string
+	Exclusion  string
 
 	StacktraceLevel Level
 
