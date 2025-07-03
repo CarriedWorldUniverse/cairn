@@ -45,12 +45,9 @@ func (t *Tokenizer) next() (tk Token, err error) {
 
 	// skip all leading white space
 	for {
-		if r, _, err = t.in.ReadRune(); err == nil && r == ' ' {
-			//nolint:staticcheck,wastedassign // SA4006 the variable is used after the loop
-			r, _, err = t.in.ReadRune()
-			continue
+		if r, _, err = t.in.ReadRune(); err != nil || r != ' ' {
+			break
 		}
-		break
 	}
 	if err != nil {
 		return tk, err
@@ -107,11 +104,17 @@ nextEnd:
 
 // Tokenize the keyword
 func (o *SearchOptions) Tokens() (tokens []Token, err error) {
+	if o.Keyword == "" {
+		return nil, nil
+	}
+
 	in := strings.NewReader(o.Keyword)
 	it := Tokenizer{in: in}
 
 	for token, err := it.next(); err == nil; token, err = it.next() {
-		tokens = append(tokens, token)
+		if token.Term != "" {
+			tokens = append(tokens, token)
+		}
 	}
 	if err != nil && err != io.EOF {
 		return nil, err
