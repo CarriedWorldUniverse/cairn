@@ -110,5 +110,6 @@
     "keys.gpg.link": "Ключі GPG",
     "profile.edit.link": "Редагувати профіль",
     "feed.atom.link": "Стрічка Atom",
-    "profile.actions.tooltip": "Більше дій"
+    "profile.actions.tooltip": "Більше дій",
+    "og.repo.summary_card.alt_description": "Підсумкова картка репозиторію %[1]s з описом: %[2]s"
 }

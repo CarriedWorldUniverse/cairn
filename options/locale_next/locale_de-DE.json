@@ -102,5 +102,6 @@
     "feed.atom.link": "Atom-Feed",
     "keys.ssh.link": "SSH-Schlüssel",
     "keys.gpg.link": "GPG-Schlüssel",
-    "profile.actions.tooltip": "Mehr Aktionen"
+    "profile.actions.tooltip": "Mehr Aktionen",
+    "og.repo.summary_card.alt_description": "Zusammenfassungskarte des Repositorys %[1]s, beschrieben als %[2]s"
 }
