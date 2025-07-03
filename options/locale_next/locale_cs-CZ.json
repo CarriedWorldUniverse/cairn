@@ -105,5 +105,11 @@
     "settings.visibility.description": "Viditelnost profilu ovlivňuje možnost ostatních přistupovat k vašim veřejným repozitářům. <a href=\"%s\" target=\"_blank\">Zjistit více</a>",
     "avatar.constraints_hint": "Velikost vlastního avataru nesmí překročit %[1]s nebo být větší než %[2]dx%[3]d pixelů",
     "repo.diff.commit.next-short": "Další",
-    "repo.diff.commit.previous-short": "Předchozí"
+    "repo.diff.commit.previous-short": "Předchozí",
+    "profile.actions.tooltip": "Další akce",
+    "keys.gpg.link": "Klíče GPG",
+    "profile.edit.link": "Upravit profil",
+    "feed.atom.link": "Zdroj Atom",
+    "keys.ssh.link": "Klíče SSH",
+    "og.repo.summary_card.alt_description": "Karta se souhrnem repozitáře %[1]s, popsaným jako: %[2]s"
 }

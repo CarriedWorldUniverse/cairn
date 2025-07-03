@@ -95,5 +95,13 @@
     "moderation.abuse_category.spam": "Skräppost",
     "moderation.abuse_category.malware": "Skadlig kod",
     "settings.visibility.description": "Profilens synlighet påverkar andras möjlighet att komma åt dina icke-privata förråd. <a href=\"%s\" target=\"_blank\">Läs mer</a>",
-    "avatar.constraints_hint": "Anpassade avatarer får inte vara större än %[1] eller %[2]dx%[3] bildpunkter"
+    "avatar.constraints_hint": "Anpassade avatarer får inte vara större än %[1] eller %[2]dx%[3] bildpunkter",
+    "og.repo.summary_card.alt_description": "Sammanfattningskort för arkivet %[1]s, beskrivet som: %[2]s",
+    "profile.actions.tooltip": "Fler åtgärder",
+    "keys.gpg.link": "GPG-nycklar",
+    "profile.edit.link": "Redigera profil",
+    "keys.ssh.link": "SSH-nycklar",
+    "repo.diff.commit.next-short": "Nästa",
+    "repo.diff.commit.previous-short": "Föreg",
+    "feed.atom.link": "Atom-flöde"
 }

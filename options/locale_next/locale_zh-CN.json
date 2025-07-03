@@ -78,5 +78,6 @@
     "repo.diff.commit.next-short": "下个",
     "repo.diff.commit.previous-short": "上个",
     "feed.atom.link": "Atom 订阅源",
-    "profile.edit.link": "编辑个人资料"
+    "profile.edit.link": "编辑个人资料",
+    "og.repo.summary_card.alt_description": "仓库 %[1]s 的摘要卡片，描述为：%[2]s"
 }

@@ -102,5 +102,6 @@
     "keys.ssh.link": "SSH-Slötels",
     "keys.gpg.link": "GPG-Slötels",
     "profile.actions.tooltip": "Mehr Aktioonen",
-    "profile.edit.link": "Profil bewarken"
+    "profile.edit.link": "Profil bewarken",
+    "og.repo.summary_card.alt_description": "Tosamenfatens-Kaart vun de Repositorium %[1]s, beschrieven as: %[2]s"
 }
