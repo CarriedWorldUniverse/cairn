@@ -105,5 +105,11 @@
     "settings.visibility.description": "Profila redzamība ietekmē iespēju citiem piekļūt Tavām glabātavām, kas nav privātas. <a href=\"%s\" target=\"_blank\">Uzzināt vairāk</a>",
     "avatar.constraints_hint": "Pielāgots profila attēls nevar pārsniegt %[1]s vai būt lielāks par %[2]dx%[3]d pikseļiem",
     "repo.diff.commit.next-short": "Nāk.",
-    "repo.diff.commit.previous-short": "Iepr."
+    "repo.diff.commit.previous-short": "Iepr.",
+    "profile.actions.tooltip": "Vairāk darbību",
+    "profile.edit.link": "Labot profilu",
+    "feed.atom.link": "Atom barotne",
+    "keys.ssh.link": "SSH atslēgas",
+    "keys.gpg.link": "GPG atslēgas",
+    "og.repo.summary_card.alt_description": "Glabātavas %[1]s kopsavilkuma kartīte, aprakstīta kā: %[2]s"
 }
