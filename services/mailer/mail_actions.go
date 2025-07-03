@@ -16,8 +16,8 @@ const (
 	tplActionNowDone base.TplName = "actions/now_done"
 )
 
-// requires !run.Status.IsSuccess() or !lastRun.Status.IsSuccess()
-func MailActionRun(run *actions_model.ActionRun, priorStatus actions_model.Status, lastRun *actions_model.ActionRun) error {
+var MailActionRun = mailActionRun // make it mockable
+func mailActionRun(run *actions_model.ActionRun, priorStatus actions_model.Status, lastRun *actions_model.ActionRun) error {
 	if setting.MailService == nil {
 		// No mail service configured
 		return nil

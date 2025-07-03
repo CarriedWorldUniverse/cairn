@@ -212,7 +212,7 @@ func (m *mailNotifier) NewUserSignUp(ctx context.Context, newUser *user_model.Us
 
 func (m *mailNotifier) ActionRunNowDone(ctx context.Context, run *actions_model.ActionRun, priorStatus actions_model.Status, lastRun *actions_model.ActionRun) {
 	// Only send a mail on a successful run when the workflow recovered (i.e., the run before failed).
-	if run.Status.IsSuccess() && (lastRun == nil || lastRun.Status.IsSuccess()) {
+	if !run.Status.IsFailure() && (lastRun == nil || !lastRun.Status.IsFailure()) {
 		return
 	}
 	if err := MailActionRun(run, priorStatus, lastRun); err != nil {

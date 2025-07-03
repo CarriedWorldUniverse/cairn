@@ -57,6 +57,91 @@ func assertTranslatedLocaleMailActionsNowDone(t *testing.T, msgBody string) {
 	AssertTranslatedLocale(t, msgBody, "mail.actions.successful_run_after_failure", "mail.actions.not_successful_run", "mail.actions.run_info_cur_status", "mail.actions.run_info_ref", "mail.actions.run_info_previous_status", "mail.actions.run_info_trigger", "mail.view_it_on")
 }
 
+func TestActionRunNowDoneStatusMatrix(t *testing.T) {
+	successStatuses := []actions_model.Status{
+		actions_model.StatusSuccess,
+		actions_model.StatusSkipped,
+		actions_model.StatusCancelled,
+	}
+	failureStatuses := []actions_model.Status{
+		actions_model.StatusFailure,
+	}
+
+	for _, testCase := range []struct {
+		name         string
+		statuses     []actions_model.Status
+		hasLastRun   bool
+		lastStatuses []actions_model.Status
+		run          bool
+	}{
+		{
+			name:     "FailureNoLastRun",
+			statuses: failureStatuses,
+			run:      true,
+		},
+		{
+			name:     "SuccessNoLastRun",
+			statuses: successStatuses,
+			run:      false,
+		},
+		{
+			name:         "FailureLastRunSuccess",
+			statuses:     failureStatuses,
+			hasLastRun:   true,
+			lastStatuses: successStatuses,
+			run:          true,
+		},
+		{
+			name:         "FailureLastRunFailure",
+			statuses:     failureStatuses,
+			hasLastRun:   true,
+			lastStatuses: failureStatuses,
+			run:          true,
+		},
+		{
+			name:         "SuccessLastRunFailure",
+			statuses:     successStatuses,
+			hasLastRun:   true,
+			lastStatuses: failureStatuses,
+			run:          true,
+		},
+		{
+			name:         "SuccessLastRunSuccess",
+			statuses:     successStatuses,
+			hasLastRun:   true,
+			lastStatuses: successStatuses,
+			run:          false,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			var called bool
+			defer test.MockVariableValue(&MailActionRun, func(run *actions_model.ActionRun, priorStatus actions_model.Status, lastRun *actions_model.ActionRun) error {
+				called = true
+				return nil
+			})()
+			for _, status := range testCase.statuses {
+				for _, lastStatus := range testCase.lastStatuses {
+					called = false
+					n := NewNotifier()
+					var lastRun *actions_model.ActionRun
+					if testCase.hasLastRun {
+						lastRun = &actions_model.ActionRun{
+							Status: lastStatus,
+						}
+					}
+					n.ActionRunNowDone(t.Context(),
+						&actions_model.ActionRun{
+							Status: status,
+						},
+						actions_model.StatusUnknown,
+						lastRun)
+					assert.Equal(t, testCase.run, called, "status = %s, lastStatus = %s", status, lastStatus)
+				}
+			}
+		})
+	}
+}
+
 func TestActionRunNowDoneNotificationMail(t *testing.T) {
 	ctx := t.Context()
 
