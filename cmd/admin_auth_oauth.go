@@ -87,6 +87,11 @@ func oauthCLIFlags() []cli.Flag {
 			Usage: "Scopes to request when to authenticate against this OAuth2 source",
 		},
 		&cli.StringFlag{
+			Name:  "attribute-ssh-public-key",
+			Value: "",
+			Usage: "Claim name providing SSH public keys for this source",
+		},
+		&cli.StringFlag{
 			Name:  "required-claim-name",
 			Value: "",
 			Usage: "Claim name that has to be set to allow users to login with this source",
@@ -163,6 +168,7 @@ func parseOAuth2Config(_ context.Context, c *cli.Command) *oauth2.Source {
 		IconURL:                       c.String("icon-url"),
 		SkipLocalTwoFA:                c.Bool("skip-local-2fa"),
 		Scopes:                        c.StringSlice("scopes"),
+		AttributeSSHPublicKey:         c.String("attribute-ssh-public-key"),
 		RequiredClaimName:             c.String("required-claim-name"),
 		RequiredClaimValue:            c.String("required-claim-value"),
 		GroupClaimName:                c.String("group-claim-name"),
@@ -242,6 +248,10 @@ func runUpdateOauth(ctx context.Context, c *cli.Command) error {
 
 	if c.IsSet("scopes") {
 		oAuth2Config.Scopes = c.StringSlice("scopes")
+	}
+
+	if c.IsSet("attribute-ssh-public-key") {
+		oAuth2Config.AttributeSSHPublicKey = c.String("attribute-ssh-public-key")
 	}
 
 	if c.IsSet("required-claim-name") {
