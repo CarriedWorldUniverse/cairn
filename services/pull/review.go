@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
-	"strings"
 
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
@@ -24,8 +22,6 @@ import (
 	"forgejo.org/modules/util"
 	notify_service "forgejo.org/services/notify"
 )
-
-var notEnoughLines = regexp.MustCompile(`fatal: file .* has only \d+ lines?`)
 
 // ErrDismissRequestOnClosedPR represents an error when an user tries to dismiss a review associated to a closed or merged PR.
 type ErrDismissRequestOnClosedPR struct{}
@@ -48,8 +44,8 @@ func (err ErrDismissRequestOnClosedPR) Unwrap() error {
 // If the line got changed the comment is going to be invalidated.
 func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.Repository, branch string) error {
 	// FIXME differentiate between previous and proposed line
-	commit, err := repo.LineBlame(branch, repo.Path, c.TreePath, uint(c.UnsignedLine()))
-	if err != nil && (strings.Contains(err.Error(), "fatal: no such path") || notEnoughLines.MatchString(err.Error())) {
+	commit, err := repo.LineBlame(branch, c.TreePath, c.UnsignedLine())
+	if err != nil && (errors.Is(err, git.ErrBlameFileDoesNotExist) || errors.Is(err, git.ErrBlameFileNotEnoughLines)) {
 		c.Invalidated = true
 		return issues_model.UpdateCommentInvalidate(ctx, c)
 	}
@@ -230,10 +226,10 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			// FIXME validate treePath
 			// Get latest commit referencing the commented line
 			// No need for get commit for base branch changes
-			commit, err := gitRepo.LineBlame(head, gitRepo.Path, treePath, uint(line))
+			commit, err := gitRepo.LineBlame(head, treePath, uint64(line))
 			if err == nil {
 				commitID = commit.ID.String()
-			} else if !strings.Contains(err.Error(), "exit status 128 - fatal: no such path") && !notEnoughLines.MatchString(err.Error()) {
+			} else if !errors.Is(err, git.ErrBlameFileDoesNotExist) && !errors.Is(err, git.ErrBlameFileNotEnoughLines) {
 				return nil, fmt.Errorf("LineBlame[%s, %s, %s, %d]: %w", pr.GetGitRefName(), gitRepo.Path, treePath, line, err)
 			}
 		}
