@@ -79,6 +79,10 @@ linters:
         - name: unreachable-code
         - name: var-declaration
         - name: var-naming
+          arguments:
+            - []
+            - []
+            - - skip-package-name-checks: true
         - name: redefines-builtin-id
           disabled: true
     staticcheck:

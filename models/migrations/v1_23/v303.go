@@ -1,7 +1,7 @@
 // Copyright 2025 The Forgejo Authors.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-package v1_23 //nolint
+package v1_23
 
 import (
 	"forgejo.org/models/migrations/base"

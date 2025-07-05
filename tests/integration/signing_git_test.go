@@ -32,7 +32,7 @@ import (
 func TestInstanceSigning(t *testing.T) {
 	t.Cleanup(func() {
 		// Cannot use t.Context(), it is in the done state.
-		require.NoError(t, git.InitFull(context.Background())) //nolint:usetesting
+		require.NoError(t, git.InitFull(context.Background()))
 	})
 
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
