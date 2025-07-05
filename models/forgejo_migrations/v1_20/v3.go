@@ -1,7 +1,7 @@
 // Copyright 2023 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package forgejo_v1_20 //nolint:revive
+package forgejo_v1_20
 
 import (
 	"forgejo.org/modules/timeutil"

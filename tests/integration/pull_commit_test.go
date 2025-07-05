@@ -65,7 +65,7 @@ func TestPullCommitLinks(t *testing.T) {
 func TestPullCommitSignature(t *testing.T) {
 	t.Cleanup(func() {
 		// Cannot use t.Context(), it is in the done state.
-		require.NoError(t, git.InitFull(context.Background())) //nolint:usetesting
+		require.NoError(t, git.InitFull(context.Background()))
 	})
 
 	defer test.MockVariableValue(&setting.Repository.Signing.SigningName, "UwU")()
