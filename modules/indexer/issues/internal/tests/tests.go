@@ -88,6 +88,11 @@ func TestIndexer(t *testing.T, indexer internal.Indexer) {
 	}
 }
 
+func allResults(t *testing.T, data map[int64]*internal.IndexerData, result *internal.SearchResult) {
+	assert.Len(t, result.Hits, len(data))
+	assert.Equal(t, len(data), int(result.Total))
+}
+
 var cases = []*testIndexerCase{
 	{
 		Name:          "default",
@@ -96,6 +101,34 @@ var cases = []*testIndexerCase{
 			assert.Equal(t, len(data), len(result.Hits))
 			assert.Equal(t, len(data), int(result.Total))
 		},
+	},
+	{
+		Name: "empty keyword",
+		SearchOptions: &internal.SearchOptions{
+			Keyword: "",
+		},
+		Expected: allResults,
+	},
+	{
+		Name: "whitespace keyword",
+		SearchOptions: &internal.SearchOptions{
+			Keyword: "    ",
+		},
+		Expected: allResults,
+	},
+	{
+		Name: "dangling slash in keyword",
+		SearchOptions: &internal.SearchOptions{
+			Keyword: "\\",
+		},
+		Expected: allResults,
+	},
+	{
+		Name: "dangling quote in keyword",
+		SearchOptions: &internal.SearchOptions{
+			Keyword: "\"",
+		},
+		Expected: allResults,
 	},
 	{
 		Name: "empty",

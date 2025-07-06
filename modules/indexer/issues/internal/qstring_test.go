@@ -42,6 +42,36 @@ var testOpts = []testIssueQueryStringOpt{
 		},
 	},
 	{
+		Keyword: "Hello  World",
+		Results: []Token{
+			{
+				Term:  "Hello",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+			{
+				Term:  "World",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
+		Keyword: " Hello World ",
+		Results: []Token{
+			{
+				Term:  "Hello",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+			{
+				Term:  "World",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
 		Keyword: "+Hello +World",
 		Results: []Token{
 			{
@@ -151,6 +181,68 @@ var testOpts = []testIssueQueryStringOpt{
 		Results: []Token{
 			{
 				Term:  "\"Hello",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
+		Keyword: "\\",
+		Results: nil,
+	},
+	{
+		Keyword: "\"",
+		Results: nil,
+	},
+	{
+		Keyword: "Hello \\",
+		Results: []Token{
+			{
+				Term:  "Hello",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
+		Keyword: "\"\"",
+		Results: nil,
+	},
+	{
+		Keyword: "\" World \"",
+		Results: []Token{
+			{
+				Term:  " World ",
+				Fuzzy: false,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
+		Keyword: "\"\" World \"\"",
+		Results: []Token{
+			{
+				Term:  "World",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+		},
+	},
+	{
+		Keyword: "Best \"Hello World\" Ever",
+		Results: []Token{
+			{
+				Term:  "Best",
+				Fuzzy: true,
+				Kind:  BoolOptShould,
+			},
+			{
+				Term:  "Hello World",
+				Fuzzy: false,
+				Kind:  BoolOptShould,
+			},
+			{
+				Term:  "Ever",
 				Fuzzy: true,
 				Kind:  BoolOptShould,
 			},

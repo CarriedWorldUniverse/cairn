@@ -155,11 +155,12 @@ func (b *Indexer) Delete(_ context.Context, ids ...int64) error {
 func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (*internal.SearchResult, error) {
 	var queries []query.Query
 
-	if options.Keyword != "" {
-		tokens, err := options.Tokens()
-		if err != nil {
-			return nil, err
-		}
+	tokens, err := options.Tokens()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tokens) > 0 {
 		q := bleve.NewBooleanQuery()
 		for _, token := range tokens {
 			innerQ := bleve.NewDisjunctionQuery(
