@@ -594,7 +594,7 @@ func CreateBranchProtection(ctx *context.APIContext) {
 	isPlainRule := !git_model.IsRuleNameSpecial(ruleName)
 	var isBranchExist bool
 	if isPlainRule {
-		isBranchExist = git.IsBranchExist(ctx.Req.Context(), ctx.Repo.Repository.RepoPath(), ruleName)
+		isBranchExist = ctx.Repo.GitRepo.IsBranchExist(ruleName)
 	}
 
 	protectBranch, err := git_model.GetProtectedBranchRuleByName(ctx, repo.ID, ruleName)
@@ -982,7 +982,7 @@ func EditBranchProtection(ctx *context.APIContext) {
 	isPlainRule := !git_model.IsRuleNameSpecial(bpName)
 	var isBranchExist bool
 	if isPlainRule {
-		isBranchExist = git.IsBranchExist(ctx.Req.Context(), ctx.Repo.Repository.RepoPath(), bpName)
+		isBranchExist = ctx.Repo.GitRepo.IsBranchExist(bpName)
 	}
 
 	if isBranchExist {
