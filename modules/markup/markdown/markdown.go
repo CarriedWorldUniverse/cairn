@@ -16,6 +16,7 @@ import (
 	"forgejo.org/modules/markup/common"
 	"forgejo.org/modules/markup/markdown/callout"
 	"forgejo.org/modules/markup/markdown/math"
+	markdownutil "forgejo.org/modules/markup/markdown/util"
 	"forgejo.org/modules/setting"
 	giteautil "forgejo.org/modules/util"
 
@@ -32,11 +33,6 @@ import (
 var (
 	specMarkdown     goldmark.Markdown
 	specMarkdownOnce sync.Once
-)
-
-var (
-	renderContextKey = parser.NewContextKey()
-	renderConfigKey  = parser.NewContextKey()
 )
 
 type limitWriter struct {
@@ -64,7 +60,7 @@ func (l *limitWriter) Write(data []byte) (int, error) {
 // newParserContext creates a parser.Context with the render context set
 func newParserContext(ctx *markup.RenderContext) parser.Context {
 	pc := parser.NewContext(parser.WithIDs(newPrefixedIDs()))
-	pc.Set(renderContextKey, ctx)
+	pc.Set(markdownutil.RenderContextKey, ctx)
 	return pc
 }
 
@@ -192,7 +188,7 @@ func actualRender(ctx *markup.RenderContext, input io.Reader, output io.Writer) 
 	}
 	rc.metaLength = metaLength
 
-	pc.Set(renderConfigKey, rc)
+	pc.Set(markdownutil.RenderConfigKey, rc)
 
 	if err := converter.Convert(buf, lw, parser.WithContext(pc)); err != nil {
 		log.Error("Unable to render: %v", err)

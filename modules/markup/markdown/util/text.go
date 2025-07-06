@@ -7,6 +7,7 @@ import (
 	"bytes"
 
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/parser"
 )
 
 func textOfChildren(n ast.Node, src []byte, b *bytes.Buffer) {
@@ -24,3 +25,8 @@ func Text(n ast.Node, src []byte) []byte {
 	textOfChildren(n, src, &b)
 	return b.Bytes()
 }
+
+var (
+	RenderContextKey = parser.NewContextKey()
+	RenderConfigKey  = parser.NewContextKey()
+)
