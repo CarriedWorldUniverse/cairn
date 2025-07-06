@@ -632,17 +632,29 @@ func TestSignInOAuthCallbackPKCE(t *testing.T) {
 	})
 }
 
-func TestWellKnownDocumentIssuerDoesNotEndWithASlash(t *testing.T) {
+func TestWellKnownOpenIDConfiguration(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
-	req := NewRequest(t, "GET", "/.well-known/openid-configuration")
-	resp := MakeRequest(t, req, http.StatusOK)
-	type response struct {
-		Issuer string `json:"issuer"`
-	}
-	parsed := new(response)
 
-	DecodeJSON(t, resp, parsed)
-	assert.Equal(t, strings.TrimSuffix(setting.AppURL, "/"), parsed.Issuer)
+	t.Run("Issuer does not end with a slash", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", "/.well-known/openid-configuration")
+		resp := MakeRequest(t, req, http.StatusOK)
+		type response struct {
+			Issuer string `json:"issuer"`
+		}
+		parsed := new(response)
+
+		DecodeJSON(t, resp, parsed)
+		assert.Equal(t, strings.TrimSuffix(setting.AppURL, "/"), parsed.Issuer)
+	})
+
+	t.Run("Not found if OAuth2 is not enabled", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		defer test.MockVariableValue(&setting.OAuth2.Enabled, false)()
+
+		MakeRequest(t, NewRequest(t, "GET", "/.well-known/openid-configuration"), http.StatusNotFound)
+	})
 }
 
 func TestSignInOAuthCallbackRedirectToEscaping(t *testing.T) {
