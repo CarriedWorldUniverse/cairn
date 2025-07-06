@@ -12,7 +12,6 @@ import (
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/structs"
@@ -105,7 +104,7 @@ func GetPullRequestCommitStatusState(ctx context.Context, pr *issues_model.PullR
 	if pr.Flow == issues_model.PullRequestFlowGithub && !headGitRepo.IsBranchExist(pr.HeadBranch) {
 		return "", errors.New("head branch does not exist, can not merge")
 	}
-	if pr.Flow == issues_model.PullRequestFlowAGit && !git.IsReferenceExist(ctx, headGitRepo.Path, pr.GetGitRefName()) {
+	if pr.Flow == issues_model.PullRequestFlowAGit && !headGitRepo.IsReferenceExist(pr.GetGitRefName()) {
 		return "", errors.New("head branch does not exist, can not merge")
 	}
 

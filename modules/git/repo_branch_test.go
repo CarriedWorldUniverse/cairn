@@ -1,4 +1,5 @@
 // Copyright 2018 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package git
@@ -194,4 +195,18 @@ func TestRepository_IsReferenceExist(t *testing.T) {
 			assert.Equal(t, tt.want, repo.IsReferenceExist(tt.arg))
 		})
 	}
+}
+
+func TestIsBranchExist(t *testing.T) {
+	repo1Path := filepath.Join(testReposDir, "repo1_bare")
+
+	assert.True(t, IsBranchExist(t.Context(), repo1Path, "branch1"))
+	assert.True(t, IsBranchExist(t.Context(), repo1Path, "branch2"))
+	assert.True(t, IsBranchExist(t.Context(), repo1Path, "master"))
+
+	assert.False(t, IsBranchExist(t.Context(), repo1Path, "HEAD"))
+	assert.False(t, IsBranchExist(t.Context(), repo1Path, "153f451b9ee7fa1da317ab17a127e9fd9d384310"))
+	assert.False(t, IsBranchExist(t.Context(), repo1Path, "153f451b9ee7fa1da317ab17a127e9fd9d384310"))
+	assert.False(t, IsBranchExist(t.Context(), repo1Path, "signed-tag"))
+	assert.False(t, IsBranchExist(t.Context(), repo1Path, "test"))
 }

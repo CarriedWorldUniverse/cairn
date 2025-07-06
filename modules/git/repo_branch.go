@@ -19,15 +19,9 @@ import (
 // BranchPrefix base dir of the branch information file store on git
 const BranchPrefix = "refs/heads/"
 
-// IsReferenceExist returns true if given reference exists in the repository.
-func IsReferenceExist(ctx context.Context, repoPath, name string) bool {
-	_, _, err := NewCommand(ctx, "show-ref", "--verify").AddDashesAndList(name).RunStdString(&RunOpts{Dir: repoPath})
-	return err == nil
-}
-
 // IsBranchExist returns true if given branch exists in the repository.
 func IsBranchExist(ctx context.Context, repoPath, name string) bool {
-	return IsReferenceExist(ctx, repoPath, BranchPrefix+name)
+	return NewCommand(ctx, "show-ref", "--verify", "--quiet").AddDashesAndList(BranchPrefix+name).Run(&RunOpts{Dir: repoPath}) == nil
 }
 
 // Branch represents a Git branch.
