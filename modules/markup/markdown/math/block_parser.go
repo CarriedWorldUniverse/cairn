@@ -6,6 +6,9 @@ package math
 import (
 	"bytes"
 
+	"forgejo.org/modules/markup"
+	markdownutil "forgejo.org/modules/markup/markdown/util"
+
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
@@ -61,6 +64,13 @@ func (b *blockParser) Open(parent ast.Node, reader text.Reader, pc parser.Contex
 		return node, parser.Close | parser.NoChildren
 	}
 
+	ctx := pc.Get(markdownutil.RenderContextKey).(*markup.RenderContext)
+	if ctx.IsWiki {
+		reader.Advance(segment.Len() - 1)
+		segment.Start += 2
+		node.Lines().Append(segment)
+		return node, parser.NoChildren
+	}
 	return nil, parser.NoChildren
 }
 

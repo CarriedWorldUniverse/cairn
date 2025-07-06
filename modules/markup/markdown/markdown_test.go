@@ -561,6 +561,14 @@ func TestMathBlock(t *testing.T) {
 			"test $$a$$",
 			`<p>test <code class="language-math display is-loading">a</code></p>` + nl,
 		},
+		{
+			`\[
+[\triangle ABC] = \sqrt{s(s-a)(s-b)(s-c)}
+\]`,
+			`<p>[<br/>
+[\triangle ABC] = \sqrt{s(s-a)(s-b)(s-c)}<br/>
+]</p>` + nl,
+		},
 	}
 
 	for _, test := range testcases {
@@ -568,6 +576,32 @@ func TestMathBlock(t *testing.T) {
 		require.NoError(t, err, "Unexpected error in testcase: %q", test.testcase)
 		assert.Equal(t, template.HTML(test.expected), res, "Unexpected result in testcase %q", test.testcase)
 	}
+
+	t.Run("Wiki context", func(t *testing.T) {
+		testcases := []struct {
+			testcase string
+			expected string
+		}{
+			{
+				"$a$",
+				`<p><code class="language-math is-loading">a</code></p>` + nl,
+			},
+			{
+				`\[
+[\triangle ABC] = \sqrt{s(s-a)(s-b)(s-c)}
+\]`,
+				`<pre class="code-block is-loading"><code class="chroma language-math display">
+[\triangle ABC] = \sqrt{s(s-a)(s-b)(s-c)}
+</code></pre>` + nl,
+			},
+		}
+
+		for _, test := range testcases {
+			res, err := markdown.RenderString(&markup.RenderContext{Ctx: git.DefaultContext, IsWiki: true}, test.testcase)
+			require.NoError(t, err, "Unexpected error in testcase: %q", test.testcase)
+			assert.Equal(t, template.HTML(test.expected), res, "Unexpected result in testcase %q", test.testcase)
+		}
+	})
 }
 
 func TestFootnote(t *testing.T) {
