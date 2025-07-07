@@ -109,6 +109,8 @@ var migrations = []*Migration{
 	NewMigration("Add `notify-email` column to `action_run` table", AddNotifyEmailToActionRun),
 	// v34 -> v35
 	NewMigration("Noop because of https://codeberg.org/forgejo/forgejo/issues/8373", NoopAddIndexToActionRunStopped),
+	// v35 -> v36
+	NewMigration("Fix wiki unit default permission", FixWikiUnitDefaultPermission),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.

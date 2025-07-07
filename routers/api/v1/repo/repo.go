@@ -861,7 +861,7 @@ func updateRepoUnits(ctx *context.APIContext, owner string, repo *repo_model.Rep
 			if *opts.GloballyEditableWiki {
 				wikiPermissions = repo_model.UnitAccessModeWrite
 			} else {
-				wikiPermissions = repo_model.UnitAccessModeRead
+				wikiPermissions = repo_model.UnitAccessModeUnset
 			}
 		}
 
