@@ -41,27 +41,30 @@ func (err ErrUnitTypeNotExist) Unwrap() error {
 }
 
 // RepoUnitAccessMode specifies the users access mode to a repo unit
+// Only UnitAccessModeWrite is used by the wiki, to mark it as instance-writable
 type UnitAccessMode int
 
 const (
 	// UnitAccessModeUnset - no unit mode set
 	UnitAccessModeUnset UnitAccessMode = iota // 0
+
 	// UnitAccessModeNone no access
-	UnitAccessModeNone // 1
+	// UnitAccessModeNone UnitAccessMode = 1
 	// UnitAccessModeRead read access
-	UnitAccessModeRead // 2
+	// UnitAccessModeRead UnitAccessMode = 2
+
 	// UnitAccessModeWrite write access
-	UnitAccessModeWrite // 3
+	UnitAccessModeWrite UnitAccessMode = 3
 )
 
 func (mode UnitAccessMode) ToAccessMode(modeIfUnset perm.AccessMode) perm.AccessMode {
 	switch mode {
 	case UnitAccessModeUnset:
 		return modeIfUnset
-	case UnitAccessModeNone:
-		return perm.AccessModeNone
-	case UnitAccessModeRead:
-		return perm.AccessModeRead
+	// case UnitAccessModeNone:
+	//	return perm.AccessModeNone
+	// case UnitAccessModeRead:
+	//	return perm.AccessModeRead
 	case UnitAccessModeWrite:
 		return perm.AccessModeWrite
 	default:
