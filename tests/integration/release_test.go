@@ -70,7 +70,7 @@ func checkLatestReleaseAndCount(t *testing.T, session *TestSession, repoURL, ver
 	// Check release count in the counter on the Release/Tag switch, as well as that the tab is highlighted
 	if count < 10 { // Only check values less than 10, should be enough attempts before this test cracks
 		// 10 is the pagination limit, but the counter can have more than that
-		releaseTab := htmlDoc.doc.Find(".repository.releases .ui.compact.menu a.active.item[href$='/releases']")
+		releaseTab := htmlDoc.doc.Find(".repository.releases .switch a.active.item[href$='/releases']")
 		assert.Contains(t, releaseTab.Text(), strconv.Itoa(count)+" release") // Could be "1 release" or "4 releases"
 	}
 

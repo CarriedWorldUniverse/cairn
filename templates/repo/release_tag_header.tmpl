@@ -2,24 +2,23 @@
 {{$canReadCode := $.Permission.CanRead $.UnitTypeCode}}
 
 {{if $canReadReleases}}
-	<div class="tw-flex">
-		<div class="tw-flex-1 tw-flex tw-items-center">
-			<h2 class="ui compact small menu small-menu-items">
-				<a class="{{if and .PageIsReleaseList (not .PageIsSingleTag)}}active {{end}}item" href="{{.RepoLink}}/releases{{if .Keyword}}?q={{.Keyword}}{{end}}">{{ctx.Locale.TrN .NumReleases "repo.n_release_one" "repo.n_release_few" (ctx.Locale.PrettyNumber .NumReleases)}}</a>
-				{{if $canReadCode}}
-					<a class="{{if or .PageIsTagList .PageIsSingleTag}}active {{end}}item" href="{{.RepoLink}}/tags{{if .Keyword}}?q={{.Keyword}}{{end}}">{{ctx.Locale.TrN .NumTags "repo.n_tag_one" "repo.n_tag_few" (ctx.Locale.PrettyNumber .NumTags)}}</a>
-				{{end}}
-			</h2>
+	<div class="list-header">
+		<div class="switch">
+			<a class="{{if and .PageIsReleaseList (not .PageIsSingleTag)}}active {{end}}item" href="{{.RepoLink}}/releases{{if .Keyword}}?q={{.Keyword}}{{end}}">{{ctx.Locale.TrN .NumReleases "repo.n_release_one" "repo.n_release_few" (ctx.Locale.PrettyNumber .NumReleases)}}</a>
+			{{if $canReadCode}}
+				<a class="{{if or .PageIsTagList .PageIsSingleTag}}active {{end}}item" href="{{.RepoLink}}/tags{{if .Keyword}}?q={{.Keyword}}{{end}}">{{ctx.Locale.TrN .NumTags "repo.n_tag_one" "repo.n_tag_few" (ctx.Locale.PrettyNumber .NumTags)}}</a>
+			{{end}}
 		</div>
 		{{if .ShowReleaseSearch}}
-			<form class="ignore-dirty tw-w-1/5 tw-mr-3" method="get">
+			<form class="ignore-dirty list-header-search release-list-search" method="get">
 				{{template "shared/search/combo" dict "Value" .Keyword}}
 			</form>
 		{{end}}
-		<div class="button-row">
+		<div class="button-sequence release-list-buttons">
 			{{if .EnableFeed}}
-				<a class="ui small button tw-h-full" href="{{.RepoLink}}/{{if .PageIsTagList}}tags{{else}}releases{{end}}.rss">
-					{{svg "octicon-rss" 16}} {{ctx.Locale.Tr "rss_feed"}}
+				<a class="ui small button" href="{{.RepoLink}}/{{if .PageIsTagList}}tags{{else}}releases{{end}}.rss">
+					{{svg "octicon-rss" 16}}
+					<label class="not-mobile">{{ctx.Locale.Tr "rss_feed"}}</label>
 				</a>
 			{{end}}
 			{{if and (not .PageIsTagList) .CanCreateRelease}}
