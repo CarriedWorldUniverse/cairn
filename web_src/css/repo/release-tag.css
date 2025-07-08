@@ -110,6 +110,12 @@
   .repository.new.release .field button {
     margin-bottom: 1em;
   }
+  .release-list-search {
+    order: 2 !important;
+  }
+  .release-list-buttons {
+    margin-left: auto;
+  }
 }
 
 .repository.new.release .field .attachment_edit {
