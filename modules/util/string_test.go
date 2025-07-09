@@ -45,3 +45,29 @@ func TestToSnakeCase(t *testing.T) {
 		assert.Equal(t, expected, ToSnakeCase(input))
 	}
 }
+
+func TestASCIIEqualFold(t *testing.T) {
+	cases := map[string]struct {
+		First    string
+		Second   string
+		Expected bool
+	}{
+		"Empty String":          {First: "", Second: "", Expected: true},
+		"Single Letter Ident":   {First: "h", Second: "h", Expected: true},
+		"Single Letter Equal":   {First: "h", Second: "H", Expected: true},
+		"Single Letter Unequal": {First: "h", Second: "g", Expected: false},
+		"Simple Match Ident":    {First: "someString", Second: "someString", Expected: true},
+		"Simple Match Equal":    {First: "someString", Second: "someSTRIng", Expected: true},
+		"Simple Match Unequal":  {First: "someString", Second: "sameString", Expected: false},
+		"Different Length":      {First: "abcdef", Second: "abcdefg", Expected: false},
+		"Unicode Kelvin":        {First: "ghijklm", Second: "GHIJ\u212ALM", Expected: false},
+	}
+
+	for name := range cases {
+		c := cases[name]
+		t.Run(name, func(t *testing.T) {
+			Actual := ASCIIEqualFold(c.First, c.Second)
+			assert.Equal(t, c.Expected, Actual)
+		})
+	}
+}
