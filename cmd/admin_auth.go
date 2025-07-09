@@ -17,6 +17,15 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+type (
+	authService struct {
+		initDB            func(ctx context.Context) error
+		createAuthSource  func(context.Context, *auth_model.Source) error
+		updateAuthSource  func(context.Context, *auth_model.Source) error
+		getAuthSourceByID func(ctx context.Context, id int64) (*auth_model.Source, error)
+	}
+)
+
 func microcmdAuthDelete() *cli.Command {
 	return &cli.Command{
 		Name:   "delete",
@@ -57,6 +66,16 @@ func microcmdAuthList() *cli.Command {
 				Usage: "Set to true to print vertical bars between columns",
 			},
 		},
+	}
+}
+
+// newAuthService creates a service with default functions.
+func newAuthService() *authService {
+	return &authService{
+		initDB:            initDB,
+		createAuthSource:  auth_model.CreateSource,
+		updateAuthSource:  auth_model.UpdateSource,
+		getAuthSourceByID: auth_model.GetSourceByID,
 	}
 }
 

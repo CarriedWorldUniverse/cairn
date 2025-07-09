@@ -14,15 +14,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-type (
-	authService struct {
-		initDB            func(ctx context.Context) error
-		createAuthSource  func(context.Context, *auth.Source) error
-		updateAuthSource  func(context.Context, *auth.Source) error
-		getAuthSourceByID func(ctx context.Context, id int64) (*auth.Source, error)
-	}
-)
-
 func commonLdapCLIFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
@@ -181,16 +172,6 @@ func microcmdAuthUpdateLdapSimpleAuth() *cli.Command {
 			return newAuthService().updateLdapSimpleAuth(ctx, cli)
 		},
 		Flags: append([]cli.Flag{idFlag()}, ldapSimpleAuthCLIFlags()...),
-	}
-}
-
-// newAuthService creates a service with default functions.
-func newAuthService() *authService {
-	return &authService{
-		initDB:            initDB,
-		createAuthSource:  auth.CreateSource,
-		updateAuthSource:  auth.UpdateSource,
-		getAuthSourceByID: auth.GetSourceByID,
 	}
 }
 

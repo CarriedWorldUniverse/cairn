@@ -132,7 +132,7 @@ func microcmdAuthAddOauth() *cli.Command {
 	return &cli.Command{
 		Name:   "add-oauth",
 		Usage:  "Add new Oauth authentication source",
-		Action: runAddOauth,
+		Action: newAuthService().addOauth,
 		Flags:  oauthCLIFlags(),
 	}
 }
@@ -141,7 +141,7 @@ func microcmdAuthUpdateOauth() *cli.Command {
 	return &cli.Command{
 		Name:   "update-oauth",
 		Usage:  "Update existing Oauth authentication source",
-		Action: runUpdateOauth,
+		Action: newAuthService().updateOauth,
 		Flags:  append(oauthCLIFlags()[:1], append([]cli.Flag{idFlag()}, oauthCLIFlags()[1:]...)...),
 	}
 }
@@ -179,11 +179,11 @@ func parseOAuth2Config(_ context.Context, c *cli.Command) *oauth2.Source {
 	}
 }
 
-func runAddOauth(ctx context.Context, c *cli.Command) error {
+func (a *authService) addOauth(ctx context.Context, c *cli.Command) error {
 	ctx, cancel := installSignals(ctx)
 	defer cancel()
 
-	if err := initDB(ctx); err != nil {
+	if err := a.initDB(ctx); err != nil {
 		return err
 	}
 
@@ -195,7 +195,7 @@ func runAddOauth(ctx context.Context, c *cli.Command) error {
 		}
 	}
 
-	return auth_model.CreateSource(ctx, &auth_model.Source{
+	return a.createAuthSource(ctx, &auth_model.Source{
 		Type:     auth_model.OAuth2,
 		Name:     c.String("name"),
 		IsActive: true,
@@ -203,7 +203,7 @@ func runAddOauth(ctx context.Context, c *cli.Command) error {
 	})
 }
 
-func runUpdateOauth(ctx context.Context, c *cli.Command) error {
+func (a *authService) updateOauth(ctx context.Context, c *cli.Command) error {
 	if !c.IsSet("id") {
 		return errors.New("--id flag is missing")
 	}
@@ -211,11 +211,11 @@ func runUpdateOauth(ctx context.Context, c *cli.Command) error {
 	ctx, cancel := installSignals(ctx)
 	defer cancel()
 
-	if err := initDB(ctx); err != nil {
+	if err := a.initDB(ctx); err != nil {
 		return err
 	}
 
-	source, err := auth_model.GetSourceByID(ctx, c.Int64("id"))
+	source, err := a.getAuthSourceByID(ctx, c.Int64("id"))
 	if err != nil {
 		return err
 	}
@@ -310,5 +310,5 @@ func runUpdateOauth(ctx context.Context, c *cli.Command) error {
 	oAuth2Config.CustomURLMapping = customURLMapping
 	source.Cfg = oAuth2Config
 
-	return auth_model.UpdateSource(ctx, source)
+	return a.updateAuthSource(ctx, source)
 }
