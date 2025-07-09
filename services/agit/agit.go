@@ -221,7 +221,7 @@ func ProcReceive(ctx context.Context, repo *repo_model.Repository, gitRepo *git.
 		}
 
 		// Validate pull request.
-		pull_service.ValidatePullRequest(ctx, pr, oldCommitID, opts.NewCommitIDs[i], pusher)
+		pull_service.ValidatePullRequest(ctx, pr, opts.NewCommitIDs[i], oldCommitID, pusher)
 
 		// TODO: call `InvalidateCodeComments`
 
