@@ -188,6 +188,7 @@ func NewFuncMap() template.FuncMap {
 		"RenderMarkdownToHtml": RenderMarkdownToHtml,
 		"RenderLabel":          RenderLabel,
 		"RenderLabels":         RenderLabels,
+		"RenderUser":           RenderUser,
 		"RenderReviewRequest":  RenderReviewRequest,
 
 		// -----------------------------------------------------------------

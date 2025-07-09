@@ -221,27 +221,23 @@
 		{{else if and (eq .Type 9) (gt .AssigneeID 0)}}
 			<div class="timeline-item event" id="{{.HashTag}}">
 				<span class="badge">{{svg "octicon-person"}}</span>
-				{{if .RemovedAssignee}}
-					{{template "shared/user/avatarlink" dict "user" .Assignee}}
-					<span class="text grey muted-links">
-						{{template "shared/user/authorlink" .Assignee}}
+				{{template "shared/user/avatarlink" dict "user" .Assignee}}
+				<span class="text grey muted-links">
+					{{template "shared/user/authorlink" .Assignee}}
+					{{if .RemovedAssignee}}
 						{{if eq .Poster.ID .Assignee.ID}}
 							{{ctx.Locale.Tr "repo.issues.remove_self_assignment" $createdStr}}
 						{{else}}
-							{{ctx.Locale.Tr "repo.issues.remove_assignee_at" .Poster.GetDisplayName $createdStr}}
+							{{ctx.Locale.Tr "repo.issues.remove_assignee_at" (RenderUser $.Context .Poster) $createdStr}}
 						{{end}}
-					</span>
-				{{else}}
-					{{template "shared/user/avatarlink" dict "user" .Assignee}}
-					<span class="text grey muted-links">
-						{{template "shared/user/authorlink" .Assignee}}
+					{{else}}
 						{{if eq .Poster.ID .AssigneeID}}
 							{{ctx.Locale.Tr "repo.issues.self_assign_at" $createdStr}}
 						{{else}}
-							{{ctx.Locale.Tr "repo.issues.add_assignee_at" .Poster.GetDisplayName $createdStr}}
+							{{ctx.Locale.Tr "repo.issues.add_assignee_at" (RenderUser $.Context .Poster) $createdStr}}
 						{{end}}
-					</span>
-				{{end}}
+					{{end}}
+				</span>
 			</div>
 		{{else if eq .Type 10}}
 			<div class="timeline-item event" id="{{.HashTag}}">
