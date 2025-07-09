@@ -17,6 +17,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/actions"
 	"forgejo.org/services/auth/source/oauth2"
@@ -125,7 +126,7 @@ func parseToken(req *http.Request) (string, bool) {
 	// check header token
 	if auHead := req.Header.Get("Authorization"); auHead != "" {
 		auths := strings.Fields(auHead)
-		if len(auths) == 2 && (auths[0] == "token" || strings.ToLower(auths[0]) == "bearer") {
+		if len(auths) == 2 && (util.ASCIIEqualFold(auths[0], "token") || util.ASCIIEqualFold(auths[0], "bearer")) {
 			return auths[1], true
 		}
 	}

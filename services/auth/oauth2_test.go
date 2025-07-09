@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 
 	"forgejo.org/models/unittest"
@@ -49,6 +50,33 @@ func TestCheckTaskIsRunning(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			actual := CheckTaskIsRunning(t.Context(), c.TaskID)
 			assert.Equal(t, c.Expected, actual)
+		})
+	}
+}
+
+func TestParseToken(t *testing.T) {
+	cases := map[string]struct {
+		Header        string
+		ExpectedToken string
+		Expected      bool
+	}{
+		"Token Uppercase":  {Header: "Token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Token Lowercase":  {Header: "token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Token Unicode":    {Header: "to\u212Aen 1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
+		"Bearer Uppercase": {Header: "Bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Bearer Lowercase": {Header: "bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Missing type":     {Header: "1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
+		"Three Parts":      {Header: "abc 1234567890 test", ExpectedToken: "", Expected: false},
+	}
+
+	for name := range cases {
+		c := cases[name]
+		t.Run(name, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", "/", nil)
+			req.Header.Add("Authorization", c.Header)
+			ActualToken, ActualSuccess := parseToken(req)
+			assert.Equal(t, c.ExpectedToken, ActualToken)
+			assert.Equal(t, c.Expected, ActualSuccess)
 		})
 	}
 }
