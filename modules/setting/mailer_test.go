@@ -4,6 +4,8 @@
 package setting
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,6 +52,24 @@ func Test_loadMailerFrom(t *testing.T) {
 
 		assert.Equal(t, "jane.doe@example.com", MailService.User)
 		assert.Equal(t, "y0u'll n3v3r gUess th1S!!1", MailService.Passwd)
+	})
+
+	t.Run("Secrets", func(t *testing.T) {
+		uri := filepath.Join(t.TempDir(), "mailer_passwd")
+
+		if err := os.WriteFile(uri, []byte("th1S gUess n3v3r y0u'll!!1"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		cfg, _ := NewConfigProviderFromData("")
+		sec := cfg.Section("mailer")
+		sec.NewKey("ENABLED", "true")
+		sec.NewKey("PASSWD_URI", "file:"+uri)
+
+		MailService.Passwd = ""
+		loadMailerFrom(cfg)
+
+		assert.Equal(t, "th1S gUess n3v3r y0u'll!!1", MailService.Passwd)
 	})
 
 	t.Run("sendmail argument sanitization", func(t *testing.T) {
