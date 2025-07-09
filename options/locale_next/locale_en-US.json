@@ -92,7 +92,7 @@
     "mail.actions.not_successful_run": "Workflow %[1]s failed in repository %[2]s",
     "mail.actions.run_info_cur_status": "This Run's Status: %[1]s (just updated from %[2]s)",
     "mail.actions.run_info_previous_status": "Previous Run's Status: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
+    "mail.actions.run_info_sha": "Commit: %[1]s",
     "mail.actions.run_info_trigger": "Triggered because: %[1]s by: %[2]s",
     "repo.diff.commit.next-short": "Next",
     "repo.diff.commit.previous-short": "Prev",

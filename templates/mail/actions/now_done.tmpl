@@ -21,7 +21,7 @@
 		<br />
 
 		{{.locale.Tr "mail.actions.run_info_cur_status" .Run.Status .PriorStatus}}<br />
-		{{.locale.Tr "mail.actions.run_info_ref" .Branch .CommitSHA}}<br />
+		{{.locale.Tr "mail.actions.run_info_sha" .CommitSHA}}<br />
 		{{if .LastRun}}
 			{{.locale.Tr "mail.actions.run_info_previous_status" .LastRun.Status}}<br />
 		{{end}}

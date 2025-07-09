@@ -60,7 +60,6 @@ func sendMailActionRun(to *user_model.User, run *actions_model.ActionRun, priorS
 	if len(commitSHA) > 7 {
 		commitSHA = commitSHA[:7]
 	}
-	branch := run.PrettyRef()
 
 	data := map[string]any{
 		"locale":          locale,
@@ -73,7 +72,6 @@ func sendMailActionRun(to *user_model.User, run *actions_model.ActionRun, priorS
 		"LastRun":         lastRun,
 		"PriorStatus":     priorStatus,
 		"CommitSHA":       commitSHA,
-		"Branch":          branch,
 		"IsSuccess":       run.Status.IsSuccess(),
 	}
 
