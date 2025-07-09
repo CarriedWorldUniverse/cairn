@@ -28,6 +28,7 @@ import (
 	"forgejo.org/modules/timeutil"
 	asymkey_service "forgejo.org/services/asymkey"
 	notify_service "forgejo.org/services/notify"
+	shared_automerge "forgejo.org/services/shared/automerge"
 )
 
 // prPatchCheckerQueue represents a queue to handle update pull request tests
@@ -170,7 +171,7 @@ func isSignedIfRequired(ctx context.Context, pr *issues_model.PullRequest, doer 
 
 // checkAndUpdateStatus checks if pull request is possible to leaving checking status,
 // and set to be either conflict or mergeable.
-func checkAndUpdateStatus(ctx context.Context, pr *issues_model.PullRequest) {
+func checkAndUpdateStatus(ctx context.Context, pr *issues_model.PullRequest) bool {
 	// If status has not been changed to conflict by testPatch then we are mergeable
 	if pr.Status == issues_model.PullRequestStatusChecking {
 		pr.Status = issues_model.PullRequestStatusMergeable
@@ -184,12 +185,15 @@ func checkAndUpdateStatus(ctx context.Context, pr *issues_model.PullRequest) {
 
 	if has {
 		log.Trace("Not updating status for %-v as it is due to be rechecked", pr)
-		return
+		return false
 	}
 
 	if err := pr.UpdateColsIfNotMerged(ctx, "merge_base", "status", "conflicted_files", "changed_protected_files"); err != nil {
 		log.Error("Update[%-v]: %v", pr, err)
+		return false
 	}
+
+	return true
 }
 
 // getMergeCommit checks if a pull request has been merged
@@ -339,15 +343,22 @@ func handler(items ...string) []string {
 }
 
 func testPR(id int64) {
-	pullWorkingPool.CheckIn(fmt.Sprint(id))
-	defer pullWorkingPool.CheckOut(fmt.Sprint(id))
 	ctx, _, finished := process.GetManager().AddContext(graceful.GetManager().HammerContext(), fmt.Sprintf("Test PR[%d] from patch checking queue", id))
 	defer finished()
+
+	if pr, updated := testPRProtected(ctx, id); pr != nil && updated {
+		shared_automerge.AddToQueueIfMergeable(ctx, pr)
+	}
+}
+
+func testPRProtected(ctx context.Context, id int64) (*issues_model.PullRequest, bool) {
+	pullWorkingPool.CheckIn(fmt.Sprint(id))
+	defer pullWorkingPool.CheckOut(fmt.Sprint(id))
 
 	pr, err := issues_model.GetPullRequestByID(ctx, id)
 	if err != nil {
 		log.Error("Unable to GetPullRequestByID[%d] for testPR: %v", id, err)
-		return
+		return nil, false
 	}
 
 	log.Trace("Testing %-v", pr)
@@ -357,12 +368,12 @@ func testPR(id int64) {
 
 	if pr.HasMerged {
 		log.Trace("%-v is already merged (status: %s, merge commit: %s)", pr, pr.Status, pr.MergedCommitID)
-		return
+		return nil, false
 	}
 
 	if manuallyMerged(ctx, pr) {
 		log.Trace("%-v is manually merged (status: %s, merge commit: %s)", pr, pr.Status, pr.MergedCommitID)
-		return
+		return nil, false
 	}
 
 	if err := TestPatch(pr); err != nil {
@@ -371,9 +382,10 @@ func testPR(id int64) {
 		if err := pr.UpdateCols(ctx, "status"); err != nil {
 			log.Error("update pr [%-v] status to PullRequestStatusError failed: %v", pr, err)
 		}
-		return
+		return nil, false
 	}
-	checkAndUpdateStatus(ctx, pr)
+
+	return pr, checkAndUpdateStatus(ctx, pr)
 }
 
 // CheckPRsForBaseBranch check all pulls with baseBrannch
