@@ -11,6 +11,9 @@ import (
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
 
 	"github.com/stretchr/testify/assert"
@@ -215,9 +218,51 @@ func TestRenderLabels(t *testing.T) {
 
 	tr := &translation.MockLocale{}
 	label := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 1})
+	labelScoped := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 7})
+	labelMalicious := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 11})
+	labelArchived := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 12})
 
-	assert.Contains(t, RenderLabels(db.DefaultContext, tr, []*issues_model.Label{label}, "user2/repo1", false),
-		"user2/repo1/issues?labels=1")
-	assert.Contains(t, RenderLabels(db.DefaultContext, tr, []*issues_model.Label{label}, "user2/repo1", true),
-		"user2/repo1/pulls?labels=1")
+	rendered := RenderLabels(db.DefaultContext, tr, []*issues_model.Label{label}, "user2/repo1", false)
+	assert.Contains(t, rendered, "user2/repo1/issues?labels=1")
+	assert.Contains(t, rendered, ">label1<")
+	assert.Contains(t, rendered, "title='First label'")
+	rendered = RenderLabels(db.DefaultContext, tr, []*issues_model.Label{label}, "user2/repo1", true)
+	assert.Contains(t, rendered, "user2/repo1/pulls?labels=1")
+	assert.Contains(t, rendered, ">label1<")
+	rendered = RenderLabels(db.DefaultContext, tr, []*issues_model.Label{labelScoped}, "user2/repo1", false)
+	assert.Contains(t, rendered, "user2/repo1/issues?labels=7")
+	assert.Contains(t, rendered, ">scope<")
+	assert.Contains(t, rendered, ">label1<")
+	rendered = RenderLabels(db.DefaultContext, tr, []*issues_model.Label{labelMalicious}, "user2/repo1", false)
+	assert.Contains(t, rendered, "user2/repo1/issues?labels=11")
+	assert.Contains(t, rendered, ">  &lt;script&gt;malicious&lt;/script&gt; <")
+	assert.Contains(t, rendered, ">&#39;?&amp;<")
+	assert.Contains(t, rendered, "title='Malicious label &#39; &lt;script&gt;malicious&lt;/script&gt;'")
+	rendered = RenderLabels(db.DefaultContext, tr, []*issues_model.Label{labelArchived}, "user2/repo1", false)
+	assert.Contains(t, rendered, "user2/repo1/issues?labels=12")
+	assert.Contains(t, rendered, ">archived label&lt;&gt;<")
+	assert.Contains(t, rendered, "title='repo.issues.archived_label_description'")
+}
+
+func TestRenderUser(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
+	ghost := user_model.NewGhostUser()
+
+	assert.Contains(t, RenderUser(db.DefaultContext, *user),
+		"<a href='/user2' rel='nofollow'><strong>user2</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *org),
+		"<a href='/org3' rel='nofollow'><strong>org3</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *ghost),
+		"<strong>Ghost</strong>")
+
+	defer test.MockVariableValue(&setting.UI.DefaultShowFullName, true)()
+	assert.Contains(t, RenderUser(db.DefaultContext, *user),
+		"<a href='/user2' rel='nofollow'><strong>&lt; U&lt;se&gt;r Tw&lt;o &gt; &gt;&lt;</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *org),
+		"<a href='/org3' rel='nofollow'><strong>&lt;&lt;&lt;&lt; &gt;&gt; &gt;&gt; &gt; &gt;&gt; &gt; &gt;&gt;&gt; &gt;&gt;</strong></a>")
+	assert.Contains(t, RenderUser(db.DefaultContext, *ghost),
+		"<strong>Ghost</strong>")
 }
