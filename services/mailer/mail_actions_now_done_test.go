@@ -54,7 +54,7 @@ func getActionsNowDoneTestOrg(t *testing.T, name, email string, owner *user_mode
 }
 
 func assertTranslatedLocaleMailActionsNowDone(t *testing.T, msgBody string) {
-	AssertTranslatedLocale(t, msgBody, "mail.actions.successful_run_after_failure", "mail.actions.not_successful_run", "mail.actions.run_info_cur_status", "mail.actions.run_info_ref", "mail.actions.run_info_previous_status", "mail.actions.run_info_trigger", "mail.view_it_on")
+	AssertTranslatedLocale(t, msgBody, "mail.actions.successful_run_after_failure", "mail.actions.not_successful_run", "mail.actions.run_info_cur_status", "mail.actions.run_info_sha", "mail.actions.run_info_previous_status", "mail.actions.run_info_trigger", "mail.view_it_on")
 }
 
 func TestActionRunNowDoneStatusMatrix(t *testing.T) {
