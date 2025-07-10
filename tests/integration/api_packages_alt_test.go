@@ -214,7 +214,7 @@ enabled=1`,
 					}
 
 					assert.Equal(t, "classic", result.Component)
-					assert.Equal(t, "Alt Linux Team", result.Origin)
+					assert.Equal(t, "Forgejo", result.Origin)
 					assert.Equal(t, "Forgejo", result.Label)
 					assert.Equal(t, "x86_64", result.Architecture)
 					assert.False(t, result.NotAutomatic)
@@ -299,17 +299,17 @@ enabled=1`,
 
 					assert.Equal(t, "Forgejo", result.Origin)
 					assert.Equal(t, "Forgejo", result.Label)
-					assert.Equal(t, "Sisyphus", result.Suite)
+					assert.Equal(t, "Unknown", result.Suite)
 					assert.Equal(t, "x86_64", result.Architectures)
 
 					assert.Len(t, result.MD5Sum, 3)
-					assert.Equal(t, "bbf7ae6b2f540673ed1cfc0266b5f319", result.MD5Sum[0].Hash)
-					assert.Equal(t, 1003, result.MD5Sum[0].Size)
+					assert.Equal(t, "3f25f44163e8e512efb248d3b96949c3", result.MD5Sum[0].Hash)
+					assert.Equal(t, 1147, result.MD5Sum[0].Size)
 					assert.Equal(t, "base/pkglist.classic", result.MD5Sum[0].File)
 
 					assert.Len(t, result.BLAKE2B, 3)
-					assert.Equal(t, "b527bf038895ce29107ec3a6d2eebd7c365e8ce5ab767276eeddd7c549a159025225cb0ecfdbf7b71da13db7e865e77bcb0e2dae4d21335df01a4a17e0056a70", result.BLAKE2B[0].Hash)
-					assert.Equal(t, 1003, result.BLAKE2B[0].Size)
+					assert.Equal(t, "21a63e12a41f70e0697d354ae31e22ad6f024ec5ead2ea498b9a1b7db0f98a4e441f46c96d6912fba19148ff013457561fbb9bf3fca2a21d04cf15a325be7de9", result.BLAKE2B[0].Hash)
+					assert.Equal(t, 1147, result.BLAKE2B[0].Size)
 					assert.Equal(t, "base/pkglist.classic", result.BLAKE2B[0].File)
 				})
 
@@ -567,9 +567,9 @@ enabled=1`,
 					assert.Equal(t, "https://gitea.io", result.URL)
 					assert.Equal(t, "x86_64", result.Arch)
 					assert.Equal(t, "gitea-test-1.0.2-1.src.rpm", result.SourceRpm)
-					assert.Equal(t, []string{"", ""}, result.ProvideNames)
+					assert.Equal(t, []string{"gitea-test(x86-64)", "gitea-test(x86-64)"}, result.ProvideNames)
 					assert.Equal(t, []int{16777226, 16777226, 16777226, 16777226, 16777226, 16777226, 16777226}, result.RequireFlags)
-					assert.Equal(t, []string{"", "", "", "", "", "", ""}, result.RequireNames)
+					assert.Equal(t, []string{"rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)", "rpmlib(PayloadIsXz)"}, result.RequireNames)
 					assert.Equal(t, []string{"5.2-1", "5.2-1", "5.2-1", "5.2-1", "5.2-1", "5.2-1", "5.2-1"}, result.RequireVersions)
 					assert.Equal(t, []int{1678276800}, result.ChangeLogTimes)
 					assert.Equal(t, []string{"KN4CK3R <dummy@gitea.io>"}, result.ChangeLogNames)
