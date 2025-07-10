@@ -125,7 +125,7 @@ func (pt Type) Name() string {
 	case TypeRpm:
 		return "RPM"
 	case TypeAlt:
-		return "Alt"
+		return "ALT"
 	case TypeRubyGems:
 		return "RubyGems"
 	case TypeSwift:

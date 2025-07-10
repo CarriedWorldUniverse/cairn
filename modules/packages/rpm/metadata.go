@@ -232,9 +232,10 @@ func getEntries(h *rpmutils.RpmHeader, namesTag, versionsTag, flagsTag int, repo
 	case "alt":
 		for i := range names {
 			e := &Entry{
+				Name:     names[i],
 				AltFlags: uint32(flags[i]),
+				Version:  versions[i],
 			}
-			e.Version = versions[i]
 			entries = append(entries, e)
 		}
 	}

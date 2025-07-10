@@ -631,7 +631,7 @@ func CommonRoutes() *web.Route {
 				baseURLPattern  = regexp.MustCompile(`\A(.*?)\.repo\z`)
 				uploadPattern   = regexp.MustCompile(`\A(.*?)/upload\z`)
 				baseRepoPattern = regexp.MustCompile(`(\S+)\.repo/(\S+)\/base/(\S+)`)
-				rpmsRepoPattern = regexp.MustCompile(`(\S+)\.repo/(\S+)\.(\S+)\/([a-zA-Z0-9_-]+)-([\d.]+-[a-zA-Z0-9_-]+)\.(\S+)\.rpm`)
+				rpmsRepoPattern = regexp.MustCompile(`(\S+)\.repo/(\S+)\.(\S+)\/([a-zA-Z0-9_-]+)-([\d.]+-[a-zA-Z0-9_.-]+)\.(\S+)\.rpm`)
 			)
 
 			r.Methods("HEAD,GET,PUT,DELETE", "*", func(ctx *context.Context) {
