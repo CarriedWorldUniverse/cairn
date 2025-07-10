@@ -84,4 +84,16 @@ func TestTxContext(t *testing.T) {
 			return nil
 		}))
 	}
+
+	t.Run("Reuses parent context", func(t *testing.T) {
+		type unique struct{}
+
+		ctx := context.WithValue(db.DefaultContext, unique{}, "yes!")
+		assert.False(t, db.InTransaction(ctx))
+
+		require.NoError(t, db.WithTx(ctx, func(ctx context.Context) error {
+			assert.Equal(t, "yes!", ctx.Value(unique{}))
+			return nil
+		}))
+	})
 }
