@@ -10,7 +10,8 @@
 import {expect} from '@playwright/test';
 import {test, save_visual, test_context} from './utils_e2e.ts';
 
-test('Mismatched ROOT_URL', async ({browser}) => {
+test('Mismatched ROOT_URL', async ({browser}, workerInfo) => {
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'init script gets randomly ignored');
   const context = await test_context(browser);
   const page = await context.newPage();
 
