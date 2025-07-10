@@ -714,21 +714,23 @@ func buildRelease(ctx context.Context, pv *packages_model.PackageVersion, pfs []
 	for architecture := range architectures.Seq() {
 		version := time.Now().Unix()
 		label := setting.AppName
-		data := fmt.Sprintf(`Archive: Alt Linux Team
+		origin := setting.AppName
+		archive := setting.AppName
+
+		data := fmt.Sprintf(`Archive: %s
 Component: classic
 Version: %d
-Origin: Alt Linux Team
+Origin: %s
 Label: %s
 Architecture: %s
 NotAutomatic: false
 `,
-			version, label, architecture)
+			archive, version, origin, label, architecture)
 		fileInfo, err := addReleaseAsFileToRepo(ctx, pv, "release.classic", data, group, architecture)
 		if err != nil {
 			return err
 		}
 
-		origin := setting.AppName
 		codename := time.Now().Unix()
 		date := time.Now().UTC().Format(time.RFC1123)
 
@@ -744,7 +746,7 @@ NotAutomatic: false
 
 		data = fmt.Sprintf(`Origin: %s
 Label: %s
-Suite: Sisyphus
+Suite: Unknown
 Codename: %d
 Date: %s
 Architectures: %s
