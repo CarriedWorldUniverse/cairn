@@ -141,7 +141,7 @@ func TxContext(parentCtx context.Context) (*Context, Committer, error) {
 		return nil, nil, err
 	}
 
-	return newContext(DefaultContext, sess, true), sess, nil
+	return newContext(parentCtx, sess, true), sess, nil
 }
 
 // WithTx represents executing database operations on a transaction, if the transaction exist,
