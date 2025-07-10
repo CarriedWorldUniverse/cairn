@@ -4,6 +4,7 @@
 package pushoptions
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -109,5 +110,22 @@ func (o gitPushOptions) GetBool(key Key, def bool) bool {
 
 func (o gitPushOptions) GetString(key Key) (string, bool) {
 	val, ok := o[string(key)]
-	return val, ok
+	if !ok {
+		return "", false
+	}
+
+	// If the value is prefixed with `{base64}` then everything after that is very
+	// likely to be encoded via base64.
+	base64Value, found := strings.CutPrefix(val, "{base64}")
+	if !found {
+		return val, true
+	}
+
+	value, err := base64.StdEncoding.DecodeString(base64Value)
+	if err != nil {
+		// Not valid base64? Return the original value.
+		return val, true
+	}
+
+	return string(value), true
 }
