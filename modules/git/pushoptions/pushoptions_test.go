@@ -4,6 +4,7 @@
 package pushoptions
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -91,6 +92,23 @@ func TestParse(t *testing.T) {
 		assert.True(t, options.Empty())
 		assert.False(t, options.Parse("unknown=value"))
 		assert.True(t, options.Empty())
+	})
+
+	t.Run("Base64 values", func(t *testing.T) {
+		options := New()
+
+		description := `I contain
+a
+line`
+		assert.True(t, options.Parse(fmt.Sprintf("%s={base64}%s", AgitDescription, base64.StdEncoding.EncodeToString([]byte(description)))))
+		val, ok := options.GetString(AgitDescription)
+		assert.True(t, ok)
+		assert.Equal(t, description, val)
+
+		assert.True(t, options.Parse(fmt.Sprintf("%s={base64}fooled you", AgitTitle)))
+		val, ok = options.GetString(AgitTitle)
+		assert.True(t, ok)
+		assert.Equal(t, "{base64}fooled you", val)
 	})
 }
 
