@@ -5533,7 +5533,7 @@
         }
       }
     },
-    "/repos/{owner}/{repo}/actions/workflows/{workflowname}/dispatches": {
+    "/repos/{owner}/{repo}/actions/workflows/{workflowfilename}/dispatches": {
       "post": {
         "consumes": [
           "application/json"
@@ -5561,7 +5561,7 @@
           {
             "type": "string",
             "description": "name of the workflow",
-            "name": "workflowname",
+            "name": "workflowfilename",
             "in": "path",
             "required": true
           },
