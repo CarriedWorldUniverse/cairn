@@ -389,6 +389,7 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 		Interval:      interval,
 		SyncOnCommit:  mirrorOption.SyncOnCommit,
 		RemoteAddress: remoteAddress,
+		BranchFilter:  mirrorOption.BranchFilter,
 	}
 
 	var plainPrivateKey []byte

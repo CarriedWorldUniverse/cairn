@@ -55,6 +55,8 @@
     "repo.form.cannot_create": "All spaces in which you can create repositories have reached the limit of repositories.",
     "repo.issue_indexer.title": "Issue Indexer",
     "search.milestone_kind": "Search milestones…",
+    "repo.settings.push_mirror.branch_filter.label": "Branch filter (optional)",
+    "repo.settings.push_mirror.branch_filter.description": "Branches to be mirrored. Leave blank to mirror all branches. See <a href=\"%[1]s\">%[2]s</a> documentation for syntax. Examples: <code>main, release/*</code>",
     "incorrect_root_url": "This Forgejo instance is configured to be served on \"%s\". You are currently viewing Forgejo through a different URL, which may cause parts of the application to break. The canonical URL is controlled by Forgejo admins via the ROOT_URL setting in the app.ini.",
     "themes.names.forgejo-auto": "Forgejo (follow system theme)",
     "themes.names.forgejo-light": "Forgejo light",

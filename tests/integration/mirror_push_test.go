@@ -13,10 +13,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	asymkey_model "forgejo.org/models/asymkey"
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
@@ -26,6 +28,7 @@ import (
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
+	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
 	gitea_context "forgejo.org/services/context"
 	doctor "forgejo.org/services/doctor"
@@ -34,6 +37,7 @@ import (
 	repo_service "forgejo.org/services/repository"
 	"forgejo.org/tests"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -125,6 +129,27 @@ func doCreatePushMirror(ctx APITestContext, address, username, password string) 
 			"push_mirror_username": username,
 			"push_mirror_password": password,
 			"push_mirror_interval": "0",
+		})
+		ctx.Session.MakeRequest(t, req, http.StatusSeeOther)
+
+		flashCookie := ctx.Session.GetCookie(gitea_context.CookieNameFlash)
+		assert.NotNil(t, flashCookie)
+		assert.Contains(t, flashCookie.Value, "success")
+	}
+}
+
+func doCreatePushMirrorWithBranchFilter(ctx APITestContext, address, username, password, branchFilter string) func(t *testing.T) {
+	return func(t *testing.T) {
+		csrf := GetCSRF(t, ctx.Session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
+
+		req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)), map[string]string{
+			"_csrf":                     csrf,
+			"action":                    "push-mirror-add",
+			"push_mirror_address":       address,
+			"push_mirror_username":      username,
+			"push_mirror_password":      password,
+			"push_mirror_interval":      "0",
+			"push_mirror_branch_filter": branchFilter,
 		})
 		ctx.Session.MakeRequest(t, req, http.StatusSeeOther)
 
@@ -322,6 +347,196 @@ func TestSSHPushMirror(t *testing.T) {
 	})
 }
 
+func TestPushMirrorBranchFilterWebUI(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		sess := loginUser(t, user.Name)
+
+		mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+		defer f()
+
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx.Session = sess
+		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
+
+		t.Run("Create push mirror with branch filter via web UI", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress, user.LowerName, userPassword, "main,develop")(t)
+
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 1)
+			assert.Equal(t, "main,develop", mirrors[0].BranchFilter)
+			assert.Equal(t, remoteAddress, mirrors[0].RemoteAddress)
+		})
+
+		t.Run("Create push mirror with empty branch filter via web UI", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			remoteAddress2 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape("foo"))
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress2, user.LowerName, userPassword, "")(t)
+
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 2)
+
+			var emptyMirror *repo_model.PushMirror
+			for _, mirror := range mirrors {
+				if mirror.RemoteAddress == remoteAddress2 {
+					emptyMirror = mirror
+					break
+				}
+			}
+			require.NotNil(t, emptyMirror)
+			assert.Empty(t, emptyMirror.BranchFilter)
+		})
+
+		t.Run("Verify branch filter field is visible in settings page", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
+			resp := sess.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			htmlDoc.AssertElement(t, "input#push_mirror_branch_filter", true)
+		})
+
+		t.Run("Verify existing branch filter values are pre-populated", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
+			resp := sess.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			// Find all edit buttons for push mirrors
+			editButtons := htmlDoc.Find("button[data-modal='#push-mirror-edit-modal']")
+			assert.Equal(t, 2, editButtons.Length(), "Should have 2 push mirror edit buttons")
+
+			// Get the created mirrors from database to match with UI elements
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 2)
+
+			// Create a map of remote address to branch filter for easy lookup
+			expectedFilters := make(map[string]string)
+			for _, mirror := range mirrors {
+				expectedFilters[mirror.RemoteAddress] = mirror.BranchFilter
+			}
+
+			// Check each edit button has the correct branch filter data attribute
+			editButtons.Each(func(i int, s *goquery.Selection) {
+				remoteAddress, exists := s.Attr("data-modal-push-mirror-edit-address")
+				assert.True(t, exists, "Edit button should have remote address data attribute")
+
+				branchFilter, exists := s.Attr("data-modal-push-mirror-edit-branch-filter")
+				assert.True(t, exists, "Edit button should have branch filter data attribute")
+
+				expectedFilter, found := expectedFilters[remoteAddress]
+				assert.True(t, found, "Remote address should match one of the created mirrors")
+				assert.Equal(t, expectedFilter, branchFilter, "Branch filter should match the expected value for remote %s", remoteAddress)
+			})
+
+			// Verify the edit modal has the correct input field for branch filter editing
+			htmlDoc.AssertElement(t, "#push-mirror-edit-modal input[name='push_mirror_branch_filter']", true)
+		})
+	})
+}
+
+func TestPushMirrorBranchFilterIntegration(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		sess := loginUser(t, user.Name)
+		token := getTokenForLoggedInUser(t, sess, auth_model.AccessTokenScopeAll)
+
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx.Session = sess
+		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape("foo"))
+		urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/push_mirrors", user.LowerName, srcRepo.Name)
+
+		t.Run("Web UI to API integration", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create push mirror with branch filter via web UI
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress, user.LowerName, userPassword, "main,develop")(t)
+
+			// Verify it appears in API responses
+			req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+			require.Len(t, pushMirrors, 1)
+			assert.Equal(t, "main,develop", pushMirrors[0].BranchFilter)
+			assert.Equal(t, remoteAddress, pushMirrors[0].RemoteAddress)
+
+			// Verify it's stored correctly in database
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 1)
+			assert.Equal(t, "main,develop", mirrors[0].BranchFilter)
+		})
+
+		t.Run("API to Web UI integration", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repo for this test
+			mirrorRepo2, err := repo_service.CreateRepositoryDirectly(db.DefaultContext, user, user, repo_service.CreateRepoOptions{
+				Name: "test-api-to-ui",
+			})
+			require.NoError(t, err)
+			remoteAddress2 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo2.Name))
+
+			// Create push mirror with branch filter via API
+			req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+				RemoteAddress: remoteAddress2,
+				Interval:      "8h",
+				BranchFilter:  "feature-*,hotfix-*",
+			}).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusOK)
+
+			// Verify it's stored in database
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 2) // Should have 2 mirrors now
+
+			// Find the mirror created via API
+			var apiMirror *repo_model.PushMirror
+			for _, mirror := range mirrors {
+				if mirror.RemoteAddress == remoteAddress2 {
+					apiMirror = mirror
+					break
+				}
+			}
+			require.NotNil(t, apiMirror)
+			assert.Equal(t, "feature-*,hotfix-*", apiMirror.BranchFilter)
+
+			// Verify it appears in web UI with correct branch filter data
+			req = NewRequest(t, "GET", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
+			resp := sess.MakeRequest(t, req, http.StatusOK)
+			assert.Equal(t, http.StatusOK, resp.Code)
+
+			// Check that the edit button has the correct data attributes for branch filter
+			doc := NewHTMLParser(t, resp.Body)
+			editButton := doc.Find(fmt.Sprintf(`button[data-modal-push-mirror-edit-address="%s"]`, remoteAddress2))
+			require.Equal(t, 1, editButton.Length(), "Should find exactly one edit button for the API-created mirror")
+
+			branchFilterAttr, exists := editButton.Attr("data-modal-push-mirror-edit-branch-filter")
+			require.True(t, exists, "Edit button should have branch filter data attribute")
+			assert.Equal(t, "feature-*,hotfix-*", branchFilterAttr, "Branch filter data attribute should match what was set via API")
+		})
+	})
+}
+
 func TestPushMirrorSettings(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
@@ -397,6 +612,462 @@ func TestPushMirrorSettings(t *testing.T) {
 			flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Contains(t, flashCookie.Value, "success")
+		})
+	})
+}
+
+func TestPushMirrorBranchFilterSyncOperations(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		sess := loginUser(t, user.Name)
+
+		// Create test repository with multiple branches
+		testRepoPath := srcRepo.RepoPath()
+
+		// Create additional branches in source repository
+		_, _, err := git.NewCommand(git.DefaultContext, "update-ref", "refs/heads/develop", "refs/heads/master").RunStdString(&git.RunOpts{Dir: testRepoPath})
+		require.NoError(t, err)
+		_, _, err = git.NewCommand(git.DefaultContext, "update-ref", "refs/heads/feature-auth", "refs/heads/master").RunStdString(&git.RunOpts{Dir: testRepoPath})
+		require.NoError(t, err)
+		_, _, err = git.NewCommand(git.DefaultContext, "update-ref", "refs/heads/feature-ui", "refs/heads/master").RunStdString(&git.RunOpts{Dir: testRepoPath})
+		require.NoError(t, err)
+		_, _, err = git.NewCommand(git.DefaultContext, "update-ref", "refs/heads/hotfix-123", "refs/heads/master").RunStdString(&git.RunOpts{Dir: testRepoPath})
+		require.NoError(t, err)
+
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx.Session = sess
+
+		t.Run("Create push mirror with branch filter and trigger sync", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create mirror repository
+			mirrorRepo, err := repo_service.CreateRepositoryDirectly(db.DefaultContext, user, user, repo_service.CreateRepoOptions{
+				Name: "test-sync-branch-filter",
+			})
+			require.NoError(t, err)
+			remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
+
+			// Create push mirror with specific branch filter via web UI
+			branchFilter := "master,develop,feature-auth"
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress, user.LowerName, userPassword, branchFilter)(t)
+
+			// Verify the push mirror was created with branch filter
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 1)
+			assert.Equal(t, branchFilter, mirrors[0].BranchFilter)
+
+			// Verify git remote configuration includes correct refspecs for filtered branches
+			output, _, err := git.NewCommand(git.DefaultContext, "config", "--get-all").AddDynamicArguments(fmt.Sprintf("remote.%s.push", mirrors[0].RemoteName)).RunStdString(&git.RunOpts{Dir: testRepoPath})
+			require.NoError(t, err)
+			assert.Contains(t, output, "+refs/heads/master:refs/heads/master")
+			assert.Contains(t, output, "+refs/heads/develop:refs/heads/develop")
+			assert.Contains(t, output, "+refs/heads/feature-auth:refs/heads/feature-auth")
+			assert.NotContains(t, output, "+refs/heads/feature-ui:refs/heads/feature-ui")
+			assert.NotContains(t, output, "+refs/heads/hotfix-123:refs/heads/hotfix-123")
+			assert.Contains(t, output, "+refs/tags/*:refs/tags/*") // Tags should always be pushed
+
+			// Trigger sync operation
+			ok := mirror_service.SyncPushMirror(db.DefaultContext, mirrors[0].ID)
+			assert.True(t, ok)
+
+			// Verify only filtered branches were pushed to mirror
+			mirrorGitRepo, err := gitrepo.OpenRepository(git.DefaultContext, mirrorRepo)
+			require.NoError(t, err)
+			defer mirrorGitRepo.Close()
+
+			// Check that filtered branches exist in mirror
+			_, err = mirrorGitRepo.GetBranchCommit("master")
+			require.NoError(t, err, "master branch should exist in mirror")
+			_, err = mirrorGitRepo.GetBranchCommit("develop")
+			require.NoError(t, err, "develop branch should exist in mirror")
+			_, err = mirrorGitRepo.GetBranchCommit("feature-auth")
+			require.NoError(t, err, "feature-auth branch should exist in mirror")
+
+			// Check that non-filtered branches don't exist in mirror
+			_, err = mirrorGitRepo.GetBranchCommit("feature-ui")
+			require.Error(t, err, "feature-ui branch should not exist in mirror")
+			_, err = mirrorGitRepo.GetBranchCommit("hotfix-123")
+			require.Error(t, err, "hotfix-123 branch should not exist in mirror")
+		})
+
+		t.Run("Update branch filter and verify git remote settings are updated", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Get the existing mirror
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 1)
+			mirror := mirrors[0]
+			mirror.Repo = srcRepo
+
+			// Update branch filter to include different branches
+			mirror.BranchFilter = "master,feature-ui,hotfix-123"
+			err = repo_model.UpdatePushMirror(db.DefaultContext, mirror)
+			require.NoError(t, err)
+
+			// Update git remote configuration
+			err = mirror_service.UpdatePushMirrorBranchFilter(db.DefaultContext, mirror)
+			require.NoError(t, err)
+
+			// Verify git remote configuration was updated
+			output, _, err := git.NewCommand(git.DefaultContext, "config", "--get-all").AddDynamicArguments(fmt.Sprintf("remote.%s.push", mirror.RemoteName)).RunStdString(&git.RunOpts{Dir: testRepoPath})
+			require.NoError(t, err)
+			assert.Contains(t, output, "+refs/heads/master:refs/heads/master")
+			assert.Contains(t, output, "+refs/heads/feature-ui:refs/heads/feature-ui")
+			assert.Contains(t, output, "+refs/heads/hotfix-123:refs/heads/hotfix-123")
+			assert.NotContains(t, output, "+refs/heads/develop:refs/heads/develop")
+			assert.NotContains(t, output, "+refs/heads/feature-auth:refs/heads/feature-auth")
+			assert.Contains(t, output, "+refs/tags/*:refs/tags/*") // Tags should always be pushed
+
+			// Trigger sync operation with updated filter
+			ok := mirror_service.SyncPushMirror(db.DefaultContext, mirror.ID)
+			assert.True(t, ok)
+		})
+
+		t.Run("Test empty branch filter pushes all branches", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repository for this test
+			mirrorRepo2, err := repo_service.CreateRepositoryDirectly(db.DefaultContext, user, user, repo_service.CreateRepoOptions{
+				Name: "test-sync-empty-filter",
+			})
+			require.NoError(t, err)
+			remoteAddress2 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo2.Name))
+
+			// Create push mirror with empty branch filter
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress2, user.LowerName, userPassword, "")(t)
+
+			// Get the new mirror
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 2) // Should have 2 mirrors now
+
+			var emptyFilterMirror *repo_model.PushMirror
+			for _, mirror := range mirrors {
+				if mirror.RemoteAddress == remoteAddress2 {
+					emptyFilterMirror = mirror
+					break
+				}
+			}
+			require.NotNil(t, emptyFilterMirror)
+			assert.Empty(t, emptyFilterMirror.BranchFilter)
+
+			// Verify git remote configuration for empty filter (should mirror all branches)
+			output, _, err := git.NewCommand(git.DefaultContext, "config", "--get-all").AddDynamicArguments(fmt.Sprintf("remote.%s.push", emptyFilterMirror.RemoteName)).RunStdString(&git.RunOpts{Dir: testRepoPath})
+			require.NoError(t, err)
+			assert.Contains(t, output, "+refs/heads/*:refs/heads/*") // Should mirror all branches
+			assert.Contains(t, output, "+refs/tags/*:refs/tags/*")
+
+			// Trigger sync operation
+			ok := mirror_service.SyncPushMirror(db.DefaultContext, emptyFilterMirror.ID)
+			assert.True(t, ok)
+
+			// Verify all branches were pushed to mirror
+			mirrorGitRepo2, err := gitrepo.OpenRepository(git.DefaultContext, mirrorRepo2)
+			require.NoError(t, err)
+			defer mirrorGitRepo2.Close()
+
+			// Check that all branches exist in mirror
+			_, err = mirrorGitRepo2.GetBranchCommit("master")
+			require.NoError(t, err, "master branch should exist in mirror")
+			_, err = mirrorGitRepo2.GetBranchCommit("develop")
+			require.NoError(t, err, "develop branch should exist in mirror")
+			_, err = mirrorGitRepo2.GetBranchCommit("feature-auth")
+			require.NoError(t, err, "feature-auth branch should exist in mirror")
+			_, err = mirrorGitRepo2.GetBranchCommit("feature-ui")
+			require.NoError(t, err, "feature-ui branch should exist in mirror")
+			_, err = mirrorGitRepo2.GetBranchCommit("hotfix-123")
+			require.NoError(t, err, "hotfix-123 branch should exist in mirror")
+		})
+
+		t.Run("Test glob pattern branch filter in sync operations", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repository for this test
+			mirrorRepo3, err := repo_service.CreateRepositoryDirectly(db.DefaultContext, user, user, repo_service.CreateRepoOptions{
+				Name: "test-sync-glob-filter",
+			})
+			require.NoError(t, err)
+			remoteAddress3 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo3.Name))
+
+			// Create push mirror with glob pattern branch filter
+			globFilter := "master,feature-*"
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress3, user.LowerName, userPassword, globFilter)(t)
+
+			// Get the new mirror
+			mirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, mirrors, 3) // Should have 3 mirrors now
+
+			var globMirror *repo_model.PushMirror
+			for _, mirror := range mirrors {
+				if mirror.RemoteAddress == remoteAddress3 {
+					globMirror = mirror
+					break
+				}
+			}
+			require.NotNil(t, globMirror)
+			assert.Equal(t, globFilter, globMirror.BranchFilter)
+
+			// Verify git remote configuration includes glob pattern branches
+			output, _, err := git.NewCommand(git.DefaultContext, "config", "--get-all").AddDynamicArguments(fmt.Sprintf("remote.%s.push", globMirror.RemoteName)).RunStdString(&git.RunOpts{Dir: testRepoPath})
+			require.NoError(t, err)
+			assert.Contains(t, output, "+refs/heads/master:refs/heads/master")
+			assert.Contains(t, output, "+refs/heads/feature-*:refs/heads/feature-*")
+			assert.NotContains(t, output, "+refs/heads/develop:refs/heads/develop")
+			assert.NotContains(t, output, "+refs/heads/hotfix-123:refs/heads/hotfix-123")
+			assert.Contains(t, output, "+refs/tags/*:refs/tags/*")
+
+			// Trigger sync operation
+			ok := mirror_service.SyncPushMirror(db.DefaultContext, globMirror.ID)
+			assert.True(t, ok)
+
+			// Verify only matching branches were pushed to mirror
+			mirrorGitRepo3, err := gitrepo.OpenRepository(git.DefaultContext, mirrorRepo3)
+			require.NoError(t, err)
+			defer mirrorGitRepo3.Close()
+
+			// Check that matching branches exist in mirror
+			_, err = mirrorGitRepo3.GetBranchCommit("master")
+			require.NoError(t, err, "master branch should exist in mirror")
+			_, err = mirrorGitRepo3.GetBranchCommit("feature-auth")
+			require.NoError(t, err, "feature-auth branch should exist in mirror")
+			_, err = mirrorGitRepo3.GetBranchCommit("feature-ui")
+			require.NoError(t, err, "feature-ui branch should exist in mirror")
+
+			// Check that non-matching branches don't exist in mirror
+			_, err = mirrorGitRepo3.GetBranchCommit("develop")
+			require.Error(t, err, "develop branch should not exist in mirror")
+			_, err = mirrorGitRepo3.GetBranchCommit("hotfix-123")
+			require.Error(t, err, "hotfix-123 branch should not exist in mirror")
+		})
+	})
+}
+
+func TestPushMirrorWebUIToAPIIntegration(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+		require.NoError(t, migrations.Init())
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		session := loginUser(t, user.Name)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeAll)
+
+		mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+		defer f()
+
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx.Session = session
+		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
+		urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/push_mirrors", user.Name, srcRepo.Name)
+
+		t.Run("Set branch filter via web UI and verify in API response", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create push mirror with branch filter via web UI
+			branchFilter := "main,develop,feature-*"
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress, user.LowerName, userPassword, branchFilter)(t)
+
+			// Verify via API that branch filter is set correctly
+			req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+
+			require.Len(t, pushMirrors, 1)
+			assert.Equal(t, branchFilter, pushMirrors[0].BranchFilter, "Branch filter set via web UI should appear in API response")
+			assert.Equal(t, remoteAddress, pushMirrors[0].RemoteAddress)
+
+			// Store mirror info for cleanup
+			mirrorRemoteName := pushMirrors[0].RemoteName
+
+			// Cleanup
+			req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, mirrorRemoteName)).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusNoContent)
+		})
+
+		t.Run("Set empty branch filter via web UI and verify in API response", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repo for this test
+			mirrorRepo2, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+			defer f()
+			remoteAddress2 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo2.Name))
+
+			// Create push mirror with empty branch filter via web UI
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress2, user.LowerName, userPassword, "")(t)
+
+			// Verify via API that branch filter is empty
+			req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+
+			require.Len(t, pushMirrors, 1)
+			assert.Empty(t, pushMirrors[0].BranchFilter, "Empty branch filter set via web UI should appear as empty in API response")
+			assert.Equal(t, remoteAddress2, pushMirrors[0].RemoteAddress)
+
+			// Cleanup
+			req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, pushMirrors[0].RemoteName)).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusNoContent)
+		})
+
+		t.Run("Set complex branch filter via web UI and verify in API response", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repo for this test
+			mirrorRepo3, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+			defer f()
+			remoteAddress3 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo3.Name))
+
+			// Create push mirror with complex branch filter via web UI
+			complexFilter := "main,release/v*,hotfix-*,feature-auth,feature-ui"
+			doCreatePushMirrorWithBranchFilter(ctx, remoteAddress3, user.LowerName, userPassword, complexFilter)(t)
+
+			// Verify via API that complex branch filter is preserved
+			req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+
+			require.Len(t, pushMirrors, 1)
+			assert.Equal(t, complexFilter, pushMirrors[0].BranchFilter, "Complex branch filter set via web UI should be preserved in API response")
+			assert.Equal(t, remoteAddress3, pushMirrors[0].RemoteAddress)
+
+			// Cleanup
+			req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, pushMirrors[0].RemoteName)).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusNoContent)
+		})
+
+		t.Run("Update branch filter via API and verify in web UI", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create another mirror repo for this test
+			mirrorRepo4, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+			defer f()
+			remoteAddress4 := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo4.Name))
+
+			// First create a push mirror via API with initial branch filter
+			initialFilter := "main"
+			req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+				RemoteAddress: remoteAddress4,
+				Interval:      "8h",
+				BranchFilter:  initialFilter,
+			}).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusOK)
+
+			// Get the created mirror info
+			req = NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+			require.Len(t, pushMirrors, 1)
+			assert.Equal(t, initialFilter, pushMirrors[0].BranchFilter)
+			mirrorRemoteName := pushMirrors[0].RemoteName
+
+			// Get the actual mirror from database to get the ID
+			dbMirrors, _, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, srcRepo.ID, db.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, dbMirrors, 1)
+
+			// Update branch filter via web form (using existing repo settings endpoint)
+			updatedFilter := "main,develop,feature-*"
+			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name)), map[string]string{
+				"_csrf":                     GetCSRF(t, session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name))),
+				"action":                    "push-mirror-update",
+				"push_mirror_id":            fmt.Sprintf("%d", dbMirrors[0].ID),
+				"push_mirror_interval":      "8h",
+				"push_mirror_branch_filter": updatedFilter,
+			})
+			session.MakeRequest(t, req, http.StatusSeeOther)
+
+			// Verify the branch filter was updated via API
+			req = NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp = MakeRequest(t, req, http.StatusOK)
+			DecodeJSON(t, resp, &pushMirrors)
+			require.Len(t, pushMirrors, 1)
+			assert.Equal(t, updatedFilter, pushMirrors[0].BranchFilter, "Branch filter should be updated via web form")
+
+			// Verify the branch filter is visible in the web UI settings page
+			req = NewRequest(t, "GET", fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name)))
+			resp = session.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			editButton := htmlDoc.Find(fmt.Sprintf(`button[data-modal-push-mirror-edit-address="%s"]`, remoteAddress4))
+			require.Equal(t, 1, editButton.Length(), "Should find exactly one edit button for the updated mirror")
+
+			branchFilterAttr, exists := editButton.Attr("data-modal-push-mirror-edit-branch-filter")
+			require.True(t, exists, "Edit button should have branch filter data attribute")
+			assert.Equal(t, updatedFilter, branchFilterAttr, "Branch filter data attribute should match the updated value")
+
+			// Cleanup
+			req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, mirrorRemoteName)).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusNoContent)
+		})
+
+		t.Run("Multiple mirrors with different branch filters - UI to API consistency", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Create multiple mirror repos
+			testCases := []struct {
+				name         string
+				branchFilter string
+			}{
+				{"multi-test-1", "main,develop"},
+				{"multi-test-2", "feature-*,hotfix-*"},
+				{"multi-test-3", ""},
+			}
+			for _, tc := range testCases {
+				remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(tc.name))
+				req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+					RemoteAddress: remoteAddress,
+					Interval:      "8h",
+					BranchFilter:  tc.branchFilter,
+				}).AddTokenAuth(token)
+				MakeRequest(t, req, http.StatusOK)
+			}
+
+			// Verify all mirrors and their branch filters via API
+			req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var pushMirrors []*api.PushMirror
+			DecodeJSON(t, resp, &pushMirrors)
+			require.Len(t, pushMirrors, 3)
+
+			// Create a map for easier verification
+			filterMap := make(map[string]string)
+			for _, mirror := range pushMirrors {
+				for _, tc := range testCases {
+					if strings.Contains(mirror.RemoteAddress, tc.name) {
+						filterMap[tc.name] = mirror.BranchFilter
+						// createdMirrors = append(createdMirrors, mirror.RemoteName)
+						break
+					}
+				}
+			}
+
+			// Verify each branch filter is correctly preserved
+			assert.Equal(t, "main,develop", filterMap["multi-test-1"], "First mirror branch filter should match")
+			assert.Equal(t, "feature-*,hotfix-*", filterMap["multi-test-2"], "Second mirror branch filter should match")
+			assert.Empty(t, filterMap["multi-test-3"], "Third mirror branch filter should be empty")
+		})
+
+		t.Run("Verify branch filter field exists in web UI form", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Access the push mirror settings page
+			req := NewRequest(t, "GET", fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name)))
+			resp := session.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			htmlDoc.AssertElement(t, "#push_mirror_branch_filter", true)
 		})
 	})
 }

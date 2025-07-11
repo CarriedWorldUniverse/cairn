@@ -111,6 +111,7 @@ var migrations = []*Migration{
 	NewMigration("Noop because of https://codeberg.org/forgejo/forgejo/issues/8373", NoopAddIndexToActionRunStopped),
 	// v35 -> v36
 	NewMigration("Fix wiki unit default permission", FixWikiUnitDefaultPermission),
+	NewMigration("Add `branch_filter` to `push_mirror` table", AddPushMirrorBranchFilter),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.
