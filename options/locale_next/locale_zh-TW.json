@@ -55,7 +55,6 @@
     "mail.actions.not_successful_run": "儲存庫 %[2]s 中的工作流程 %[1]s 已失敗",
     "mail.actions.run_info_cur_status": "本次執行狀態：%[1]s（剛從 %[2]s 更新）",
     "mail.actions.run_info_previous_status": "前一次執行狀態：%[1]s",
-    "mail.actions.run_info_ref": "分支：%[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "觸發原因：%[1]s，由 %[2]s 執行",
     "discussion.locked": "此討論已被鎖定。僅限貢獻者留言。",
     "alert.asset_load_failed": "無法從 {path} 載入資源檔案。請確保這些資源檔案可以被存取。",

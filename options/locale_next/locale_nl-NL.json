@@ -28,7 +28,6 @@
     "mail.actions.not_successful_run": "Werkstroom %[1]s mislukt in repositorie %[2]s",
     "mail.actions.run_info_cur_status": "De status van deze run: %[1]s (zojuist bijgewerkt van %[2]s)",
     "mail.actions.run_info_previous_status": "Status vorige run: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Getriggerd omdat: %[1]s door: %[2]s",
     "discussion.locked": "Deze discussie is afgesloten. Commentaar is alleen mogelijk voor bijdragers.",
     "relativetime.now": "nu",
@@ -103,5 +102,6 @@
     "feed.atom.link": "Atom-feed",
     "repo.diff.commit.previous-short": "Vorige",
     "avatar.constraints_hint": "Eigen avatars mogen niet groter zijn dan %[1]s in grootte of groter zijn dan %[2]dx%[3]d pixels",
-    "og.repo.summary_card.alt_description": "Samenvattingsoverzicht van repositorie %[1]s, omschreven als: %[2]s"
+    "og.repo.summary_card.alt_description": "Samenvattingsoverzicht van repositorie %[1]s, omschreven als: %[2]s",
+    "mail.actions.run_info_sha": "Commit: %[1]s"
 }

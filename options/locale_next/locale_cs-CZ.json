@@ -28,7 +28,6 @@
     "mail.actions.not_successful_run": "Workflow %[1]s selhal v repozitáři %[2]s",
     "mail.actions.run_info_cur_status": "Stav tohoto procesu: %[1]s (právě aktualizováno z %[2]s)",
     "mail.actions.run_info_previous_status": "Stav předchozího procesu: %[1]s",
-    "mail.actions.run_info_ref": "Větev: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Spuštěno z důvodu: %[1]s od: %[2]s",
     "mail.actions.successful_run_after_failure_subject": "Workflow %[1]s obnoven v repozitáři %[2]s",
     "mail.actions.successful_run_after_failure": "Workflow %[1]s obnoven v repozitáři %[2]s",
@@ -111,5 +110,6 @@
     "profile.edit.link": "Upravit profil",
     "feed.atom.link": "Zdroj Atom",
     "keys.ssh.link": "Klíče SSH",
-    "og.repo.summary_card.alt_description": "Karta se souhrnem repozitáře %[1]s, popsaným jako: %[2]s"
+    "og.repo.summary_card.alt_description": "Karta se souhrnem repozitáře %[1]s, popsaným jako: %[2]s",
+    "mail.actions.run_info_sha": "Revize: %[1]s"
 }

@@ -30,7 +30,6 @@
     "mail.actions.not_successful_run": "Darbplūsmas %[1] atteice glabātavā %[2]s",
     "mail.actions.run_info_cur_status": "Šī izpildījuma stāvoklis: %[1]s (tikko atjaunināts no %[2]s)",
     "mail.actions.run_info_previous_status": "Iepriekšējā izpildījuma stāvoklis: %[1]s",
-    "mail.actions.run_info_ref": "Zars: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Izraisīšanas iemesls: %[2]s no: %[2]s",
     "discussion.locked": "Šī apspriede tika slēgta. Piebilžu pievienošana ir ļauta tikai līdzdalībniekiem.",
     "relativetime.future": "nākotnē",
@@ -111,5 +110,6 @@
     "feed.atom.link": "Atom barotne",
     "keys.ssh.link": "SSH atslēgas",
     "keys.gpg.link": "GPG atslēgas",
-    "og.repo.summary_card.alt_description": "Glabātavas %[1]s kopsavilkuma kartīte, aprakstīta kā: %[2]s"
+    "og.repo.summary_card.alt_description": "Glabātavas %[1]s kopsavilkuma kartīte, aprakstīta kā: %[2]s",
+    "mail.actions.run_info_sha": "Iesūtījums: %[1]s"
 }

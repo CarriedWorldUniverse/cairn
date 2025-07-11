@@ -27,7 +27,6 @@
     "mail.actions.successful_run_after_failure_subject": "Sequência de trabalho %[1]s foi recuperada no repositório %[2]s",
     "mail.actions.not_successful_run_subject": "Sequência de trabalho %[1]s falhou no repositório %[2]s",
     "mail.actions.not_successful_run": "Sequência de trabalho %[1]s falhou no repositório %[2]s",
-    "mail.actions.run_info_ref": "Ramo: %[1]s (%[2]s)",
     "mail.actions.successful_run_after_failure": "Sequência de trabalho %[1]s foi recuperada no repositório %[2]s",
     "discussion.locked": "Esta discussão foi fechada. Apenas contribuidores podem publicar comentários.",
     "mail.actions.run_info_cur_status": "Estado desta execução: %[1]s (atualizado recentemente de %[2]s)",

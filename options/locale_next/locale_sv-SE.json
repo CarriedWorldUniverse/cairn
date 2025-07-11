@@ -27,7 +27,6 @@
     "moderation.reporting_failed": "Det gick inte att skicka in den nya övergreppsrapporten: %v",
     "mail.actions.run_info_cur_status": "Status för denna körning: %[1]s (just uppdaterad från %[2]s)",
     "mail.actions.run_info_previous_status": "Status för föregående körning: %[1]s",
-    "mail.actions.run_info_ref": "Gren: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Utlöses på grund av: %[1]s av: %[2]s",
     "alert.asset_load_failed": "Misslyckades med att läsa in resursfiler från {path}. Kontrollera att resursfilerna är åtkomliga.",
     "install.invalid_lfs_path": "Det gick inte att skapa LFS-roten på den angivna sökvägen: %[1]s",
