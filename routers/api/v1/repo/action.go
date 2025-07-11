@@ -615,7 +615,7 @@ func ListActionTasks(ctx *context.APIContext) {
 
 // DispatchWorkflow dispatches a workflow
 func DispatchWorkflow(ctx *context.APIContext) {
-	// swagger:operation POST /repos/{owner}/{repo}/actions/workflows/{workflowname}/dispatches repository DispatchWorkflow
+	// swagger:operation POST /repos/{owner}/{repo}/actions/workflows/{workflowfilename}/dispatches repository DispatchWorkflow
 	// ---
 	// summary: Dispatches a workflow
 	// consumes:
@@ -631,7 +631,7 @@ func DispatchWorkflow(ctx *context.APIContext) {
 	//   description: name of the repo
 	//   type: string
 	//   required: true
-	// - name: workflowname
+	// - name: workflowfilename
 	//   in: path
 	//   description: name of the workflow
 	//   type: string
@@ -649,13 +649,13 @@ func DispatchWorkflow(ctx *context.APIContext) {
 	//     "$ref": "#/responses/notFound"
 
 	opt := web.GetForm(ctx).(*api.DispatchWorkflowOption)
-	name := ctx.Params("workflowname")
+	name := ctx.Params("workflowfilename")
 
 	if len(opt.Ref) == 0 {
 		ctx.Error(http.StatusBadRequest, "ref", "ref is empty")
 		return
 	} else if len(name) == 0 {
-		ctx.Error(http.StatusBadRequest, "workflowname", "workflow name is empty")
+		ctx.Error(http.StatusBadRequest, "workflowfilename", "workflow file name is empty")
 		return
 	}
 
