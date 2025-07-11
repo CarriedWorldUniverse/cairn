@@ -27,7 +27,6 @@
     "mail.actions.successful_run_after_failure": "Arbeitsablauf %[1]s in Repository %[2]s wiederhergestellt",
     "mail.actions.not_successful_run": "Arbeitsablauf %[1]s in Repository %[2]s fehlgeschlagen",
     "mail.actions.run_info_previous_status": "Vorheriger Status des Runs: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Ausgelöst, weil: %[1]s durch: %[2]s",
     "mail.actions.run_info_cur_status": "Status dieses Runs: %[1]s (gerade eben von %[2]s aktualisiert)",
     "discussion.locked": "Diese Diskussion wurde gesperrt. Nur Mitwirkende können kommentieren.",
@@ -103,5 +102,6 @@
     "keys.ssh.link": "SSH-Schlüssel",
     "keys.gpg.link": "GPG-Schlüssel",
     "profile.actions.tooltip": "Mehr Aktionen",
-    "og.repo.summary_card.alt_description": "Zusammenfassungskarte des Repositorys %[1]s, beschrieben als %[2]s"
+    "og.repo.summary_card.alt_description": "Zusammenfassungskarte des Repositorys %[1]s, beschrieben als %[2]s",
+    "mail.actions.run_info_sha": "Commit: %[1]s"
 }

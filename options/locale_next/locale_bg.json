@@ -7,7 +7,6 @@
         "one": "иска да слее %[1]d подаване от <code>%[2]s</code> в <code id=\"%[4]s\">%[3]s</code>",
         "other": "иска да слее %[1]d подавания от <code>%[2]s</code> в <code id=\"%[4]s\">%[3]s</code>"
     },
-    "mail.actions.run_info_ref": "Клон: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Задействано поради: %[1]s от: %[2]s",
     "meta.last_line": "В България расте най-старото дърво в страната, Байкушевата мура, на възраст над 1300 години.",
     "relativetime.1day": "вчера",

@@ -25,7 +25,6 @@
     "mail.actions.successful_run_after_failure": "Na-recover ang workflow na %[1]s sa repositoryong %[2]s",
     "mail.actions.not_successful_run": "Nabigo ang workflow na %[1]s sa repositoryong %[2]s",
     "mail.actions.run_info_previous_status": "Nakaraang Status ng Run: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Na-trigger dahil: %[1]s ni/ng: %[2]s",
     "mail.actions.successful_run_after_failure_subject": "Na-recover ang workflow na %[1]s sa repositoryong %[2]s",
     "mail.actions.not_successful_run_subject": "Nabigo ang workflow na %[1]s sa repositoryong %[2]s",

@@ -10,7 +10,6 @@
         "other": ""
     },
     "search.milestone_kind": "Recherche dans les jalons…",
-    "mail.actions.run_info_ref": "Branche : %[1]s (%[2]s)",
     "discussion.locked": "Cette discussion a été bloqué. Les commentaires sont limités aux contributeurs.",
     "relativetime.now": "maintenant",
     "relativetime.future": "dans le future",

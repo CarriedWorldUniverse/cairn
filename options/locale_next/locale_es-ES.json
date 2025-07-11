@@ -30,5 +30,6 @@
     "relativetime.future": "en el futuro",
     "home.explore_repos": "Explorar repositorios",
     "home.explore_users": "Explorar usuarios",
-    "home.explore_orgs": "Explorar organizaciones"
+    "home.explore_orgs": "Explorar organizaciones",
+    "moderation.abuse_category.malware": "Malware"
 }
