@@ -28,7 +28,6 @@
     "mail.actions.not_successful_run": "Arbejdsgangen %[1]s mislykkedes i depotet %[2]s",
     "mail.actions.run_info_cur_status": "Status for denne kørsel: %[1]s (lige opdateret fra %[2]s)",
     "mail.actions.run_info_previous_status": "Status for forrige kørsel: %[1]s",
-    "mail.actions.run_info_ref": "Gren: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Udløst fordi: %[1]s af: %[2]s",
     "discussion.locked": "Denne diskussion er blevet låst. Kommentarer er begrænset til bidragydere.",
     "relativetime.now": "nu",
@@ -97,5 +96,10 @@
     "settings.visibility.description": "Profilsynlighed påvirker andres adgang til dine ikke-private depoter. <a href=\"%s\" target=\"_blank\">Læs mere</a>",
     "avatar.constraints_hint": "Brugerdefineret avatar må ikke overstige %[1]s i størrelse eller være større end %[2]dx%[3]d pixels",
     "repo.diff.commit.next-short": "Næste",
-    "repo.diff.commit.previous-short": "Forrige"
+    "repo.diff.commit.previous-short": "Forrige",
+    "profile.actions.tooltip": "Flere handlinger",
+    "profile.edit.link": "Redigere profil",
+    "feed.atom.link": "Atom feed",
+    "keys.ssh.link": "SSH Nøgler",
+    "keys.gpg.link": "GPG Nøgler"
 }
