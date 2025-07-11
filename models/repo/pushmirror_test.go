@@ -75,3 +75,139 @@ func TestPushMirrorPrivatekey(t *testing.T) {
 		assert.Empty(t, actualPrivateKey)
 	})
 }
+
+func TestPushMirrorBranchFilter(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	t.Run("Create push mirror with branch filter", func(t *testing.T) {
+		m := &repo_model.PushMirror{
+			RepoID:       1,
+			RemoteName:   "test-branch-filter",
+			BranchFilter: "main,develop",
+		}
+		unittest.AssertSuccessfulInsert(t, m)
+		assert.NotZero(t, m.ID)
+		assert.Equal(t, "main,develop", m.BranchFilter)
+	})
+
+	t.Run("Create push mirror with empty branch filter", func(t *testing.T) {
+		m := &repo_model.PushMirror{
+			RepoID:       1,
+			RemoteName:   "test-empty-filter",
+			BranchFilter: "",
+		}
+		unittest.AssertSuccessfulInsert(t, m)
+		assert.NotZero(t, m.ID)
+		assert.Empty(t, m.BranchFilter)
+	})
+
+	t.Run("Create push mirror without branch filter", func(t *testing.T) {
+		m := &repo_model.PushMirror{
+			RepoID:     1,
+			RemoteName: "test-no-filter",
+			// BranchFilter: "",
+		}
+		unittest.AssertSuccessfulInsert(t, m)
+		assert.NotZero(t, m.ID)
+		assert.Empty(t, m.BranchFilter)
+	})
+
+	t.Run("Update branch filter", func(t *testing.T) {
+		m := &repo_model.PushMirror{
+			RepoID:       1,
+			RemoteName:   "test-update",
+			BranchFilter: "main",
+		}
+		unittest.AssertSuccessfulInsert(t, m)
+
+		m.BranchFilter = "main,develop"
+		require.NoError(t, repo_model.UpdatePushMirrorBranchFilter(db.DefaultContext, m))
+
+		updated := unittest.AssertExistsAndLoadBean(t, &repo_model.PushMirror{ID: m.ID})
+		assert.Equal(t, "main,develop", updated.BranchFilter)
+	})
+
+	t.Run("Retrieve push mirror with branch filter", func(t *testing.T) {
+		original := &repo_model.PushMirror{
+			RepoID:       1,
+			RemoteName:   "test-retrieve",
+			BranchFilter: "main,develop",
+		}
+		unittest.AssertSuccessfulInsert(t, original)
+
+		retrieved := unittest.AssertExistsAndLoadBean(t, &repo_model.PushMirror{ID: original.ID})
+		assert.Equal(t, original.BranchFilter, retrieved.BranchFilter)
+		assert.Equal(t, "main,develop", retrieved.BranchFilter)
+	})
+
+	t.Run("GetPushMirrorsByRepoID includes branch filter", func(t *testing.T) {
+		mirrors := []*repo_model.PushMirror{
+			{
+				RepoID:       2,
+				RemoteName:   "mirror-1",
+				BranchFilter: "main",
+			},
+			{
+				RepoID:       2,
+				RemoteName:   "mirror-2",
+				BranchFilter: "develop,feature-*",
+			},
+			{
+				RepoID:       2,
+				RemoteName:   "mirror-3",
+				BranchFilter: "",
+			},
+		}
+
+		for _, mirror := range mirrors {
+			unittest.AssertSuccessfulInsert(t, mirror)
+		}
+
+		retrieved, count, err := repo_model.GetPushMirrorsByRepoID(db.DefaultContext, 2, db.ListOptions{})
+		require.NoError(t, err)
+		assert.Equal(t, int64(3), count)
+		assert.Len(t, retrieved, 3)
+
+		filterMap := make(map[string]string)
+		for _, mirror := range retrieved {
+			filterMap[mirror.RemoteName] = mirror.BranchFilter
+		}
+
+		assert.Equal(t, "main", filterMap["mirror-1"])
+		assert.Equal(t, "develop,feature-*", filterMap["mirror-2"])
+		assert.Empty(t, filterMap["mirror-3"])
+	})
+
+	t.Run("GetPushMirrorsSyncedOnCommit includes branch filter", func(t *testing.T) {
+		mirrors := []*repo_model.PushMirror{
+			{
+				RepoID:       3,
+				RemoteName:   "sync-mirror-1",
+				BranchFilter: "main,develop",
+				SyncOnCommit: true,
+			},
+			{
+				RepoID:       3,
+				RemoteName:   "sync-mirror-2",
+				BranchFilter: "feature-*",
+				SyncOnCommit: true,
+			},
+		}
+
+		for _, mirror := range mirrors {
+			unittest.AssertSuccessfulInsert(t, mirror)
+		}
+
+		retrieved, err := repo_model.GetPushMirrorsSyncedOnCommit(db.DefaultContext, 3)
+		require.NoError(t, err)
+		assert.Len(t, retrieved, 2)
+
+		filterMap := make(map[string]string)
+		for _, mirror := range retrieved {
+			filterMap[mirror.RemoteName] = mirror.BranchFilter
+		}
+
+		assert.Equal(t, "main,develop", filterMap["sync-mirror-1"])
+		assert.Equal(t, "feature-*", filterMap["sync-mirror-2"])
+	})
+}

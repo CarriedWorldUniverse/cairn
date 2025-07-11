@@ -23111,6 +23111,10 @@
       "type": "object",
       "title": "CreatePushMirrorOption represents need information to create a push mirror of a repository.",
       "properties": {
+        "branch_filter": {
+          "type": "string",
+          "x-go-name": "BranchFilter"
+        },
         "interval": {
           "type": "string",
           "x-go-name": "Interval"
@@ -26994,6 +26998,10 @@
       "description": "PushMirror represents information of a push mirror",
       "type": "object",
       "properties": {
+        "branch_filter": {
+          "type": "string",
+          "x-go-name": "BranchFilter"
+        },
         "created": {
           "type": "string",
           "format": "date-time",

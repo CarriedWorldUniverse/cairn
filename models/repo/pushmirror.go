@@ -32,6 +32,7 @@ type PushMirror struct {
 	Repo          *Repository `xorm:"-"`
 	RemoteName    string
 	RemoteAddress string `xorm:"VARCHAR(2048)"`
+	BranchFilter  string `xorm:"VARCHAR(2048)"`
 
 	// A keypair formatted in OpenSSH format.
 	PublicKey  string `xorm:"VARCHAR(100)"`
@@ -119,6 +120,11 @@ func UpdatePushMirror(ctx context.Context, m *PushMirror) error {
 // UpdatePushMirrorInterval updates the push-mirror
 func UpdatePushMirrorInterval(ctx context.Context, m *PushMirror) error {
 	_, err := db.GetEngine(ctx).ID(m.ID).Cols("interval").Update(m)
+	return err
+}
+
+func UpdatePushMirrorBranchFilter(ctx context.Context, m *PushMirror) error {
+	_, err := db.GetEngine(ctx).ID(m.ID).Cols("branch_filter").Update(m)
 	return err
 }
 

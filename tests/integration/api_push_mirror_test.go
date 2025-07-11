@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -140,6 +141,159 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 			}
 		})
 	}
+}
+
+func TestAPIPushMirrorBranchFilter(t *testing.T) {
+	onGiteaRun(t, testAPIPushMirrorBranchFilter)
+}
+
+func testAPIPushMirrorBranchFilter(t *testing.T, u *url.URL) {
+	defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
+	defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
+	defer test.MockProtect(&mirror_service.AddPushMirrorRemote)()
+	defer test.MockProtect(&repo_model.DeletePushMirrors)()
+
+	require.NoError(t, migrations.Init())
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: srcRepo.OwnerID})
+	session := loginUser(t, user.Name)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeAll)
+	urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/push_mirrors", owner.Name, srcRepo.Name)
+
+	mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
+	defer f()
+	remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
+
+	t.Run("Create push mirror with branch filter", func(t *testing.T) {
+		req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+			RemoteAddress: remoteAddress,
+			Interval:      "8h",
+			BranchFilter:  "main,develop",
+		}).AddTokenAuth(token)
+
+		MakeRequest(t, req, http.StatusOK)
+
+		// Verify the push mirror was created with branch filter
+		req = NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var pushMirrors []*api.PushMirror
+		DecodeJSON(t, resp, &pushMirrors)
+		require.Len(t, pushMirrors, 1)
+		assert.Equal(t, "main,develop", pushMirrors[0].BranchFilter)
+
+		// Cleanup
+		req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, pushMirrors[0].RemoteName)).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNoContent)
+	})
+
+	t.Run("Create push mirror with empty branch filter", func(t *testing.T) {
+		req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+			RemoteAddress: remoteAddress,
+			Interval:      "8h",
+			BranchFilter:  "",
+		}).AddTokenAuth(token)
+
+		MakeRequest(t, req, http.StatusOK)
+
+		// Verify the push mirror was created with empty branch filter
+		req = NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var pushMirrors []*api.PushMirror
+		DecodeJSON(t, resp, &pushMirrors)
+		require.Len(t, pushMirrors, 1)
+		assert.Empty(t, pushMirrors[0].BranchFilter)
+
+		// Cleanup
+		req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, pushMirrors[0].RemoteName)).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNoContent)
+	})
+
+	t.Run("Create push mirror without branch filter parameter", func(t *testing.T) {
+		req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+			RemoteAddress: remoteAddress,
+			Interval:      "8h",
+			// BranchFilter: ""
+		}).AddTokenAuth(token)
+
+		MakeRequest(t, req, http.StatusOK)
+
+		// Verify the push mirror defaults to empty branch filter
+		req = NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var pushMirrors []*api.PushMirror
+		DecodeJSON(t, resp, &pushMirrors)
+		require.Len(t, pushMirrors, 1)
+		assert.Empty(t, pushMirrors[0].BranchFilter)
+
+		// Cleanup
+		req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, pushMirrors[0].RemoteName)).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNoContent)
+	})
+
+	t.Run("Retrieve multiple push mirrors with different branch filters", func(t *testing.T) {
+		// Create multiple push mirrors with different branch filters
+		testCases := []struct {
+			name         string
+			branchFilter string
+		}{
+			{"mirror-1", "main"},
+			{"mirror-2", "develop,feature-*"},
+			{"mirror-3", ""},
+		}
+
+		// Create mirrors
+		mirrorCleanups := []func(){}
+		defer func() {
+			for _, mirror := range mirrorCleanups {
+				mirror()
+			}
+		}()
+		for _, tc := range testCases {
+			mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, tc.name, []unit.Type{unit.TypeCode}, nil, nil)
+			mirrorCleanups = append(mirrorCleanups, f)
+
+			remoteAddr := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
+			req := NewRequestWithJSON(t, "POST", urlStr, &api.CreatePushMirrorOption{
+				RemoteAddress: remoteAddr,
+				Interval:      "8h",
+				BranchFilter:  tc.branchFilter,
+			}).AddTokenAuth(token)
+
+			MakeRequest(t, req, http.StatusOK)
+		}
+
+		// Retrieve all mirrors and verify branch filters
+		req := NewRequest(t, "GET", urlStr).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var pushMirrors []*api.PushMirror
+		DecodeJSON(t, resp, &pushMirrors)
+		require.Len(t, pushMirrors, 3)
+
+		// Create a map for easier verification
+		filterMap := make(map[string]string)
+		var createdMirrors []*api.PushMirror
+		for _, mirror := range pushMirrors {
+			for _, tc := range testCases {
+				if strings.Contains(mirror.RemoteAddress, tc.name) {
+					filterMap[tc.name] = mirror.BranchFilter
+					createdMirrors = append(createdMirrors, mirror)
+					break
+				}
+			}
+		}
+
+		assert.Equal(t, "main", filterMap["mirror-1"])
+		assert.Equal(t, "develop,feature-*", filterMap["mirror-2"])
+		assert.Empty(t, filterMap["mirror-3"])
+
+		// Cleanup
+		for _, mirror := range createdMirrors {
+			req = NewRequest(t, "DELETE", fmt.Sprintf("%s/%s", urlStr, mirror.RemoteName)).AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusNoContent)
+		}
+	})
 }
 
 func TestAPIPushMirrorSSH(t *testing.T) {
