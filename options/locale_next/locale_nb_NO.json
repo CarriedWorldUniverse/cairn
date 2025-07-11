@@ -98,7 +98,6 @@
     "mail.actions.not_successful_run": "Arbeidsflyten %[1]s feilet i repository %[2]s",
     "mail.actions.run_info_cur_status": "Status for denne kjøringen: %[1]s (oppdatert fra %[2]s)",
     "mail.actions.run_info_previous_status": "Status for forrige kjøring: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
     "repo.diff.commit.next-short": "Neste",
     "repo.diff.commit.previous-short": "Forrige",
     "discussion.locked": "Denne diskusjonen er låst. Kommentarer kan kun gjøres av bidragsytere.",

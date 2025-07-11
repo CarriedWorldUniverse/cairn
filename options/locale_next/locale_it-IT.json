@@ -82,7 +82,6 @@
     "moderation.report_abuse_form.invalid": "Argomenti non validi",
     "moderation.reporting_failed": "Impossibile inviare segnalazione: %v",
     "moderation.reported_thank_you": "Grazie per la segnalazione. L'amministratore è stato avvertito.",
-    "mail.actions.run_info_ref": "Ramo: %[1]s (%[2]s)",
     "alert.asset_load_failed": "Impossibile caricare i file di risorsa da {path}. Controlla che i file di risorsa siano accessibili.",
     "install.invalid_lfs_path": "Non è possibile creare una root LFS nel percorso specificato: %[1]s",
     "home.welcome.activity_hint": "Non c'è nulla nel tuo feed. Le tue azioni e le attività dei repositori che segui verranno mostrate qui.",

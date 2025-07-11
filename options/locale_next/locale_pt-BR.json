@@ -26,7 +26,6 @@
     "meta.last_line": "real hot girl shit",
     "mail.actions.run_info_cur_status": "Status desta execução: %[1]s (atualizado recentemente de %[2]s)",
     "mail.actions.run_info_previous_status": "Status da execução anterior: %[1]s",
-    "mail.actions.run_info_ref": "Branch: %[1]s (%[2]s)",
     "mail.actions.successful_run_after_failure_subject": "Workflow %[1]s recuperado no repositório %[2]s",
     "mail.actions.not_successful_run_subject": "Workflow %[1]s falhou no repositório %[2]s",
     "mail.actions.successful_run_after_failure": "Workflow %[1]s recuperado no repositório %[2]s",
@@ -83,7 +82,7 @@
     "moderation.abuse_category": "Categoria",
     "moderation.abuse_category.placeholder": "Selecione uma categoria",
     "moderation.abuse_category.spam": "Spam",
-    "moderation.abuse_category.malware": "Malware",
+    "moderation.abuse_category.malware": "Software malicioso",
     "moderation.abuse_category.illegal_content": "Conteúdo ilegal",
     "moderation.abuse_category.other_violations": "Outras violações de regras da plataforma",
     "moderation.report_remarks": "Observações",
@@ -111,5 +110,6 @@
     "keys.gpg.link": "Chaves GPG",
     "og.repo.summary_card.alt_description": "Cartão de resumo do repositório %[1]s, descrito como: %[2]s",
     "profile.actions.tooltip": "Mais Actions",
-    "keys.ssh.link": "Chaves SSH"
+    "keys.ssh.link": "Chaves SSH",
+    "mail.actions.run_info_sha": "Commit: %[1]s"
 }

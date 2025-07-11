@@ -28,7 +28,6 @@
     "mail.actions.not_successful_run": "Warkwies %[1]s in Repositorium %[2]s is fehlslagen",
     "mail.actions.run_info_cur_status": "Tostand vun deesem Utföhren: %[1]s (jüüst vun %[2]s verneeit)",
     "mail.actions.run_info_previous_status": "Tostand vun de vörig Utföhren: %[1]s",
-    "mail.actions.run_info_ref": "Twieg: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Utlööst um: %[1]s vun: %[2]s",
     "discussion.locked": "Deeser Snack is tosloten worden. Blots Bidragers könen kommenteren.",
     "relativetime.future": "in Tokunft",
@@ -103,5 +102,6 @@
     "keys.gpg.link": "GPG-Slötels",
     "profile.actions.tooltip": "Mehr Aktioonen",
     "profile.edit.link": "Profil bewarken",
-    "og.repo.summary_card.alt_description": "Tosamenfatens-Kaart vun de Repositorium %[1]s, beschrieven as: %[2]s"
+    "og.repo.summary_card.alt_description": "Tosamenfatens-Kaart vun de Repositorium %[1]s, beschrieven as: %[2]s",
+    "mail.actions.run_info_sha": "Kommitteren: %[1]s"
 }

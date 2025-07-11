@@ -26,7 +26,6 @@
     "meta.last_line": "Unskip..",
     "mail.actions.not_successful_run_subject": "Провал раб. потока %[1]s в репозитории %[2]s",
     "mail.actions.successful_run_after_failure_subject": "Возобновление раб. потока %[1]s в репозитории %[2]s",
-    "mail.actions.run_info_ref": "Ветвь: %[1]s (%[2]s)",
     "mail.actions.run_info_trigger": "Причина срабатывания: %[1]s by: %[2]s",
     "mail.actions.successful_run_after_failure": "Рабочий поток %[1]s в репозитории %[2]s был возобновлён после провала",
     "mail.actions.run_info_cur_status": "Текущее состояние: %[1]s (обновлено после %[2]s)",
@@ -110,5 +109,7 @@
     "feed.atom.link": "Atom-лента",
     "keys.ssh.link": "Ключи SSH",
     "keys.gpg.link": "Ключи GPG",
-    "profile.edit.link": "Изменить профиль"
+    "profile.edit.link": "Изменить профиль",
+    "og.repo.summary_card.alt_description": "Карточка со сводкой о репозитории %s. Описание: %[2]s",
+    "mail.actions.run_info_sha": "Коммит: %[1]s"
 }
