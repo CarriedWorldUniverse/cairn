@@ -29,6 +29,8 @@ const (
 	MergeStyleRebaseUpdate MergeStyle = "rebase-update-only"
 )
 
+var MergeStyles = []MergeStyle{MergeStyleMerge, MergeStyleRebase, MergeStyleRebaseMerge, MergeStyleSquash, MergeStyleFastForwardOnly, MergeStyleManuallyMerged, MergeStyleRebaseUpdate}
+
 type UpdateStyle string
 
 const (

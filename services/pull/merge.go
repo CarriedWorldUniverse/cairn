@@ -35,6 +35,30 @@ import (
 	notify_service "forgejo.org/services/notify"
 )
 
+var mergeMessageTemplates = make(map[repo_model.MergeStyle]string, len(repo_model.MergeStyles))
+
+func LoadMergeMessageTemplates() error {
+	// Load templates for all known merge styles
+	for _, mergeStyle := range repo_model.MergeStyles {
+		templateFilename := filepath.Join(
+			setting.CustomPath,
+			"default_merge_message",
+			fmt.Sprintf("%s_TEMPLATE.md", strings.ToUpper(string(mergeStyle))),
+		)
+
+		content, err := os.ReadFile(templateFilename)
+		if err == nil {
+			mergeMessageTemplates[mergeStyle] = string(content)
+		} else if os.IsNotExist(err) {
+			// The file no longer exists, so delete any previous content
+			delete(mergeMessageTemplates, mergeStyle)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 // getMergeMessage composes the message used when merging a pull request.
 func getMergeMessage(ctx context.Context, baseGitRepo *git.Repository, pr *issues_model.PullRequest, mergeStyle repo_model.MergeStyle, extraVars map[string]string) (message, body string, err error) {
 	if err := pr.LoadBaseRepo(ctx); err != nil {
@@ -79,6 +103,13 @@ func getMergeMessage(ctx context.Context, baseGitRepo *git.Repository, pr *issue
 		if _, ok := err.(git.ErrNotExist); ok {
 			templateContent, err = commit.GetFileContent(templateFilepathGitea, setting.Repository.PullRequest.DefaultMergeMessageSize)
 		}
+
+		if _, ok := err.(git.ErrNotExist); ok {
+			if preloadedContent, ok := mergeMessageTemplates[mergeStyle]; ok {
+				templateContent, err = preloadedContent, nil
+			}
+		}
+
 		if err != nil {
 			if !git.IsErrNotExist(err) {
 				return "", "", err

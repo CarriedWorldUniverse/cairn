@@ -4,9 +4,17 @@
 package pull
 
 import (
+	"os"
+	"path"
+	"strings"
 	"testing"
 
+	repo_model "forgejo.org/models/repo"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_expandDefaultMergeMessage(t *testing.T) {
@@ -89,4 +97,52 @@ func TestAddCommitMessageTailer(t *testing.T) {
 	// add tailer for message with existing tailer and different value (will append)
 	assert.Equal(t, "title\n\nTest-tailer: v1\nTest-tailer: v2", AddCommitMessageTrailer("title\n\nTest-tailer: v1", "Test-tailer", "v2"))
 	assert.Equal(t, "title\n\nTest-tailer: v1\nTest-tailer: v2", AddCommitMessageTrailer("title\n\nTest-tailer: v1\n", "Test-tailer", "v2"))
+}
+
+func prepareLoadMergeMessageTemplates(targetDir string) error {
+	for _, template := range []string{"MERGE", "REBASE", "REBASE-MERGE", "SQUASH", "MANUALLY-MERGED", "REBASE-UPDATE-ONLY"} {
+		file, err := os.Create(path.Join(targetDir, template+"_TEMPLATE.md"))
+		defer file.Close()
+
+		if err == nil {
+			_, err = file.WriteString("Contents for " + template)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func TestLoadMergeMessageTemplates(t *testing.T) {
+	defer test.MockVariableValue(&setting.CustomPath, t.TempDir())()
+	templateTemp := path.Join(setting.CustomPath, "default_merge_message")
+
+	require.NoError(t, os.MkdirAll(templateTemp, 0o755))
+	require.NoError(t, prepareLoadMergeMessageTemplates(templateTemp))
+
+	testStyles := []repo_model.MergeStyle{
+		repo_model.MergeStyleMerge,
+		repo_model.MergeStyleRebase,
+		repo_model.MergeStyleRebaseMerge,
+		repo_model.MergeStyleSquash,
+		repo_model.MergeStyleManuallyMerged,
+		repo_model.MergeStyleRebaseUpdate,
+	}
+
+	// Load all templates
+	require.NoError(t, LoadMergeMessageTemplates())
+
+	// Check their correctness
+	assert.Len(t, mergeMessageTemplates, len(testStyles))
+	for _, mergeStyle := range testStyles {
+		assert.Equal(t, "Contents for "+strings.ToUpper(string(mergeStyle)), mergeMessageTemplates[mergeStyle])
+	}
+
+	// Unload all templates
+	require.NoError(t, os.RemoveAll(templateTemp))
+	require.NoError(t, LoadMergeMessageTemplates())
+	assert.Empty(t, mergeMessageTemplates)
 }
