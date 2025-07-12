@@ -92,3 +92,39 @@ func TestPullRequest_GetDefaultMergeMessage_ExternalTracker(t *testing.T) {
 
 	assert.Equal(t, "Merge pull request 'issue3' (#3) from user2/repo2:branch2 into master", mergeMessage)
 }
+
+func TestPullRequest_GetDefaultMergeMessage_GlobalTemplate(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 2})
+
+	require.NoError(t, pr.LoadBaseRepo(t.Context()))
+	gitRepo, err := gitrepo.OpenRepository(t.Context(), pr.BaseRepo)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	templateRepo, err := git.OpenRepository(t.Context(), "./../../modules/git/tests/repos/templates_repo")
+	require.NoError(t, err)
+	defer templateRepo.Close()
+
+	mergeMessageTemplates[repo_model.MergeStyleMerge] = "${PullRequestTitle} (${PullRequestReference})\n${PullRequestDescription}"
+
+	// Check template is used for Merge...
+	mergeMessage, body, err := GetDefaultMergeMessage(t.Context(), gitRepo, pr, repo_model.MergeStyleMerge)
+	require.NoError(t, err)
+
+	assert.Equal(t, "issue3 (#3)", mergeMessage)
+	assert.Equal(t, "content for the third issue", body)
+
+	// ...but not for RebaseMerge
+	mergeMessage, _, err = GetDefaultMergeMessage(t.Context(), gitRepo, pr, repo_model.MergeStyleRebaseMerge)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Merge pull request 'issue3' (#3) from branch2 into master", mergeMessage)
+
+	// ...and that custom Merge template takes priority
+	mergeMessage, body, err = GetDefaultMergeMessage(t.Context(), templateRepo, pr, repo_model.MergeStyleMerge)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Default merge message template", mergeMessage)
+	assert.Equal(t, "This line was read from .forgejo/default_merge_message/MERGE_TEMPLATE.md", body)
+}
