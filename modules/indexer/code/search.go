@@ -97,7 +97,7 @@ func HighlightSearchResultCode(filename string, lineNums []int, highlightRanges 
 	conv := hcd.ConvertToPlaceholders(string(hl))
 	convLines := strings.Split(conv, "\n")
 
-	// each highlightRange is of the form [line number, start pos, end pos]
+	// each highlightRange is of the form [line number, start byte offset, end byte offset]
 	for _, highlightRange := range highlightRanges {
 		ln, start, end := highlightRange[0], highlightRange[1], highlightRange[2]
 		line := convLines[ln]
@@ -105,15 +105,18 @@ func HighlightSearchResultCode(filename string, lineNums []int, highlightRanges 
 			continue
 		}
 
+		sr := strings.NewReader(line)
 		sb := strings.Builder{}
 		count := -1
 		isOpen := false
-		for _, r := range line {
+		for r, size, err := sr.ReadRune(); err == nil; r, size, err = sr.ReadRune() {
 			if token, ok := hcd.PlaceholderTokenMap[r];
 			// token was not found
-			!ok ||
-				// token was marked as used
-				token == "" ||
+			!ok {
+				count += size
+			} else if
+			// token was marked as used
+			token == "" ||
 				// the token is not an valid html tag emitted by chroma
 				!(len(token) > 6 && (token[0:5] == "<span" || token[0:6] == "</span")) {
 				count++
@@ -132,15 +135,15 @@ func HighlightSearchResultCode(filename string, lineNums []int, highlightRanges 
 				continue
 			}
 
-			switch count {
-			case end:
+			switch {
+			case count >= end:
 				// if tag is not open, no need to close
 				if !isOpen {
 					break
 				}
 				sb.WriteRune(endTag)
 				isOpen = false
-			case start:
+			case count >= start:
 				// if tag is open, do not open again
 				if isOpen {
 					break
@@ -161,7 +164,7 @@ func HighlightSearchResultCode(filename string, lineNums []int, highlightRanges 
 	highlightedLines := strings.Split(hcd.Recover(conv), "\n")
 	// The lineNums outputted by highlight.Code might not match the original lineNums, because "highlight" removes the last `\n`
 	lines := make([]ResultLine, min(len(highlightedLines), len(lineNums)))
-	for i := 0; i < len(lines); i++ {
+	for i := range len(lines) {
 		lines[i].Num = lineNums[i]
 		lines[i].FormattedContent = template.HTML(highlightedLines[i])
 	}
