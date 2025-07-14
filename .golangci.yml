@@ -42,6 +42,8 @@ linters:
               desc: do not use the ini package, use gitea's config system instead
             - pkg: github.com/minio/sha256-simd
               desc: use crypto/sha256 instead, see https://codeberg.org/forgejo/forgejo/pulls/1528
+            - pkg: github.com/go-git/go-git
+              desc: use forgejo.org/modules/git instead, see https://codeberg.org/forgejo/forgejo/pulls/4941
     gocritic:
       disabled-checks:
         - ifElseChain

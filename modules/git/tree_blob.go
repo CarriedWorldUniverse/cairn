@@ -17,7 +17,6 @@ func (t *Tree) GetTreeEntryByPath(relpath string) (*TreeEntry, error) {
 			ptree:     t,
 			ID:        t.ID,
 			name:      "",
-			fullName:  "",
 			entryMode: EntryModeTree,
 		}, nil
 	}
@@ -55,7 +54,7 @@ func (t *Tree) GetBlobByPath(relpath string) (*Blob, error) {
 		return nil, err
 	}
 
-	if !entry.IsDir() && !entry.IsSubModule() {
+	if !entry.IsDir() && !entry.IsSubmodule() {
 		return entry.Blob(), nil
 	}
 

@@ -20,17 +20,17 @@
 		{{range $item := .Files}}
 			{{$entry := $item.Entry}}
 			{{$commit := $item.Commit}}
-			{{$subModuleFile := $item.SubModuleFile}}
 			<tr data-entryname="{{$entry.Name}}" data-ready="{{if $commit}}true{{else}}false{{end}}" class="{{if not $commit}}not{{end}}ready entry">
 				<td class="name four wide">
 					<span class="truncate">
-						{{if $entry.IsSubModule}}
-							{{$refURL := $subModuleFile.RefURL AppUrl $.Repository.FullName $.SSHDomain}} {{/* FIXME: the usage of AppUrl seems incorrect, it would be fixed in the future, use AppSubUrl instead */}}
+						{{if $entry.IsSubmodule}}
+							{{$submodule := $item.Submodule}}
+							{{$refURL := $submodule.ResolveUpstreamURL $.Repository.HTMLURL}}
 							{{$icon := (svg "octicon-file-submodule" 16 "tw-mr-2")}}
 							{{if $refURL}}
-								<a class="muted" href="{{$refURL}}">{{$icon}}{{$entry.Name}}</a><span class="at">@</span><a href="{{$refURL}}/commit/{{PathEscape $subModuleFile.RefID}}">{{ShortSha $subModuleFile.RefID}}</a>
+								<a class="muted" href="{{$refURL}}">{{$icon}}{{$entry.Name}}</a><span class="at">@</span><a href="{{$refURL}}/commit/{{PathEscape $submodule.Commit.String}}">{{ShortSha $submodule.Commit.String}}</a>
 							{{else}}
-								{{$icon}}{{$entry.Name}}<span class="at">@</span>{{ShortSha $subModuleFile.RefID}}
+								{{$icon}}{{$entry.Name}}<span class="at">@</span>{{ShortSha $submodule.Commit.String}}
 							{{end}}
 						{{else}}
 							{{if $entry.IsDir}}

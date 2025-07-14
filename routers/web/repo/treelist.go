@@ -42,7 +42,7 @@ func isExcludedEntry(entry *git.TreeEntry) bool {
 		return true
 	}
 
-	if entry.IsSubModule() {
+	if entry.IsSubmodule() {
 		return true
 	}
 

@@ -241,7 +241,7 @@ func getBlobForEntry(ctx *context.APIContext) (blob *git.Blob, entry *git.TreeEn
 		return nil, nil, nil
 	}
 
-	if entry.IsDir() || entry.IsSubModule() {
+	if entry.IsDir() || entry.IsSubmodule() {
 		ctx.NotFound("getBlobForEntry", nil)
 		return nil, nil, nil
 	}

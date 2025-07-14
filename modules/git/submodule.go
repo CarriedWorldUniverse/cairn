@@ -6,37 +6,123 @@ package git
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
+
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/util"
+
+	"gopkg.in/ini.v1" //nolint:depguard // used to read .gitmodules
 )
 
-var scpSyntax = regexp.MustCompile(`^([a-zA-Z0-9_]+@)?([a-zA-Z0-9._-]+):(.*)$`)
-
-// SubModule submodule is a reference on git repository
-type SubModule struct {
-	Name string
-	URL  string
-}
-
-// SubModuleFile represents a file with submodule type.
-type SubModuleFile struct {
-	*Commit
-
-	refURL string
-	refID  string
-}
-
-// NewSubModuleFile create a new submodule file
-func NewSubModuleFile(c *Commit, refURL, refID string) *SubModuleFile {
-	return &SubModuleFile{
-		Commit: c,
-		refURL: refURL,
-		refID:  refID,
+// GetSubmodule returns the Submodule of a given path
+func (c *Commit) GetSubmodule(path string, entry *TreeEntry) (Submodule, error) {
+	err := c.readSubmodules()
+	if err != nil {
+		// the .gitmodules file exists but could not be read or parsed
+		return Submodule{}, err
 	}
+
+	sm, ok := c.submodules[path]
+	if !ok {
+		// no info found in .gitmodules: fallback to what we can provide
+		return Submodule{
+			Path:   path,
+			Commit: entry.ID,
+		}, nil
+	}
+
+	sm.Commit = entry.ID
+	return sm, nil
 }
+
+// readSubmodules populates the submodules field by reading the .gitmodules file
+func (c *Commit) readSubmodules() error {
+	if c.submodules != nil {
+		return nil
+	}
+
+	entry, err := c.GetTreeEntryByPath(".gitmodules")
+	if err != nil {
+		if IsErrNotExist(err) {
+			c.submodules = make(map[string]Submodule)
+			return nil
+		}
+		return err
+	}
+
+	rc, _, err := entry.Blob().NewTruncatedReader(10 * 1024)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	c.submodules, err = parseSubmoduleContent(rc)
+	return err
+}
+
+func parseSubmoduleContent(r io.Reader) (map[string]Submodule, error) {
+	// https://git-scm.com/docs/gitmodules#_description
+	// The .gitmodules file, located in the top-level directory of a Git working tree
+	// is a text file with a syntax matching the requirements of git-config[1].
+	// https://git-scm.com/docs/git-config#_configuration_file
+
+	cfg := ini.Empty(ini.LoadOptions{
+		InsensitiveKeys: true, // "The variable names are case-insensitive", but "Subsection names are case sensitive"
+	})
+	err := cfg.Append(r)
+	if err != nil {
+		return nil, err
+	}
+
+	sections := cfg.Sections()
+	submodule := make(map[string]Submodule, len(sections))
+
+	for _, s := range sections {
+		sm := parseSubmoduleSection(s)
+		if sm.Path == "" || sm.URL == "" {
+			continue
+		}
+		submodule[sm.Path] = sm
+	}
+	return submodule, nil
+}
+
+func parseSubmoduleSection(s *ini.Section) Submodule {
+	section, name, _ := strings.Cut(s.Name(), " ")
+	if !util.ASCIIEqualFold("submodule", section) { // See https://codeberg.org/forgejo/forgejo/pulls/8438#issuecomment-5805251
+		return Submodule{}
+	}
+	_ = name
+
+	sm := Submodule{}
+	if key, _ := s.GetKey("path"); key != nil {
+		sm.Path = key.Value()
+	}
+	if key, _ := s.GetKey("url"); key != nil {
+		sm.URL = key.Value()
+	}
+	return sm
+}
+
+// Submodule represents a parsed git submodule reference.
+type Submodule struct {
+	Path   string   // path property
+	URL    string   // upstream URL
+	Commit ObjectID // upstream Commit-ID
+}
+
+// ResolveUpstreamURL resolves the upstream URL relative to the repo URL.
+func (sm Submodule) ResolveUpstreamURL(repoURL string) string {
+	repoFullName := strings.TrimPrefix(repoURL, setting.AppURL) // currently hacky, but can be dropped when refactoring getRefURL
+	return getRefURL(sm.URL, setting.AppURL, repoFullName, setting.SSH.Domain)
+}
+
+var scpSyntax = regexp.MustCompile(`^([a-zA-Z0-9_]+@)?([a-zA-Z0-9._-]+):(.*)$`)
 
 func getRefURL(refURL, urlPrefix, repoFullName, sshDomain string) string {
 	if refURL == "" {
@@ -53,7 +139,7 @@ func getRefURL(refURL, urlPrefix, repoFullName, sshDomain string) string {
 
 	urlPrefix = strings.TrimSuffix(urlPrefix, "/")
 
-	// FIXME: Need to consider branch - which will require changes in modules/git/commit.go:GetSubModules
+	// FIXME: Need to consider branch - which will require changes in parseSubmoduleSection
 	// Relative url prefix check (according to git submodule documentation)
 	if strings.HasPrefix(refURI, "./") || strings.HasPrefix(refURI, "../") {
 		return urlPrefix + path.Clean(path.Join("/", repoFullName, refURI))
@@ -106,14 +192,4 @@ func getRefURL(refURL, urlPrefix, repoFullName, sshDomain string) string {
 	}
 
 	return ""
-}
-
-// RefURL guesses and returns reference URL.
-func (sf *SubModuleFile) RefURL(urlPrefix, repoFullName, sshDomain string) string {
-	return getRefURL(sf.refURL, urlPrefix, repoFullName, sshDomain)
-}
-
-// RefID returns reference ID.
-func (sf *SubModuleFile) RefID() string {
-	return sf.refID
 }

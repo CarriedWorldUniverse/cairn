@@ -16,8 +16,6 @@ import (
 
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/util"
-
-	"github.com/go-git/go-git/v5/config"
 )
 
 // Commit represents a git commit.
@@ -29,8 +27,8 @@ type Commit struct {
 	CommitMessage string
 	Signature     *ObjectSignature
 
-	Parents        []ObjectID // ID strings
-	submoduleCache *ObjectCache
+	Parents    []ObjectID           // ID strings
+	submodules map[string]Submodule // submodule indexed by path
 }
 
 // Message returns the commit message. Same as retrieving CommitMessage directly.
@@ -350,64 +348,6 @@ func (c *Commit) GetFileContent(filename string, limit int) (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
-}
-
-// GetSubModules get all the sub modules of current revision git tree
-func (c *Commit) GetSubModules() (*ObjectCache, error) {
-	if c.submoduleCache != nil {
-		return c.submoduleCache, nil
-	}
-
-	entry, err := c.GetTreeEntryByPath(".gitmodules")
-	if err != nil {
-		if _, ok := err.(ErrNotExist); ok {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	content, err := entry.Blob().GetBlobContent(10 * 1024)
-	if err != nil {
-		return nil, err
-	}
-
-	c.submoduleCache, err = parseSubmoduleContent([]byte(content))
-	if err != nil {
-		return nil, err
-	}
-	return c.submoduleCache, nil
-}
-
-func parseSubmoduleContent(bs []byte) (*ObjectCache, error) {
-	cfg := config.NewModules()
-	if err := cfg.Unmarshal(bs); err != nil {
-		return nil, err
-	}
-	submoduleCache := newObjectCache()
-	if len(cfg.Submodules) == 0 {
-		return nil, errors.New("no submodules found")
-	}
-	for _, subModule := range cfg.Submodules {
-		submoduleCache.Set(subModule.Path, subModule.URL)
-	}
-
-	return submoduleCache, nil
-}
-
-// GetSubModule returns the URL to the submodule according entryname
-func (c *Commit) GetSubModule(entryname string) (string, error) {
-	modules, err := c.GetSubModules()
-	if err != nil {
-		return "", err
-	}
-
-	if modules != nil {
-		module, has := modules.Get(entryname)
-		if has {
-			return module.(string), nil
-		}
-	}
-	return "", nil
 }
 
 // GetBranchName gets the closest branch name (as returned by 'git name-rev --name-only')

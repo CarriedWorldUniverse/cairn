@@ -92,7 +92,7 @@ func getBlobForEntry(ctx *context.Context) (*git.Blob, *time.Time) {
 		return nil, nil
 	}
 
-	if entry.IsDir() || entry.IsSubModule() {
+	if entry.IsDir() || entry.IsSubmodule() {
 		ctx.NotFound("getBlobForEntry", nil)
 		return nil, nil
 	}

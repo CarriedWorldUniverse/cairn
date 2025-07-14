@@ -114,7 +114,7 @@ func EntryIcon(entry *git.TreeEntry) string {
 		return "file-symlink-file"
 	case entry.IsDir():
 		return "file-directory-fill"
-	case entry.IsSubModule():
+	case entry.IsSubmodule():
 		return "file-submodule"
 	}
 
