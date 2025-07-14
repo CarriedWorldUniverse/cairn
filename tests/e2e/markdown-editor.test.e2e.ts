@@ -456,3 +456,62 @@ test('Combo Markdown: preview mode switch', async ({page}) => {
   await expect(previewPanel).toBeHidden();
   await save_visual(page);
 });
+
+test('Multiple combo markdown: insert table', async ({page}) => {
+  const response = await page.goto('/user2/multiple-combo-boxes/issues/new?template=.forgejo%2fissue_template%2fmulti-combo-boxes.yaml');
+  expect(response?.status()).toBe(200);
+
+  // check that there are two textareas
+  const textareaOne = page.locator('textarea[name=form-field-textarea-one]');
+  const comboboxOne = page.locator('textarea#_combo_markdown_editor_0');
+  await expect(textareaOne).toBeVisible();
+  await expect(comboboxOne).toBeHidden();
+  const textareaTwo = page.locator('textarea[name=form-field-textarea-two]');
+  const comboboxTwo = page.locator('textarea#_combo_markdown_editor_1');
+  await expect(textareaTwo).toBeVisible();
+  await expect(comboboxTwo).toBeHidden();
+
+  // focus first one and add table to it
+  await textareaOne.click();
+  await expect(comboboxOne).toBeVisible();
+  await expect(comboboxTwo).toBeHidden();
+
+  const newTableButtonOne = page.locator('[for="_combo_markdown_editor_0"] button[data-md-action="new-table"]');
+  await newTableButtonOne.click();
+
+  const newTableModalOne = page.locator('div[data-markdown-table-modal-id="0"]');
+  await expect(newTableModalOne).toBeVisible();
+
+  await newTableModalOne.locator('input[name="table-rows"]').fill('3');
+  await newTableModalOne.locator('input[name="table-columns"]').fill('2');
+
+  await newTableModalOne.locator('button[data-selector-name="ok-button"]').click();
+
+  await expect(newTableModalOne).toBeHidden();
+
+  await expect(comboboxOne).toHaveValue('| Header  | Header  |\n|---------|---------|\n| Content | Content |\n| Content | Content |\n| Content | Content |\n');
+  await expect(comboboxTwo).toBeEmpty();
+  await save_visual(page);
+
+  // focus second one and add table to it
+  await textareaTwo.click();
+  await expect(comboboxOne).toBeHidden();
+  await expect(comboboxTwo).toBeVisible();
+
+  const newTableButtonTwo = page.locator('[for="_combo_markdown_editor_1"] button[data-md-action="new-table"]');
+  await newTableButtonTwo.click();
+
+  const newTableModalTwo = page.locator('div[data-markdown-table-modal-id="1"]');
+  await expect(newTableModalTwo).toBeVisible();
+
+  await newTableModalTwo.locator('input[name="table-rows"]').fill('2');
+  await newTableModalTwo.locator('input[name="table-columns"]').fill('3');
+
+  await newTableModalTwo.locator('button[data-selector-name="ok-button"]').click();
+
+  await expect(newTableModalTwo).toBeHidden();
+
+  await expect(comboboxOne).toHaveValue('| Header  | Header  |\n|---------|---------|\n| Content | Content |\n| Content | Content |\n| Content | Content |\n');
+  await expect(comboboxTwo).toHaveValue('| Header  | Header  | Header  |\n|---------|---------|---------|\n| Content | Content | Content |\n| Content | Content | Content |\n');
+  await save_visual(page);
+});
