@@ -79,6 +79,22 @@ func DeclareGitRepos(t *testing.T) func() {
 			Filename: "a-file",
 			Versions: []string{"{a}{а}"},
 		}}, nil),
+		newRepo(t, 2, "multiple-combo-boxes", nil, []FileChanges{{
+			Filename: ".forgejo/issue_template/multi-combo-boxes.yaml",
+			Versions: []string{`
+name: "Multiple combo-boxes"
+description: "To show something"
+body:
+- type: textarea
+  id: textarea-one
+  attributes:
+    label: one
+- type: textarea
+  id: textarea-two
+  attributes:
+    label: two
+`},
+		}}, nil),
 		newRepo(t, 11, "dependency-test", &tests.DeclarativeRepoOptions{
 			UnitConfig: optional.Some(map[unit_model.Type]convert.Conversion{
 				unit_model.TypeIssues: &repo_model.IssuesConfig{
