@@ -15,9 +15,9 @@ import (
 
 // CommitInfo describes the first commit with the provided entry
 type CommitInfo struct {
-	Entry         *TreeEntry
-	Commit        *Commit
-	SubModuleFile *SubModuleFile
+	Entry     *TreeEntry
+	Commit    *Commit
+	Submodule Submodule
 }
 
 // GetCommitsInfo gets information of all commits that are corresponding to these entries
@@ -71,19 +71,18 @@ func (tes Entries) GetCommitsInfo(ctx context.Context, commit *Commit, treePath 
 		}
 
 		// If the entry if a submodule add a submodule file for this
-		if entry.IsSubModule() {
+		if entry.IsSubmodule() {
 			var fullPath string
 			if len(treePath) > 0 {
 				fullPath = treePath + "/" + entry.Name()
 			} else {
 				fullPath = entry.Name()
 			}
-			subModuleURL, err := commit.GetSubModule(fullPath)
+			submodule, err := commit.GetSubmodule(fullPath, entry)
 			if err != nil {
 				return nil, nil, err
 			}
-			subModuleFile := NewSubModuleFile(commitsInfo[i].Commit, subModuleURL, entry.ID.String())
-			commitsInfo[i].SubModuleFile = subModuleFile
+			commitsInfo[i].Submodule = submodule
 		}
 	}
 

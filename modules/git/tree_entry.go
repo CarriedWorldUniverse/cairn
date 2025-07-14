@@ -21,16 +21,12 @@ type TreeEntry struct {
 	entryMode EntryMode
 	name      string
 
-	size     int64
-	sized    bool
-	fullName string
+	size  int64
+	sized bool
 }
 
 // Name returns the name of the entry
 func (te *TreeEntry) Name() string {
-	if te.fullName != "" {
-		return te.fullName
-	}
 	return te.name
 }
 
@@ -68,8 +64,8 @@ func (te *TreeEntry) Size() int64 {
 	return te.size
 }
 
-// IsSubModule if the entry is a sub module
-func (te *TreeEntry) IsSubModule() bool {
+// IsSubmodule if the entry is a submodule
+func (te *TreeEntry) IsSubmodule() bool {
 	return te.entryMode == EntryModeCommit
 }
 
@@ -214,7 +210,7 @@ func (te *TreeEntry) Tree() *Tree {
 
 // GetSubJumpablePathName return the full path of subdirectory jumpable ( contains only one directory )
 func (te *TreeEntry) GetSubJumpablePathName() string {
-	if te.IsSubModule() || !te.IsDir() {
+	if te.IsSubmodule() || !te.IsDir() {
 		return ""
 	}
 	tree, err := te.ptree.SubTree(te.Name())
@@ -241,7 +237,7 @@ type customSortableEntries struct {
 
 var sorter = []func(t1, t2 *TreeEntry, cmp func(s1, s2 string) bool) bool{
 	func(t1, t2 *TreeEntry, cmp func(s1, s2 string) bool) bool {
-		return (t1.IsDir() || t1.IsSubModule()) && !t2.IsDir() && !t2.IsSubModule()
+		return (t1.IsDir() || t1.IsSubmodule()) && !t2.IsDir() && !t2.IsSubmodule()
 	},
 	func(t1, t2 *TreeEntry, cmp func(s1, s2 string) bool) bool {
 		return cmp(t1.Name(), t2.Name())

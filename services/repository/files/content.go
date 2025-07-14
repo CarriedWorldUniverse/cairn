@@ -108,7 +108,7 @@ func GetObjectTypeFromTreeEntry(entry *git.TreeEntry) ContentType {
 	switch {
 	case entry.IsDir():
 		return ContentTypeDir
-	case entry.IsSubModule():
+	case entry.IsSubmodule():
 		return ContentTypeSubmodule
 	case entry.IsExecutable(), entry.IsRegular():
 		return ContentTypeRegular
@@ -211,14 +211,14 @@ func GetContents(ctx context.Context, repo *repo_model.Repository, treePath, ref
 			return nil, err
 		}
 		contentsResponse.Target = &targetFromContent
-	} else if entry.IsSubModule() {
+	} else if entry.IsSubmodule() {
 		contentsResponse.Type = string(ContentTypeSubmodule)
-		submoduleURL, err := commit.GetSubModule(treePath)
+		submodule, err := commit.GetSubmodule(treePath, entry)
 		if err != nil {
 			return nil, err
 		}
-		if submoduleURL != "" {
-			contentsResponse.SubmoduleGitURL = &submoduleURL
+		if submodule.URL != "" {
+			contentsResponse.SubmoduleGitURL = &submodule.URL
 		}
 	}
 	// Handle links
@@ -230,7 +230,7 @@ func GetContents(ctx context.Context, repo *repo_model.Repository, treePath, ref
 		downloadURLString := downloadURL.String()
 		contentsResponse.DownloadURL = &downloadURLString
 	}
-	if !entry.IsSubModule() {
+	if !entry.IsSubmodule() {
 		htmlURL, err := url.Parse(repo.HTMLURL() + "/src/" + url.PathEscape(string(refType)) + "/" + util.PathEscapeSegments(ref) + "/" + util.PathEscapeSegments(treePath))
 		if err != nil {
 			return nil, err

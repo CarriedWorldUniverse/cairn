@@ -4,9 +4,11 @@
 package git
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetRefURL(t *testing.T) {
@@ -38,5 +40,76 @@ func TestGetRefURL(t *testing.T) {
 
 	for _, kase := range kases {
 		assert.Equal(t, kase.expect, getRefURL(kase.refURL, kase.prefixURL, kase.parentPath, kase.SSHDomain))
+	}
+}
+
+func Test_parseSubmoduleContent(t *testing.T) {
+	submoduleFiles := []struct {
+		fileContent  string
+		expectedPath string
+		expected     Submodule
+	}{
+		{
+			fileContent: `[submodule "jakarta-servlet"]
+url = ../../ALP-pool/jakarta-servlet
+path = jakarta-servlet`,
+			expectedPath: "jakarta-servlet",
+			expected: Submodule{
+				Path: "jakarta-servlet",
+				URL:  "../../ALP-pool/jakarta-servlet",
+			},
+		},
+		{
+			fileContent: `[submodule "jakarta-servlet"]
+path = jakarta-servlet
+url = ../../ALP-pool/jakarta-servlet`,
+			expectedPath: "jakarta-servlet",
+			expected: Submodule{
+				Path: "jakarta-servlet",
+				URL:  "../../ALP-pool/jakarta-servlet",
+			},
+		},
+		{
+			fileContent: `[submodule "about/documents"]
+  path = about/documents
+  url = git@github.com:example/documents.git
+  branch = gh-pages
+[submodule "custom-name"]
+  path = manifesto
+  url = https://github.com/example/manifesto.git
+[submodule]
+  path = relative/url
+  url = ../such-relative.git
+`,
+			expectedPath: "relative/url",
+			expected: Submodule{
+				Path: "relative/url",
+				URL:  "../such-relative.git",
+			},
+		},
+		{
+			fileContent: `# .gitmodules
+# Subsection names are case sensitive
+[submodule "Seanpm2001/Degoogle-your-life"]
+	path = Its-time-to-cut-WideVine-DRM/DeGoogle-Your-Life/submodule.gitmodules
+	url = https://github.com/seanpm2001/Degoogle-your-life/
+
+[submodule "seanpm2001/degoogle-your-life"]
+	url = https://github.com/seanpm2001/degoogle-your-life/
+# This second section should not be merged with the first, because of casing
+`,
+			expectedPath: "Its-time-to-cut-WideVine-DRM/DeGoogle-Your-Life/submodule.gitmodules",
+			expected: Submodule{
+				Path: "Its-time-to-cut-WideVine-DRM/DeGoogle-Your-Life/submodule.gitmodules",
+				URL:  "https://github.com/seanpm2001/Degoogle-your-life/",
+			},
+		},
+	}
+	for _, kase := range submoduleFiles {
+		submodule, err := parseSubmoduleContent(strings.NewReader(kase.fileContent))
+		require.NoError(t, err)
+		v, ok := submodule[kase.expectedPath]
+		assert.True(t, ok)
+		assert.Equal(t, kase.expected, v)
 	}
 }
