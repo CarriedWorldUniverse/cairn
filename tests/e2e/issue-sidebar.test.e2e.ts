@@ -221,7 +221,7 @@ test('Issue: Milestone', async ({page}, workerInfo) => {
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 
-  const selectedMilestone = page.locator('.issue-content-right .select-milestone.list');
+  const selectedMilestone = page.locator('.issue-content-right #selected-milestone');
   const milestoneDropdown = page.locator('.issue-content-right .select-milestone.dropdown');
   await expect(selectedMilestone).toContainText('No milestone');
 

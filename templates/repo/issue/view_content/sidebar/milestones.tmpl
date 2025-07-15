@@ -1,4 +1,4 @@
-<div id="milestone-section" hx-swap="morph" hx-target="this" hx-indicator="this">
+<div id="milestone-section" hx-swap="morph" hx-target="#selected-milestone" hx-indicator="this">
 	<div class="ui {{if or (not .HasIssuesOrPullsWritePermission) .Repository.IsArchived}}disabled{{end}} floating jump select-milestone dropdown">
 		<a class="text muted flex-text-block">
 			<strong>{{ctx.Locale.Tr "repo.issues.new.milestone"}}</strong>
@@ -10,15 +10,5 @@
 			{{template "repo/issue/milestone/select_menu" .}}
 		</div>
 	</div>
-	<div class="ui select-milestone list">
-		<span class="no-select item {{if .Issue.Milestone}}tw-hidden{{end}}">{{ctx.Locale.Tr "repo.issues.new.no_milestone"}}</span>
-		<div class="selected">
-			{{if .Issue.Milestone}}
-				<a class="item muted sidebar-item-link" href="{{.RepoLink}}/milestone/{{.Issue.Milestone.ID}}">
-					{{svg "octicon-milestone" 18 "tw-mr-2"}}
-					{{.Issue.Milestone.Name}}
-				</a>
-			{{end}}
-		</div>
-	</div>
+	{{template "repo/issue/milestone/selected" .}}
 </div>
