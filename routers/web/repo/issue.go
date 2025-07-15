@@ -2401,10 +2401,6 @@ func UpdateIssueMilestone(ctx *context.Context) {
 	}
 
 	if ctx.FormBool("htmx") {
-		renderMilestones(ctx)
-		if ctx.Written() {
-			return
-		}
 		prepareHiddenCommentType(ctx)
 		if ctx.Written() {
 			return
