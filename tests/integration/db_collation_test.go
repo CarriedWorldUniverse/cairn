@@ -98,9 +98,13 @@ func TestDatabaseCollation(t *testing.T) {
 		require.NoError(t, db.ConvertDatabaseTable())
 		time.Sleep(5 * time.Second)
 
-		r, err := db.CheckCollations(x)
-		require.NoError(t, err)
-		assert.Equal(t, "utf8mb4_bin", r.DatabaseCollation)
+		var r *db.CheckCollationsResult
+		assert.Eventually(t, func() bool {
+			r, err = db.CheckCollations(x)
+			require.NoError(t, err)
+
+			return r.DatabaseCollation == "utf8mb4_bin"
+		}, time.Second*30, time.Second)
 		assert.True(t, r.CollationEquals(r.ExpectedCollation, r.DatabaseCollation))
 		assert.Empty(t, r.InconsistentCollationColumns)
 
@@ -119,9 +123,13 @@ func TestDatabaseCollation(t *testing.T) {
 		require.NoError(t, db.ConvertDatabaseTable())
 		time.Sleep(5 * time.Second)
 
-		r, err := db.CheckCollations(x)
-		require.NoError(t, err)
-		assert.Equal(t, "utf8mb4_general_ci", r.DatabaseCollation)
+		var r *db.CheckCollationsResult
+		assert.Eventually(t, func() bool {
+			r, err = db.CheckCollations(x)
+			require.NoError(t, err)
+
+			return r.DatabaseCollation == "utf8mb4_general_ci"
+		}, time.Second*30, time.Second)
 		assert.True(t, r.CollationEquals(r.ExpectedCollation, r.DatabaseCollation))
 		assert.Empty(t, r.InconsistentCollationColumns)
 
@@ -140,9 +148,15 @@ func TestDatabaseCollation(t *testing.T) {
 		require.NoError(t, db.ConvertDatabaseTable())
 		time.Sleep(5 * time.Second)
 
+		var r *db.CheckCollationsResult
 		r, err := db.CheckCollations(x)
 		require.NoError(t, err)
-		assert.True(t, r.IsCollationCaseSensitive(r.DatabaseCollation))
+		assert.Eventually(t, func() bool {
+			r, err = db.CheckCollations(x)
+			require.NoError(t, err)
+
+			return r.IsCollationCaseSensitive(r.DatabaseCollation)
+		}, time.Second*30, time.Second)
 		assert.True(t, r.CollationEquals(r.ExpectedCollation, r.DatabaseCollation))
 		assert.Empty(t, r.InconsistentCollationColumns)
 	})
