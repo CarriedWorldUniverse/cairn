@@ -781,10 +781,6 @@ func AddTeamReviewRequest(ctx context.Context, issue *Issue, reviewer *organizat
 	official, err := IsOfficialReviewerTeam(ctx, issue, reviewer)
 	if err != nil {
 		return nil, fmt.Errorf("isOfficialReviewerTeam(): %w", err)
-	} else if !official {
-		if official, err = IsOfficialReviewer(ctx, issue, doer); err != nil {
-			return nil, fmt.Errorf("isOfficialReviewer(): %w", err)
-		}
 	}
 
 	if review, err = CreateReview(ctx, CreateReviewOptions{
@@ -795,12 +791,6 @@ func AddTeamReviewRequest(ctx context.Context, issue *Issue, reviewer *organizat
 		Stale:        false,
 	}); err != nil {
 		return nil, err
-	}
-
-	if official {
-		if _, err := db.Exec(ctx, "UPDATE `review` SET official=? WHERE issue_id=? AND reviewer_team_id=?", false, issue.ID, reviewer.ID); err != nil {
-			return nil, err
-		}
 	}
 
 	comment, err := CreateComment(ctx, &CreateCommentOptions{
