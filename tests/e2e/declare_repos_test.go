@@ -57,6 +57,22 @@ func DeclareGitRepos(t *testing.T) func() {
 			Filename: "a-file",
 			Versions: []string{"{a}{а}"},
 		}}),
+		newRepo(t, 2, "multiple-combo-boxes", []FileChanges{{
+			Filename: ".forgejo/issue_template/multi-combo-boxes.yaml",
+			Versions: []string{`
+name: "Multiple combo-boxes"
+description: "To show something"
+body:
+- type: textarea
+  id: textarea-one
+  attributes:
+    label: one
+- type: textarea
+  id: textarea-two
+  attributes:
+    label: two
+`},
+		}}),
 		// add your repo declarations here
 	}
 
