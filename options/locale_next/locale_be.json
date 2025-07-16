@@ -1,3 +1,8 @@
 {
-    "moderation.abuse_category.malware": "Шкодная праграма"
+    "moderation.abuse_category.malware": "Шкодная праграма",
+    "home.welcome.no_activity": "Няма падзей",
+    "home.welcome.activity_hint": "У вашай стужцы пакуль што нічога няма. Вашыя дзеяньні ды падзеі з рэпазыторыяў зьявяцца тут.",
+    "home.explore_repos": "Агляд рэпазыторыяў",
+    "home.explore_users": "Агляд карыстальнікаў",
+    "home.explore_orgs": "Агляд арганізацый"
 }
