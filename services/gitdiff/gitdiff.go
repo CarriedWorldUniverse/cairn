@@ -85,11 +85,20 @@ type DiffLine struct {
 
 // DiffLineSectionInfo represents diff line section meta data
 type DiffLineSectionInfo struct {
-	Path          string
-	LastLeftIdx   int
-	LastRightIdx  int
-	LeftIdx       int
-	RightIdx      int
+	Path string
+
+	// Last(Left/Right)Idx do not directly relate to this diff section, but indicate the last line number in the
+	// previous diff section. Set to 0 for the first diff section of a file, and 1 for the first line of code in the
+	// file.
+	LastLeftIdx  int
+	LastRightIdx int
+
+	// (Left/Right)Idx are the first line number in this diff section
+	LeftIdx  int
+	RightIdx int
+
+	// Number of lines contained within each diff section.  In the UI, these fields are set to 0 in cases where a
+	// section is being used as a placeholder at the end of a diff to allow expansion into the remainder of the file.
 	LeftHunkSize  int
 	RightHunkSize int
 }
@@ -157,7 +166,7 @@ func (d *DiffLine) GetExpandDirection() DiffLineExpandDirection {
 	}
 	if d.SectionInfo.LastLeftIdx <= 0 && d.SectionInfo.LastRightIdx <= 0 {
 		return DiffLineExpandUp
-	} else if d.SectionInfo.RightIdx-d.SectionInfo.LastRightIdx > BlobExcerptChunkSize && d.SectionInfo.RightHunkSize > 0 {
+	} else if d.SectionInfo.RightIdx-d.SectionInfo.LastRightIdx-1 > BlobExcerptChunkSize && d.SectionInfo.RightHunkSize > 0 {
 		return DiffLineExpandUpDown
 	} else if d.SectionInfo.LeftHunkSize <= 0 && d.SectionInfo.RightHunkSize <= 0 {
 		return DiffLineExpandDown
