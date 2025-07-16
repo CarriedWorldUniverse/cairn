@@ -106,12 +106,15 @@ func (t *testPatchContext) LoadHeadRevision(ctx context.Context, pr *issues_mode
 }
 
 // getTestPatchCtx constructs a new testpatch context for the given pull request.
-func getTestPatchCtx(ctx context.Context, pr *issues_model.PullRequest) (*testPatchContext, error) {
+// If `onBare` is true, then the context will use the base repository that does
+// not contain a working tree. Otherwise a temprorary repository is created that
+// contains a working tree.
+func getTestPatchCtx(ctx context.Context, pr *issues_model.PullRequest, onBare bool) (*testPatchContext, error) {
 	testPatchCtx := &testPatchContext{
 		close: func() {},
 	}
 
-	if git.SupportGitMergeTree {
+	if onBare {
 		if err := pr.LoadBaseRepo(ctx); err != nil {
 			return testPatchCtx, fmt.Errorf("LoadBaseRepo: %w", err)
 		}
@@ -157,7 +160,7 @@ func getTestPatchCtx(ctx context.Context, pr *issues_model.PullRequest) (*testPa
 }
 
 func testPatch(ctx context.Context, pr *issues_model.PullRequest) (*testPatchContext, error) {
-	testPatchCtx, err := getTestPatchCtx(ctx, pr)
+	testPatchCtx, err := getTestPatchCtx(ctx, pr, git.SupportGitMergeTree)
 	if err != nil {
 		return testPatchCtx, fmt.Errorf("getTestPatchCtx: %w", err)
 	}

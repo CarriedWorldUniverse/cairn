@@ -4,11 +4,9 @@
 package pull
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -30,7 +28,6 @@ import (
 	repo_module "forgejo.org/modules/repository"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/sync"
-	"forgejo.org/modules/util"
 	gitea_context "forgejo.org/services/context"
 	issue_service "forgejo.org/services/issue"
 	notify_service "forgejo.org/services/notify"
@@ -384,96 +381,49 @@ func TestPullRequest(ctx context.Context, doer *user_model.User, repoID, olderTh
 // Update commit divergence.
 func ValidatePullRequest(ctx context.Context, pr *issues_model.PullRequest, newCommitID, oldCommitID string, doer *user_model.User) {
 	objectFormat := git.ObjectFormatFromName(pr.BaseRepo.ObjectFormatName)
-	if newCommitID != "" && newCommitID != objectFormat.EmptyObjectID().String() {
-		changed, err := checkIfPRContentChanged(ctx, pr, oldCommitID, newCommitID)
+	if newCommitID == "" || newCommitID == objectFormat.EmptyObjectID().String() {
+		return
+	}
+
+	testPatchCtx, err := getTestPatchCtx(ctx, pr, true)
+	defer testPatchCtx.close()
+	if err != nil {
+		log.Error("testPatchCtx: %v", err)
+		return
+	}
+
+	changed, err := testPatchCtx.gitRepo.CheckIfDiffDiffers(testPatchCtx.baseRev, oldCommitID, newCommitID, testPatchCtx.env)
+	if err != nil {
+		log.Error("CheckIfDiffDiffers: %v", err)
+	}
+	if changed {
+		if err := issues_model.MarkReviewsAsStale(ctx, pr.IssueID); err != nil {
+			log.Error("MarkReviewsAsStale: %v", err)
+		}
+
+		pb, err := git_model.GetFirstMatchProtectedBranchRule(ctx, pr.BaseRepoID, pr.BaseBranch)
 		if err != nil {
-			log.Error("checkIfPRContentChanged: %v", err)
+			log.Error("GetFirstMatchProtectedBranchRule: %v", err)
 		}
-		if changed {
-			if err := issues_model.MarkReviewsAsStale(ctx, pr.IssueID); err != nil {
-				log.Error("MarkReviewsAsStale: %v", err)
+		if pb != nil && pb.DismissStaleApprovals {
+			if err := DismissApprovalReviews(ctx, doer, pr); err != nil {
+				log.Error("DismissApprovalReviews: %v", err)
 			}
+		}
+	}
+	if err := issues_model.MarkReviewsAsNotStale(ctx, pr.IssueID, newCommitID); err != nil {
+		log.Error("MarkReviewsAsNotStale: %v", err)
+	}
 
-			pb, err := git_model.GetFirstMatchProtectedBranchRule(ctx, pr.BaseRepoID, pr.BaseBranch)
-			if err != nil {
-				log.Error("GetFirstMatchProtectedBranchRule: %v", err)
-			}
-			if pb != nil && pb.DismissStaleApprovals {
-				if err := DismissApprovalReviews(ctx, doer, pr); err != nil {
-					log.Error("DismissApprovalReviews: %v", err)
-				}
-			}
-		}
-		if err := issues_model.MarkReviewsAsNotStale(ctx, pr.IssueID, newCommitID); err != nil {
-			log.Error("MarkReviewsAsNotStale: %v", err)
-		}
-		divergence, err := GetDiverging(ctx, pr)
+	divergence, err := git.GetDivergingCommits(ctx, testPatchCtx.gitRepo.Path, testPatchCtx.baseRev, testPatchCtx.headRev, testPatchCtx.env)
+	if err != nil {
+		log.Error("GetDivergingCommits: %v", err)
+	} else {
+		err = pr.UpdateCommitDivergence(ctx, divergence.Ahead, divergence.Behind)
 		if err != nil {
-			log.Error("GetDiverging: %v", err)
-		} else {
-			err = pr.UpdateCommitDivergence(ctx, divergence.Ahead, divergence.Behind)
-			if err != nil {
-				log.Error("UpdateCommitDivergence: %v", err)
-			}
+			log.Error("UpdateCommitDivergence: %v", err)
 		}
 	}
-}
-
-// checkIfPRContentChanged checks if diff to target branch has changed by push
-// A commit can be considered to leave the PR untouched if the patch/diff with its merge base is unchanged
-func checkIfPRContentChanged(ctx context.Context, pr *issues_model.PullRequest, oldCommitID, newCommitID string) (hasChanged bool, err error) {
-	prCtx, cancel, err := createTemporaryRepoForPR(ctx, pr)
-	if err != nil {
-		log.Error("CreateTemporaryRepoForPR %-v: %v", pr, err)
-		return false, err
-	}
-	defer cancel()
-
-	tmpRepo, err := git.OpenRepository(ctx, prCtx.tmpBasePath)
-	if err != nil {
-		return false, fmt.Errorf("OpenRepository: %w", err)
-	}
-	defer tmpRepo.Close()
-
-	// Find the merge-base
-	_, base, err := tmpRepo.GetMergeBase("", "base", "tracking")
-	if err != nil {
-		return false, fmt.Errorf("GetMergeBase: %w", err)
-	}
-
-	cmd := git.NewCommand(ctx, "diff", "--name-only", "-z").AddDynamicArguments(newCommitID, oldCommitID, base)
-	stdoutReader, stdoutWriter, err := os.Pipe()
-	if err != nil {
-		return false, fmt.Errorf("unable to open pipe for to run diff: %w", err)
-	}
-
-	stderr := new(bytes.Buffer)
-	if err := cmd.Run(&git.RunOpts{
-		Dir:    prCtx.tmpBasePath,
-		Stdout: stdoutWriter,
-		Stderr: stderr,
-		PipelineFunc: func(ctx context.Context, cancel context.CancelFunc) error {
-			_ = stdoutWriter.Close()
-			defer func() {
-				_ = stdoutReader.Close()
-			}()
-			return util.IsEmptyReader(stdoutReader)
-		},
-	}); err != nil {
-		if err == util.ErrNotEmpty {
-			return true, nil
-		}
-		err = git.ConcatenateError(err, stderr.String())
-
-		log.Error("Unable to run diff on %s %s %s in tempRepo for PR[%d]%s/%s...%s/%s: Error: %v",
-			newCommitID, oldCommitID, base,
-			pr.ID, pr.BaseRepo.FullName(), pr.BaseBranch, pr.HeadRepo.FullName(), pr.HeadBranch,
-			err)
-
-		return false, fmt.Errorf("Unable to run git diff --name-only -z %s %s %s: %w", newCommitID, oldCommitID, base, err)
-	}
-
-	return false, nil
 }
 
 // PushToBaseRepo pushes commits from branches of head repository to
