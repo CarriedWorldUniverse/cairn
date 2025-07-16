@@ -111,5 +111,7 @@
     "feed.atom.link": "Стрічка Atom",
     "profile.actions.tooltip": "Більше дій",
     "og.repo.summary_card.alt_description": "Підсумкова картка репозиторію %[1]s з описом: %[2]s",
-    "mail.actions.run_info_sha": "Коміт: %[1]s"
+    "mail.actions.run_info_sha": "Коміт: %[1]s",
+    "repo.settings.push_mirror.branch_filter.description": "Гілки для дзеркалювання. Залиште порожнім, щоб віддзеркалити всі гілки. Дивіться синтаксис у <a href=\"%[1]s\">документації %[2]s</a>. Приклади: <code>main, release/*</code>",
+    "repo.settings.push_mirror.branch_filter.label": "Фільтр гілок (необов'язково)"
 }
