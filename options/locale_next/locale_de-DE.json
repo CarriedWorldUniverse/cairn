@@ -90,11 +90,11 @@
     "followers.outgoing.list.none": "%s folgt niemanden.",
     "stars.list.none": "Niemand hat dieses Repo favorisiert.",
     "followers.incoming.list.none": "Niemand folgt diesem Benutzer.",
-    "editor.textarea.tab_hint": "Zeile bereits eingerückt. Drücke nochmals <kbd>Tab</kbd> oder <kbd>Escape</kbd> um den Editor zu verlassen.",
-    "editor.textarea.shift_tab_hint": "Keine Einrückung auf dieser Zeile. Drücke nochmals <kbd>Shift</kbd> + <kbd>Tab</kbd> oder <kbd>Escape</kbd> um den Editor zu verlassen.",
-    "admin.dashboard.cleanup_offline_runners": "Aufräumen der offline Runner",
+    "editor.textarea.tab_hint": "Zeile bereits eingerückt. Drücke nochmals <kbd>Tab</kbd> oder <kbd>Escape</kbd>, um den Editor zu verlassen.",
+    "editor.textarea.shift_tab_hint": "Keine Einrückung auf dieser Zeile. Drücke nochmals <kbd>Shift</kbd> + <kbd>Tab</kbd> oder <kbd>Escape</kbd>, um den Editor zu verlassen.",
+    "admin.dashboard.cleanup_offline_runners": "Aufräumen der Offline-Runner",
     "settings.visibility.description": "Die Profilsichtbarkeit beeinflusst die Möglichkeit anderer, auf deine nicht-privaten Repositorys zuzugreifen. <a href=\"%s\" target=\"_blank\">Erfahre mehr</a>",
-    "avatar.constraints_hint": "Individuelles Profilbild darf %[1]s in der Größe nicht überschreiten, und nicht größer als %[2]dx%[3]d Pixel sein",
+    "avatar.constraints_hint": "Individuelles Profilbild darf %[1]s in der Größe nicht überschreiten, und nicht größer als %[2]d×%[3]d Pixel sein",
     "repo.diff.commit.next-short": "Nächste",
     "repo.diff.commit.previous-short": "Vorherige",
     "profile.edit.link": "Profil bearbeiten",
@@ -103,5 +103,7 @@
     "keys.gpg.link": "GPG-Schlüssel",
     "profile.actions.tooltip": "Mehr Aktionen",
     "og.repo.summary_card.alt_description": "Zusammenfassungskarte des Repositorys %[1]s, beschrieben als %[2]s",
-    "mail.actions.run_info_sha": "Commit: %[1]s"
+    "mail.actions.run_info_sha": "Commit: %[1]s",
+    "repo.settings.push_mirror.branch_filter.label": "Branch-Filter (optional)",
+    "repo.settings.push_mirror.branch_filter.description": "Zu spiegelnde Branches. Leer lassen, um alle Branches zu spiegeln. Siehe die <a href=\"%[1]s\">„%[2]s“-Dokumentation</a> für die Syntax. Beispiele: <code>main, release/*</code>"
 }

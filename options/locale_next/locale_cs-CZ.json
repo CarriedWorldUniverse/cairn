@@ -111,5 +111,7 @@
     "feed.atom.link": "Zdroj Atom",
     "keys.ssh.link": "Klíče SSH",
     "og.repo.summary_card.alt_description": "Karta se souhrnem repozitáře %[1]s, popsaným jako: %[2]s",
-    "mail.actions.run_info_sha": "Revize: %[1]s"
+    "mail.actions.run_info_sha": "Revize: %[1]s",
+    "repo.settings.push_mirror.branch_filter.label": "Filtr větve (nepovinný)",
+    "repo.settings.push_mirror.branch_filter.description": "Větve, které mají být zrcadleny. Ponechte prázdné pro zrcadlení všech větví. Syntaxi naleznete v <a href=\"%[1]s\">dokumentaci %[2]s</a>. Příklady: <code>main, release/*</code>"
 }
