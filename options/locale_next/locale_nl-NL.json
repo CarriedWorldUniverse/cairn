@@ -103,5 +103,7 @@
     "repo.diff.commit.previous-short": "Vorige",
     "avatar.constraints_hint": "Eigen avatars mogen niet groter zijn dan %[1]s in grootte of groter zijn dan %[2]dx%[3]d pixels",
     "og.repo.summary_card.alt_description": "Samenvattingsoverzicht van repositorie %[1]s, omschreven als: %[2]s",
-    "mail.actions.run_info_sha": "Commit: %[1]s"
+    "mail.actions.run_info_sha": "Commit: %[1]s",
+    "repo.settings.push_mirror.branch_filter.label": "Branch filter (optioneel)",
+    "repo.settings.push_mirror.branch_filter.description": "Branches die gespiegeld moeten worden. Laat het laag om alle branches te spiegelen. Zie <a href=\"%[1]s\">%[2]s</a> documentatie voor de syntax. Voorbeeld: <code>main, release/*</code>"
 }

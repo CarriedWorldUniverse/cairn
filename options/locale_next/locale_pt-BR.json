@@ -111,5 +111,7 @@
     "og.repo.summary_card.alt_description": "Cartão de resumo do repositório %[1]s, descrito como: %[2]s",
     "profile.actions.tooltip": "Mais Actions",
     "keys.ssh.link": "Chaves SSH",
-    "mail.actions.run_info_sha": "Commit: %[1]s"
+    "mail.actions.run_info_sha": "Commit: %[1]s",
+    "repo.settings.push_mirror.branch_filter.label": "Filtro de branches (opcional)",
+    "repo.settings.push_mirror.branch_filter.description": "Branches para espelhar. Deixe em branco para espelhar todos os branches. Veja <a href=\"%[1]s\">%[2]s documentação</a> sobre a sintaxe. Exemplos: <code>main, release/*</code>"
 }

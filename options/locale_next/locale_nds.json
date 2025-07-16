@@ -103,5 +103,7 @@
     "profile.actions.tooltip": "Mehr Aktioonen",
     "profile.edit.link": "Profil bewarken",
     "og.repo.summary_card.alt_description": "Tosamenfatens-Kaart vun de Repositorium %[1]s, beschrieven as: %[2]s",
-    "mail.actions.run_info_sha": "Kommitteren: %[1]s"
+    "mail.actions.run_info_sha": "Kommitteren: %[1]s",
+    "repo.settings.push_mirror.branch_filter.description": "Twiegen tum Spegeln. Laat dat leeg, um all Twiegen to spegeln. Lees de <a href=\"%[1]s\">%[2]s-Dokumenteren</a> för de Syntax. Bispölen: <code>main, release/*</code>",
+    "repo.settings.push_mirror.branch_filter.label": "Twieg-Filter (wenn du willst)"
 }
