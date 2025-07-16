@@ -105,5 +105,10 @@
     "avatar.constraints_hint": "Imagem de perfil personalizada não pode exceder %[1]s em tamanho ou ser maior que %[2]dx%[3]d pixels",
     "settings.visibility.description": "A visibilidade do perfil afeta a habilidade de acessarem seus repositórios não-privados. <a href=\"%s\" target=\"_blank\">Saiba mais</a>",
     "repo.diff.commit.next-short": "Próximo",
-    "repo.diff.commit.previous-short": "Anterior"
+    "repo.diff.commit.previous-short": "Anterior",
+    "profile.actions.tooltip": "Mais Actions",
+    "profile.edit.link": "Editar perfil",
+    "feed.atom.link": "Feed Atom",
+    "keys.ssh.link": "Chaves SSH",
+    "keys.gpg.link": "Chaves GPG"
 }
