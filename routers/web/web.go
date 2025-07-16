@@ -117,7 +117,7 @@ func webAuth(authMethod auth_service.Method) func(*context.Context) {
 	return func(ctx *context.Context) {
 		ar, err := common.AuthShared(ctx.Base, ctx.Session, authMethod)
 		if err != nil {
-			log.Error("Failed to verify user: %v", err)
+			log.Info("Failed to verify user: %v", err)
 			ctx.Error(http.StatusUnauthorized, ctx.Locale.TrString("auth.unauthorized_credentials", "https://codeberg.org/forgejo/forgejo/issues/2809"))
 			return
 		}
