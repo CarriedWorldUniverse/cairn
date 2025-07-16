@@ -715,6 +715,163 @@ func TestGetDiffFull(t *testing.T) {
 	})
 }
 
+func TestDiffLine_GetExpandDirection(t *testing.T) {
+	tests := []struct {
+		name           string
+		diffLine       *DiffLine
+		expectedResult DiffLineExpandDirection
+	}{
+		{
+			name: "non-section line - no expansion",
+			diffLine: &DiffLine{
+				Type:        DiffLineAdd,
+				SectionInfo: &DiffLineSectionInfo{},
+			},
+			expectedResult: DiffLineExpandNone,
+		},
+		{
+			name: "nil section info - no expansion",
+			diffLine: &DiffLine{
+				Type:        DiffLineSection,
+				SectionInfo: nil,
+			},
+			expectedResult: DiffLineExpandNone,
+		},
+		{
+			name: "no lines between",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Previous section of the diff displayed up to line 530...
+					LastRightIdx: 530,
+					LastLeftIdx:  530,
+					// This section of the diff starts at line 531...
+					RightIdx: 531,
+					LeftIdx:  531,
+				},
+			},
+			// There are zero lines between 530 and 531, so we should have nothing to expand.
+			expectedResult: DiffLineExpandNone,
+		},
+		{
+			name: "first diff section is the start of the file",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Last[...]Idx is set to zero when it's the first section in the file (and not 1, which would be
+					// the first section -is- the first line of the file).
+					LastRightIdx: 0,
+					LastLeftIdx:  0,
+					// The diff section is showing line 1, the top of th efile.
+					RightIdx: 1,
+					LeftIdx:  1,
+				},
+			},
+			// We're at the top of the file; no expansion.
+			expectedResult: DiffLineExpandNone,
+		},
+		{
+			name: "first diff section doesn't start at the top of the file",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Last[...]Idx is set to zero when it's the first section in the file (and not 1, which would be
+					// the first section -is- the first line of the file).
+					LastRightIdx: 0,
+					LastLeftIdx:  0,
+					RightIdx:     531,
+					LeftIdx:      531,
+				},
+			},
+			// We're at the top of the diff but there's content above, so can only expand up.
+			expectedResult: DiffLineExpandUp,
+		},
+		{
+			name: "middle of the file with single expansion",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Previous section ended at ~500...
+					LastRightIdx: 500,
+					LastLeftIdx:  500,
+					// Next section starts one line away...
+					RightIdx: 502,
+					LeftIdx:  502,
+					// The next block has content (> 0)
+					RightHunkSize: 50,
+					LeftHunkSize:  50,
+				},
+			},
+			// Can be expanded in a single direction, displaying the missing line (501).
+			expectedResult: DiffLineExpandSingle,
+		},
+		{
+			name: "middle of the file with multi line expansion",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Previous section ended at ~500...
+					LastRightIdx: 500,
+					LastLeftIdx:  500,
+					// Lines 501-520 are hidden, exactly 20 lines, matching BlobExcerptChunkSize (20)...
+					RightIdx: 521,
+					LeftIdx:  521,
+					// The next block has content (> 0)
+					RightHunkSize: 50,
+					LeftHunkSize:  50,
+				},
+			},
+			// Can be expanded in a single direction, displaying all the hidden 20 lines.
+			expectedResult: DiffLineExpandSingle,
+		},
+		{
+			name: "middle of the file with multi direction expansion",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// Previous section ended at ~500...
+					LastRightIdx: 500,
+					LastLeftIdx:  500,
+					// Lines 501-521 are hidden, exactly 21 lines, exceeding BlobExcerptChunkSize (20)...
+					RightIdx: 522,
+					LeftIdx:  522,
+					// The next block has content (> 0)
+					RightHunkSize: 50,
+					LeftHunkSize:  50,
+				},
+			},
+			// Now can be expanded down to display from 501-520 (521 remains hidden), or up to display 502-521 (501
+			// remains hidden).
+			expectedResult: DiffLineExpandUpDown,
+		},
+		{
+			name: "end of the diff but still file content to display",
+			diffLine: &DiffLine{
+				Type: DiffLineSection,
+				SectionInfo: &DiffLineSectionInfo{
+					// We had a previous diff section, of any size/location...
+					LastRightIdx: 200,
+					LastLeftIdx:  200,
+					RightIdx:     531,
+					LeftIdx:      531,
+					// Hunk size size 0 is a placeholder value for the end or beginning of a file...
+					RightHunkSize: 0,
+					LeftHunkSize:  0,
+				},
+			},
+			// Combination of conditions says we're at the end of the last diff section, can only expand down.
+			expectedResult: DiffLineExpandDown,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.diffLine.GetExpandDirection()
+			assert.Equal(t, tt.expectedResult, result)
+		})
+	}
+}
+
 func TestNoCrashes(t *testing.T) {
 	type testcase struct {
 		gitdiff string

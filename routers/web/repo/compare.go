@@ -933,25 +933,29 @@ func ExcerptBlob(ctx *context.Context) {
 		ctx.Error(http.StatusInternalServerError, "getExcerptLines")
 		return
 	}
-	if idxRight > lastRight {
+
+	// After the "up" or "down" expansion, check if there's any remaining content in the diff and add a line that will
+	// be rendered into a new expander at either the top, or bottom.
+	lineSection := &gitdiff.DiffLine{
+		Type: gitdiff.DiffLineSection,
+		SectionInfo: &gitdiff.DiffLineSectionInfo{
+			Path:          filePath,
+			LastLeftIdx:   lastLeft,
+			LastRightIdx:  lastRight,
+			LeftIdx:       idxLeft,
+			RightIdx:      idxRight,
+			LeftHunkSize:  leftHunkSize,
+			RightHunkSize: rightHunkSize,
+		},
+	}
+	if lineSection.GetExpandDirection() != gitdiff.DiffLineExpandNone {
 		lineText := " "
 		if rightHunkSize > 0 || leftHunkSize > 0 {
 			lineText = fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", idxLeft, leftHunkSize, idxRight, rightHunkSize)
 		}
 		lineText = html.EscapeString(lineText)
-		lineSection := &gitdiff.DiffLine{
-			Type:    gitdiff.DiffLineSection,
-			Content: lineText,
-			SectionInfo: &gitdiff.DiffLineSectionInfo{
-				Path:          filePath,
-				LastLeftIdx:   lastLeft,
-				LastRightIdx:  lastRight,
-				LeftIdx:       idxLeft,
-				RightIdx:      idxRight,
-				LeftHunkSize:  leftHunkSize,
-				RightHunkSize: rightHunkSize,
-			},
-		}
+		lineSection.Content = lineText
+
 		switch direction {
 		case "up":
 			section.Lines = append([]*gitdiff.DiffLine{lineSection}, section.Lines...)
