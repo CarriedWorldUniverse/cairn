@@ -117,7 +117,7 @@ func verifyAuth(r *web.Route, authMethods []auth.Method) {
 		var err error
 		ctx.Doer, err = authGroup.Verify(ctx.Req, ctx.Resp, ctx, ctx.Session)
 		if err != nil {
-			log.Error("Failed to verify user: %v", err)
+			log.Info("Failed to verify user: %v", err)
 			ctx.Error(http.StatusUnauthorized, "authGroup.Verify")
 			return
 		}
