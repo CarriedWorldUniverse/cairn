@@ -111,5 +111,7 @@
     "keys.ssh.link": "SSH atslēgas",
     "keys.gpg.link": "GPG atslēgas",
     "og.repo.summary_card.alt_description": "Glabātavas %[1]s kopsavilkuma kartīte, aprakstīta kā: %[2]s",
-    "mail.actions.run_info_sha": "Iesūtījums: %[1]s"
+    "mail.actions.run_info_sha": "Iesūtījums: %[1]s",
+    "repo.settings.push_mirror.branch_filter.description": "Zarus, kurus spoguļot. Atstāt tukšu, lai spoguļotu visus zarus. Pierakstu skatīt <a href=\"%[1]s\">%[2]s dokumentācijā</a>. Piemēri: <code>main, release/*</code>",
+    "repo.settings.push_mirror.branch_filter.label": "Zaru atlasītājs (izvēles)"
 }

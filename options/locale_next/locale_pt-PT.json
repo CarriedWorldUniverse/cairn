@@ -83,7 +83,7 @@
     "moderation.abuse_category": "Categoria",
     "moderation.abuse_category.placeholder": "Escolha uma categoria",
     "moderation.abuse_category.spam": "Spam",
-    "moderation.abuse_category.malware": "Malware",
+    "moderation.abuse_category.malware": "Software malicioso",
     "moderation.abuse_category.illegal_content": "Conteúdo ilegal",
     "moderation.abuse_category.other_violations": "Outras violações das regras da plataforma",
     "moderation.report_remarks": "Observações",
@@ -109,5 +109,9 @@
     "feed.atom.link": "Feed Atom",
     "keys.ssh.link": "Chaves SSH",
     "keys.gpg.link": "Chaves GPG",
-    "repo.diff.commit.previous-short": "Ant."
+    "repo.diff.commit.previous-short": "Ant.",
+    "og.repo.summary_card.alt_description": "Cartão de resumo do repositório %[1]s, descrito como: %[2]s",
+    "repo.settings.push_mirror.branch_filter.label": "Filtro de ramos (opcional)",
+    "repo.settings.push_mirror.branch_filter.description": "Ramos a serem espelhados. Deixe em branco para espelhar todos os ramos. Veja a <a href=\"%[1]s\">%[2]s documentação</a> sobre a sintaxe. Exemplos: <code>main, release/*</code>",
+    "mail.actions.run_info_sha": "Cometimento: %[1]s"
 }
