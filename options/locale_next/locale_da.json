@@ -97,5 +97,10 @@
     "settings.visibility.description": "Profilsynlighed påvirker andres adgang til dine ikke-private depoter. <a href=\"%s\" target=\"_blank\">Læs mere</a>",
     "avatar.constraints_hint": "Brugerdefineret avatar må ikke overstige %[1]s i størrelse eller være større end %[2]dx%[3]d pixels",
     "repo.diff.commit.next-short": "Næste",
-    "repo.diff.commit.previous-short": "Forrige"
+    "repo.diff.commit.previous-short": "Forrige",
+    "profile.actions.tooltip": "Flere handlinger",
+    "profile.edit.link": "Redigere profil",
+    "feed.atom.link": "Atom feed",
+    "keys.ssh.link": "SSH Nøgler",
+    "keys.gpg.link": "GPG Nøgler"
 }

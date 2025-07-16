@@ -64,5 +64,6 @@
     "mail.actions.run_info_cur_status": "Tämän juoksun tila: %[1]s (juuri päivitetty %[2]s:sta)",
     "mail.actions.run_info_previous_status": "Edellisen ajon tila: %[1]s",
     "mail.actions.run_info_ref": "Haara: %[1]s (%[2]s)",
-    "mail.actions.run_info_trigger": "Laukaistui, koska: %[1]s, tekijänä: %[2]s"
+    "mail.actions.run_info_trigger": "Laukaistui, koska: %[1]s, tekijänä: %[2]s",
+    "moderation.abuse_category.malware": "Haittaohjelma"
 }

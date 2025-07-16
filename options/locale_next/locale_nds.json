@@ -102,5 +102,6 @@
     "keys.ssh.link": "SSH-Slötels",
     "keys.gpg.link": "GPG-Slötels",
     "profile.actions.tooltip": "Mehr Aktioonen",
-    "profile.edit.link": "Profil bewarken"
+    "profile.edit.link": "Profil bewarken",
+    "mail.actions.run_info_sha": "Kommitteren: %[1]s"
 }

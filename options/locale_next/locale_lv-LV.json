@@ -110,5 +110,6 @@
     "profile.edit.link": "Labot profilu",
     "feed.atom.link": "Atom barotne",
     "keys.ssh.link": "SSH atslēgas",
-    "keys.gpg.link": "GPG atslēgas"
+    "keys.gpg.link": "GPG atslēgas",
+    "mail.actions.run_info_sha": "Iesūtījums: %[1]s"
 }

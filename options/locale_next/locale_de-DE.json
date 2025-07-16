@@ -102,5 +102,6 @@
     "feed.atom.link": "Atom-Feed",
     "keys.ssh.link": "SSH-Schlüssel",
     "keys.gpg.link": "GPG-Schlüssel",
-    "profile.actions.tooltip": "Mehr Aktionen"
+    "profile.actions.tooltip": "Mehr Aktionen",
+    "mail.actions.run_info_sha": "Commit: %[1]s"
 }
