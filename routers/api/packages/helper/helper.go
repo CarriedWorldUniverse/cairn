@@ -25,7 +25,8 @@ func LogAndProcessError(ctx *context.Context, status int, obj any, cb func(strin
 		message = fmt.Sprintf("%s", obj)
 	}
 	if status == http.StatusInternalServerError {
-		log.ErrorWithSkip(1, message)
+		// LogAndProcessError is always wrapped in a `apiError` call, so we need to skip two frames
+		log.ErrorWithSkip(2, message)
 
 		if setting.IsProd && (ctx.Doer == nil || !ctx.Doer.IsAdmin) {
 			message = ""
