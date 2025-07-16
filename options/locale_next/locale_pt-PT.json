@@ -84,7 +84,7 @@
     "moderation.abuse_category": "Categoria",
     "moderation.abuse_category.placeholder": "Escolha uma categoria",
     "moderation.abuse_category.spam": "Spam",
-    "moderation.abuse_category.malware": "Malware",
+    "moderation.abuse_category.malware": "Software malicioso",
     "moderation.abuse_category.illegal_content": "Conteúdo ilegal",
     "moderation.abuse_category.other_violations": "Outras violações das regras da plataforma",
     "moderation.report_remarks": "Observações",
@@ -103,5 +103,13 @@
     "stars.list.none": "Ninguém juntou este repositório aos favoritos.",
     "admin.dashboard.cleanup_offline_runners": "Limpeza de executores offline",
     "settings.visibility.description": "A visibilidade do perfil afecta a capacidade de outros acederem aos seus repositórios não privados. <a href=\"%s\" target=\"_blank\">Ler mais</a>",
-    "avatar.constraints_hint": "O avatar personalizado não pode exceder %[1]s de tamanho ou ser maior do que %[2]dx%[3]d pixéis"
+    "avatar.constraints_hint": "O avatar personalizado não pode exceder %[1]s de tamanho ou ser maior do que %[2]dx%[3]d pixéis",
+    "profile.actions.tooltip": "Mais Actions",
+    "profile.edit.link": "Editar perfil",
+    "feed.atom.link": "Feed Atom",
+    "keys.ssh.link": "Chaves SSH",
+    "keys.gpg.link": "Chaves GPG",
+    "repo.diff.commit.next-short": "Seg.",
+    "repo.diff.commit.previous-short": "Ant.",
+    "mail.actions.run_info_sha": "Cometimento: %[1]s"
 }
