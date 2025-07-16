@@ -298,9 +298,15 @@ func SubmitReview(ctx context.Context, doer *user_model.User, gitRepo *git.Repos
 		if headCommitID == commitID {
 			stale = false
 		} else {
-			stale, err = checkIfPRContentChanged(ctx, pr, commitID, headCommitID)
+			testPatchCtx, err := getTestPatchCtx(ctx, pr, true)
+			defer testPatchCtx.close()
 			if err != nil {
 				return nil, nil, err
+			}
+
+			stale, err = testPatchCtx.gitRepo.CheckIfDiffDiffers(testPatchCtx.baseRev, commitID, headCommitID, testPatchCtx.env)
+			if err != nil {
+				return nil, nil, fmt.Errorf("CheckIfDiffDiffers: %w", err)
 			}
 		}
 	}
