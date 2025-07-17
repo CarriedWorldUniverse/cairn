@@ -209,7 +209,7 @@ func (m *MinioStorage) Save(path string, r io.Reader, size int64) (int64, error)
 		m.ctx,
 		m.bucket,
 		m.buildMinioPath(path),
-		r,
+		io.NopCloser(r), // prevent minio from closing the reader
 		size,
 		minio.PutObjectOptions{
 			ContentType: "application/octet-stream",
