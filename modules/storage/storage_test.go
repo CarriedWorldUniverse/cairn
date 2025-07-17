@@ -5,6 +5,7 @@ package storage
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	"forgejo.org/modules/setting"
@@ -13,22 +14,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type spyCloser struct {
+	io.Reader
+	closed int
+}
+
+func (s *spyCloser) Close() error {
+	s.closed++
+	return nil
+}
+
+var _ io.ReadCloser = &spyCloser{}
+
 func testStorageIterator(t *testing.T, typStr Type, cfg *setting.Storage) {
 	l, err := NewStorage(typStr, cfg)
 	require.NoError(t, err)
 
-	testFiles := [][]string{
-		{"a/1.txt", "a1"},
-		{"/a/1.txt", "aa1"}, // same as above, but with leading slash that will be trim
-		{"ab/1.txt", "ab1"},
-		{"b/1.txt", "b1"},
-		{"b/2.txt", "b2"},
-		{"b/3.txt", "b3"},
-		{"b/x 4.txt", "bx4"},
+	testFiles := []struct {
+		path, content string
+		size          int64
+	}{
+		{"a/1.txt", "a1", -1},
+		{"/a/1.txt", "aa1", -1}, // same as above, but with leading slash that will be trim
+		{"ab/1.txt", "ab1", 3},
+		{"b/1.txt", "b1", 2}, // minio closes when the size is set
+		{"b/2.txt", "b2", -1},
+		{"b/3.txt", "b3", -1},
+		{"b/x 4.txt", "bx4", -1},
 	}
 	for _, f := range testFiles {
-		_, err = l.Save(f[0], bytes.NewBufferString(f[1]), -1)
+		sc := &spyCloser{bytes.NewBufferString(f.content), 0}
+		_, err = l.Save(f.path, sc, f.size)
 		require.NoError(t, err)
+		assert.Equal(t, 0, sc.closed)
 	}
 
 	expectedList := map[string][]string{
