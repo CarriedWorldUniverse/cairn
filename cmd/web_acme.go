@@ -15,6 +15,7 @@ import (
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/process"
+	"forgejo.org/modules/proxy"
 	"forgejo.org/modules/setting"
 
 	"github.com/caddyserver/certmagic"
@@ -76,6 +77,12 @@ func runACME(listenAddr string, m http.Handler) error {
 		ListenHost:              setting.HTTPAddr,
 		AltTLSALPNPort:          altTLSALPNPort,
 		AltHTTPPort:             altHTTPPort,
+		HTTPProxy:               proxy.Proxy(),
+	}
+
+	// Preserve behavior to use Let's encrypt test CA when Let's encrypt is CA.
+	if certmagic.DefaultACME.CA == certmagic.LetsEncryptProductionCA {
+		certmagic.DefaultACME.TestCA = certmagic.LetsEncryptStagingCA
 	}
 
 	magic := certmagic.NewDefault()

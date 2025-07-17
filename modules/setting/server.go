@@ -16,6 +16,8 @@ import (
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/util"
+
+	"github.com/caddyserver/certmagic"
 )
 
 // Scheme describes protocol types
@@ -206,7 +208,7 @@ func loadServerFrom(rootCfg ConfigProvider) {
 			EnableAcme = sec.Key("ENABLE_LETSENCRYPT").MustBool(false)
 		}
 		if EnableAcme {
-			AcmeURL = sec.Key("ACME_URL").MustString("")
+			AcmeURL = sec.Key("ACME_URL").MustString(certmagic.LetsEncryptProductionCA)
 			AcmeCARoot = sec.Key("ACME_CA_ROOT").MustString("")
 
 			if sec.HasKey("ACME_ACCEPTTOS") {
