@@ -531,6 +531,13 @@ const filters = {
     }
     return el;
   },
+  IMG(el, context) {
+    const src = el.getAttribute('src');
+    if (src?.startsWith(context)) {
+      el.src = src.slice(context.length);
+    }
+    return el;
+  },
 };
 
 function hasContent(node) {
@@ -538,32 +545,34 @@ function hasContent(node) {
 }
 
 // This code matches that of what is done by @github/quote-selection
-function preprocessFragment(fragment) {
-  const nodeIterator = document.createNodeIterator(fragment, NodeFilter.SHOW_ELEMENT, {
-    acceptNode(node) {
-      if (node.nodeName in filters && hasContent(node)) {
-        return NodeFilter.FILTER_ACCEPT;
+function preprocessFragment(context) {
+  return function(fragment) {
+    const nodeIterator = document.createNodeIterator(fragment, NodeFilter.SHOW_ELEMENT, {
+      acceptNode(node) {
+        if (node.nodeName in filters && hasContent(node)) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+
+        return NodeFilter.FILTER_SKIP;
+      },
+    });
+    const results = [];
+    let node = nodeIterator.nextNode();
+
+    while (node) {
+      if (node instanceof HTMLElement) {
+        results.push(node);
       }
-
-      return NodeFilter.FILTER_SKIP;
-    },
-  });
-  const results = [];
-  let node = nodeIterator.nextNode();
-
-  while (node) {
-    if (node instanceof HTMLElement) {
-      results.push(node);
+      node = nodeIterator.nextNode();
     }
-    node = nodeIterator.nextNode();
-  }
 
   // process deepest matches first
-  results.reverse();
+    results.reverse();
 
-  for (const el of results) {
-    el.replaceWith(filters[el.nodeName](el));
-  }
+    for (const el of results) {
+      el.replaceWith(filters[el.nodeName](el, context));
+    }
+  };
 }
 
 function initRepoIssueCommentEdit() {
@@ -573,7 +582,7 @@ function initRepoIssueCommentEdit() {
   // Quote reply
   $(document).on('click', '.quote-reply', async (event) => {
     event.preventDefault();
-    const quote = new MarkdownQuote('', preprocessFragment);
+    const quote = new MarkdownQuote('', preprocessFragment(event.target.getAttribute('data-context')));
 
     let editorTextArea;
     if (event.target.classList.contains('quote-reply-diff')) {
