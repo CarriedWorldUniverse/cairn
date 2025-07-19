@@ -57,7 +57,7 @@ export function initRepoIssueTimeTracking() {
     $(sel).modal({
       duration: 200,
       onApprove() {
-        document.getElementById(`${sel} form`).requestSubmit();
+        document.querySelector(`${sel} form`).requestSubmit();
       },
     }).modal('show');
   });
