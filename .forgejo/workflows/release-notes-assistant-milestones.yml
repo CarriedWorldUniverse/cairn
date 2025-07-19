@@ -6,7 +6,7 @@ on:
 
 env:
   RNA_WORKDIR: /srv/rna
-  RNA_VERSION: v1.3.0 # renovate: datasource=gitea-releases depName=forgejo/release-notes-assistant registryUrl=https://code.forgejo.org
+  RNA_VERSION: v1.3.1 # renovate: datasource=gitea-releases depName=forgejo/release-notes-assistant registryUrl=https://code.forgejo.org
 
 jobs:
   release-notes:
