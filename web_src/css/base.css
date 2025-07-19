@@ -546,11 +546,6 @@ a.label,
   background: var(--color-active);
 }
 
-.ui.secondary.menu.tight .item {
-  padding-left: 0.85714286em;
-  padding-right: 0.85714286em;
-}
-
 /* remove the menu clearfix so that it won't add undesired gaps when using "gap" */
 .ui.menu::after {
   content: normal;
