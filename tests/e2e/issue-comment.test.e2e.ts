@@ -123,7 +123,8 @@ test('Quote reply', async ({page}, workerInfo) => {
                                            "> alert('evil')\n" +
                                            '> ```\n' +
                                            '> \n' +
-                                           '> :+1: :100:\n\n');
+                                           '> :+1: :100: [![hi there](/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2)](/user2/repo1/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2)\n' +
+                                           '> <img alt="something something" width="500" height="500" src="/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2">\n\n');
 
   await editorTextarea.fill('');
 
@@ -197,7 +198,8 @@ test('Pull quote reply', async ({page}, workerInfo) => {
                                            "> alert('evil')\n" +
                                            '> ```\n' +
                                            '> \n' +
-                                           '> :+1: :100:\n\n');
+                                           '> :+1: :100: [![hi there](/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2)](/user2/commitsonpr/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2)\n' +
+                                           '> <img alt="something something" width="500" height="500" src="/attachments/3f4f4016-877b-46b3-b79f-ad24519a9cf2">\n\n');
 
   await editorTextarea.fill('');
 });
