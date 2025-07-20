@@ -15,10 +15,13 @@ import (
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/models/moderation"
 	"forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/json"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
@@ -276,4 +279,57 @@ func TestDeleteInactiveUsers(t *testing.T) {
 	// User not older than a minute shouldn't be deleted and their emaill address should still exist.
 	unittest.AssertExistsIf(t, true, newUser)
 	unittest.AssertExistsIf(t, true, newEmail)
+}
+
+func TestCreateShadowCopyOnUserUpdate(t *testing.T) {
+	defer unittest.OverrideFixtures("models/fixtures/ModerationFeatures")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	userAlexSmithID := int64(1002)
+	abuseReportID := int64(2)     // submitted for @alexsmith
+	newDummyValue := "[REDACTED]" // used for updating profile text fields
+
+	// Retrieve the abusive user (@alexsmith) and the abuse report already created for this user.
+	abuser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userAlexSmithID})
+	report := unittest.AssertExistsAndLoadBean(t, &moderation.AbuseReport{
+		ID:          abuseReportID,
+		ContentType: moderation.ReportedContentTypeUser,
+		ContentID:   abuser.ID,
+	})
+	// The report should not already have a shadow copy linked.
+	assert.False(t, report.ShadowCopyID.Valid)
+
+	// Keep a copy of old field values before updating them.
+	oldUserData := user_model.UserData{
+		FullName:    abuser.FullName,
+		Location:    abuser.Location,
+		Website:     abuser.Website,
+		Pronouns:    abuser.Pronouns,
+		Description: abuser.Description,
+	}
+
+	// The abusive user is updating their profile.
+	opts := &UpdateOptions{
+		FullName:    optional.Some(newDummyValue),
+		Location:    optional.Some(newDummyValue),
+		Website:     optional.Some(newDummyValue),
+		Pronouns:    optional.Some(newDummyValue),
+		Description: optional.Some(newDummyValue),
+	}
+	require.NoError(t, UpdateUser(t.Context(), abuser, opts))
+
+	// Reload the report.
+	report = unittest.AssertExistsAndLoadBean(t, &moderation.AbuseReport{ID: report.ID})
+	// A shadow copy should have been created and linked to our report.
+	assert.True(t, report.ShadowCopyID.Valid)
+	// Retrieve the newly created shadow copy and unmarshal the stored JSON so that we can check the values.
+	shadowCopy := unittest.AssertExistsAndLoadBean(t, &moderation.AbuseReportShadowCopy{ID: report.ShadowCopyID.Int64})
+	shadowCopyUserData := new(user_model.UserData)
+	require.NoError(t, json.Unmarshal([]byte(shadowCopy.RawValue), &shadowCopyUserData))
+	// Check to see if the initial field values of the user were stored within the shadow copy.
+	assert.Equal(t, oldUserData.FullName, shadowCopyUserData.FullName)
+	assert.Equal(t, oldUserData.Location, shadowCopyUserData.Location)
+	assert.Equal(t, oldUserData.Website, shadowCopyUserData.Website)
+	assert.Equal(t, oldUserData.Pronouns, shadowCopyUserData.Pronouns)
+	assert.Equal(t, oldUserData.Description, shadowCopyUserData.Description)
 }

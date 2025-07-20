@@ -73,16 +73,20 @@ var userDataColumnNames = sync.OnceValue(func() []string {
 // and if found a shadow copy of relevant user fields will be stored into DB and linked to the above report(s).
 // This function should be called before a user is deleted or updated.
 //
+// In case the User object was already altered before calling this method, just provide the userID and
+// nil for unalteredUser; when it is decided that a shadow copy should be created and unalteredUser is nil,
+// the user will be retrieved from DB based on the provided userID.
+//
 // For deletions alteredCols argument must be omitted.
 //
 // In case of updates it will first checks whether any of the columns being updated (alteredCols argument)
 // is relevant for moderation purposes (i.e. included in the UserData struct).
-func IfNeededCreateShadowCopyForUser(ctx context.Context, user *User, alteredCols ...string) error {
+func IfNeededCreateShadowCopyForUser(ctx context.Context, userID int64, unalteredUser *User, alteredCols ...string) error {
 	// TODO: this can be triggered quite often (e.g. by routers/web/repo/middlewares.go SetDiffViewStyle())
 
 	shouldCheckIfNeeded := len(alteredCols) == 0 // no columns being updated, therefore a deletion
 	if !shouldCheckIfNeeded {
-		// for updates we need to go further only if certain column are being changed
+		// for updates we need to go further only if certain columns are being changed
 		for _, colName := range userDataColumnNames() {
 			if shouldCheckIfNeeded = slices.Contains(alteredCols, colName); shouldCheckIfNeeded {
 				break
@@ -94,18 +98,23 @@ func IfNeededCreateShadowCopyForUser(ctx context.Context, user *User, alteredCol
 		return nil
 	}
 
-	shadowCopyNeeded, err := moderation.IsShadowCopyNeeded(ctx, moderation.ReportedContentTypeUser, user.ID)
+	shadowCopyNeeded, err := moderation.IsShadowCopyNeeded(ctx, moderation.ReportedContentTypeUser, userID)
 	if err != nil {
 		return err
 	}
 
 	if shadowCopyNeeded {
-		userData := newUserData(user)
+		if unalteredUser == nil {
+			if unalteredUser, err = GetUserByID(ctx, userID); err != nil {
+				return err
+			}
+		}
+		userData := newUserData(unalteredUser)
 		content, err := json.Marshal(userData)
 		if err != nil {
 			return err
 		}
-		return moderation.CreateShadowCopyForUser(ctx, user.ID, string(content))
+		return moderation.CreateShadowCopyForUser(ctx, userID, string(content))
 	}
 
 	return nil
