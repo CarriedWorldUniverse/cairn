@@ -457,7 +457,7 @@ export default sfc; // activate the IDE's Vue plugin
               <svg-icon name="octicon-organization" :size="16" class="repo-list-icon"/>
               <div class="text truncate">{{ org.name }}</div>
               <div><!-- div to prevent underline of label on hover -->
-                <span class="ui tiny basic label" v-if="org.org_visibility !== 'public'">
+                <span class="ui label" v-if="org.org_visibility !== 'public'">
                   {{ org.org_visibility === 'limited' ? textOrgVisibilityLimited: textOrgVisibilityPrivate }}
                 </span>
               </div>
