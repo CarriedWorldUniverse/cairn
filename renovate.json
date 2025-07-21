@@ -6,7 +6,7 @@
     "docker:pinDigests",
     "helpers:pinGitHubActionDigests"
   ],
-  "baseBranches": [
+  "baseBranchPatterns": [
     "$default",
     "/^v11\\.\\d+/forgejo$/",
     "/^v12\\.\\d+/forgejo$/"
