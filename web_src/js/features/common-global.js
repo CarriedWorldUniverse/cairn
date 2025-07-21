@@ -12,6 +12,7 @@ import {confirmModal} from './comp/ConfirmModal.js';
 import {showErrorToast} from '../modules/toast.js';
 import {request, POST, GET} from '../modules/fetch.js';
 import '../htmx.js';
+import {initTab} from '../modules/tab.ts';
 
 const {appUrl, appSubUrl, csrfToken, i18n} = window.config;
 
@@ -195,7 +196,9 @@ export function initGlobalCommon() {
   $uiDropdowns.filter('.upward').dropdown('setting', 'direction', 'upward');
   $uiDropdowns.filter('.downward').dropdown('setting', 'direction', 'downward');
 
-  $('.tabular.menu .item').tab();
+  for (const el of document.querySelectorAll('.tabular.menu')) {
+    initTab(el);
+  }
 
   initSubmitEventPolyfill();
   document.addEventListener('submit', formFetchAction);

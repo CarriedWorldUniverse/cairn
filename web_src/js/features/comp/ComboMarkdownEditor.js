@@ -10,6 +10,7 @@ import {easyMDEToolbarActions} from './EasyMDEToolbarActions.js';
 import {initTextExpander} from './TextExpander.js';
 import {showErrorToast, showHintToast} from '../../modules/toast.js';
 import {POST} from '../../modules/fetch.js';
+import {initTab} from '../../modules/tab.ts';
 
 /**
  * validate if the given textarea is non-empty.
@@ -200,7 +201,8 @@ class ComboMarkdownEditor {
 
   setupTab() {
     const $container = $(this.container);
-    const tabs = $container[0].querySelectorAll('.switch > .item');
+    const switchEl = $container[0].querySelector('.switch');
+    const tabs = switchEl.querySelectorAll('.item');
 
     // Fomantic Tab requires the "data-tab" to be globally unique.
     // So here it uses our defined "data-tab-for" and "data-tab-panel" to generate the "data-tab" attribute for Fomantic.
@@ -221,7 +223,7 @@ class ComboMarkdownEditor {
       });
     });
 
-    $(tabs).tab();
+    initTab(switchEl);
 
     this.previewUrl = tabPreviewer.getAttribute('data-preview-url');
     this.previewContext = tabPreviewer.getAttribute('data-preview-context');

@@ -1,4 +1,6 @@
 // @watch start
+// web_src/js/modules/tab.ts
+// web_src/css/modules/tab.css
 // web_src/js/features/comp/ComboMarkdownEditor.js
 // web_src/css/editor/combomarkdowneditor.css
 // templates/shared/combomarkdowneditor.tmpl
