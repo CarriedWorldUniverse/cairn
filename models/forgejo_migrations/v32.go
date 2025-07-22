@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"forgejo.org/models/db"
 	"forgejo.org/models/packages"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
@@ -52,55 +53,50 @@ type mavenPackageResult struct {
 // ChangeMavenArtifactConcatenation resolves old dash-concatenated Maven coordinates and regenerates metadata.
 // Note: runs per-owner in a single transaction; failures roll back all owners.
 func ChangeMavenArtifactConcatenation(x *xorm.Engine) error {
-	sess := x.NewSession()
-	defer sess.Close()
-
-	if err := sess.Begin(); err != nil {
-		return err
-	}
-
-	// get unique owner IDs of Maven packages
-	var ownerIDs []*int64
-	if err := sess.
-		Table("package").
-		Select("package.owner_id").
-		Where("package.type = 'maven'").
-		GroupBy("package.owner_id").
-		OrderBy("package.owner_id DESC").
-		Find(&ownerIDs); err != nil {
-		return err
-	}
-
-	for _, id := range ownerIDs {
-		if err := fixMavenArtifactPerOwner(sess, id); err != nil {
-			log.Error("owner %d migration failed: %v", id, err)
-			return err // rollback all
+	return db.WithTx(db.DefaultContext, func(ctx context.Context) error {
+		// get unique owner IDs of Maven packages
+		var ownerIDs []*int64
+		if err := db.GetEngine(ctx).
+			Table("package").
+			Select("package.owner_id").
+			Where("package.type = 'maven'").
+			GroupBy("package.owner_id").
+			OrderBy("package.owner_id DESC").
+			Find(&ownerIDs); err != nil {
+			return err
 		}
-	}
 
-	return sess.Commit()
+		for _, id := range ownerIDs {
+			if err := fixMavenArtifactPerOwner(ctx, id); err != nil {
+				log.Error("owner %d migration failed: %v", id, err)
+				return err // rollback all
+			}
+		}
+
+		return nil
+	})
 }
 
-func fixMavenArtifactPerOwner(sess *xorm.Session, ownerID *int64) error {
-	results, err := getMavenPackageResultsToUpdate(sess, ownerID)
+func fixMavenArtifactPerOwner(ctx context.Context, ownerID *int64) error {
+	results, err := getMavenPackageResultsToUpdate(ctx, ownerID)
 	if err != nil {
 		return err
 	}
 
-	if err = resolvePackageCollisions(results, sess); err != nil {
+	if err = resolvePackageCollisions(ctx, results); err != nil {
 		return err
 	}
 
-	if err = processPackageVersions(results, sess); err != nil {
+	if err = processPackageVersions(ctx, results); err != nil {
 		return err
 	}
 
-	return processPackageFiles(results, sess)
+	return processPackageFiles(ctx, results)
 }
 
 // processPackageFiles updates Maven package files and versions in the database
 // Returns an error if any database or processing operation fails.
-func processPackageFiles(results []*mavenPackageResult, sess *xorm.Session) error {
+func processPackageFiles(ctx context.Context, results []*mavenPackageResult) error {
 	processedVersion := make(map[string][]*mavenPackageResult)
 
 	for _, r := range results {
@@ -113,7 +109,7 @@ func processPackageFiles(results []*mavenPackageResult, sess *xorm.Session) erro
 		if r.PackageVersion.ID != r.PackageFile.VersionID {
 			pattern := strings.TrimSuffix(r.PackageFile.Name, ".pom") + "%"
 			// Per routers/api/packages/maven/maven.go:338, POM files already have the `IsLead`, so no update needed for this prop
-			if _, err := sess.Exec("UPDATE package_file SET version_id = ? WHERE version_id = ? and name like ?", r.PackageVersion.ID, r.PackageFile.VersionID, pattern); err != nil {
+			if _, err := db.GetEngine(ctx).Exec("UPDATE package_file SET version_id = ? WHERE version_id = ? and name like ?", r.PackageVersion.ID, r.PackageFile.VersionID, pattern); err != nil {
 				return err
 			}
 		}
@@ -128,14 +124,14 @@ func processPackageFiles(results []*mavenPackageResult, sess *xorm.Session) erro
 
 		rs := packageResults[0]
 
-		pf, md, err := parseMetadata(sess, rs)
+		pf, md, err := parseMetadata(ctx, rs)
 		if err != nil {
 			return err
 		}
 
 		if pf != nil && md != nil && md.GroupID == rs.GroupID && md.ArtifactID == rs.ArtifactID {
 			if pf.VersionID != rs.PackageFile.VersionID {
-				if _, err := sess.ID(pf.ID).Cols("version_id").Update(pf); err != nil {
+				if _, err := db.GetEngine(ctx).ID(pf.ID).Cols("version_id").Update(pf); err != nil {
 					return err
 				}
 			}
@@ -150,11 +146,9 @@ func processPackageFiles(results []*mavenPackageResult, sess *xorm.Session) erro
 
 // parseMetadata retrieves metadata for a Maven package file from the database and decodes it into a Metadata object.
 // Returns the associated PackageFile, Metadata, and any error encountered during processing.
-func parseMetadata(sess *xorm.Session, snapshot *mavenPackageResult) (*packages.PackageFile, *Metadata, error) {
-	ctx := context.Background()
-
+func parseMetadata(ctx context.Context, snapshot *mavenPackageResult) (*packages.PackageFile, *Metadata, error) {
 	var pf packages.PackageFile
-	found, err := sess.Table(pf).
+	found, err := db.GetEngine(ctx).Table(pf).
 		Where("version_id = ?", snapshot.PackageFile.VersionID). // still the old id
 		And("lower_name = ?", "maven-metadata.xml").
 		Get(&pf)
@@ -183,7 +177,7 @@ func parseMetadata(sess *xorm.Session, snapshot *mavenPackageResult) (*packages.
 
 // processPackageVersions processes Maven package versions by updating metadata or inserting new records as necessary.
 // It avoids redundant updates by tracking already processed versions using a map. Returns an error on failure.
-func processPackageVersions(results []*mavenPackageResult, sess *xorm.Session) error {
+func processPackageVersions(ctx context.Context, results []*mavenPackageResult) error {
 	processedVersion := make(map[string]int64)
 
 	for _, r := range results {
@@ -196,14 +190,14 @@ func processPackageVersions(results []*mavenPackageResult, sess *xorm.Session) e
 
 		// for non collisions, just update the metadata
 		if r.PackageVersion.PackageID == r.Package.ID {
-			if _, err := sess.ID(r.PackageVersion.ID).Cols("metadata_json").Update(r.PackageVersion); err != nil {
+			if _, err := db.GetEngine(ctx).ID(r.PackageVersion.ID).Cols("metadata_json").Update(r.PackageVersion); err != nil {
 				return err
 			}
 		} else {
 			log.Info("Create new maven package version for %s:%s", r.PackageName, r.PackageVersion.Version)
 			r.PackageVersion.ID = 0
 			r.PackageVersion.PackageID = r.Package.ID
-			if _, err := sess.Insert(r.PackageVersion); err != nil {
+			if _, err := db.GetEngine(ctx).Insert(r.PackageVersion); err != nil {
 				return err
 			}
 		}
@@ -216,10 +210,9 @@ func processPackageVersions(results []*mavenPackageResult, sess *xorm.Session) e
 
 // getMavenPackageResultsToUpdate retrieves Maven package results that need updates based on the owner ID.
 // It processes POM metadata, fixes package inconsistencies, and filters corrupted package versions.
-func getMavenPackageResultsToUpdate(sess *xorm.Session, ownerID *int64) ([]*mavenPackageResult, error) {
-	ctx := context.Background()
+func getMavenPackageResultsToUpdate(ctx context.Context, ownerID *int64) ([]*mavenPackageResult, error) {
 	var candidates []*mavenPackageResult
-	if err := sess.
+	if err := db.GetEngine(ctx).
 		Table("package_file").
 		Select("package_file.*, package_version.*, package.*").
 		Join("INNER", "package_version", "package_version.id = package_file.version_id").
@@ -265,7 +258,7 @@ func getMavenPackageResultsToUpdate(sess *xorm.Session, ownerID *int64) ([]*mave
 
 // resolvePackageCollisions handles name collisions by keeping the first existing record and inserting new Package records for subsequent collisions.
 // Returns a map from PackageName to its resolved Package.ID.
-func resolvePackageCollisions(results []*mavenPackageResult, sess *xorm.Session) error {
+func resolvePackageCollisions(ctx context.Context, results []*mavenPackageResult) error {
 	// Group new names by lowerName
 	collisions := make(map[string][]string)
 	for _, r := range results {
@@ -292,7 +285,7 @@ func resolvePackageCollisions(results []*mavenPackageResult, sess *xorm.Session)
 		} else if list[0] == r.PackageName {
 			pkgIDByName[r.PackageName] = r.Package.ID
 
-			if _, err = sess.ID(r.Package.ID).Cols("name", "lower_name").Update(r.Package); err != nil {
+			if _, err = db.GetEngine(ctx).ID(r.Package.ID).Cols("name", "lower_name").Update(r.Package); err != nil {
 				return err
 			}
 			// create a new entry
@@ -300,7 +293,7 @@ func resolvePackageCollisions(results []*mavenPackageResult, sess *xorm.Session)
 			log.Info("Create new maven package for %s", r.Package.Name)
 
 			r.Package.ID = 0
-			if _, err = sess.Insert(r.Package); err != nil {
+			if _, err = db.GetEngine(ctx).Insert(r.Package); err != nil {
 				return err
 			}
 
