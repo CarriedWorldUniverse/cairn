@@ -56,14 +56,7 @@ func Local(name, base string, sub ...string) *Layer {
 		panic(fmt.Sprintf("Unable to get absolute path for %q: %v", base, err))
 	}
 	root := util.FilePathJoinAbs(base, sub...)
-	fsRoot, err := os.OpenRoot(root)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil
-		}
-		panic(fmt.Sprintf("Unable to open layer %q", err))
-	}
-	return &Layer{name: name, fs: fsRoot.FS(), localPath: root}
+	return &Layer{name: name, fs: os.DirFS(root), localPath: root}
 }
 
 // Bindata returns a new Layer with the given name, it serves files from the given bindata asset.
@@ -80,7 +73,7 @@ type LayeredFS struct {
 
 // Layered returns a new LayeredFS with the given layers. The first layer is the top layer.
 func Layered(layers ...*Layer) *LayeredFS {
-	return &LayeredFS{layers: slices.DeleteFunc(layers, func(layer *Layer) bool { return layer == nil })}
+	return &LayeredFS{layers: layers}
 }
 
 // Open opens the named file. The caller is responsible for closing the file.
