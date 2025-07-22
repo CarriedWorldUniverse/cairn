@@ -434,7 +434,7 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 		if err != nil {
 			log.Error("actions.GetContentFromEntry: %v", err)
 		}
-		_, workFlowErr := model.ReadWorkflow(bytes.NewReader(content))
+		_, workFlowErr := model.ReadWorkflow(bytes.NewReader(content), true)
 		if workFlowErr != nil {
 			ctx.Data["FileError"] = ctx.Locale.Tr("actions.runs.invalid_workflow_helper", workFlowErr.Error())
 		}

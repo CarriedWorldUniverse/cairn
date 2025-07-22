@@ -56,7 +56,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		return nil, nil, err
 	}
 
-	wf, err := act_model.ReadWorkflow(bytes.NewReader(content))
+	wf, err := act_model.ReadWorkflow(bytes.NewReader(content), false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -138,7 +138,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		return nil, nil, err
 	}
 
-	jobs, err := jobparser.Parse(content, jobparser.WithVars(vars))
+	jobs, err := jobparser.Parse(content, false, jobparser.WithVars(vars))
 	if err != nil {
 		return nil, nil, err
 	}

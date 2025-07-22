@@ -86,7 +86,7 @@ func GetContentFromEntry(entry *git.TreeEntry) ([]byte, error) {
 }
 
 func GetEventsFromContent(content []byte) ([]*jobparser.Event, error) {
-	workflow, err := model.ReadWorkflow(bytes.NewReader(content))
+	workflow, err := model.ReadWorkflow(bytes.NewReader(content), false)
 	if err != nil {
 		return nil, err
 	}

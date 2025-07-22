@@ -80,7 +80,7 @@ func createCommitStatus(ctx context.Context, job *actions_model.ActionRunJob) er
 	repo := run.Repo
 	// TODO: store workflow name as a field in ActionRun to avoid parsing
 	runName := path.Base(run.WorkflowID)
-	if wfs, err := jobparser.Parse(job.WorkflowPayload); err == nil && len(wfs) > 0 {
+	if wfs, err := jobparser.Parse(job.WorkflowPayload, false); err == nil && len(wfs) > 0 {
 		runName = wfs[0].Name
 	}
 	ctxname := fmt.Sprintf("%s / %s (%s)", runName, job.Name, event)
