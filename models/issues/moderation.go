@@ -87,13 +87,19 @@ func IfNeededCreateShadowCopyForIssue(ctx context.Context, issue *Issue) error {
 // IfNeededCreateShadowCopyForComment checks if for the given comment there are any reports of abusive content submitted
 // and if found a shadow copy of relevant comment fields will be stored into DB and linked to the above report(s).
 // This function should be called before a comment is deleted or updated.
-func IfNeededCreateShadowCopyForComment(ctx context.Context, comment *Comment) error {
+func IfNeededCreateShadowCopyForComment(ctx context.Context, comment *Comment, forUpdates bool) error {
 	shadowCopyNeeded, err := moderation.IsShadowCopyNeeded(ctx, moderation.ReportedContentTypeComment, comment.ID)
 	if err != nil {
 		return err
 	}
 
 	if shadowCopyNeeded {
+		if forUpdates {
+			// get the unaltered comment fields (for updates the provided variable is already altered but not yet saved)
+			if comment, err = GetCommentByID(ctx, comment.ID); err != nil {
+				return err
+			}
+		}
 		commentData := newCommentData(comment)
 		content, err := json.Marshal(commentData)
 		if err != nil {

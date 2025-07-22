@@ -1156,7 +1156,7 @@ func UpdateComment(ctx context.Context, c *Comment, contentVersion int, doer *us
 	defer committer.Close()
 
 	// If the comment was reported as abusive, a shadow copy should be created before first update.
-	if err := IfNeededCreateShadowCopyForComment(ctx, c); err != nil {
+	if err := IfNeededCreateShadowCopyForComment(ctx, c, true); err != nil {
 		return err
 	}
 
@@ -1197,7 +1197,7 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 	e := db.GetEngine(ctx)
 
 	// If the comment was reported as abusive, a shadow copy should be created before deletion.
-	if err := IfNeededCreateShadowCopyForComment(ctx, comment); err != nil {
+	if err := IfNeededCreateShadowCopyForComment(ctx, comment, false); err != nil {
 		return err
 	}
 
