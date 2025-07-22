@@ -1,4 +1,5 @@
 // Copyright 2023 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package assetfs
@@ -107,4 +108,31 @@ func TestLayered(t *testing.T) {
 	assert.Empty(t, assets.GetFileLayerName("no-such"))
 	assert.Equal(t, "l1", assets.GetFileLayerName("f1"))
 	assert.Equal(t, "l2", assets.GetFileLayerName("f2"))
+}
+
+// Allow layers to read symlink outside the layer root.
+func TestLayeredSymlink(t *testing.T) {
+	dir := t.TempDir()
+	dirl1 := filepath.Join(dir, "l1")
+	require.NoError(t, os.MkdirAll(dirl1, 0o755))
+
+	// Open layer in dir/l1
+	layer := Local("l1", dirl1)
+
+	// Create a file in dir/outside
+	fileContents := []byte("I am outside the layer")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "outside"), fileContents, 0o600))
+	// Symlink dir/l1/outside to dir/outside
+	require.NoError(t, os.Symlink(filepath.Join(dir, "outside"), filepath.Join(dirl1, "outside")))
+
+	// Open dir/l1/outside.
+	f, err := layer.Open("outside")
+	require.NoError(t, err)
+	defer f.Close()
+
+	// Confirm it contains the output of dir/outside
+	contents, err := io.ReadAll(f)
+	require.NoError(t, err)
+
+	assert.Equal(t, fileContents, contents)
 }
