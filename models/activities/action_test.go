@@ -227,6 +227,24 @@ func TestNotifyWatchers(t *testing.T) {
 	})
 }
 
+func TestGetFeedsCorrupted(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	unittest.AssertExistsAndLoadBean(t, &activities_model.Action{
+		ID:     8,
+		RepoID: 1700,
+	})
+
+	actions, count, err := activities_model.GetFeeds(db.DefaultContext, activities_model.GetFeedsOptions{
+		RequestedUser:  user,
+		Actor:          user,
+		IncludePrivate: true,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, actions)
+	assert.Equal(t, int64(0), count)
+}
+
 func TestConsistencyUpdateAction(t *testing.T) {
 	if !setting.Database.Type.IsSQLite3() {
 		t.Skip("Test is only for SQLite database.")
