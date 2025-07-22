@@ -441,7 +441,7 @@ func TestRebuildCargo(t *testing.T) {
 
 			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
-			assert.Equal(t, "success%3DThe%2BCargo%2Bindex%2Bwas%2Bsuccessfully%2Brebuild.", flashCookie.Value)
+			assert.Equal(t, "success%3DThe%2BCargo%2Bindex%2Bwas%2Bsuccessfully%2Brebuilt.", flashCookie.Value)
 		})
 	})
 }
