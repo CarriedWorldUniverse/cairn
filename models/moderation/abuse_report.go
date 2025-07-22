@@ -47,14 +47,21 @@ const (
 	AbuseCategoryTypeIllegalContent                              // 4
 )
 
+var AbuseCategoriesTranslationKeys = map[AbuseCategoryType]string{
+	AbuseCategoryTypeSpam:           "moderation.abuse_category.spam",
+	AbuseCategoryTypeMalware:        "moderation.abuse_category.malware",
+	AbuseCategoryTypeIllegalContent: "moderation.abuse_category.illegal_content",
+	AbuseCategoryTypeOther:          "moderation.abuse_category.other_violations",
+}
+
 // GetAbuseCategoriesList returns a list of pairs with the available abuse category types
 // and their corresponding translation keys
 func GetAbuseCategoriesList() []AbuseCategoryItem {
 	return []AbuseCategoryItem{
-		{AbuseCategoryTypeSpam, "moderation.abuse_category.spam"},
-		{AbuseCategoryTypeMalware, "moderation.abuse_category.malware"},
-		{AbuseCategoryTypeIllegalContent, "moderation.abuse_category.illegal_content"},
-		{AbuseCategoryTypeOther, "moderation.abuse_category.other_violations"},
+		{AbuseCategoryTypeSpam, AbuseCategoriesTranslationKeys[AbuseCategoryTypeSpam]},
+		{AbuseCategoryTypeMalware, AbuseCategoriesTranslationKeys[AbuseCategoryTypeMalware]},
+		{AbuseCategoryTypeIllegalContent, AbuseCategoriesTranslationKeys[AbuseCategoryTypeIllegalContent]},
+		{AbuseCategoryTypeOther, AbuseCategoriesTranslationKeys[AbuseCategoryTypeOther]},
 	}
 }
 

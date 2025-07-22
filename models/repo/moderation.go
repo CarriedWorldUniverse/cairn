@@ -5,6 +5,8 @@ package repo
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"forgejo.org/models/moderation"
 	"forgejo.org/modules/json"
@@ -23,6 +25,22 @@ type RepositoryData struct {
 	Avatar      string
 	CreatedUnix timeutil.TimeStamp
 	UpdatedUnix timeutil.TimeStamp
+}
+
+// Implements GetFieldsMap() from ShadowCopyData interface, returning a list of <key, value> pairs
+// to be used when rendering the shadow copy for admins reviewing the corresponding abuse report(s).
+func (rd RepositoryData) GetFieldsMap() []moderation.ShadowCopyField {
+	return []moderation.ShadowCopyField{
+		{Key: "OwnerID", Value: strconv.FormatInt(rd.OwnerID, 10)},
+		{Key: "OwnerName", Value: rd.OwnerName},
+		{Key: "Name", Value: rd.Name},
+		{Key: "Description", Value: rd.Description},
+		{Key: "Website", Value: rd.Website},
+		{Key: "Topics", Value: strings.Join(rd.Topics, ", ")},
+		{Key: "Avatar", Value: rd.Avatar},
+		{Key: "CreatedUnix", Value: rd.CreatedUnix.AsLocalTime().String()},
+		{Key: "UpdatedUnix", Value: rd.UpdatedUnix.AsLocalTime().String()},
+	}
 }
 
 // newRepositoryData creates a trimmed down repository to be used just to create a JSON structure

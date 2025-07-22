@@ -108,5 +108,10 @@
 				</a>
 			</div>
 		</details>
+		{{if .EnableModeration}}
+		<a class="{{if .PageIsAdminModerationReports}}active {{end}}item" href="{{AppSubUrl}}/admin/moderation/reports">
+			{{ctx.Locale.Tr "admin.moderation.moderation_reports"}}
+		</a>
+		{{end}}
 	</div>
 </div>
