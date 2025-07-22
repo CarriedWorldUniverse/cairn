@@ -473,8 +473,11 @@ func GetFeeds(ctx context.Context, opts GetFeedsOptions) (ActionList, int64, err
 		return nil, 0, err
 	}
 
+	sess := db.GetEngine(ctx).Where(cond).
+		Select("`action`.*"). // this line will avoid select other joined table's columns
+		Join("INNER", "repository", "`repository`.id = `action`.repo_id")
+
 	opts.SetDefaultValues()
-	sess := db.GetEngine(ctx).Where(cond)
 	sess = db.SetSessionPagination(sess, &opts)
 
 	actions := make([]*Action, 0, opts.PageSize)
