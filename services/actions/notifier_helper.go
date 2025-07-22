@@ -345,7 +345,7 @@ func handleWorkflows(
 			Status:            actions_model.StatusWaiting,
 		}
 
-		if workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content)); err == nil {
+		if workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content), false); err == nil {
 			notifications, err := workflow.Notifications()
 			if err != nil {
 				log.Error("Notifications: %w", err)
@@ -372,7 +372,7 @@ func handleWorkflows(
 			continue
 		}
 
-		jobs, err := jobparser.Parse(dwf.Content, jobparser.WithVars(vars))
+		jobs, err := jobparser.Parse(dwf.Content, false, jobparser.WithVars(vars))
 		if err != nil {
 			run.Status = actions_model.StatusFailure
 			log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
@@ -537,7 +537,7 @@ func handleSchedules(
 	crons := make([]*actions_model.ActionSchedule, 0, len(detectedWorkflows))
 	for _, dwf := range detectedWorkflows {
 		// Check cron job condition. Only working in default branch
-		workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content))
+		workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content), false)
 		if err != nil {
 			log.Error("ReadWorkflow: %v", err)
 			continue

@@ -142,7 +142,7 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 			} else {
 				// Check if the job has an "if" condition
 				hasIf := false
-				if wfJobs, _ := jobparser.Parse(r.jobMap[id].WorkflowPayload); len(wfJobs) == 1 {
+				if wfJobs, _ := jobparser.Parse(r.jobMap[id].WorkflowPayload, false); len(wfJobs) == 1 {
 					_, wfJob := wfJobs[0].Job()
 					hasIf = len(wfJob.If.Value) > 0
 				}

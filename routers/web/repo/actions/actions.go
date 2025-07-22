@@ -111,7 +111,7 @@ func List(ctx *context.Context) {
 				ctx.ServerError("GetContentFromEntry", err)
 				return
 			}
-			wf, err := model.ReadWorkflow(bytes.NewReader(content))
+			wf, err := model.ReadWorkflow(bytes.NewReader(content), true)
 			if err != nil {
 				workflow.ErrMsg = ctx.Locale.TrString("actions.runs.invalid_workflow_helper", err.Error())
 				workflows = append(workflows, workflow)
