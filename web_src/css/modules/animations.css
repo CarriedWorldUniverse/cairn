@@ -3,11 +3,13 @@
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
+lazy-webc,
 .is-loading {
   pointer-events: none !important;
   position: relative !important;
 }
 
+lazy-webc > *,
 .is-loading > * {
   opacity: 0.3;
 }
@@ -17,6 +19,7 @@
   opacity: 0;
 }
 
+lazy-webc::after,
 .is-loading::after {
   content: "";
   position: absolute;
@@ -52,8 +55,7 @@ form.single-button-form.is-loading .button {
 }
 
 .markup pre.is-loading,
-.editor-loading.is-loading,
-.pdf-content.is-loading {
+.editor-loading.is-loading {
   height: var(--height-loading);
 }
 

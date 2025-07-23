@@ -415,22 +415,20 @@ td .commit-summary {
   max-width: 600px !important;
 }
 
+lazy-webc[tag="model-viewer"],
 model-viewer {
   width: 100%;
   height: 100vh;
 }
 
-.pdf-content {
+lazy-webc[tag="pdf-object"],
+pdf-object {
   width: 100%;
   height: 100vh;
   border: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.pdf-content .pdf-fallback-button {
-  margin: 50px auto;
 }
 
 .repository.file.list .non-diff-file-content .plain-text {

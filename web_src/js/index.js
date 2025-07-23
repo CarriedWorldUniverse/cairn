@@ -22,8 +22,6 @@ import {initRepoIssueContentHistory} from './features/repo-issue-content.js';
 import {initStopwatch} from './features/stopwatch.js';
 import {initFindFileInRepo} from './features/repo-findfile.js';
 import {initCommentContent, initMarkupContent} from './markup/content.js';
-import {initPdfViewer} from './render/pdf.js';
-import {initGltfViewer} from './render/gltf.js';
 
 import {initUserAuthOauth2, initUserAuth} from './features/user-auth.js';
 import {
@@ -189,8 +187,6 @@ onDomReady(() => {
   initUserAuthWebAuthnRegister();
   initUserAuth();
   initRepoDiffView();
-  initPdfViewer();
-  initGltfViewer();
   initScopedAccessTokenCategories();
   initColorPickers();
 
