@@ -275,10 +275,18 @@ func RenderUser(ctx context.Context, user user_model.User) template.HTML {
 		html.EscapeString(user.GetDisplayName())))
 }
 
-func RenderReviewRequest(users []issues_model.RequestReviewTarget) template.HTML {
+func RenderReviewRequest(ctx context.Context, users []issues_model.RequestReviewTarget) template.HTML {
 	usernames := make([]string, 0, len(users))
 	for _, user := range users {
-		usernames = append(usernames, html.EscapeString(user.Name()))
+		if user.ID() > 0 {
+			usernames = append(usernames, fmt.Sprintf(
+				"<a href='%s' rel='nofollow'><strong>%s</strong></a>",
+				user.Link(ctx), html.EscapeString(user.Name())))
+		} else {
+			usernames = append(usernames, fmt.Sprintf(
+				"<strong>%s</strong>",
+				html.EscapeString(user.Name())))
+		}
 	}
 
 	htmlCode := `<span class="review-request-list">`

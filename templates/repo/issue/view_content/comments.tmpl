@@ -548,14 +548,15 @@
 					<span class="badge">{{svg "octicon-eye"}}</span>
 					{{template "shared/user/avatarlink" dict "user" .Poster}}
 					<span class="text grey muted-links">
+						{{template "shared/user/authorlink" .Poster}}
 						{{if and (eq (len .RemovedRequestReview) 1) (eq (len .AddedRequestReview) 0) (eq ((index .RemovedRequestReview 0).ID) .PosterID) (eq ((index .RemovedRequestReview 0).Type) "user")}}
 							<span class="review-request-list">{{ctx.Locale.Tr "repo.issues.review.remove_review_request_self" $createdStr}}</span>
 						{{else if and .AddedRequestReview (not .RemovedRequestReview)}}
-							{{ctx.Locale.TrN (len .AddedRequestReview) "repo.issues.review.add_review_request" "repo.issues.review.add_review_requests" (RenderReviewRequest .AddedRequestReview) $createdStr}}
+							{{ctx.Locale.TrN (len .AddedRequestReview) "repo.issues.review.add_review_request" "repo.issues.review.add_review_requests" (RenderReviewRequest $.Context .AddedRequestReview) $createdStr}}
 						{{else if and (not .AddedRequestReview) .RemovedRequestReview}}
-							{{ctx.Locale.TrN (len .RemovedRequestReview) "repo.issues.review.remove_review_request" "repo.issues.review.remove_review_requests" (RenderReviewRequest .RemovedRequestReview) $createdStr}}
+							{{ctx.Locale.TrN (len .RemovedRequestReview) "repo.issues.review.remove_review_request" "repo.issues.review.remove_review_requests" (RenderReviewRequest $.Context .RemovedRequestReview) $createdStr}}
 						{{else}}
-							{{ctx.Locale.Tr "repo.issues.review.add_remove_review_requests" (RenderReviewRequest .AddedRequestReview) (RenderReviewRequest .RemovedRequestReview) $createdStr}}
+							{{ctx.Locale.Tr "repo.issues.review.add_remove_review_requests" (RenderReviewRequest $.Context .AddedRequestReview) (RenderReviewRequest $.Context .RemovedRequestReview) $createdStr}}
 						{{end}}
 					</span>
 				</div>

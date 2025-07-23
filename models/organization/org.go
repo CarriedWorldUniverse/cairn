@@ -186,6 +186,11 @@ func (org *Organization) CanCreateRepo() bool {
 	return org.AsUser().CanCreateRepo()
 }
 
+// IsGhost returns if the organization is a ghost
+func (org *Organization) IsGhost() bool {
+	return org.AsUser().IsGhost()
+}
+
 // FindOrgMembersOpts represensts find org members conditions
 type FindOrgMembersOpts struct {
 	db.ListOptions

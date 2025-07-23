@@ -4,6 +4,7 @@
 package issues
 
 import (
+	"context"
 	"slices"
 
 	"forgejo.org/models/organization"
@@ -373,4 +374,11 @@ func (t *RequestReviewTarget) Type() string {
 		return "user"
 	}
 	return "team"
+}
+
+func (t *RequestReviewTarget) Link(ctx context.Context) string {
+	if t.User != nil {
+		return t.User.HomeLink()
+	}
+	return t.Team.Link(ctx)
 }
