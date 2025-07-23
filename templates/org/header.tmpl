@@ -1,33 +1,41 @@
-<div class="ui container tw-flex">
+<div class="ui container tw-flex tw-gap-x-4">
 	{{ctx.AvatarUtils.Avatar .Org 100 "org-avatar"}}
 	<div id="org-info" class="tw-flex tw-flex-col">
-		<div class="ui header">
+		<div class="org-header tw-flex">
 			<div class="org-title">
-				{{.Org.DisplayName}}
+				<h1>{{.Org.DisplayName}}</h1>
 				<span class="org-visibility">
 					{{if .Org.Visibility.IsLimited}}<span class="ui large horizontal label">{{ctx.Locale.Tr "org.settings.visibility.limited_shortname"}}</span>{{end}}
 					{{if .Org.Visibility.IsPrivate}}<span class="ui large horizontal label">{{ctx.Locale.Tr "org.settings.visibility.private_shortname"}}</span>{{end}}
 				</span>
 			</div>
-			<span class="tw-flex tw-items-center button-row tw-ml-auto tw-text-16 tw-whitespace-nowrap">
-				{{if .EnableFeed}}
-					<a class="ui basic label button tw-mr-0" href="{{.Org.HomeLink}}.rss" data-tooltip-content="{{ctx.Locale.Tr "rss_feed"}}">
-						{{svg "octicon-rss" 24}}
-					</a>
-				{{end}}
+			<span class="button-sequence tw-items-center tw-ml-auto tw-whitespace-nowrap">
 				{{if .IsSigned}}
 					{{template "org/follow_unfollow" .}}
 				{{end}}
 				{{if .IsOrganizationMember}}
-					<a class="ui basic button tw-mr-0" href="{{.OrgLink}}/dashboard">{{ctx.Locale.Tr "org.open_dashboard"}}</a>
+					<a class="ui basic button" href="{{.OrgLink}}/dashboard">{{ctx.Locale.Tr "org.open_dashboard"}}</a>
 				{{end}}
-				{{if and .IsModerationEnabled .IsSigned (not .IsOrganizationOwner)}}
-					<button class="ui dropdown icon button" data-tooltip-content="{{ctx.Locale.Tr "repo.more_operations"}}" aria-label="{{ctx.Locale.Tr "toggle_menu"}}">
-						{{svg "octicon-kebab-horizontal" 14}}
-						<div class="menu top left">
-							<a class="item context" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
-						</div>
-					</button>
+				{{$moderationEntryNeeded := and .IsModerationEnabled .IsSigned (not .IsOrganizationOwner)}}
+				{{if or .EnableFeed $moderationEntryNeeded}}
+					<details class="dropdown dir-rtl">
+						<summary data-tooltip-content="{{ctx.Locale.Tr "profile.actions.tooltip"}}">{{svg "octicon-kebab-horizontal" 20}}</summary>
+						<ul>
+							{{if .EnableFeed}}
+								<li>
+									<a class="item" href="{{.Org.HomeLink}}.rss">{{svg "octicon-rss"}}{{ctx.Locale.Tr "rss_feed"}}</a>
+								</li>
+								<li>
+									<a class="item" href="{{.Org.HomeLink}}.atom">{{svg "octicon-rss"}}{{ctx.Locale.Tr "feed.atom.link"}}</a>
+								</li>
+							{{end}}
+							{{if $moderationEntryNeeded}}
+								<li>
+									<a class="item orange text" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{svg "octicon-stop"}}{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
+								</li>
+							{{end}}
+						</ul>
+					</details>
 				{{end}}
 			</span>
 		</div>
