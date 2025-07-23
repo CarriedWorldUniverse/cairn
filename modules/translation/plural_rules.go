@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Some useful links:
+// https://codeberg.org/forgejo/forgejo/src/branch/forgejo/web_src/js/webcomponents/relative-time.js
 // https://www.unicode.org/cldr/charts/46/supplemental/language_plural_rules.html
 // https://translate.codeberg.org/languages/$LANGUAGE_CODE/#information
 // https://github.com/WeblateOrg/language-data/blob/main/languages.csv
@@ -16,7 +17,7 @@ import (
 	"forgejo.org/modules/translation/i18n"
 )
 
-// The constants refer to indices below in `PluralRules` and also in i18n.js, keep them in sync!
+// The constants refer to indices below in `PluralRules` and also in web_src/js/webcomponents/relative-time.js, keep them in sync!
 const (
 	PluralRuleDefault    = 0
 	PluralRuleBengali    = 1
