@@ -101,6 +101,9 @@
     "vite-string-plugin": "1.3.4",
     "vitest": "3.2.3"
   },
+  "overrides": {
+    "stylus": "github:stylus/stylus#0.57.0"
+  },
   "browserslist": [
     "defaults"
   ]
