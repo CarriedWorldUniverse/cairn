@@ -1141,26 +1141,67 @@ func TestRebaseWhenNecessary(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
-		testEditFile(t, session, "user1", "repo1", "master", "README.md", "Hello, World (Edited)\n")
 
-		resp := testPullCreate(t, session, "user1", "repo1", false, "master", "master", "This is a pull title")
-		pullLink := test.RedirectURL(resp)
+		t.Run("No rebase needed", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
 
-		resp = session.MakeRequest(t, NewRequest(t, "GET", test.RedirectURL(resp)+"/commits"), http.StatusOK)
-		htmlDoc := NewHTMLParser(t, resp.Body)
-		commitLinkBefore, ok := htmlDoc.Find("a.sha").Attr("href")
-		assert.True(t, ok)
-		commitBefore := commitLinkBefore[strings.LastIndexByte(commitLinkBefore, '/'):]
+			testEditFile(t, session, "user1", "repo1", "master", "README.md", "Hello, World (Edited)\n")
 
-		elem := strings.Split(pullLink, "/")
-		testPullMerge(t, session, elem[1], elem[2], elem[4], repo_model.MergeStyleRebase, false)
+			resp := testPullCreate(t, session, "user1", "repo1", false, "master", "master", "This is a pull title")
+			pullLink := test.RedirectURL(resp)
 
-		resp = session.MakeRequest(t, NewRequest(t, "GET", "/user2/repo1"), http.StatusOK)
-		htmlDoc = NewHTMLParser(t, resp.Body)
-		commitLinkAfter, ok := htmlDoc.Find(".latest-commit a.sha").Attr("href")
-		assert.True(t, ok)
-		commitAfter := commitLinkAfter[strings.LastIndexByte(commitLinkAfter, '/'):]
+			resp = session.MakeRequest(t, NewRequest(t, "GET", test.RedirectURL(resp)+"/commits"), http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			commitLinkBefore, ok := htmlDoc.Find("a.sha").Attr("href")
+			assert.True(t, ok)
+			commitBefore := commitLinkBefore[strings.LastIndexByte(commitLinkBefore, '/'):]
 
-		assert.Equal(t, commitBefore, commitAfter)
+			elem := strings.Split(pullLink, "/")
+			testPullMerge(t, session, elem[1], elem[2], elem[4], repo_model.MergeStyleRebase, false)
+
+			resp = session.MakeRequest(t, NewRequest(t, "GET", "/user2/repo1"), http.StatusOK)
+			htmlDoc = NewHTMLParser(t, resp.Body)
+			commitLinkAfter, ok := htmlDoc.Find(".latest-commit a.sha").Attr("href")
+			assert.True(t, ok)
+			commitAfter := commitLinkAfter[strings.LastIndexByte(commitLinkAfter, '/'):]
+
+			assert.Equal(t, commitBefore, commitAfter)
+		})
+
+		t.Run("Rebase needed", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// Make user2/repo1 ahead of user1/repo1
+			testEditFile(t, session, "user2", "repo1", "master", "README.md", "Hello, World (Edited 2x)\n")
+
+			// To avoid conflicts, create a new file on /user/repo1.
+			session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user1/repo1/_new/master", map[string]string{
+				"_csrf":          GetCSRF(t, session, "/user/settings"),
+				"commit_choice":  "direct",
+				"tree_path":      "test-file.md",
+				"content":        "newly-added-test-file",
+				"commit_mail_id": "-1",
+			}), http.StatusSeeOther)
+
+			resp := testPullCreate(t, session, "user1", "repo1", false, "master", "master", "This is another pull")
+			pullLink := test.RedirectURL(resp)
+
+			resp = session.MakeRequest(t, NewRequest(t, "GET", test.RedirectURL(resp)+"/commits"), http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			commitLinkBefore, ok := htmlDoc.Find("a.sha").Attr("href")
+			assert.True(t, ok)
+			commitBefore := commitLinkBefore[strings.LastIndexByte(commitLinkBefore, '/'):]
+
+			elem := strings.Split(pullLink, "/")
+			testPullMerge(t, session, elem[1], elem[2], elem[4], repo_model.MergeStyleRebase, false)
+
+			resp = session.MakeRequest(t, NewRequest(t, "GET", "/user2/repo1"), http.StatusOK)
+			htmlDoc = NewHTMLParser(t, resp.Body)
+			commitLinkAfter, ok := htmlDoc.Find(".latest-commit a.sha").Attr("href")
+			assert.True(t, ok)
+			commitAfter := commitLinkAfter[strings.LastIndexByte(commitLinkAfter, '/'):]
+
+			assert.NotEqual(t, commitBefore, commitAfter)
+		})
 	})
 }
