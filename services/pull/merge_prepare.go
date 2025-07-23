@@ -249,6 +249,11 @@ func rebaseTrackingOnToBase(ctx *mergeContext, mergeStyle repo_model.MergeStyle)
 	ctx.outbuf.Reset()
 	ctx.errbuf.Reset()
 
+	// If the pull request is zero commits behind, then no rebasing needs to be done.
+	if ctx.pr.CommitsBehind == 0 {
+		return nil
+	}
+
 	// Check git version for availability of git-replay. If it is available, we use
 	// it for performance and to preserve unknown commit headers like the
 	// "change-id" header used by Jujutsu and GitButler to track changes across
