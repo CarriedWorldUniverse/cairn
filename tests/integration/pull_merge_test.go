@@ -1135,3 +1135,32 @@ func TestPullDeleteBranchPerms(t *testing.T) {
 		user4Session.MakeRequest(t, req, http.StatusOK)
 	})
 }
+
+// Test that rebasing only happens when its necessary.
+func TestRebaseWhenNecessary(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+		session := loginUser(t, "user1")
+		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
+		testEditFile(t, session, "user1", "repo1", "master", "README.md", "Hello, World (Edited)\n")
+
+		resp := testPullCreate(t, session, "user1", "repo1", false, "master", "master", "This is a pull title")
+		pullLink := test.RedirectURL(resp)
+
+		resp = session.MakeRequest(t, NewRequest(t, "GET", test.RedirectURL(resp)+"/commits"), http.StatusOK)
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		commitLinkBefore, ok := htmlDoc.Find("a.sha").Attr("href")
+		assert.True(t, ok)
+		commitBefore := commitLinkBefore[strings.LastIndexByte(commitLinkBefore, '/'):]
+
+		elem := strings.Split(pullLink, "/")
+		testPullMerge(t, session, elem[1], elem[2], elem[4], repo_model.MergeStyleRebase, false)
+
+		resp = session.MakeRequest(t, NewRequest(t, "GET", "/user2/repo1"), http.StatusOK)
+		htmlDoc = NewHTMLParser(t, resp.Body)
+		commitLinkAfter, ok := htmlDoc.Find(".latest-commit a.sha").Attr("href")
+		assert.True(t, ok)
+		commitAfter := commitLinkAfter[strings.LastIndexByte(commitLinkAfter, '/'):]
+
+		assert.Equal(t, commitBefore, commitAfter)
+	})
+}
