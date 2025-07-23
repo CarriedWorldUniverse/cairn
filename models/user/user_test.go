@@ -46,6 +46,28 @@ func TestIsValidUserID(t *testing.T) {
 	assert.True(t, user_model.IsValidUserID(200))
 }
 
+func TestUserLinks(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	assert.Equal(t, "/", user1.DashboardLink())
+	assert.Equal(t, "/user1", user1.HomeLink())
+	assert.Equal(t, "https://try.gitea.io/user1", user1.HTMLURL())
+	assert.Empty(t, user1.OrganisationLink())
+
+	org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
+	assert.Equal(t, "/org/org3/dashboard", org3.DashboardLink())
+	assert.Equal(t, "/org3", org3.HomeLink())
+	assert.Equal(t, "https://try.gitea.io/org3", org3.HTMLURL())
+	assert.Equal(t, "/org/org3", org3.OrganisationLink())
+
+	ghost := user_model.NewGhostUser()
+	assert.Empty(t, ghost.DashboardLink())
+	assert.Empty(t, ghost.HomeLink())
+	assert.Empty(t, ghost.HTMLURL())
+	assert.Empty(t, ghost.OrganisationLink())
+}
+
 func TestGetUserFromMap(t *testing.T) {
 	id := int64(200)
 	idMap := map[int64]*user_model.User{

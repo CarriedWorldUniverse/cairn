@@ -1,5 +1,6 @@
-// Copyright 2018 The Gitea Authors. All rights reserved.
 // Copyright 2016 The Gogs Authors. All rights reserved.
+// Copyright 2018 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package organization
@@ -7,6 +8,7 @@ package organization
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"forgejo.org/models/db"
@@ -19,13 +21,6 @@ import (
 
 	"xorm.io/builder"
 )
-
-// ___________
-// \__    ___/___ _____    _____
-//   |    |_/ __ \\__  \  /     \
-//   |    |\  ___/ / __ \|  Y Y  \
-//   |____| \___  >____  /__|_|  /
-//              \/     \/      \/
 
 // ErrTeamAlreadyExist represents a "TeamAlreadyExist" kind of error.
 type ErrTeamAlreadyExist struct {
@@ -193,6 +188,27 @@ func (t *Team) UnitAccessMode(ctx context.Context, tp unit.Type) perm.AccessMode
 	return perm.AccessModeNone
 }
 
+// GetOrg returns the team's organization
+func (t *Team) GetOrg(ctx context.Context) *Organization {
+	org, err := GetOrgByID(ctx, t.OrgID)
+	if err != nil {
+		return OrgFromUser(user_model.NewGhostUser())
+	}
+	return org
+}
+
+// Link returns the team's page link
+func (t *Team) Link(ctx context.Context) string {
+	if t.IsGhost() {
+		return ""
+	}
+	org := t.GetOrg(ctx)
+	if org.IsGhost() {
+		return ""
+	}
+	return org.OrganisationLink() + "/teams/" + url.PathEscape(t.Name)
+}
+
 // IsUsableTeamName tests if a name could be as team name
 func IsUsableTeamName(name string) error {
 	switch name {
@@ -293,10 +309,22 @@ func FixInconsistentOwnerTeams(ctx context.Context) (int64, error) {
 	return int64(len(teamIDs)), nil
 }
 
+const (
+	GhostTeamID        = -1
+	GhostTeamName      = "Ghost team"
+	GhostTeamLowerName = "ghost team"
+)
+
+// NewGhostTeam creates ghost team (for deleted team)
 func NewGhostTeam() *Team {
 	return &Team{
-		ID:        -1,
-		Name:      "Ghost team",
-		LowerName: "ghost team",
+		ID:        GhostTeamID,
+		Name:      GhostTeamName,
+		LowerName: GhostTeamLowerName,
 	}
+}
+
+// IsGhost returns if a team is a ghost team
+func (t *Team) IsGhost() bool {
+	return t.ID == GhostTeamID
 }

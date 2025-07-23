@@ -5,13 +5,20 @@ package integration
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
+	"forgejo.org/models/db"
+	issues_model "forgejo.org/models/issues"
+	org_model "forgejo.org/models/organization"
+	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
 	"forgejo.org/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testIssueCommentChangeEvent(t *testing.T, htmlDoc *HTMLDoc, commentID, badgeOcticon, avatarTitle, avatarLink string, texts, links []string) {
@@ -236,6 +243,76 @@ func TestIssueCommentChangeAssignee(t *testing.T) {
 		"octicon-person", "< U<se>r Tw<o > ><", "/user2",
 		[]string{"user2 removed their assignment"},
 		[]string{"/user2"})
+}
+
+func TestIssueCommentChangeReviewRequest(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	pull := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 6})
+	require.NoError(t, pull.LoadIssue(db.DefaultContext))
+	issue := pull.Issue
+	require.NoError(t, issue.LoadRepo(db.DefaultContext))
+
+	user1, err := user_model.GetUserByID(db.DefaultContext, 1)
+	require.NoError(t, err)
+	user2, err := user_model.GetUserByID(db.DefaultContext, 2)
+	require.NoError(t, err)
+	team1, err := org_model.GetTeamByID(db.DefaultContext, 2)
+	require.NoError(t, err)
+	assert.NotNil(t, team1)
+
+	// Request from other
+	comment1, err := issues_model.AddReviewRequest(db.DefaultContext, issue, user2, user1)
+	require.NoError(t, err)
+
+	// Refuse review
+	comment2, err := issues_model.RemoveReviewRequest(db.DefaultContext, issue, user2, user2)
+	require.NoError(t, err)
+
+	// Request from other
+	comment3, err := issues_model.AddReviewRequest(db.DefaultContext, issue, user2, user1)
+	require.NoError(t, err)
+	// Request from team
+	comment4, err := issues_model.AddTeamReviewRequest(db.DefaultContext, issue, team1, user1)
+	require.NoError(t, err)
+
+	// Remove request from team
+	comment5, err := issues_model.RemoveTeamReviewRequest(db.DefaultContext, issue, team1, user2)
+	require.NoError(t, err)
+	// Request from other
+	comment6, err := issues_model.AddReviewRequest(db.DefaultContext, issue, user1, user2)
+	require.NoError(t, err)
+
+	session := loginUser(t, "user2")
+	req := NewRequest(t, "GET", "/org3/repo3/pulls/2")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	// Request from other
+	testIssueCommentChangeEvent(t, htmlDoc, strconv.FormatInt(comment1.ID, 10),
+		"octicon-eye", "User One", "/user1",
+		[]string{"user1 requested review from user2"},
+		[]string{"/user1", "/user2"})
+
+	// Refuse review
+	testIssueCommentChangeEvent(t, htmlDoc, strconv.FormatInt(comment2.ID, 10),
+		"octicon-eye", "< U<se>r Tw<o > ><", "/user2",
+		[]string{"user2 refused to review"},
+		[]string{"/user2"})
+
+	// Request review from other and from team
+	testIssueCommentChangeEvent(t, htmlDoc, strconv.FormatInt(comment3.ID, 10),
+		"octicon-eye", "User One", "/user1",
+		[]string{"user1 requested reviews from user2, team1"},
+		[]string{"/user1", "/user2", "/org/org3/teams/team1"})
+	assert.Empty(t, htmlDoc.Find("#issuecomment-"+strconv.FormatInt(comment4.ID, 10)+" .text").Text())
+
+	// Remove and add request
+	testIssueCommentChangeEvent(t, htmlDoc, strconv.FormatInt(comment5.ID, 10),
+		"octicon-eye", "< U<se>r Tw<o > ><", "/user2",
+		[]string{"user2 requested reviews from user1 and removed review requests for team1"},
+		[]string{"/user2", "/user1", "/org/org3/teams/team1"})
+	assert.Empty(t, htmlDoc.Find("#issuecomment-"+strconv.FormatInt(comment6.ID, 10)+" .text").Text())
 }
 
 func TestIssueCommentChangeLock(t *testing.T) {
