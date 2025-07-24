@@ -33,6 +33,11 @@ func Search(ctx *context.APIContext) {
 	//   description: ID of the user to search for
 	//   type: integer
 	//   format: int64
+	// - name: sort
+	//   in: query
+	//   description: sort order of results
+	//   type: string
+	//   enum: [oldest, newest, alphabetically, reversealphabetically, recentupdate, leastupdate]
 	// - name: page
 	//   in: query
 	//   description: page number of results to return (1-based)
@@ -81,6 +86,7 @@ func Search(ctx *context.APIContext) {
 			SearchByEmail: true,
 			Visible:       visible,
 			ListOptions:   listOptions,
+			OrderBy:       utils.GetDbSearchOrder(ctx),
 		})
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, map[string]any{

@@ -436,26 +436,6 @@ func SearchUsers(ctx *context.APIContext) {
 
 	listOptions := utils.GetListOptions(ctx)
 
-	sort := ctx.FormString("sort")
-	var orderBy db.SearchOrderBy
-
-	switch sort {
-	case "oldest":
-		orderBy = db.SearchOrderByOldest
-	case "newest":
-		orderBy = db.SearchOrderByNewest
-	case "alphabetically":
-		orderBy = db.SearchOrderByAlphabetically
-	case "reversealphabetically":
-		orderBy = db.SearchOrderByAlphabeticallyReverse
-	case "recentupdate":
-		orderBy = db.SearchOrderByRecentUpdated
-	case "leastupdate":
-		orderBy = db.SearchOrderByLeastUpdated
-	default:
-		orderBy = db.SearchOrderByAlphabetically
-	}
-
 	intSource, err := strconv.ParseInt(ctx.FormString("source_id"), 10, 64)
 	var sourceID optional.Option[int64]
 	if ctx.FormString("source_id") == "" || err != nil {
@@ -469,7 +449,7 @@ func SearchUsers(ctx *context.APIContext) {
 		Type:        user_model.UserTypeIndividual,
 		LoginName:   ctx.FormTrim("login_name"),
 		SourceID:    sourceID,
-		OrderBy:     orderBy,
+		OrderBy:     utils.GetDbSearchOrder(ctx),
 		ListOptions: listOptions,
 	})
 	if err != nil {

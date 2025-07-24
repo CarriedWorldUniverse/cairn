@@ -4,18 +4,25 @@
 package integration
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
+	"time"
 
 	auth_model "forgejo.org/models/auth"
+	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
+	"forgejo.org/modules/timeutil"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type SearchResults struct {
@@ -178,4 +185,62 @@ func TestAPIUserSearchByEmail(t *testing.T) {
 	DecodeJSON(t, resp, &results)
 	assert.Len(t, results.Data, 1)
 	assert.Equal(t, query, results.Data[0].Email)
+}
+
+func TestUsersSearchSorted(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	createTimestamp := time.Now().Unix() - 1000
+	updateTimestamp := time.Now().Unix() - 500
+	sess := db.GetEngine(context.Background())
+
+	for i := int64(1); i <= 10; i++ {
+		name := "sorttest" + strconv.Itoa(int(i))
+		user := &user_model.User{
+			Name:        name,
+			LowerName:   name,
+			LoginName:   name,
+			Email:       name + "@example.com",
+			Passwd:      name + ".password",
+			Avatar:      "xyz",
+			Type:        user_model.UserTypeIndividual,
+			LoginType:   auth_model.OAuth2,
+			CreatedUnix: timeutil.TimeStamp(createTimestamp - i),
+			UpdatedUnix: timeutil.TimeStamp(updateTimestamp - i),
+		}
+		_, err := sess.NoAutoTime().Insert(user)
+		require.NoError(t, err)
+	}
+
+	session := loginUser(t, "user1")
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadUser)
+
+	testCases := []struct {
+		sortType      string
+		expectedUsers []string
+	}{
+		{"alphabetically", []string{"sorttest1", "sorttest10", "sorttest2", "sorttest3"}},
+		{"reversealphabetically", []string{"sorttest9", "sorttest8", "sorttest7", "sorttest6"}},
+		{"newest", []string{"sorttest1", "sorttest2", "sorttest3", "sorttest4"}},
+		{"oldest", []string{"sorttest10", "sorttest9", "sorttest8", "sorttest7"}},
+		{"recentupdate", []string{"sorttest1", "sorttest2", "sorttest3", "sorttest4"}},
+		{"leastupdate", []string{"sorttest10", "sorttest9", "sorttest8", "sorttest7"}},
+	}
+
+	for _, testCase := range testCases {
+		req := NewRequest(
+			t,
+			"GET",
+			fmt.Sprintf("/api/v1/users/search?q=sorttest&sort=%s&limit=4",
+				testCase.sortType,
+			),
+		).AddTokenAuth(token)
+		resp := session.MakeRequest(t, req, http.StatusOK)
+
+		var results SearchResults
+		DecodeJSON(t, resp, &results)
+		assert.Len(t, results.Data, 4)
+		for i, searchData := range results.Data {
+			assert.Equalf(t, testCase.expectedUsers[i], searchData.UserName, "Sort type: %s, index %d", testCase.sortType, i)
+		}
+	}
 }
