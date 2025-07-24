@@ -724,18 +724,18 @@
 							<li>
 							<span class="badge tw-bg-green tw-text-white">{{svg "octicon-dot-fill"}}</span>
 							{{if .Issue.IsPull}}
-								{{ctx.Locale.Tr "repo.pulls.reopened_at" "" ""}}
+								{{ctx.Locale.Tr "repo.pulls.reopened_at" ""}}
 							{{else}}
-								{{ctx.Locale.Tr "repo.issues.reopened_at" "" ""}}
+								{{ctx.Locale.Tr "repo.issues.reopened_at" ""}}
 							{{end}}
 							</li>
 						{{else if and (not .Aggregator.PrevClosed) .Aggregator.IsClosed}}
 							<span class="badge tw-bg-red tw-text-white">{{svg "octicon-circle-slash"}}</span>
 							<li>
 							{{if .Issue.IsPull}}
-								{{ctx.Locale.Tr "repo.pulls.closed_at" "" ""}}
+								{{ctx.Locale.Tr "repo.pulls.closed_at" ""}}
 							{{else}}
-								{{ctx.Locale.Tr "repo.issues.closed_at" "" ""}}
+								{{ctx.Locale.Tr "repo.issues.closed_at" ""}}
 							{{end}}
 							</li>
 						{{end}}
