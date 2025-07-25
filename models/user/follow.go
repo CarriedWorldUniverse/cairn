@@ -39,21 +39,21 @@ func FollowUser(ctx context.Context, userID, followID int64) (err error) {
 		return ErrBlockedByUser
 	}
 
-	ctx, committer, err := db.TxContext(ctx)
+	dbCtx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer committer.Close()
 
-	if err = db.Insert(ctx, &Follow{UserID: userID, FollowID: followID}); err != nil {
+	if err = db.Insert(dbCtx, &Follow{UserID: userID, FollowID: followID}); err != nil {
 		return err
 	}
 
-	if _, err = db.Exec(ctx, "UPDATE `user` SET num_followers = num_followers + 1 WHERE id = ?", followID); err != nil {
+	if _, err = db.Exec(dbCtx, "UPDATE `user` SET num_followers = num_followers + 1 WHERE id = ?", followID); err != nil {
 		return err
 	}
 
-	if _, err = db.Exec(ctx, "UPDATE `user` SET num_following = num_following + 1 WHERE id = ?", userID); err != nil {
+	if _, err = db.Exec(dbCtx, "UPDATE `user` SET num_following = num_following + 1 WHERE id = ?", userID); err != nil {
 		return err
 	}
 	return committer.Commit()
@@ -65,21 +65,21 @@ func UnfollowUser(ctx context.Context, userID, followID int64) (err error) {
 		return nil
 	}
 
-	ctx, committer, err := db.TxContext(ctx)
+	dbCtx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer committer.Close()
 
-	if _, err = db.DeleteByBean(ctx, &Follow{UserID: userID, FollowID: followID}); err != nil {
+	if _, err = db.DeleteByBean(dbCtx, &Follow{UserID: userID, FollowID: followID}); err != nil {
 		return err
 	}
 
-	if _, err = db.Exec(ctx, "UPDATE `user` SET num_followers = num_followers - 1 WHERE id = ?", followID); err != nil {
+	if _, err = db.Exec(dbCtx, "UPDATE `user` SET num_followers = num_followers - 1 WHERE id = ?", followID); err != nil {
 		return err
 	}
 
-	if _, err = db.Exec(ctx, "UPDATE `user` SET num_following = num_following - 1 WHERE id = ?", userID); err != nil {
+	if _, err = db.Exec(dbCtx, "UPDATE `user` SET num_following = num_following - 1 WHERE id = ?", userID); err != nil {
 		return err
 	}
 	return committer.Commit()
