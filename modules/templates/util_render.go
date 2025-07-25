@@ -22,7 +22,6 @@ import (
 	"forgejo.org/modules/markup"
 	"forgejo.org/modules/markup/markdown"
 	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 )
 
@@ -145,7 +144,7 @@ func RenderRefIssueTitle(ctx context.Context, text string) template.HTML {
 
 // RenderLabel renders a label
 // locale is needed due to an import cycle with our context providing the `Tr` function
-func RenderLabel(ctx context.Context, locale translation.Locale, label *issues_model.Label) template.HTML {
+func RenderLabel(ctx *Context, label *issues_model.Label) template.HTML {
 	var (
 		archivedCSSClass string
 		textColor        = util.ContrastColor(label.Color)
@@ -156,7 +155,7 @@ func RenderLabel(ctx context.Context, locale translation.Locale, label *issues_m
 
 	if label.IsArchived() {
 		archivedCSSClass = "archived-label"
-		description = locale.TrString("repo.issues.archived_label_description", description)
+		description = ctx.Locale.TrString("repo.issues.archived_label_description", description)
 	}
 
 	if labelScope == "" {
@@ -246,7 +245,7 @@ func RenderMarkdownToHtml(ctx context.Context, input string) template.HTML { //n
 	return output
 }
 
-func RenderLabels(ctx context.Context, locale translation.Locale, labels []*issues_model.Label, repoLink string, isPull bool) template.HTML {
+func RenderLabels(ctx *Context, labels []*issues_model.Label, repoLink string, isPull bool) template.HTML {
 	htmlCode := `<span class="labels-list">`
 	for _, label := range labels {
 		// Protect against nil value in labels - shouldn't happen but would cause a panic if so
@@ -259,7 +258,7 @@ func RenderLabels(ctx context.Context, locale translation.Locale, labels []*issu
 			issuesOrPull = "pulls"
 		}
 		htmlCode += fmt.Sprintf("<a href='%s/%s?labels=%d' rel='nofollow'>%s</a> ",
-			repoLink, issuesOrPull, label.ID, RenderLabel(ctx, locale, label))
+			repoLink, issuesOrPull, label.ID, RenderLabel(ctx, label))
 	}
 	htmlCode += "</span>"
 	return template.HTML(htmlCode)

@@ -41,7 +41,7 @@ type Render interface {
 type Context struct {
 	*Base
 
-	TemplateContext TemplateContext
+	TemplateContext *templates.Context
 
 	Render   Render
 	PageData map[string]any // data used by JavaScript modules in one page, it's `window.config.pageData`
@@ -63,8 +63,6 @@ type Context struct {
 	Org     *Organization
 	Package *Package
 }
-
-type TemplateContext map[string]any
 
 func init() {
 	web.RegisterResponseStatusProvider[*Context](func(req *http.Request) web_types.ResponseStatusProvider {
@@ -98,10 +96,11 @@ func GetValidateContext(req *http.Request) (ctx *ValidateContext) {
 	return ctx
 }
 
-func NewTemplateContextForWeb(ctx *Context) TemplateContext {
-	tmplCtx := NewTemplateContext(ctx)
-	tmplCtx["Locale"] = ctx.Locale
-	tmplCtx["AvatarUtils"] = templates.NewAvatarUtils(ctx)
+func NewTemplateContextForWeb(ctx *Context) *templates.Context {
+	tmplCtx := templates.NewContext(ctx)
+	tmplCtx.Locale = ctx.Locale
+	tmplCtx.AvatarUtils = templates.NewAvatarUtils(ctx)
+	tmplCtx.Data = ctx.Data
 	return tmplCtx
 }
 
