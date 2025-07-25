@@ -102,7 +102,7 @@
     "editor.textarea.shift_tab_hint": "Sem indentação nesta linha. Pressione <kbd>Shift</kbd> + <kbd>Tab</kbd> novamente ou <kbd>Esc</kbd> para sair do editor.",
     "admin.dashboard.cleanup_offline_runners": "Limpar runners desconectados",
     "avatar.constraints_hint": "Imagem de perfil personalizada não pode exceder %[1]s em tamanho ou ser maior que %[2]dx%[3]d pixels",
-    "settings.visibility.description": "A visibilidade do perfil afeta a habilidade de acessarem seus repositórios não-privados. <a href=\"%s\" target=\"_blank\">Saiba mais</a>",
+    "settings.visibility.description": "A visibilidade do perfil afeta a habilidade de acessarem seus repositórios não-privados. <a href=\"%s\" target=\"_blank\">Saiba mais</a>.",
     "repo.diff.commit.next-short": "Próximo",
     "repo.diff.commit.previous-short": "Anterior",
     "profile.edit.link": "Editar perfil",
@@ -113,5 +113,10 @@
     "keys.ssh.link": "Chaves SSH",
     "mail.actions.run_info_sha": "Commit: %[1]s",
     "repo.settings.push_mirror.branch_filter.label": "Filtro de branches (opcional)",
-    "repo.settings.push_mirror.branch_filter.description": "Branches para espelhar. Deixe em branco para espelhar todos os branches. Veja <a href=\"%[1]s\">%[2]s documentação</a> sobre a sintaxe. Exemplos: <code>main, release/*</code>"
+    "repo.settings.push_mirror.branch_filter.description": "Branches para espelhar. Deixe em branco para espelhar todos os branches. Veja <a href=\"%[1]s\">%[2]s documentação</a> sobre a sintaxe. Exemplos: <code>main, release/*</code>",
+    "discussion.sidebar.reference": "Referência",
+    "admin.moderation.deleted_content_ref": "Conteúdo denunciado do tipo %[1]v e ID %[2]d não existe mais",
+    "admin.moderation.moderation_reports": "Denúncias para moderação",
+    "admin.moderation.reports": "Denúncias",
+    "admin.moderation.no_open_reports": "Não há denúncias abertas atualmente."
 }

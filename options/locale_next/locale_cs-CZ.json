@@ -34,9 +34,9 @@
     "discussion.locked": "Tato diskuze byla uzamčena. Komentování je omezené na přispěvatele.",
     "relativetime.future": "v budoucnu",
     "relativetime.years": {
-        "one": "Před %d rokem",
-        "few": "Před %d lety",
-        "other": "Před %d lety"
+        "one": "před %d rokem",
+        "few": "před %d lety",
+        "other": "před %d lety"
     },
     "relativetime.1day": "včera",
     "relativetime.2days": "před dvěma dny",
@@ -47,30 +47,30 @@
     "relativetime.1year": "minulý rok",
     "relativetime.2years": "před dvěma lety",
     "relativetime.weeks": {
-        "one": "Před %d týdnem",
-        "few": "Před %d týdny",
-        "other": "Před %d týdny"
+        "one": "před %d týdnem",
+        "few": "před %d týdny",
+        "other": "před %d týdny"
     },
     "relativetime.days": {
-        "one": "Před %d dnem",
-        "few": "Před %d dny",
-        "other": "Před %d dny"
+        "one": "před %d dnem",
+        "few": "před %d dny",
+        "other": "před %d dny"
     },
     "relativetime.mins": {
-        "one": "Před %d minutou",
-        "few": "Před %d minutami",
-        "other": "Před %d minutami"
+        "one": "před %d minutou",
+        "few": "před %d minutami",
+        "other": "před %d minutami"
     },
     "relativetime.hours": {
-        "one": "Před %d hodinou",
-        "few": "Před %d hodinami",
-        "other": "Před %d hodinami"
+        "one": "před %d hodinou",
+        "few": "před %d hodinami",
+        "other": "před %d hodinami"
     },
     "relativetime.now": "nyní",
     "relativetime.months": {
-        "one": "Před %d měsícem",
-        "few": "Před %d měsíci",
-        "other": "Před %d měsíci"
+        "one": "před %d měsícem",
+        "few": "před %d měsíci",
+        "other": "před %d měsíci"
     },
     "moderation.report_content": "Nahlásit obsah",
     "moderation.report_abuse_form.details": "Tento formulář je určen k nahlašování uživatelů, kteří si vytvářejí spamové profily, repozitáře, problémy, komentáře nebo se chovají nevhodně.",
@@ -101,7 +101,7 @@
     "editor.textarea.tab_hint": "Řádek je již odsazen. Pro opuštění editoru stiskněte znovu <kbd>Tab</kbd> nebo <kbd>Escape</kbd>.",
     "editor.textarea.shift_tab_hint": "Na tomto řádku není žádné odsazení. Pro opuštění editoru stiskněte znovu <kbd>Shift</kbd> + <kbd>Tab</kbd> nebo <kbd>Escape</kbd>.",
     "admin.dashboard.cleanup_offline_runners": "Vymazat offline runnery",
-    "settings.visibility.description": "Viditelnost profilu ovlivňuje možnost ostatních přistupovat k vašim veřejným repozitářům. <a href=\"%s\" target=\"_blank\">Zjistit více</a>",
+    "settings.visibility.description": "Viditelnost profilu ovlivňuje možnost ostatních přistupovat k vašim veřejným repozitářům. <a href=\"%s\" target=\"_blank\">Zjistit více</a>.",
     "avatar.constraints_hint": "Velikost vlastního avataru nesmí překročit %[1]s nebo být větší než %[2]dx%[3]d pixelů",
     "repo.diff.commit.next-short": "Další",
     "repo.diff.commit.previous-short": "Předchozí",
@@ -113,5 +113,10 @@
     "og.repo.summary_card.alt_description": "Karta se souhrnem repozitáře %[1]s, popsaným jako: %[2]s",
     "mail.actions.run_info_sha": "Revize: %[1]s",
     "repo.settings.push_mirror.branch_filter.label": "Filtr větve (nepovinný)",
-    "repo.settings.push_mirror.branch_filter.description": "Větve, které mají být zrcadleny. Ponechte prázdné pro zrcadlení všech větví. Syntaxi naleznete v <a href=\"%[1]s\">dokumentaci %[2]s</a>. Příklady: <code>main, release/*</code>"
+    "repo.settings.push_mirror.branch_filter.description": "Větve, které mají být zrcadleny. Ponechte prázdné pro zrcadlení všech větví. Syntaxi naleznete v <a href=\"%[1]s\">dokumentaci %[2]s</a>. Příklady: <code>main, release/*</code>",
+    "discussion.sidebar.reference": "Reference",
+    "admin.moderation.moderation_reports": "Hlášení moderace",
+    "admin.moderation.reports": "Hlášení",
+    "admin.moderation.deleted_content_ref": "Nahlášený obsah s typem %[1]v a ID %[2]d již neexistuje",
+    "admin.moderation.no_open_reports": "Momentálně nejsou otevřena žádná hlášení."
 }

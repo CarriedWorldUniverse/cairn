@@ -81,5 +81,6 @@
     "og.repo.summary_card.alt_description": "仓库 %[1]s 的摘要卡片，描述为：%[2]s",
     "repo.settings.push_mirror.branch_filter.label": "分支过滤器（可选）",
     "repo.settings.push_mirror.branch_filter.description": "欲镜像的分支。留空以镜像所有分支。关于语法的更多信息，请参见 <a href=\"%[1]s\">%[2]s 文档</a>。例如：<code>main, release/*</code>",
-    "mail.actions.run_info_sha": "提交：%[1]s"
+    "mail.actions.run_info_sha": "提交：%[1]s",
+    "discussion.sidebar.reference": "引用"
 }
