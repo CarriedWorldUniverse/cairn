@@ -93,7 +93,7 @@
     "editor.textarea.tab_hint": "Naka-indent na ang linya. Pindutin ulit ang <kbd>Tab</kbd> o <kbd>Escape</kbd> para umalis sa editor.",
     "editor.textarea.shift_tab_hint": "Walang indentation sa linyang ito. Pindutin ang <kbd>Shift</kbd> + <kbd>Tab</kbd> ulit o <kbd>Escape</kbd> para umalis sa editor.",
     "admin.dashboard.cleanup_offline_runners": "Linisin ang mga offline na runner",
-    "settings.visibility.description": "Maaapektuhan ng visibility ng profile ang kakayahan ng iba na i-access ang iyong mga hindi pribadong repositoryo. <a href=\"%s\" target=\"_blank\">Matuto pa</a>",
+    "settings.visibility.description": "Maaapektuhan ng visibility ng profile ang kakayahan ng iba na i-access ang iyong mga hindi pribadong repositoryo. <a href=\"%s\" target=\"_blank\">Matuto pa</a>.",
     "avatar.constraints_hint": "Hindi maaaring lumagpas sa laking %[1]s o mas malaki sa %[2]dx%[3]d pixel ang custom na avatar",
     "repo.diff.commit.next-short": "Susunod",
     "repo.diff.commit.previous-short": "Nakaraan",
@@ -105,5 +105,10 @@
     "og.repo.summary_card.alt_description": "Card ng pangkalahatang ideya ng repositoryong %[1]s, inilalarawan bilang: %[2]s",
     "mail.actions.run_info_sha": "Commit: %[1]s",
     "repo.settings.push_mirror.branch_filter.label": "Filter ng branch (opsyonal)",
-    "repo.settings.push_mirror.branch_filter.description": "Mga branch na imi-mirror. Iwanang walang laman para i-mirror ang lahat ng mga branch. Tignan ang <a href=\"%[1]s\">dokumentasyon ng %[2]s</a> para sa syntax. Halimbawa: <code>main, your-reality, release/*</code>"
+    "repo.settings.push_mirror.branch_filter.description": "Mga branch na imi-mirror. Iwanang walang laman para i-mirror ang lahat ng mga branch. Tignan ang <a href=\"%[1]s\">dokumentasyon ng %[2]s</a> para sa syntax. Halimbawa: <code>main, your-reality, release/*</code>",
+    "discussion.sidebar.reference": "Sangguni",
+    "admin.moderation.moderation_reports": "Mga ulat sa moderation",
+    "admin.moderation.no_open_reports": "Kasalukuyang walang mga nakabukas na ulat.",
+    "admin.moderation.reports": "Mga ulat",
+    "admin.moderation.deleted_content_ref": "Hindi na umiiral ang inulat na nilalaman na may uri na %[1]v at ID %[2]d"
 }
