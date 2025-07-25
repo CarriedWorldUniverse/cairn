@@ -4,7 +4,7 @@ A minor or major Forgejo release is published every [three months](https://forge
 
 A [patch or minor release](https://semver.org/spec/v2.0.0.html) (e.g. upgrading from v7.0.0 to v7.0.1 or v7.1.0) does not require manual intervention. But [major releases](https://semver.org/spec/v2.0.0.html#spec-item-8) where the first version number changes (e.g. upgrading from v1.21 to v7.0) contain breaking changes and the release notes explain how to deal with them.
 
-The release notes of each release [are available in the release-notes-published directory of this repository](release-notes-published), starting with [Forgejo 7.0.7](release-notes-published/7.0.7.md) and [Forgejo 8.0.1](release-notes-published/8.0.1.md).
+The release notes of each release [are available in the release-notes-published directory of this repository](https://codeberg.org/forgejo/forgejo/src/branch/forgejo/release-notes-published), starting with [Forgejo 7.0.7](release-notes-published/7.0.7.md) and [Forgejo 8.0.1](release-notes-published/8.0.1.md).
 
 ## 9.0.2
 
