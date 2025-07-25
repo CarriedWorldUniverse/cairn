@@ -15,7 +15,6 @@ import (
 	"forgejo.org/modules/templates"
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/modules/web/routing"
-	"forgejo.org/services/context"
 )
 
 const tplStatus500 base.TplName = "status/500"
@@ -36,8 +35,8 @@ func RenderPanicErrorPage(w http.ResponseWriter, req *http.Request, err any) {
 	httpcache.SetCacheControlInHeader(w.Header(), 0, "no-transform")
 	w.Header().Set(`X-Frame-Options`, setting.CORSConfig.XFrameOptions)
 
-	tmplCtx := context.TemplateContext{}
-	tmplCtx["Locale"] = middleware.Locale(w, req)
+	tmplCtx := templates.NewContext(req.Context())
+	tmplCtx.Locale = middleware.Locale(w, req)
 	ctxData := middleware.GetContextData(req.Context())
 
 	// This recovery handler could be called without Gitea's web context, so we shouldn't touch that context too much.

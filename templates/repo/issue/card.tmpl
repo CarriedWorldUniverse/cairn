@@ -65,7 +65,7 @@
 	<div class="issue-card-bottom">
 		<div class="labels-list">
 			{{range .Labels}}
-				<a target="_blank" href="{{$.Issue.Repo.Link}}/issues?labels={{.ID}}">{{RenderLabel ctx ctx.Locale .}}</a>
+				<a target="_blank" href="{{$.Issue.Repo.Link}}/issues?labels={{.ID}}">{{RenderLabel ctx .}}</a>
 			{{end}}
 		</div>
 		<div class="issue-card-assignees">

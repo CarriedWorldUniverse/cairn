@@ -1524,3 +1524,15 @@ func TestIssuePostersSearch(t *testing.T) {
 		assert.EqualValues(t, 1, data.Results[0].UserID)
 	})
 }
+
+func TestIssueTimelineLabels(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequest(t, "GET", "/user2/repo1/issues/1")
+	resp := MakeRequest(t, req, http.StatusOK)
+	assert.NotContains(t, resp.Body.String(), `status-page-500`)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	filterLinks := htmlDoc.Find(".timeline .labels-list a")
+	assert.Equal(t, 9, filterLinks.Length())
+}
