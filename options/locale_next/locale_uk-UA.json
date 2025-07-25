@@ -101,7 +101,7 @@
     "editor.textarea.tab_hint": "У рядку вже є відступ. Натисніть <kbd>Tab</kbd> ще раз або <kbd>Esc</kbd>, щоб вийти з редактора.",
     "editor.textarea.shift_tab_hint": "У цьому рядку немає відступів. Натисніть <kbd>Shift</kbd> + <kbd>Tab</kbd> ще раз або <kbd>Esc</kbd>, щоб вийти з редактора.",
     "admin.dashboard.cleanup_offline_runners": "Очистити неактивні раннери",
-    "settings.visibility.description": "Видимість профілю впливає на можливість інших користувачів отримати доступ до ваших неприватних репозиторіїв. <a href=\"%s\" target=\"_blank\">Дізнатися більше</a>",
+    "settings.visibility.description": "Видимість профілю впливає на можливість інших користувачів отримати доступ до ваших неприватних репозиторіїв. <a href=\"%s\" target=\"_blank\">Дізнатися більше</a>.",
     "avatar.constraints_hint": "Розмір користувацького аватара не може перевищувати %[1]s або бути більшим за %[2]d×%[3]d пікселів",
     "repo.diff.commit.next-short": "Наступний",
     "repo.diff.commit.previous-short": "Попередній",
@@ -113,5 +113,9 @@
     "og.repo.summary_card.alt_description": "Підсумкова картка репозиторію %[1]s з описом: %[2]s",
     "mail.actions.run_info_sha": "Коміт: %[1]s",
     "repo.settings.push_mirror.branch_filter.description": "Гілки для дзеркалювання. Залиште порожнім, щоб віддзеркалити всі гілки. Дивіться синтаксис у <a href=\"%[1]s\">документації %[2]s</a>. Приклади: <code>main, release/*</code>",
-    "repo.settings.push_mirror.branch_filter.label": "Фільтр гілок (необов'язково)"
+    "repo.settings.push_mirror.branch_filter.label": "Фільтр гілок (необов'язково)",
+    "discussion.sidebar.reference": "Посилання",
+    "admin.moderation.no_open_reports": "Відкритих скарг наразі немає.",
+    "admin.moderation.reports": "Скарги",
+    "admin.moderation.deleted_content_ref": "Вміст типу %[1]v з ідентифікатором %[2]d, на який подано скаргу, більше не існує"
 }

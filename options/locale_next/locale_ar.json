@@ -137,5 +137,9 @@
     "moderation.report_abuse": "الإبلاغ عن إساءة الاستخدام",
     "feed.atom.link": "موجز Atom",
     "admin.config.moderation_config": "تهيئة الإشراف",
-    "mail.actions.successful_run_after_failure_subject": "تم استعادة سير العمل %[1]s في المستودع %[2]s"
+    "mail.actions.successful_run_after_failure_subject": "تم استعادة سير العمل %[1]s في المستودع %[2]s",
+    "discussion.sidebar.reference": "مرجع",
+    "admin.moderation.moderation_reports": "تقارير الإشراف",
+    "admin.moderation.reports": "التقارير",
+    "admin.moderation.no_open_reports": "لا يوجد حالياً أية تقارير مفتوحة."
 }
