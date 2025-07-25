@@ -93,7 +93,7 @@
     "editor.textarea.tab_hint": "Rieg al inschuven. Drück weer <kbd>Tab</kbd> of <kbd>Esc</kbd>, um de Bewarker to verlaten.",
     "editor.textarea.shift_tab_hint": "Keen Inschuuv in deeser Rieg. Drück weer <kbd>Umschalt</kbd>+<kbd>Tab</kbd> of <kbd>Esc</kbd>, um de Bewarker to verlaten.",
     "admin.dashboard.cleanup_offline_runners": "Nich verbunnen Lopers uprümen",
-    "settings.visibility.description": "De Profil-Sichtbaarkeid maakt daar wat an, of un wo anner Lüü diene nich-privaaten Repositoriums ankieken könen. <a href=\"%s\" target=\"_blank\">Mehr unnerhören</a>",
+    "settings.visibility.description": "De Profil-Sichtbaarkeid maakt daar wat an, of un wo anner Lüü diene nich-privaaten Repositoriums ankieken könen. <a href=\"%s\" target=\"_blank\">Mehr unnerhören</a>.",
     "avatar.constraints_hint": "Dat eegene Kontobill düür nich groter as %[1]s wesen of groter as %[2]d×%[3]d Billtüttels wesen",
     "repo.diff.commit.next-short": "Anner",
     "repo.diff.commit.previous-short": "Vörig",
@@ -105,5 +105,10 @@
     "og.repo.summary_card.alt_description": "Tosamenfatens-Kaart vun de Repositorium %[1]s, beschrieven as: %[2]s",
     "mail.actions.run_info_sha": "Kommitteren: %[1]s",
     "repo.settings.push_mirror.branch_filter.description": "Twiegen tum Spegeln. Laat dat leeg, um all Twiegen to spegeln. Lees de <a href=\"%[1]s\">%[2]s-Dokumenteren</a> för de Syntax. Bispölen: <code>main, release/*</code>",
-    "repo.settings.push_mirror.branch_filter.label": "Twieg-Filter (wenn du willst)"
+    "repo.settings.push_mirror.branch_filter.label": "Twieg-Filter (wenn du willst)",
+    "discussion.sidebar.reference": "Nömen",
+    "admin.moderation.moderation_reports": "Moderatioons-Berichten",
+    "admin.moderation.no_open_reports": "Dat gifft jüüst keene open Berichten.",
+    "admin.moderation.reports": "Berichten",
+    "admin.moderation.deleted_content_ref": "Mellt Inholl mit Aard %[1]v un Kennteken %[2]d gifft dat nich mehr"
 }

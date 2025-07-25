@@ -113,5 +113,6 @@
     "og.repo.summary_card.alt_description": "Карточка со сводкой о репозитории %s. Описание: %[2]s",
     "mail.actions.run_info_sha": "Коммит: %[1]s",
     "repo.settings.push_mirror.branch_filter.description": "Синхронизируемые ветви. Оставьте пустым, чтобы синхронизировать все. Ознакомьтесь с синтаксисом в <a href=\"%[1]s\">документации %[2]s</a>. Примеры: <code>main, release/*</code>",
-    "repo.settings.push_mirror.branch_filter.label": "Выбор ветвей (опционально)"
+    "repo.settings.push_mirror.branch_filter.label": "Выбор ветвей (опционально)",
+    "discussion.sidebar.reference": "Ссылка"
 }
