@@ -138,7 +138,7 @@ func TestPullCombinedReviewRequest(t *testing.T) {
 }
 
 func TestShowMergeForManualMerge(t *testing.T) {
-	defer tests.PrintCurrentTest(t)()
+	defer tests.PrepareTestEnv(t)()
 
 	// Only allow manual merge strategy for this repository.
 	pullRepoUnit := unittest.AssertExistsAndLoadBean(t, &repo_model.RepoUnit{ID: 5, RepoID: 1, Type: unit.TypePullRequests})
