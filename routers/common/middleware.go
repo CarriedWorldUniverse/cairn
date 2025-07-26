@@ -46,7 +46,11 @@ func ProtocolMiddlewares() (handlers []any) {
 			defer finished()
 			trace.Log(ctx, "method", req.Method)
 			trace.Log(ctx, "url", req.RequestURI)
-			next.ServeHTTP(context.WrapResponseWriter(resp), req.WithContext(cache.WithCacheContext(ctx)))
+
+			respWriter := context.WrapResponseWriter(resp)
+			next.ServeHTTP(respWriter, req.WithContext(cache.WithCacheContext(ctx)))
+
+			trace.Logf(ctx, "status", "%d", respWriter.WrittenStatus())
 		})
 	})
 
