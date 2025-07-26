@@ -386,6 +386,15 @@ func (TracingHook) BeforeProcess(c *contexts.ContextHook) (context.Context, erro
 }
 
 func (TracingHook) AfterProcess(c *contexts.ContextHook) error {
+	if c.Result != nil {
+		if rowsAffected, err := c.Result.RowsAffected(); err == nil {
+			trace.Logf(c.Ctx, "rows affected", "%d", rowsAffected)
+		}
+		if lastID, err := c.Result.LastInsertId(); err == nil {
+			trace.Logf(c.Ctx, "last insert id", "%d", lastID)
+		}
+	}
+
 	c.Ctx.Value(sqlTask{}).(*trace.Task).End()
 	return nil
 }
