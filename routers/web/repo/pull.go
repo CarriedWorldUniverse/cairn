@@ -1152,7 +1152,7 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 			ctx.ServerError("GetUserRepoPermission", err)
 			return
 		}
-		ctx.Data["HeadBranchIsEditable"] = pull.HeadRepo.CanEnableEditor() && issues_model.CanMaintainerWriteToBranch(ctx, headRepoPerm, pull.HeadBranch, ctx.Doer)
+		ctx.Data["HeadBranchIsEditable"] = pull.HeadRepo.CanEnableEditor() && issues_model.CanMaintainerWriteToBranch(ctx, headRepoPerm, pull.HeadBranch, ctx.Doer) && pull.Flow != issues_model.PullRequestFlowAGit
 		ctx.Data["SourceRepoLink"] = pull.HeadRepo.Link()
 		ctx.Data["HeadBranch"] = pull.HeadBranch
 	}
