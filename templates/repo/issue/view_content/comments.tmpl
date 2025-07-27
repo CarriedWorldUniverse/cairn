@@ -759,11 +759,11 @@
 						{{if and (eq (len .RemovedRequestReview) 1) (eq (len .AddedRequestReview) 0) (eq ((index .RemovedRequestReview 0).ID) .PosterID) (eq ((index .RemovedRequestReview 0).Type) "user")}}
 							<span class="review-request-list">{{ctx.Locale.Tr "repo.issues.review.remove_review_request_self" ""}}</span>
 						{{else if and .AddedRequestReview (not .RemovedRequestReview)}}
-							{{ctx.Locale.TrN (len .AddedRequestReview) "repo.issues.review.add_review_request" "repo.issues.review.add_review_requests" (RenderReviewRequest .AddedRequestReview) ""}}
+							{{ctx.Locale.TrN (len .AddedRequestReview) "repo.issues.review.add_review_request" "repo.issues.review.add_review_requests" (RenderReviewRequest  $.Context .AddedRequestReview) ""}}
 						{{else if and (not .AddedRequestReview) .RemovedRequestReview}}
-							{{ctx.Locale.TrN (len .RemovedRequestReview) "repo.issues.review.remove_review_request" "repo.issues.review.remove_review_requests" (RenderReviewRequest .RemovedRequestReview) ""}}
+							{{ctx.Locale.TrN (len .RemovedRequestReview) "repo.issues.review.remove_review_request" "repo.issues.review.remove_review_requests" (RenderReviewRequest $.Context .RemovedRequestReview) ""}}
 						{{else}}
-							{{ctx.Locale.Tr "repo.issues.review.add_remove_review_requests" (RenderReviewRequest .AddedRequestReview) (RenderReviewRequest .RemovedRequestReview) ""}}
+							{{ctx.Locale.Tr "repo.issues.review.add_remove_review_requests" (RenderReviewRequest $.Context .AddedRequestReview) (RenderReviewRequest $.Context .RemovedRequestReview) ""}}
 						{{end}}
 
 						</span>
