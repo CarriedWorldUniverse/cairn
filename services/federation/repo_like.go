@@ -5,6 +5,7 @@ package federation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,8 +18,6 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/validation"
 	context_service "forgejo.org/services/context"
-
-	ap "github.com/go-ap/activitypub"
 )
 
 // ProcessLikeActivity receives a ForgeLike activity and does the following:
@@ -28,32 +27,32 @@ import (
 // Validation of incoming RepositoryID against Local RepositoryID
 // Star the repo if it wasn't already stared
 // Do some mitigation against out of order attacks
-func ProcessLikeActivity(ctx context.Context, activity *ap.Activity, repositoryID int64) (ServiceResult, error) {
-	constructorLikeActivity, _ := fm.NewForgeLike(activity.Actor.GetLink().String(), activity.Object.GetLink().String(), activity.StartTime)
-	if res, err := validation.IsValid(constructorLikeActivity); !res {
-		return ServiceResult{}, NewErrNotAcceptablef("Invalid activity: %v", err)
+func ProcessLikeActivity(ctx *context_service.APIContext, form any, repositoryID int64) (int, string, error) {
+	activity := form.(*fm.ForgeLike)
+	if res, err := validation.IsValid(activity); !res {
+		return http.StatusNotAcceptable, "Invalid activity", err
 	}
 	log.Trace("Activity validated: %#v", activity)
 
 	// parse actorID (person)
 	actorURI := activity.Actor.GetID().String()
-	user, _, federationHost, err := FindOrCreateFederatedUser(ctx, actorURI)
+	user, _, federationHost, err := FindOrCreateFederatedUser(ctx.Base, actorURI)
 	if err != nil {
-		log.Error("Federated user not found (%s): %v", actorURI, err)
-		return ServiceResult{}, NewErrNotAcceptablef("FindOrCreateFederatedUser failed: %v", err)
+		ctx.Error(http.StatusNotAcceptable, "Federated user not found", err)
+		return http.StatusInternalServerError, "FindOrCreateFederatedUser", err
 	}
 
-	if !constructorLikeActivity.IsNewer(federationHost.LatestActivity) {
-		return ServiceResult{}, NewErrNotAcceptablef("LatestActivity: activity already processed: %v", err)
+	if !activity.IsNewer(federationHost.LatestActivity) {
+		return http.StatusNotAcceptable, "Activity out of order.", errors.New("Activity already processed")
 	}
 
 	// parse objectID (repository)
-	objectID, err := fm.NewRepositoryID(constructorLikeActivity.Object.GetID().String(), string(forgefed.ForgejoSourceType))
+	objectID, err := fm.NewRepositoryID(activity.Object.GetID().String(), string(forgefed.ForgejoSourceType))
 	if err != nil {
-		return ServiceResult{}, NewErrNotAcceptablef("Parsing repo objectID failed: %v", err)
+		return http.StatusNotAcceptable, "Invalid objectId", err
 	}
 	if objectID.ID != fmt.Sprint(repositoryID) {
-		return ServiceResult{}, NewErrNotAcceptablef("Invalid repoId: %v", err)
+		return http.StatusNotAcceptable, "Invalid objectId", err
 	}
 	log.Trace("Object accepted: %#v", objectID)
 
@@ -62,16 +61,16 @@ func ProcessLikeActivity(ctx context.Context, activity *ap.Activity, repositoryI
 	if !alreadyStared {
 		err = repo.StarRepo(ctx, user.ID, repositoryID, true)
 		if err != nil {
-			return ServiceResult{}, NewErrNotAcceptablef("Staring failed: %v", err)
+			return http.StatusNotAcceptable, "Error staring", err
 		}
 	}
 	federationHost.LatestActivity = activity.StartTime
 	err = forgefed.UpdateFederationHost(ctx, federationHost)
 	if err != nil {
-		return ServiceResult{}, NewErrNotAcceptablef("Updating federatedHost failed: %v", err)
+		return http.StatusNotAcceptable, "Error updating federatedHost", err
 	}
 
-	return NewServiceResultStatusOnly(http.StatusNoContent), nil
+	return 0, "", nil
 }
 
 // Create or update a list of FollowingRepo structs
