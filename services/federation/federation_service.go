@@ -18,6 +18,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/validation"
+	context_service "forgejo.org/services/context"
 
 	"github.com/google/uuid"
 )
@@ -26,7 +27,7 @@ func Init() error {
 	return nil
 }
 
-func FindOrCreateFederationHost(ctx context.Context, actorURI string) (*forgefed.FederationHost, error) {
+func FindOrCreateFederationHost(ctx *context_service.Base, actorURI string) (*forgefed.FederationHost, error) {
 	rawActorID, err := fm.NewActorID(actorURI)
 	if err != nil {
 		return nil, err
@@ -45,7 +46,7 @@ func FindOrCreateFederationHost(ctx context.Context, actorURI string) (*forgefed
 	return federationHost, nil
 }
 
-func FindOrCreateFederatedUser(ctx context.Context, actorURI string) (*user.User, *user.FederatedUser, *forgefed.FederationHost, error) {
+func FindOrCreateFederatedUser(ctx *context_service.Base, actorURI string) (*user.User, *user.FederatedUser, *forgefed.FederationHost, error) {
 	user, federatedUser, federationHost, err := findFederatedUser(ctx, actorURI)
 	if err != nil {
 		return nil, nil, nil, err
@@ -56,21 +57,20 @@ func FindOrCreateFederatedUser(ctx context.Context, actorURI string) (*user.User
 	}
 
 	if user != nil {
-		log.Trace("Local ActivityPub user found (actorURI: %#v, user: %#v)", actorURI, user)
+		log.Trace("Found local federatedUser: %#v", user)
 	} else {
-		log.Trace("Attempting to create new user and federatedUser for actorURI: %#v", actorURI)
 		user, federatedUser, err = createUserFromAP(ctx, personID, federationHost.ID)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		log.Trace("Created user %#v with federatedUser %#v from distant server", user, federatedUser)
+		log.Trace("Created federatedUser from ap: %#v", user)
 	}
 	log.Trace("Got user: %v", user.Name)
 
 	return user, federatedUser, federationHost, nil
 }
 
-func findFederatedUser(ctx context.Context, actorURI string) (*user.User, *user.FederatedUser, *forgefed.FederationHost, error) {
+func findFederatedUser(ctx *context_service.Base, actorURI string) (*user.User, *user.FederatedUser, *forgefed.FederationHost, error) {
 	federationHost, err := FindOrCreateFederationHost(ctx, actorURI)
 	if err != nil {
 		return nil, nil, nil, err
@@ -90,7 +90,6 @@ func findFederatedUser(ctx context.Context, actorURI string) (*user.User, *user.
 
 func createFederationHostFromAP(ctx context.Context, actorID fm.ActorID) (*forgefed.FederationHost, error) {
 	actionsUser := user.NewAPServerActor()
-
 	clientFactory, err := activitypub.GetClientFactory(ctx)
 	if err != nil {
 		return nil, err
@@ -162,7 +161,7 @@ func fetchUserFromAP(ctx context.Context, personID fm.PersonID, federationHostID
 		return nil, nil, err
 	}
 
-	log.Info("Fetched valid person from distant server: %q", person)
+	log.Info("Fetched valid person:%q", person)
 
 	localFqdn, err := url.ParseRequestURI(setting.AppURL)
 	if err != nil {
@@ -221,7 +220,7 @@ func fetchUserFromAP(ctx context.Context, personID fm.PersonID, federationHostID
 		},
 	}
 
-	log.Info("Fetched person's %q federatedUser from distant server: %q", person, federatedUser)
+	log.Info("Fetch federatedUser:%q", federatedUser)
 	return &newUser, &federatedUser, nil
 }
 
@@ -235,6 +234,6 @@ func createUserFromAP(ctx context.Context, personID fm.PersonID, federationHostI
 		return nil, nil, err
 	}
 
-	log.Info("Created federatedUser: %q", federatedUser)
+	log.Info("Created federatedUser:%q", federatedUser)
 	return newUser, federatedUser, nil
 }

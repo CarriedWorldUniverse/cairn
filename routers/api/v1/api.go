@@ -81,6 +81,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
@@ -852,7 +853,7 @@ func Routes() *web.Route {
 				m.Group("/repository-id/{repository-id}", func() {
 					m.Get("", activitypub.ReqHTTPUserSignature(), activitypub.Repository)
 					m.Post("/inbox",
-						bind(ap.Activity{}),
+						bind(forgefed.ForgeLike{}),
 						activitypub.ReqHTTPUserSignature(),
 						activitypub.RepositoryInbox)
 				}, context.RepositoryIDAssignmentAPI())
