@@ -38,18 +38,18 @@ func StoreFollowingRepos(ctx context.Context, localRepoID int64, followingRepoLi
 	}
 
 	// Begin transaction
-	ctx, committer, err := db.TxContext((ctx))
+	dbCtx, committer, err := db.TxContext((ctx))
 	if err != nil {
 		return err
 	}
 	defer committer.Close()
 
-	_, err = db.GetEngine(ctx).Where("repo_id=?", localRepoID).Delete(FollowingRepo{})
+	_, err = db.GetEngine(dbCtx).Where("repo_id=?", localRepoID).Delete(FollowingRepo{})
 	if err != nil {
 		return err
 	}
 	for _, followingRepo := range followingRepoList {
-		_, err = db.GetEngine(ctx).Insert(followingRepo)
+		_, err = db.GetEngine(dbCtx).Insert(followingRepo)
 		if err != nil {
 			return err
 		}

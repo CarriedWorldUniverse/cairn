@@ -28,7 +28,7 @@ func CreateFederatedUser(ctx context.Context, user *User, federatedUser *Federat
 	}
 
 	// Begin transaction
-	ctx, committer, err := db.TxContext((ctx))
+	txCtx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func CreateFederatedUser(ctx context.Context, user *User, federatedUser *Federat
 		}
 	}()
 
-	if err := CreateUser(ctx, user, &overwrite); err != nil {
+	if err := CreateUser(txCtx, user, &overwrite); err != nil {
 		return err
 	}
 
@@ -48,7 +48,7 @@ func CreateFederatedUser(ctx context.Context, user *User, federatedUser *Federat
 		return err
 	}
 
-	_, err = db.GetEngine(ctx).Insert(federatedUser)
+	_, err = db.GetEngine(txCtx).Insert(federatedUser)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func FindFederatedUser(ctx context.Context, externalID string, federationHostID 
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, fmt.Errorf("User %v for federated user is missing", federatedUser.UserID)
+		return nil, nil, fmt.Errorf("FederatedUser table contains entry for user ID %v, but no user with this ID exists", federatedUser.UserID)
 	}
 
 	if res, err := validation.IsValid(*user); !res {
@@ -87,7 +87,7 @@ func GetFederatedUser(ctx context.Context, externalID string, federationHostID i
 	if err != nil {
 		return nil, nil, err
 	} else if federatedUser == nil {
-		return nil, nil, fmt.Errorf("FederatedUser for externalId = %v and federationHostId = %v does not exist", externalID, federationHostID)
+		return nil, nil, fmt.Errorf("FederatedUser not found (given externalId: %v, federationHostId: %v)", externalID, federationHostID)
 	}
 	return user, federatedUser, nil
 }
@@ -99,13 +99,13 @@ func GetFederatedUserByUserID(ctx context.Context, userID int64) (*User, *Federa
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, fmt.Errorf("Federated user %v does not exist", federatedUser.UserID)
+		return nil, nil, fmt.Errorf("FederatedUser table does not contain entry for user ID: %v", federatedUser.UserID)
 	}
 	has, err = db.GetEngine(ctx).ID(federatedUser.UserID).Get(user)
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, fmt.Errorf("User %v for federated user is missing", federatedUser.UserID)
+		return nil, nil, fmt.Errorf("FederatedUser table contains entry for user ID %v, but no user with this ID exists", federatedUser.UserID)
 	}
 
 	if res, err := validation.IsValid(*user); !res {
@@ -130,7 +130,7 @@ func FindFederatedUserByKeyID(ctx context.Context, keyID string) (*User, *Federa
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, fmt.Errorf("User %v for federated user is missing", federatedUser.UserID)
+		return nil, nil, fmt.Errorf("FederatedUser table contains entry for user ID %v, but no user with this ID exists", federatedUser.UserID)
 	}
 
 	if res, err := validation.IsValid(*user); !res {
