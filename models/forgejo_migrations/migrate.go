@@ -115,6 +115,8 @@ var migrations = []*Migration{
 	NewMigration("Add `branch_filter` to `push_mirror` table", AddPushMirrorBranchFilter),
 	// v37 -> v38
 	NewMigration("Add `resolved_unix` column to `abuse_report` table", AddResolvedUnixToAbuseReport),
+	// v38 -> v39
+	NewMigration("Migrate `data` column of `secret` table to store keying material", MigrateActionSecretsToKeying),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.
