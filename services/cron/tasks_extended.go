@@ -15,6 +15,7 @@ import (
 	issue_indexer "forgejo.org/modules/indexer/issues"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/updatechecker"
+	moderation_service "forgejo.org/services/moderation"
 	repo_service "forgejo.org/services/repository"
 	archiver_service "forgejo.org/services/repository/archiver"
 	user_service "forgejo.org/services/user"
@@ -225,6 +226,24 @@ func registerRebuildIssueIndexer() {
 	})
 }
 
+func registerRemoveResolvedReports() {
+	type ReportConfig struct {
+		BaseConfig
+		ConfigKeepResolvedReportsFor time.Duration
+	}
+	RegisterTaskFatal("remove_resolved_reports", &ReportConfig{
+		BaseConfig: BaseConfig{
+			Enabled:    false,
+			RunAtStart: false,
+			Schedule:   "@every 24h",
+		},
+		ConfigKeepResolvedReportsFor: setting.Moderation.KeepResolvedReportsFor,
+	}, func(ctx context.Context, _ *user_model.User, config Config) error {
+		reportConfig := config.(*ReportConfig)
+		return moderation_service.RemoveResolvedReports(ctx, reportConfig.ConfigKeepResolvedReportsFor)
+	})
+}
+
 func initExtendedTasks() {
 	registerDeleteInactiveUsers()
 	registerDeleteRepositoryArchives()
@@ -240,4 +259,7 @@ func initExtendedTasks() {
 	registerDeleteOldSystemNotices()
 	registerGCLFS()
 	registerRebuildIssueIndexer()
+	if setting.Moderation.Enabled {
+		registerRemoveResolvedReports()
+	}
 }

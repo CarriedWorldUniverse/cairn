@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"slices"
+	"time"
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/log"
@@ -111,6 +112,7 @@ type AbuseReport struct {
 	// The ID of the corresponding shadow-copied content when exists; otherwise null.
 	ShadowCopyID sql.NullInt64      `xorm:"DEFAULT NULL"`
 	CreatedUnix  timeutil.TimeStamp `xorm:"created NOT NULL"`
+	ResolvedUnix timeutil.TimeStamp `xorm:"DEFAULT NULL"`
 }
 
 var ErrSelfReporting = errors.New("reporting yourself is not allowed")
@@ -159,6 +161,25 @@ func ReportAbuse(ctx context.Context, report *AbuseReport) error {
 	_, err := db.GetEngine(ctx).Insert(report)
 
 	return err
+}
+
+// GetResolvedReports gets all resolved reports
+func GetResolvedReports(ctx context.Context, keepReportsFor time.Duration) ([]*AbuseReport, error) {
+	cond := builder.And(
+		builder.Or(
+			builder.Eq{"`status`": ReportStatusTypeHandled},
+			builder.Eq{"`status`": ReportStatusTypeIgnored},
+		),
+	)
+
+	if keepReportsFor > 0 {
+		cond = cond.And(builder.Lt{"resolved_unix": time.Now().Add(-keepReportsFor).Unix()})
+	}
+
+	abuseReports := make([]*AbuseReport, 0, 30)
+	return abuseReports, db.GetEngine(ctx).
+		Where(cond).
+		Find(&abuseReports)
 }
 
 /*
