@@ -107,6 +107,7 @@
     "editor.textarea.tab_hint": "Line already indented. Press <kbd>Tab</kbd> again or <kbd>Escape</kbd> to leave the editor.",
     "editor.textarea.shift_tab_hint": "No indentation on this line. Press <kbd>Shift</kbd> + <kbd>Tab</kbd> again or <kbd>Escape</kbd> to leave the editor.",
     "admin.dashboard.cleanup_offline_runners": "Cleanup offline runners",
+    "admin.dashboard.remove_resolved_reports": "Remove resolved reports",
     "settings.visibility.description": "Profile visibility affects others' ability to access your non-private repositories. <a href=\"%s\" target=\"_blank\">Learn more</a>.",
     "avatar.constraints_hint": "Custom avatar may not exceed %[1]s in size or be larger than %[2]dx%[3]d pixels",
     "og.repo.summary_card.alt_description": "Summary card of repository %[1]s, described as: %[2]s",
