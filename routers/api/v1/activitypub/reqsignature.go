@@ -8,13 +8,13 @@ import (
 
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
-	gitea_context "forgejo.org/services/context"
+	services_context "forgejo.org/services/context"
 	"forgejo.org/services/federation"
 
 	"github.com/42wim/httpsig"
 )
 
-func verifyHTTPUserOrInstanceSignature(ctx *gitea_context.APIContext) (authenticated bool, err error) {
+func verifyHTTPUserOrInstanceSignature(ctx services_context.APIContext) (authenticated bool, err error) {
 	if !setting.Federation.SignatureEnforced {
 		return true, nil
 	}
@@ -28,9 +28,9 @@ func verifyHTTPUserOrInstanceSignature(ctx *gitea_context.APIContext) (authentic
 	}
 
 	signatureAlgorithm := httpsig.Algorithm(setting.Federation.SignatureAlgorithms[0])
-	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx.Base, v.KeyId())
+	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx, v.KeyId())
 	if err != nil || pubKey == nil {
-		pubKey, err = federation.FindOrCreateFederationHostKey(ctx.Base, v.KeyId())
+		pubKey, err = federation.FindOrCreateFederationHostKey(ctx, v.KeyId())
 		if err != nil {
 			return false, err
 		}
@@ -43,7 +43,7 @@ func verifyHTTPUserOrInstanceSignature(ctx *gitea_context.APIContext) (authentic
 	return true, nil
 }
 
-func verifyHTTPUserSignature(ctx *gitea_context.APIContext) (authenticated bool, err error) {
+func verifyHTTPUserSignature(ctx services_context.APIContext) (authenticated bool, err error) {
 	if !setting.Federation.SignatureEnforced {
 		return true, nil
 	}
@@ -57,7 +57,7 @@ func verifyHTTPUserSignature(ctx *gitea_context.APIContext) (authenticated bool,
 	}
 
 	signatureAlgorithm := httpsig.Algorithm(setting.Federation.SignatureAlgorithms[0])
-	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx.Base, v.KeyId())
+	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx, v.KeyId())
 	if err != nil {
 		return false, err
 	}
@@ -70,9 +70,9 @@ func verifyHTTPUserSignature(ctx *gitea_context.APIContext) (authenticated bool,
 }
 
 // ReqHTTPSignature function
-func ReqHTTPUserOrInstanceSignature() func(ctx *gitea_context.APIContext) {
-	return func(ctx *gitea_context.APIContext) {
-		if authenticated, err := verifyHTTPUserOrInstanceSignature(ctx); err != nil {
+func ReqHTTPUserOrInstanceSignature() func(ctx *services_context.APIContext) {
+	return func(ctx *services_context.APIContext) {
+		if authenticated, err := verifyHTTPUserOrInstanceSignature(*ctx); err != nil {
 			log.Warn("verifyHttpSignatures failed: %v", err)
 			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")
 		} else if !authenticated {
@@ -81,10 +81,10 @@ func ReqHTTPUserOrInstanceSignature() func(ctx *gitea_context.APIContext) {
 	}
 }
 
-// ReqHTTPSignature function
-func ReqHTTPUserSignature() func(ctx *gitea_context.APIContext) {
-	return func(ctx *gitea_context.APIContext) {
-		if authenticated, err := verifyHTTPUserSignature(ctx); err != nil {
+// ReqHTTPUserSignature function
+func ReqHTTPUserSignature() func(ctx *services_context.APIContext) {
+	return func(ctx *services_context.APIContext) {
+		if authenticated, err := verifyHTTPUserSignature(*ctx); err != nil {
 			log.Warn("verifyHttpSignatures failed: %v", err)
 			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")
 		} else if !authenticated {

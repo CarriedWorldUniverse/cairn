@@ -246,7 +246,10 @@ forgejo.org/services/context
 	GetPrivateContext
 
 forgejo.org/services/federation
+	NewErrInternalf
+	ErrInternal.Error
 	Init
+	NewServiceResultWithBytes
 
 forgejo.org/services/repository
 	IsErrForkAlreadyExist

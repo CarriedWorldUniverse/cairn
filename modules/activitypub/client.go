@@ -66,6 +66,11 @@ type ClientFactory struct {
 
 // NewClient function
 func NewClientFactory() (c *ClientFactory, err error) {
+	return NewClientFactoryWithTimeout(5 * time.Second)
+}
+
+// NewClient function
+func NewClientFactoryWithTimeout(timeout time.Duration) (c *ClientFactory, err error) {
 	if err = containsRequiredHTTPHeaders(http.MethodGet, setting.Federation.GetHeaders); err != nil {
 		return nil, err
 	} else if err = containsRequiredHTTPHeaders(http.MethodPost, setting.Federation.PostHeaders); err != nil {
@@ -77,7 +82,7 @@ func NewClientFactory() (c *ClientFactory, err error) {
 			Transport: &http.Transport{
 				Proxy: proxy.Proxy(),
 			},
-			Timeout: 5 * time.Second,
+			Timeout: timeout,
 		},
 		algs:        setting.HttpsigAlgs,
 		digestAlg:   httpsig.DigestAlgorithm(setting.Federation.DigestAlgorithm),
