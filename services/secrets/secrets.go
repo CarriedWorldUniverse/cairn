@@ -15,16 +15,16 @@ func CreateOrUpdateSecret(ctx context.Context, ownerID, repoID int64, name, data
 		return nil, false, err
 	}
 
-	s, err := db.Find[secret_model.Secret](ctx, secret_model.FindSecretsOptions{
+	s, exists, err := db.Get[secret_model.Secret](ctx, secret_model.FindSecretsOptions{
 		OwnerID: ownerID,
 		RepoID:  repoID,
 		Name:    name,
-	})
+	}.ToConds())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if len(s) == 0 {
+	if !exists {
 		s, err := secret_model.InsertEncryptedSecret(ctx, ownerID, repoID, name, data)
 		if err != nil {
 			return nil, false, err
@@ -32,11 +32,11 @@ func CreateOrUpdateSecret(ctx context.Context, ownerID, repoID int64, name, data
 		return s, true, nil
 	}
 
-	if err := secret_model.UpdateSecret(ctx, s[0].ID, data); err != nil {
+	s.SetSecret(data)
+	if _, err := db.GetEngine(ctx).Cols("data").ID(s.ID).Update(s); err != nil {
 		return nil, false, err
 	}
-
-	return s[0], false, nil
+	return s, false, nil
 }
 
 func DeleteSecretByID(ctx context.Context, ownerID, repoID, secretID int64) error {

@@ -58,6 +58,8 @@ var (
 	ContextPushMirror Context = "pushmirror"
 	// Used for the `two_factor` table.
 	ContextTOTP Context = "totp"
+	// Used for the `secret` table.
+	ContextActionSecret Context = "action_secret"
 )
 
 // Derive *the* key for a given context, this is a deterministic function.
