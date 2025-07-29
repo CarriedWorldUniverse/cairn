@@ -145,10 +145,16 @@ func TestRenameUser(t *testing.T) {
 
 	t.Run("Non-Local", func(t *testing.T) {
 		u := &user_model.User{
+			ID:        2,
+			Name:      "old-name",
 			Type:      user_model.UserTypeIndividual,
 			LoginType: auth.OAuth2,
 		}
-		require.ErrorIs(t, RenameUser(db.DefaultContext, u, "user_rename"), user_model.ErrUserIsNotLocal{})
+		require.ErrorIs(t, RenameUser(db.DefaultContext, u, "user_rename2"), user_model.ErrUserIsNotLocal{UID: 2, Name: "old-name"})
+
+		t.Run("Admin", func(t *testing.T) {
+			require.NoError(t, AdminRenameUser(t.Context(), u, "user_rename2"))
+		})
 	})
 
 	t.Run("Same username", func(t *testing.T) {
