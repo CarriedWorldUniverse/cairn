@@ -253,17 +253,17 @@ func DeleteTopic(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// TopicSearch search for creating topic
+// TopicSearch searches known topics, i.e. when adding a topic to a repository
 func TopicSearch(ctx *context.APIContext) {
 	// swagger:operation GET /topics/search repository topicSearch
 	// ---
-	// summary: search topics via keyword
+	// summary: Search for topics by keyword
 	// produces:
 	//   - application/json
 	// parameters:
 	//   - name: q
 	//     in: query
-	//     description: keywords to search
+	//     description: keyword to search for
 	//     required: true
 	//     type: string
 	//   - name: page

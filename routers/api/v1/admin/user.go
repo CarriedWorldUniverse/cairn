@@ -51,11 +51,11 @@ func parseAuthSource(ctx *context.APIContext, u *user_model.User, sourceID int64
 	u.LoginSource = source.ID
 }
 
-// CreateUser create a user
+// CreateUser create a user account
 func CreateUser(ctx *context.APIContext) {
 	// swagger:operation POST /admin/users admin adminCreateUser
 	// ---
-	// summary: Create a user
+	// summary: Create a user account
 	// consumes:
 	// - application/json
 	// produces:
@@ -274,7 +274,7 @@ func EditUser(ctx *context.APIContext) {
 func DeleteUser(ctx *context.APIContext) {
 	// swagger:operation DELETE /admin/users/{username} admin adminDeleteUser
 	// ---
-	// summary: Delete a user
+	// summary: Delete user account
 	// produces:
 	// - application/json
 	// parameters:
@@ -324,11 +324,11 @@ func DeleteUser(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// CreatePublicKey api for creating a public key to a user
+// CreatePublicKey adds an SSH public key to user's account
 func CreatePublicKey(ctx *context.APIContext) {
 	// swagger:operation POST /admin/users/{username}/keys admin adminCreatePublicKey
 	// ---
-	// summary: Add a public key on behalf of a user
+	// summary: Add an SSH public key to user's account
 	// consumes:
 	// - application/json
 	// produces:
@@ -356,11 +356,11 @@ func CreatePublicKey(ctx *context.APIContext) {
 	user.CreateUserPublicKey(ctx, *form, ctx.ContextUser.ID)
 }
 
-// DeleteUserPublicKey api for deleting a user's public key
+// DeleteUserPublicKey removes an SSH public key from user's account
 func DeleteUserPublicKey(ctx *context.APIContext) {
 	// swagger:operation DELETE /admin/users/{username}/keys/{id} admin adminDeleteUserPublicKey
 	// ---
-	// summary: Delete a user's public key
+	// summary: Remove a public key from user's account
 	// produces:
 	// - application/json
 	// parameters:

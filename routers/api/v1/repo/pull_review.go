@@ -716,7 +716,7 @@ func prepareSingleReview(ctx *context.APIContext) (*issues_model.Review, *issues
 func CreateReviewRequests(ctx *context.APIContext) {
 	// swagger:operation POST /repos/{owner}/{repo}/pulls/{index}/requested_reviewers repository repoCreatePullReviewRequests
 	// ---
-	// summary: create review requests for a pull request
+	// summary: Create review requests for a pull request
 	// produces:
 	// - application/json
 	// parameters:
@@ -757,7 +757,7 @@ func CreateReviewRequests(ctx *context.APIContext) {
 func DeleteReviewRequests(ctx *context.APIContext) {
 	// swagger:operation DELETE /repos/{owner}/{repo}/pulls/{index}/requested_reviewers repository repoDeletePullReviewRequests
 	// ---
-	// summary: cancel review requests for a pull request
+	// summary: Cancel review requests for a pull request
 	// produces:
 	// - application/json
 	// parameters:

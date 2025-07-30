@@ -71,11 +71,11 @@ func ListAccessTokens(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, &apiTokens)
 }
 
-// CreateAccessToken create access tokens
+// CreateAccessToken creates an access token for doer
 func CreateAccessToken(ctx *context.APIContext) {
 	// swagger:operation POST /users/{username}/tokens user userCreateToken
 	// ---
-	// summary: Create an access token
+	// summary: Generate an access token for the current user
 	// consumes:
 	// - application/json
 	// produces:
@@ -141,11 +141,11 @@ func CreateAccessToken(ctx *context.APIContext) {
 	})
 }
 
-// DeleteAccessToken delete access tokens
+// DeleteAccessToken deletes an access token from doer's account
 func DeleteAccessToken(ctx *context.APIContext) {
 	// swagger:operation DELETE /users/{username}/tokens/{token} user userDeleteAccessToken
 	// ---
-	// summary: delete an access token
+	// summary: Delete an access token from current user's account
 	// produces:
 	// - application/json
 	// parameters:
@@ -214,7 +214,7 @@ func DeleteAccessToken(ctx *context.APIContext) {
 func CreateOauth2Application(ctx *context.APIContext) {
 	// swagger:operation POST /user/applications/oauth2 user userCreateOAuth2Application
 	// ---
-	// summary: creates a new OAuth2 application
+	// summary: Creates a new OAuth2 application
 	// produces:
 	// - application/json
 	// parameters:
@@ -298,11 +298,11 @@ func ListOauth2Applications(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, &apiApps)
 }
 
-// DeleteOauth2Application delete OAuth2 Application
+// DeleteOauth2Application delete OAuth2 application
 func DeleteOauth2Application(ctx *context.APIContext) {
 	// swagger:operation DELETE /user/applications/oauth2/{id} user userDeleteOAuth2Application
 	// ---
-	// summary: delete an OAuth2 Application
+	// summary: Delete an OAuth2 application
 	// produces:
 	// - application/json
 	// parameters:
@@ -334,11 +334,11 @@ func DeleteOauth2Application(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// GetOauth2Application get OAuth2 Application
+// GetOauth2Application returns an OAuth2 application
 func GetOauth2Application(ctx *context.APIContext) {
 	// swagger:operation GET /user/applications/oauth2/{id} user userGetOAuth2Application
 	// ---
-	// summary: get an OAuth2 Application
+	// summary: Get an OAuth2 application
 	// produces:
 	// - application/json
 	// parameters:
@@ -377,11 +377,11 @@ func GetOauth2Application(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, convert.ToOAuth2Application(app))
 }
 
-// UpdateOauth2Application update OAuth2 Application
+// UpdateOauth2Application updates an OAuth2 application
 func UpdateOauth2Application(ctx *context.APIContext) {
 	// swagger:operation PATCH /user/applications/oauth2/{id} user userUpdateOAuth2Application
 	// ---
-	// summary: update an OAuth2 Application, this includes regenerating the client secret
+	// summary: Update an OAuth2 application, this includes regenerating the client secret
 	// produces:
 	// - application/json
 	// parameters:
