@@ -17,7 +17,7 @@ import (
 func GetAllEmails(ctx *context.APIContext) {
 	// swagger:operation GET /admin/emails admin adminGetAllEmails
 	// ---
-	// summary: List all emails
+	// summary: List all users' email addresses
 	// produces:
 	// - application/json
 	// parameters:
@@ -60,7 +60,7 @@ func GetAllEmails(ctx *context.APIContext) {
 func SearchEmail(ctx *context.APIContext) {
 	// swagger:operation GET /admin/emails/search admin adminSearchEmails
 	// ---
-	// summary: Search all emails
+	// summary: Search users' email addresses
 	// produces:
 	// - application/json
 	// parameters:

@@ -251,11 +251,11 @@ func GetPushMirrorByName(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, m)
 }
 
-// AddPushMirror adds a push mirror to a repository
+// AddPushMirror sets up a new push mirror in a repository
 func AddPushMirror(ctx *context.APIContext) {
 	// swagger:operation POST /repos/{owner}/{repo}/push_mirrors repository repoAddPushMirror
 	// ---
-	// summary: add a push mirror to the repository
+	// summary: Set up a new push mirror in a repository
 	// consumes:
 	// - application/json
 	// produces:
@@ -296,11 +296,11 @@ func AddPushMirror(ctx *context.APIContext) {
 	CreatePushMirror(ctx, pushMirror)
 }
 
-// DeletePushMirrorByRemoteName deletes a push mirror from a repository by remoteName
+// DeletePushMirrorByRemoteName removes a push mirror from a repository by remoteName
 func DeletePushMirrorByRemoteName(ctx *context.APIContext) {
 	// swagger:operation DELETE /repos/{owner}/{repo}/push_mirrors/{name} repository repoDeletePushMirror
 	// ---
-	// summary: deletes a push mirror from a repository by remoteName
+	// summary: Remove a push mirror from a repository by remoteName
 	// produces:
 	// - application/json
 	// parameters:

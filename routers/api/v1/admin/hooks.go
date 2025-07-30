@@ -17,11 +17,11 @@ import (
 	webhook_service "forgejo.org/services/webhook"
 )
 
-// ListHooks list system's webhooks
+// ListHooks list system webhooks
 func ListHooks(ctx *context.APIContext) {
 	// swagger:operation GET /admin/hooks admin adminListHooks
 	// ---
-	// summary: List system's webhooks
+	// summary: List global (system) webhooks
 	// produces:
 	// - application/json
 	// parameters:

@@ -249,11 +249,11 @@ type swaggerUserCurrentPostGPGKey struct {
 	Form api.CreateGPGKeyOption
 }
 
-// CreateGPGKey create a GPG key belonging to the authenticated user
+// CreateGPGKey adds a GPG public key doer's account
 func CreateGPGKey(ctx *context.APIContext) {
 	// swagger:operation POST /user/gpg_keys user userCurrentPostGPGKey
 	// ---
-	// summary: Create a GPG key
+	// summary: Add a GPG public key to current user's account
 	// consumes:
 	// - application/json
 	// produces:
@@ -274,11 +274,11 @@ func CreateGPGKey(ctx *context.APIContext) {
 	CreateUserGPGKey(ctx, *form, ctx.Doer.ID)
 }
 
-// DeleteGPGKey remove a GPG key belonging to the authenticated user
+// DeleteGPGKey removes a GPG public key from doer's account
 func DeleteGPGKey(ctx *context.APIContext) {
 	// swagger:operation DELETE /user/gpg_keys/{id} user userCurrentDeleteGPGKey
 	// ---
-	// summary: Remove a GPG key
+	// summary: Remove a GPG public key from current user's account
 	// produces:
 	// - application/json
 	// parameters:

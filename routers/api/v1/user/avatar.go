@@ -13,11 +13,11 @@ import (
 	user_service "forgejo.org/services/user"
 )
 
-// UpdateAvatar updates the Avatar of an User
+// UpdateAvatar updates doer's avatar
 func UpdateAvatar(ctx *context.APIContext) {
 	// swagger:operation POST /user/avatar user userUpdateAvatar
 	// ---
-	// summary: Update Avatar
+	// summary: Update avatar of the current user
 	// produces:
 	// - application/json
 	// parameters:
@@ -49,11 +49,11 @@ func UpdateAvatar(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// DeleteAvatar deletes the Avatar of an User
+// DeleteAvatar deletes doer's avatar
 func DeleteAvatar(ctx *context.APIContext) {
 	// swagger:operation DELETE /user/avatar user userDeleteAvatar
 	// ---
-	// summary: Delete Avatar
+	// summary: Delete avatar of the current user. It will be replaced by a default one
 	// produces:
 	// - application/json
 	// responses:

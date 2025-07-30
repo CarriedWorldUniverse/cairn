@@ -180,7 +180,7 @@ func GetUserOrgsPermissions(ctx *context.APIContext) {
 func GetAll(ctx *context.APIContext) {
 	// swagger:operation Get /orgs organization orgGetAll
 	// ---
-	// summary: Get list of organizations
+	// summary: List all organizations
 	// produces:
 	// - application/json
 	// parameters:

@@ -266,7 +266,7 @@ func ListBlockedUsers(ctx *context.APIContext) {
 func BlockUser(ctx *context.APIContext) {
 	// swagger:operation PUT /user/block/{username} user userBlockUser
 	// ---
-	// summary: Blocks a user from the doer.
+	// summary: Blocks a user from the doer
 	// produces:
 	// - application/json
 	// parameters:
@@ -299,7 +299,7 @@ func BlockUser(ctx *context.APIContext) {
 func UnblockUser(ctx *context.APIContext) {
 	// swagger:operation PUT /user/unblock/{username} user userUnblockUser
 	// ---
-	// summary: Unblocks a user from the doer.
+	// summary: Unblocks a user from the doer
 	// produces:
 	// - application/json
 	// parameters:

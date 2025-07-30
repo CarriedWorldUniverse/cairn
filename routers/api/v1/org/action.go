@@ -20,11 +20,11 @@ import (
 	secret_service "forgejo.org/services/secrets"
 )
 
-// ListActionsSecrets list an organization's actions secrets
+// ListActionsSecrets lists actions secrets of an organization
 func (Action) ListActionsSecrets(ctx *context.APIContext) {
 	// swagger:operation GET /orgs/{org}/actions/secrets organization orgListActionsSecrets
 	// ---
-	// summary: List an organization's actions secrets
+	// summary: List actions secrets of an organization
 	// produces:
 	// - application/json
 	// parameters:
@@ -218,7 +218,7 @@ func (Action) SearchActionRunJobs(ctx *context.APIContext) {
 func (Action) ListVariables(ctx *context.APIContext) {
 	// swagger:operation GET /orgs/{org}/actions/variables organization getOrgVariablesList
 	// ---
-	// summary: Get an org-level variables list
+	// summary: List variables of an organization
 	// produces:
 	// - application/json
 	// parameters:
@@ -266,11 +266,11 @@ func (Action) ListVariables(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, variables)
 }
 
-// GetVariable get an org-level variable
+// GetVariable gives organization's variable
 func (Action) GetVariable(ctx *context.APIContext) {
 	// swagger:operation GET /orgs/{org}/actions/variables/{variablename} organization getOrgVariable
 	// ---
-	// summary: Get an org-level variable
+	// summary: Get organization's variable by name
 	// produces:
 	// - application/json
 	// parameters:
@@ -315,11 +315,11 @@ func (Action) GetVariable(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, variable)
 }
 
-// DeleteVariable delete an org-level variable
+// DeleteVariable deletes an organization's variable
 func (Action) DeleteVariable(ctx *context.APIContext) {
 	// swagger:operation DELETE /orgs/{org}/actions/variables/{variablename} organization deleteOrgVariable
 	// ---
-	// summary: Delete an org-level variable
+	// summary: Delete organization's variable by name
 	// produces:
 	// - application/json
 	// parameters:
@@ -359,11 +359,11 @@ func (Action) DeleteVariable(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// CreateVariable create an org-level variable
+// CreateVariable creates a new variable in organization
 func (Action) CreateVariable(ctx *context.APIContext) {
 	// swagger:operation POST /orgs/{org}/actions/variables/{variablename} organization createOrgVariable
 	// ---
-	// summary: Create an org-level variable
+	// summary: Create a new variable in organization
 	// consumes:
 	// - application/json
 	// produces:
@@ -423,11 +423,11 @@ func (Action) CreateVariable(ctx *context.APIContext) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// UpdateVariable update an org-level variable
+// UpdateVariable updates variable in organization
 func (Action) UpdateVariable(ctx *context.APIContext) {
 	// swagger:operation PUT /orgs/{org}/actions/variables/{variablename} organization updateOrgVariable
 	// ---
-	// summary: Update an org-level variable
+	// summary: Update variable in organization
 	// consumes:
 	// - application/json
 	// produces:
