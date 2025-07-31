@@ -110,5 +110,6 @@
     "admin.moderation.moderation_reports": "Moderatioons-Berichten",
     "admin.moderation.no_open_reports": "Dat gifft jüüst keene open Berichten.",
     "admin.moderation.reports": "Berichten",
-    "admin.moderation.deleted_content_ref": "Mellt Inholl mit Aard %[1]v un Kennteken %[2]d gifft dat nich mehr"
+    "admin.moderation.deleted_content_ref": "Mellt Inholl mit Aard %[1]v un Kennteken %[2]d gifft dat nich mehr",
+    "admin.dashboard.remove_resolved_reports": "Lööst Berichten wegdoon"
 }
