@@ -118,5 +118,6 @@
     "admin.moderation.no_open_reports": "Pašlaik nav atvērtu pārskatu.",
     "admin.moderation.moderation_reports": "Satura pārraudzības pārskati",
     "admin.moderation.reports": "Pārskati",
-    "admin.moderation.deleted_content_ref": "Saturs, par kuru ziņots, ar veidu %[1]v un Id %[2]d vairs nepastāv"
+    "admin.moderation.deleted_content_ref": "Saturs, par kuru ziņots, ar veidu %[1]v un Id %[2]d vairs nepastāv",
+    "admin.dashboard.remove_resolved_reports": "Noņemt atrisinātos ziņojumus"
 }

@@ -101,7 +101,7 @@
     "editor.textarea.shift_tab_hint": "Sem indentação nesta linha. Pressione <kbd>Shift</kbd> + <kbd>Tab</kbd> novamente ou <kbd>Escape</kbd> para sair do editor.",
     "stars.list.none": "Ninguém juntou este repositório aos favoritos.",
     "admin.dashboard.cleanup_offline_runners": "Limpeza de executores offline",
-    "settings.visibility.description": "A visibilidade do perfil afecta a capacidade de outros acederem aos seus repositórios não privados. <a href=\"%s\" target=\"_blank\">Ler mais</a>",
+    "settings.visibility.description": "A visibilidade do perfil afecta a capacidade de outros acederem aos seus repositórios não privados. <a href=\"%s\" target=\"_blank\">Saiba mais</a>.",
     "avatar.constraints_hint": "O avatar personalizado não pode exceder %[1]s de tamanho ou ser maior do que %[2]dx%[3]d pixéis",
     "repo.diff.commit.next-short": "Seg.",
     "profile.actions.tooltip": "Mais Actions",
@@ -114,5 +114,10 @@
     "repo.settings.push_mirror.branch_filter.label": "Filtro de ramos (opcional)",
     "repo.settings.push_mirror.branch_filter.description": "Ramos a serem espelhados. Deixe em branco para espelhar todos os ramos. Veja a <a href=\"%[1]s\">%[2]s documentação</a> sobre a sintaxe. Exemplos: <code>main, release/*</code>",
     "mail.actions.run_info_sha": "Cometimento: %[1]s",
-    "discussion.sidebar.reference": "Referência"
+    "discussion.sidebar.reference": "Referência",
+    "admin.dashboard.remove_resolved_reports": "Remover denúncias resolvidas",
+    "admin.moderation.no_open_reports": "Atualmente não há denúncias em aberto.",
+    "admin.moderation.deleted_content_ref": "O conteúdo denunciado do tipo %[1]v e id %[2]d já não existe",
+    "admin.moderation.moderation_reports": "Denúncias aos moderadores",
+    "admin.moderation.reports": "Denúncias"
 }

@@ -117,5 +117,7 @@
     "discussion.sidebar.reference": "Посилання",
     "admin.moderation.no_open_reports": "Відкритих скарг наразі немає.",
     "admin.moderation.reports": "Скарги",
-    "admin.moderation.deleted_content_ref": "Вміст типу %[1]v з ідентифікатором %[2]d, на який подано скаргу, більше не існує"
+    "admin.moderation.deleted_content_ref": "Вміст типу %[1]v з ідентифікатором %[2]d, на який подано скаргу, більше не існує",
+    "admin.moderation.moderation_reports": "Скарги модераторам",
+    "admin.dashboard.remove_resolved_reports": "Видалити закриті скарги"
 }
