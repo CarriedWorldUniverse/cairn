@@ -102,7 +102,7 @@
     "editor.textarea.shift_tab_hint": "В строке нет отступов. Нажмите <kbd>Shift</kbd> + <kbd>Tab</kbd> снова или <kbd>Escape</kbd>, чтобы покинуть редактор.",
     "admin.dashboard.cleanup_offline_runners": "Удалить недоступных исполнителей",
     "avatar.constraints_hint": "Изображение профиля не может быть более %[1]s и крупнее %[2]dx%[3]d пикселей",
-    "settings.visibility.description": "Видимость профиля влияет на доступ других до ваших не частных репозиториев. <a href=\"%s\" target=\"_blank\">Подробнее</a>",
+    "settings.visibility.description": "Видимость профиля влияет на доступ других до ваших не частных репозиториев. <a href=\"%s\" target=\"_blank\">Подробнее</a>.",
     "repo.diff.commit.previous-short": "Пред.",
     "repo.diff.commit.next-short": "След.",
     "profile.actions.tooltip": "Показать действия",
@@ -114,5 +114,10 @@
     "mail.actions.run_info_sha": "Коммит: %[1]s",
     "repo.settings.push_mirror.branch_filter.description": "Синхронизируемые ветви. Оставьте пустым, чтобы синхронизировать все. Ознакомьтесь с синтаксисом в <a href=\"%[1]s\">документации %[2]s</a>. Примеры: <code>main, release/*</code>",
     "repo.settings.push_mirror.branch_filter.label": "Выбор ветвей (опционально)",
-    "discussion.sidebar.reference": "Ссылка"
+    "discussion.sidebar.reference": "Ссылка",
+    "admin.moderation.moderation_reports": "Жалобы модерации",
+    "admin.moderation.deleted_content_ref": "Содержимое типа %[1]v и ид. %[2]d, на которое пожаловались, более не существует",
+    "admin.moderation.reports": "Жалобы",
+    "admin.moderation.no_open_reports": "Нет открытых жалоб.",
+    "admin.dashboard.remove_resolved_reports": "Удалить разрешённые жалобы"
 }

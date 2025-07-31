@@ -141,5 +141,6 @@
     "discussion.sidebar.reference": "مرجع",
     "admin.moderation.moderation_reports": "تقارير الإشراف",
     "admin.moderation.reports": "التقارير",
-    "admin.moderation.no_open_reports": "لا يوجد حالياً أية تقارير مفتوحة."
+    "admin.moderation.no_open_reports": "لا يوجد حالياً أية تقارير مفتوحة.",
+    "admin.moderation.deleted_content_ref": "المحتوى المُبلغ عنه بالنوع %[1]v والمعرف %[2]d لم يعد موجوداً"
 }

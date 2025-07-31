@@ -110,5 +110,6 @@
     "admin.moderation.moderation_reports": "Mga ulat sa moderation",
     "admin.moderation.no_open_reports": "Kasalukuyang walang mga nakabukas na ulat.",
     "admin.moderation.reports": "Mga ulat",
-    "admin.moderation.deleted_content_ref": "Hindi na umiiral ang inulat na nilalaman na may uri na %[1]v at ID %[2]d"
+    "admin.moderation.deleted_content_ref": "Hindi na umiiral ang inulat na nilalaman na may uri na %[1]v at ID %[2]d",
+    "admin.dashboard.remove_resolved_reports": "Tanggalin ang mga naresolbang ulat"
 }
