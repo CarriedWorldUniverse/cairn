@@ -13,10 +13,10 @@ import (
 	api "forgejo.org/modules/structs"
 	webhook_module "forgejo.org/modules/webhook"
 
+	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
+	"code.forgejo.org/forgejo/runner/v9/act/model"
+	"code.forgejo.org/forgejo/runner/v9/act/workflowpattern"
 	"github.com/gobwas/glob"
-	"github.com/nektos/act/pkg/jobparser"
-	"github.com/nektos/act/pkg/model"
-	"github.com/nektos/act/pkg/workflowpattern"
 	"gopkg.in/yaml.v3"
 )
 

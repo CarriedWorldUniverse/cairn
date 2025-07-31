@@ -27,7 +27,7 @@ import (
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
 
-	"github.com/nektos/act/pkg/model"
+	"code.forgejo.org/forgejo/runner/v9/act/model"
 )
 
 const (

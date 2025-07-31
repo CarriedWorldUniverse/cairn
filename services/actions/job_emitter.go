@@ -13,7 +13,7 @@ import (
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/queue"
 
-	"github.com/nektos/act/pkg/jobparser"
+	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
 	"xorm.io/builder"
 )
 
