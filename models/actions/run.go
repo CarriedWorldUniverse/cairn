@@ -21,7 +21,7 @@ import (
 	"forgejo.org/modules/util"
 	webhook_module "forgejo.org/modules/webhook"
 
-	"github.com/nektos/act/pkg/jobparser"
+	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
 	"xorm.io/builder"
 )
 

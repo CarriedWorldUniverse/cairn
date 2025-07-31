@@ -19,7 +19,7 @@ import (
 	webhook_module "forgejo.org/modules/webhook"
 	commitstatus_service "forgejo.org/services/repository/commitstatus"
 
-	"github.com/nektos/act/pkg/jobparser"
+	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
 )
 
 // CreateCommitStatus creates a commit status for the given job.

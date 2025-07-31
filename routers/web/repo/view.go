@@ -56,7 +56,7 @@ import (
 	repo_service "forgejo.org/services/repository"
 	files_service "forgejo.org/services/repository/files"
 
-	"github.com/nektos/act/pkg/model"
+	"code.forgejo.org/forgejo/runner/v9/act/model"
 
 	_ "golang.org/x/image/bmp"  // for processing bmp images
 	_ "golang.org/x/image/webp" // for processing webp images
