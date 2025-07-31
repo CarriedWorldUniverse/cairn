@@ -118,5 +118,6 @@
     "admin.moderation.deleted_content_ref": "Conteúdo denunciado do tipo %[1]v e ID %[2]d não existe mais",
     "admin.moderation.moderation_reports": "Denúncias para moderação",
     "admin.moderation.reports": "Denúncias",
-    "admin.moderation.no_open_reports": "Não há denúncias abertas atualmente."
+    "admin.moderation.no_open_reports": "Não há denúncias abertas atualmente.",
+    "admin.dashboard.remove_resolved_reports": "Remover denúncias resolvidas"
 }

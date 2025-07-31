@@ -110,5 +110,6 @@
     "admin.moderation.deleted_content_ref": "Gemeldeter Inhalt vom Typ %[1]v und ID %[2]d existiert nicht mehr",
     "admin.moderation.moderation_reports": "Moderationsmeldungen",
     "admin.moderation.reports": "Meldungen",
-    "admin.moderation.no_open_reports": "Es gibt momentan keine offenen Meldungen."
+    "admin.moderation.no_open_reports": "Es gibt momentan keine offenen Meldungen.",
+    "admin.dashboard.remove_resolved_reports": "Erledigte Meldungen entfernen"
 }
