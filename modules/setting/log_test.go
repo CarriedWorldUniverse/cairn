@@ -251,8 +251,8 @@ ENABLE_ACCESS_LOG = false
 func TestLogConfigNewConfig(t *testing.T) {
 	manager, managerClose := initLoggersByConfig(t, `
 [log]
-logger.access.MODE = console
-logger.xorm.MODE = console, console-1
+LOGGER_ACCESS_MODE = console
+LOGGER_XORM_MODE = console, console-1
 
 [log.console]
 LEVEL = warn
@@ -421,7 +421,7 @@ func TestLegacyLoggerMigrations(t *testing.T) {
 	}
 
 	t.Run("default", func(t *testing.T) {
-		runCases(t, "logger.default.MODE", Cases{
+		runCases(t, "LOGGER_DEFAULT_MODE", Cases{
 			{
 				"uses default value for default logger",
 				"",
@@ -438,7 +438,7 @@ logger.default.MODE = file
 	})
 
 	t.Run("access", func(t *testing.T) {
-		runCases(t, "logger.access.MODE", Cases{
+		runCases(t, "LOGGER_ACCESS_MODE", Cases{
 			{
 				"uses default value for access logger",
 				"",
@@ -476,6 +476,14 @@ logger.access.MODE = console
 				"console",
 			},
 			{
+				"LOGGER_ACCESS_MODE has precedence over logger.access.MODE for access logger",
+				`[log]
+LOGGER_ACCESS_MODE = file
+logger.access.MODE = console
+`,
+				"file",
+			},
+			{
 				"ENABLE_ACCESS_LOG doesn't enable access logger",
 				`[log]
 ENABLE_ACCESS_LOG = true
@@ -486,7 +494,7 @@ ENABLE_ACCESS_LOG = true
 	})
 
 	t.Run("router", func(t *testing.T) {
-		runCases(t, "logger.router.MODE", Cases{
+		runCases(t, "LOGGER_ROUTER_MODE", Cases{
 			{
 				"uses default value for router logger",
 				"",
@@ -523,11 +531,19 @@ logger.router.MODE = console
 `,
 				"console",
 			},
+			{
+				"LOGGER_ROUTER_MODE has precedence over logger.router.MODE for router logger",
+				`[log]
+LOGGER_ROUTER_MODE = file
+logger.router.MODE = console
+`,
+				"file",
+			},
 		})
 	})
 
 	t.Run("xorm", func(t *testing.T) {
-		runCases(t, "logger.xorm.MODE", Cases{
+		runCases(t, "LOGGER_XORM_MODE", Cases{
 			{
 				"uses default value for xorm logger",
 				"",
@@ -563,6 +579,14 @@ XORM = file
 logger.xorm.MODE = console
 `,
 				"console",
+			},
+			{
+				"LOGGER_XORM_MODE has precedence over logger.xorm.MODE for xorm logger",
+				`[log]
+LOGGER_XORM_MODE = file
+logger.xorm.MODE = console
+`,
+				"file",
 			},
 		})
 	})
