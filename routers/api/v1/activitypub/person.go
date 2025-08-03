@@ -4,14 +4,14 @@
 package activitypub
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"forgejo.org/modules/activitypub"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
+	"forgejo.org/services/convert"
+	"forgejo.org/services/federation"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"
@@ -34,44 +34,11 @@ func Person(ctx *context.APIContext) {
 	//   "200":
 	//     "$ref": "#/responses/ActivityPub"
 
-	// TODO: the setting.AppURL during the test doesn't follow the definition: "It always has a '/' suffix"
-	link := fmt.Sprintf("%s/api/v1/activitypub/user-id/%d", strings.TrimSuffix(setting.AppURL, "/"), ctx.ContextUser.ID)
-	person := ap.PersonNew(ap.IRI(link))
-
-	person.Name = ap.NaturalLanguageValuesNew()
-	err := person.Name.Set("en", ap.Content(ctx.ContextUser.FullName))
+	person, err := convert.ToActivityPubPerson(ctx, ctx.ContextUser)
 	if err != nil {
-		ctx.ServerError("Set Name", err)
+		ctx.ServerError("convert.ToActivityPubPerson", err)
 		return
 	}
-
-	person.PreferredUsername = ap.NaturalLanguageValuesNew()
-	err = person.PreferredUsername.Set("en", ap.Content(ctx.ContextUser.Name))
-	if err != nil {
-		ctx.ServerError("Set PreferredUsername", err)
-		return
-	}
-
-	person.URL = ap.IRI(ctx.ContextUser.HTMLURL())
-
-	person.Icon = ap.Image{
-		Type:      ap.ImageType,
-		MediaType: "image/png",
-		URL:       ap.IRI(ctx.ContextUser.AvatarLink(ctx)),
-	}
-
-	person.Inbox = ap.IRI(link + "/inbox")
-	person.Outbox = ap.IRI(link + "/outbox")
-
-	person.PublicKey.ID = ap.IRI(link + "#main-key")
-	person.PublicKey.Owner = ap.IRI(link)
-
-	publicKeyPem, err := activitypub.GetPublicKey(ctx, ctx.ContextUser)
-	if err != nil {
-		ctx.ServerError("GetPublicKey", err)
-		return
-	}
-	person.PublicKey.PublicKeyPem = publicKeyPem
 
 	binary, err := jsonld.WithContext(jsonld.IRI(ap.ActivityBaseURI), jsonld.IRI(ap.SecurityContextURI)).Marshal(person)
 	if err != nil {
@@ -99,8 +66,15 @@ func PersonInbox(ctx *context.APIContext) {
 	//   type: integer
 	//   required: true
 	// responses:
-	//   "204":
+	//   "202":
 	//     "$ref": "#/responses/empty"
 
-	ctx.Status(http.StatusNoContent)
+	form := web.GetForm(ctx)
+	activity := form.(*ap.Activity)
+	result, err := federation.ProcessPersonInbox(ctx, ctx.ContextUser, activity)
+	if err != nil {
+		ctx.Error(federation.HTTPStatus(err), "PersonInbox", err)
+		return
+	}
+	responseServiceResult(ctx, result)
 }

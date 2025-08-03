@@ -59,16 +59,12 @@ forgejo.org/models/user
 	IsErrExternalLoginUserAlreadyExist
 	IsErrExternalLoginUserNotExist
 	NewFederatedUser
-	NewFederatedUserFollower
 	IsErrUserSettingIsNotExist
 	GetUserAllSettings
 	DeleteUserSetting
 	GetFederatedUser
 	GetFederatedUserByUserID
 	GetFollowersForUser
-	AddFollower
-	RemoveFollower
-	IsFollowingAp
 
 forgejo.org/modules/activitypub
 	NewContext
@@ -99,11 +95,7 @@ forgejo.org/modules/eventsource
 	Event.String
 
 forgejo.org/modules/forgefed
-	NewForgeFollowFromAp
 	NewForgeFollow
-	ForgeFollow.MarshalJSON
-	ForgeFollow.UnmarshalJSON
-	ForgeFollow.Validate
 	NewForgeUndoLike
 	ForgeUndoLike.UnmarshalJSON
 	ForgeUndoLike.Validate
@@ -228,7 +220,6 @@ forgejo.org/modules/util/filebuffer
 
 forgejo.org/modules/validation
 	IsErrNotValid
-	ValidateIDExists
 
 forgejo.org/modules/web
 	RouteMock
@@ -245,11 +236,8 @@ forgejo.org/routers/web/org
 forgejo.org/services/context
 	GetPrivateContext
 
-forgejo.org/services/federation
-	NewErrInternalf
-	ErrInternal.Error
-	Init
-	NewServiceResultWithBytes
+forgejo.org/services/convert
+	ToActivityPubPersonFeedItem
 
 forgejo.org/services/repository
 	IsErrForkAlreadyExist
