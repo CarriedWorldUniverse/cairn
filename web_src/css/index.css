@@ -30,6 +30,7 @@
 @import "./modules/svg.css";
 @import "./modules/flexcontainer.css";
 @import "./modules/user-cards.css";
+@import "./modules/hashbox.css";
 
 @import "./shared/flex-list.css";
 @import "./shared/milestone.css";

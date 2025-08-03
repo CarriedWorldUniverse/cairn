@@ -181,11 +181,11 @@
 					<span>{{ctx.Locale.Tr "repo.diff.parent"}}</span>
 					{{range .Parents}}
 						{{if $.PageIsWiki}}
-							<a class="ui primary sha label" href="{{$.RepoLink}}/wiki/commit/{{PathEscape .}}">
+							<a class="primary sha label" href="{{$.RepoLink}}/wiki/commit/{{PathEscape .}}">
 								<span class="shortsha">{{ShortSha .}}</span>
 							</a>
 						{{else}}
-							<a class="ui primary sha label" href="{{$.RepoLink}}/commit/{{PathEscape .}}">
+							<a class="primary sha label" href="{{$.RepoLink}}/commit/{{PathEscape .}}">
 								<span class="shortsha">{{ShortSha .}}</span>
 							</a>
 						{{end}}
@@ -200,7 +200,7 @@
 						<span class="shortsha">{{ShortSha .CommitID}}</span>
 					</a>
 				{{else}}
-					<span class="ui primary sha label">
+					<span class="primary sha label">
 						<span class="shortsha">{{ShortSha .CommitID}}</span>
 					</span>
 				{{end}}
