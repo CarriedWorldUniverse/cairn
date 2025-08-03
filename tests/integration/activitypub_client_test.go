@@ -6,14 +6,15 @@ package integration
 import (
 	"net/url"
 	"testing"
+	"time"
 
-	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/activitypub"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/routers"
+	"forgejo.org/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,14 +26,14 @@ func TestActivityPubClientBodySize(t *testing.T) {
 
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
-
-		clientFactory, err := activitypub.GetClientFactory(db.DefaultContext)
-		require.NoError(t, err)
-
-		apClient, err := clientFactory.WithKeys(db.DefaultContext, user1, user1.KeyID())
-		require.NoError(t, err)
-
 		url := u.JoinPath("/api/v1/nodeinfo").String()
+
+		ctx, _ := contexttest.MockAPIContext(t, url)
+		clientFactory, err := activitypub.NewClientFactoryWithTimeout(60 * time.Second)
+		require.NoError(t, err)
+
+		apClient, err := clientFactory.WithKeys(ctx, user1, user1.KeyID())
+		require.NoError(t, err)
 
 		// Request with normal MaxSize
 		t.Run("NormalMaxSize", func(t *testing.T) {

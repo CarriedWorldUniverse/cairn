@@ -23,7 +23,10 @@ import (
 )
 
 func Init() error {
-	return nil
+	if !setting.Federation.Enabled {
+		return nil
+	}
+	return initDeliveryQueue()
 }
 
 func FindOrCreateFederationHost(ctx context.Context, actorURI string) (*forgefed.FederationHost, error) {

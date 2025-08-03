@@ -38,6 +38,7 @@ import (
 	"forgejo.org/services/auth/source/oauth2"
 	"forgejo.org/services/automerge"
 	"forgejo.org/services/cron"
+	federation_service "forgejo.org/services/federation"
 	feed_service "forgejo.org/services/feed"
 	indexer_service "forgejo.org/services/indexer"
 	"forgejo.org/services/mailer"
@@ -122,6 +123,7 @@ func InitWebInstalled(ctx context.Context) {
 	mailer.NewContext(ctx)
 	mustInit(cache.Init)
 	mustInit(feed_service.Init)
+	mustInit(federation_service.Init)
 	mustInit(uinotification.Init)
 	mustInitCtx(ctx, archiver.Init)
 
