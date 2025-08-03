@@ -520,17 +520,6 @@ func ParseCompareInfo(ctx *context.Context) *common.CompareInfo {
 		ctx.Data["PageIsComparePull"] = headIsBranch && baseIsBranch
 	}
 
-	if ctx.Data["PageIsComparePull"] == true && !permBase.CanReadIssuesOrPulls(true) {
-		if log.IsTrace() {
-			log.Trace("Permission Denied: User: %-v cannot create/read pull requests in Repo: %-v\nUser in baseRepo has Permissions: %-+v",
-				ctx.Doer,
-				baseRepo,
-				permBase)
-		}
-		ctx.NotFound("ParseCompareInfo", nil)
-		return nil
-	}
-
 	baseBranchRef := ci.BaseBranch
 	if baseIsBranch {
 		baseBranchRef = git.BranchPrefix + ci.BaseBranch

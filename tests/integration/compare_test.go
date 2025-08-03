@@ -267,13 +267,14 @@ func TestCompareWithPRsDisabled(t *testing.T) {
 			[]unit_model.Type{unit_model.TypePullRequests})
 		require.NoError(t, err)
 
-		t.Run("branch view doesn't offer creating PRs", func(t *testing.T) {
+		t.Run("branch view offer comparing branches", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequest(t, "GET", "/user1/repo1/branches")
 			resp := session.MakeRequest(t, req, http.StatusOK)
 			htmlDoc := NewHTMLParser(t, resp.Body)
-			htmlDoc.AssertElement(t, "a[href='/user1/repo1/compare/master...recent-push']", false)
+			compareLink := htmlDoc.Find("a[href='/user1/repo1/compare/master...recent-push']")
+			assert.Equal(t, "Compare branches", strings.TrimSpace(compareLink.Text()))
 		})
 
 		t.Run("compare doesn't offer local branches", func(t *testing.T) {
@@ -290,11 +291,13 @@ func TestCompareWithPRsDisabled(t *testing.T) {
 			}
 		})
 
-		t.Run("comparing against a disabled-PR repo is 404", func(t *testing.T) {
+		t.Run("comparing against a disabled-PR repo", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequest(t, "GET", "/user1/repo1/compare/master...recent-push")
-			session.MakeRequest(t, req, http.StatusNotFound)
+			resp := session.MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			assert.Equal(t, "Compare branches", strings.TrimSpace(htmlDoc.Find("h2.header").Text()))
 		})
 	})
 }

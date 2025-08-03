@@ -121,7 +121,11 @@
 								{{end}}
 							</td>
 							<td class="two wide right aligned">
-								{{if not .LatestPullRequest}}
+								{{if not ($.Permission.CanRead $.UnitTypePullRequests)}}
+									<a href="{{$.RepoLink}}/compare/{{PathEscapeSegments $.DefaultBranchBranch.DBBranch.Name}}...{{if ne $.Repository.Owner.Name $.Owner.Name}}{{PathEscape $.Owner.Name}}:{{end}}{{PathEscapeSegments .DBBranch.Name}}">
+										<button class="ui compact basic button tw-mr-0">{{ctx.Locale.Tr "compare.branches.title"}}</button>
+									</a>
+								{{else if not .LatestPullRequest}}
 									{{if .IsIncluded}}
 										<span class="ui orange large label" data-tooltip-content="{{ctx.Locale.Tr "repo.branch.included_desc"}}">
 											{{svg "octicon-git-pull-request"}} {{ctx.Locale.Tr "repo.branch.included"}}
