@@ -743,11 +743,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -777,11 +777,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -856,11 +856,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -887,11 +887,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -920,11 +920,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -945,11 +945,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -976,11 +976,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -1001,11 +1001,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -1026,11 +1026,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+
@@ -1129,11 +1129,11 @@ func TestRender_FilePreview(t *testing.T) {
 				`<tbody>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="2"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">B</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`<tr>`+
 				`<td class="lines-num"><span data-line-number="3"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner"><span class="nx">C</span>`+"\n"+`</code></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="w"></span><span class="nx">C</span>`+"<span class=\"w\">\n</span>"+`</code></td>`+
 				`</tr>`+
 				`</tbody>`+
 				`</table>`+

@@ -86,9 +86,9 @@ func TestHighlightSearchResultCode(t *testing.T) {
 			Range: [][3]int{{1, 14, 23}},
 			Code:  "func main() {\n\tfmt.Println(\"mark this\")\n}",
 			Result: []template.HTML{
-				"<span class=\"kd\">func</span> <span class=\"nf\">main</span><span class=\"p\">(</span><span class=\"p\">)</span> <span class=\"p\">{</span>",
-				"\t<span class=\"nx\">fmt</span><span class=\"p\">.</span><span class=\"nf\">Println</span><span class=\"p\">(</span><span class=\"s\">&#34;<span class=\"search-highlight\">mark this</span>&#34;</span><span class=\"p\">)</span>",
-				"<span class=\"p\">}</span>",
+				"<span class=\"kd\">func</span><span class=\"w\"> </span><span class=\"nf\">main</span><span class=\"p\">(</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span><span class=\"w\">",
+				"</span><span class=\"w\"></span><span class=\"w\">\t</span><span class=\"nx\">fmt</span><span class=\"p\">.</span><span class=\"nf\">Println</span><span class=\"p\">(</span><span class=\"s\">&#34;<span class=\"search-highlight\">mark this</span>&#34;</span><span class=\"p\">)</span><span class=\"w\">",
+				"</span><span class=\"w\"></span><span class=\"p\">}</span>",
 			},
 		},
 		{
@@ -97,9 +97,9 @@ func TestHighlightSearchResultCode(t *testing.T) {
 			Range: [][3]int{{1, 14, 28}},
 			Code:  "func main() {\n\tfmt.Println(\"mark this 😊\")\n}",
 			Result: []template.HTML{
-				"<span class=\"kd\">func</span> <span class=\"nf\">main</span><span class=\"p\">(</span><span class=\"p\">)</span> <span class=\"p\">{</span>",
-				"\t<span class=\"nx\">fmt</span><span class=\"p\">.</span><span class=\"nf\">Println</span><span class=\"p\">(</span><span class=\"s\">&#34;<span class=\"search-highlight\">mark this 😊</span>&#34;</span><span class=\"p\">)</span>",
-				"<span class=\"p\">}</span>",
+				"<span class=\"kd\">func</span><span class=\"w\"> </span><span class=\"nf\">main</span><span class=\"p\">(</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span><span class=\"w\">",
+				"</span><span class=\"w\"></span><span class=\"w\">\t</span><span class=\"nx\">fmt</span><span class=\"p\">.</span><span class=\"nf\">Println</span><span class=\"p\">(</span><span class=\"s\">&#34;<span class=\"search-highlight\">mark this 😊</span>&#34;</span><span class=\"p\">)</span><span class=\"w\">",
+				"</span><span class=\"w\"></span><span class=\"p\">}</span>",
 			},
 		},
 	}
