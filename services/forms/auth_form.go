@@ -79,6 +79,7 @@ type AuthenticationForm struct {
 	SkipLocalTwoFA                bool
 	GroupTeamMap                  string `binding:"ValidGroupTeamMap"`
 	GroupTeamMapRemoval           bool
+	AllowUsernameChange           bool
 }
 
 // Validate validates fields

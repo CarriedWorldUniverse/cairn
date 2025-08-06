@@ -13,6 +13,7 @@ import (
 
 	"forgejo.org/models"
 	asymkey_model "forgejo.org/models/asymkey"
+	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
 	packages_model "forgejo.org/models/packages"
@@ -25,6 +26,7 @@ import (
 	"forgejo.org/modules/storage"
 	"forgejo.org/modules/util"
 	"forgejo.org/services/agit"
+	"forgejo.org/services/auth/source/oauth2"
 	org_service "forgejo.org/services/org"
 	"forgejo.org/services/packages"
 	container_service "forgejo.org/services/packages/container"
@@ -49,9 +51,26 @@ func renameUser(ctx context.Context, u *user_model.User, newUserName string, doe
 	// Non-local users are not allowed to change their username.
 	// If the doer is an admin, then allow the rename - they know better.
 	if !doerIsAdmin && !u.IsOrganization() && !u.IsLocal() {
-		return user_model.ErrUserIsNotLocal{
-			UID:  u.ID,
-			Name: u.Name,
+		// If the user's authentication source is OAuth2 and that source allows for
+		// username changes then don't make a fuzz about it.
+
+		if !u.IsOAuth2() {
+			return user_model.ErrUserIsNotLocal{
+				UID:  u.ID,
+				Name: u.Name,
+			}
+		}
+
+		source, err := auth.GetSourceByID(ctx, u.LoginSource)
+		if err != nil {
+			return err
+		}
+		sourceCfg := source.Cfg.(*oauth2.Source)
+		if !sourceCfg.AllowUsernameChange {
+			return user_model.ErrUserIsNotLocal{
+				UID:  u.ID,
+				Name: u.Name,
+			}
 		}
 	}
 

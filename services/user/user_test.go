@@ -25,6 +25,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/services/auth/source/oauth2"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,22 +141,9 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestRenameUser(t *testing.T) {
+	defer unittest.OverrideFixtures("models/user/fixtures/")()
 	require.NoError(t, unittest.PrepareTestDatabase())
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 21})
-
-	t.Run("Non-Local", func(t *testing.T) {
-		u := &user_model.User{
-			ID:        2,
-			Name:      "old-name",
-			Type:      user_model.UserTypeIndividual,
-			LoginType: auth.OAuth2,
-		}
-		require.ErrorIs(t, RenameUser(db.DefaultContext, u, "user_rename2"), user_model.ErrUserIsNotLocal{UID: 2, Name: "old-name"})
-
-		t.Run("Admin", func(t *testing.T) {
-			require.NoError(t, AdminRenameUser(t.Context(), u, "user_rename2"))
-		})
-	})
 
 	t.Run("Same username", func(t *testing.T) {
 		require.NoError(t, RenameUser(db.DefaultContext, user, user.Name))
@@ -224,6 +212,30 @@ func TestRenameUser(t *testing.T) {
 		require.NoError(t, RenameUser(db.DefaultContext, user, "redirect-3"))
 		unittest.AssertExistsIf(t, true, &user_model.Redirect{LowerName: "redirect-1"})
 		unittest.AssertExistsIf(t, true, &user_model.Redirect{LowerName: "redirect-2"})
+	})
+
+	t.Run("Non-local", func(t *testing.T) {
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1041, LoginSource: 1001})
+		authSource := unittest.AssertExistsAndLoadBean(t, &auth.Source{ID: user.LoginSource})
+		assert.False(t, user.IsLocal())
+		assert.True(t, user.IsOAuth2())
+
+		t.Run("Allowed", func(t *testing.T) {
+			require.NoError(t, RenameUser(t.Context(), user, "I-am-a-local-username"))
+		})
+
+		t.Run("Not allowed", func(t *testing.T) {
+			authSourceCfg := authSource.Cfg.(*oauth2.Source)
+			authSourceCfg.AllowUsernameChange = false
+			authSource.Cfg = authSourceCfg
+			_, err := db.GetEngine(t.Context()).Cols("cfg").ID(authSource.ID).Update(authSource)
+			require.NoError(t, err)
+
+			require.ErrorIs(t, RenameUser(t.Context(), user, "Another-username-change"), user_model.ErrUserIsNotLocal{UID: user.ID, Name: user.Name})
+			t.Run("Admin", func(t *testing.T) {
+				require.NoError(t, AdminRenameUser(t.Context(), user, "Another-username-change"))
+			})
+		})
 	})
 }
 

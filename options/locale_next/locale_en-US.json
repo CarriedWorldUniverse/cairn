@@ -106,6 +106,8 @@
     "discussion.sidebar.reference": "Reference",
     "editor.textarea.tab_hint": "Line already indented. Press <kbd>Tab</kbd> again or <kbd>Escape</kbd> to leave the editor.",
     "editor.textarea.shift_tab_hint": "No indentation on this line. Press <kbd>Shift</kbd> + <kbd>Tab</kbd> again or <kbd>Escape</kbd> to leave the editor.",
+    "admin.auths.allow_username_change": "Allow username change",
+    "admin.auths.allow_username_change.description": "Allow users to change their username in the profile settings",
     "admin.dashboard.cleanup_offline_runners": "Cleanup offline runners",
     "admin.dashboard.remove_resolved_reports": "Remove resolved reports",
     "settings.visibility.description": "Profile visibility affects others' ability to access your non-private repositories. <a href=\"%s\" target=\"_blank\">Learn more</a>.",
