@@ -179,7 +179,7 @@ func WebfingerQuery(ctx *context.Context) {
 		},
 		{
 			Rel:  "http://openid.net/specs/connect/1.0/issuer",
-			Href: appURL.String(),
+			Href: strings.TrimSuffix(appURL.String(), "/"),
 		},
 	}
 
