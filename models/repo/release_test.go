@@ -49,3 +49,16 @@ func TestReleaseDisplayName(t *testing.T) {
 	release.Title = "Title"
 	assert.Equal(t, "Title", release.DisplayName())
 }
+
+func Test_FindTagsByCommitIDs(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	sha1Rels, err := FindTagsByCommitIDs(db.DefaultContext, 1, "65f1bf27bc3bf70f64657658635e66094edbcb4d")
+	require.NoError(t, err)
+	assert.Len(t, sha1Rels, 1)
+	rels := sha1Rels["65f1bf27bc3bf70f64657658635e66094edbcb4d"]
+	assert.Len(t, rels, 3)
+	assert.Equal(t, "v1.1", rels[0].TagName)
+	assert.Equal(t, "delete-tag", rels[1].TagName)
+	assert.Equal(t, "v1.0", rels[2].TagName)
+}
