@@ -125,6 +125,10 @@ func oauthCLIFlags() []cli.Flag {
 			Name:  "group-team-map-removal",
 			Usage: "Activate automatic team membership removal depending on groups",
 		},
+		&cli.BoolFlag{
+			Name:  "allow-username-change",
+			Usage: "Allow users to change their username",
+		},
 	}
 }
 
@@ -176,6 +180,7 @@ func parseOAuth2Config(_ context.Context, c *cli.Command) *oauth2.Source {
 		RestrictedGroup:               c.String("restricted-group"),
 		GroupTeamMap:                  c.String("group-team-map"),
 		GroupTeamMapRemoval:           c.Bool("group-team-map-removal"),
+		AllowUsernameChange:           c.Bool("allow-username-change"),
 	}
 }
 
@@ -275,6 +280,10 @@ func (a *authService) updateOauth(ctx context.Context, c *cli.Command) error {
 	}
 	if c.IsSet("group-team-map-removal") {
 		oAuth2Config.GroupTeamMapRemoval = c.Bool("group-team-map-removal")
+	}
+
+	if c.IsSet("allow-username-change") {
+		oAuth2Config.AllowUsernameChange = c.Bool("allow-username-change")
 	}
 
 	// update custom URL mapping

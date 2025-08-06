@@ -11,6 +11,7 @@
   must_change_password: false
   login_source: 1001
   login_name: 123
+  login_type: 6
   type: 5
   salt: ZogKvWdyEx
   max_repo_creation: -1

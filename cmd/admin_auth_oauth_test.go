@@ -55,6 +55,7 @@ func TestAddOauth(t *testing.T) {
 				"--restricted-group", "restricted",
 				"--group-team-map", `{"org_a_team_1": {"organization-a": ["Team 1"]}, "org_a_all_teams": {"organization-a": ["Team 1", "Team 2", "Team 3"]}}`,
 				"--group-team-map-removal",
+				"--allow-username-change",
 			},
 			source: &auth.Source{
 				Type:     auth.OAuth2,
@@ -83,6 +84,7 @@ func TestAddOauth(t *testing.T) {
 					GroupTeamMapRemoval:   true,
 					RestrictedGroup:       "restricted",
 					SkipLocalTwoFA:        true,
+					AllowUsernameChange:   true,
 				},
 			},
 		},

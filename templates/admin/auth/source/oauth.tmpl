@@ -35,6 +35,13 @@
 			<p class="help">{{ctx.Locale.Tr "admin.auths.skip_local_two_fa_helper"}}</p>
 		</div>
 	</div>
+	<div class="optional field">
+		<div class="ui checkbox">
+			<label for="allow_username_change"><strong>{{ctx.Locale.Tr "admin.auths.allow_username_change"}}</strong></label>
+			<input id="allow_username_change" name="allow_username_change" type="checkbox" {{if .allow_username_change}}checked{{end}}>
+			<p class="help">{{ctx.Locale.Tr "admin.auths.allow_username_change.description"}}</p>
+		</div>
+	</div>
 
 	<div class="oauth2_use_custom_url inline field">
 		<div class="ui checkbox">
