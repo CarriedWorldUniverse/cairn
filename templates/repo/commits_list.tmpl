@@ -59,6 +59,14 @@
 							<button class="ui button js-toggle-commit-body ellipsis-button" aria-expanded="false">...</button>
 							{{end}}
 							{{template "repo/commit_statuses" dict "Status" .Status "Statuses" .Statuses}}
+							{{if $.CommitTagsMap}}
+								{{$tags := index $.CommitTagsMap .ID.String}}
+								{{if $tags}}
+									{{range $tags}}
+										{{- template "repo/tag/name" dict "RepoLink" $.Repository.Link "TagName" .TagName "IsRelease" (not .IsTag) -}}
+									{{end}}
+								{{end}}
+							{{end}}
 							{{if IsMultilineCommitMessage .Message}}
 							<pre class="commit-body tw-hidden">{{RenderCommitBody $.Context .Message ($.Repository.ComposeMetas ctx)}}</pre>
 							{{end}}
