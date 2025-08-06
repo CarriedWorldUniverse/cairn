@@ -45,7 +45,7 @@ func IsValid(v Validateable) (bool, error) {
 
 func ValidateIDExists(value ap.Item, name string) []string {
 	if value == nil {
-		return []string{fmt.Sprintf("%v should not be nil", name)}
+		return []string{fmt.Sprintf("Field %v must not be nil", name)}
 	}
 	return ValidateNotEmpty(value.GetID().String(), name)
 }
@@ -76,12 +76,12 @@ func ValidateNotEmpty(value any, name string) []string {
 	if isValid {
 		return []string{}
 	}
-	return []string{fmt.Sprintf("%v should not be empty", name)}
+	return []string{fmt.Sprintf("Value %v should not be empty", name)}
 }
 
 func ValidateMaxLen(value string, maxLen int, name string) []string {
 	if utf8.RuneCountInString(value) > maxLen {
-		return []string{fmt.Sprintf("Value %v was longer than %v", name, maxLen)}
+		return []string{fmt.Sprintf("Value %v is longer than expected length %v", name, maxLen)}
 	}
 	return []string{}
 }

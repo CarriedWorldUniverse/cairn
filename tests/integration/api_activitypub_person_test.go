@@ -39,9 +39,6 @@ func TestActivityPubPerson(t *testing.T) {
 		localUserName := "user2"
 		localUserURL := fmt.Sprintf("%sapi/v1/activitypub/user-id/%d", localUrl, localUserID)
 
-		// distantURL := federatedSrv.URL
-		// distantUser15URL := fmt.Sprintf("%s/api/v1/activitypub/user-id/15", distantURL)
-
 		// Unsigned request
 		t.Run("UnsignedRequest", func(t *testing.T) {
 			req := NewRequest(t, "GET", localUserURL)
@@ -109,5 +106,32 @@ func TestActivityPubPersonInbox(t *testing.T) {
 		resp, err := c.Post([]byte{}, user2inboxurl)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusNotAcceptable, resp.StatusCode)
+	})
+}
+
+func TestActivityPubPersonOutbox(t *testing.T) {
+	defer test.MockVariableValue(&setting.Federation.Enabled, true)()
+	defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
+
+	mock := test.NewFederationServerMock()
+	federatedSrv := mock.DistantServer(t)
+	defer federatedSrv.Close()
+
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		defer test.MockVariableValue(&setting.AppURL, u.String())()
+		user2outboxurl := u.JoinPath("/api/v1/activitypub/user-id/2/outbox").String()
+
+		ctx, _ := contexttest.MockAPIContext(t, user2outboxurl)
+		cf, err := activitypub.NewClientFactoryWithTimeout(60 * time.Second)
+		require.NoError(t, err)
+
+		c, err := cf.WithKeysDirect(ctx, mock.Persons[0].PrivKey,
+			mock.Persons[0].KeyID(federatedSrv.URL))
+		require.NoError(t, err)
+
+		// request outbox
+		resp, err := c.Get(user2outboxurl)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 }

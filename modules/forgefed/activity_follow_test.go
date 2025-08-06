@@ -9,6 +9,7 @@ import (
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_NewForgeFollowValidation(t *testing.T) {
@@ -17,15 +18,13 @@ func Test_NewForgeFollowValidation(t *testing.T) {
 	sut.Actor = ap.IRI("example.org/alice")
 	sut.Object = ap.IRI("example.org/bob")
 
-	if err, _ := validation.IsValid(sut); !err {
-		t.Errorf("sut is invalid: %v\n", err)
-	}
+	valid, err := validation.IsValid(sut)
+	assert.True(t, valid, "sut is invalid: %v\n", err)
 
 	sut = ForgeFollow{}
 	sut.Actor = ap.IRI("example.org/alice")
 	sut.Object = ap.IRI("example.org/bob")
 
-	if err, _ := validation.IsValid(sut); err {
-		t.Errorf("sut is valid: %v\n", err)
-	}
+	valid, err = validation.IsValid(sut)
+	assert.False(t, valid, "sut is valid: %v\n", err)
 }

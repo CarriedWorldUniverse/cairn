@@ -844,6 +844,11 @@ func Routes() *web.Route {
 						activitypub.ReqHTTPUserSignature(),
 						bind(ap.Activity{}),
 						activitypub.PersonInbox)
+					m.Group("/activities/{activity-id}", func() {
+						m.Get("", activitypub.PersonActivityNote)
+						m.Get("/activity", activitypub.PersonActivity)
+					})
+					m.Get("/outbox", activitypub.ReqHTTPUserSignature(), activitypub.PersonFeed)
 				}, context.UserIDAssignmentAPI(), checkTokenPublicOnly())
 				m.Group("/actor", func() {
 					m.Get("", activitypub.Actor)

@@ -142,6 +142,72 @@
         }
       }
     },
+    "/activitypub/user-id/{user-id}/activities/{activity-id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "activitypub"
+        ],
+        "summary": "Get a specific activity object of the user",
+        "operationId": "activitypubPersonActivityNote",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "user ID of the user",
+            "name": "user-id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "description": "activity ID of the sought activity",
+            "name": "activity-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ActivityPub"
+          }
+        }
+      }
+    },
+    "/activitypub/user-id/{user-id}/activities/{activity-id}/activity": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "activitypub"
+        ],
+        "summary": "Get a specific activity of the user",
+        "operationId": "activitypubPersonActivity",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "user ID of the user",
+            "name": "user-id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "description": "activity ID of the sought activity",
+            "name": "activity-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ActivityPub"
+          }
+        }
+      }
+    },
     "/activitypub/user-id/{user-id}/inbox": {
       "post": {
         "produces": [
@@ -164,6 +230,35 @@
         "responses": {
           "202": {
             "$ref": "#/responses/empty"
+          }
+        }
+      }
+    },
+    "/activitypub/user-id/{user-id}/outbox": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "activitypub"
+        ],
+        "summary": "List the user's recorded activity",
+        "operationId": "activitypubPersonFeed",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "user ID of the user",
+            "name": "user-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/PersonFeed"
+          },
+          "403": {
+            "$ref": "#/responses/forbidden"
           }
         }
       }
@@ -21121,6 +21216,28 @@
       },
       "x-go-package": "forgejo.org/services/context"
     },
+    "APPersonFollowItem": {
+      "type": "object",
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "x-go-name": "ActorID"
+        },
+        "note": {
+          "type": "string",
+          "x-go-name": "Note"
+        },
+        "original_item": {
+          "type": "string",
+          "x-go-name": "OriginalItem"
+        },
+        "original_url": {
+          "type": "string",
+          "x-go-name": "OriginalURL"
+        }
+      },
+      "x-go-package": "forgejo.org/modules/structs"
+    },
     "AccessToken": {
       "type": "object",
       "title": "AccessToken represents an API access token.",
@@ -29563,6 +29680,15 @@
         "type": "array",
         "items": {
           "$ref": "#/definitions/Package"
+        }
+      }
+    },
+    "PersonFeed": {
+      "description": "Personfeed",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/APPersonFollowItem"
         }
       }
     },

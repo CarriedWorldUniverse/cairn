@@ -115,7 +115,7 @@ func TestPersonIdValidation(t *testing.T) {
 
 	result, err := validation.IsValid(sut)
 	assert.False(t, result)
-	require.EqualError(t, err, "Validation Error: forgefed.PersonID: path should not be empty\npath: \"\" has to be a person specific api path")
+	require.EqualError(t, err, "Validation Error: forgefed.PersonID: Value path should not be empty\npath: \"\" has to be a person specific api path")
 
 	sut = PersonID{}
 	sut.ID = "1"
@@ -166,38 +166,28 @@ func TestWebfingerId(t *testing.T) {
 }
 
 func TestShouldThrowErrorOnInvalidInput(t *testing.T) {
-	var err any
-	_, err = NewPersonID("", "forgejo")
-	if err == nil {
-		t.Errorf("empty input should be invalid.")
+	tests := []struct {
+		input     string
+		username  string
+		expectErr bool
+	}{
+		{"", "forgejo", true},
+		{"http://localhost:3000/api/v1/something", "forgejo", true},
+		{"./api/v1/something", "forgejo", true},
+		{"http://1.2.3.4/api/v1/something", "forgejo", true},
+		{"http:///[fe80::1ff:fe23:4567:890a%25eth0]/api/v1/something", "forgejo", true},
+		{"https://codeberg.org/api/v1/activitypub/../activitypub/user-id/12345", "forgejo", true},
+		{"https://myuser@an.other.host/api/v1/activitypub/user-id/1", "forgejo", true},
+		{"https://an.other.host/api/v1/activitypub/user-id/1", "forgejo", false},
 	}
-	_, err = NewPersonID("http://localhost:3000/api/v1/something", "forgejo")
-	if err == nil {
-		t.Errorf("localhost uris are not external")
-	}
-	_, err = NewPersonID("./api/v1/something", "forgejo")
-	if err == nil {
-		t.Errorf("relative uris are not allowed")
-	}
-	_, err = NewPersonID("http://1.2.3.4/api/v1/something", "forgejo")
-	if err == nil {
-		t.Errorf("uri may not be ip-4 based")
-	}
-	_, err = NewPersonID("http:///[fe80::1ff:fe23:4567:890a%25eth0]/api/v1/something", "forgejo")
-	if err == nil {
-		t.Errorf("uri may not be ip-6 based")
-	}
-	_, err = NewPersonID("https://codeberg.org/api/v1/activitypub/../activitypub/user-id/12345", "forgejo")
-	if err == nil {
-		t.Errorf("uri may not contain relative path elements")
-	}
-	_, err = NewPersonID("https://myuser@an.other.host/api/v1/activitypub/user-id/1", "forgejo")
-	if err == nil {
-		t.Errorf("uri may not contain unparsed elements")
-	}
-	_, err = NewPersonID("https://an.other.host/api/v1/activitypub/user-id/1", "forgejo")
-	if err != nil {
-		t.Errorf("this uri should be valid but was: %v", err)
+
+	for _, tt := range tests {
+		_, err := NewPersonID(tt.input, tt.username)
+		if tt.expectErr {
+			assert.Error(t, err, "Expected an error for input: %s", tt.input)
+		} else {
+			assert.NoError(t, err, "Expected no error for input: %s, but got: %v", tt.input, err)
+		}
 	}
 }
 
@@ -221,14 +211,11 @@ func Test_PersonUnmarshalJSON(t *testing.T) {
 	}
 	sut := new(ForgePerson)
 	err := sut.UnmarshalJSON([]byte(`{"type":"Person","preferredUsername":"MaxMuster"}`))
-	if err != nil {
-		t.Errorf("UnmarshalJSON() unexpected error: %v", err)
-	}
+	require.NoError(t, err, "UnmarshalJSON() unexpected error: %q", err)
+
 	x, _ := expected.MarshalJSON()
 	y, _ := sut.MarshalJSON()
-	if !reflect.DeepEqual(x, y) {
-		t.Errorf("UnmarshalJSON() expected: %q got: %q", x, y)
-	}
+	assert.True(t, reflect.DeepEqual(x, y), "UnmarshalJSON()\n got: %q,\n want: %q", x, y)
 
 	expectedStr := strings.ReplaceAll(strings.ReplaceAll(`{
 		"id":"https://federated-repo.prod.meissa.de/api/v1/activitypub/user-id/10",
@@ -244,9 +231,7 @@ func Test_PersonUnmarshalJSON(t *testing.T) {
 		"\n", ""),
 		"\t", "")
 	err = sut.UnmarshalJSON([]byte(expectedStr))
-	if err != nil {
-		t.Errorf("UnmarshalJSON() unexpected error: %v", err)
-	}
+	require.NoError(t, err, "UnmarshalJSON() unexpected error: %q", err)
 	result, _ := sut.MarshalJSON()
 	assert.JSONEq(t, expectedStr, string(result), "Expected string is not equal")
 }
@@ -254,9 +239,8 @@ func Test_PersonUnmarshalJSON(t *testing.T) {
 func TestForgePersonValidation(t *testing.T) {
 	sut := new(ForgePerson)
 	sut.UnmarshalJSON([]byte(`{"type":"Person","preferredUsername":"MaxMuster"}`))
-	if res, _ := validation.IsValid(sut); !res {
-		t.Errorf("sut expected to be valid: %v\n", sut.Validate())
-	}
+	valid, _ := validation.IsValid(sut)
+	assert.True(t, valid, "sut expected to be valid: %v\n", sut.Validate())
 }
 
 func TestAsloginName(t *testing.T) {

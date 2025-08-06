@@ -9,6 +9,7 @@ import (
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_ForgeUserActivityValidation(t *testing.T) {
@@ -34,7 +35,6 @@ func Test_ForgeUserActivityValidation(t *testing.T) {
 
 	sut.Note = note
 
-	if res, _ := validation.IsValid(sut); !res {
-		t.Errorf("sut expected to be valid: %v\n", sut.Validate())
-	}
+	valid, _ := validation.IsValid(sut)
+	assert.True(t, valid, "sut expected to be valid: %v\n", sut.Validate())
 }

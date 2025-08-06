@@ -19,6 +19,7 @@ import (
 	"forgejo.org/modules/repository"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
+	federation_service "forgejo.org/services/federation"
 	notify_service "forgejo.org/services/notify"
 )
 
@@ -40,21 +41,19 @@ func NewNotifier() notify_service.Notifier {
 }
 
 func notifyAll(ctx context.Context, action *activities_model.Action) error {
-	_, err := activities_model.NotifyWatchers(ctx, action)
+	out, err := activities_model.NotifyWatchers(ctx, action)
 	if err != nil {
 		return err
 	}
-	return err
-	// return federation_service.NotifyActivityPubFollowers(ctx, out)
+	return federation_service.NotifyActivityPubFollowers(ctx, out)
 }
 
 func notifyAllActions(ctx context.Context, acts []*activities_model.Action) error {
-	_, err := activities_model.NotifyWatchersActions(ctx, acts)
+	out, err := activities_model.NotifyWatchersActions(ctx, acts)
 	if err != nil {
 		return err
 	}
-	return nil
-	// return federation_service.NotifyActivityPubFollowers(ctx, out)
+	return federation_service.NotifyActivityPubFollowers(ctx, out)
 }
 
 func (a *actionNotifier) NewIssue(ctx context.Context, issue *issues_model.Issue, mentions []*user_model.User) {
