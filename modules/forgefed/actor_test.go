@@ -58,7 +58,7 @@ func TestActorIdValidation(t *testing.T) {
 	sut.UnvalidatedInput = "https://an.other.host/api/v1/activitypub/user-id/"
 	result := sut.Validate()
 	assert.Len(t, result, 1)
-	assert.Equal(t, "ID should not be empty", result[0])
+	assert.Equal(t, "Value ID should not be empty", result[0])
 
 	sut = ActorID{}
 	sut.ID = "1"

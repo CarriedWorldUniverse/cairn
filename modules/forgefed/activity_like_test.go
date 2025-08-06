@@ -13,6 +13,8 @@ import (
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_NewForgeLike(t *testing.T) {
@@ -22,21 +24,14 @@ func Test_NewForgeLike(t *testing.T) {
 	objectIRI := "https://codeberg.org/api/v1/activitypub/repository-id/1"
 	startTime, _ := time.Parse("2006-Jan-02", "2024-Mar-07")
 	sut, err := NewForgeLike(actorIRI, objectIRI, startTime)
-	if err != nil {
-		t.Errorf("unexpected error: %v\n", err)
-	}
-	if valid, _ := validation.IsValid(sut); !valid {
-		t.Errorf("sut expected to be valid: %v\n", sut.Validate())
-	}
+	require.NoError(t, err, "unexpected error: %v\n", err)
+
+	valid, _ := validation.IsValid(sut)
+	assert.True(t, valid, "sut expected to be valid: %v\n", sut.Validate())
 
 	got, err := sut.MarshalJSON()
-	if err != nil {
-		t.Errorf("MarshalJSON() error = \"%v\"", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("MarshalJSON() got = %q, want %q", got, want)
-	}
+	require.NoError(t, err, "MarshalJSON() error = %q", err)
+	assert.True(t, reflect.DeepEqual(got, want), "MarshalJSON()\n got: %q,\n want: %q", got, want)
 }
 
 func Test_LikeMarshalJSON(t *testing.T) {
@@ -66,13 +61,8 @@ func Test_LikeMarshalJSON(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := tt.item.MarshalJSON()
-			if (err != nil || tt.wantErr != nil) && tt.wantErr.Error() != err.Error() {
-				t.Errorf("MarshalJSON() error = \"%v\", wantErr \"%v\"", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MarshalJSON() got = %q, want %q", got, tt.want)
-			}
+			assert.False(t, (err != nil || tt.wantErr != nil) && tt.wantErr.Error() != err.Error(), "MarshalJSON()\n got: %v,\n want: %v", err, tt.wantErr)
+			assert.True(t, reflect.DeepEqual(got, tt.want), "MarshalJSON()\n got: %q\n want: %q", got, tt.want)
 		})
 	}
 }
@@ -89,8 +79,8 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 			item: []byte(`{"type":"Like","actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1","object":"https://codeberg.org/api/activitypub/repository-id/1"}`),
 			want: &ForgeLike{
 				Activity: ap.Activity{
-					Actor:  ap.IRI("https://repo.prod.meissa.de/api/activitypub/user-id/1"),
 					Type:   "Like",
+					Actor:  ap.IRI("https://repo.prod.meissa.de/api/activitypub/user-id/1"),
 					Object: ap.IRI("https://codeberg.org/api/activitypub/repository-id/1"),
 				},
 			},
@@ -107,12 +97,10 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := new(ForgeLike)
 			err := got.UnmarshalJSON(test.item)
-			if (err != nil || test.wantErr != nil) && !strings.Contains(err.Error(), test.wantErr.Error()) {
-				t.Errorf("UnmarshalJSON() error = \"%v\", wantErr \"%v\"", err, test.wantErr)
-				return
-			}
+			assert.False(t, (err != nil || test.wantErr != nil) && !strings.Contains(err.Error(), test.wantErr.Error()), "UnmarshalJSON()\n error: %v\n wantErr: %v", err, test.wantErr)
+
 			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("UnmarshalJSON() got = %q, want %q, err %q", got, test.want, err.Error())
+				assert.Errorf(t, err, "UnmarshalJSON() got = %q, want %q, err %q", got, test.want, err.Error())
 			}
 		})
 	}
@@ -120,46 +108,47 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 
 func Test_ForgeLikeValidation(t *testing.T) {
 	// Successful
-
 	sut := new(ForgeLike)
 	sut.UnmarshalJSON([]byte(`{"type":"Like",
 	"actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1",
 	"object":"https://codeberg.org/api/activitypub/repository-id/1",
 	"startTime": "2014-12-31T23:00:00-08:00"}`))
-	if res, _ := validation.IsValid(sut); !res {
-		t.Errorf("sut expected to be valid: %v\n", sut.Validate())
-	}
+	valid, _ := validation.IsValid(sut)
+	assert.True(t, valid, "sut expected to be valid: %v\n", sut.Validate())
 
 	// Errors
-
 	sut.UnmarshalJSON([]byte(`{"actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1",
 	"object":"https://codeberg.org/api/activitypub/repository-id/1",
 	"startTime": "2014-12-31T23:00:00-08:00"}`))
-	if err := validateAndCheckError(sut, "type should not be empty"); err != nil {
-		t.Error(err)
-	}
+	validate := sut.Validate()
+	assert.Len(t, validate, 2)
+	assert.Equal(t,
+		"Field type contains the value , which is not in allowed subset [Like]",
+		validate[1])
 
 	sut.UnmarshalJSON([]byte(`{"type":"bad-type",
 		"actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1",
 	"object":"https://codeberg.org/api/activitypub/repository-id/1",
 	"startTime": "2014-12-31T23:00:00-08:00"}`))
-	if err := validateAndCheckError(sut, "Field type contains the value bad-type, which is not in allowed subset [Like]"); err != nil {
-		t.Error(err)
-	}
+	validate = sut.Validate()
+	assert.Len(t, validate, 1)
+	assert.Equal(t,
+		"Field type contains the value bad-type, which is not in allowed subset [Like]",
+		validate[0])
 
 	sut.UnmarshalJSON([]byte(`{"type":"Like",
 		"actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1",
 	  "object":"https://codeberg.org/api/activitypub/repository-id/1",
 	  "startTime": "not a date"}`))
-	if err := validateAndCheckError(sut, "StartTime was invalid."); err != nil {
-		t.Error(err)
-	}
+	validate = sut.Validate()
+	assert.Len(t, validate, 1)
+	assert.Equal(t,
+		"StartTime was invalid.",
+		validate[0])
 }
 
 func TestActivityValidation_Attack(t *testing.T) {
 	sut := new(ForgeLike)
 	sut.UnmarshalJSON([]byte(`{rubbish}`))
-	if len(sut.Validate()) != 5 {
-		t.Errorf("5 validation errors expected but was: %v\n", len(sut.Validate()))
-	}
+	assert.Len(t, sut.Validate(), 5)
 }

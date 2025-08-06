@@ -13,13 +13,6 @@ forgejo.org/models
 	IsErrSHANotFound
 	IsErrMergeDivergingFastForwardOnly
 
-forgejo.org/models/activities
-	GetActivityByID
-	NewFederatedUserActivity
-	CreateUserActivity
-	GetFollowingFeeds
-	FederatedUserActivity.loadActor
-
 forgejo.org/models/auth
 	WebAuthnCredentials
 
@@ -63,8 +56,6 @@ forgejo.org/models/user
 	GetUserAllSettings
 	DeleteUserSetting
 	GetFederatedUser
-	GetFederatedUserByUserID
-	GetFollowersForUser
 
 forgejo.org/modules/activitypub
 	NewContext
@@ -99,16 +90,10 @@ forgejo.org/modules/forgefed
 	NewForgeUndoLike
 	ForgeUndoLike.UnmarshalJSON
 	ForgeUndoLike.Validate
-	NewForgeUserActivityFromAp
-	NewForgeUserActivity
-	ForgeUserActivity.Validate
 	NewPersonIDFromModel
 	GetItemByType
 	JSONUnmarshalerFn
 	NotEmpty
-	NewForgeUserActivityNoteFromAp
-	newNote
-	ForgeUserActivityNote.Validate
 	ToRepository
 	OnRepository
 
@@ -236,8 +221,8 @@ forgejo.org/routers/web/org
 forgejo.org/services/context
 	GetPrivateContext
 
-forgejo.org/services/convert
-	ToActivityPubPersonFeedItem
+forgejo.org/services/federation
+	FollowRemoteActor
 
 forgejo.org/services/repository
 	IsErrForkAlreadyExist

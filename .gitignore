@@ -37,6 +37,8 @@ _testmain.go
 
 *coverage.out
 coverage.all
+coverage.html
+coverage.html.gz
 coverage/
 cpu.out
 
@@ -129,3 +131,4 @@ prime/
 
 # Manpage
 /man
+tests/integration/api_activitypub_person_inbox_useractivity_test.go

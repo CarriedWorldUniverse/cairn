@@ -173,7 +173,7 @@ func TestActivityValidationUndo(t *testing.T) {
 		  "startTime":"2024-03-27T00:00:00Z",
 		  "actor":"https://repo.prod.meissa.de/api/v1/activitypub/user-id/1",
 		  "object":"https://codeberg.org/api/v1/activitypub/repository-id/1"}}`))
-	if err := validateAndCheckError(sut, "type should not be empty"); err != nil {
+	if err := validateAndCheckError(sut, "Value type should not be empty"); err != nil {
 		t.Error(*err)
 	}
 

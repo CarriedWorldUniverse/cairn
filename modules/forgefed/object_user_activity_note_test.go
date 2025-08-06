@@ -9,6 +9,7 @@ import (
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_UserActivityNoteValidation(t *testing.T) {
@@ -22,7 +23,6 @@ func Test_UserActivityNoteValidation(t *testing.T) {
 	}
 	sut.URL = ap.IRI("example.org/user-id/57")
 
-	if res, _ := validation.IsValid(sut); !res {
-		t.Errorf("sut expected to be valid: %v\n", sut.Validate())
-	}
+	valid, _ := validation.IsValid(sut)
+	assert.True(t, valid, "sut expected to be valid: %v\n", sut.Validate())
 }
