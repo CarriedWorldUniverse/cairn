@@ -119,5 +119,9 @@
     "admin.moderation.deleted_content_ref": "Содержимое типа %[1]v и ид. %[2]d, на которое пожаловались, более не существует",
     "admin.moderation.reports": "Жалобы",
     "admin.moderation.no_open_reports": "Нет открытых жалоб.",
-    "admin.dashboard.remove_resolved_reports": "Удалить разрешённые жалобы"
+    "admin.dashboard.remove_resolved_reports": "Удалить разрешённые жалобы",
+    "compare.branches.title": "Сравнение ветвей",
+    "repo.commit.load_tags_failed": "Загрузка тегов не удалась из-за внутренней ошибки",
+    "admin.auths.allow_username_change.description": "Пользователи смогут изменять свои имена после регистрации",
+    "admin.auths.allow_username_change": "Разрешить смену имён"
 }

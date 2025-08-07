@@ -110,5 +110,9 @@
     "profile.actions.tooltip": "Plus d'actions",
     "profile.edit.link": "Éditer le profil",
     "keys.ssh.link": "Clé SSH",
-    "keys.gpg.link": "Clés GPG"
+    "keys.gpg.link": "Clés GPG",
+    "compare.branches.title": "Comparer les branches",
+    "repo.settings.push_mirror.branch_filter.description": "Branches a répliquer. Laisser vide pour répliquer toutes les branches. Voir la documentation <a href=\"%[1]s\">%[2]</a> pour la syntaxe. Exemples: <code>main, release/*</code>",
+    "mail.actions.run_info_sha": "Commit: %[1]s",
+    "admin.moderation.deleted_content_ref": "Le signalement avec le type %[1]v et l'identifiant %[2]d n'existe plus."
 }
