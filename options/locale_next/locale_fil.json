@@ -111,5 +111,9 @@
     "admin.moderation.no_open_reports": "Kasalukuyang walang mga nakabukas na ulat.",
     "admin.moderation.reports": "Mga ulat",
     "admin.moderation.deleted_content_ref": "Hindi na umiiral ang inulat na nilalaman na may uri na %[1]v at ID %[2]d",
-    "admin.dashboard.remove_resolved_reports": "Tanggalin ang mga naresolbang ulat"
+    "admin.dashboard.remove_resolved_reports": "Tanggalin ang mga naresolbang ulat",
+    "compare.branches.title": "Ikumpara ang mga branch",
+    "repo.commit.load_tags_failed": "Nabigo ang pag-load ng mga tag dahil sa isang panloob na error",
+    "admin.auths.allow_username_change": "Payagan ang pagpalit ng username",
+    "admin.auths.allow_username_change.description": "Payagan ang mga user na palitan ang kanilang username sa mga setting ng profile"
 }
