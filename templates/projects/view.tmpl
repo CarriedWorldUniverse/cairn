@@ -20,7 +20,7 @@
 						{{ctx.Locale.Tr "repo.projects.close"}}
 					</button>
 				{{end}}
-				<button class="item btn delete-button" data-url="{{.Link}}/delete" data-id="{{.Project.ID}}">
+				<button class="item btn delete-button" data-url="{{.Link}}/delete" data-id="{{.Project.ID}}" data-modal-id="delete-project">
 					{{svg "octicon-trash"}}
 					{{ctx.Locale.Tr "repo.issues.label_delete"}}
 				</button>
@@ -167,7 +167,7 @@
 </div>
 
 {{if .CanWriteProjects}}
-	<div class="ui g-modal-confirm delete modal">
+	<div class="ui g-modal-confirm delete modal" id="delete-project">
 		<div class="header">
 			{{svg "octicon-trash"}}
 			{{ctx.Locale.Tr "repo.projects.deletion"}}

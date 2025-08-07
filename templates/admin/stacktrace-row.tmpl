@@ -19,7 +19,7 @@
 		</div>
 		<div>
 			{{if or (eq .Process.Type "request") (eq .Process.Type "normal")}}
-				<a class="delete-button icon" href="" data-url="{{.root.Link}}/cancel/{{.Process.PID}}" data-id="{{.Process.PID}}" data-name="{{.Process.Description}}">{{svg "octicon-trash" 16 "text-red"}}</a>
+				<a class="delete-button icon" href="" data-url="{{.root.Link}}/cancel/{{.Process.PID}}" data-id="{{.Process.PID}}" data-name="{{.Process.Description}}" data-modal-id="cancel-process">{{svg "octicon-trash" 16 "text-red"}}</a>
 			{{end}}
 		</div>
 	</div>

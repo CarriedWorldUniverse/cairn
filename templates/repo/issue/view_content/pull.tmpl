@@ -45,7 +45,7 @@
 							</div>
 						</div>
 						<div class="item-section-right">
-							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
+							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}" data-modal-id="delete-branch">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
 						</div>
 					</div>
 				{{end}}
@@ -63,7 +63,7 @@
 					</div>
 					{{if and .IsPullBranchDeletable (not .IsPullRequestBroken)}}
 						<div class="item-section-right">
-							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
+							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}" data-modal-id="delete-branch">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
 						</div>
 					{{end}}
 				</div>

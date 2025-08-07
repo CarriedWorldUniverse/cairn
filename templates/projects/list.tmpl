@@ -66,7 +66,7 @@
 					{{else}}
 						<a class="link-action flex-text-inline" href data-url="{{.Link ctx}}/close">{{svg "octicon-skip" 14}}{{ctx.Locale.Tr "repo.projects.close"}}</a>
 					{{end}}
-					<a class="delete-button flex-text-inline" href="#" data-url="{{.Link ctx}}/delete">{{svg "octicon-trash" 14}}{{ctx.Locale.Tr "repo.issues.label_delete"}}</a>
+					<a class="delete-button flex-text-inline" href="#" data-url="{{.Link ctx}}/delete" data-modal-id="delete-project">{{svg "octicon-trash" 14}}{{ctx.Locale.Tr "repo.issues.label_delete"}}</a>
 				</div>
 				{{end}}
 			</div>
@@ -82,7 +82,7 @@
 </div>
 
 {{if and $.CanWriteProjects (not $.Repository.IsArchived)}}
-<div class="ui g-modal-confirm delete modal">
+<div class="ui g-modal-confirm delete modal" id="delete-project">
 	<div class="header">
 		{{svg "octicon-trash"}}
 		{{ctx.Locale.Tr "repo.projects.deletion"}}

@@ -404,7 +404,7 @@
 
 				<div class="field">
 					<button class="ui primary button">{{ctx.Locale.Tr "admin.auths.update"}}</button>
-					<button class="ui red button delete-button" data-url="{{$.Link}}/delete" data-id="{{.Source.ID}}">{{ctx.Locale.Tr "admin.auths.delete"}}</button>
+					<button class="ui red button delete-button" data-url="{{$.Link}}/delete" data-id="{{.Source.ID}}" data-modal-id="delete-auth-source">{{ctx.Locale.Tr "admin.auths.delete"}}</button>
 				</div>
 			</form>
 		</div>
@@ -421,7 +421,7 @@
 		</div>
 	</div>
 
-<div class="ui g-modal-confirm delete modal">
+<div class="ui g-modal-confirm delete modal" id="delete-auth-source">
 	<div class="header">
 		{{svg "octicon-trash"}}
 		{{ctx.Locale.Tr "admin.auths.delete_auth_title"}}

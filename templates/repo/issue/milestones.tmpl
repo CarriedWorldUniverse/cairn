@@ -78,7 +78,7 @@
 								{{else}}
 									<a class="link-action flex-text-inline" href data-url="{{$.Link}}/{{.ID}}/close">{{svg "octicon-x" 14}}{{ctx.Locale.Tr "repo.milestones.close"}}</a>
 								{{end}}
-								<a class="delete-button flex-text-inline" href="#" data-url="{{$.RepoLink}}/milestones/delete" data-id="{{.ID}}">{{svg "octicon-trash" 14}}{{ctx.Locale.Tr "repo.issues.label_delete"}}</a>
+								<a class="delete-button flex-text-inline" href="#" data-url="{{$.RepoLink}}/milestones/delete" data-id="{{.ID}}" data-modal-id="delete-milestone">{{svg "octicon-trash" 14}}{{ctx.Locale.Tr "repo.issues.label_delete"}}</a>
 							</div>
 						{{end}}
 					</div>
@@ -96,7 +96,7 @@
 </div>
 
 {{if or .CanWriteIssues .CanWritePulls}}
-	<div class="ui g-modal-confirm delete modal">
+	<div class="ui g-modal-confirm delete modal" id="delete-milestone">
 		<div class="header">
 			{{svg "octicon-trash"}}
 			{{ctx.Locale.Tr "repo.milestones.deletion"}}

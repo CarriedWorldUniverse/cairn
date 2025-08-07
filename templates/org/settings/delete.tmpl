@@ -14,14 +14,14 @@
 							<label for="org_name">{{ctx.Locale.Tr "org.org_name_holder"}}</label>
 							<input id="org_name" name="org_name" value="" autocomplete="off" autofocus required>
 						</div>
-						<button class="ui red button delete-button" data-type="form" data-form="#delete-form">
+						<button class="ui red button delete-button" data-type="form" data-form="#delete-form" data-modal-id="delete-org">
 							{{ctx.Locale.Tr "org.settings.confirm_delete_account"}}
 						</button>
 					</form>
 				</div>
 			</div>
 
-<div class="ui g-modal-confirm delete modal">
+<div class="ui g-modal-confirm delete modal" id="delete-org">
 	<div class="header">
 		{{svg "octicon-trash"}}
 		{{ctx.Locale.Tr "org.settings.delete_org_title"}}
