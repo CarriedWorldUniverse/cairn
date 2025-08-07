@@ -85,11 +85,11 @@ func TestGetUserOrgsList(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	orgs, err := organization.GetUserOrgsList(db.DefaultContext, &user_model.User{ID: 4})
 	require.NoError(t, err)
-	if assert.Len(t, orgs, 1) {
-		assert.EqualValues(t, 3, orgs[0].ID)
-		// repo_id: 3 is in the team, 32 is public, 5 is private with no team
-		assert.Equal(t, 2, orgs[0].NumRepos)
-	}
+	assert.Len(t, orgs, 1)
+	assert.EqualValues(t, 3, orgs[0].ID)
+	// repo_id: 3 is in the team, 32 is public, 5 is private with no team
+	assert.Equal(t, 2, orgs[0].NumRepos)
+	assert.Equal(t, user_model.UserTypeOrganization, orgs[0].Type)
 }
 
 func TestGetUserOrgsListSorting(t *testing.T) {
@@ -97,7 +97,7 @@ func TestGetUserOrgsListSorting(t *testing.T) {
 	orgs, err := organization.GetUserOrgsList(db.DefaultContext, &user_model.User{ID: 1})
 	require.NoError(t, err)
 
-	isSorted := slices.IsSortedFunc(orgs, func(a, b *organization.MinimalOrg) int {
+	isSorted := slices.IsSortedFunc(orgs, func(a, b *organization.Organization) int {
 		return strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name))
 	})
 

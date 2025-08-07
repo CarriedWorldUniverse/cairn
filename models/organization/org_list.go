@@ -71,11 +71,8 @@ func GetOrgsCanCreateRepoByUserID(ctx context.Context, userID int64) ([]*Organiz
 		Find(&orgs)
 }
 
-// MinimalOrg represents a simple organization with only the needed columns
-type MinimalOrg = Organization
-
 // GetUserOrgsList returns all organizations the given user has access to
-func GetUserOrgsList(ctx context.Context, user *user_model.User) ([]*MinimalOrg, error) {
+func GetUserOrgsList(ctx context.Context, user *user_model.User) ([]*Organization, error) {
 	schema, err := db.TableInfo(new(user_model.User))
 	if err != nil {
 		return nil, err
@@ -100,7 +97,7 @@ func GetUserOrgsList(ctx context.Context, user *user_model.User) ([]*MinimalOrg,
 	}
 	columnsStr := selectColumns.String()
 
-	var orgs []*MinimalOrg
+	var orgs []*Organization
 	if err := db.GetEngine(ctx).Select(columnsStr).
 		Table("user").
 		Where(builder.In("`user`.`id`", queryUserOrgIDs(user.ID, true))).
@@ -138,6 +135,7 @@ func GetUserOrgsList(ctx context.Context, user *user_model.User) ([]*MinimalOrg,
 
 	for _, org := range orgs {
 		org.NumRepos = orgCountMap[org.ID]
+		org.Type = user_model.UserTypeOrganization
 	}
 
 	return orgs, nil
