@@ -46,30 +46,34 @@ func TestMeilisearchIndexer(t *testing.T) {
 }
 
 func TestConvertHits(t *testing.T) {
-	_, err := convertHits(&meilisearch.SearchResponse{
-		Hits: []any{"aa", "bb", "cc", "dd"},
-	})
-	require.ErrorIs(t, err, ErrMalformedResponse)
+	for _, invalidID := range []string{"\"aa\"", "{\"aa\":\"123\"}", "[\"aa\"]"} {
+		_, err := convertHits(&meilisearch.SearchResponse{
+			Hits: meilisearch.Hits{
+				meilisearch.Hit{"id": []byte(invalidID)},
+			},
+		})
+		require.ErrorIs(t, err, ErrMalformedResponse)
+	}
 
 	validResponse := &meilisearch.SearchResponse{
-		Hits: []any{
-			map[string]any{
-				"id":       float64(11),
-				"title":    "a title",
-				"content":  "issue body with no match",
-				"comments": []any{"hey what's up?", "I'm currently bowling", "nice"},
+		Hits: meilisearch.Hits{
+			meilisearch.Hit{
+				"id":       []byte("11"),
+				"title":    []byte("\"a title\""),
+				"content":  []byte("\"issue body with no match\""),
+				"comments": []byte("[\"hey what's up?\", \"I'm currently bowling\", \"nice\"]"),
 			},
-			map[string]any{
-				"id":       float64(22),
-				"title":    "Bowling as title",
-				"content":  "",
-				"comments": []any{},
+			meilisearch.Hit{
+				"id":       []byte("22"),
+				"title":    []byte("\"Bowling as title\""),
+				"content":  []byte("\"\""),
+				"comments": []byte("[]"),
 			},
-			map[string]any{
-				"id":       float64(33),
-				"title":    "Bowl-ing as fuzzy match",
-				"content":  "",
-				"comments": []any{},
+			meilisearch.Hit{
+				"id":       []byte("33"),
+				"title":    []byte("\"Bowl-ing as fuzzy match\""),
+				"content":  []byte("\"\""),
+				"comments": []byte("[]"),
 			},
 		},
 	}
