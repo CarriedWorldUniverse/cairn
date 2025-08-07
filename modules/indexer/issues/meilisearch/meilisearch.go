@@ -13,6 +13,7 @@ import (
 	indexer_internal "forgejo.org/modules/indexer/internal"
 	inner_meilisearch "forgejo.org/modules/indexer/internal/meilisearch"
 	"forgejo.org/modules/indexer/issues/internal"
+	"forgejo.org/modules/json"
 
 	"github.com/meilisearch/meilisearch-go"
 )
@@ -100,7 +101,7 @@ func (b *Indexer) Index(_ context.Context, issues ...*internal.IndexerData) erro
 		return nil
 	}
 	for _, issue := range issues {
-		_, err := b.inner.Client.Index(b.inner.VersionedIndexName()).AddDocuments(issue)
+		_, err := b.inner.Client.Index(b.inner.VersionedIndexName()).AddDocuments(issue, nil)
 		if err != nil {
 			return err
 		}
@@ -305,18 +306,13 @@ func doubleQuoteKeyword(k string) string {
 func convertHits(searchRes *meilisearch.SearchResponse) ([]internal.Match, error) {
 	hits := make([]internal.Match, 0, len(searchRes.Hits))
 	for _, hit := range searchRes.Hits {
-		hit, ok := hit.(map[string]any)
-		if !ok {
-			return nil, ErrMalformedResponse
-		}
-
-		issueID, ok := hit["id"].(float64)
-		if !ok {
+		var issueID int64
+		if err := json.Unmarshal(hit["id"], &issueID); err != nil {
 			return nil, ErrMalformedResponse
 		}
 
 		hits = append(hits, internal.Match{
-			ID: int64(issueID),
+			ID: issueID,
 		})
 	}
 	return hits, nil
