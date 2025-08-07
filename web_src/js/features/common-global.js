@@ -369,12 +369,13 @@ export function initGlobalLinkActions() {
     e.preventDefault();
     const $this = $(this || e.target);
     const dataArray = $this.data();
-    let filter = '';
-    if ($this[0].getAttribute('data-modal-id')) {
-      filter += `#${$this[0].getAttribute('data-modal-id')}`;
+
+    const modalID = $this[0].getAttribute('data-modal-id');
+    if (!modalID) {
+      throw new Error('This button does not specify which modal it wants to open.');
     }
 
-    const $dialog = $(`.delete.modal${filter}`);
+    const $dialog = $(`#${modalID}`);
     $dialog.find('.name').text($this.data('name'));
     for (const [key, value] of Object.entries(dataArray)) {
       if (key && key.startsWith('data')) {

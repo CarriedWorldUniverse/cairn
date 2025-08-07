@@ -19,7 +19,7 @@
 					<a title="{{.URL}}" href="{{$.BaseLink}}/{{.ID}}">{{.URL}}</a>
 				</div>
 				<a class="muted tw-p-2" href="{{$.BaseLink}}/{{.ID}}">{{svg "octicon-pencil"}}</a>
-				<a class="delete-button tw-p-2" data-url="{{$.Link}}/delete" data-id="{{.ID}}">{{svg "octicon-trash"}}</a>
+				<a class="delete-button tw-p-2" data-url="{{$.Link}}/delete" data-id="{{.ID}}" data-modal-id="delete-webhook">{{svg "octicon-trash"}}</a>
 			</div>
 		{{end}}
 	</div>

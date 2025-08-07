@@ -49,7 +49,7 @@
 							</div>
 							<div class="flex-item-trailing">
 								<a class="rm ui tiny button" href="{{$.Repository.Link}}/settings/branches/edit?rule_name={{.RuleName}}">{{ctx.Locale.Tr "repo.settings.edit_protected_branch"}}</a>
-								<button class="ui red tiny button delete-button" data-url="{{$.Repository.Link}}/settings/branches/{{.ID}}/delete" data-id="{{.ID}}">
+								<button class="ui red tiny button delete-button" data-url="{{$.Repository.Link}}/settings/branches/{{.ID}}/delete" data-id="{{.ID}}" data-modal-id="delete-protected-branch">
 									{{ctx.Locale.Tr "repo.settings.protected_branch.delete_rule"}}
 								</button>
 							</div>
@@ -64,7 +64,7 @@
 		{{end}}
 	</div>
 
-<div class="ui g-modal-confirm delete modal">
+<div class="ui g-modal-confirm delete modal" id="delete-protected-branch">
 	<div class="header">
 		{{svg "octicon-trash"}}
 		{{ctx.Locale.Tr "repo.settings.protected_branch_deletion"}}
