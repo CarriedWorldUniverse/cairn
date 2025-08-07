@@ -83,7 +83,7 @@ jobs:
         env:
           MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: yes
           MARIADB_DATABASE: testgitea
-        options: --tmpfs /mariadb/data:noatime
+        options: --tmpfs /var/lib/mysql:noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
