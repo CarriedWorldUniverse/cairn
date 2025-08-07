@@ -119,5 +119,9 @@
     "admin.moderation.reports": "Скарги",
     "admin.moderation.deleted_content_ref": "Вміст типу %[1]v з ідентифікатором %[2]d, на який подано скаргу, більше не існує",
     "admin.moderation.moderation_reports": "Скарги модераторам",
-    "admin.dashboard.remove_resolved_reports": "Видалити закриті скарги"
+    "admin.dashboard.remove_resolved_reports": "Видалити закриті скарги",
+    "compare.branches.title": "Порівняти гілки",
+    "repo.commit.load_tags_failed": "Завантаження тегів не вдалося через внутрішню помилку",
+    "admin.auths.allow_username_change.description": "Дозволити користувачам змінювати ім'я користувача в налаштуваннях профілю",
+    "admin.auths.allow_username_change": "Дозволити змінювати імена"
 }

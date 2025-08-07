@@ -119,5 +119,9 @@
     "admin.moderation.moderation_reports": "Satura pārraudzības pārskati",
     "admin.moderation.reports": "Pārskati",
     "admin.moderation.deleted_content_ref": "Saturs, par kuru ziņots, ar veidu %[1]v un Id %[2]d vairs nepastāv",
-    "admin.dashboard.remove_resolved_reports": "Noņemt atrisinātos ziņojumus"
+    "admin.dashboard.remove_resolved_reports": "Noņemt atrisinātos ziņojumus",
+    "compare.branches.title": "Salīdzināt zarus",
+    "admin.auths.allow_username_change": "Atļaut lietotājvārda mainīšanu",
+    "repo.commit.load_tags_failed": "Birku ielādēšana neizdevās iekšējas kļūdas dēļ",
+    "admin.auths.allow_username_change.description": "Ļaut lietotājiem profila iestatījumos mainīt savu lietotājvārdu"
 }
