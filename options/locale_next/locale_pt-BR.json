@@ -119,5 +119,6 @@
     "admin.moderation.moderation_reports": "Denúncias para moderação",
     "admin.moderation.reports": "Denúncias",
     "admin.moderation.no_open_reports": "Não há denúncias abertas atualmente.",
-    "admin.dashboard.remove_resolved_reports": "Remover denúncias resolvidas"
+    "admin.dashboard.remove_resolved_reports": "Remover denúncias resolvidas",
+    "compare.branches.title": "Comparar branches"
 }

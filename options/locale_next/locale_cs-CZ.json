@@ -118,5 +118,10 @@
     "admin.moderation.moderation_reports": "Hlášení moderace",
     "admin.moderation.reports": "Hlášení",
     "admin.moderation.deleted_content_ref": "Nahlášený obsah s typem %[1]v a ID %[2]d již neexistuje",
-    "admin.moderation.no_open_reports": "Momentálně nejsou otevřena žádná hlášení."
+    "admin.moderation.no_open_reports": "Momentálně nejsou otevřena žádná hlášení.",
+    "admin.dashboard.remove_resolved_reports": "Odstranit vyřešená hlášení",
+    "compare.branches.title": "Porovnat větve",
+    "repo.commit.load_tags_failed": "Načtení značek selhalo z důvodu interní chyby",
+    "admin.auths.allow_username_change": "Povolit změnu uživatelského jména",
+    "admin.auths.allow_username_change.description": "Povolit uživatelům změnit své uživatelské jméno v nastavení profilu"
 }
