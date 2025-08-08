@@ -103,12 +103,12 @@
 												</a>
 											</li>
 										{{else}}
-											<li>
+											<li class="max-sm:tw-flex-col max-sm:tw-gap-2">
 												<a class="tw-flex-1 flex-text-inline tw-font-bold" target="_blank" rel="nofollow" href="{{.DownloadURL}}" download>
 													{{svg "octicon-package" 16 "tw-mr-1"}}{{.Name}}
 												</a>
 												<div>
-													<span class="text grey">{{ctx.Locale.TrN .DownloadCount "repo.release.download_count_one" "repo.release.download_count_few" (ctx.Locale.PrettyNumber .DownloadCount)}} · {{.Size | ctx.Locale.TrSize}}</span>
+													<span class="text grey">{{ctx.Locale.TrN .DownloadCount "repo.release.download_count_one" "repo.release.download_count_few" (ctx.Locale.PrettyNumber .DownloadCount)}} · {{DateUtils.TimeSince .CreatedUnix}} · {{.Size | ctx.Locale.TrSize}}</span>
 												</div>
 											</li>
 										{{end}}
