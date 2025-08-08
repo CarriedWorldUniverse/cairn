@@ -74,7 +74,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-sqlite3 v1.14.30
 	github.com/meilisearch/meilisearch-go v0.33.0
-	github.com/mholt/archiver/v3 v3.5.1
+	github.com/mholt/archives v0.1.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/minio/minio-go/v7 v7.0.94
 	github.com/msteinert/pam/v2 v2.1.0
@@ -121,6 +121,7 @@ require (
 	git.sr.ht/~mariusor/go-xsd-duration v0.0.0-20220703122237-02e73435a078 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
+	github.com/STARRY-S/zip v0.2.1 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
@@ -145,6 +146,9 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.4 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.8.0 // indirect
+	github.com/bodgit/plumbing v1.3.0 // indirect
+	github.com/bodgit/sevenzip v1.6.0 // indirect
+	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf // indirect
 	github.com/caddyserver/zerossl v0.1.3 // indirect
@@ -184,7 +188,9 @@ require (
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -206,7 +212,7 @@ require (
 	github.com/mrjones/oauth v0.0.0-20190623134757-126b35219450 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nwaples/rardecode v1.1.3 // indirect
+	github.com/nwaples/rardecode/v2 v2.0.0-beta.4.0.20241112120701-034e449c6e78 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/olekukonko/tablewriter v1.0.7 // indirect
@@ -224,11 +230,12 @@ require (
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
+	github.com/sorairolake/lzip-go v0.3.5 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
+	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/zeebo/assert v1.3.0 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.etcd.io/bbolt v1.4.2 // indirect
@@ -236,6 +243,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
+	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
