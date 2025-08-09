@@ -44,6 +44,7 @@
     "relativetime.2months": "two months ago",
     "relativetime.1year": "last year",
     "relativetime.2years": "two years ago",
+    "repo.pulls.already_merged": "Merge failed: This pull request has already been merged.",
     "repo.pulls.merged_title_desc": {
         "one": "merged %[1]d commit from <code>%[2]s</code> into <code>%[3]s</code> %[4]s",
         "other": "merged %[1]d commits from <code>%[2]s</code> into <code>%[3]s</code> %[4]s"
