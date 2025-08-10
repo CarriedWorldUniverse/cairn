@@ -15,9 +15,7 @@ import (
 func TestFlags(t *testing.T) {
 	assert.Equal(t, Ldefault, Flags{}.Bits())
 	assert.EqualValues(t, 0, FlagsFromString("").Bits())
-	assert.Equal(t, Lgopid, FlagsFromString("", Lgopid).Bits())
-	assert.EqualValues(t, 0, FlagsFromString("none", Lgopid).Bits())
-	assert.Equal(t, Ldate|Ltime, FlagsFromString("date,time", Lgopid).Bits())
+	assert.Equal(t, Ldate|Ltime, FlagsFromString("date,time").Bits())
 
 	assert.Equal(t, "stdflags", FlagsFromString("stdflags").String())
 	assert.Equal(t, "medfile", FlagsFromString("medfile").String())
