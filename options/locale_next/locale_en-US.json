@@ -62,6 +62,7 @@
     "themes.names.forgejo-light": "Forgejo light",
     "themes.names.forgejo-dark": "Forgejo dark",
     "error.not_found.title": "Page not found",
+    "warning.repository.out_of_sync": "The database representation of this repository is out of synchronization. If this warning is still shown after pushing a commit to this repository contact the administrator.",
     "alert.asset_load_failed": "Failed to load asset files from {path}. Please make sure the asset files can be accessed.",
     "alert.range_error": " must be a number between %[1]s and %[2]s.",
     "install.invalid_lfs_path": "Unable to create the LFS root at the specified path: %[1]s",
