@@ -128,8 +128,8 @@ func NewFuncMap() template.FuncMap {
 		"AllowedReactions": func() []string {
 			return setting.UI.Reactions
 		},
-		"CustomEmojis": func() map[string]string {
-			return setting.UI.CustomEmojisMap
+		"CustomEmojis": func() []string {
+			return setting.UI.CustomEmojis
 		},
 		"MetaAuthor": func() string {
 			return setting.UI.Meta.Author
