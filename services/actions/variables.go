@@ -87,7 +87,7 @@ func GetVariable(ctx context.Context, opts actions_model.FindVariablesOpts) (*ac
 // https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables
 // https://docs.github.com/en/actions/security-guides/encrypted-secrets#naming-your-secrets
 var (
-	forbiddenEnvNameCIRx = regexp.MustCompile("(?i)^CI")
+	forbiddenEnvNameCIRx = regexp.MustCompile("(?i)^CI$")
 )
 
 func envNameCIRegexMatch(name string) error {
