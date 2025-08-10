@@ -13,7 +13,7 @@ If you introduce mistakes in it, Gitea JavaScript code wouldn't run correctly.
 		assetVersionEncoded: encodeURIComponent('{{AssetVersion}}'), // will be used in URL construction directly
 		assetUrlPrefix: '{{AssetUrlPrefix}}',
 		runModeIsProd: {{.RunModeIsProd}},
-		customEmojis: {{CustomEmojis}},
+		customEmojis: new Set({{CustomEmojis}}),
 		csrfToken: '{{.CsrfToken}}',
 		pageData: {{.PageData}},
 		notificationSettings: {{NotificationSettings}}, {{/*a map provided by NewFuncMap in helper.go*/}}

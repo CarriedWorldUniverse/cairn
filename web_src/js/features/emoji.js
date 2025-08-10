@@ -2,7 +2,7 @@ import emojis from '../../../assets/emoji.json';
 
 const {assetUrlPrefix, customEmojis} = window.config;
 
-const tempMap = {...customEmojis};
+const tempMap = Object.assign(...Array.from(customEmojis, (v) => ({[v]: `:${v}:`})));
 for (const {emoji, aliases} of emojis) {
   for (const alias of aliases || []) {
     tempMap[alias] = emoji;
@@ -23,7 +23,7 @@ for (const key of emojiKeys) {
 // retrieve HTML for given emoji name
 export function emojiHTML(name) {
   let inner;
-  if (Object.hasOwn(customEmojis, name)) {
+  if (customEmojis.has(name)) {
     inner = `<img alt=":${name}:" src="${assetUrlPrefix}/img/emoji/${name}.png">`;
   } else {
     inner = emojiString(name);
