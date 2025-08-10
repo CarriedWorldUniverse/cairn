@@ -399,12 +399,7 @@ func EndUploadBlob(ctx *context.Context) {
 		}
 		return
 	}
-	doClose := true
-	defer func() {
-		if doClose {
-			uploader.Close()
-		}
-	}()
+	defer uploader.Close()
 
 	if ctx.Req.Body != nil {
 		if err := uploader.Append(ctx, ctx.Req.Body); err != nil {
@@ -434,12 +429,6 @@ func EndUploadBlob(ctx *context.Context) {
 		default:
 			apiError(ctx, http.StatusInternalServerError, err)
 		}
-		return
-	}
-
-	doClose = false
-	if err := uploader.Close(); err != nil {
-		apiError(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
