@@ -4,8 +4,9 @@ window.config = {
   csrfToken: 'test-csrf-token-123456',
   pageData: {},
   i18n: {},
-  customEmojis: {},
+  customEmojis: new Set(['forgejo', 'frogejo', 'blobnom']),
   appSubUrl: '',
+  assetUrlPrefix: '/assets',
   mentionValues: [
     {key: 'user1 User 1', value: 'user1', name: 'user1', fullname: 'User 1', avatar: 'https://avatar1.com'},
     {key: 'user2 User 2', value: 'user2', name: 'user2', fullname: 'User 2', avatar: 'https://avatar2.com'},
