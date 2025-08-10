@@ -71,7 +71,7 @@ func (a *actionNotifier) NewIssue(ctx context.Context, issue *issues_model.Issue
 		ActUserID: issue.Poster.ID,
 		ActUser:   issue.Poster,
 		OpType:    activities_model.ActionCreateIssue,
-		Content:   fmt.Sprintf("%d|%s", issue.Index, issue.Title),
+		Content:   encodeContent(fmt.Sprintf("%d", issue.Index), issue.Title),
 		RepoID:    repo.ID,
 		Repo:      repo,
 		IsPrivate: repo.IsPrivate,
@@ -87,7 +87,7 @@ func (a *actionNotifier) IssueChangeStatus(ctx context.Context, doer *user_model
 	act := &activities_model.Action{
 		ActUserID: doer.ID,
 		ActUser:   doer,
-		Content:   fmt.Sprintf("%d|%s", issue.Index, ""),
+		Content:   encodeContent(fmt.Sprintf("%d", issue.Index), ""),
 		RepoID:    issue.Repo.ID,
 		Repo:      issue.Repo,
 		Comment:   actionComment,
@@ -135,7 +135,7 @@ func (a *actionNotifier) CreateIssueComment(ctx context.Context, doer *user_mode
 			truncatedContent = truncatedContent[:lastSpaceIdx] + "…"
 		}
 	}
-	act.Content = fmt.Sprintf("%d|%s", issue.Index, truncatedContent)
+	act.Content = encodeContent(fmt.Sprintf("%d", issue.Index), truncatedContent)
 
 	if issue.IsPull {
 		act.OpType = activities_model.ActionCommentPull
@@ -167,7 +167,7 @@ func (a *actionNotifier) NewPullRequest(ctx context.Context, pull *issues_model.
 		ActUserID: pull.Issue.Poster.ID,
 		ActUser:   pull.Issue.Poster,
 		OpType:    activities_model.ActionCreatePullRequest,
-		Content:   fmt.Sprintf("%d|%s", pull.Issue.Index, pull.Issue.Title),
+		Content:   encodeContent(fmt.Sprintf("%d", pull.Issue.Index), pull.Issue.Title),
 		RepoID:    pull.Issue.Repo.ID,
 		Repo:      pull.Issue.Repo,
 		IsPrivate: pull.Issue.Repo.IsPrivate,
@@ -247,7 +247,7 @@ func (a *actionNotifier) PullRequestReview(ctx context.Context, pr *issues_model
 				actions = append(actions, &activities_model.Action{
 					ActUserID: review.Reviewer.ID,
 					ActUser:   review.Reviewer,
-					Content:   fmt.Sprintf("%d|%s", review.Issue.Index, strings.Split(comm.Content, "\n")[0]),
+					Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), strings.Split(comm.Content, "\n")[0]),
 					OpType:    activities_model.ActionCommentPull,
 					RepoID:    review.Issue.RepoID,
 					Repo:      review.Issue.Repo,
@@ -263,7 +263,7 @@ func (a *actionNotifier) PullRequestReview(ctx context.Context, pr *issues_model
 		action := &activities_model.Action{
 			ActUserID: review.Reviewer.ID,
 			ActUser:   review.Reviewer,
-			Content:   fmt.Sprintf("%d|%s", review.Issue.Index, strings.Split(comment.Content, "\n")[0]),
+			Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), strings.Split(comment.Content, "\n")[0]),
 			RepoID:    review.Issue.RepoID,
 			Repo:      review.Issue.Repo,
 			IsPrivate: review.Issue.Repo.IsPrivate,
@@ -293,7 +293,7 @@ func (*actionNotifier) MergePullRequest(ctx context.Context, doer *user_model.Us
 		ActUserID: doer.ID,
 		ActUser:   doer,
 		OpType:    activities_model.ActionMergePullRequest,
-		Content:   fmt.Sprintf("%d|%s", pr.Issue.Index, pr.Issue.Title),
+		Content:   encodeContent(fmt.Sprintf("%d", pr.Issue.Index), pr.Issue.Title),
 		RepoID:    pr.Issue.Repo.ID,
 		Repo:      pr.Issue.Repo,
 		IsPrivate: pr.Issue.Repo.IsPrivate,
@@ -307,7 +307,7 @@ func (*actionNotifier) AutoMergePullRequest(ctx context.Context, doer *user_mode
 		ActUserID: doer.ID,
 		ActUser:   doer,
 		OpType:    activities_model.ActionAutoMergePullRequest,
-		Content:   fmt.Sprintf("%d|%s", pr.Issue.Index, pr.Issue.Title),
+		Content:   encodeContent(fmt.Sprintf("%d", pr.Issue.Index), pr.Issue.Title),
 		RepoID:    pr.Issue.Repo.ID,
 		Repo:      pr.Issue.Repo,
 		IsPrivate: pr.Issue.Repo.IsPrivate,
@@ -325,7 +325,7 @@ func (*actionNotifier) NotifyPullRevieweDismiss(ctx context.Context, doer *user_
 		ActUserID: doer.ID,
 		ActUser:   doer,
 		OpType:    activities_model.ActionPullReviewDismissed,
-		Content:   fmt.Sprintf("%d|%s|%s", review.Issue.Index, reviewerName, comment.Content),
+		Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), reviewerName, comment.Content),
 		RepoID:    review.Issue.Repo.ID,
 		Repo:      review.Issue.Repo,
 		IsPrivate: review.Issue.Repo.IsPrivate,
@@ -481,4 +481,13 @@ func (a *actionNotifier) NewRelease(ctx context.Context, rel *repo_model.Release
 	}); err != nil {
 		log.Error("NotifyWatchers: %v", err)
 	}
+}
+
+// ... later decoded in models/activities/action.go:GetIssueInfos
+func encodeContent(params ...string) string {
+	contentEncoded, err := json.Marshal(params)
+	if err != nil {
+		log.Error("encodeContent: Unexpected json encoding error: %v", err)
+	}
+	return string(contentEncoded)
 }
