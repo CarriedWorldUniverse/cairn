@@ -26,6 +26,7 @@ import (
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/git"
+	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
@@ -386,8 +387,21 @@ func (a *Action) IsIssueEvent() bool {
 
 // GetIssueInfos returns a list of associated information with the action.
 func (a *Action) GetIssueInfos() []string {
+	// Previously multiple pieces of data used to be encoded into a.Content by pipe-separating them, but this doesn't
+	// work well if some of the user-entered pieces of content (issue titles, comments, etc.) contain pipes.  The newer
+	// storage format is to json-encode a string array, which we check for and prefer... then fallback to assuming old.
+	var ret []string
+	if strings.HasPrefix(a.Content, "[") && strings.HasSuffix(a.Content, "]") {
+		ret = make([]string, 0, 3)
+		err := json.Unmarshal([]byte(a.Content), &ret)
+		if err != nil {
+			log.Error("GetIssueInfos json decoding error: %v", err)
+		}
+	} else {
+		ret = strings.SplitN(a.Content, "|", 3)
+	}
+
 	// make sure it always returns 3 elements, because there are some access to the a[1] and a[2] without checking the length
-	ret := strings.SplitN(a.Content, "|", 3)
 	for len(ret) < 3 {
 		ret = append(ret, "")
 	}
@@ -770,7 +784,9 @@ func DeleteIssueActions(ctx context.Context, repoID, issueID, issueIndex int64) 
 
 	_, err := e.Where("repo_id = ?", repoID).
 		In("op_type", ActionCreateIssue, ActionCreatePullRequest).
-		Where("content LIKE ?", strconv.FormatInt(issueIndex, 10)+"|%"). // "IssueIndex|content..."
+		Where(builder.Or(
+			builder.Like{"content", strconv.FormatInt(issueIndex, 10) + "|%"},            // "IssueIndex|content..."
+			builder.Like{"content", "[\"" + strconv.FormatInt(issueIndex, 10) + "\"%"})). // JSON, ["IssueIndex"...
 		Delete(&Action{})
 	return err
 }

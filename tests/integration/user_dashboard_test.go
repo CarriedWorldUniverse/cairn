@@ -87,3 +87,38 @@ func TestDashboardTitleRendering(t *testing.T) {
 		assert.Equal(t, 6, count)
 	})
 }
+
+func TestDashboardActionEscaping(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+		sess := loginUser(t, user4.Name)
+
+		repo, _, f := tests.CreateDeclarativeRepo(t, user4, "",
+			[]unit_model.Type{unit_model.TypePullRequests, unit_model.TypeIssues}, nil,
+			[]*files_service.ChangeRepoFile{},
+		)
+		defer f()
+
+		issue := createIssue(t, user4, repo, "Issue with | in title", "Hey here's a | for you")
+
+		_, err := issue_service.CreateIssueComment(db.DefaultContext, user4, repo, issue, "Comment with a | in it", nil)
+		require.NoError(t, err)
+
+		testIssueClose(t, sess, repo.OwnerName, repo.Name, strconv.Itoa(int(issue.Index)), false)
+
+		response := sess.MakeRequest(t, NewRequest(t, "GET", "/"), http.StatusOK)
+		htmlDoc := NewHTMLParser(t, response.Body)
+
+		count := 0
+		htmlDoc.doc.Find("#activity-feed .flex-item-main .title").Each(func(i int, s *goquery.Selection) {
+			count++
+			assert.Equal(t, "Issue with | in title", s.Text())
+		})
+		htmlDoc.doc.Find("#activity-feed .flex-item-main .markup").Each(func(i int, s *goquery.Selection) {
+			count++
+			assert.Equal(t, "Comment with a | in it\n", s.Text())
+		})
+
+		assert.Equal(t, 4, count)
+	})
+}
