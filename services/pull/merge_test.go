@@ -9,7 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"forgejo.org/models"
+	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
+	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 
@@ -145,4 +150,30 @@ func TestLoadMergeMessageTemplates(t *testing.T) {
 	require.NoError(t, os.RemoveAll(templateTemp))
 	require.NoError(t, LoadMergeMessageTemplates())
 	assert.Empty(t, mergeMessageTemplates)
+}
+
+func TestMergeMergedPR(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 1})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+	require.NoError(t, pr.LoadBaseRepo(t.Context()))
+
+	gitRepo, err := gitrepo.OpenRepository(t.Context(), pr.BaseRepo)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	assert.True(t, pr.HasMerged)
+	pr.HasMerged = false
+
+	err = Merge(t.Context(), pr, doer, gitRepo, repo_model.MergeStyleRebase, "", "I should not exist", false)
+	require.Error(t, err)
+	assert.True(t, models.IsErrPullRequestHasMerged(err))
+
+	if mergeErr, ok := err.(models.ErrPullRequestHasMerged); ok {
+		assert.Equal(t, pr.ID, mergeErr.ID)
+		assert.Equal(t, pr.IssueID, mergeErr.IssueID)
+		assert.Equal(t, pr.HeadBranch, mergeErr.HeadBranch)
+		assert.Equal(t, pr.BaseBranch, mergeErr.BaseBranch)
+	}
 }

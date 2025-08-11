@@ -1445,6 +1445,10 @@ func MergePullRequest(ctx *context.Context) {
 			log.Debug("MergeUnrelatedHistories error: %v", err)
 			ctx.Flash.Error(ctx.Tr("repo.pulls.unrelated_histories"))
 			ctx.JSONRedirect(issue.Link())
+		} else if models.IsErrPullRequestHasMerged(err) {
+			log.Debug("MergePullRequestHasMerged error: %v", err)
+			ctx.Flash.Error(ctx.Tr("repo.pulls.already_merged"))
+			ctx.JSONRedirect(issue.Link())
 		} else if git.IsErrPushOutOfDate(err) {
 			log.Debug("MergePushOutOfDate error: %v", err)
 			ctx.Flash.Error(ctx.Tr("repo.pulls.merge_out_of_date"))
