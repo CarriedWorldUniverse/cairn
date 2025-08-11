@@ -42,6 +42,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"xorm.io/xorm/convert"
 )
 
 func exitf(format string, args ...any) {
@@ -342,6 +343,7 @@ type DeclarativeRepoOptions struct {
 	Name          optional.Option[string]
 	EnabledUnits  optional.Option[[]unit_model.Type]
 	DisabledUnits optional.Option[[]unit_model.Type]
+	UnitConfig    optional.Option[map[unit_model.Type]convert.Conversion]
 	Files         optional.Option[[]*files_service.ChangeRepoFile]
 	WikiBranch    optional.Option[string]
 	AutoInit      optional.Option[bool]
@@ -390,9 +392,14 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 		enabledUnits = make([]repo_model.RepoUnit, len(units))
 
 		for i, unitType := range units {
+			var config convert.Conversion
+			if cfg, ok := opts.UnitConfig.Value()[unitType]; ok {
+				config = cfg
+			}
 			enabledUnits[i] = repo_model.RepoUnit{
 				RepoID: repo.ID,
 				Type:   unitType,
+				Config: config,
 			}
 		}
 	}
@@ -470,6 +477,25 @@ func CreateDeclarativeRepo(t *testing.T, owner *user_model.User, name string, en
 	}
 	if enabledUnits != nil {
 		opts.EnabledUnits = optional.Some(enabledUnits)
+
+		for _, unitType := range enabledUnits {
+			if unitType == unit_model.TypePullRequests {
+				opts.UnitConfig = optional.Some(map[unit_model.Type]convert.Conversion{
+					unit_model.TypePullRequests: &repo_model.PullRequestsConfig{
+						AllowMerge:           true,
+						AllowRebase:          true,
+						AllowRebaseMerge:     true,
+						AllowSquash:          true,
+						AllowFastForwardOnly: true,
+						AllowManualMerge:     true,
+						AllowRebaseUpdate:    true,
+						DefaultMergeStyle:    repo_model.MergeStyleMerge,
+						DefaultUpdateStyle:   repo_model.UpdateStyleMerge,
+					},
+				})
+				break
+			}
+		}
 	}
 	if disabledUnits != nil {
 		opts.DisabledUnits = optional.Some(disabledUnits)
