@@ -327,6 +327,7 @@ const (
 	GitBucketService                       // 7 gitbucket service
 	CodebaseService                        // 8 codebase service
 	ForgejoService                         // 9 forgejo service
+	PagureService                          // 10 pagure service
 )
 
 // Name represents the service type's name
@@ -354,6 +355,8 @@ func (gt GitServiceType) Title() string {
 		return "Codebase"
 	case ForgejoService:
 		return "Forgejo"
+	case PagureService:
+		return "Pagure"
 	case PlainGitService:
 		return "Git"
 	}
@@ -412,6 +415,7 @@ var SupportedFullGitService = []GitServiceType{
 	OneDevService,
 	GitBucketService,
 	CodebaseService,
+	PagureService,
 }
 
 // RepoTransfer represents a pending repo transfer

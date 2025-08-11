@@ -1,0 +1,125 @@
+HTTP/2 200 
+date: Wed, 23 Jul 2025 06:17:07 GMT
+server: Apache/2.4.37 (Red Hat Enterprise Linux) OpenSSL/1.1.1k mod_wsgi/4.6.4 Python/3.6
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+referrer-policy: same-origin
+x-frame-options: ALLOW-FROM https://pagure.io/
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+content-length: 3105
+content-security-policy: default-src 'self';script-src 'self' 'nonce-yBIiXAYKuVAlrSnvYuxYU2MVh'; style-src 'self' 'nonce-yBIiXAYKuVAlrSnvYuxYU2MVh'; object-src 'none';base-uri 'self';img-src 'self' https:;connect-src 'self' https://pagure.io:8088;frame-src https://docs.pagure.org;frame-ancestors https://pagure.io;
+set-cookie: pagure=eyJfcGVybWFuZW50Ijp0cnVlLCJjc3JmX3Rva2VuIjoiZDQ4YWUxNzRmZGRjNDE3MGE3Zjg4YTY2OWJmMzI4MTA3OGQ0NDJmNyJ9.G2IP4w.fBfDUgO0_qt8TTh1QGvCxyEoNw8; Expires=Sat, 23-Aug-2025 06:17:07 GMT; Secure; HttpOnly; Path=/
+content-type: application/json
+
+{
+  "assignee": null, 
+  "blocks": [], 
+  "close_status": null, 
+  "closed_at": null, 
+  "closed_by": null, 
+  "comments": [
+    {
+      "comment": "**Metadata Update from @t0xic0der**:\n- Issue tagged with: aaaa, bbbb", 
+      "date_created": "1697169699", 
+      "edited_on": null, 
+      "editor": null, 
+      "id": 878471, 
+      "notification": true, 
+      "parent": null, 
+      "reactions": {}, 
+      "user": {
+        "full_url": "https://pagure.io/user/t0xic0der", 
+        "fullname": "Akashdeep Dhar", 
+        "name": "t0xic0der", 
+        "url_path": "user/t0xic0der"
+      }
+    }, 
+    {
+      "comment": "This is the first comment under the first test issue", 
+      "date_created": "1697169880", 
+      "edited_on": null, 
+      "editor": null, 
+      "id": 878473, 
+      "notification": false, 
+      "parent": null, 
+      "reactions": {}, 
+      "user": {
+        "full_url": "https://pagure.io/user/t0xic0der", 
+        "fullname": "Akashdeep Dhar", 
+        "name": "t0xic0der", 
+        "url_path": "user/t0xic0der"
+      }
+    }, 
+    {
+      "comment": "This is the second comment under the first test issue", 
+      "date_created": "1697169924", 
+      "edited_on": null, 
+      "editor": null, 
+      "id": 878474, 
+      "notification": false, 
+      "parent": null, 
+      "reactions": {}, 
+      "user": {
+        "full_url": "https://pagure.io/user/t0xic0der", 
+        "fullname": "Akashdeep Dhar", 
+        "name": "t0xic0der", 
+        "url_path": "user/t0xic0der"
+      }
+    }, 
+    {
+      "comment": "**Metadata Update from @t0xic0der**:\n- Issue set to the milestone: Milestone AAAA", 
+      "date_created": "1746679806", 
+      "edited_on": null, 
+      "editor": null, 
+      "id": 971677, 
+      "notification": true, 
+      "parent": null, 
+      "reactions": {}, 
+      "user": {
+        "full_url": "https://pagure.io/user/t0xic0der", 
+        "fullname": "Akashdeep Dhar", 
+        "name": "t0xic0der", 
+        "url_path": "user/t0xic0der"
+      }
+    }, 
+    {
+      "comment": "**Metadata Update from @t0xic0der**:\n- Issue priority set to: Epic", 
+      "date_created": "1750832745", 
+      "edited_on": null, 
+      "editor": null, 
+      "id": 976719, 
+      "notification": true, 
+      "parent": null, 
+      "reactions": {}, 
+      "user": {
+        "full_url": "https://pagure.io/user/t0xic0der", 
+        "fullname": "Akashdeep Dhar", 
+        "name": "t0xic0der", 
+        "url_path": "user/t0xic0der"
+      }
+    }
+  ], 
+  "content": "This is the body of the first test issue", 
+  "custom_fields": [], 
+  "date_created": "1697169462", 
+  "depends": [], 
+  "full_url": "https://pagure.io/protop2g-test-srce/issue/1", 
+  "id": 1, 
+  "last_updated": "1750832745", 
+  "milestone": "Milestone AAAA", 
+  "priority": 4, 
+  "private": false, 
+  "related_prs": [], 
+  "status": "Open", 
+  "tags": [
+    "aaaa", 
+    "bbbb"
+  ], 
+  "title": "This is the title of the first test issue", 
+  "user": {
+    "full_url": "https://pagure.io/user/t0xic0der", 
+    "fullname": "Akashdeep Dhar", 
+    "name": "t0xic0der", 
+    "url_path": "user/t0xic0der"
+  }
+}

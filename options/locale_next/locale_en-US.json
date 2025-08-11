@@ -117,5 +117,12 @@
     "og.repo.summary_card.alt_description": "Summary card of repository %[1]s, described as: %[2]s",
     "repo.commit.load_tags_failed": "Load tags failed because of internal error",
     "compare.branches.title": "Compare branches",
+    "migrate.pagure.description": "Migrate data from pagure.io or other Pagure instances.",
+    "migrate.pagure.incorrect_url": "Incorrect source repository URL has been provided",
+    "migrate.pagure.project_url": "Pagure project URL",
+    "migrate.pagure.project_example": "The Pagure project url, e.g. https://pagure.io/pagure",
+    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_body_a": "Provide a Pagure API token with access to the private issues to create a repository with just the private issues in it",
+    "migrate.pagure.token_body_b": "Be sure to set the private repo flag above if you want this repo to be private",
     "meta.last_line": "Thank you for translating Forgejo! This line isn't seen by the users but it serves other purposes in the translation management. You can place a fun fact in the translation instead of translating it."
 }

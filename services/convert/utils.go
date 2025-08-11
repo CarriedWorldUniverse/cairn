@@ -38,6 +38,8 @@ func ToGitServiceType(value string) structs.GitServiceType {
 		return structs.GitBucketService
 	case "forgejo":
 		return structs.ForgejoService
+	case "pagure":
+		return structs.PagureService
 	default:
 		return structs.PlainGitService
 	}
