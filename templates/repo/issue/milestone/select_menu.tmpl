@@ -6,7 +6,7 @@
 	</div>
 	<div class="divider"></div>
 {{end}}
-<div class="no-select item"{{if $useHTMX}} hx-post="{{$.RepoLink}}/issues/milestone?issue_ids={{$.Issue.ID}}&htmx=true"{{end}}>{{ctx.Locale.Tr "repo.issues.new.clear_milestone"}}</div>
+{{template "repo/issue/milestone/clear_milestone" dict "." . "UseHTMX" $useHTMX}}
 {{if and (not .OpenMilestones) (not .ClosedMilestones)}}
 	<div class="disabled item">
 		{{ctx.Locale.Tr "repo.issues.new.no_items"}}
