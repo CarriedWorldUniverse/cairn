@@ -2414,6 +2414,7 @@ func UpdateIssueMilestone(ctx *context.Context) {
 				ctx.ServerError("GetMilestoneByRepoID", err)
 				return
 			}
+			ctx.Data["OpenMilestones"] = true
 		} else {
 			issue.Milestone = nil
 		}
