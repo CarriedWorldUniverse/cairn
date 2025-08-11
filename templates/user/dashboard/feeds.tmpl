@@ -76,7 +76,7 @@
 					{{else if .GetOpType.InActions "publish_release"}}
 						{{$linkText := .Content | RenderEmoji $.Context}}
 						{{ctx.Locale.Tr "action.publish_release" (.GetRepoLink ctx) (printf "%s/releases/tag/%s" (.GetRepoLink ctx) .GetTag) (.ShortRepoPath ctx) $linkText}}
-					{{else if .GetOpType.InActions "review_dismissed"}}
+					{{else if .GetOpType.InActions "pull_review_dismissed"}}
 						{{$index := index .GetIssueInfos 0}}
 						{{$reviewer := index .GetIssueInfos 1}}
 						{{ctx.Locale.Tr "action.review_dismissed" (printf "%s/pulls/%s" (.GetRepoLink ctx) $index) $index (.ShortRepoPath ctx) $reviewer}}
@@ -121,8 +121,8 @@
 				{{else if .GetOpType.InActions "close_issue" "reopen_issue" "close_pull_request" "reopen_pull_request"}}
 					<span class="text truncate issue title">{{RenderIssueTitle ctx (.GetIssueTitle ctx) (.Repo.ComposeMetas ctx)}}</span>
 				{{else if .GetOpType.InActions "pull_review_dismissed"}}
-				<div class="flex-item-body text black">{{ctx.Locale.Tr "action.review_dismissed_reason"}}</div>
-				<div class="flex-item-body text black">{{index .GetIssueInfos 2 | RenderEmoji $.Context}}</div>
+					<div class="flex-item-body text black">{{ctx.Locale.Tr "action.review_dismissed_reason"}}</div>
+					<div class="flex-item-body text black">{{index .GetIssueInfos 2 | RenderEmoji $.Context}}</div>
 				{{end}}
 			</div>
 			<div class="flex-item-trailing">
