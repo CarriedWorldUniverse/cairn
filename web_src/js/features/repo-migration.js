@@ -38,7 +38,10 @@ function checkAuth() {
   if (!service) return;
   const serviceType = Number(service.value);
 
-  checkItems(serviceType !== 1);
+  // hack for pagure importer.
+  if (serviceType !== 10) {
+    checkItems(serviceType !== 1);
+  }
 }
 
 function checkItems(tokenAuth) {
