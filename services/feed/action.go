@@ -125,17 +125,8 @@ func (a *actionNotifier) CreateIssueComment(ctx context.Context, doer *user_mode
 		Comment:   comment,
 		CommentID: comment.ID,
 		IsPrivate: issue.Repo.IsPrivate,
+		Content:   encodeContent(fmt.Sprintf("%d", issue.Index), abbreviatedComment(comment.Content)),
 	}
-
-	truncatedContent, truncatedRight := util.SplitStringAtByteN(comment.Content, 200)
-	if truncatedRight != "" {
-		// in case the content is in a Latin family language, we remove the last broken word.
-		lastSpaceIdx := strings.LastIndex(truncatedContent, " ")
-		if lastSpaceIdx != -1 && (len(truncatedContent)-lastSpaceIdx < 15) {
-			truncatedContent = truncatedContent[:lastSpaceIdx] + "…"
-		}
-	}
-	act.Content = encodeContent(fmt.Sprintf("%d", issue.Index), truncatedContent)
 
 	if issue.IsPull {
 		act.OpType = activities_model.ActionCommentPull
@@ -247,7 +238,7 @@ func (a *actionNotifier) PullRequestReview(ctx context.Context, pr *issues_model
 				actions = append(actions, &activities_model.Action{
 					ActUserID: review.Reviewer.ID,
 					ActUser:   review.Reviewer,
-					Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), strings.Split(comm.Content, "\n")[0]),
+					Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), abbreviatedComment(comm.Content)),
 					OpType:    activities_model.ActionCommentPull,
 					RepoID:    review.Issue.RepoID,
 					Repo:      review.Issue.Repo,
@@ -263,7 +254,7 @@ func (a *actionNotifier) PullRequestReview(ctx context.Context, pr *issues_model
 		action := &activities_model.Action{
 			ActUserID: review.Reviewer.ID,
 			ActUser:   review.Reviewer,
-			Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), strings.Split(comment.Content, "\n")[0]),
+			Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), abbreviatedComment(comment.Content)),
 			RepoID:    review.Issue.RepoID,
 			Repo:      review.Issue.Repo,
 			IsPrivate: review.Issue.Repo.IsPrivate,
@@ -325,7 +316,7 @@ func (*actionNotifier) NotifyPullRevieweDismiss(ctx context.Context, doer *user_
 		ActUserID: doer.ID,
 		ActUser:   doer,
 		OpType:    activities_model.ActionPullReviewDismissed,
-		Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), reviewerName, comment.Content),
+		Content:   encodeContent(fmt.Sprintf("%d", review.Issue.Index), reviewerName, abbreviatedComment(comment.Content)),
 		RepoID:    review.Issue.Repo.ID,
 		Repo:      review.Issue.Repo,
 		IsPrivate: review.Issue.Repo.IsPrivate,
@@ -490,4 +481,21 @@ func encodeContent(params ...string) string {
 		log.Error("encodeContent: Unexpected json encoding error: %v", err)
 	}
 	return string(contentEncoded)
+}
+
+// Given a comment of arbitrary-length Markdown text, create an abbreviated Markdown text appropriate for the
+// activity feed.
+func abbreviatedComment(comment string) string {
+	firstLine := strings.Split(comment, "\n")[0]
+
+	truncatedContent, truncatedRight := util.SplitStringAtByteN(firstLine, 200)
+	if truncatedRight != "" {
+		// in case the content is in a Latin family language, we remove the last broken word.
+		lastSpaceIdx := strings.LastIndex(truncatedContent, " ")
+		if lastSpaceIdx != -1 && (len(truncatedContent)-lastSpaceIdx < 15) {
+			truncatedContent = truncatedContent[:lastSpaceIdx] + "…"
+		}
+	}
+
+	return truncatedContent
 }
