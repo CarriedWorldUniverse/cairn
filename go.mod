@@ -91,7 +91,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ulikunitz/xz v0.5.12
-	github.com/urfave/cli/v3 v3.3.3
+	github.com/urfave/cli/v3 v3.3.9
 	github.com/valyala/fastjson v1.6.4
 	github.com/yohcop/openid-go v1.0.1
 	github.com/yuin/goldmark v1.7.13
