@@ -360,7 +360,7 @@ func getPullInfo(ctx *context.Context) (issue *issues_model.Issue, ok bool) {
 	ctx.Data["Issue"] = issue
 
 	if !issue.IsPull {
-		ctx.NotFound("ViewPullCommits", nil)
+		ctx.Redirect(issue.Link())
 		return nil, false
 	}
 
