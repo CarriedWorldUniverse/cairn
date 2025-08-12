@@ -1,5 +1,8 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
 const {pageData} = window.config;
+
+dayjs.extend(utc);
 
 export const HALF_MINUTE = 30 * 1000;
 export const ONE_MINUTE = 60 * 1000;
@@ -103,8 +106,8 @@ export function DoUpdateRelativeTime(object, now) {
 
   if (!now) now = Date.now();
 
-  const nowJS = dayjs(now);
-  const thenJS = dayjs(absoluteTime);
+  const nowJS = dayjs.utc(now);
+  const thenJS = dayjs.utc(absoluteTime);
 
   object.setAttribute('data-tooltip-content', ABSOLUTE_DATETIME_FORMAT.format(thenJS.toDate()));
 
