@@ -372,7 +372,7 @@ func handleWorkflows(
 			continue
 		}
 
-		jobs, err := jobparser.Parse(dwf.Content, false, jobparser.WithVars(vars))
+		jobs, err := jobParser(dwf.Content, jobparser.WithVars(vars))
 		if err != nil {
 			run.Status = actions_model.StatusFailure
 			log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
