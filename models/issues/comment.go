@@ -795,16 +795,15 @@ func (c *Comment) LoadPushCommits(ctx context.Context) (err error) {
 		}
 		c.OldCommit = data.CommitIDs[0]
 		c.NewCommit = data.CommitIDs[1]
-	} else {
-		gitRepo, closer, err := gitrepo.RepositoryFromContextOrOpen(ctx, c.Issue.Repo)
-		if err != nil {
-			return err
-		}
-		defer closer.Close()
-
-		c.Commits = git_model.ParseCommitsWithStatus(ctx, gitRepo.GetCommitsFromIDs(data.CommitIDs), c.Issue.Repo)
-		c.CommitsNum = int64(len(c.Commits))
 	}
+
+	gitRepo, closer, err := gitrepo.RepositoryFromContextOrOpen(ctx, c.Issue.Repo)
+	if err != nil {
+		return err
+	}
+	defer closer.Close()
+	c.Commits = git_model.ParseCommitsWithStatus(ctx, gitRepo.GetCommitsFromIDs(data.CommitIDs), c.Issue.Repo)
+	c.CommitsNum = int64(len(c.Commits))
 
 	return err
 }

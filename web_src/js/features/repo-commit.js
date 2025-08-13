@@ -22,6 +22,7 @@ export function initCommitStatuses() {
       interactive: true,
       role: 'dialog',
       theme: 'box-with-header',
+      interactiveBorder: element.closest('.forced-push') ? 0 : 20,
     });
   }
 }
