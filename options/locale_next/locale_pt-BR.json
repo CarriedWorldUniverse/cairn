@@ -120,5 +120,8 @@
     "admin.moderation.reports": "Denúncias",
     "admin.moderation.no_open_reports": "Não há denúncias abertas atualmente.",
     "admin.dashboard.remove_resolved_reports": "Remover denúncias resolvidas",
-    "compare.branches.title": "Comparar branches"
+    "compare.branches.title": "Comparar branches",
+    "admin.auths.allow_username_change": "Permitir mudança de nome de usuário",
+    "admin.auths.allow_username_change.description": "Permitir que usuários alterem seus nomes de usuário nas configurações do perfil",
+    "repo.commit.load_tags_failed": "Carregamento de etiquetas falhou devido a um erro interno"
 }

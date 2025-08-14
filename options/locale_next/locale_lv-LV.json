@@ -123,5 +123,14 @@
     "compare.branches.title": "Salīdzināt zarus",
     "admin.auths.allow_username_change": "Atļaut lietotājvārda mainīšanu",
     "repo.commit.load_tags_failed": "Birku ielādēšana neizdevās iekšējas kļūdas dēļ",
-    "admin.auths.allow_username_change.description": "Ļaut lietotājiem profila iestatījumos mainīt savu lietotājvārdu"
+    "admin.auths.allow_username_change.description": "Ļaut lietotājiem profila iestatījumos mainīt savu lietotājvārdu",
+    "warning.repository.out_of_sync": "Šīs glabātavas atspoguļojums datubāzē nav sinhronizēts. Ja šis brīdinājums tiek rādīts pēc iesūtījuma aizgādāšanas šajā glabātavā, jāsazinās ar pārvaldītāju.",
+    "migrate.pagure.description": "Pārcelt datus no pagure.io vai citiem Pagure serveriem.",
+    "migrate.pagure.incorrect_url": "Ir norādīts nepareizs avota glabātavas URL",
+    "migrate.pagure.project_url": "Pagure projekta URL",
+    "migrate.pagure.project_example": "Pagure projekta URL, piem., https://pagure.io/pagure",
+    "migrate.pagure.token_label": "Pilnvara",
+    "migrate.pagure.token_body_a": "Jānorāda Pagura API pilnvara ar piekļuvi privātajiem pieteikumiem, lai izveidotu glabātavu tikai ar privātiem pieteikumiem tajā",
+    "migrate.pagure.token_body_b": "Jāpārliecinās, ka augstāk ir iestatīts privātas glabātavas karogs, ja vēlies, lai šī glabātava būtu privāta",
+    "repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts."
 }
