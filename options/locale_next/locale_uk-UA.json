@@ -123,5 +123,14 @@
     "compare.branches.title": "Порівняти гілки",
     "repo.commit.load_tags_failed": "Завантаження тегів не вдалося через внутрішню помилку",
     "admin.auths.allow_username_change.description": "Дозволити користувачам змінювати ім'я користувача в налаштуваннях профілю",
-    "admin.auths.allow_username_change": "Дозволити змінювати імена"
+    "admin.auths.allow_username_change": "Дозволити змінювати імена",
+    "warning.repository.out_of_sync": "База даних цього репозиторію не синхронізована. Якщо ви знову бачите це попередження після відправлення коміту в цей репозиторій, зверніться до адміністратора.",
+    "repo.pulls.already_merged": "Не вдалося об'єднати: цей запит на злиття вже об'єднано.",
+    "migrate.pagure.description": "Перенести дані з pagure.io або інших екземплярів Pagure.",
+    "migrate.pagure.token_label": "Токен",
+    "migrate.pagure.project_url": "URL-адреса проєкту Pagure",
+    "migrate.pagure.project_example": "URL-адреса проєкту Pagure, наприклад, https://pagure.io/pagure",
+    "migrate.pagure.token_body_b": "Якщо хочете зробити цей репозиторій приватним, обов'язково встановіть прапорець «Приватний репозиторій» вище",
+    "migrate.pagure.incorrect_url": "Вказано неправильну URL-адресу репозиторію-джерела",
+    "migrate.pagure.token_body_a": "Уведіть токен API Pagure з доступом до приватних задач, щоб створити репозиторій, який міститиме лише приватні задачі"
 }

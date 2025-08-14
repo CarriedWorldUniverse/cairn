@@ -123,5 +123,14 @@
     "compare.branches.title": "Porovnat větve",
     "repo.commit.load_tags_failed": "Načtení značek selhalo z důvodu interní chyby",
     "admin.auths.allow_username_change": "Povolit změnu uživatelského jména",
-    "admin.auths.allow_username_change.description": "Povolit uživatelům změnit své uživatelské jméno v nastavení profilu"
+    "admin.auths.allow_username_change.description": "Povolit uživatelům změnit své uživatelské jméno v nastavení profilu",
+    "warning.repository.out_of_sync": "Databázová reprezentace tohoto repozitáře není synchronizovaná. Pokud se toto varování zobrazuje i po odeslání revize do repozitáře, kontaktujte administrátora.",
+    "repo.pulls.already_merged": "Sloučení selhalo: tato žádost již byla sloučena.",
+    "migrate.pagure.description": "Migrovat data z pagure.io nebo jiných instancí Pagure.",
+    "migrate.pagure.incorrect_url": "Byla zadána nesprávná adresa URL zdrojového repozitáře",
+    "migrate.pagure.project_url": "Adresa projektu Pagure",
+    "migrate.pagure.project_example": "Adresa URL projektu Pagure, např. https://pagure.io/pagure",
+    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_body_a": "Zadejte token API Pagure s přístupem k soukromým problémům pro vytvoření repozitáře obsahujícího pouze soukromé problémy",
+    "migrate.pagure.token_body_b": "Nezapomeňte nastavit repozitář jako soukromý výše, pokud chcete, aby byl repozitář soukromý"
 }
