@@ -69,7 +69,7 @@
     "editor.textarea.tab_hint": "此行已缩进。再次按 <kbd>Tab</kbd> 或按 <kbd>Escape</kbd> 退出编辑器。",
     "editor.textarea.shift_tab_hint": "此行无缩进。再次按 <kbd>Shift</kbd> + <kbd>Tab</kbd> 或按 <kbd>Escape</kbd> 退出编辑器。",
     "admin.dashboard.cleanup_offline_runners": "清理离线运行器",
-    "settings.visibility.description": "个人资料可见性设置会影响他人对您的非私有仓库的访问。<a href=\"%s\" target=\"_blank\">了解更多</a>",
+    "settings.visibility.description": "个人资料可见性设置会影响他人对您的非私有仓库的访问。<a href=\"%s\" target=\"_blank\">了解更多</a>。",
     "avatar.constraints_hint": "自定义头像大小不得超过 %[1]s，且分辨率不得大于 %[2]d×%[3]d 像素",
     "keys.ssh.link": "SSH 密钥",
     "keys.gpg.link": "GPG 密钥",
@@ -82,5 +82,14 @@
     "repo.settings.push_mirror.branch_filter.label": "分支过滤器（可选）",
     "repo.settings.push_mirror.branch_filter.description": "欲镜像的分支。留空以镜像所有分支。关于语法的更多信息，请参见 <a href=\"%[1]s\">%[2]s 文档</a>。例如：<code>main, release/*</code>",
     "mail.actions.run_info_sha": "提交：%[1]s",
-    "discussion.sidebar.reference": "引用"
+    "discussion.sidebar.reference": "引用",
+    "admin.dashboard.remove_resolved_reports": "移除已解决的举报",
+    "compare.branches.title": "比较分支",
+    "admin.auths.allow_username_change.description": "允许用户在个人设置中更改用户名",
+    "admin.moderation.moderation_reports": "举报",
+    "admin.moderation.reports": "举报",
+    "admin.moderation.no_open_reports": "目前没有打开的举报。",
+    "admin.moderation.deleted_content_ref": "类型为 %[1]v、ID为 %[2]d 的举报不存在",
+    "repo.commit.load_tags_failed": "由于内部错误，无法加载标签",
+    "admin.auths.allow_username_change": "允许更改用户名"
 }

@@ -32,19 +32,19 @@
     "relativetime.now": "ngayon",
     "relativetime.mins": {
         "one": "%d minuto ang nakalipas",
-        "other": "%d minuto ang nakalipas"
+        "other": "%d (na) minuto ang nakalipas"
     },
     "relativetime.days": {
         "one": "%d araw ang nakalipas",
-        "other": "%d araw ang nakalipas"
+        "other": "%d (na) araw ang nakalipas"
     },
     "relativetime.weeks": {
         "one": "%d linggo ang nakalipas",
-        "other": "%d linggo ang nakalipas"
+        "other": "%d (na) linggo ang nakalipas"
     },
     "relativetime.years": {
         "one": "%d taon ang nakalipas",
-        "other": "%d taon ang nakalipas"
+        "other": "%d (na) taon ang nakalipas"
     },
     "relativetime.2days": "2 araw ang nakalipas",
     "relativetime.2weeks": "2 linggo ang nakalipas",
@@ -54,12 +54,12 @@
     "relativetime.2years": "2 taon ang nakalipas",
     "relativetime.1day": "kahapon",
     "relativetime.hours": {
-        "one": "%d oras ang nakalipas",
-        "other": "%d oras ang nakalipas"
+        "one": "%d kras ang nakalipas",
+        "other": "%d (na) oras ang nakalipas"
     },
     "relativetime.months": {
         "one": "%d buwan ang nakalipas",
-        "other": "%d buwan ang nakalipas"
+        "other": "%d (na) buwan ang nakalipas"
     },
     "discussion.locked": "Naka-kandado ang pag-uusap na ito. Nilimitahan ang pagkomento sa mga tagatulong.",
     "relativetime.1month": "nakaraang buwan",
@@ -115,5 +115,14 @@
     "compare.branches.title": "Ikumpara ang mga branch",
     "repo.commit.load_tags_failed": "Nabigo ang pag-load ng mga tag dahil sa isang panloob na error",
     "admin.auths.allow_username_change": "Payagan ang pagpalit ng username",
-    "admin.auths.allow_username_change.description": "Payagan ang mga user na palitan ang kanilang username sa mga setting ng profile"
+    "admin.auths.allow_username_change.description": "Payagan ang mga user na palitan ang kanilang username sa mga setting ng profile",
+    "warning.repository.out_of_sync": "Wala sa pag-sync ang database na representasyon ng repositoryong ito. Kung pinapakita pa rin ang babala na ito pagkagapos magtulak ng commit sa repositoryong ito, makipagugnayan sa tagapangasiwa.",
+    "repo.pulls.already_merged": "Nabigo ang pagsasama: Naisama na ang hiling sa paghila na ito.",
+    "migrate.pagure.incorrect_url": "Maling pinagmulang URL ng repositoryo ang ibinigay",
+    "migrate.pagure.project_url": "URL ng Pagure na proyekto",
+    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_body_a": "Magbigay ng Pagure API token na may access sa mga pribadong isyu para gumawa ng repositoryo na may mga pribadong isyu lang",
+    "migrate.pagure.project_example": "Ang URL ng Pagure na proyekto, hal. https://pagure.io/pagure",
+    "migrate.pagure.token_body_b": "Siguraduhin na itakda ang pribadong repositoryo na flag sa itaas kung gusto mo na pribado ang repositoryong ito",
+    "migrate.pagure.description": "Mag-migrate ng data mula sa pagure.io o sa ibang mga Pagure na instansya."
 }

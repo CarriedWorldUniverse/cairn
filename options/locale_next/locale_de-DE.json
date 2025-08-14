@@ -114,6 +114,15 @@
     "admin.dashboard.remove_resolved_reports": "Erledigte Meldungen entfernen",
     "compare.branches.title": "Branches vergleichen",
     "repo.commit.load_tags_failed": "Laden von Tags aufgrund eines internen Fehlers fehlgeschlagen",
-    "admin.auths.allow_username_change": "Erlaube Benutzernamenswechsel",
-    "admin.auths.allow_username_change.description": "Erlaube Benutzern, ihren Benutzernamen in den Profileinstellungen zu ändern"
+    "admin.auths.allow_username_change": "Benutzernamen ändern zulassen",
+    "admin.auths.allow_username_change.description": "Benutzern erlauben, ihren Benutzernamen in den Profileinstellungen zu ändern",
+    "warning.repository.out_of_sync": "Die Datenbankdarstellung dieses Repositorys ist nicht synchronisiert. Falls diese Warnung immer noch angezeigt wird, nachdem ein Commit zu diesem Repository gepusht wurde, kontaktieren Sie den Administrator.",
+    "migrate.pagure.token_body_b": "Stellen Sie sicher, dass das Flag für private Repos oben gesetzt ist, wenn Sie möchten, dass dieses Repo privat ist",
+    "repo.pulls.already_merged": "Zusammenführung fehlgeschlagen. Der Pull-Request wurde bereits zusammengeführt.",
+    "migrate.pagure.incorrect_url": "Falsche Quellrepository-URL wurde angegeben",
+    "migrate.pagure.token_body_a": "Stellen Sie ein Pagure-API-Token mit Zugriff auf die privaten Issues zur Verfügung, um ein Repository mit nur den privaten Issues darin zu erstellen",
+    "migrate.pagure.project_example": "Die URL des Pagure-Projekts, z. B. https://pagure.io/pagure",
+    "migrate.pagure.description": "Daten von pagure.io oder anderen Pagure-Instanzen migrieren.",
+    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.project_url": "Pagure-Projekt-URL"
 }

@@ -115,5 +115,14 @@
     "compare.branches.title": "Twiegen verglieken",
     "repo.commit.load_tags_failed": "Kunn de Markens um eenen binnern Fehler nich laden",
     "admin.auths.allow_username_change.description": "Verlööv Brukers, hör Brukernaam in de Profil-Instellens to ännern",
-    "admin.auths.allow_username_change": "Brukernaam-Ännern verlöven"
+    "admin.auths.allow_username_change": "Brukernaam-Ännern verlöven",
+    "warning.repository.out_of_sync": "De Datenbank-Tostand vun deesem Repositorium is verschuven. Wenn deese Wahrschau immer noch wiest word, nadeem een Kommitteren to deesem Repositorium schuven word, kuntakteer de Sied-Chef.",
+    "repo.pulls.already_merged": "Tosamenföhren fehlslagen: Deeser Haalvörslag is al tosamenföhrt worden.",
+    "migrate.pagure.description": "Daten vun pagure.io of anner Pagure-Instanzen umtrecken.",
+    "migrate.pagure.project_url": "Pagure-Projekt-URL",
+    "migrate.pagure.project_example": "De URL vum Projekt up Pagure, to’n Bispööl https://pagure.io/pagure",
+    "migrate.pagure.token_label": "Teken",
+    "migrate.pagure.token_body_b": "Wees wiss, boven the Flagg för een privaates Repo to setten, wenn du willst, dat deeses Repo privaat wesen sall",
+    "migrate.pagure.incorrect_url": "Ungültige Quell-Repositoriums-URL is angeven worden",
+    "migrate.pagure.token_body_a": "Giff een Pagure-API-Teken mit Togang to de privaaten Gefallens an, um een Repositorium mit blots the privaaten Gefallens daarin to maken"
 }
