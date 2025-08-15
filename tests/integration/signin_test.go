@@ -5,11 +5,13 @@
 package integration
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 
+	"forgejo.org/models/auth"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/setting"
@@ -138,6 +140,139 @@ func TestDisableSignin(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			req := NewRequest(t, "POST", "/user/login")
 			MakeRequest(t, req, http.StatusOK)
+		})
+	})
+}
+
+func TestGlobalTwoFactorRequirement(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	locale := translation.NewLocale("en-US")
+
+	adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
+
+	runTest := func(t *testing.T, user *user_model.User, useTOTP, loginAllowed bool) {
+		t.Helper()
+		defer unittest.AssertSuccessfulDelete(t, &auth.TwoFactor{UID: user.ID})
+
+		session := loginUserMaybeTOTP(t, user, useTOTP)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/%s", user.Name))
+
+		if loginAllowed {
+			session.MakeRequest(t, req, http.StatusOK)
+
+			// not found page
+			req = NewRequest(t, "GET", "/absolutly/not/found")
+			req.Header.Add("Accept", "text/html")
+			resp := session.MakeRequest(t, req, http.StatusNotFound)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			assert.Greater(t, htmlDoc.Find(".navbar-left > a.item").Length(), 1) // show the Logo, and other links
+			assert.Greater(t, htmlDoc.Find(".navbar-right .user-menu a.item").Length(), 1)
+
+			// 500 page
+			reset := enableDevtest()
+			req = NewRequest(t, "GET", "/devtest/error/500")
+			req.Header.Add("Accept", "text/html")
+			resp = session.MakeRequest(t, req, http.StatusInternalServerError)
+			htmlDoc = NewHTMLParser(t, resp.Body)
+			assert.Equal(t, 1, htmlDoc.Find(".navbar-left > a.item").Length())
+			htmlDoc.AssertElement(t, ".navbar-right", false)
+			reset()
+		} else {
+			resp := session.MakeRequest(t, req, http.StatusSeeOther)
+			assert.Equal(t, "/user/settings/security", resp.Header().Get("Location"))
+
+			// not found page
+			req = NewRequest(t, "GET", "/absolutly/not/found")
+			req.Header.Add("Accept", "text/html")
+			resp = session.MakeRequest(t, req, http.StatusNotFound)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			assert.Equal(t, 1, htmlDoc.Find(".navbar-left > a.item").Length()) // only show the Logo, no other links
+
+			userLinks := htmlDoc.Find(".navbar-right .user-menu a.item")
+			assert.Equal(t, 1, userLinks.Length()) // only logout link
+			assert.Equal(t, "Sign out", strings.TrimSpace(userLinks.Text()))
+
+			// 500 page
+			reset := enableDevtest()
+			req = NewRequest(t, "GET", "/devtest/error/500")
+			req.Header.Add("Accept", "text/html")
+			resp = session.MakeRequest(t, req, http.StatusInternalServerError)
+			htmlDoc = NewHTMLParser(t, resp.Body)
+			assert.Equal(t, 1, htmlDoc.Find(".navbar-left > a.item").Length())
+			htmlDoc.AssertElement(t, ".navbar-right", false)
+			reset()
+
+			// 2fa page
+			req = NewRequest(t, "GET", "/user/settings/security")
+			resp = session.MakeRequest(t, req, http.StatusOK)
+			htmlDoc = NewHTMLParser(t, resp.Body)
+			assert.Equal(t, locale.TrString("settings.must_enable_2fa"), htmlDoc.Find(".ui.red.message").Text())
+			assert.Equal(t, 1, htmlDoc.Find(".navbar-left > a.item").Length()) // only show the Logo, no other links
+
+			userLinks = htmlDoc.Find(".navbar-right .user-menu a.item")
+			assert.Equal(t, 1, userLinks.Length()) // only logout link
+			assert.Equal(t, "Sign out", strings.TrimSpace(userLinks.Text()))
+
+			assert.Equal(t, 0, htmlDoc.FindByText("a", locale.TrString("settings.twofa_reenroll")).Length())
+
+			headings := htmlDoc.Find(".user-setting-content h4.attached.header")
+			assert.Equal(t, 2, headings.Length())
+			assert.Equal(t, locale.TrString("settings.twofa"), strings.TrimSpace(headings.First().Text()))
+			assert.Equal(t, locale.TrString("settings.webauthn"), strings.TrimSpace(headings.Last().Text()))
+		}
+	}
+
+	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, true)
+			runTest(t, normalUser, false, true)
+			runTest(t, restrictedUser, false, true)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, restrictedUser, true, true)
+		})
+	})
+
+	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, false)
+			runTest(t, normalUser, false, false)
+			runTest(t, restrictedUser, false, false)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, restrictedUser, true, true)
+		})
+	})
+
+	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, false)
+			runTest(t, normalUser, false, true)
+			runTest(t, restrictedUser, false, true)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, restrictedUser, true, true)
 		})
 	})
 }

@@ -1,7 +1,11 @@
-{{template "user/settings/layout_head" (dict "ctxData" . "pageClass" "user settings twofa")}}
+{{template "user/settings/layout_head" (dict "ctxData" . "pageClass" "user settings twofa" "HideNavbarLinks" .HideNavbarLinks)}}
 	<div class="user-setting-content">
 		<h4 class="ui top attached header">
-			{{ctx.Locale.Tr "settings.twofa_enroll"}}
+			{{if .ReenrollTwofa}}
+				{{ctx.Locale.Tr "settings.twofa_reenroll"}}
+			{{else}}
+				{{ctx.Locale.Tr "settings.twofa_enroll"}}
+			{{end}}
 		</h4>
 		<div class="ui attached segment">
 			<p>{{ctx.Locale.Tr "settings.scan_this_image"}}</p>

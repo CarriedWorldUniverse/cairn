@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
@@ -35,18 +36,37 @@ func Home(ctx *context.Context) {
 		if !ctx.Doer.IsActive && setting.Service.RegisterEmailConfirm {
 			ctx.Data["Title"] = ctx.Tr("auth.active_your_account")
 			ctx.HTML(http.StatusOK, auth.TplActivate)
-		} else if !ctx.Doer.IsActive || ctx.Doer.ProhibitLogin {
+			return
+		}
+		if !ctx.Doer.IsActive || ctx.Doer.ProhibitLogin {
 			log.Info("Failed authentication attempt for %s from %s", ctx.Doer.Name, ctx.RemoteAddr())
 			ctx.Data["Title"] = ctx.Tr("auth.prohibit_login")
 			ctx.HTML(http.StatusOK, "user/auth/prohibit_login")
-		} else if ctx.Doer.MustChangePassword {
+			return
+		}
+		if ctx.Doer.MustChangePassword {
 			ctx.Data["Title"] = ctx.Tr("auth.must_change_password")
 			ctx.Data["ChangePasscodeLink"] = setting.AppSubURL + "/user/change_password"
 			middleware.SetRedirectToCookie(ctx.Resp, setting.AppSubURL+ctx.Req.URL.RequestURI())
 			ctx.Redirect(setting.AppSubURL + "/user/settings/change_password")
-		} else {
-			user.Dashboard(ctx)
+			return
 		}
+		if ctx.Doer.MustHaveTwoFactor() {
+			hasTwoFactor, err := auth_model.HasTwoFactorByUID(ctx, ctx.Doer.ID)
+			if err != nil {
+				ctx.Data["Title"] = ctx.Tr("auth.prohibit_login")
+				log.Error("Error getting 2fa: %s", err)
+				ctx.Error(http.StatusInternalServerError, "HasTwoFactorByUID", err.Error())
+				return
+			}
+			if !hasTwoFactor {
+				ctx.Data["Title"] = ctx.Tr("auth.prohibit_login")
+				ctx.Redirect(setting.AppSubURL + "/user/settings/security")
+				return
+			}
+		}
+
+		user.Dashboard(ctx)
 		return
 		// Check non-logged users landing page.
 	} else if setting.LandingPageURL != setting.LandingPageHome {

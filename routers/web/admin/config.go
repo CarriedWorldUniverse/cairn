@@ -128,6 +128,7 @@ func Config(ctx *context.Context) {
 	ctx.Data["AppBuiltWith"] = setting.AppBuiltWith
 	ctx.Data["Domain"] = setting.Domain
 	ctx.Data["OfflineMode"] = setting.OfflineMode
+	ctx.Data["GlobalTwoFactorRequirement"] = setting.GlobalTwoFactorRequirement
 	ctx.Data["RunUser"] = setting.RunUser
 	ctx.Data["RunMode"] = util.ToTitleCase(setting.RunMode)
 	ctx.Data["GitVersion"] = git.VersionInfo()

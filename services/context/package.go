@@ -97,7 +97,7 @@ func determineAccessMode(ctx *Base, pkg *Package, doer *user_model.User) (perm.A
 		return perm.AccessModeNone, nil
 	}
 
-	if doer != nil && !doer.IsGhost() && (!doer.IsActive || doer.ProhibitLogin) {
+	if doer != nil && !doer.IsGhost() && !doer.IsAccessAllowed(ctx) {
 		return perm.AccessModeNone, nil
 	}
 

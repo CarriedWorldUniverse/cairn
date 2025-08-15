@@ -637,6 +637,145 @@ func TestGetAllAdmins(t *testing.T) {
 	assert.Equal(t, int64(1), admins[0].ID)
 }
 
+func TestMustHaveTwoFactor(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 17})
+	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
+	ghostUser := user_model.NewGhostUser()
+
+	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+		// this should be the default, so don't have to set the variable
+		assert.False(t, adminUser.MustHaveTwoFactor())
+		assert.False(t, normalUser.MustHaveTwoFactor())
+		assert.False(t, restrictedUser.MustHaveTwoFactor())
+		assert.False(t, org.MustHaveTwoFactor())
+		assert.False(t, ghostUser.MustHaveTwoFactor())
+	})
+
+	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+		assert.True(t, adminUser.MustHaveTwoFactor())
+		assert.True(t, normalUser.MustHaveTwoFactor())
+		assert.True(t, restrictedUser.MustHaveTwoFactor())
+		assert.False(t, org.MustHaveTwoFactor())
+		assert.True(t, ghostUser.MustHaveTwoFactor())
+	})
+
+	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+		assert.True(t, adminUser.MustHaveTwoFactor())
+		assert.False(t, normalUser.MustHaveTwoFactor())
+		assert.False(t, restrictedUser.MustHaveTwoFactor())
+		assert.False(t, org.MustHaveTwoFactor())
+		assert.False(t, ghostUser.MustHaveTwoFactor())
+	})
+}
+
+func TestIsAccessAllowed(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	runTest := func(t *testing.T, user *user_model.User, useTOTP, accessAllowed bool) {
+		t.Helper()
+		if useTOTP {
+			unittest.AssertSuccessfulInsert(t, &auth.TwoFactor{UID: user.ID})
+			defer unittest.AssertSuccessfulDelete(t, &auth.TwoFactor{UID: user.ID})
+		}
+
+		assert.Equal(t, accessAllowed, user.IsAccessAllowed(t.Context()))
+	}
+
+	adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	inactiveUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 9})
+	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 17})
+	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
+	prohibitLoginUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 37})
+	ghostUser := user_model.NewGhostUser()
+
+	// users with enabled WebAuthn
+	normalWebAuthnUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 32})
+
+	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+		// this should be the default, so don't have to set the variable
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, true)
+			runTest(t, normalUser, false, true)
+			runTest(t, inactiveUser, false, false)
+			runTest(t, org, false, true)
+			runTest(t, restrictedUser, false, true)
+			runTest(t, prohibitLoginUser, false, false)
+			runTest(t, ghostUser, false, false)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, normalWebAuthnUser, false, true)
+
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, inactiveUser, true, false)
+			runTest(t, org, true, true)
+			runTest(t, restrictedUser, true, true)
+			runTest(t, prohibitLoginUser, true, false)
+		})
+	})
+
+	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, false)
+			runTest(t, normalUser, false, false)
+			runTest(t, inactiveUser, false, false)
+			runTest(t, org, false, true)
+			runTest(t, restrictedUser, false, false)
+			runTest(t, prohibitLoginUser, false, false)
+			runTest(t, ghostUser, false, false)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, normalWebAuthnUser, false, true)
+
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, inactiveUser, true, false)
+			runTest(t, org, true, true)
+			runTest(t, restrictedUser, true, true)
+			runTest(t, prohibitLoginUser, true, false)
+		})
+	})
+
+	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, false)
+			runTest(t, normalUser, false, true)
+			runTest(t, inactiveUser, false, false)
+			runTest(t, org, false, true)
+			runTest(t, restrictedUser, false, true)
+			runTest(t, prohibitLoginUser, false, false)
+			runTest(t, ghostUser, false, false)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, normalWebAuthnUser, false, true)
+
+			runTest(t, adminUser, true, true)
+			runTest(t, normalUser, true, true)
+			runTest(t, inactiveUser, true, false)
+			runTest(t, org, true, true)
+			runTest(t, restrictedUser, true, true)
+			runTest(t, prohibitLoginUser, true, false)
+		})
+	})
+}
+
 func Test_ValidateUser(t *testing.T) {
 	defer test.MockVariableValue(&setting.Service.AllowedUserVisibilityModesSlice, []bool{true, false, true})()
 

@@ -6,9 +6,11 @@ package web
 
 import (
 	gocontext "context"
+	"fmt"
 	"net/http"
 	"strings"
 
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/perm"
 	quota_model "forgejo.org/models/quota"
 	"forgejo.org/models/unit"
@@ -169,6 +171,19 @@ func verifyAuthWithOptions(options *common.VerifyOptions) func(ctx *context.Cont
 				ctx.Redirect(setting.AppSubURL + "/")
 				return
 			}
+
+			if ctx.Doer.MustHaveTwoFactor() && !strings.HasPrefix(ctx.Req.URL.Path, "/user/settings/security") {
+				hasTwoFactor, err := auth_model.HasTwoFactorByUID(ctx, ctx.Doer.ID)
+				if err != nil {
+					log.Error("Error getting 2fa: %s", err)
+					ctx.Error(http.StatusInternalServerError, "HasTwoFactorByUID", err.Error())
+					return
+				}
+				if !hasTwoFactor {
+					ctx.Redirect(setting.AppSubURL + "/user/settings/security")
+					return
+				}
+			}
 		}
 
 		// Redirect to dashboard (or alternate location) if user tries to visit any non-login page.
@@ -307,6 +322,20 @@ func registerRoutes(m *web.Route) {
 			ctx.Error(http.StatusForbidden)
 			return
 		}
+	}
+
+	requiredTwoFactor := func(ctx *context.Context) {
+		if !ctx.Doer.MustHaveTwoFactor() {
+			return
+		}
+
+		hasTwoFactor, err := auth_model.HasTwoFactorByUID(ctx, ctx.Doer.ID)
+		if err != nil {
+			ctx.Error(http.StatusInternalServerError, fmt.Sprintf("Error getting 2fa: %s", err))
+			return
+		}
+		ctx.Data["MustEnableTwoFactor"] = !hasTwoFactor
+		ctx.Data["HideNavbarLinks"] = !hasTwoFactor
 	}
 
 	openIDSignInEnabled := func(ctx *context.Context) {
@@ -564,6 +593,8 @@ func registerRoutes(m *web.Route) {
 				m.Post("/disable", security.DisableTwoFactor)
 				m.Get("/enroll", security.EnrollTwoFactor)
 				m.Post("/enroll", web.Bind(forms.TwoFactorAuthForm{}), security.EnrollTwoFactorPost)
+				m.Get("/reenroll", security.ReenrollTwoFactor)
+				m.Post("/reenroll", web.Bind(forms.TwoFactorAuthForm{}), security.ReenrollTwoFactorPost)
 			})
 			m.Group("/webauthn", func() {
 				m.Post("/request_register", web.Bind(forms.WebauthnRegistrationForm{}), security.WebAuthnRegister)
@@ -576,7 +607,7 @@ func registerRoutes(m *web.Route) {
 				m.Post("/toggle_visibility", security.ToggleOpenIDVisibility)
 			}, openIDSignInEnabled)
 			m.Post("/account_link", linkAccountEnabled, security.DeleteAccountLink)
-		})
+		}, requiredTwoFactor)
 
 		m.Group("/applications", func() {
 			// oauth2 applications

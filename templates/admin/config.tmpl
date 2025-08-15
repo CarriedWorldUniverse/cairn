@@ -52,6 +52,16 @@
 		</div>
 
 		<h4 class="ui top attached header">
+			{{ctx.Locale.Tr "admin.config.security"}}
+		</h4>
+		<div class="ui attached table segment">
+			<dl class="admin-dl-horizontal">
+				<dt>{{ctx.Locale.Tr "admin.config.global_2fa_requirement.title"}}</dt>
+				<dd>{{ctx.Locale.Tr (print "admin.config.global_2fa_requirement." .GlobalTwoFactorRequirement)}}</dd>
+			</dl>
+		</div>
+
+		<h4 class="ui top attached header">
 			{{ctx.Locale.Tr "admin.config.ssh_config"}}
 		</h4>
 		<div class="ui attached table segment">

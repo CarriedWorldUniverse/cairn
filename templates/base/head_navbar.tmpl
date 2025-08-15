@@ -24,7 +24,7 @@
 		</div>
 
 		<!-- navbar links non-mobile -->
-		{{if and .IsSigned .MustChangePassword}}
+		{{if and .IsSigned .HideNavbarLinks}}
 			{{/* No links */}}
 		{{else if .IsSigned}}
 			{{if not .UnitIssuesGlobalDisabled}}
@@ -54,7 +54,7 @@
 
 	<!-- the full dropdown menus -->
 	<div class="navbar-right ui secondary menu">
-		{{if and .IsSigned .MustChangePassword}}
+		{{if and .IsSigned .HideNavbarLinks}}
 			<div class="ui dropdown jump item" data-tooltip-content="{{ctx.Locale.Tr "user_profile_and_more"}}">
 				<span class="text tw-flex tw-items-center">
 					{{ctx.AvatarUtils.Avatar .SignedUser 24 "tw-mr-1"}}

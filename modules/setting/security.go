@@ -20,6 +20,7 @@ var (
 	SecretKey                          string
 	InternalToken                      string // internal access token
 	LogInRememberDays                  int
+	GlobalTwoFactorRequirement         TwoFactorRequirementType
 	CookieRememberName                 string
 	ReverseProxyAuthUser               string
 	ReverseProxyAuthEmail              string
@@ -113,6 +114,8 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	}
 	keying.Init([]byte(SecretKey))
 
+	GlobalTwoFactorRequirement = NewTwoFactorRequirementType(sec.Key("GLOBAL_TWO_FACTOR_REQUIREMENT").String())
+
 	CookieRememberName = sec.Key("COOKIE_REMEMBER_NAME").MustString("gitea_incredible")
 
 	ReverseProxyAuthUser = sec.Key("REVERSE_PROXY_AUTHENTICATION_USER").MustString("X-WEBAUTH-USER")
@@ -170,4 +173,40 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	if sectionHasDisableQueryAuthToken && !DisableQueryAuthToken {
 		log.Warn("Enabling Query API Auth tokens is not recommended. DISABLE_QUERY_AUTH_TOKEN will be removed in Forgejo v13.0.0.")
 	}
+}
+
+type TwoFactorRequirementType string
+
+// llu:TrKeysSuffix admin.config.global_2fa_requirement.
+const (
+	NoneTwoFactorRequirement  TwoFactorRequirementType = "none"
+	AllTwoFactorRequirement   TwoFactorRequirementType = "all"
+	AdminTwoFactorRequirement TwoFactorRequirementType = "admin"
+)
+
+func NewTwoFactorRequirementType(twoFactorRequirement string) TwoFactorRequirementType {
+	switch twoFactorRequirement {
+	case AllTwoFactorRequirement.String():
+		return AllTwoFactorRequirement
+	case AdminTwoFactorRequirement.String():
+		return AdminTwoFactorRequirement
+	default:
+		return NoneTwoFactorRequirement
+	}
+}
+
+func (r TwoFactorRequirementType) String() string {
+	return string(r)
+}
+
+func (r TwoFactorRequirementType) IsNone() bool {
+	return r == NoneTwoFactorRequirement
+}
+
+func (r TwoFactorRequirementType) IsAll() bool {
+	return r == AllTwoFactorRequirement
+}
+
+func (r TwoFactorRequirementType) IsAdmin() bool {
+	return r == AdminTwoFactorRequirement
 }

@@ -853,32 +853,6 @@ func TestUserTOTPEnrolled(t *testing.T) {
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	session := loginUser(t, user.Name)
 
-	enrollTOTP := func(t *testing.T) {
-		t.Helper()
-
-		req := NewRequest(t, "GET", "/user/settings/security/two_factor/enroll")
-		resp := session.MakeRequest(t, req, http.StatusOK)
-
-		htmlDoc := NewHTMLParser(t, resp.Body)
-		totpSecretKey, has := htmlDoc.Find(".twofa img[src^='data:image/png;base64']").Attr("alt")
-		assert.True(t, has)
-
-		currentTOTP, err := totp.GenerateCode(totpSecretKey, time.Now())
-		require.NoError(t, err)
-
-		req = NewRequestWithValues(t, "POST", "/user/settings/security/two_factor/enroll", map[string]string{
-			"_csrf":    htmlDoc.GetCSRF(),
-			"passcode": currentTOTP,
-		})
-		session.MakeRequest(t, req, http.StatusSeeOther)
-
-		flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
-		assert.NotNil(t, flashCookie)
-		assert.Contains(t, flashCookie.Value, "success%3DYour%2Baccount%2Bhas%2Bbeen%2Bsuccessfully%2Benrolled.")
-
-		unittest.AssertSuccessfulDelete(t, &auth_model.TwoFactor{UID: user.ID})
-	}
-
 	t.Run("No WebAuthn enabled", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
@@ -891,7 +865,8 @@ func TestUserTOTPEnrolled(t *testing.T) {
 			called = true
 		})()
 
-		enrollTOTP(t)
+		session.EnrollTOTP(t)
+		unittest.AssertSuccessfulDelete(t, &auth_model.TwoFactor{UID: user.ID})
 
 		assert.True(t, called)
 	})
@@ -909,9 +884,119 @@ func TestUserTOTPEnrolled(t *testing.T) {
 		})()
 
 		unittest.AssertSuccessfulInsert(t, &auth_model.WebAuthnCredential{UserID: user.ID, Name: "Cueball's primary key"})
-		enrollTOTP(t)
+		session.EnrollTOTP(t)
+		unittest.AssertSuccessfulDelete(t, &auth_model.TwoFactor{UID: user.ID})
 
 		assert.True(t, called)
+	})
+}
+
+func TestUserTOTPReenroll(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	session := loginUser(t, user.Name)
+
+	resp := session.MakeRequest(t, NewRequest(t, "GET", "/user/settings/security/two_factor/reenroll"), http.StatusSeeOther)
+	assert.Equal(t, "/user/settings/security", resp.Header().Get("Location"))
+
+	session.EnrollTOTP(t)
+
+	resp = session.MakeRequest(t, NewRequest(t, "GET", "/user/settings/security/two_factor/reenroll"), http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	totpSecretKey, has := htmlDoc.Find(".twofa img[src^='data:image/png;base64']").Attr("alt")
+	assert.True(t, has)
+
+	currentTOTP, err := totp.GenerateCode(totpSecretKey, time.Now())
+	require.NoError(t, err)
+
+	req := NewRequestWithValues(t, "POST", "/user/settings/security/two_factor/reenroll", map[string]string{
+		"_csrf":    htmlDoc.GetCSRF(),
+		"passcode": currentTOTP,
+	})
+	session.MakeRequest(t, req, http.StatusSeeOther)
+
+	flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+	assert.NotNil(t, flashCookie)
+	assert.Contains(t, flashCookie.Value, "success%3DYour%2Baccount%2Bhas%2Bbeen%2Bsuccessfully%2Benrolled.")
+}
+
+func TestUserTOTPDisable(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	runTest := func(t *testing.T, user *user_model.User, useTOTP, disableAllowed bool, status int, flashMessage string) {
+		t.Helper()
+		defer unittest.AssertSuccessfulDelete(t, &auth_model.TwoFactor{UID: user.ID})
+
+		session := loginUserMaybeTOTP(t, user, useTOTP)
+
+		resp := session.MakeRequest(t, NewRequest(t, "GET", "user/settings/security"), http.StatusOK)
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		htmlDoc.AssertElement(t, "#disable-form", disableAllowed)
+
+		req := NewRequestWithValues(t, "POST", "user/settings/security/two_factor/disable", map[string]string{
+			"_csrf": htmlDoc.GetCSRF(),
+		})
+		if status == http.StatusSeeOther {
+			resp := session.MakeRequest(t, req, http.StatusSeeOther)
+			assert.Equal(t, "/user/settings/security", resp.Header().Get("Location"))
+		} else {
+			session.MakeRequest(t, req, status)
+		}
+		if flashMessage != "" {
+			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			assert.NotNil(t, flashCookie)
+			if disableAllowed {
+				assert.Contains(t, flashCookie.Value, fmt.Sprintf("success%%3D%s", flashMessage))
+			} else {
+				assert.Contains(t, flashCookie.Value, fmt.Sprintf("error%%3D%s", flashMessage))
+			}
+		}
+	}
+
+	adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
+
+	const twofaNotEnrolled = "Your%2Baccount%2Bis%2Bnot%2Bcurrently%2Benrolled%2Bin%2Btwo-factor%2Bauthentication."
+	const twofaDisabled = "Two-factor%2Bauthentication%2Bhas%2Bbeen%2Bdisabled."
+
+	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, false, http.StatusSeeOther, twofaNotEnrolled)
+			runTest(t, normalUser, false, false, http.StatusSeeOther, twofaNotEnrolled)
+			runTest(t, restrictedUser, false, false, http.StatusSeeOther, twofaNotEnrolled)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, true, http.StatusSeeOther, twofaDisabled)
+			runTest(t, normalUser, true, true, http.StatusSeeOther, twofaDisabled)
+			runTest(t, restrictedUser, true, true, http.StatusSeeOther, twofaDisabled)
+		})
+	})
+
+	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+		runTest(t, adminUser, true, false, http.StatusNotFound, "")
+		runTest(t, normalUser, true, false, http.StatusNotFound, "")
+		runTest(t, restrictedUser, true, false, http.StatusNotFound, "")
+	})
+
+	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, normalUser, false, false, http.StatusSeeOther, twofaNotEnrolled)
+			runTest(t, restrictedUser, false, false, http.StatusSeeOther, twofaNotEnrolled)
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, false, http.StatusNotFound, "")
+			runTest(t, normalUser, true, true, http.StatusSeeOther, twofaDisabled)
+			runTest(t, restrictedUser, true, true, http.StatusSeeOther, twofaDisabled)
+		})
 	})
 }
 
