@@ -349,3 +349,19 @@ test.describe('Dependency dropdown', () => {
     await expect(depsBlock).toContainText('No dependencies set');
   });
 });
+
+test('Issue: Reference', async ({page}) => {
+  let response = await page.goto('/user2/repo1/pulls/5');
+  expect(response?.status()).toBe(200);
+
+  await expect(page.locator('.ui.reference .truncate')).toContainText(
+    'user2/repo1!5',
+  );
+
+  response = await page.goto('/user2/repo1/issues/1');
+  expect(response?.status()).toBe(200);
+
+  await expect(page.locator('.ui.reference .truncate')).toContainText(
+    'user2/repo1#1',
+  );
+});
