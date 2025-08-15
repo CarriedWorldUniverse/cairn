@@ -5,12 +5,19 @@ package integration
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"testing"
 
 	asymkey_model "forgejo.org/models/asymkey"
+	"forgejo.org/models/auth"
 	"forgejo.org/models/perm"
+	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/private"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
+	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -150,5 +157,92 @@ func TestAPIPrivateServ(t *testing.T) {
 		assert.Equal(t, "user15", results.OwnerName)
 		assert.Equal(t, "big_test_private_2", results.RepoName)
 		assert.Equal(t, int64(20), results.RepoID)
+	})
+}
+
+func TestAPIPrivateServAndNoServWithRequiredTwoFactor(t *testing.T) {
+	onGiteaRun(t, func(*testing.T, *url.URL) {
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		runTest := func(t *testing.T, user *user_model.User, useTOTP, servAllowed bool) {
+			t.Helper()
+			repo, _, reset := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{})
+			defer reset()
+
+			pubKey, err := asymkey_model.AddPublicKey(ctx, user.ID, "tmp-key-"+user.Name, "sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBGXEEzWmm1dxb+57RoK5KVCL0w2eNv9cqJX2AGGVlkFsVDhOXHzsadS3LTK4VlEbbrDMJdoti9yM8vclA8IeRacAAAAEc3NoOg== nocomment", 0)
+			require.NoError(t, err)
+			defer unittest.AssertSuccessfulDelete(t, &asymkey_model.PublicKey{ID: pubKey.ID})
+
+			if useTOTP {
+				session := loginUser(t, user.Name)
+				session.EnrollTOTP(t)
+				session.MakeRequest(t, NewRequest(t, "POST", "/user/logout"), http.StatusOK)
+				defer unittest.AssertSuccessfulDelete(t, &auth.TwoFactor{UID: user.ID})
+			}
+
+			// Can push to a repo
+			_, extra := private.ServCommand(ctx, pubKey.ID, user.Name, repo.Name, perm.AccessModeWrite, "git-upload-pack", "")
+			_, _, err = private.ServNoCommand(ctx, pubKey.ID)
+			if servAllowed {
+				require.NoError(t, extra.Error)
+				require.NoError(t, err)
+			} else {
+				require.Error(t, extra.Error)
+				require.Error(t, err)
+			}
+		}
+
+		adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+		normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+		restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
+
+		t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+			// this should be the default, so don't have to set the variable
+
+			t.Run("no 2fa", func(t *testing.T) {
+				runTest(t, adminUser, false, true)
+				runTest(t, normalUser, false, true)
+				runTest(t, restrictedUser, false, true)
+			})
+
+			t.Run("enabled 2fa", func(t *testing.T) {
+				runTest(t, adminUser, true, true)
+				runTest(t, normalUser, true, true)
+				runTest(t, restrictedUser, true, true)
+			})
+		})
+
+		t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+			defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+			t.Run("no 2fa", func(t *testing.T) {
+				runTest(t, adminUser, false, false)
+				runTest(t, normalUser, false, false)
+				runTest(t, restrictedUser, false, false)
+			})
+
+			t.Run("enabled 2fa", func(t *testing.T) {
+				runTest(t, adminUser, true, true)
+				runTest(t, normalUser, true, true)
+				runTest(t, restrictedUser, true, true)
+			})
+		})
+
+		t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+			defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+			t.Run("no 2fa", func(t *testing.T) {
+				runTest(t, adminUser, false, false)
+				runTest(t, normalUser, false, true)
+				runTest(t, restrictedUser, false, true)
+			})
+
+			t.Run("enabled 2fa", func(t *testing.T) {
+				runTest(t, adminUser, true, true)
+				runTest(t, normalUser, true, true)
+				runTest(t, restrictedUser, true, true)
+			})
+		})
 	})
 }

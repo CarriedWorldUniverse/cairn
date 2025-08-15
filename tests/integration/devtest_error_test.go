@@ -18,9 +18,17 @@ import (
 // error pages sometimes which can be hard to reach otherwise.
 // This file is a test of various attributes on those pages.
 
+func enableDevtest() func() {
+	resetIsProd := test.MockVariableValue(&setting.IsProd, false)
+	resetRoutes := test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())
+	return func() {
+		resetIsProd()
+		resetRoutes()
+	}
+}
+
 func TestDevtestErrorpages(t *testing.T) {
-	defer test.MockVariableValue(&setting.IsProd, false)()
-	defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
+	defer enableDevtest()()
 
 	t.Run("Server error", func(t *testing.T) {
 		// `/devtest/error/x` returns 500 for any x by default.

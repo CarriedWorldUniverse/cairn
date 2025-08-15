@@ -4,8 +4,10 @@
 package shared
 
 import (
+	"fmt"
 	"net/http"
 
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/routers/common"
@@ -91,6 +93,25 @@ func verifyAuthWithOptions(options *common.VerifyOptions) func(ctx *context.APIC
 					"message": "You must change your password. Change it at: " + setting.AppURL + "/user/change_password",
 				})
 				return
+			}
+
+			if ctx.Doer.MustHaveTwoFactor() {
+				hasTwoFactor, err := auth_model.HasTwoFactorByUID(ctx, ctx.Doer.ID)
+				if err != nil {
+					ctx.Data["Title"] = ctx.Tr("auth.prohibit_login")
+					log.Error("Error getting 2fa: %s", err)
+					ctx.JSON(http.StatusInternalServerError, map[string]string{
+						"message": fmt.Sprintf("Error getting 2fa: %s", err),
+					})
+					return
+				}
+				if !hasTwoFactor {
+					ctx.Data["Title"] = ctx.Tr("auth.prohibit_login")
+					ctx.JSON(http.StatusForbidden, map[string]string{
+						"message": ctx.Locale.TrString("error.must_enable_2fa", fmt.Sprintf("%suser/settings/security", setting.AppURL)),
+					})
+					return
+				}
 			}
 		}
 

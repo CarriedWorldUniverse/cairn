@@ -1,10 +1,15 @@
-{{template "user/settings/layout_head" (dict "ctxData" . "pageClass" "user settings security")}}
+{{template "user/settings/layout_head" (dict "ctxData" . "pageClass" "user settings security" "HideNavbarLinks" .HideNavbarLinks)}}
 	<div class="user-setting-content">
+		{{if .MustEnableTwoFactor}}
+			<div class="ui red message">{{ctx.Locale.Tr "settings.must_enable_2fa"}}</div>
+		{{end}}
 		{{template "user/settings/security/twofa" .}}
 		{{template "user/settings/security/webauthn" .}}
-		{{template "user/settings/security/accountlinks" .}}
-		{{if .EnableOpenIDSignIn}}
-		{{template "user/settings/security/openid" .}}
+		{{if not .MustEnableTwoFactor}}
+			{{template "user/settings/security/accountlinks" .}}
+			{{if .EnableOpenIDSignIn}}
+				{{template "user/settings/security/openid" .}}
+			{{end}}
 		{{end}}
 	</div>
 

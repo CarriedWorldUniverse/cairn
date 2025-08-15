@@ -21,11 +21,13 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/util"
 	packages_service "forgejo.org/services/packages"
 	packages_cleanup_service "forgejo.org/services/packages/cleanup"
 	"forgejo.org/tests"
 
+	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -671,5 +673,99 @@ func TestPackageCleanup(t *testing.T) {
 				require.NoError(t, packages_model.DeleteCleanupRuleByID(db.DefaultContext, pcr.ID))
 			})
 		}
+	})
+}
+
+func TestPackageWithTwoFactor(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	adminUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+
+	runTest := func(t *testing.T, doer *user_model.User, useTOTP bool, expectedStatus int) {
+		t.Helper()
+		if doer != nil {
+			defer unittest.AssertSuccessfulDelete(t, &auth_model.TwoFactor{UID: doer.ID})
+		}
+
+		passcode := func() string {
+			if !useTOTP {
+				return ""
+			}
+
+			otpKey, err := totp.Generate(totp.GenerateOpts{
+				SecretSize:  40,
+				Issuer:      "forgejo-test",
+				AccountName: doer.Name,
+			})
+			require.NoError(t, err)
+
+			require.NoError(t, auth_model.NewTwoFactor(t.Context(), &auth_model.TwoFactor{UID: doer.ID}, otpKey.Secret()))
+
+			passcode, err := totp.GenerateCode(otpKey.Secret(), time.Now())
+			require.NoError(t, err)
+			return passcode
+		}()
+
+		url := fmt.Sprintf("/api/v1/packages/%s", normalUser.Name) // a public packge to test
+		req := NewRequest(t, "GET", url)
+		if doer != nil {
+			req.AddBasicAuth(doer.Name)
+		}
+
+		if useTOTP {
+			MakeRequest(t, req, http.StatusUnauthorized)
+
+			req = NewRequest(t, "GET", url).
+				AddBasicAuth(doer.Name)
+			req.Header.Set("X-Forgejo-OTP", passcode)
+		}
+
+		MakeRequest(t, req, expectedStatus)
+	}
+
+	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
+		// this should be the default, so don't have to set the variable
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, http.StatusOK)
+			runTest(t, normalUser, false, http.StatusOK)
+			runTest(t, nil, false, http.StatusOK) // anonymous
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, http.StatusOK)
+			runTest(t, normalUser, true, http.StatusOK)
+		})
+	})
+
+	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AllTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, http.StatusForbidden)
+			runTest(t, normalUser, false, http.StatusForbidden)
+			runTest(t, nil, false, http.StatusOK) // anonymous
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, http.StatusOK)
+			runTest(t, normalUser, true, http.StatusOK)
+		})
+	})
+
+	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.GlobalTwoFactorRequirement, setting.AdminTwoFactorRequirement)()
+
+		t.Run("no 2fa", func(t *testing.T) {
+			runTest(t, adminUser, false, http.StatusForbidden)
+			runTest(t, normalUser, false, http.StatusOK)
+			runTest(t, nil, false, http.StatusOK) // anonymous
+		})
+
+		t.Run("enabled 2fa", func(t *testing.T) {
+			runTest(t, adminUser, true, http.StatusOK)
+			runTest(t, normalUser, true, http.StatusOK)
+		})
 	})
 }

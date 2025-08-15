@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/httplib"
@@ -129,6 +130,21 @@ func (ctx *Context) RenderWithErr(msg any, tpl base.TplName, form any) {
 	ctx.HTML(http.StatusOK, tpl)
 }
 
+// validateTwoFactorRequirement sets ctx-data to hide/show ui-elements depending on the GlobalTwoFactorRequirement
+func (ctx *Context) validateTwoFactorRequirement() {
+	if ctx.Doer == nil || !ctx.Doer.MustHaveTwoFactor() {
+		return
+	}
+
+	hasTwoFactor, err := auth.HasTwoFactorByUID(ctx, ctx.Doer.ID)
+	if err != nil {
+		log.ErrorWithSkip(2, "Error getting 2fa: %s", err)
+		// fallthrough to set the variables
+	}
+	ctx.Data["MustEnableTwoFactor"] = !hasTwoFactor
+	ctx.Data["HideNavbarLinks"] = !hasTwoFactor
+}
+
 // NotFound displays a 404 (Not Found) page and prints the given error, if any.
 func (ctx *Context) NotFound(logMsg string, logErr error) {
 	ctx.notFoundInternal(logMsg, logErr)
@@ -156,6 +172,7 @@ func (ctx *Context) notFoundInternal(logMsg string, logErr error) {
 		return
 	}
 
+	ctx.validateTwoFactorRequirement()
 	ctx.Data["IsRepo"] = ctx.Repo.Repository != nil
 	ctx.Data["Title"] = ctx.Locale.TrString("error.not_found.title")
 	ctx.HTML(http.StatusNotFound, tplStatus404)
@@ -181,6 +198,7 @@ func (ctx *Context) serverErrorInternal(logMsg string, logErr error) {
 		}
 	}
 
+	ctx.validateTwoFactorRequirement()
 	ctx.HTML(http.StatusInternalServerError, tplStatus500)
 }
 
