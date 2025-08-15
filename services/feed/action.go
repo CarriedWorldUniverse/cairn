@@ -488,6 +488,12 @@ func encodeContent(params ...string) string {
 func abbreviatedComment(comment string) string {
 	firstLine := strings.Split(comment, "\n")[0]
 
+	if strings.HasPrefix(firstLine, "```") {
+		// First line is is a fenced code block... with no special abbreviate we would display a blank block, or in the
+		// worst-case a ```mermaid would display an error. Better to omit the comment.
+		return ""
+	}
+
 	truncatedContent, truncatedRight := util.SplitStringAtByteN(firstLine, 200)
 	if truncatedRight != "" {
 		// in case the content is in a Latin family language, we remove the last broken word.

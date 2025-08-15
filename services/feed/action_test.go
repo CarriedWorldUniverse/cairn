@@ -185,6 +185,16 @@ func TestAbbreviatedComment(t *testing.T) {
 			input:    "Interesting point, here's a digram with my thoughts:\n```mermaid\ngraph LR\n   a -->|some text| b\n```",
 			expected: "Interesting point, here's a digram with my thoughts:",
 		},
+		{
+			name:     "block start",
+			input:    "```\n# This file describes the expected reviewers for a PR based on the changed\n# files.\n```\n\nI think this comment is wrong...",
+			expected: "",
+		},
+		{
+			name:     "labeled block start",
+			input:    "```mermaid\ngraph LR\n   a -->|some text| b\n```",
+			expected: "",
+		},
 	}
 
 	for _, tt := range tests {
