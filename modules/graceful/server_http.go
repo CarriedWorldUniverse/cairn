@@ -16,6 +16,11 @@ func newHTTPServer(network, address, name string, handler http.Handler) (*Server
 		Handler:     handler,
 		BaseContext: func(net.Listener) context.Context { return GetManager().HammerContext() },
 	}
+	// Enable H2C for HTTP server
+	httpServer.Protocols = new(http.Protocols)
+	httpServer.Protocols.SetHTTP1(true)
+	httpServer.Protocols.SetHTTP2(true)
+	httpServer.Protocols.SetUnencryptedHTTP2(true)
 	server.OnShutdown = func() {
 		httpServer.SetKeepAlivesEnabled(false)
 	}
