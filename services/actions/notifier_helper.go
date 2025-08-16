@@ -364,7 +364,7 @@ func handleWorkflows(
 			continue
 		}
 
-		jobs, err := jobparser.Parse(dwf.Content, jobparser.WithVars(vars))
+		jobs, err := jobParser(dwf.Content, jobparser.WithVars(vars))
 		if err != nil {
 			log.Error("jobparser.Parse: %v", err)
 			continue

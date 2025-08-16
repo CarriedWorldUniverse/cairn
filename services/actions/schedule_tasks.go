@@ -139,7 +139,7 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 	}
 
 	// Parse the workflow specification from the cron schedule
-	workflows, err := jobparser.Parse(cron.Content, jobparser.WithVars(vars))
+	workflows, err := jobParser(cron.Content, jobparser.WithVars(vars))
 	if err != nil {
 		return err
 	}
