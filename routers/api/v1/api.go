@@ -414,8 +414,11 @@ func reqBasicOrRevProxyAuth() func(ctx *context.APIContext) {
 		if ctx.IsSigned && setting.Service.EnableReverseProxyAuthAPI && ctx.Data["AuthedMethod"].(string) == auth.ReverseProxyMethodName {
 			return
 		}
-		if !ctx.IsBasicAuth {
-			ctx.Error(http.StatusUnauthorized, "reqBasicAuth", "auth required")
+
+		// Require basic authorization method to be used and that basic
+		// authorization used password login to verify the user.
+		if passwordLogin, ok := ctx.Data["IsPasswordLogin"].(bool); !ok || !passwordLogin {
+			ctx.Error(http.StatusUnauthorized, "reqBasicAuth", "auth method not allowed")
 			return
 		}
 	}
