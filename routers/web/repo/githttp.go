@@ -192,24 +192,19 @@ func httpBase(ctx *context.Context) *serviceHandler {
 					ctx.ServerError("GetTaskByID", err)
 					return nil
 				}
-				if task.RepoID != repo.ID {
+
+				p, err := access_model.GetActionRepoPermission(ctx, repo, task)
+				if err != nil {
+					ctx.ServerError("GetActionRepoPermission", err)
+					return nil
+				}
+
+				if !p.CanAccess(accessMode, unitType) {
 					ctx.PlainText(http.StatusForbidden, "User permission denied")
 					return nil
 				}
 
-				if task.IsForkPullRequest {
-					if accessMode > perm.AccessModeRead {
-						ctx.PlainText(http.StatusForbidden, "User permission denied")
-						return nil
-					}
-					environ = append(environ, fmt.Sprintf("%s=%d", repo_module.EnvActionPerm, perm.AccessModeRead))
-				} else {
-					if accessMode > perm.AccessModeWrite {
-						ctx.PlainText(http.StatusForbidden, "User permission denied")
-						return nil
-					}
-					environ = append(environ, fmt.Sprintf("%s=%d", repo_module.EnvActionPerm, perm.AccessModeWrite))
-				}
+				environ = append(environ, fmt.Sprintf("%s=%d", repo_module.EnvActionPerm, p.AccessMode))
 			} else {
 				p, err := access_model.GetUserRepoPermission(ctx, repo, ctx.Doer)
 				if err != nil {
