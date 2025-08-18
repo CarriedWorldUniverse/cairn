@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	actions_model "forgejo.org/models/actions"
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
@@ -49,6 +50,33 @@ const (
 
 func TestGit(t *testing.T) {
 	onGiteaRun(t, testGit)
+}
+
+func TestActionsTokenAuth(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
+		task.GenerateToken()
+		actions_model.UpdateTask(db.DefaultContext, task)
+		u.User = url.UserPassword("token", task.Token)
+
+		t.Run("clone task's own repo", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: task.RepoID})
+			u.Path = fmt.Sprintf("/%s/%s.git", repo.OwnerName, repo.Name)
+			doGitClone(t.TempDir(), u)(t)
+		})
+
+		t.Run("clone public repo of limited owner", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 38})
+			u.Path = fmt.Sprintf("/%s/%s.git", repo.OwnerName, repo.Name)
+			doGitClone(t.TempDir(), u)(t)
+		})
+
+		t.Run("cannot clone private repo", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
+			u.Path = fmt.Sprintf("/%s/%s.git", repo.OwnerName, repo.Name)
+			doGitCloneFail(u)(t)
+		})
+	})
 }
 
 func testGit(t *testing.T, u *url.URL) {
