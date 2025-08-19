@@ -46,7 +46,7 @@ XGO_PACKAGE ?= src.techknowlogick.com/xgo@latest
 GO_LICENSES_PACKAGE ?= github.com/google/go-licenses@v1.6.0 # renovate: datasource=go
 GOVULNCHECK_PACKAGE ?= golang.org/x/vuln/cmd/govulncheck@v1 # renovate: datasource=go
 DEADCODE_PACKAGE ?= golang.org/x/tools/cmd/deadcode@v0.36.0 # renovate: datasource=go
-GOMOCK_PACKAGE ?= go.uber.org/mock/mockgen@v0.5.2 # renovate: datasource=go
+GOMOCK_PACKAGE ?= go.uber.org/mock/mockgen@v0.6.0 # renovate: datasource=go
 RENOVATE_NPM_PACKAGE ?= renovate@41.76.0 # renovate: datasource=docker packageName=data.forgejo.org/renovate/renovate
 
 # https://github.com/disposable-email-domains/disposable-email-domains/commits/main/
