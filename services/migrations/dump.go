@@ -25,7 +25,7 @@ import (
 	"forgejo.org/modules/structs"
 
 	"github.com/google/uuid"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 var _ base.Uploader = &RepositoryDumper{}

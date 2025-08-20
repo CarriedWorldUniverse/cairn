@@ -6,7 +6,7 @@ package markdown
 import (
 	"github.com/yuin/goldmark/ast"
 	east "github.com/yuin/goldmark/extension/ast"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func nodeToTable(meta *yaml.Node) ast.Node {

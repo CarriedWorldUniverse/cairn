@@ -12,7 +12,7 @@ import (
 
 	base "forgejo.org/modules/migration"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // RepositoryRestorer implements an Downloader from the local directory

@@ -24,7 +24,7 @@ import (
 	"forgejo.org/services/context"
 	packages_service "forgejo.org/services/packages"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func apiError(ctx *context.Context, status int, obj any) {
