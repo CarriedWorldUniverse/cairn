@@ -26,7 +26,7 @@ import (
 	"forgejo.org/services/webhook/shared"
 
 	"code.forgejo.org/go-chi/binding"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type BuildsHandler struct{}

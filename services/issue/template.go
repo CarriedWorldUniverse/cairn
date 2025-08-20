@@ -16,7 +16,7 @@ import (
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // templateDirCandidates issue templates directory

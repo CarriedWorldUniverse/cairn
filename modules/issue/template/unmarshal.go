@@ -15,7 +15,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // CouldBe indicates a file with the filename could be a template,

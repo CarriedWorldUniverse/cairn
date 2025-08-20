@@ -6,7 +6,7 @@ package optional
 import (
 	"forgejo.org/modules/json"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func (o *Option[T]) UnmarshalJSON(data []byte) error {
