@@ -114,5 +114,13 @@
     "compare.branches.title": "Comparer les branches",
     "repo.settings.push_mirror.branch_filter.description": "Branches a répliquer. Laisser vide pour répliquer toutes les branches. Voir la documentation <a href=\"%[1]s\">%[2]</a> pour la syntaxe. Exemples: <code>main, release/*</code>",
     "mail.actions.run_info_sha": "Commit: %[1]s",
-    "admin.moderation.deleted_content_ref": "Le signalement avec le type %[1]v et l'identifiant %[2]d n'existe plus."
+    "admin.moderation.deleted_content_ref": "Le signalement avec le type %[1]v et l'identifiant %[2]d n'existe plus.",
+    "error.must_enable_2fa": "Cette instance Forgejo exige que les utilisateurs activent l'authentification à deux facteurs avant qu'ils puissent accéder a leurs comptes. Activez-la sur  : %s",
+    "admin.config.global_2fa_requirement.admin": "Administrateurs",
+    "admin.config.global_2fa_requirement.all": "Tous les utilisateurs",
+    "admin.config.global_2fa_requirement.none": "Non",
+    "admin.config.global_2fa_requirement.title": "Exigence globale de l'authentification à deux facteurs",
+    "admin.config.security": "Configuration de sécurité",
+    "settings.must_enable_2fa": "Cette instance Forgejo exige que les utilisateurs activent l'authentification à deux facteurs avant qu'ils puissent accéder a leurs comptes.",
+    "settings.twofa_unroll_unavailable": "L'authentification à deux facteurs est nécessaire pour votre compte et ne peut pas être désactivée."
 }
