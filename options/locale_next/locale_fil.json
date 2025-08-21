@@ -54,7 +54,7 @@
     "relativetime.2years": "2 taon ang nakalipas",
     "relativetime.1day": "kahapon",
     "relativetime.hours": {
-        "one": "%d kras ang nakalipas",
+        "one": "%d oras ang nakalipas",
         "other": "%d (na) oras ang nakalipas"
     },
     "relativetime.months": {
@@ -124,5 +124,15 @@
     "migrate.pagure.token_body_a": "Magbigay ng Pagure API token na may access sa mga pribadong isyu para gumawa ng repositoryo na may mga pribadong isyu lang",
     "migrate.pagure.project_example": "Ang URL ng Pagure na proyekto, hal. https://pagure.io/pagure",
     "migrate.pagure.token_body_b": "Siguraduhin na itakda ang pribadong repositoryo na flag sa itaas kung gusto mo na pribado ang repositoryong ito",
-    "migrate.pagure.description": "Mag-migrate ng data mula sa pagure.io o sa ibang mga Pagure na instansya."
+    "migrate.pagure.description": "Mag-migrate ng data mula sa pagure.io o sa ibang mga Pagure na instansya.",
+    "admin.config.security": "Pagsasaayos sa seguridad",
+    "error.must_enable_2fa": "Kinakailangan ng instansyang ito na ang mga user ay paganahin ang authentikasyong two-factor bago nila i-access ang kani-kanilang account. Paganahin ito sa: %s",
+    "admin.config.global_2fa_requirement.title": "Global na pangangailangan ng two-factor",
+    "settings.twofa_reenroll.description": "I-enroll muli ang iyong authentikasyong two-factor",
+    "settings.must_enable_2fa": "Kinakailangan ng instansyang ito na ang mga user ay paganahin ang authentikasyong two-factor bago nila i-access ang kani-kanilang account.",
+    "admin.config.global_2fa_requirement.none": "Hindi",
+    "admin.config.global_2fa_requirement.all": "Lahat ng mga user",
+    "admin.config.global_2fa_requirement.admin": "Mga tagapangasiwa",
+    "settings.twofa_unroll_unavailable": "Kinakailangan ang authentikasyong two-factor para sa iyong account at hindi maaaring i-disable.",
+    "settings.twofa_reenroll": "I-enroll muli ang authentikasyong two-factor"
 }
