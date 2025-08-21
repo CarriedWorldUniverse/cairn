@@ -35,6 +35,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	asymkey_service "forgejo.org/services/asymkey"
+	redirect_service "forgejo.org/services/redirect"
 
 	"github.com/editorconfig/editorconfig-core-go/v2"
 )
@@ -477,12 +478,12 @@ func RepoAssignment(ctx *Context) context.CancelFunc {
 					return nil
 				}
 
-				if redirectUserID, err := user_model.LookupUserRedirect(ctx, userName); err == nil {
+				if redirectUserID, err := redirect_service.LookupUserRedirect(ctx, ctx.Doer, userName); err == nil {
 					RedirectToUser(ctx.Base, userName, redirectUserID)
 				} else if user_model.IsErrUserRedirectNotExist(err) {
 					ctx.NotFound("GetUserByName", nil)
 				} else {
-					ctx.ServerError("LookupUserRedirect", err)
+					ctx.ServerError("LookupRedirect", err)
 				}
 			} else {
 				ctx.ServerError("GetUserByName", err)
