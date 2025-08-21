@@ -153,7 +153,7 @@ export default tseslint.config(
 
       '@stylistic/quotes': [2, 'single', {
         avoidEscape: true,
-        allowTemplateLiterals: true,
+        allowTemplateLiterals: 'always',
       }],
 
       '@stylistic/rest-spread-spacing': [2, 'never'],
