@@ -520,7 +520,7 @@ func RepoAssignment(ctx *Context) context.CancelFunc {
 	repo, err := repo_model.GetRepositoryByName(ctx, owner.ID, repoName)
 	if err != nil {
 		if repo_model.IsErrRepoNotExist(err) {
-			redirectRepoID, err := repo_model.LookupRedirect(ctx, owner.ID, repoName)
+			redirectRepoID, err := redirect_service.LookupRepoRedirect(ctx, ctx.Doer, owner.ID, repoName)
 			if err == nil {
 				RedirectToRepo(ctx.Base, redirectRepoID)
 			} else if repo_model.IsErrRedirectNotExist(err) {
