@@ -1116,6 +1116,8 @@ func handleSettingRemoteAddrError(ctx *context.Context, err error, form *forms.R
 			}
 		case addrErr.IsInvalidPath:
 			ctx.RenderWithErr(ctx.Tr("repo.migrate.invalid_local_path"), tplSettingsOptions, form)
+		case addrErr.HasCredentials:
+			ctx.RenderWithErr(ctx.Tr("migrate.form.error.url_credentials"), tplSettingsOptions, form)
 		default:
 			ctx.ServerError("Unknown error", err)
 		}
