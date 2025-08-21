@@ -132,5 +132,15 @@
     "migrate.pagure.project_example": "Adresa URL projektu Pagure, např. https://pagure.io/pagure",
     "migrate.pagure.token_label": "Token",
     "migrate.pagure.token_body_a": "Zadejte token API Pagure s přístupem k soukromým problémům pro vytvoření repozitáře obsahujícího pouze soukromé problémy",
-    "migrate.pagure.token_body_b": "Nezapomeňte nastavit repozitář jako soukromý výše, pokud chcete, aby byl repozitář soukromý"
+    "migrate.pagure.token_body_b": "Nezapomeňte nastavit repozitář jako soukromý výše, pokud chcete, aby byl repozitář soukromý",
+    "admin.config.security": "Nastavení zabezpečení",
+    "admin.config.global_2fa_requirement.title": "Globální požadavek dvoufázového ověření",
+    "error.must_enable_2fa": "Tato instance Forgejo vyžaduje, aby si všichni uživatelé zapnuli dvoufázové ověření, než začnou používat svůj účet. Povolíte jej zde: %s",
+    "settings.twofa_reenroll.description": "Znovu použít vaše dvoufázové ověření",
+    "admin.config.global_2fa_requirement.none": "Ne",
+    "admin.config.global_2fa_requirement.all": "Všichni uživatelé",
+    "admin.config.global_2fa_requirement.admin": "Administrátoři",
+    "settings.twofa_unroll_unavailable": "U vašeho účtu je vyžadováno dvoufázové ověření a nelze jej zakázat.",
+    "settings.twofa_reenroll": "Znovu použít dvoufázové ověření",
+    "settings.must_enable_2fa": "Tato instance Forgejo vyžaduje, aby si všichni uživatelé zapnuli dvoufázové ověření, než začnou používat svůj účet."
 }

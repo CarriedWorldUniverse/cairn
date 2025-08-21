@@ -132,5 +132,15 @@
     "migrate.pagure.project_example": "URL-адреса проєкту Pagure, наприклад, https://pagure.io/pagure",
     "migrate.pagure.token_body_b": "Якщо хочете зробити цей репозиторій приватним, обов'язково встановіть прапорець «Приватний репозиторій» вище",
     "migrate.pagure.incorrect_url": "Вказано неправильну URL-адресу репозиторію-джерела",
-    "migrate.pagure.token_body_a": "Уведіть токен API Pagure з доступом до приватних задач, щоб створити репозиторій, який міститиме лише приватні задачі"
+    "migrate.pagure.token_body_a": "Уведіть токен API Pagure з доступом до приватних задач, щоб створити репозиторій, який міститиме лише приватні задачі",
+    "settings.must_enable_2fa": "Цей екземпляр Forgejo вимагає від користувачів увімкнути двофакторну автентифікацію, перш ніж вони зможуть отримати доступ до своїх облікових записів.",
+    "error.must_enable_2fa": "Цей екземпляр Forgejo вимагає від користувачів увімкнути двофакторну автентифікацію, перш ніж вони зможуть отримати доступ до своїх облікових записів. Увімкніть її тут: %s",
+    "admin.config.global_2fa_requirement.none": "Немає",
+    "admin.config.global_2fa_requirement.all": "Усі користувачі",
+    "admin.config.global_2fa_requirement.admin": "Адміністратори",
+    "admin.config.security": "Конфігурація безпеки",
+    "admin.config.global_2fa_requirement.title": "Глобальна вимога двофакторної автентифікації",
+    "settings.twofa_unroll_unavailable": "Для вашого облікового запису необхідна двофакторна автентифікація; це неможливо вимкнути.",
+    "settings.twofa_reenroll": "Увімкнути двофакторну автентифікацію",
+    "settings.twofa_reenroll.description": "Повторно зареєструйте свою двофакторну автентифікацію"
 }
