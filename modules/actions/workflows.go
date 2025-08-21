@@ -17,7 +17,7 @@ import (
 	"code.forgejo.org/forgejo/runner/v9/act/model"
 	"code.forgejo.org/forgejo/runner/v9/act/workflowpattern"
 	"github.com/gobwas/glob"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type DetectedWorkflow struct {
