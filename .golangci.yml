@@ -44,6 +44,8 @@ linters:
               desc: use crypto/sha256 instead, see https://codeberg.org/forgejo/forgejo/pulls/1528
             - pkg: github.com/go-git/go-git
               desc: use forgejo.org/modules/git instead, see https://codeberg.org/forgejo/forgejo/pulls/4941
+            - pkg: gopkg.in/yaml.v3
+              desc: use go.yaml.in/yaml instead, see https://codeberg.org/forgejo/forgejo/pulls/8956
     gocritic:
       disabled-checks:
         - ifElseChain
