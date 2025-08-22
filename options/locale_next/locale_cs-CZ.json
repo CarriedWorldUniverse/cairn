@@ -111,5 +111,6 @@
     "feed.atom.link": "Zdroj Atom",
     "keys.ssh.link": "Klíče SSH",
     "keys.gpg.link": "Klíče GPG",
-    "mail.actions.run_info_sha": "Revize: %[1]s"
+    "mail.actions.run_info_sha": "Revize: %[1]s",
+    "repo.pulls.already_merged": "Sloučení selhalo: tato žádost již byla sloučena."
 }
