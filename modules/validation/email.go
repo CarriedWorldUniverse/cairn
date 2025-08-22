@@ -80,8 +80,15 @@ func validateEmailDomain(email string) error {
 }
 
 func IsEmailDomainAllowed(email string) bool {
+	// Normalized the address. This strips for example comments which could be
+	// used to smuggle a different domain
+	parsedAddress, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
 	return isEmailDomainAllowedInternal(
-		email,
+		parsedAddress.Address,
 		setting.Service.EmailDomainAllowList,
 		setting.Service.EmailDomainBlockList)
 }
