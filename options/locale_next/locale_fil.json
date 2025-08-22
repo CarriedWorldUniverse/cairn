@@ -55,7 +55,7 @@
     "relativetime.2years": "2 taon ang nakalipas",
     "relativetime.1day": "kahapon",
     "relativetime.hours": {
-        "one": "%d kras ang nakalipas",
+        "one": "%d oras ang nakalipas",
         "other": "%d (na) oras ang nakalipas"
     },
     "relativetime.months": {
