@@ -109,5 +109,6 @@
     "keys.ssh.link": "Clé SSH",
     "keys.gpg.link": "Clés GPG",
     "repo.diff.commit.next-short": "Suiv.",
-    "repo.diff.commit.previous-short": "Préc."
+    "repo.diff.commit.previous-short": "Préc.",
+    "mail.actions.run_info_sha": "Commit: %[1]s"
 }
