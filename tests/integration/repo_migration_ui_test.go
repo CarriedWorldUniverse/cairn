@@ -1,4 +1,4 @@
-// Copyright 2024 The Forgejo Authors. All rights reserved.
+// Copyright 2024-2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 package integration
@@ -6,15 +6,18 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
+	"forgejo.org/modules/translation"
 	"forgejo.org/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 )
 
-// TestRepoMigrationUI is used to test various form properties of different migration types
+// TestRepoMigrationUI is used to test various form properties of different
+// migration types on /repo/migrate?service_type=%d
 func TestRepoMigrationUI(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	session := loginUser(t, "user1")
@@ -102,4 +105,27 @@ func testRepoMigrationFormItems(t *testing.T, items *goquery.Selection, expected
 		assert.True(t, exists)
 		assert.Equal(t, expectedName, name)
 	}
+}
+
+// TestRepoMigrationTypeSelect is a simple content test for page /repo/migrate
+// where migration source type is selected
+func TestRepoMigrationTypeSelect(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user1")
+	locale := translation.NewLocale("en-US")
+
+	page := NewHTMLParser(t, session.MakeRequest(t, NewRequest(t, "GET", "/repo/migrate"), http.StatusOK).Body)
+	headers := page.Find(".migrate-entry h3").Text()
+	descriptions := page.Find(".migrate-entry .description").Text()
+
+	sourceNames := []string{"github", "gitea", "gitlab", "gogs", "onedev", "gitbucket", "codebase", "forgejo"}
+	for _, sourceName := range sourceNames {
+		assert.Contains(t, strings.ToLower(headers), sourceName)
+		assert.Contains(t, descriptions, locale.Tr(fmt.Sprintf("repo.migrate.%s.description", sourceName)))
+	}
+
+	// Special case
+	assert.Contains(t, strings.ToLower(headers), "pagure")
+	assert.Contains(t, descriptions, locale.Tr("migrate.pagure.description")) // Not prefixed with repo.
 }
