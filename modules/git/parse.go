@@ -64,7 +64,7 @@ func parseTreeEntries(data []byte, ptree *Tree) ([]*TreeEntry, error) {
 			entry.entryMode = EntryModeSymlink
 		case "160000":
 			entry.entryMode = EntryModeCommit
-		case "040000", "040755": // git uses 040000 for tree object, but some users may get 040755 for unknown reasons
+		case "040000", "040755", "040775": // git uses 040000 for tree object, but some users may get 040755 or 040775 for unknown reasons
 			entry.entryMode = EntryModeTree
 		default:
 			return nil, fmt.Errorf("unknown type: %v", string(entryMode))
@@ -118,7 +118,7 @@ loop:
 			entry.entryMode = EntryModeSymlink
 		case "160000":
 			entry.entryMode = EntryModeCommit
-		case "40000", "40755": // git uses 40000 for tree object, but some users may get 40755 for unknown reasons
+		case "40000", "40755", "40775": // git uses 40000 for tree object, but some users may get 40755 or 40775 for unknown reasons
 			entry.entryMode = EntryModeTree
 		default:
 			log.Debug("Unknown mode: %v", string(mode))
