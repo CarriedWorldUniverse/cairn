@@ -791,6 +791,7 @@ func TestPullRequestStaleReview(t *testing.T) {
 			cloneURL, _ := url.Parse(clone)
 			cloneURL.User = url.UserPassword("user2", userPassword)
 			require.NoError(t, git.CloneWithArgs(t.Context(), nil, cloneURL.String(), dstPath, git.CloneRepoOptions{}))
+			doGitSetRemoteURL(dstPath, "origin", cloneURL)(t)
 
 			return dstPath
 		}
