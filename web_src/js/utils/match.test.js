@@ -30,7 +30,7 @@ test('matchEmoji', () => {
 
   expect(matchEmoji('poo')).toEqual([
     'poodle',
-    'hankey',
+    'poop',
     'spoon',
     'bowl_with_spoon',
   ]);
@@ -41,6 +41,19 @@ test('matchEmoji', () => {
 
   expect(matchEmoji('jellyfis')).toEqual([
     'jellyfish',
+  ]);
+
+  expect(matchEmoji('forge')).toEqual([
+    'forgejo',
+  ]);
+
+  expect(matchEmoji('frog')).toEqual([
+    'frog',
+    'frogejo',
+  ]);
+
+  expect(matchEmoji('blob')).toEqual([
+    'blobnom',
   ]);
 });
 

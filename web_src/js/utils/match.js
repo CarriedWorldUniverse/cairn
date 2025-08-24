@@ -1,4 +1,4 @@
-import emojis from '../../../assets/emoji.json';
+import {emojiKeys} from '../features/emoji.js';
 
 const maxMatches = 6;
 
@@ -9,19 +9,14 @@ function sortAndReduce(map) {
 
 export function matchEmoji(queryText) {
   const query = queryText.toLowerCase().replaceAll('_', ' ');
-  if (!query) return emojis.slice(0, maxMatches).map((e) => e.aliases[0]);
+  if (!query) return emojiKeys.slice(0, maxMatches);
 
   // results is a map of weights, lower is better
   const results = new Map();
-  for (const {aliases} of emojis) {
-    const mainAlias = aliases[0];
-    for (const [aliasIndex, alias] of aliases.entries()) {
-      const index = alias.replaceAll('_', ' ').indexOf(query);
-      if (index === -1) continue;
-      const existing = results.get(mainAlias);
-      const rankedIndex = index + aliasIndex;
-      results.set(mainAlias, existing ? existing - rankedIndex : rankedIndex);
-    }
+  for (const emojiKey of emojiKeys) {
+    const index = emojiKey.replaceAll('_', ' ').indexOf(query);
+    if (index === -1) continue;
+    results.set(emojiKey, index);
   }
 
   return sortAndReduce(results);
