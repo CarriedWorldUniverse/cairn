@@ -203,3 +203,36 @@ test('Pull quote reply', async ({page}, workerInfo) => {
 
   await editorTextarea.fill('');
 });
+
+test('Emoji suggestions', async ({page}) => {
+  const response = await page.goto('/user2/repo1/issues/1');
+  expect(response?.status()).toBe(200);
+
+  const textarea = page.locator('#comment-form textarea[name=content]');
+
+  await textarea.focus();
+  await textarea.pressSequentially(':');
+
+  const suggestionList = page.locator('#comment-form .suggestions');
+  await expect(suggestionList).toBeVisible();
+
+  const expectedSuggestions = [
+    {emoji: '👍', name: '+1'},
+    {emoji: '👎', name: '-1'},
+    {emoji: '💯', name: '100'},
+    {emoji: '🔢', name: '1234'},
+    {emoji: '🥇', name: '1st_place_medal'},
+    {emoji: '🥈', name: '2nd_place_medal'},
+  ];
+
+  for (const {emoji, name} of expectedSuggestions) {
+    const item = suggestionList.locator(`li:has-text("${name}")`);
+    await expect(item).toContainText(`${emoji} ${name}`);
+  }
+
+  await textarea.pressSequentially('forge');
+  await expect(suggestionList).toBeVisible();
+
+  const item = suggestionList.locator(`li:has-text("forgejo")`);
+  await expect(item.locator('img')).toHaveAttribute('src', '/assets/img/emoji/forgejo.png');
+});
