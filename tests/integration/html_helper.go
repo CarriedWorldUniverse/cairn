@@ -26,6 +26,17 @@ func NewHTMLParser(t testing.TB, body *bytes.Buffer) *HTMLDoc {
 	return &HTMLDoc{doc: doc}
 }
 
+func (doc *HTMLDoc) AssertAttrEqual(t testing.TB, selector, attr, expected string) bool {
+	t.Helper()
+	selection := doc.doc.Find(selector)
+	require.NotEmpty(t, selection, selector)
+
+	actual, exists := selection.Attr(attr)
+	require.True(t, exists, "%s not found in %s", attr, selection.Text())
+
+	return assert.Equal(t, expected, actual)
+}
+
 // GetInputValueByID for get input value by id
 func (doc *HTMLDoc) GetInputValueByID(id string) string {
 	text, _ := doc.doc.Find("#" + id).Attr("value")

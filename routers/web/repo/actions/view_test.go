@@ -8,11 +8,53 @@ import (
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
+	repo_model "forgejo.org/models/repo"
 	unittest "forgejo.org/models/unittest"
 	"forgejo.org/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_getRunByID(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerID: 5, ID: 4})
+
+	for _, testCase := range []struct {
+		name  string
+		runID int64
+		err   string
+	}{
+		{
+			name:  "Found",
+			runID: 792,
+		},
+		{
+			name:  "NotFound",
+			runID: 24344,
+			err:   "no such run",
+		},
+		{
+			name:  "ZeroNotFound",
+			runID: 0,
+			err:   "zero is not a valid run ID",
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx, resp := contexttest.MockContext(t, fmt.Sprintf("user5/repo4/actions/runs/%v/artifacts/some-name", testCase.runID))
+			ctx.Repo.Repository = repo
+			run := getRunByID(ctx, testCase.runID)
+			if testCase.err == "" {
+				assert.NotNil(t, run)
+				assert.False(t, ctx.Written(), resp.Body.String())
+			} else {
+				assert.Nil(t, run)
+				assert.True(t, ctx.Written())
+				assert.Contains(t, resp.Body.String(), testCase.err)
+			}
+		})
+	}
+}
 
 func Test_artifactsFind(t *testing.T) {
 	unittest.PrepareTestEnv(t)

@@ -53,6 +53,7 @@ func View(ctx *context_module.Context) {
 	workflowName := job.Run.WorkflowID
 
 	ctx.Data["RunIndex"] = runIndex
+	ctx.Data["RunID"] = job.Run.ID
 	ctx.Data["JobIndex"] = jobIndex
 	ctx.Data["ActionsURL"] = ctx.Repo.RepoLink + "/actions"
 	ctx.Data["WorkflowName"] = workflowName
@@ -668,6 +669,31 @@ func ArtifactsDeleteView(ctx *context_module.Context) {
 	ctx.JSON(http.StatusOK, struct{}{})
 }
 
+func getRunByID(ctx *context_module.Context, runID int64) *actions_model.ActionRun {
+	if runID == 0 {
+		log.Debug("Requested runID is zero.")
+		ctx.Error(http.StatusNotFound, "zero is not a valid run ID")
+		return nil
+	}
+
+	run, has, err := actions_model.GetRunByIDWithHas(ctx, runID)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return nil
+	}
+	if !has {
+		log.Debug("Requested runID[%d] not found.", runID)
+		ctx.Error(http.StatusNotFound, fmt.Sprintf("no such run %d", runID))
+		return nil
+	}
+	if run.RepoID != ctx.Repo.Repository.ID {
+		log.Debug("Requested runID[%d] does not belong to repo[%-v].", runID, ctx.Repo.Repository)
+		ctx.Error(http.StatusNotFound, "no such run")
+		return nil
+	}
+	return run
+}
+
 func artifactsFind(ctx *context_module.Context, opts actions_model.FindArtifactsOptions) []*actions_model.ActionArtifact {
 	artifacts, err := db.Find[actions_model.ActionArtifact](ctx, opts)
 	if err != nil {
@@ -711,18 +737,11 @@ func artifactsFindByNameOrID(ctx *context_module.Context, runID int64, nameOrID 
 }
 
 func ArtifactsDownloadView(ctx *context_module.Context) {
-	runIndex := ctx.ParamsInt64("run")
-	artifactNameOrID := ctx.Params("artifact_name_or_id")
-
-	run, err := actions_model.GetRunByIndex(ctx, ctx.Repo.Repository.ID, runIndex)
-	if err != nil {
-		if errors.Is(err, util.ErrNotExist) {
-			ctx.Error(http.StatusNotFound, err.Error())
-			return
-		}
-		ctx.Error(http.StatusInternalServerError, err.Error())
+	run := getRunByID(ctx, ctx.ParamsInt64("run"))
+	if ctx.Written() {
 		return
 	}
+	artifactNameOrID := ctx.Params("artifact_name_or_id")
 
 	artifacts := artifactsFindByNameOrID(ctx, run.ID, artifactNameOrID)
 	if ctx.Written() {
