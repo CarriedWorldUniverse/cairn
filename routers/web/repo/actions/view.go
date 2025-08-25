@@ -668,9 +668,51 @@ func ArtifactsDeleteView(ctx *context_module.Context) {
 	ctx.JSON(http.StatusOK, struct{}{})
 }
 
+func artifactsFind(ctx *context_module.Context, opts actions_model.FindArtifactsOptions) []*actions_model.ActionArtifact {
+	artifacts, err := db.Find[actions_model.ActionArtifact](ctx, opts)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return nil
+	}
+	if len(artifacts) == 0 {
+		return nil
+	}
+	return artifacts
+}
+
+func artifactsFindByNameOrID(ctx *context_module.Context, runID int64, nameOrID string) []*actions_model.ActionArtifact {
+	artifacts := artifactsFind(ctx, actions_model.FindArtifactsOptions{
+		RunID:        runID,
+		ArtifactName: nameOrID,
+	})
+	if ctx.Written() {
+		return nil
+	}
+	// if lookup by name found nothing, maybe it is an ID
+	if len(artifacts) == 0 {
+		id, err := strconv.ParseInt(nameOrID, 10, 64)
+		if err != nil || id == 0 {
+			ctx.Error(http.StatusNotFound, fmt.Sprintf("runID %d: artifact name not found: %v", runID, nameOrID))
+			return nil
+		}
+		artifacts = artifactsFind(ctx, actions_model.FindArtifactsOptions{
+			RunID: runID,
+			ID:    id,
+		})
+		if ctx.Written() {
+			return nil
+		}
+		if len(artifacts) == 0 {
+			ctx.Error(http.StatusNotFound, fmt.Sprintf("runID %d: artifact ID not found: %v", runID, nameOrID))
+			return nil
+		}
+	}
+	return artifacts
+}
+
 func ArtifactsDownloadView(ctx *context_module.Context) {
 	runIndex := ctx.ParamsInt64("run")
-	artifactName := ctx.Params("artifact_name")
+	artifactNameOrID := ctx.Params("artifact_name_or_id")
 
 	run, err := actions_model.GetRunByIndex(ctx, ctx.Repo.Repository.ID, runIndex)
 	if err != nil {
@@ -682,16 +724,8 @@ func ArtifactsDownloadView(ctx *context_module.Context) {
 		return
 	}
 
-	artifacts, err := db.Find[actions_model.ActionArtifact](ctx, actions_model.FindArtifactsOptions{
-		RunID:        run.ID,
-		ArtifactName: artifactName,
-	})
-	if err != nil {
-		ctx.Error(http.StatusInternalServerError, err.Error())
-		return
-	}
-	if len(artifacts) == 0 {
-		ctx.Error(http.StatusNotFound, "artifact not found")
+	artifacts := artifactsFindByNameOrID(ctx, run.ID, artifactNameOrID)
+	if ctx.Written() {
 		return
 	}
 
@@ -720,12 +754,14 @@ func ArtifactsDownloadView(ctx *context_module.Context) {
 			ctx.Error(http.StatusInternalServerError, err.Error())
 			return
 		}
-		common.ServeContentByReadSeeker(ctx.Base, artifactName, util.ToPointer(art.UpdatedUnix.AsTime()), f)
+		common.ServeContentByReadSeeker(ctx.Base, artifacts[0].ArtifactName+".zip", util.ToPointer(art.UpdatedUnix.AsTime()), f)
 		return
 	}
 
 	// Artifacts using the v1-v3 backend are stored as multiple individual files per artifact on the backend
 	// Those need to be zipped for download
+	artifactName := artifacts[0].ArtifactName
+
 	ctx.Resp.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip; filename*=UTF-8''%s.zip", url.PathEscape(artifactName), artifactName))
 	writer := zip.NewWriter(ctx.Resp)
 	defer writer.Close()

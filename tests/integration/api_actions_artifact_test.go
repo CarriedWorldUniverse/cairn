@@ -267,6 +267,11 @@ func TestActionsArtifactDownloadMultiFiles(t *testing.T) {
 		resp = MakeRequest(t, req, http.StatusOK)
 		assert.Equal(t, strings.Repeat(bodyChar, 1024), resp.Body.String())
 	}
+
+	// Download artifact via user-facing URL
+	req = NewRequest(t, "GET", "/user5/repo4/actions/runs/187/artifacts/multi-file-download")
+	resp = MakeRequest(t, req, http.StatusOK)
+	assert.Contains(t, resp.Header().Get("content-disposition"), "multi-file-download.zip")
 }
 
 func TestActionsArtifactUploadWithRetentionDays(t *testing.T) {
