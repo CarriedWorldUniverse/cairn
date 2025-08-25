@@ -108,6 +108,7 @@ func UpdateArtifactByID(ctx context.Context, id int64, art *ActionArtifact) erro
 
 type FindArtifactsOptions struct {
 	db.ListOptions
+	ID           int64
 	RepoID       int64
 	RunID        int64
 	ArtifactName string
@@ -116,6 +117,9 @@ type FindArtifactsOptions struct {
 
 func (opts FindArtifactsOptions) ToConds() builder.Cond {
 	cond := builder.NewCond()
+	if opts.ID > 0 {
+		cond = cond.And(builder.Eq{"id": opts.ID})
+	}
 	if opts.RepoID > 0 {
 		cond = cond.And(builder.Eq{"repo_id": opts.RepoID})
 	}

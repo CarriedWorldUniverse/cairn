@@ -344,6 +344,7 @@ func TestActionsArtifactV4DownloadSingle(t *testing.T) {
 	req = NewRequest(t, "GET", "/user5/repo4/actions/runs/188/artifacts/artifact-v4-download")
 	resp = MakeRequest(t, req, http.StatusOK)
 	assert.Equal(t, "bytes", resp.Header().Get("accept-ranges"))
+	assert.Contains(t, resp.Header().Get("content-disposition"), "artifact-v4-download.zip")
 	assert.Equal(t, body, resp.Body.String())
 
 	// Partial artifact download
