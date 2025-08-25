@@ -215,3 +215,104 @@ test('load multiple steps on a finished action', async () => {
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(2) .log-msg').text()).toEqual('Step #2 Log #2');
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(3) .log-msg').text()).toEqual('Step #2 Log #3');
 });
+
+test('artifacts download links', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {
+    if (url.endsWith('/artifacts')) {
+      return Promise.resolve({
+        ok: true,
+        json: vi.fn().mockResolvedValue(
+          {
+            artifacts: [
+              {name: 'artifactname1', size: 111, status: 'completed'},
+              {name: 'artifactname2', size: 222, status: 'expired'},
+            ],
+          },
+        ),
+      });
+    }
+
+    const postBody = JSON.parse(opts.body);
+    const stepsLog_value = [];
+    for (const cursor of postBody.logCursors) {
+      if (cursor.expanded) {
+        stepsLog_value.push(
+          {
+            step: cursor.step,
+            cursor: 0,
+            lines: [
+              {index: 1, message: `Step #${cursor.step + 1} Log #1`, timestamp: 0},
+            ],
+          },
+        );
+      }
+    }
+    const jobs_value = {
+      state: {
+        run: {
+          status: 'success',
+          commit: {
+            pusher: {},
+          },
+        },
+        currentJob: {
+          steps: [
+            {
+              summary: 'Test Step #1',
+              duration: '1s',
+              status: 'success',
+            },
+          ],
+        },
+      },
+      logs: {
+        stepsLog: opts.body?.includes('"cursor":null') ? stepsLog_value : [],
+      },
+    };
+
+    return Promise.resolve({
+      ok: true,
+      json: vi.fn().mockResolvedValue(
+        jobs_value,
+      ),
+    });
+  });
+
+  const wrapper = mount(RepoActionView, {
+    props: {
+      actionsURL: 'https://example.com/example-org/example-repo/actions',
+      runIndex: '10',
+      runID: '1001',
+      jobIndex: '2',
+      locale: {
+        approve: '',
+        cancel: '',
+        rerun: '',
+        artifactsTitle: 'artifactTitleHere',
+        areYouSure: '',
+        confirmDeleteArtifact: '',
+        rerun_all: '',
+        showTimeStamps: '',
+        showLogSeconds: '',
+        showFullScreen: '',
+        downloadLogs: '',
+        status: {
+          unknown: '',
+          waiting: '',
+          running: '',
+          success: '',
+          failure: '',
+          cancelled: '',
+          skipped: '',
+          blocked: '',
+        },
+      },
+    },
+  });
+  await flushPromises();
+
+  expect(wrapper.get('.job-artifacts .job-artifacts-title').text()).toEqual('artifactTitleHere');
+  expect(wrapper.get('.job-artifacts .job-artifacts-item:nth-of-type(1) .job-artifacts-link').attributes('href')).toEqual('https://example.com/example-org/example-repo/actions/runs/1001/artifacts/artifactname1');
+  expect(wrapper.get('.job-artifacts .job-artifacts-item:nth-of-type(2) .job-artifacts-link').attributes('href')).toEqual('https://example.com/example-org/example-repo/actions/runs/1001/artifacts/artifactname2');
+});

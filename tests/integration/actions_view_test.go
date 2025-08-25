@@ -4,6 +4,8 @@
 package integration
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -58,29 +60,53 @@ func TestActionsViewArtifactDeletion(t *testing.T) {
 func TestActionViewsArtifactDownload(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
+	assertDataAttrs := func(t *testing.T, body *bytes.Buffer, runID int64) {
+		t.Helper()
+		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: runID})
+		htmlDoc := NewHTMLParser(t, body)
+		selector := "#repo-action-view"
+		htmlDoc.AssertAttrEqual(t, selector, "data-run-id", fmt.Sprintf("%d", run.ID))
+		htmlDoc.AssertAttrEqual(t, selector, "data-run-index", fmt.Sprintf("%d", run.Index))
+	}
+
 	t.Run("V3", func(t *testing.T) {
-		req := NewRequest(t, "GET", "/user5/repo4/actions/runs/187/artifacts")
+		runIndex := 187
+		runID := int64(791)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d/artifacts", runIndex))
 		resp := MakeRequest(t, req, http.StatusOK)
 		assert.JSONEq(t, `{"artifacts":[{"name":"multi-file-download","size":2048,"status":"completed"}]}`, strings.TrimSuffix(resp.Body.String(), "\n"))
 
-		req = NewRequest(t, "GET", "/user5/repo4/actions/runs/187/artifacts/multi-file-download")
+		req = NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d", runIndex))
+		resp = MakeRequest(t, req, http.StatusOK)
+		assertDataAttrs(t, resp.Body, runID)
+
+		req = NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d/artifacts/multi-file-download", runID))
 		resp = MakeRequest(t, req, http.StatusOK)
 		assert.Contains(t, resp.Header().Get("content-disposition"), "multi-file-download.zip")
 	})
 
 	t.Run("V4", func(t *testing.T) {
-		req := NewRequest(t, "GET", "/user5/repo4/actions/runs/188/artifacts")
+		runIndex := 188
+		runID := int64(792)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d/artifacts", runIndex))
 		resp := MakeRequest(t, req, http.StatusOK)
 		assert.JSONEq(t, `{"artifacts":[{"name":"artifact-v4-download","size":1024,"status":"completed"}]}`, strings.TrimSuffix(resp.Body.String(), "\n"))
 
-		req = NewRequest(t, "GET", "/user5/repo4/actions/runs/188/artifacts/artifact-v4-download")
+		req = NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d", runIndex))
+		resp = MakeRequest(t, req, http.StatusOK)
+		assertDataAttrs(t, resp.Body, runID)
+
+		download := fmt.Sprintf("/user5/repo4/actions/runs/%d/artifacts/artifact-v4-download", runID)
+		req = NewRequest(t, "GET", download)
 		resp = MakeRequest(t, req, http.StatusOK)
 		assert.Equal(t, "bytes", resp.Header().Get("accept-ranges"))
 		assert.Contains(t, resp.Header().Get("content-disposition"), "artifact-v4-download.zip")
 		assert.Equal(t, strings.Repeat("D", 1024), resp.Body.String())
 
 		// Partial artifact download
-		req = NewRequest(t, "GET", "/user5/repo4/actions/runs/188/artifacts/artifact-v4-download").SetHeader("range", "bytes=0-99")
+		req = NewRequest(t, "GET", download).SetHeader("range", "bytes=0-99")
 		resp = MakeRequest(t, req, http.StatusPartialContent)
 		assert.Equal(t, "bytes 0-99/1024", resp.Header().Get("content-range"))
 		assert.Equal(t, strings.Repeat("D", 100), resp.Body.String())
