@@ -1,15 +1,12 @@
-HTTP/2 200 
-date: Wed, 23 Jul 2025 05:36:23 GMT
-server: Apache/2.4.37 (Red Hat Enterprise Linux) OpenSSL/1.1.1k mod_wsgi/4.6.4 Python/3.6
-x-xss-protection: 1; mode=block
-x-content-type-options: nosniff
-referrer-policy: same-origin
-x-frame-options: ALLOW-FROM https://pagure.io/
-strict-transport-security: max-age=31536000; includeSubDomains; preload
-content-length: 77
-content-security-policy: default-src 'self';script-src 'self' 'nonce-rzXQsxeaBjeye4rVcEn3aSWKa'; style-src 'self' 'nonce-rzXQsxeaBjeye4rVcEn3aSWKa'; object-src 'none';base-uri 'self';img-src 'self' https:;connect-src 'self' https://pagure.io:8088;frame-src https://docs.pagure.org;frame-ancestors https://pagure.io;
-set-cookie: pagure=eyJfcGVybWFuZW50Ijp0cnVlLCJjc3JmX3Rva2VuIjoiY2VhZjRhOTlkZWUxZDcxODg2NWIyN2JhZGY4ZjUyMjcxZTdkZGU0MyJ9.G2IGVw.JCK3tXfD0aOgDdIAMv5MlFkl-SY; Expires=Sat, 23-Aug-2025 05:36:23 GMT; Secure; HttpOnly; Path=/
-content-type: application/json
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Content-Length: 77
+Content-Type: application/json
+X-Xss-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: ALLOW-FROM https://pagure.io/
+Content-Security-Policy: default-src 'self';script-src 'self' 'nonce-Paip3h7855Wqz66JatzO28HOo'; style-src 'self' 'nonce-Paip3h7855Wqz66JatzO28HOo'; object-src 'none';base-uri 'self';img-src 'self' https:;connect-src 'self' https://pagure.io:8088;frame-src https://docs.pagure.org;frame-ancestors https://pagure.io;
+Set-Cookie: pagure=eyJfcGVybWFuZW50Ijp0cnVlLCJjc3JmX3Rva2VuIjoiYjIxMzk4ZjQwMDM3NjdmMWY0MjI5YTExYTVlNDQwODlhYWJhNTgyOSJ9.G4-gsw.cpd52huyCk-zDHjOrMBhHmL5STo; Expires=Fri, 26-Sep-2025 19:46:59 GMT; Secure; HttpOnly; Path=/
+Referrer-Policy: same-origin
 
 {
   "tag": "dddd", 
