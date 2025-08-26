@@ -1,4 +1,3 @@
-HTTP/2 200 
 date: Wed, 23 Jul 2025 06:19:47 GMT
 server: Apache/2.4.37 (Red Hat Enterprise Linux) OpenSSL/1.1.1k mod_wsgi/4.6.4 Python/3.6
 x-xss-protection: 1; mode=block
