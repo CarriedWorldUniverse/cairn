@@ -91,6 +91,7 @@ jobs:
           RACE_ENABLED: 'true'
           TAGS: bindata
           TEST_ELASTICSEARCH_URL: http://elasticsearch:9200
+          TEST_MINIO_ENDPOINT: minio:9000
   test-e2e:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
