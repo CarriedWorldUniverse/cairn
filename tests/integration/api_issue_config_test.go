@@ -133,6 +133,7 @@ func TestAPIRepoIssueConfigPaths(t *testing.T) {
 		".gitea/issue_template/config",
 		".github/ISSUE_TEMPLATE/config",
 		".github/issue_template/config",
+		"docs/issue_template/config",
 	}
 
 	for _, candidate := range templateConfigCandidates {
@@ -184,7 +185,7 @@ func TestAPIRepoValidateIssueConfig(t *testing.T) {
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
-		dirs := []string{".gitea", ".forgejo"}
+		dirs := []string{".gitea", ".forgejo", "docs"}
 		for _, dir := range dirs {
 			t.Run(dir, func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()

@@ -136,6 +136,8 @@ func TestPullCreateWithPullTemplate(t *testing.T) {
 			".gitea/pull_request_template.md",
 			".github/PULL_REQUEST_TEMPLATE.md",
 			".github/pull_request_template.md",
+			"docs/pull_request_template.md",
+			"docs/PULL_REQUEST_TEMPLATE.md",
 		}
 
 		createBaseRepo := func(t *testing.T, templateFiles []string, message string) (*repo_model.Repository, func()) {
