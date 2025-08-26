@@ -66,32 +66,26 @@ const (
 	pullRequestTemplateKey = "PullRequestTemplate"
 )
 
-var pullRequestTemplateCandidates = []string{
-	"PULL_REQUEST_TEMPLATE.md",
-	"PULL_REQUEST_TEMPLATE.yaml",
-	"PULL_REQUEST_TEMPLATE.yml",
-	"pull_request_template.md",
-	"pull_request_template.yaml",
-	"pull_request_template.yml",
-	".forgejo/PULL_REQUEST_TEMPLATE.md",
-	".forgejo/PULL_REQUEST_TEMPLATE.yaml",
-	".forgejo/PULL_REQUEST_TEMPLATE.yml",
-	".forgejo/pull_request_template.md",
-	".forgejo/pull_request_template.yaml",
-	".forgejo/pull_request_template.yml",
-	".gitea/PULL_REQUEST_TEMPLATE.md",
-	".gitea/PULL_REQUEST_TEMPLATE.yaml",
-	".gitea/PULL_REQUEST_TEMPLATE.yml",
-	".gitea/pull_request_template.md",
-	".gitea/pull_request_template.yaml",
-	".gitea/pull_request_template.yml",
-	".github/PULL_REQUEST_TEMPLATE.md",
-	".github/PULL_REQUEST_TEMPLATE.yaml",
-	".github/PULL_REQUEST_TEMPLATE.yml",
-	".github/pull_request_template.md",
-	".github/pull_request_template.yaml",
-	".github/pull_request_template.yml",
+// generatePullRequestTemplateLocations generates all the file paths where we
+// look for a pull request template, e.g. ".forgejo/PULL_REQUEST_TEMPLATE.md".
+func generatePullRequestTemplateLocations() []string {
+	var result []string
+	prefixes := []string{"", ".forgejo/", ".gitea/", ".github/", "docs/"}
+	filenames := []string{"PULL_REQUEST_TEMPLATE", "pull_request_template"}
+	extensions := []string{".md", ".yaml", ".yml"}
+
+	for _, prefix := range prefixes {
+		for _, filename := range filenames {
+			for _, extension := range extensions {
+				result = append(result, prefix+filename+extension)
+			}
+		}
+	}
+
+	return result
 }
+
+var pullRequestTemplateCandidates = generatePullRequestTemplateLocations()
 
 func getRepository(ctx *context.Context, repoID int64) *repo_model.Repository {
 	repo, err := repo_model.GetRepositoryByID(ctx, repoID)

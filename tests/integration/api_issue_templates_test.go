@@ -42,6 +42,7 @@ func TestAPIIssueTemplateList(t *testing.T) {
 				".gitea/issue_template/test.md",
 				".github/ISSUE_TEMPLATE/test.md",
 				".github/issue_template/test.md",
+				"docs/issue_template/test.md",
 			}
 
 			for _, template := range templateCandidates {
@@ -79,6 +80,7 @@ This is the template!`)
 				".forgejo/issue_template/test.md",
 				".gitea/issue_template/test.md",
 				".github/issue_template/test.md",
+				"docs/issue_template/test.md",
 			}
 			defer func() {
 				for _, template := range templatePriority {
@@ -107,7 +109,7 @@ This is the template!`)
 			// If templates have the same filename and content, but in different
 			// directories, they count as different templates, and all are
 			// considered.
-			assert.Len(t, issueTemplates, 3)
+			assert.Len(t, issueTemplates, 4)
 		})
 	})
 }
