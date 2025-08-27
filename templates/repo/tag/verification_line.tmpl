@@ -9,7 +9,7 @@
 		{{$class = (print $class " isWarning")}}
 	{{end}}
 
-	<div class="ui attached message tw-text-left tw-flex tw-mb-4 tw-content-center tw-justify-between tag-signature-row tw-flex-wrap {{$class}}">
+	<div class="ui bottom attached message tw-text-left tw-flex tw-mb-4 tw-content-center tw-justify-between tag-signature-row tw-flex-wrap {{$class}}">
 		<div class="tw-flex tw-content-center">
 			{{if $v.Verified}}
 				{{if ne $v.SigningUser.ID 0}}
@@ -62,14 +62,14 @@
 			{{else}}
 				{{if $v.SigningKey}}
 					{{if ne $v.SigningKey.KeyID ""}}
-						{{svg "octicon-verified" 16 "tw-mr-2"}}
+						{{svg "octicon-unverified" 16 "tw-mr-2"}}
 						<span class="ui text tw-mr-2">{{ctx.Locale.Tr "repo.commits.gpg_key_id"}}:</span>
 						{{$v.SigningKey.PaddedKeyID}}
 					{{end}}
 				{{end}}
 				{{if $v.SigningSSHKey}}
 					{{if ne $v.SigningSSHKey.Fingerprint ""}}
-						{{svg "octicon-verified" 16 "tw-mr-2"}}
+						{{svg "octicon-unverified" 16 "tw-mr-2"}}
 						<span class="ui text tw-mr-2">{{ctx.Locale.Tr "repo.commits.ssh_key_fingerprint"}}:</span>
 						{{$v.SigningSSHKey.Fingerprint}}
 					{{end}}
