@@ -112,29 +112,37 @@ type ViewRequest struct {
 }
 
 type ViewResponse struct {
-	State struct {
-		Run struct {
-			Link              string        `json:"link"`
-			Title             string        `json:"title"`
-			TitleHTML         template.HTML `json:"titleHTML"`
-			Status            string        `json:"status"`
-			CanCancel         bool          `json:"canCancel"`
-			CanApprove        bool          `json:"canApprove"` // the run needs an approval and the doer has permission to approve
-			CanRerun          bool          `json:"canRerun"`
-			CanDeleteArtifact bool          `json:"canDeleteArtifact"`
-			Done              bool          `json:"done"`
-			Jobs              []*ViewJob    `json:"jobs"`
-			Commit            ViewCommit    `json:"commit"`
-		} `json:"run"`
-		CurrentJob struct {
-			Title  string         `json:"title"`
-			Detail string         `json:"detail"`
-			Steps  []*ViewJobStep `json:"steps"`
-		} `json:"currentJob"`
-	} `json:"state"`
-	Logs struct {
-		StepsLog []*ViewStepLog `json:"stepsLog"`
-	} `json:"logs"`
+	State ViewState `json:"state"`
+	Logs  ViewLogs  `json:"logs"`
+}
+
+type ViewState struct {
+	Run        ViewRunInfo    `json:"run"`
+	CurrentJob ViewCurrentJob `json:"currentJob"`
+}
+
+type ViewRunInfo struct {
+	Link              string        `json:"link"`
+	Title             string        `json:"title"`
+	TitleHTML         template.HTML `json:"titleHTML"`
+	Status            string        `json:"status"`
+	CanCancel         bool          `json:"canCancel"`
+	CanApprove        bool          `json:"canApprove"` // the run needs an approval and the doer has permission to approve
+	CanRerun          bool          `json:"canRerun"`
+	CanDeleteArtifact bool          `json:"canDeleteArtifact"`
+	Done              bool          `json:"done"`
+	Jobs              []*ViewJob    `json:"jobs"`
+	Commit            ViewCommit    `json:"commit"`
+}
+
+type ViewCurrentJob struct {
+	Title  string         `json:"title"`
+	Detail string         `json:"detail"`
+	Steps  []*ViewJobStep `json:"steps"`
+}
+
+type ViewLogs struct {
+	StepsLog []*ViewStepLog `json:"stepsLog"`
 }
 
 type ViewJob struct {
