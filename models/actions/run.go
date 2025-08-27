@@ -309,15 +309,26 @@ func GetLatestRunForBranchAndWorkflow(ctx context.Context, repoID int64, branch,
 }
 
 func GetRunByID(ctx context.Context, id int64) (*ActionRun, error) {
-	var run ActionRun
-	has, err := db.GetEngine(ctx).Where("id=?", id).Get(&run)
+	run, has, err := GetRunByIDWithHas(ctx, id)
 	if err != nil {
 		return nil, err
 	} else if !has {
 		return nil, fmt.Errorf("run with id %d: %w", id, util.ErrNotExist)
 	}
 
-	return &run, nil
+	return run, nil
+}
+
+func GetRunByIDWithHas(ctx context.Context, id int64) (*ActionRun, bool, error) {
+	var run ActionRun
+	has, err := db.GetEngine(ctx).Where("id=?", id).Get(&run)
+	if err != nil {
+		return nil, false, err
+	} else if !has {
+		return nil, false, nil
+	}
+
+	return &run, true, nil
 }
 
 func GetRunByIndex(ctx context.Context, repoID, index int64) (*ActionRun, error) {
