@@ -469,6 +469,8 @@ func (issue *Issue) GetLastEventTimestamp() timeutil.TimeStamp {
 }
 
 // GetLastEventLabel returns the localization label for the current issue.
+//
+//llu:returnsTrKey
 func (issue *Issue) GetLastEventLabel() string {
 	if issue.IsClosed {
 		if issue.IsPull && issue.PullRequest.HasMerged {
@@ -494,6 +496,8 @@ func (issue *Issue) GetLastComment(ctx context.Context) (*Comment, error) {
 }
 
 // GetLastEventLabelFake returns the localization label for the current issue without providing a link in the username.
+//
+//llu:returnsTrKey
 func (issue *Issue) GetLastEventLabelFake() string {
 	if issue.IsClosed {
 		if issue.IsPull && issue.PullRequest.HasMerged {

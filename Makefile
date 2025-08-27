@@ -463,7 +463,7 @@ lint-locale:
 
 .PHONY: lint-locale-usage
 lint-locale-usage:
-	$(GO) run build/lint-locale-usage/lint-locale-usage.go
+	$(GO) run ./build/lint-locale-usage --allow-masked-usages-from=build/lint-locale-usage/allowed-masked-usage.txt
 
 .PHONY: lint-md
 lint-md: node_modules

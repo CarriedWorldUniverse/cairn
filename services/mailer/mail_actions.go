@@ -53,7 +53,7 @@ func sendMailActionRun(to *user_model.User, run *actions_model.ActionRun, priorS
 	if run.Status.IsSuccess() {
 		subject = locale.TrString("mail.actions.successful_run_after_failure_subject", run.Title, run.Repo.FullName())
 	} else {
-		subject = locale.TrString("mail.actions.not_successful_run", run.Title, run.Repo.FullName())
+		subject = locale.TrString("mail.actions.not_successful_run_subject", run.Title, run.Repo.FullName())
 	}
 
 	commitSHA := run.CommitSHA

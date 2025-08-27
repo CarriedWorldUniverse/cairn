@@ -39,4 +39,5 @@ options/locale/.* @0ko
 options/locale_next/.* @0ko
 
 # Personal interest
+build/lint-locale-usage/.* @fogti
 .*/webhook.* @oliverpool

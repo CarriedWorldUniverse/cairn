@@ -55,6 +55,8 @@ cpu.out
 *.log
 *.log.*.gz
 
+/build/lint-locale/lint-locale
+/build/lint-locale-usage/lint-locale-usage
 /gitea
 /gitea-vet
 /debug

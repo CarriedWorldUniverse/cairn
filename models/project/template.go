@@ -26,6 +26,8 @@ const (
 )
 
 // GetTemplateConfigs retrieves the template configs of configurations project columns could have
+//
+//llu:returnsTrKey
 func GetTemplateConfigs() []TemplateConfig {
 	return []TemplateConfig{
 		{TemplateTypeNone, "repo.projects.type.none"},
