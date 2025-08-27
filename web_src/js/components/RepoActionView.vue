@@ -15,6 +15,7 @@ const sfc = {
   },
   props: {
     runIndex: String,
+    runID: String,
     jobIndex: String,
     actionsURL: String,
     workflowName: String,
@@ -386,6 +387,7 @@ export function initRepositoryActionView() {
 
   const view = createApp(sfc, {
     runIndex: el.getAttribute('data-run-index'),
+    runID: el.getAttribute('data-run-id'),
     jobIndex: el.getAttribute('data-job-index'),
     actionsURL: el.getAttribute('data-actions-url'),
     workflowName: el.getAttribute('data-workflow-name'),
@@ -473,7 +475,7 @@ export function initRepositoryActionView() {
           </div>
           <ul class="job-artifacts-list">
             <li class="job-artifacts-item" v-for="artifact in artifacts" :key="artifact.name">
-              <a class="job-artifacts-link" target="_blank" :href="run.link+'/artifacts/'+artifact.name">
+              <a class="job-artifacts-link" target="_blank" :href="actionsURL+'/runs/'+runID+'/artifacts/'+artifact.name">
                 <SvgIcon name="octicon-file" class="ui text black job-artifacts-icon"/>{{ artifact.name }}
               </a>
               <a v-if="run.canDeleteArtifact" @click="deleteArtifact(artifact.name)" class="job-artifacts-delete">
