@@ -802,6 +802,49 @@ Citation needed[^0].`,
 	}
 }
 
+func TestFootnoteWithScope(t *testing.T) {
+	testcases := []struct {
+		testcase string
+		expected string
+	}{
+		{
+			`Citation needed[^0].
+[^0]: Source`,
+			`<p>Citation needed<sup id="fnref:user-content-0-comment-999"><a href="#fn:user-content-0-comment-999" rel="nofollow">1</a></sup>.</p>
+<div>
+<hr/>
+<ol>
+<li id="fn:user-content-0-comment-999">
+<p>Source <a href="#fnref:user-content-0-comment-999" rel="nofollow">↩︎</a></p>
+</li>
+</ol>
+</div>
+`,
+		}, {
+			`[^0]: Source
+
+Citation needed[^0].`,
+			`<p>Citation needed<sup id="fnref:user-content-0-comment-999"><a href="#fn:user-content-0-comment-999" rel="nofollow">1</a></sup>.</p>
+<div>
+<hr/>
+<ol>
+<li id="fn:user-content-0-comment-999">
+<p>Source <a href="#fnref:user-content-0-comment-999" rel="nofollow">↩︎</a></p>
+</li>
+</ol>
+</div>
+`,
+		},
+	}
+
+	for _, test := range testcases {
+		metas := map[string]string{"scope": "comment-999"}
+		res, err := markdown.RenderString(&markup.RenderContext{Ctx: git.DefaultContext, Metas: metas}, test.testcase)
+		require.NoError(t, err, "Unexpected error in testcase: %q", test.testcase)
+		assert.Equal(t, test.expected, string(res), "Unexpected result in testcase %q", test.testcase)
+	}
+}
+
 func TestTaskList(t *testing.T) {
 	testcases := []struct {
 		testcase string

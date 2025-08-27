@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"forgejo.org/modules/markup"
+	"forgejo.org/modules/markup/common"
 	markdownutil "forgejo.org/modules/markup/markdown/util"
 	"forgejo.org/modules/setting"
 
@@ -74,6 +75,18 @@ func (g *ASTTransformer) Transform(node *ast.Document, reader text.Reader, pc pa
 			}
 		case *ast.CodeSpan:
 			g.transformCodeSpan(ctx, v, reader)
+		case *common.Footnote:
+			if scope, found := ctx.Metas["scope"]; found {
+				v.Name = fmt.Appendf(v.Name, "-%s", scope)
+			}
+		case *common.FootnoteLink:
+			if scope, found := ctx.Metas["scope"]; found {
+				v.Name = fmt.Appendf(v.Name, "-%s", scope)
+			}
+		case *common.FootnoteBackLink:
+			if scope, found := ctx.Metas["scope"]; found {
+				v.Name = fmt.Appendf(v.Name, "-%s", scope)
+			}
 		}
 		return ast.WalkContinue, nil
 	})
