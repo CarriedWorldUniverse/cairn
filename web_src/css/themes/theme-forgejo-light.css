@@ -298,11 +298,6 @@
 .ui.primary.labels .label {
   background-color: var(--color-primary-dark-1) !important;
 }
-.repository.view.issue .comment-list .code-comment + .code-comment {
-  margin: 1.25rem 0 !important;
-  padding-top: 1.25rem !important;
-  border-top-color: var(--zinc-250) !important;
-}
 .ui.labeled.icon.buttons > .button > .icon,
 .ui.labeled.icon.button > .icon {
   background-color: var(--color-shadow) !important;
