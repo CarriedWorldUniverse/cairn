@@ -47,7 +47,7 @@ test('PR: Create review from commit', async ({page}) => {
   if (await start_button.isVisible({timeout: 100})) {
     await start_button.click();
   } else {
-    await page.locator('.comment-code-cloud form button.btn-add-comment').click();
+    await page.locator('.comment-code-cloud form button[name="pending_review"]').click();
   }
 
   await expect(page.locator('.comment-list .comment-container')).toBeVisible();
