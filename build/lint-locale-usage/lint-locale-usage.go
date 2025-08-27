@@ -5,22 +5,19 @@
 package main
 
 import (
+	"bufio"
+	"errors"
+	"flag"
 	"fmt"
-	"go/ast"
-	goParser "go/parser"
 	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
+	"sort"
 	"strings"
-	"text/template"
-	tmplParser "text/template/parse"
 
 	"forgejo.org/modules/container"
-	fjTemplates "forgejo.org/modules/templates"
 	"forgejo.org/modules/translation/localeiter"
-	"forgejo.org/modules/util"
 )
 
 // this works by first gathering all valid source string IDs from `en-US` reference files
@@ -63,241 +60,180 @@ func InitLocaleTrFunctions() map[string][]uint {
 
 type Handler struct {
 	OnMsgid            func(fset *token.FileSet, pos token.Pos, msgid string)
+	OnMsgidPrefix      func(fset *token.FileSet, pos token.Pos, msgidPrefix string, truncated bool)
 	OnUnexpectedInvoke func(fset *token.FileSet, pos token.Pos, funcname string, argc int)
+	OnWarning          func(fset *token.FileSet, pos token.Pos, msg string)
 	LocaleTrFunctions  map[string][]uint
 }
 
-// the `Handle*File` functions follow the following calling convention:
-// * `fname` is the name of the input file
-// * `src` is either `nil` (then the function invokes `ReadFile` to read the file)
-//   or the contents of the file as {`[]byte`, or a `string`}
+type StringTrie interface {
+	Matches(key []string) bool
+}
 
-func (handler Handler) HandleGoFile(fname string, src any) error {
-	fset := token.NewFileSet()
-	node, err := goParser.ParseFile(fset, fname, src, goParser.SkipObjectResolution)
-	if err != nil {
-		return LocatedError{
-			Location: fname,
-			Kind:     "Go parser",
-			Err:      err,
-		}
-	}
+type StringTrieMap map[string]StringTrie
 
-	ast.Inspect(node, func(n ast.Node) bool {
-		// search for function calls of the form `anything.Tr(any-string-lit, ...)`
-
-		call, ok := n.(*ast.CallExpr)
-		if !ok || len(call.Args) < 1 {
-			return true
-		}
-
-		funSel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return true
-		}
-
-		ltf, ok := handler.LocaleTrFunctions[funSel.Sel.Name]
-		if !ok {
-			return true
-		}
-
-		var gotUnexpectedInvoke *int
-
-		for _, argNum := range ltf {
-			if len(call.Args) >= int(argNum+1) {
-				argLit, ok := call.Args[int(argNum)].(*ast.BasicLit)
-				if !ok || argLit.Kind != token.STRING {
-					continue
-				}
-
-				// extract string content
-				arg, err := strconv.Unquote(argLit.Value)
-				if err == nil {
-					// found interesting strings
-					handler.OnMsgid(fset, argLit.ValuePos, arg)
-				}
-			} else {
-				argc := len(call.Args)
-				gotUnexpectedInvoke = &argc
-			}
-		}
-
-		if gotUnexpectedInvoke != nil {
-			handler.OnUnexpectedInvoke(fset, funSel.Sel.NamePos, funSel.Sel.Name, *gotUnexpectedInvoke)
-		}
-
+func (m StringTrieMap) Matches(key []string) bool {
+	if len(key) == 0 || m == nil {
 		return true
-	})
-
-	return nil
-}
-
-// derived from source: modules/templates/scopedtmpl/scopedtmpl.go, L169-L213
-func (handler Handler) handleTemplateNode(fset *token.FileSet, node tmplParser.Node) {
-	switch node.Type() {
-	case tmplParser.NodeAction:
-		handler.handleTemplatePipeNode(fset, node.(*tmplParser.ActionNode).Pipe)
-	case tmplParser.NodeList:
-		nodeList := node.(*tmplParser.ListNode)
-		handler.handleTemplateFileNodes(fset, nodeList.Nodes)
-	case tmplParser.NodePipe:
-		handler.handleTemplatePipeNode(fset, node.(*tmplParser.PipeNode))
-	case tmplParser.NodeTemplate:
-		handler.handleTemplatePipeNode(fset, node.(*tmplParser.TemplateNode).Pipe)
-	case tmplParser.NodeIf:
-		nodeIf := node.(*tmplParser.IfNode)
-		handler.handleTemplateBranchNode(fset, nodeIf.BranchNode)
-	case tmplParser.NodeRange:
-		nodeRange := node.(*tmplParser.RangeNode)
-		handler.handleTemplateBranchNode(fset, nodeRange.BranchNode)
-	case tmplParser.NodeWith:
-		nodeWith := node.(*tmplParser.WithNode)
-		handler.handleTemplateBranchNode(fset, nodeWith.BranchNode)
-
-	case tmplParser.NodeCommand:
-		nodeCommand := node.(*tmplParser.CommandNode)
-
-		handler.handleTemplateFileNodes(fset, nodeCommand.Args)
-
-		if len(nodeCommand.Args) < 2 {
-			return
-		}
-
-		nodeChain, ok := nodeCommand.Args[0].(*tmplParser.ChainNode)
-		if !ok {
-			return
-		}
-
-		nodeIdent, ok := nodeChain.Node.(*tmplParser.IdentifierNode)
-		if !ok || nodeIdent.Ident != "ctx" || len(nodeChain.Field) != 2 || nodeChain.Field[0] != "Locale" {
-			return
-		}
-
-		ltf, ok := handler.LocaleTrFunctions[nodeChain.Field[1]]
-		if !ok {
-			return
-		}
-
-		var gotUnexpectedInvoke *int
-
-		for _, argNum := range ltf {
-			if len(nodeCommand.Args) >= int(argNum+2) {
-				nodeString, ok := nodeCommand.Args[int(argNum+1)].(*tmplParser.StringNode)
-				if ok {
-					// found interesting strings
-					// the column numbers are a bit "off", but much better than nothing
-					handler.OnMsgid(fset, token.Pos(nodeString.Pos), nodeString.Text)
-				}
-			} else {
-				argc := len(nodeCommand.Args) - 1
-				gotUnexpectedInvoke = &argc
-			}
-		}
-
-		if gotUnexpectedInvoke != nil {
-			handler.OnUnexpectedInvoke(fset, token.Pos(nodeChain.Pos), nodeChain.Field[1], *gotUnexpectedInvoke)
-		}
-
-	default:
 	}
+	value, ok := m[key[0]]
+	if !ok {
+		return false
+	}
+	if value == nil {
+		return true
+	}
+	return value.Matches(key[1:])
 }
 
-func (handler Handler) handleTemplatePipeNode(fset *token.FileSet, pipeNode *tmplParser.PipeNode) {
-	if pipeNode == nil {
+func (m StringTrieMap) Insert(key []string) {
+	if m == nil {
 		return
 	}
 
-	// NOTE: we can't pass `pipeNode.Cmds` to handleTemplateFileNodes due to incompatible argument types
-	for _, node := range pipeNode.Cmds {
-		handler.handleTemplateNode(fset, node)
-	}
-}
+	switch len(key) {
+	case 0:
+		return
 
-func (handler Handler) handleTemplateBranchNode(fset *token.FileSet, branchNode tmplParser.BranchNode) {
-	handler.handleTemplatePipeNode(fset, branchNode.Pipe)
-	handler.handleTemplateFileNodes(fset, branchNode.List.Nodes)
-	if branchNode.ElseList != nil {
-		handler.handleTemplateFileNodes(fset, branchNode.ElseList.Nodes)
-	}
-}
+	case 1:
+		m[key[0]] = nil
 
-func (handler Handler) handleTemplateFileNodes(fset *token.FileSet, nodes []tmplParser.Node) {
-	for _, node := range nodes {
-		handler.handleTemplateNode(fset, node)
-	}
-}
-
-func (handler Handler) HandleTemplateFile(fname string, src any) error {
-	var tmplContent []byte
-	switch src2 := src.(type) {
-	case nil:
-		var err error
-		tmplContent, err = os.ReadFile(fname)
-		if err != nil {
-			return LocatedError{
-				Location: fname,
-				Kind:     "ReadFile",
-				Err:      err,
-			}
-		}
-	case []byte:
-		tmplContent = src2
-	case string:
-		// SAFETY: we do not modify tmplContent below
-		tmplContent = util.UnsafeStringToBytes(src2)
 	default:
-		panic("invalid type for 'src'")
+		if value, ok := m[key[0]]; ok {
+			if value == nil {
+				return
+			}
+		} else {
+			m[key[0]] = make(StringTrieMap)
+		}
+		m[key[0]].(StringTrieMap).Insert(key[1:])
 	}
+}
 
-	fset := token.NewFileSet()
-	fset.AddFile(fname, 1, len(tmplContent)).SetLinesForContent(tmplContent)
-	// SAFETY: we do not modify tmplContent2 below
-	tmplContent2 := util.UnsafeBytesToString(tmplContent)
-
-	tmpl := template.New(fname)
-	tmpl.Funcs(fjTemplates.NewFuncMap())
-	tmplParsed, err := tmpl.Parse(tmplContent2)
+func ParseAllowedMaskedUsages(fname string, usedMsgids container.Set[string], allowedMaskedPrefixes StringTrieMap, chkMsgid func(msgid string) bool) error {
+	file, err := os.Open(fname)
 	if err != nil {
 		return LocatedError{
 			Location: fname,
-			Kind:     "Template parser",
+			Kind:     "Open",
 			Err:      err,
 		}
 	}
-	handler.handleTemplateFileNodes(fset, tmplParsed.Root.Nodes)
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lno := 0
+	for scanner.Scan() {
+		lno++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if linePrefix, found := strings.CutSuffix(line, "."); found {
+			allowedMaskedPrefixes.Insert(strings.Split(linePrefix, "."))
+		} else {
+			if !chkMsgid(line) {
+				return LocatedError{
+					Location: fmt.Sprintf("%s: line %d", fname, lno),
+					Kind:     "undefined msgid",
+					Err:      errors.New(line),
+				}
+			}
+			usedMsgids.Add(line)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return LocatedError{
+			Location: fname,
+			Kind:     "Scanner",
+			Err:      err,
+		}
+	}
 	return nil
 }
 
-// This command assumes that we get started from the project root directory
-//
-// Possible command line flags:
-//
-//	--allow-missing-msgids        don't return an error code if missing message IDs are found
-//
-// EXIT CODES:
-//
-//	0  success, no issues found
-//	1  unable to walk directory tree
-//	2  unable to parse locale ini/json files
-//	3  unable to parse go or text/template files
-//	4  found missing message IDs
-//
+// Truncating a message id prefix to the last dot
+func PrepareMsgidPrefix(s string) (string, bool) {
+	index := strings.LastIndexByte(s, 0x2e)
+	if index == -1 {
+		return "", true
+	}
+	return s[:index], index != len(s)-1
+}
+
+func Usage() {
+	outp := flag.CommandLine.Output()
+	fmt.Fprintf(outp, "Usage of %s:\n", os.Args[0])
+	flag.PrintDefaults()
+
+	fmt.Fprintf(outp, "\nThis command assumes that it gets started from the project root directory.\n")
+
+	fmt.Fprintf(outp, "\nExit codes:\n")
+	for _, i := range []string{
+		"0\tsuccess, no issues found",
+		"1\tunable to walk directory tree",
+		"2\tunable to parse locale ini/json files",
+		"3\tunable to parse go or text/template files",
+		"4\tfound missing message IDs",
+		"5\tfound unused message IDs",
+	} {
+		fmt.Fprintf(outp, "\t%s\n", i)
+	}
+
+	fmt.Fprintf(outp, "\nSpecial Go doc comments:\n")
+	for _, i := range []string{
+		"//llu:returnsTrKey",
+		"\tcan be used in front of functions to indicate",
+		"\tthat the function returns message IDs",
+		"\tWARNING: this currently doesn't support nested functions properly",
+		"",
+		"//llu:returnsTrKeySuffix prefix.",
+		"\tsimilar to llu:returnsTrKey, but the given prefix is prepended",
+		"\tto the found strings before interpreting them as msgids",
+		"",
+		"// llu:TrKeys",
+		"\tcan be used in front of 'const' and 'var' blocks",
+		"\tin order to mark all contained strings as message IDs",
+		"",
+		"// llu:TrKeysSuffix prefix.",
+		"\tlike llu:returnsTrKeySuffix, but for 'const' and 'var' blocks",
+	} {
+		if i == "" {
+			fmt.Fprintf(outp, "\n")
+		} else {
+			fmt.Fprintf(outp, "\t%s\n", i)
+		}
+	}
+}
+
 //nolint:forbidigo
 func main() {
 	allowMissingMsgids := false
-	for _, arg := range os.Args[1:] {
-		if arg == "--allow-missing-msgids" {
-			allowMissingMsgids = true
-		}
-	}
+	allowUnusedMsgids := false
+	usedMsgids := make(container.Set[string])
+	allowedMaskedPrefixes := make(StringTrieMap)
 
-	onError := func(err error) {
-		if err == nil {
-			return
-		}
-		fmt.Println(err.Error())
-		os.Exit(3)
+	// It's possible for execl to hand us an empty os.Args.
+	if len(os.Args) == 0 {
+		flag.CommandLine = flag.NewFlagSet("lint-locale-usage", flag.ExitOnError)
+	} else {
+		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	}
+	flag.CommandLine.Usage = Usage
+	flag.Usage = Usage
+
+	flag.BoolVar(
+		&allowMissingMsgids,
+		"allow-missing-msgids",
+		false,
+		"don't return an error code if missing message IDs are found",
+	)
+	flag.BoolVar(
+		&allowUnusedMsgids,
+		"allow-unused-msgids",
+		false,
+		"don't return an error code if unused message IDs are found",
+	)
 
 	msgids := make(container.Set[string])
 
@@ -334,16 +270,49 @@ func main() {
 
 	gotAnyMsgidError := false
 
+	flag.Func(
+		"allow-masked-usages-from",
+		"supply a file containing a newline-separated list of allowed masked usages",
+		func(argval string) error {
+			return ParseAllowedMaskedUsages(argval, usedMsgids, allowedMaskedPrefixes, func(msgid string) bool {
+				return msgids.Contains(msgid)
+			})
+		},
+	)
+	flag.Parse()
+
+	onError := func(err error) {
+		if err == nil {
+			return
+		}
+		fmt.Println(err.Error())
+		os.Exit(3)
+	}
+
 	handler := Handler{
+		OnMsgidPrefix: func(fset *token.FileSet, pos token.Pos, msgidPrefix string, truncated bool) {
+			msgidPrefixSplit := strings.Split(msgidPrefix, ".")
+			if !truncated {
+				allowedMaskedPrefixes.Insert(msgidPrefixSplit)
+			} else if !allowedMaskedPrefixes.Matches(msgidPrefixSplit) {
+				gotAnyMsgidError = true
+				fmt.Printf("%s:\tmissing msgid prefix: %s\n", fset.Position(pos).String(), msgidPrefix)
+			}
+		},
 		OnMsgid: func(fset *token.FileSet, pos token.Pos, msgid string) {
 			if !msgids.Contains(msgid) {
 				gotAnyMsgidError = true
 				fmt.Printf("%s:\tmissing msgid: %s\n", fset.Position(pos).String(), msgid)
+			} else {
+				usedMsgids.Add(msgid)
 			}
 		},
 		OnUnexpectedInvoke: func(fset *token.FileSet, pos token.Pos, funcname string, argc int) {
 			gotAnyMsgidError = true
 			fmt.Printf("%s:\tunexpected invocation of %s with %d arguments\n", fset.Position(pos).String(), funcname, argc)
+		},
+		OnWarning: func(fset *token.FileSet, pos token.Pos, msg string) {
+			fmt.Printf("%s:\tWARNING: %s\n", fset.Position(pos).String(), msg)
 		},
 		LocaleTrFunctions: InitLocaleTrFunctions(),
 	}
@@ -377,7 +346,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	unusedMsgids := []string{}
+
+	for msgid := range msgids {
+		if !usedMsgids.Contains(msgid) && !allowedMaskedPrefixes.Matches(strings.Split(msgid, ".")) {
+			unusedMsgids = append(unusedMsgids, msgid)
+		}
+	}
+
+	sort.Strings(unusedMsgids)
+
+	if len(unusedMsgids) != 0 {
+		fmt.Printf("=== unused msgids (%d): ===\n", len(unusedMsgids))
+		for _, msgid := range unusedMsgids {
+			fmt.Printf("- %s\n", msgid)
+		}
+	}
+
 	if !allowMissingMsgids && gotAnyMsgidError {
 		os.Exit(4)
+	}
+	if !allowUnusedMsgids && len(unusedMsgids) != 0 {
+		os.Exit(5)
 	}
 }

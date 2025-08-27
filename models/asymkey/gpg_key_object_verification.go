@@ -36,6 +36,7 @@ type ObjectVerification struct {
 	TrustStatus    string
 }
 
+// llu:TrKeys
 const (
 	// BadSignature is used as the reason when the signature has a KeyID that is in the db
 	// but no key that has that ID verifies the signature. This is a suspicious failure.

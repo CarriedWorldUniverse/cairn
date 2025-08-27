@@ -48,6 +48,7 @@ const (
 	AbuseCategoryTypeIllegalContent                              // 4
 )
 
+// llu:TrKeys
 var AbuseCategoriesTranslationKeys = map[AbuseCategoryType]string{
 	AbuseCategoryTypeSpam:           "moderation.abuse_category.spam",
 	AbuseCategoryTypeMalware:        "moderation.abuse_category.malware",

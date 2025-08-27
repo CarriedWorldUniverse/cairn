@@ -427,6 +427,7 @@ func (diffFile *DiffFile) ShouldBeHidden() bool {
 	return diffFile.IsGenerated || diffFile.IsViewed
 }
 
+//llu:returnsTrKey
 func (diffFile *DiffFile) ModeTranslationKey(mode string) string {
 	switch mode {
 	case "040000":

@@ -271,7 +271,6 @@ type Unit struct {
 	Name          string
 	NameKey       string
 	URI           string
-	DescKey       string
 	Idx           int
 	MaxAccessMode perm.AccessMode // The max access mode of the unit. i.e. Read means this unit can only be read.
 }
@@ -299,7 +298,6 @@ var (
 		"code",
 		"repo.code",
 		"/",
-		"repo.code.desc",
 		0,
 		perm.AccessModeOwner,
 	}
@@ -309,7 +307,6 @@ var (
 		"issues",
 		"repo.issues",
 		"/issues",
-		"repo.issues.desc",
 		1,
 		perm.AccessModeOwner,
 	}
@@ -319,7 +316,6 @@ var (
 		"ext_issues",
 		"repo.ext_issues",
 		"/issues",
-		"repo.ext_issues.desc",
 		1,
 		perm.AccessModeRead,
 	}
@@ -329,7 +325,6 @@ var (
 		"pulls",
 		"repo.pulls",
 		"/pulls",
-		"repo.pulls.desc",
 		2,
 		perm.AccessModeOwner,
 	}
@@ -339,7 +334,6 @@ var (
 		"releases",
 		"repo.releases",
 		"/releases",
-		"repo.releases.desc",
 		3,
 		perm.AccessModeOwner,
 	}
@@ -349,7 +343,6 @@ var (
 		"wiki",
 		"repo.wiki",
 		"/wiki",
-		"repo.wiki.desc",
 		4,
 		perm.AccessModeOwner,
 	}
@@ -359,7 +352,6 @@ var (
 		"ext_wiki",
 		"repo.ext_wiki",
 		"/wiki",
-		"repo.ext_wiki.desc",
 		4,
 		perm.AccessModeRead,
 	}
@@ -369,7 +361,6 @@ var (
 		"projects",
 		"repo.projects",
 		"/projects",
-		"repo.projects.desc",
 		5,
 		perm.AccessModeOwner,
 	}
@@ -379,7 +370,6 @@ var (
 		"packages",
 		"repo.packages",
 		"/packages",
-		"packages.desc",
 		6,
 		perm.AccessModeRead,
 	}
@@ -389,7 +379,6 @@ var (
 		"actions",
 		"repo.actions",
 		"/actions",
-		"actions.unit.desc",
 		7,
 		perm.AccessModeOwner,
 	}
