@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPISearchActionJobs_OrgRunner(t *testing.T) {
+func TestActionsAPISearchActionJobs_OrgRunner(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	session := loginUser(t, "user1")

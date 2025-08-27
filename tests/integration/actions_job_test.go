@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestJobWithNeeds(t *testing.T) {
+func TestActionsJobWithNeeds(t *testing.T) {
 	if !setting.Database.Type.IsSQLite3() {
 		t.Skip()
 	}
@@ -174,7 +174,7 @@ jobs:
 	})
 }
 
-func TestJobNeedsMatrix(t *testing.T) {
+func TestActionsJobNeedsMatrix(t *testing.T) {
 	if !setting.Database.Type.IsSQLite3() {
 		t.Skip()
 	}

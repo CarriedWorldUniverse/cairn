@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPISearchActionJobs_RepoRunner(t *testing.T) {
+func TestActionsAPISearchActionJobs_RepoRunner(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -47,7 +47,7 @@ func TestAPISearchActionJobs_RepoRunner(t *testing.T) {
 	assert.Equal(t, job.ID, jobs[0].ID)
 }
 
-func TestAPIWorkflowDispatchReturnInfo(t *testing.T) {
+func TestActionsAPIWorkflowDispatchReturnInfo(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		workflowName := "dispatch.yml"
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -102,7 +102,7 @@ jobs:
 	})
 }
 
-func TestAPIGetListActionRun(t *testing.T) {
+func TestActionsAPIGetListActionRun(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	var (
 		runIDs = []int64{892, 893, 894}
@@ -185,7 +185,7 @@ func TestAPIGetListActionRun(t *testing.T) {
 	}
 }
 
-func TestAPIGetActionRun(t *testing.T) {
+func TestActionsAPIGetActionRun(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
