@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestActionNotifications(t *testing.T) {
+func TestActionsNotifications(t *testing.T) {
 	if !setting.Database.Type.IsSQLite3() {
 		t.Skip()
 	}

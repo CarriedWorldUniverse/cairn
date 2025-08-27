@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestActionVariablesModification(t *testing.T) {
+func TestActionsVariablesModification(t *testing.T) {
 	defer unittest.OverrideFixtures("tests/integration/fixtures/TestActionVariablesModification")()
 	defer tests.PrepareTestEnv(t)()
 

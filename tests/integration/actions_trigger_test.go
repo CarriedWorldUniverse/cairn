@@ -39,7 +39,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPullRequestCommitStatus(t *testing.T) {
+func TestActionsPullRequestCommitStatus(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the base repo
 		session := loginUser(t, "user2")
@@ -350,7 +350,7 @@ jobs:
 	})
 }
 
-func TestPullRequestWithInvalidWorkflow(t *testing.T) {
+func TestActionsPullRequestWithInvalidWorkflow(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the base repo
 		session := loginUser(t, "user2")
@@ -431,7 +431,7 @@ runs-on: docker
 	})
 }
 
-func TestPullRequestTargetEvent(t *testing.T) {
+func TestActionsPullRequestTargetEvent(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the base repo
 		org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})  // owner of the forked repo
@@ -588,7 +588,7 @@ func TestPullRequestTargetEvent(t *testing.T) {
 	})
 }
 
-func TestSkipCI(t *testing.T) {
+func TestActionsSkipCI(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -679,7 +679,7 @@ func TestSkipCI(t *testing.T) {
 	})
 }
 
-func TestCreateDeleteRefEvent(t *testing.T) {
+func TestActionsCreateDeleteRefEvent(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
@@ -795,7 +795,7 @@ func TestCreateDeleteRefEvent(t *testing.T) {
 	})
 }
 
-func TestWorkflowDispatchEvent(t *testing.T) {
+func TestActionsWorkflowDispatchEvent(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 

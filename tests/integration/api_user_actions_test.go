@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPISearchActionJobs_UserRunner(t *testing.T) {
+func TestActionsAPISearchActionJobs_UserRunner(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	normalUsername := "user2"

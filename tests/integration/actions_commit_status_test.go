@@ -51,7 +51,7 @@ func TestActionsAutomerge(t *testing.T) {
 	)
 }
 
-func TestForcePushCommitStatus(t *testing.T) {
+func TestActionsForcePushCommitStatus(t *testing.T) {
 	defer unittest.OverrideFixtures("tests/integration/fixtures/TestForcePushCommitStatus/")()
 	defer tests.PrepareTestEnv(t)()
 

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPISearchActionJobs_GlobalRunner(t *testing.T) {
+func TestActionsAPISearchActionJobs_GlobalRunner(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 393})

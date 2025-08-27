@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestDownloadTaskLogs(t *testing.T) {
+func TestActionsDownloadTaskLogs(t *testing.T) {
 	if !setting.Database.Type.IsSQLite3() {
 		t.Skip()
 	}
