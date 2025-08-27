@@ -124,6 +124,7 @@
     "settings.must_enable_2fa": "This Forgejo instance requires users to enable two-factor authentication before they can access their accounts.",
     "error.must_enable_2fa": "This Forgejo instance requires users to enable two-factor authentication before they can access their accounts. Enable it at: %s",
     "avatar.constraints_hint": "Custom avatar may not exceed %[1]s in size or be larger than %[2]dx%[3]d pixels",
+    "user.ghost.tooltip": "This user has been deleted, or cannot be matched.",
     "og.repo.summary_card.alt_description": "Summary card of repository %[1]s, described as: %[2]s",
     "repo.commit.load_tags_failed": "Load tags failed because of internal error",
     "compare.branches.title": "Compare branches",
