@@ -481,38 +481,44 @@ export function initGlobalButtons() {
   // There are many "cancel button" elements in modal dialogs, Fomantic UI expects they are button-like elements but never submit a form.
   // However, Gitea misuses the modal dialog and put the cancel buttons inside forms, so we must prevent the form submission.
   // There are a few cancel buttons in non-modal forms, and there are some dynamically created forms (eg: the "Edit Issue Content")
-  $(document).on('click', 'form button.ui.cancel.button', (e) => {
-    e.preventDefault();
-  });
-
-  $('.show-panel').on('click', function (e) {
-    // a '.show-panel' element can show a panel, by `data-panel="selector"`
-    // if it has "toggle" class, it toggles the panel
-    e.preventDefault();
-    const sel = this.getAttribute('data-panel');
-    if (this.classList.contains('toggle')) {
-      toggleElem(sel);
-    } else {
-      showElem(sel);
+  document.addEventListener('click', (e) => {
+    if (e.target.matches('form button.ui.cancel.button')) {
+      e.preventDefault();
     }
   });
 
-  $('.hide-panel').on('click', function (e) {
-    // a `.hide-panel` element can hide a panel, by `data-panel="selector"` or `data-panel-closest="selector"`
-    e.preventDefault();
-    let sel = this.getAttribute('data-panel');
-    if (sel) {
-      hideElem($(sel));
-      return;
-    }
-    sel = this.getAttribute('data-panel-closest');
-    if (sel) {
-      hideElem($(this).closest(sel));
-      return;
-    }
-    // should never happen, otherwise there is a bug in code
-    showErrorToast('Nothing to hide');
-  });
+  for (const showPanelButton of document.querySelectorAll('.show-panel')) {
+    showPanelButton.addEventListener('click', (e) => {
+      // a '.show-panel' element can show a panel, by `data-panel="selector"`
+      // if it has "toggle" class, it toggles the panel
+      e.preventDefault();
+      const sel = e.currentTarget.getAttribute('data-panel');
+      if (e.currentTarget.classList.contains('toggle')) {
+        toggleElem(sel);
+      } else {
+        showElem(sel);
+      }
+    });
+  }
+
+  for (const hidePanelButton of document.querySelectorAll('.hide-panel')) {
+    hidePanelButton.addEventListener('click', (e) => {
+      // a `.hide-panel` element can hide a panel, by `data-panel="selector"` or `data-panel-closest="selector"`
+      e.preventDefault();
+      let sel = e.currentTarget.getAttribute('data-panel');
+      if (sel) {
+        hideElem(sel);
+        return;
+      }
+      sel = e.currentTarget.getAttribute('data-panel-closest');
+      if (sel) {
+        hideElem(e.currentTarget.closest(sel));
+        return;
+      }
+      // should never happen, otherwise there is a bug in code
+      showErrorToast('Nothing to hide');
+    });
+  }
 
   initGlobalShowModal();
 }
