@@ -5,7 +5,7 @@ import {createDropzone} from './dropzone.js';
 import {showGlobalErrorMessage} from '../bootstrap.js';
 import {handleGlobalEnterQuickSubmit} from './comp/QuickSubmit.js';
 import {svg} from '../svg.js';
-import {hideElem, showElem, toggleElem, initSubmitEventPolyfill, submitEventSubmitter} from '../utils/dom.js';
+import {hideElem, showElem, toggleElem, resetForms, initSubmitEventPolyfill, submitEventSubmitter} from '../utils/dom.js';
 import {htmlEscape} from 'escape-goat';
 import {showTemporaryTooltip} from '../modules/tippy.js';
 import {confirmModal} from './comp/ConfirmModal.js';
@@ -507,12 +507,16 @@ export function initGlobalButtons() {
       e.preventDefault();
       let sel = e.currentTarget.getAttribute('data-panel');
       if (sel) {
-        hideElem(sel);
+        const element = document.querySelector(sel);
+        hideElem(element);
+        resetForms(element);
         return;
       }
       sel = e.currentTarget.getAttribute('data-panel-closest');
       if (sel) {
-        hideElem(e.currentTarget.closest(sel));
+        const element = e.currentTarget.closest(sel);
+        hideElem(element);
+        resetForms(element);
         return;
       }
       // should never happen, otherwise there is a bug in code
