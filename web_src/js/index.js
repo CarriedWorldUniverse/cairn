@@ -49,7 +49,7 @@ import {initAdminEmails} from './features/admin/emails.js';
 import {initAdminCommon} from './features/admin/common.js';
 import {initRepoTemplateSearch} from './features/repo-template.js';
 import {initRepoCodeView} from './features/repo-code.js';
-import {initSshKeyFormParser, initSshKeyCancelButton} from './features/sshkey-helper.js';
+import {initSshKeyFormParser} from './features/sshkey-helper.js';
 import {initRepoArchiveLinks} from './features/repo-common.js';
 import {initRepoMigrationStatusChecker} from './features/repo-migrate.js';
 import {
@@ -122,7 +122,6 @@ onDomReady(() => {
   initMarkupAnchors();
   initMarkupContent();
   initSshKeyFormParser();
-  initSshKeyCancelButton();
   initStopwatch();
   initTableSort();
   initAutoFocusEnd();
