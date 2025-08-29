@@ -98,7 +98,6 @@
   }
   .comment-code-cloud .comments .comment .avatar {
     width: auto;
-    float: none;
     margin: 0 0.5rem 0 0;
     flex-shrink: 0;
   }
@@ -110,9 +109,6 @@
   }
   .comment-code-cloud .comments .comment .comment-content {
     margin-left: 0 !important;
-  }
-  .comment-code-cloud .comments .comment .comment-container {
-    width: 100%;
   }
   .comment-code-cloud .comments .comment.code-comment {
     padding: 0 0 0.5rem !important;
