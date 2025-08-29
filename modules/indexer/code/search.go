@@ -35,6 +35,7 @@ type SearchResultLanguages = internal.SearchResultLanguages
 
 type SearchOptions = internal.SearchOptions
 
+// llu:TrKeysSuffix search.
 var CodeSearchOptions = [2]string{"exact", "union"}
 
 type SearchMode = internal.CodeSearchMode

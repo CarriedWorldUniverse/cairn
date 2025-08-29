@@ -36,6 +36,7 @@ const (
 	RegExpGrepMode
 )
 
+// llu:TrKeysSuffix search.
 var GrepSearchOptions = [3]string{"exact", "union", "regexp"}
 
 type GrepOptions struct {
