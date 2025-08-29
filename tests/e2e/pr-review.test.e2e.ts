@@ -30,59 +30,57 @@ test('PR: Create review from files', async ({page}) => {
   await save_visual(page);
 });
 
-// Test disabled because it is flaky.
-// TODO: re-enable it
-// test('PR: Create review from commit', async ({page}) => {
-//   const response = await page.goto('/user2/repo1/pulls/3/commits/4a357436d925b5c974181ff12a994538ddc5a269');
-//   expect(response?.status()).toBe(200);
-//
-//   await page.locator('button.add-code-comment').click();
-//   const code_comment = page.locator('.comment-code-cloud form textarea.markdown-text-editor');
-//   await expect(code_comment).toBeVisible();
-//
-//   await code_comment.fill('This is a code comment');
-//   await save_visual(page);
-//
-//   const start_button = page.locator('.comment-code-cloud form button.btn-start-review');
-//   // Workaround for #7152, where there might already be a pending review state from previous
-//   // test runs (most likely to happen when debugging tests).
-//   if (await start_button.isVisible({timeout: 100})) {
-//     await start_button.click();
-//   } else {
-//     await page.locator('.comment-code-cloud form button[name="pending_review"]').click();
-//   }
-//
-//   await expect(page.locator('.comment-list .comment-container')).toBeVisible();
-//
-//   // We need to wait for the review to be processed. Checking the comment counter
-//   // conveniently does that.
-//   await expect(page.locator('#review-box .js-btn-review > span.review-comments-counter')).toHaveText('1');
-//
-//   await page.locator('#review-box .js-btn-review').click();
-//   await expect(page.locator('.tippy-box .review-box-panel')).toBeVisible();
-//   await save_visual(page);
-//
-//   await page.locator('.review-box-panel textarea.markdown-text-editor')
-//     .fill('This is a review');
-//   await page.locator('.review-box-panel button.btn-submit[value="approve"]').click();
-//   await page.waitForURL(/.*\/user2\/repo1\/pulls\/3#issuecomment-\d+/);
-//   await save_visual(page);
-//
-//   // In addition to testing the ability to delete comments, this also
-//   // performs clean up. If tests are run for multiple platforms, the data isn't reset
-//   // in-between, and subsequent runs of this test would fail, because when there already is
-//   // a comment, the on-hover button to start a conversation doesn't appear anymore.
-//   await page.goto('/user2/repo1/pulls/3/commits/4a357436d925b5c974181ff12a994538ddc5a269');
-//   await page.locator('.comment-header-right.actions a.context-menu').click();
-//
-//   await expect(page.locator('.comment-header-right.actions div.menu').getByText(/Copy link.*/)).toBeVisible();
-//   // The button to delete a comment will prompt for confirmation using a browser alert.
-//   page.on('dialog', (dialog) => dialog.accept());
-//   await page.locator('.comment-header-right.actions div.menu .delete-comment').click();
-//
-//   await expect(page.locator('.comment-list .comment-container')).toBeHidden();
-//   await save_visual(page);
-// });
+test('PR: Create review from commit', async ({page}) => {
+  const response = await page.goto('/user2/repo1/pulls/3/commits/4a357436d925b5c974181ff12a994538ddc5a269');
+  expect(response?.status()).toBe(200);
+
+  await page.locator('button.add-code-comment').click();
+  const code_comment = page.locator('.comment-code-cloud form textarea.markdown-text-editor');
+  await expect(code_comment).toBeVisible();
+
+  await code_comment.fill('This is a code comment');
+  await save_visual(page);
+
+  const start_button = page.locator('.comment-code-cloud form button.btn-start-review');
+  // Workaround for #7152, where there might already be a pending review state from previous
+  // test runs (most likely to happen when debugging tests).
+  if (await start_button.isVisible({timeout: 100})) {
+    await start_button.click();
+  } else {
+    await page.locator('.comment-code-cloud form button[name="pending_review"]').click();
+  }
+
+  await expect(page.locator('.comment-list .comment-container')).toBeVisible();
+
+  // We need to wait for the review to be processed. Checking the comment counter
+  // conveniently does that.
+  await expect(page.locator('#review-box .js-btn-review > span.review-comments-counter')).toHaveText('1');
+
+  await page.locator('#review-box .js-btn-review').click();
+  await expect(page.locator('.tippy-box .review-box-panel')).toBeVisible();
+  await save_visual(page);
+
+  await page.locator('.review-box-panel textarea.markdown-text-editor')
+    .fill('This is a review');
+  await page.locator('.review-box-panel button.btn-submit[value="approve"]').click();
+  await page.waitForURL(/.*\/user2\/repo1\/pulls\/3#issuecomment-\d+/);
+  await save_visual(page);
+
+  // In addition to testing the ability to delete comments, this also
+  // performs clean up. If tests are run for multiple platforms, the data isn't reset
+  // in-between, and subsequent runs of this test would fail, because when there already is
+  // a comment, the on-hover button to start a conversation doesn't appear anymore.
+  await page.goto('/user2/repo1/pulls/3/commits/4a357436d925b5c974181ff12a994538ddc5a269');
+  await page.locator('.comment-header-right.actions a.context-menu').click();
+
+  await expect(page.locator('.comment-header-right.actions div.menu').getByText(/Copy link.*/)).toBeVisible();
+  // The button to delete a comment will prompt for confirmation using a browser alert.
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.locator('.comment-header-right.actions div.menu .delete-comment').click();
+
+  await expect(page.locator('.comment-list .comment-container')).toBeHidden();
+  await save_visual(page);
+});
 
 test('PR: Navigate by single commit', async ({page}) => {
   const response = await page.goto('/user2/repo1/pulls/3/commits');
