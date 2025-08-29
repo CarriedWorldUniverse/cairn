@@ -192,15 +192,19 @@ test.describe('workflow list dynamic refresh', () => {
     await page.locator('#status_dropdown').click();
     await expect(page.getByText('Waiting')).toBeVisible();
     await expect(page.getByText('Failure')).toBeVisible();
+    await expect(page.locator('[aria-expanded="true"]')).toHaveCount(1);
     await simulatePollingInterval(page);
     await expect(page.getByText('Waiting')).toBeVisible();
     await expect(page.getByText('Failure')).toBeVisible();
+    await expect(page.locator('[aria-expanded="true"]')).toHaveCount(1);
 
     // Actor dropdown
     await expect(page.getByText('All actors')).toBeHidden();
     await page.locator('#actor_dropdown').click();
     await expect(page.getByText('All Actors')).toBeVisible();
+    await expect(page.locator('[aria-expanded="true"]')).toHaveCount(1);
     await simulatePollingInterval(page);
     await expect(page.getByText('All Actors')).toBeVisible();
+    await expect(page.locator('[aria-expanded="true"]')).toHaveCount(1);
   });
 });
