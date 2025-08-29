@@ -17,19 +17,24 @@ export async function accessibilityCheck({page}: {page: Page}, includes: string[
     accessibilityScanner = accessibilityScanner.exclude(excl);
   }
 
-  // scan the page both in dark and light theme
-  let accessibilityScanResults = await accessibilityScanner.analyze();
-  expect(accessibilityScanResults.violations).toEqual([]);
+  // Scan the page both in dark and light theme.
+  //
+  // Have observed failures during this scanning which are understood to be caused by CSS transitions, either applied to
+  // whatever last action occurred on the page before `accessibilityCheck` was called, or during the transition from
+  // dark to light.  As there are a variety of transitions in Forgejo's CSS files (primarily in fomantic) with ease
+  // elements between 0.1 and 0.3 seconds, we give the accessibility scanner up to 1s to settle into success for each
+  // scan.
+  await expect(async () => {
+    const accessibilityScanResults = await accessibilityScanner.analyze();
+    expect(accessibilityScanResults.violations).toEqual([]);
+  }).toPass({timeout: 1000});
+
   await page.emulateMedia({colorScheme: 'dark'});
-  // in https://codeberg.org/forgejo/forgejo/pulls/5899 there have been
-  // some weird failures related to contrast scanning,
-  // reporting for colours that haven't been used and no trace in the
-  // screenshots.
-  // Since this was only happening with some browsers and not always,
-  // my bet is on a transition effect on dark/light mode switch.
-  // Waiting a little seems to work around this.
-  await page.waitForTimeout(100); // eslint-disable-line playwright/no-wait-for-timeout
-  accessibilityScanResults = await accessibilityScanner.analyze();
-  expect(accessibilityScanResults.violations).toEqual([]);
+
+  await expect(async () => {
+    const accessibilityScanResults = await accessibilityScanner.analyze();
+    expect(accessibilityScanResults.violations).toEqual([]);
+  }).toPass({timeout: 1000});
+
   await page.emulateMedia({colorScheme: 'light'});
 }
