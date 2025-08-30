@@ -205,7 +205,7 @@
   --color-light-mimic-enabled: rgba(0, 0, 0, calc(40 / 255 * 222 / 255 / var(--opacity-disabled)));
   --color-light-border: #e8e8ff28;
   --color-hover: #e8e8ff19;
-  --color-active: #e8e8ff24;
+  --color-active: #393b43;
   --color-menu: #151a1e;
   --color-card: #151a1e;
   --fancy-card-bg: #14171a;
