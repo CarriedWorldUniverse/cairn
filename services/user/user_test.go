@@ -25,6 +25,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
+	redirect_service "forgejo.org/services/redirect"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -196,7 +197,7 @@ func TestRenameUser(t *testing.T) {
 		require.NoError(t, RenameUser(db.DefaultContext, user, newUsername))
 		unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: user.ID, Name: newUsername, LowerName: strings.ToLower(newUsername)})
 
-		redirectUID, err := user_model.LookupUserRedirect(db.DefaultContext, oldUsername)
+		redirectUID, err := redirect_service.LookupUserRedirect(db.DefaultContext, user, oldUsername)
 		require.NoError(t, err)
 		assert.Equal(t, user.ID, redirectUID)
 
