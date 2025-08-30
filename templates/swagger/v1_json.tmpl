@@ -10998,7 +10998,7 @@
         }
       }
     },
-    "/repos/{owner}/{repo}/issues/{index}/labels/{id}": {
+    "/repos/{owner}/{repo}/issues/{index}/labels/{identifier}": {
       "delete": {
         "produces": [
           "application/json"
@@ -11032,10 +11032,9 @@
             "required": true
           },
           {
-            "type": "integer",
-            "format": "int64",
-            "description": "id of the label to remove",
-            "name": "id",
+            "type": "string",
+            "description": "name or id of the label to remove",
+            "name": "identifier",
             "in": "path",
             "required": true
           },
