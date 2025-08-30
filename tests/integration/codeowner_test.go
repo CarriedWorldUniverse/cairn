@@ -48,6 +48,7 @@ func TestCodeOwner(t *testing.T) {
 		cloneURL, _ := url.Parse(r)
 		cloneURL.User = url.UserPassword("user2", userPassword)
 		require.NoError(t, git.CloneWithArgs(t.Context(), nil, cloneURL.String(), dstPath, git.CloneRepoOptions{}))
+		doGitSetRemoteURL(dstPath, "origin", cloneURL)(t)
 
 		t.Run("Normal", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
