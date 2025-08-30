@@ -78,6 +78,7 @@ func TestPatchStatus(t *testing.T) {
 		// Clone repository.
 		dstPath := t.TempDir()
 		require.NoError(t, git.Clone(t.Context(), u.String(), dstPath, git.CloneRepoOptions{}))
+		doGitSetRemoteURL(dstPath, "origin", u)(t)
 
 		// Add `fork` remote.
 		u.Path = forkRepo.FullName()
