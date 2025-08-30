@@ -240,7 +240,7 @@
   --color-light-mimic-enabled: rgba(0, 0, 0, calc(6 / 255 * 222 / 255 / var(--opacity-disabled)));
   --color-light-border: #0000001d;
   --color-hover: #e4e4e4aa;
-  --color-active: #d4d4d8aa;
+  --color-active: #e2e2e5;
   --color-menu: var(--zinc-100);
   --color-card: var(--zinc-50);
   --fancy-card-bg: var(--zinc-100);
