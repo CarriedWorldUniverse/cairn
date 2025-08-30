@@ -310,6 +310,7 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 		"openid_determined_username",
 		"twofaUid",
 		"twofaRemember",
+		"twofaOpenID",
 		"linkAccount",
 	}, map[string]any{
 		"uid": u.ID,
