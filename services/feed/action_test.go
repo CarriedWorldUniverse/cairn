@@ -67,7 +67,7 @@ func pushCommits() *repository.PushCommits {
 			CommitterName:  "User2",
 			AuthorEmail:    "user2@example.com",
 			AuthorName:     "User2",
-			Message:        "not signed commit",
+			Message:        "not signed commit\nline two",
 		},
 		{
 			Sha1:           "27566bd",
@@ -83,10 +83,10 @@ func pushCommits() *repository.PushCommits {
 			CommitterName:  "User2",
 			AuthorEmail:    "user2@example.com",
 			AuthorName:     "User2",
-			Message:        "good signed commit",
+			Message:        "good signed commit\nlong commit message\nwith lots of details\nabout how cool the implementation is",
 		},
 	}
-	pushCommits.HeadCommit = &repository.PushCommit{Sha1: "69554a6"}
+	pushCommits.HeadCommit = &repository.PushCommit{Sha1: "69554a6", Message: "not signed commit\nline two"}
 	return pushCommits
 }
 
@@ -103,7 +103,7 @@ func TestSyncPushCommits(t *testing.T) {
 		NewNotifier().SyncPushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("master")}, pushCommits())
 
 		newNotification := unittest.AssertExistsAndLoadBean(t, &activities_model.Action{ActUserID: user.ID, RefName: "refs/heads/master"}, unittest.Cond("id > ?", maxID))
-		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"27566bd","Message":"good signed commit (with not yet validated email)","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"5099b81","Message":"good signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"27566bd","Message":"good signed commit (with not yet validated email)","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"5099b81","Message":"good signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
 	})
 
 	t.Run("Only one commit", func(t *testing.T) {
@@ -113,7 +113,23 @@ func TestSyncPushCommits(t *testing.T) {
 		NewNotifier().SyncPushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("main")}, pushCommits())
 
 		newNotification := unittest.AssertExistsAndLoadBean(t, &activities_model.Action{ActUserID: user.ID, RefName: "refs/heads/main"}, unittest.Cond("id > ?", maxID))
-		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+	})
+
+	t.Run("Does not mutate commits param", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.UI.FeedMaxCommitNum, 1)()
+
+		commits := pushCommits()
+
+		assert.Equal(t, "not signed commit\nline two", commits.HeadCommit.Message)
+		assert.Equal(t, "good signed commit\nlong commit message\nwith lots of details\nabout how cool the implementation is", commits.Commits[2].Message)
+
+		NewNotifier().SyncPushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("master")}, commits)
+
+		// commits passed into SyncPushCommits may be passed into other notifiers, so checking that the struct wasn't
+		// mutated by truncate of messages, or truncation to match FeedMaxCommitNum (Commits[2])...
+		assert.Equal(t, "not signed commit\nline two", commits.HeadCommit.Message)
+		assert.Equal(t, "good signed commit\nlong commit message\nwith lots of details\nabout how cool the implementation is", commits.Commits[2].Message)
 	})
 }
 
@@ -130,7 +146,7 @@ func TestPushCommits(t *testing.T) {
 		NewNotifier().PushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("master")}, pushCommits())
 
 		newNotification := unittest.AssertExistsAndLoadBean(t, &activities_model.Action{ActUserID: user.ID, RefName: "refs/heads/master"}, unittest.Cond("id > ?", maxID))
-		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"27566bd","Message":"good signed commit (with not yet validated email)","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"5099b81","Message":"good signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"27566bd","Message":"good signed commit (with not yet validated email)","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},{"Sha1":"5099b81","Message":"good signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
 	})
 
 	t.Run("Only one commit", func(t *testing.T) {
@@ -140,7 +156,23 @@ func TestPushCommits(t *testing.T) {
 		NewNotifier().PushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("main")}, pushCommits())
 
 		newNotification := unittest.AssertExistsAndLoadBean(t, &activities_model.Action{ActUserID: user.ID, RefName: "refs/heads/main"}, unittest.Cond("id > ?", maxID))
-		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+		assert.JSONEq(t, `{"Commits":[{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"user2@example.com","AuthorName":"User2","CommitterEmail":"user2@example.com","CommitterName":"User2","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"}],"HeadCommit":{"Sha1":"69554a6","Message":"not signed commit","AuthorEmail":"","AuthorName":"","CommitterEmail":"","CommitterName":"","Signature":null,"Verification":null,"Timestamp":"0001-01-01T00:00:00Z"},"CompareURL":"","Len":0}`, newNotification.Content)
+	})
+
+	t.Run("Does not mutate commits param", func(t *testing.T) {
+		defer test.MockVariableValue(&setting.UI.FeedMaxCommitNum, 1)()
+
+		commits := pushCommits()
+
+		assert.Equal(t, "not signed commit\nline two", commits.HeadCommit.Message)
+		assert.Equal(t, "good signed commit\nlong commit message\nwith lots of details\nabout how cool the implementation is", commits.Commits[2].Message)
+
+		NewNotifier().PushCommits(db.DefaultContext, user, repo, &repository.PushUpdateOptions{RefFullName: git.RefNameFromBranch("main")}, commits)
+
+		// commits passed into SyncPushCommits may be passed into other notifiers, so checking that the struct wasn't
+		// mutated by truncate of messages, or truncation to match FeedMaxCommitNum (Commits[2])...
+		assert.Equal(t, "not signed commit\nline two", commits.HeadCommit.Message)
+		assert.Equal(t, "good signed commit\nlong commit message\nwith lots of details\nabout how cool the implementation is", commits.Commits[2].Message)
 	})
 }
 
