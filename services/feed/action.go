@@ -328,9 +328,7 @@ func (*actionNotifier) PullReviewDismiss(ctx context.Context, doer *user_model.U
 }
 
 func (a *actionNotifier) PushCommits(ctx context.Context, pusher *user_model.User, repo *repo_model.Repository, opts *repository.PushUpdateOptions, commits *repository.PushCommits) {
-	if len(commits.Commits) > setting.UI.FeedMaxCommitNum {
-		commits.Commits = commits.Commits[:setting.UI.FeedMaxCommitNum]
-	}
+	commits = prepareCommitsForFeed(commits)
 
 	data, err := json.Marshal(commits)
 	if err != nil {
@@ -403,9 +401,7 @@ func (a *actionNotifier) DeleteRef(ctx context.Context, doer *user_model.User, r
 }
 
 func (a *actionNotifier) SyncPushCommits(ctx context.Context, pusher *user_model.User, repo *repo_model.Repository, opts *repository.PushUpdateOptions, commits *repository.PushCommits) {
-	if len(commits.Commits) > setting.UI.FeedMaxCommitNum {
-		commits.Commits = commits.Commits[:setting.UI.FeedMaxCommitNum]
-	}
+	commits = prepareCommitsForFeed(commits)
 
 	data, err := json.Marshal(commits)
 	if err != nil {
@@ -504,4 +500,42 @@ func abbreviatedComment(comment string) string {
 	}
 
 	return truncatedContent
+}
+
+// Return a clone of the incoming repository.PushCommits that is appropriately tweaked for the activity feed. The struct
+// is cloned rather than modified in-place because the same data will be sent to multiple notifiers. Transformations
+// applied are: # of commits are limited to FeedMaxCommitNum, commit messages are trimmed to just the content displayed
+// in the activity feed.
+func prepareCommitsForFeed(commits *repository.PushCommits) *repository.PushCommits {
+	numCommits := min(len(commits.Commits), setting.UI.FeedMaxCommitNum)
+	retval := repository.PushCommits{
+		Commits:    make([]*repository.PushCommit, 0, numCommits),
+		HeadCommit: nil,
+		CompareURL: commits.CompareURL,
+		Len:        commits.Len,
+	}
+	if commits.HeadCommit != nil {
+		retval.HeadCommit = prepareCommitForFeed(commits.HeadCommit)
+	}
+	for i, commit := range commits.Commits {
+		if i == numCommits {
+			break
+		}
+		retval.Commits = append(retval.Commits, prepareCommitForFeed(commit))
+	}
+	return &retval
+}
+
+func prepareCommitForFeed(commit *repository.PushCommit) *repository.PushCommit {
+	return &repository.PushCommit{
+		Sha1:           commit.Sha1,
+		Message:        abbreviatedComment(commit.Message),
+		AuthorEmail:    commit.AuthorEmail,
+		AuthorName:     commit.AuthorName,
+		CommitterEmail: commit.CommitterEmail,
+		CommitterName:  commit.CommitterName,
+		Signature:      commit.Signature,
+		Verification:   commit.Verification,
+		Timestamp:      commit.Timestamp,
+	}
 }
