@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	issues_model "forgejo.org/models/issues"
 	api "forgejo.org/modules/structs"
@@ -125,7 +126,7 @@ func AddIssueLabels(ctx *context.APIContext) {
 
 // DeleteIssueLabel delete a label for an issue
 func DeleteIssueLabel(ctx *context.APIContext) {
-	// swagger:operation DELETE /repos/{owner}/{repo}/issues/{index}/labels/{id} issue issueRemoveLabel
+	// swagger:operation DELETE /repos/{owner}/{repo}/issues/{index}/labels/{identifier} issue issueRemoveLabel
 	// ---
 	// summary: Remove a label from an issue
 	// produces:
@@ -147,11 +148,10 @@ func DeleteIssueLabel(ctx *context.APIContext) {
 	//   type: integer
 	//   format: int64
 	//   required: true
-	// - name: id
+	// - name: identifier
 	//   in: path
-	//   description: id of the label to remove
-	//   type: integer
-	//   format: int64
+	//   description: name or id of the label to remove
+	//   type: string
 	//   required: true
 	// - name: body
 	//   in: body
@@ -188,12 +188,24 @@ func DeleteIssueLabel(ctx *context.APIContext) {
 		return
 	}
 
-	label, err := issues_model.GetLabelByID(ctx, ctx.ParamsInt64(":id"))
+	labelName := ctx.Params(":identifier")
+	label, err := issues_model.GetLabelInRepoByName(ctx, ctx.Repo.Repository.ID, labelName)
+	if err != nil && issues_model.IsErrRepoLabelNotExist(err) && ctx.Repo.Owner.IsOrganization() {
+		label, err = issues_model.GetLabelInOrgByName(ctx, ctx.Repo.Owner.ID, labelName)
+	}
+	if err != nil && (issues_model.IsErrRepoLabelNotExist(err) || issues_model.IsErrOrgLabelNotExist(err)) {
+		if labelID, parseErr := strconv.ParseInt(labelName, 10, 64); parseErr == nil {
+			label, err = issues_model.GetLabelByID(ctx, labelID)
+		}
+	}
+
 	if err != nil {
-		if issues_model.IsErrLabelNotExist(err) {
+		if issues_model.IsErrRepoLabelNotExist(err) ||
+			issues_model.IsErrOrgLabelNotExist(err) ||
+			issues_model.IsErrLabelNotExist(err) {
 			ctx.Error(http.StatusUnprocessableEntity, "", err)
 		} else {
-			ctx.Error(http.StatusInternalServerError, "GetLabelByID", err)
+			ctx.Error(http.StatusInternalServerError, "GetLabel", err)
 		}
 		return
 	}
@@ -203,7 +215,11 @@ func DeleteIssueLabel(ctx *context.APIContext) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	if ctx.Req.Header.Get("Accept") == "application/vnd.github+json" {
+		ctx.JSON(http.StatusOK, convert.ToLabelList([]*issues_model.Label{label}, ctx.Repo.Repository, ctx.Repo.Owner))
+	} else {
+		ctx.Status(http.StatusNoContent)
+	}
 }
 
 // ReplaceIssueLabels replace labels for an issue

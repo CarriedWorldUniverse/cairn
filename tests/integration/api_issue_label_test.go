@@ -172,6 +172,41 @@ func TestAPIRemoveIssueLabel(t *testing.T) {
 	unittest.AssertCount(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: issueLabel.LabelID}, 0)
 }
 
+func TestAPIRemoveIssueLabelByName(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestAPIRemoveIssueLabelByName")()
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 3})
+	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{RepoID: repo.ID, ID: 12})
+	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+	repoIssueLabel := unittest.AssertExistsAndLoadBean(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: 10})
+	orgIssueLabel := unittest.AssertExistsAndLoadBean(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: 3})
+	repoLabel := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: repoIssueLabel.LabelID, RepoID: repo.ID})
+	orgLabel := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: orgIssueLabel.LabelID, OrgID: owner.ID})
+
+	assert.Equal(t, int64(0), orgLabel.RepoID)
+	assert.Equal(t, int64(0), repoLabel.OrgID)
+
+	task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
+	task.RepoID = repo.ID
+	task.OwnerID = repo.OwnerID
+	require.NoError(t, task.GenerateToken())
+	actions_model.UpdateTask(t.Context(), task)
+
+	deleteURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%s", owner.Name, repo.Name, issue.Index, repoLabel.Name)
+	req := NewRequest(t, "DELETE", deleteURL).
+		AddTokenAuth(task.Token)
+	MakeRequest(t, req, http.StatusNoContent)
+
+	deleteURL = fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%s", owner.Name, repo.Name, issue.Index, orgLabel.Name)
+	req = NewRequest(t, "DELETE", deleteURL).
+		AddTokenAuth(task.Token)
+	MakeRequest(t, req, http.StatusNoContent)
+
+	unittest.AssertCount(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: repoIssueLabel.ID}, 0)
+	unittest.AssertCount(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: orgIssueLabel.ID}, 0)
+}
+
 func TestAPIAddIssueLabelsAutoDate(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
