@@ -1,1 +1,11 @@
-{}
+{
+    "migrate.github.description": "ייבוא מידע מ־github.com או שרת GitHub Enteprise.",
+    "migrate.git.description": "ייבוא קרפיף מכל שירות גיט שהוא.",
+    "migrate.gitea.description": "ייבוא מידע מ־gitea.com או שרת גיטאה אחר.",
+    "migrate.gitlab.description": "ייבוא מידע מ־gitlab.com או משרתי GitLab אחרים.",
+    "migrate.gogs.description": "ייבוא מידע מ־notabug.org או שרת גוגס אחר.",
+    "migrate.onedev.description": "ייבוא מידע מ־code.onedev.io או שרת OneDev אחר.",
+    "migrate.gitbucket.description": "יבוא מידע משרת GitBucket.",
+    "migrate.codebase.description": "ייבוא מידע מ־codebasehq.com.",
+    "migrate.forgejo.description": "ייבוא מידע מקודברג או שרת פורג'ו אחר."
+}

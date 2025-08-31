@@ -101,5 +101,14 @@
     "profile.edit.link": "Redigere profil",
     "feed.atom.link": "Atom feed",
     "keys.ssh.link": "SSH Nøgler",
-    "keys.gpg.link": "GPG Nøgler"
+    "keys.gpg.link": "GPG Nøgler",
+    "migrate.github.description": "Migrer data fra github.com eller GitHub Enterprise server.",
+    "migrate.git.description": "Migrer kun et depot fra enhver Git-tjeneste.",
+    "migrate.gitea.description": "Migrer data fra gitea.com eller andre Gitea-instanser.",
+    "migrate.gitlab.description": "Migrer data fra gitlab.com eller andre GitLab-instanser.",
+    "migrate.gogs.description": "Migrer data fra notabug.org eller andre Gogs-instanser.",
+    "migrate.onedev.description": "Migrer data fra code.onedev.io eller andre OneDev-instanser.",
+    "migrate.gitbucket.description": "Migrer data fra GitBucket-instanser.",
+    "migrate.codebase.description": "Migrer data fra codebasehq.com.",
+    "migrate.forgejo.description": "Migrer data fra codeberg.org eller andre Forgejo-instanser."
 }

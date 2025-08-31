@@ -2,5 +2,13 @@
     "repo.pulls.merged_title_desc": "%[4]s <code>%[2]s</code> içindeki %[1]d işlemeyi <code>%[3]s</code> ile birleştirdi",
     "repo.pulls.title_desc": "<code>%[2]s</code> içindeki %[1]d işlemeyi <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor",
     "search.milestone_kind": "Kilometre taşlarını ara...",
-    "moderation.abuse_category.malware": "Malware"
+    "moderation.abuse_category.malware": "Malware",
+    "migrate.github.description": "Github.com veya diğer Github sunucularından veri aktar.",
+    "migrate.git.description": "Herhangi bir Git hizmetinden sadece bir depoyu aktar.",
+    "migrate.gitea.description": "Gitea.com veya diğer Gitea sunucularından veri aktar.",
+    "migrate.gitlab.description": "Gitlab.com veya diğer Gitlab sunucularından veri aktar.",
+    "migrate.gogs.description": "Notabug.org veya diğer Gogs sunucularından veri aktar.",
+    "migrate.onedev.description": "Code.onedev.io ve diğer OneDev sunucularından veri aktar.",
+    "migrate.gitbucket.description": "GitBucket sunucularından veri aktar.",
+    "migrate.codebase.description": "Codebasehq.com sitesinden veri aktar."
 }

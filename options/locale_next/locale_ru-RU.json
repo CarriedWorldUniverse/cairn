@@ -143,6 +143,15 @@
     "migrate.pagure.token_label": "Токен",
     "migrate.pagure.token_body_a": "Если предоставить токен API Pagure с доступом к секретным задачам проекта, будет создан отдельный репозиторий, в котором они будут размещены",
     "migrate.pagure.token_body_b": "Поставьте флажок на пункте видимости репозитория выше, если хотите, чтобы этот репозиторий был частным",
+    "migrate.github.description": "Перенесите данные с github.com или сервера GitHub Enterprise.",
+    "migrate.git.description": "Перенести только репозиторий из любого Git сервиса.",
+    "migrate.gitea.description": "Перенести данные с gitea.com или других серверов Gitea.",
+    "migrate.gitlab.description": "Перенести данные с gitlab.com или других серверов GitLab.",
+    "migrate.gogs.description": "Перенести данные с notabug.org или других серверов Gogs.",
+    "migrate.onedev.description": "Перенести данные с code.onedev.io или других серверов OneDev.",
+    "migrate.gitbucket.description": "Перенести данные из экземпляров GitBucket.",
+    "migrate.codebase.description": "Перенос данных с codebasehq.com.",
+    "migrate.forgejo.description": "Перенести данные с codeberg.org или другого сервера Forgejo.",
     "user.ghost.tooltip": "Пользователь удалён или неизвестен.",
     "migrate.form.error.url_credentials": "Ссылка содержит данные авторизации. Поместите их в соответствующие поля"
 }

@@ -97,6 +97,12 @@
     "admin.dashboard.cleanup_offline_runners": "Vymazať odpojené spúštače",
     "migrate.pagure.project_example": "URL adresa projektu Pagure, napr. https://pagure.io/pagure",
     "migrate.pagure.token_body_a": "Poskytnite API token rozhrania Pagure s prístupom k súkromným problémom, aby ste vytvorili repozitár, ktorý bude obsahovať iba súkromné problémy",
+    "migrate.gitea.description": "Migrovať dáta z gitea.com alebo iných inštancií Gitea.",
+    "migrate.gitlab.description": "Migrovať dáta z gitlab.com alebo iných inštancií GitLab.",
+    "migrate.gogs.description": "Migrovať dáta z notabug.org alebo iných inštancií Gogs.",
+    "migrate.onedev.description": "Migrovať dáta z code.onedev.io alebo iných inštancií OneDev.",
+    "migrate.gitbucket.description": "Migrovať dáta z inštancií GitBucket.",
+    "migrate.codebase.description": "Migrovať dáta z codebasehq.com.",
     "repo.pulls.title_desc": {
         "one": "je potrebné zlúčiť %[1]d revíziu z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",
         "few": "je potrebné zlúčiť %[1]d revízie z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",

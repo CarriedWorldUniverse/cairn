@@ -19,5 +19,14 @@
     "home.explore_orgs": "Εξερευνήστε οργανισμούς",
     "home.welcome.activity_hint": "Δεν υπάρχει τίποτα στην τροφοδοσία σας ακόμα. Οι ενέργειές σας και η δραστηριότητά σας από τα αποθετήρια που παρακολουθείτε θα εμφανίζονται εδώ.",
     "home.explore_repos": "Εξερευνήστε τα αποθετήρια",
-    "home.explore_users": "Εξερευνήστε τους χρήστες"
+    "home.explore_users": "Εξερευνήστε τους χρήστες",
+    "migrate.github.description": "Μεταφορά δεδομένων από το github.com ή διακομιστές GitHub Enterprise.",
+    "migrate.git.description": "Μεταφορά μόνο του αποθετηρίου από μια οποιαδήποτε υπηρεσία Git.",
+    "migrate.gitea.description": "Μεταφορά δεδομένων από το gitea.com ή άλλες εγκαταστάσεις Gitea.",
+    "migrate.gitlab.description": "Μεταφορά δεδομένων από το gitlab.com ή άλλες εγκαταστάσεις GitLab.",
+    "migrate.gogs.description": "Μεταφορά δεδομένων από το notabug.org ή άλλες εγκαταστάσεις Gogs.",
+    "migrate.onedev.description": "Μεταφορά δεδομένων από το code.onedev.io ή άλλες εγκαταστάσεις OneDev.",
+    "migrate.gitbucket.description": "Μεταφορά δεδομένων από διακομιστές GitBucket.",
+    "migrate.codebase.description": "Μεταφορά δεδομένων από το codebasehq.com.",
+    "migrate.forgejo.description": "Μεταφορά δεδομένων από το codeberg.org ή άλλων υπηρεσιών Forgejo."
 }

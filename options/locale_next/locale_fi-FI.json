@@ -110,5 +110,14 @@
     "admin.dashboard.remove_resolved_reports": "Poista selvitetyt raportit",
     "migrate.pagure.project_url": "Pagure-projektin URL-osoite",
     "migrate.pagure.project_example": "Pagure-projektin URL-osoite, esim. https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Poletti"
+    "migrate.pagure.token_label": "Poletti",
+    "migrate.github.description": "Tee migraatio github.comista tai GitHub Enterprise -palvelimelta.",
+    "migrate.git.description": "Suorita tietovaraston migraatio mistä tahansa Git-palvelusta.",
+    "migrate.gitea.description": "Tee migraatio gitea.comista tai muista Gitea-instansseista.",
+    "migrate.gitlab.description": "Tee migraatio gitlab.comista tai muista GitLab-instansseista.",
+    "migrate.gogs.description": "Tee migraatio notabug.orgista tai muista Gogs-instansseista.",
+    "migrate.onedev.description": "Tee migraatio code.onedev.io:sta tai muista OneDev-instansseista.",
+    "migrate.gitbucket.description": "Tee migraatio GitBucket-instansseista.",
+    "migrate.codebase.description": "Tee migraatio codebasehq.comista.",
+    "migrate.forgejo.description": "Tee migraatio codeberg.orgista tai muista Forgejo-instansseista."
 }

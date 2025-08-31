@@ -16,11 +16,7 @@
 							{{.Title}}
 						</h3>
 						<div class="description">
-							{{if eq .Name "pagure"}}
-								{{ctx.Locale.Tr "migrate.pagure.description"}}
-							{{else}}
-								{{ctx.Locale.Tr (printf "repo.migrate.%s.description" .Name)}}
-							{{end}}
+							{{ctx.Locale.Tr (printf "migrate.%s.description" .Name)}}
 						</div>
 					</div>
 				</a>

@@ -84,5 +84,14 @@
         "other": "преди %d години"
     },
     "editor.textarea.tab_hint": "Редът вече е с отстъп. Натиснете отново <kbd>Tab</kbd> или <kbd>Escape</kbd>, за да излезете от редактора.",
-    "editor.textarea.shift_tab_hint": "Няма отстъп на този ред. Натиснете отново <kbd>Shift</kbd> + <kbd>Tab</kbd> или <kbd>Escape</kbd>, за да излезете от редактора."
+    "editor.textarea.shift_tab_hint": "Няма отстъп на този ред. Натиснете отново <kbd>Shift</kbd> + <kbd>Tab</kbd> или <kbd>Escape</kbd>, за да излезете от редактора.",
+    "migrate.github.description": "Мигриране на данни от github.com или GitHub Enterprise сървър.",
+    "migrate.git.description": "Мигриране само на хранилище от всяка Git услуга.",
+    "migrate.gitea.description": "Мигриране на данни от gitea.com или други Gitea инстанции.",
+    "migrate.gitlab.description": "Мигриране на данни от gitlab.com или други GitLab инстанции.",
+    "migrate.gogs.description": "Мигриране на данни от notabug.org или други Gogs инстанции.",
+    "migrate.onedev.description": "Мигриране на данни от code.onedev.io или други OneDev инстанции.",
+    "migrate.gitbucket.description": "Мигриране на данни от GitBucket инстанции.",
+    "migrate.codebase.description": "Мигриране на данни от codebasehq.com.",
+    "migrate.forgejo.description": "Мигриране на данни от codeberg.org или други Forgejo инстанции."
 }
