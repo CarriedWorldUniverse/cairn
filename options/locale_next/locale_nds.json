@@ -134,5 +134,7 @@
     "admin.config.global_2fa_requirement.title": "Twee-Faktooren-Anmellen överall verlangen",
     "settings.twofa_reenroll": "Twee-Faktooren-Anmellen neei inrichten",
     "settings.twofa_reenroll.description": "Richt dien Twee-Faktooren-Anmellen neei in",
-    "settings.must_enable_2fa": "Deese Forgejo-Instanz verlangt, dat Brukers Twee-Faktooren-Anmellen anknipsen, ehr se up hör Konten togriepen könen."
+    "settings.must_enable_2fa": "Deese Forgejo-Instanz verlangt, dat Brukers Twee-Faktooren-Anmellen anknipsen, ehr se up hör Konten togriepen könen.",
+    "user.ghost.tooltip": "Deeser Bruker is lösket worden of kann nich funnen worden.",
+    "migrate.form.error.url_credentials": "De URL enthollt Anmell-Daten, legg se in de Felden för Brukernaam un Passwoord"
 }

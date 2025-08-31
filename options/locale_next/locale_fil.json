@@ -134,5 +134,6 @@
     "admin.config.global_2fa_requirement.all": "Lahat ng mga user",
     "admin.config.global_2fa_requirement.admin": "Mga tagapangasiwa",
     "settings.twofa_unroll_unavailable": "Kinakailangan ang authentikasyong two-factor para sa iyong account at hindi maaaring i-disable.",
-    "settings.twofa_reenroll": "I-enroll muli ang authentikasyong two-factor"
+    "settings.twofa_reenroll": "I-enroll muli ang authentikasyong two-factor",
+    "user.ghost.tooltip": "Binura ang user na ito, o hindi matugma."
 }

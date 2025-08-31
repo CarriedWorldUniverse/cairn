@@ -142,5 +142,7 @@
     "admin.config.security": "Configuração de segurança",
     "admin.config.global_2fa_requirement.admin": "Administradores",
     "settings.twofa_reenroll.description": "Recadastrar sua autenticação de dois fatores",
-    "error.must_enable_2fa": "Este servidor do Forgejo exige que usuários habilitem a autenticação de dois fatores antes que possam acessar suas contas. Habilitar em: %s"
+    "error.must_enable_2fa": "Este servidor do Forgejo exige que usuários habilitem a autenticação de dois fatores antes que possam acessar suas contas. Habilitar em: %s",
+    "user.ghost.tooltip": "Este usuário foi excluído, ou não pode ser encontrado.",
+    "migrate.form.error.url_credentials": "A URL contém credenciais, coloque-as nos campos de usuário e senha respectivamente"
 }
