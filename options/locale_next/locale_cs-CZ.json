@@ -142,5 +142,7 @@
     "admin.config.global_2fa_requirement.admin": "Administrátoři",
     "settings.twofa_unroll_unavailable": "U vašeho účtu je vyžadováno dvoufázové ověření a nelze jej zakázat.",
     "settings.twofa_reenroll": "Znovu použít dvoufázové ověření",
-    "settings.must_enable_2fa": "Tato instance Forgejo vyžaduje, aby si všichni uživatelé zapnuli dvoufázové ověření, než začnou používat svůj účet."
+    "settings.must_enable_2fa": "Tato instance Forgejo vyžaduje, aby si všichni uživatelé zapnuli dvoufázové ověření, než začnou používat svůj účet.",
+    "user.ghost.tooltip": "Tento uživatel byl odstraněn, nebo ho nelze dohledat.",
+    "migrate.form.error.url_credentials": "Adresa obsahuje údaje, zadejte je do odpovídajících polí uživatelského jména a hesla"
 }

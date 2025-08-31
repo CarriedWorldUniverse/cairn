@@ -132,5 +132,16 @@
     "migrate.pagure.token_label": "Pilnvara",
     "migrate.pagure.token_body_a": "Jānorāda Pagura API pilnvara ar piekļuvi privātajiem pieteikumiem, lai izveidotu glabātavu tikai ar privātiem pieteikumiem tajā",
     "migrate.pagure.token_body_b": "Jāpārliecinās, ka augstāk ir iestatīts privātas glabātavas karogs, ja vēlies, lai šī glabātava būtu privāta",
-    "repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts."
+    "repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts.",
+    "admin.config.security": "Drošības kondigurācija",
+    "settings.twofa_reenroll.description": "Atkārtoti ieslēgt savu divpakāpju autentificēšanos",
+    "error.must_enable_2fa": "Šis Forgejo serveris pieprasa lietotājiem iespējot divpakāpju autentificēšanos, pirms viņi var piekļūt savam kontam. Iespējo to: %s",
+    "admin.config.global_2fa_requirement.title": "Visaptveroša divpakāpju prasība",
+    "admin.config.global_2fa_requirement.none": "Nē",
+    "admin.config.global_2fa_requirement.all": "Visi lietotāji",
+    "admin.config.global_2fa_requirement.admin": "Pārvaldītāji",
+    "settings.twofa_unroll_unavailable": "Tavam kontam ir nepieciešama divpakāpju autentificēšanās, un to nevar atspējot.",
+    "settings.twofa_reenroll": "Atkārtoti ieslēgt divpakāpju autentificēšanos",
+    "settings.must_enable_2fa": "Šis Forgejo serveris pieprasa lietotājiem iespējot divpakāpju autentificēšanos, pirms viņi var piekļūt savam kontam.",
+    "user.ghost.tooltip": "Šis lietotājs ir izdzēsts vai to nevar salāgot."
 }
