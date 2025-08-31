@@ -92,5 +92,14 @@
     },
     "editor.textarea.tab_hint": "Linea già indentata. Premi di nuovo <kbd>Tab</kbd> o <kbd>Esc</kbd> per uscire dall'editor.",
     "repo.diff.commit.previous-short": "Precedente",
-    "meta.last_line": "Ambaraba cicci cocco."
+    "meta.last_line": "Ambaraba cicci cocco.",
+    "migrate.github.description": "Migrare i dati da github.com o da server GitHub Enterprise.",
+    "migrate.git.description": "Migra un repositorio solo da qualsiasi servizio Git.",
+    "migrate.gitea.description": "Migrare i dati da gitea.com o altre istanze di Gitea.",
+    "migrate.gitlab.description": "Migrare i dati da gitlab.com o da altre istanze di GitLab.",
+    "migrate.gogs.description": "Migrare i dati da notabug.org o da altre istanze Gogs.",
+    "migrate.onedev.description": "Migrare i dati da code.onedev.io o da altre istanze OneDev.",
+    "migrate.gitbucket.description": "Migra i dati dalle istanze di GitBucket.",
+    "migrate.codebase.description": "Migrare i dati da codebasehq.com.",
+    "migrate.forgejo.description": "Migra dati da codeberg.org o da altre istanze Forgejo."
 }

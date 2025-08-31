@@ -142,5 +142,14 @@
     "admin.moderation.moderation_reports": "تقارير الإشراف",
     "admin.moderation.reports": "التقارير",
     "admin.moderation.no_open_reports": "لا يوجد حالياً أية تقارير مفتوحة.",
-    "admin.moderation.deleted_content_ref": "المحتوى المُبلغ عنه بالنوع %[1]v والمعرف %[2]d لم يعد موجوداً"
+    "admin.moderation.deleted_content_ref": "المحتوى المُبلغ عنه بالنوع %[1]v والمعرف %[2]d لم يعد موجوداً",
+    "migrate.github.description": "ترحيل البيانات من github.com أو خادم GitHub Enterprise.",
+    "migrate.git.description": "ترحيل مستودع فقط من أي خدمة Git.",
+    "migrate.gitea.description": "ترحيل البيانات من gitea.com أو مثيلات Gitea الأخرى.",
+    "migrate.gitlab.description": "ترحيل البيانات من gitlab.com أو مثيلات GitLab الأخرى.",
+    "migrate.gogs.description": "ترحيل البيانات من notabug.org أو مثيلات Gogs الأخرى.",
+    "migrate.onedev.description": "ترحيل البيانات من code.onedev.io أو مثيلات OneDev الأخرى.",
+    "migrate.gitbucket.description": "ترحيل البيانات من مثيلات GitBucket.",
+    "migrate.codebase.description": "ترحيل البيانات من codebasehq.com.",
+    "migrate.forgejo.description": "ترحيل المعلومات من كودبيرج أو خوادم فورجيو الأخرى."
 }

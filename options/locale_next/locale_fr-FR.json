@@ -122,5 +122,14 @@
     "admin.config.global_2fa_requirement.title": "Exigence globale de l'authentification à deux facteurs",
     "admin.config.security": "Configuration de sécurité",
     "settings.must_enable_2fa": "Cette instance Forgejo exige que les utilisateurs activent l'authentification à deux facteurs avant qu'ils puissent accéder a leurs comptes.",
-    "settings.twofa_unroll_unavailable": "L'authentification à deux facteurs est nécessaire pour votre compte et ne peut pas être désactivée."
+    "settings.twofa_unroll_unavailable": "L'authentification à deux facteurs est nécessaire pour votre compte et ne peut pas être désactivée.",
+    "migrate.github.description": "Migrer les données depuis github.com ou GitHub Enterprise Server.",
+    "migrate.git.description": "Migrer uniquement un dépôt depuis n’importe quel service Git.",
+    "migrate.gitea.description": "Migrer les données depuis gitea.com ou d’autres instances de Gitea.",
+    "migrate.gitlab.description": "Migrer les données depuis gitlab.com ou d’autres instances de GitLab.",
+    "migrate.gogs.description": "Migrer les données depuis notabug.org ou d’autres instances de Gogs.",
+    "migrate.onedev.description": "Migrer les données depuis code.onedev.io ou d’autre instance de OneDev.",
+    "migrate.gitbucket.description": "Migrer les données depuis des instances GitBucket.",
+    "migrate.codebase.description": "Migrer les données depuis codebasehq.com.",
+    "migrate.forgejo.description": "Migrer les données depuis codeberg.org ou une autre instance Forgejo."
 }

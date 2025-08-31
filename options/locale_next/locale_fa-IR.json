@@ -12,5 +12,12 @@
     "home.welcome.no_activity": "بدون کوشش",
     "home.explore_repos": "کاوش مخازن",
     "home.explore_users": "کاوش کاربران",
-    "home.explore_orgs": "کاوش سازمان‌ها"
+    "home.explore_orgs": "کاوش سازمان‌ها",
+    "migrate.git.description": "کوچ یک مخزن فقط از یک سرویس Git.",
+    "migrate.gitea.description": "مهاجرت داده از gitea.com یا پیاده‌سازی‌های دیگر Gitea.",
+    "migrate.gitlab.description": "مهاجرت داده از gitlabb.com یا پیاده‌سازی‌های دیگر GitLab.",
+    "migrate.gogs.description": "مهاجرت داده از notabug.com یا پیاده‌سازی‌های دیگر Gogs.",
+    "migrate.onedev.description": "مهاجرت داده از code.onedev.io یا پیاده‌سازی‌های دیگر OneDev.",
+    "migrate.gitbucket.description": "مهاجرت داده از نمونه های GitBucket",
+    "migrate.codebase.description": "مهاجر داده ها از codebasehq.com."
 }

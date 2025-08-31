@@ -105,5 +105,14 @@
     "warning.repository.out_of_sync": "La base de datos que representa este repositorio está desincronizada. Si esta advertencia continúa mostrándose después de empujar un commit a este repositorio, contacte al administrador.",
     "moderation.report_abuse_form.details": "Este formulario se usa para reportar usuarios que crean perfiles, repositorios, incidencias, comentarios spam o se comportan de manera inapropiada.",
     "moderation.reported_thank_you": "Gracias por su reporte. La administración ha sido notificada de esto.",
-    "mail.actions.not_successful_run_subject": "El flujo %[1]s falló en el repositorio %[2]s"
+    "mail.actions.not_successful_run_subject": "El flujo %[1]s falló en el repositorio %[2]s",
+    "migrate.github.description": "Migrar datos desde github.com o un servidor GitHub Enterprise.",
+    "migrate.git.description": "Migrar un repositorio sólo desde cualquier servicio Git.",
+    "migrate.gitea.description": "Migrar datos de gitea.com u otra instancia de Gitea.",
+    "migrate.gitlab.description": "Migrar datos de gitlab.com u otra instancia de GitLab.",
+    "migrate.gogs.description": "Migrar datos de notabug.org u otra instancia de Gogs.",
+    "migrate.onedev.description": "Migrar datos desde code.onedev.io u otra instancia de OneDev.",
+    "migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
+    "migrate.codebase.description": "Migrar datos desde codebasehq.com.",
+    "migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo."
 }
