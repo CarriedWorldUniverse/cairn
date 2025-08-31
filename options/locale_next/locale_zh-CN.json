@@ -110,5 +110,7 @@
     "migrate.pagure.token_label": "令牌",
     "migrate.pagure.token_body_a": "提供可访问私有议题的 Pagure API 令牌以创建一个只有私有议题的仓库",
     "migrate.pagure.token_body_b": "如果你希望此仓库为私有，记得选择上面的私有仓库选项！",
-    "repo.pulls.already_merged": "合并失败：此合并请求已被合并。"
+    "repo.pulls.already_merged": "合并失败：此合并请求已被合并。",
+    "user.ghost.tooltip": "该用户已被删除或无法找到。",
+    "migrate.form.error.url_credentials": "URL 包含凭据，分别将其填入用户名和密码字段"
 }

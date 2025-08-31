@@ -134,5 +134,6 @@
     "settings.twofa_reenroll": "Zwei-Faktor-Authentifizierung neu ausrollen",
     "settings.twofa_reenroll.description": "Deine Zwei-Faktor-Authentifizierung neu ausrollen",
     "error.must_enable_2fa": "Diese Forgejo-Instanz verlangt von den Benutzern, dass sie die Zwei-Faktor-Authentifizierung aktivieren, bevor sie auf ihren Accounts zugreifen können. Dies kann aktiviert werden bei: %s",
-    "admin.config.global_2fa_requirement.title": "Globale Zwei-Faktor-Anforderung"
+    "admin.config.global_2fa_requirement.title": "Globale Zwei-Faktor-Anforderung",
+    "user.ghost.tooltip": "Dieser Benutzer wurde gelöscht oder konnte nicht gefunden werden."
 }
