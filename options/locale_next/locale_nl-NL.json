@@ -124,5 +124,13 @@
     "migrate.pagure.project_example": "De url van het Pagure-project, bijvoorbeeld https://pagure.io/pagure",
     "migrate.pagure.token_label": "Token",
     "migrate.pagure.token_body_a": "Geef een Pagure API-token met toegang tot de privé-issues om een repository te maken met alleen de privé-issues erin",
-    "migrate.pagure.token_body_b": "Zorg ervoor dat u de vlag voor privé-repository hierboven instelt als u wilt dat deze repository privé is"
+    "migrate.pagure.token_body_b": "Zorg ervoor dat u de vlag voor privé-repository hierboven instelt als u wilt dat deze repository privé is",
+    "settings.twofa_unroll_unavailable": "Tweefactorauthenticatie is vereist voor uw account en kan niet worden uitgeschakeld.",
+    "admin.config.security": "Beveiligingsconfiguratie",
+    "admin.config.global_2fa_requirement.title": "Globale vereiste van tweefactorauthenticatie",
+    "admin.config.global_2fa_requirement.none": "Nee",
+    "admin.config.global_2fa_requirement.all": "Alle gebruikers",
+    "admin.config.global_2fa_requirement.admin": "Beheerders",
+    "settings.twofa_reenroll": "Herinschrijven voor tweefactorauthenticatie",
+    "settings.twofa_reenroll.description": "Herhaal uw tweefactorauthenticatie"
 }

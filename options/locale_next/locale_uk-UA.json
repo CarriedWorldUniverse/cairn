@@ -142,5 +142,7 @@
     "admin.config.global_2fa_requirement.title": "Глобальна вимога двофакторної автентифікації",
     "settings.twofa_unroll_unavailable": "Для вашого облікового запису необхідна двофакторна автентифікація; це неможливо вимкнути.",
     "settings.twofa_reenroll": "Увімкнути двофакторну автентифікацію",
-    "settings.twofa_reenroll.description": "Повторно зареєструйте свою двофакторну автентифікацію"
+    "settings.twofa_reenroll.description": "Повторно зареєструйте свою двофакторну автентифікацію",
+    "user.ghost.tooltip": "Користувача не знайдено; ймовірно, його було видалено.",
+    "migrate.form.error.url_credentials": "URL-адреса містить дані для входу, введіть їх у поля «Ім'я користувача» і «Пароль» відповідно"
 }
