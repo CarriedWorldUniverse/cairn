@@ -52,7 +52,7 @@
 									<span class="help">{{ctx.Locale.Tr "org.teams.admin_access_helper"}}</span>
 								</label>
 								<label>
-									<input type="radio" name="permission" value="read" {{if or .PageIsOrgTeamsNew (eq .Team.AccessMode 1) (eq .Team.AccessMode 2)}}checked{{end}}>
+									<input type="radio" name="permission" value="read" {{if or .PageIsOrgTeamsNew (le .Team.AccessMode 2)}}checked{{end}}>
 									{{ctx.Locale.Tr "org.teams.general_access"}}
 									<span class="help">{{ctx.Locale.Tr "org.teams.general_access_helper"}}</span>
 								</label>
