@@ -64,7 +64,15 @@ func TestUserProfile(t *testing.T) {
 		checkReadme(t, "README.md", "README.md", 1)
 		checkReadme(t, "readme.md", "readme.md", 1)
 		checkReadme(t, "ReadMe.mD", "ReadMe.mD", 1)
-		checkReadme(t, "readme.org does not render", "README.org", 0)
+		checkReadme(t, "readme.org", "README.org", 1)
+		checkReadme(t, "README.en-us.md", "README.en-us.md", 1)
+		checkReadme(t, "README.en.md", "README.en.md", 1)
+		checkReadme(t, "README.txt", "README.txt", 1)
+		checkReadme(t, "README", "README", 1)
+		checkReadme(t, "README.mdown", "README.mdown", 1)
+		checkReadme(t, "README.i18n.md", "README.i18n.md", 1)
+		checkReadme(t, "readmee", "readmee", 0)
+		checkReadme(t, "test.md", "test.md", 0)
 
 		t.Run("readme-size", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
