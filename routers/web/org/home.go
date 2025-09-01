@@ -5,6 +5,8 @@ package org
 
 import (
 	"fmt"
+	gotemplate "html/template"
+	"io"
 	"net/http"
 	"path"
 	"strings"
@@ -180,20 +182,30 @@ func prepareOrgProfileReadme(ctx *context.Context, profileGitRepo *git.Repositor
 	} else {
 		defer rc.Close()
 
-		if profileContent, err := markdown.RenderReader(&markup.RenderContext{
-			Ctx:     ctx,
-			GitRepo: profileGitRepo,
-			Links: markup.Links{
-				// Pass repo link to markdown render for the full link of media elements.
-				// The profile of default branch would be shown.
-				Base:       profileDbRepo.Link(),
-				BranchPath: path.Join("branch", util.PathEscapeSegments(profileDbRepo.DefaultBranch)),
-			},
-			Metas: map[string]string{"mode": "document"},
-		}, rc); err != nil {
-			log.Error("failed to RenderString: %v", err)
+		if markupType := markup.Type(profileReadme.Name()); markupType != "" {
+			if profileContent, err := markdown.RenderReader(&markup.RenderContext{
+				Ctx:     ctx,
+				Type:    markupType,
+				GitRepo: profileGitRepo,
+				Links: markup.Links{
+					// Pass repo link to markdown render for the full link of media elements.
+					// The profile of default branch would be shown.
+					Base:       profileDbRepo.Link(),
+					BranchPath: path.Join("branch", util.PathEscapeSegments(profileDbRepo.DefaultBranch)),
+				},
+				Metas: map[string]string{"mode": "document"},
+			}, rc); err != nil {
+				log.Error("failed to RenderString: %v", err)
+			} else {
+				ctx.Data["ProfileReadme"] = profileContent
+			}
 		} else {
-			ctx.Data["ProfileReadme"] = profileContent
+			content, err := io.ReadAll(rc)
+			if err != nil {
+				log.Error("Read readme content failed: %v", err)
+			}
+			ctx.Data["ProfileReadme"] = gotemplate.HTMLEscapeString(util.UnsafeBytesToString(content))
+			ctx.Data["IsProfileReadmePlain"] = true
 		}
 	}
 }
