@@ -141,7 +141,7 @@
     "migrate.pagure.description": "Migrate data from pagure.io or other Pagure instances.",
     "migrate.pagure.incorrect_url": "Incorrect source repository URL has been provided",
     "migrate.pagure.project_url": "Pagure project URL",
-    "migrate.pagure.project_example": "The Pagure project url, e.g. https://pagure.io/pagure",
+    "migrate.pagure.project_example": "The Pagure project URL, e.g. https://pagure.io/pagure",
     "migrate.pagure.token_label": "Token",
     "migrate.pagure.token_body_a": "Provide a Pagure API token with access to the private issues to create a repository with just the private issues in it",
     "migrate.pagure.token_body_b": "Be sure to set the private repo flag above if you want this repo to be private",
