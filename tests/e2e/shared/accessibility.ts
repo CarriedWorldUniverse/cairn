@@ -22,19 +22,19 @@ export async function accessibilityCheck({page}: {page: Page}, includes: string[
   // Have observed failures during this scanning which are understood to be caused by CSS transitions, either applied to
   // whatever last action occurred on the page before `accessibilityCheck` was called, or during the transition from
   // dark to light.  As there are a variety of transitions in Forgejo's CSS files (primarily in fomantic) with ease
-  // elements between 0.1 and 0.3 seconds, we give the accessibility scanner up to 1s to settle into success for each
+  // elements between 0.1 and 0.3 seconds, we give the accessibility scanner up to 2s to settle into success for each
   // scan.
   await expect(async () => {
     const accessibilityScanResults = await accessibilityScanner.analyze();
     expect(accessibilityScanResults.violations).toEqual([]);
-  }).toPass({timeout: 1000});
+  }).toPass({timeout: 2000});
 
   await page.emulateMedia({colorScheme: 'dark'});
 
   await expect(async () => {
     const accessibilityScanResults = await accessibilityScanner.analyze();
     expect(accessibilityScanResults.violations).toEqual([]);
-  }).toPass({timeout: 1000});
+  }).toPass({timeout: 2000});
 
   await page.emulateMedia({colorScheme: 'light'});
 }
