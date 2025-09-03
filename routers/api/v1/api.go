@@ -69,6 +69,7 @@ package v1
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	actions_model "forgejo.org/models/actions"
@@ -468,6 +469,12 @@ func reqAdmin() func(ctx *context.APIContext) {
 // reqRepoWriter user should have a permission to write to a repo, or be a site admin
 func reqRepoWriter(unitTypes ...unit.Type) func(ctx *context.APIContext) {
 	return func(ctx *context.APIContext) {
+		if !slices.ContainsFunc(unitTypes, func(unitType unit.Type) bool {
+			return ctx.Repo.Repository.UnitEnabled(ctx, unitType)
+		}) {
+			ctx.NotFound()
+			return
+		}
 		if !ctx.IsUserRepoWriter(unitTypes) && !ctx.IsUserRepoAdmin() && !ctx.IsUserSiteAdmin() {
 			ctx.Error(http.StatusForbidden, "reqRepoWriter", "user should have a permission to write to a repo")
 			return
@@ -487,6 +494,10 @@ func reqRepoBranchWriter(ctx *context.APIContext) {
 // reqRepoReader user should have specific read permission or be a repo admin or a site admin
 func reqRepoReader(unitType unit.Type) func(ctx *context.APIContext) {
 	return func(ctx *context.APIContext) {
+		if !ctx.Repo.Repository.UnitEnabled(ctx, unitType) {
+			ctx.NotFound()
+			return
+		}
 		if !ctx.Repo.CanRead(unitType) && !ctx.IsUserRepoAdmin() && !ctx.IsUserSiteAdmin() {
 			ctx.Error(http.StatusForbidden, "reqRepoReader", "user should have specific read permission or be a repo admin or a site admin")
 			return
@@ -739,6 +750,26 @@ func mustEnableIssuesOrPulls(ctx *context.APIContext) {
 					ctx.Repo.Permission)
 			}
 		}
+		ctx.NotFound()
+		return
+	}
+}
+
+func mustEnableLocalIssuesIfIsIssue(ctx *context.APIContext) {
+	if ctx.Repo.Repository.UnitEnabled(ctx, unit.TypeIssues) {
+		return
+	}
+
+	issue, err := issues_model.GetIssueByIndex(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":index"))
+	if err != nil {
+		if issues_model.IsErrIssueNotExist(err) {
+			ctx.NotFound()
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetIssueByIndex", err)
+		}
+		return
+	}
+	if !issue.IsPull {
 		ctx.NotFound()
 		return
 	}
@@ -1426,7 +1457,7 @@ func Routes() *web.Route {
 						m.Group("/comments", func() {
 							m.Combo("").Get(repo.ListIssueComments).
 								Post(reqToken(), mustNotBeArchived, bind(api.CreateIssueCommentOption{}), repo.CreateIssueComment)
-							m.Combo("/{id}", reqToken()).Patch(bind(api.EditIssueCommentOption{}), repo.EditIssueCommentDeprecated).
+							m.Combo("/{id}", reqToken(), commentAssignment(":id")).Patch(bind(api.EditIssueCommentOption{}), repo.EditIssueCommentDeprecated).
 								Delete(repo.DeleteIssueCommentDeprecated)
 						})
 						m.Get("/timeline", repo.ListIssueCommentsAndTimeline)
@@ -1483,7 +1514,7 @@ func Routes() *web.Route {
 								Delete(reqToken(), reqAdmin(), repo.UnpinIssue)
 							m.Patch("/{position}", reqToken(), reqAdmin(), repo.MoveIssuePin)
 						})
-					})
+					}, mustEnableLocalIssuesIfIsIssue)
 				}, mustEnableIssuesOrPulls)
 				m.Group("/labels", func() {
 					m.Combo("").Get(repo.ListLabels).

@@ -5,9 +5,12 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"os"
 	"path"
 	"path/filepath"
@@ -523,4 +526,14 @@ func CreateDeclarativeRepo(t *testing.T, owner *user_model.User, name string, en
 	}
 
 	return CreateDeclarativeRepoWithOptions(t, owner, opts)
+}
+
+func WriteImageBody(t *testing.T, buff bytes.Buffer, filename string, body *bytes.Buffer) string {
+	writer := multipart.NewWriter(body)
+	defer writer.Close()
+	part, err := writer.CreateFormFile("attachment", filename)
+	require.NoError(t, err)
+	_, err = io.Copy(part, &buff)
+	require.NoError(t, err)
+	return writer.FormDataContentType()
 }
