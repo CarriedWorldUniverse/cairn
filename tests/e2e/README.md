@@ -233,7 +233,7 @@ The following environment variables control visual testing:
 `VISUAL_TEST=1` will create screenshots in tests/e2e/test-snapshots.
   The test will fail the first time,
   because the screenshots are not included with Forgejo.
-  Subsequent runs will comopare against your local copy of the screenshots.
+  Subsequent runs will compare against your local copy of the screenshots.
 
 `ACCEPT_VISUAL=1` will overwrite the snapshot images with new images.
 
