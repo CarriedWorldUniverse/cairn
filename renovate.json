@@ -27,7 +27,7 @@
       "description": "Require dashboard approval for some deps",
       "matchPackageNames": [
         "docker.io/bitnami/minio",
-        "github.com/go-ap/activitypub",
+        "github.com/go-ap/activitypub"
       ],
       "dependencyDashboardApproval": true
     },
