@@ -211,10 +211,20 @@ func ViewPost(ctx *context_module.Context) {
 	resp.State.Run.CanApprove = run.NeedApproval && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanRerun = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanDeleteArtifact = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
-	resp.State.Run.Done = run.Status.IsDone()
 	resp.State.Run.Jobs = make([]*ViewJob, 0, len(jobs)) // marshal to '[]' instead of 'null' in json
 	resp.State.Run.Status = run.Status.String()
+
+	// It's possible for the run to be marked with a finalized status (eg. failure) because of a  single job within the
+	// run; eg. one job fails, the run fails. But other jobs can still be running. The frontend RepoActionView uses the
+	// `done` flag to indicate whether to stop querying the run's status -- so even though the run has reached a final
+	// state, it may not be time to stop polling for updates.
+	done := run.Status.IsDone()
+
 	for _, v := range jobs {
+		if !v.Status.IsDone() {
+			// Ah, another job is still running. Keep the frontend polling enabled then.
+			done = false
+		}
 		resp.State.Run.Jobs = append(resp.State.Run.Jobs, &ViewJob{
 			ID:       v.ID,
 			Name:     v.Name,
@@ -223,6 +233,7 @@ func ViewPost(ctx *context_module.Context) {
 			Duration: v.Duration().String(),
 		})
 	}
+	resp.State.Run.Done = done
 
 	pusher := ViewUser{
 		DisplayName: run.TriggerUser.GetDisplayName(),
