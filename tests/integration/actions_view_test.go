@@ -49,6 +49,10 @@ func TestActionsViewArtifactDeletion(t *testing.T) {
 
 		// Visit it's web view
 		req := NewRequest(t, "GET", run.HTMLURL())
+		intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
+
+		finalURL := intermediateRedirect.Result().Header.Get("Location")
+		req = NewRequest(t, "GET", finalURL)
 		resp := MakeRequest(t, req, http.StatusOK)
 		htmlDoc := NewHTMLParser(t, resp.Body)
 
@@ -78,6 +82,10 @@ func TestActionViewsArtifactDownload(t *testing.T) {
 		assert.JSONEq(t, `{"artifacts":[{"name":"multi-file-download","size":2048,"status":"completed"}]}`, strings.TrimSuffix(resp.Body.String(), "\n"))
 
 		req = NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d", runIndex))
+		intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
+
+		finalURL := intermediateRedirect.Result().Header.Get("Location")
+		req = NewRequest(t, "GET", finalURL)
 		resp = MakeRequest(t, req, http.StatusOK)
 		assertDataAttrs(t, resp.Body, runID)
 
@@ -95,6 +103,10 @@ func TestActionViewsArtifactDownload(t *testing.T) {
 		assert.JSONEq(t, `{"artifacts":[{"name":"artifact-v4-download","size":1024,"status":"completed"}]}`, strings.TrimSuffix(resp.Body.String(), "\n"))
 
 		req = NewRequest(t, "GET", fmt.Sprintf("/user5/repo4/actions/runs/%d", runIndex))
+		intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
+
+		finalURL := intermediateRedirect.Result().Header.Get("Location")
+		req = NewRequest(t, "GET", finalURL)
 		resp = MakeRequest(t, req, http.StatusOK)
 		assertDataAttrs(t, resp.Body, runID)
 
@@ -111,4 +123,22 @@ func TestActionViewsArtifactDownload(t *testing.T) {
 		assert.Equal(t, "bytes 0-99/1024", resp.Header().Get("content-range"))
 		assert.Equal(t, strings.Repeat("D", 100), resp.Body.String())
 	})
+}
+
+func TestActionViewsView(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequest(t, "GET", "/user2/repo1/actions/runs/187")
+	intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
+
+	finalURL := intermediateRedirect.Result().Header.Get("Location")
+	req = NewRequest(t, "GET", finalURL)
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	selector := "#repo-action-view"
+	// Verify key properties going into the `repo-action-view` to initialize the Vue component.
+	htmlDoc.AssertAttrEqual(t, selector, "data-run-index", "187")
+	htmlDoc.AssertAttrEqual(t, selector, "data-job-index", "0")
+	htmlDoc.AssertAttrEqual(t, selector, "data-attempt-number", "1")
 }

@@ -527,7 +527,7 @@ test: test-frontend test-backend
 .PHONY: test-backend
 test-backend:
 	@echo "Running go test with $(GOTESTFLAGS) -tags '$(TEST_TAGS)'..."
-	@$(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' $(GO_TEST_PACKAGES)
+	@TZ=UTC $(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' $(GO_TEST_PACKAGES)
 
 .PHONY: test-remote-cacher
 test-remote-cacher:
@@ -557,7 +557,7 @@ test-check:
 .PHONY: test\#%
 test\#%:
 	@echo "Running go test with $(GOTESTFLAGS) -tags '$(TEST_TAGS)'..."
-	@$(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' -run $(subst .,/,$*) $(GO_TEST_PACKAGES)
+	@TZ=UTC $(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' -run $(subst .,/,$*) $(GO_TEST_PACKAGES)
 
 coverage-merge:
 	rm -fr coverage/merged ; mkdir -p coverage/merged

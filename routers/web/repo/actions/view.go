@@ -40,10 +40,31 @@ import (
 	"xorm.io/builder"
 )
 
+func RedirectToLatestAttempt(ctx *context_module.Context) {
+	runIndex := ctx.ParamsInt64("run")
+	jobIndex := ctx.ParamsInt64("job")
+
+	job, _ := getRunJobs(ctx, runIndex, jobIndex)
+	if ctx.Written() {
+		return
+	}
+
+	jobURL, err := job.HTMLURL(ctx)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.Redirect(jobURL, http.StatusTemporaryRedirect)
+}
+
 func View(ctx *context_module.Context) {
 	ctx.Data["PageIsActions"] = true
 	runIndex := ctx.ParamsInt64("run")
 	jobIndex := ctx.ParamsInt64("job")
+	// note: this is `attemptNumber` not `attemptIndex` since this value has to matches the ActionTask's Attempt field
+	// which uses 1-based numbering... would be confusing as "Index" if it later can't be used to index an slice/array.
+	attemptNumber := ctx.ParamsInt64("attempt")
 
 	job, _ := getRunJobs(ctx, runIndex, jobIndex)
 	if ctx.Written() {
@@ -56,6 +77,7 @@ func View(ctx *context_module.Context) {
 	ctx.Data["RunID"] = job.Run.ID
 	ctx.Data["JobIndex"] = jobIndex
 	ctx.Data["ActionsURL"] = ctx.Repo.RepoLink + "/actions"
+	ctx.Data["AttemptNumber"] = attemptNumber
 	ctx.Data["WorkflowName"] = workflowName
 	ctx.Data["WorkflowURL"] = ctx.Repo.RepoLink + "/actions?workflow=" + workflowName
 
@@ -136,9 +158,10 @@ type ViewRunInfo struct {
 }
 
 type ViewCurrentJob struct {
-	Title  string         `json:"title"`
-	Detail string         `json:"detail"`
-	Steps  []*ViewJobStep `json:"steps"`
+	Title       string         `json:"title"`
+	Detail      string         `json:"detail"`
+	Steps       []*ViewJobStep `json:"steps"`
+	AllAttempts []*TaskAttempt `json:"allAttempts"`
 }
 
 type ViewLogs struct {
@@ -193,10 +216,19 @@ type ViewStepLogLine struct {
 	Timestamp float64 `json:"timestamp"`
 }
 
+type TaskAttempt struct {
+	Number  int64         `json:"number"`
+	Started template.HTML `json:"time_since_started_html"`
+	Status  string        `json:"status"`
+}
+
 func ViewPost(ctx *context_module.Context) {
 	req := web.GetForm(ctx).(*ViewRequest)
 	runIndex := ctx.ParamsInt64("run")
 	jobIndex := ctx.ParamsInt64("job")
+	// note: this is `attemptNumber` not `attemptIndex` since this value has to matches the ActionTask's Attempt field
+	// which uses 1-based numbering... would be confusing as "Index" if it later can't be used to index an slice/array.
+	attemptNumber := ctx.ParamsInt64("attempt")
 
 	current, jobs := getRunJobs(ctx, runIndex, jobIndex)
 	if ctx.Written() {
@@ -274,7 +306,7 @@ func ViewPost(ctx *context_module.Context) {
 	var task *actions_model.ActionTask
 	if current.TaskID > 0 {
 		var err error
-		task, err = actions_model.GetTaskByID(ctx, current.TaskID)
+		task, err = actions_model.GetTaskByJobAttempt(ctx, current.ID, attemptNumber)
 		if err != nil {
 			ctx.Error(http.StatusInternalServerError, err.Error())
 			return
@@ -294,8 +326,22 @@ func ViewPost(ctx *context_module.Context) {
 	resp.State.CurrentJob.Steps = make([]*ViewJobStep, 0) // marshal to '[]' instead of 'null' in json
 	resp.Logs.StepsLog = make([]*ViewStepLog, 0)          // marshal to '[]' instead of 'null' in json
 	if task != nil {
-		steps := actions.FullSteps(task)
+		taskAttempts, err := task.GetAllAttempts(ctx)
+		if err != nil {
+			ctx.Error(http.StatusInternalServerError, err.Error())
+			return
+		}
+		allAttempts := make([]*TaskAttempt, len(taskAttempts))
+		for i, actionTask := range taskAttempts {
+			allAttempts[i] = &TaskAttempt{
+				Number:  actionTask.Attempt,
+				Started: templates.TimeSince(actionTask.Started),
+				Status:  actionTask.Status.String(),
+			}
+		}
+		resp.State.CurrentJob.AllAttempts = allAttempts
 
+		steps := actions.FullSteps(task)
 		for _, v := range steps {
 			resp.State.CurrentJob.Steps = append(resp.State.CurrentJob.Steps, &ViewJobStep{
 				Summary:  v.Name,

@@ -1,4 +1,5 @@
 import {mount, flushPromises} from '@vue/test-utils';
+import {toAbsoluteUrl} from '../utils.js';
 import RepoActionView from './RepoActionView.vue';
 
 test('processes ##[group] and ##[endgroup]', async () => {
@@ -35,6 +36,7 @@ test('processes ##[group] and ##[endgroup]', async () => {
               status: 'success',
             },
           ],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
         },
       },
       logs: {
@@ -53,6 +55,7 @@ test('processes ##[group] and ##[endgroup]', async () => {
   const wrapper = mount(RepoActionView, {
     props: {
       jobIndex: '1',
+      attemptNumber: '1',
       locale: {
         approve: '',
         cancel: '',
@@ -65,6 +68,9 @@ test('processes ##[group] and ##[endgroup]', async () => {
         showLogSeconds: '',
         showFullScreen: '',
         downloadLogs: '',
+        runAttemptLabel: '',
+        viewingOutOfDateRun: '',
+        viewMostRecentRun: '',
         status: {
           unknown: '',
           waiting: '',
@@ -156,6 +162,7 @@ test('load multiple steps on a finished action', async () => {
               status: 'success',
             },
           ],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
         },
       },
       logs: {
@@ -176,6 +183,7 @@ test('load multiple steps on a finished action', async () => {
       actionsURL: 'https://example.com/example-org/example-repo/actions',
       runIndex: '1',
       jobIndex: '2',
+      attemptNumber: '1',
       locale: {
         approve: '',
         cancel: '',
@@ -188,6 +196,9 @@ test('load multiple steps on a finished action', async () => {
         showLogSeconds: '',
         showFullScreen: '',
         downloadLogs: '',
+        runAttemptLabel: '',
+        viewingOutOfDateRun: '',
+        viewMostRecentRun: '',
         status: {
           unknown: '',
           waiting: '',
@@ -214,6 +225,194 @@ test('load multiple steps on a finished action', async () => {
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(1) .log-msg').text()).toEqual('Step #2 Log #1');
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(2) .log-msg').text()).toEqual('Step #2 Log #2');
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(3) .log-msg').text()).toEqual('Step #2 Log #3');
+});
+
+function configureForMultipleAttemptTests({viewHistorical}) {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {
+    const artifacts_value = {
+      artifacts: [],
+    };
+    const stepsLog_value = [
+      {
+        step: 0,
+        cursor: 0,
+        lines: [],
+      },
+    ];
+    const jobs_value = {
+      state: {
+        run: {
+          canApprove: true,
+          canCancel: true,
+          canRerun: true,
+          status: 'success',
+          commit: {
+            pusher: {},
+          },
+        },
+        currentJob: {
+          steps: [
+            {
+              summary: 'Test Job',
+              duration: '1s',
+              status: 'success',
+            },
+          ],
+          allAttempts: [
+            {number: 2, time_since_started_html: 'yesterday', status: 'success'},
+            {number: 1, time_since_started_html: 'two days ago', status: 'failure'},
+          ],
+        },
+      },
+      logs: {
+        stepsLog: opts.body?.includes('"cursor":null') ? stepsLog_value : [],
+      },
+    };
+
+    return Promise.resolve({
+      ok: true,
+      json: vi.fn().mockResolvedValue(
+        url.endsWith('/artifacts') ? artifacts_value : jobs_value,
+      ),
+    });
+  });
+
+  const wrapper = mount(RepoActionView, {
+    props: {
+      runIndex: '123',
+      jobIndex: '1',
+      attemptNumber: viewHistorical ? '1' : '2',
+      actionsURL: toAbsoluteUrl('/user1/repo2/actions'),
+      locale: {
+        approve: 'Locale Approve',
+        cancel: 'Locale Cancel',
+        rerun: 'Locale Re-run',
+        artifactsTitle: '',
+        areYouSure: '',
+        confirmDeleteArtifact: '',
+        rerun_all: '',
+        showTimeStamps: '',
+        showLogSeconds: '',
+        showFullScreen: '',
+        downloadLogs: '',
+        runAttemptLabel: 'Run attempt %[1]s %[2]s',
+        viewingOutOfDateRun: 'oh no, out of date since %[1]s give or take or so',
+        viewMostRecentRun: '',
+        status: {
+          unknown: '',
+          waiting: '',
+          running: '',
+          success: '',
+          failure: '',
+          cancelled: '',
+          skipped: '',
+          blocked: '',
+        },
+      },
+    },
+  });
+  return wrapper;
+}
+
+test('display baseline with most-recent attempt', async () => {
+  const wrapper = configureForMultipleAttemptTests({viewHistorical: false});
+  await flushPromises();
+
+  // Warning dialog for viewing an out-of-date attempt...
+  expect(wrapper.findAll('.job-out-of-date-warning').length).toEqual(0);
+
+  // Approve button should be visible; can't have all three at once but at least this verifies the inverse of the
+  // historical attempt test below.
+  expect(wrapper.findAll('button').filter((button) => button.text() === 'Locale Approve').length).toEqual(1);
+
+  // Job list will be visible...
+  expect(wrapper.findAll('.job-group-section').length).toEqual(1);
+
+  // Attempt selector dropdown...
+  expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
+  expect(wrapper.findAll('.job-attempt-dropdown .svg.octicon-check-circle-fill.text.green').length).toEqual(1);
+  expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 2 yesterday');
+});
+
+test('display reconfigured for historical attempt', async () => {
+  const wrapper = configureForMultipleAttemptTests({viewHistorical: true});
+  await flushPromises();
+
+  // Warning dialog for viewing an out-of-date attempt...
+  expect(wrapper.findAll('.job-out-of-date-warning').length).toEqual(1);
+  expect(wrapper.get('.job-out-of-date-warning').text()).toEqual('oh no, out of date since two days ago give or take or so');
+  await wrapper.get('.job-out-of-date-warning button').trigger('click');
+  expect(window.location.href).toEqual(toAbsoluteUrl('/user1/repo2/actions/runs/123/jobs/1'));
+  // eslint-disable-next-line no-restricted-globals
+  history.back();
+  await flushPromises();
+
+  // Approve, Cancel, Re-run all buttons should all be suppressed...
+  expect(wrapper.findAll('button').filter((button) => button.text() === 'Locale Approve').length).toEqual(0);
+  expect(wrapper.findAll('button').filter((button) => button.text() === 'Locale Cancel').length).toEqual(0);
+  expect(wrapper.findAll('button').filter((button) => button.text() === 'Locale Re-run').length).toEqual(0);
+
+  // Job list will be suppressed...
+  expect(wrapper.findAll('.job-group-section').length).toEqual(0);
+
+  // Attempt selector dropdown...
+  expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
+  expect(wrapper.findAll('.job-attempt-dropdown .svg.octicon-x-circle-fill.text.red').length).toEqual(1);
+  expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 1 two days ago');
+});
+
+test('historical attempt dropdown interactions', async () => {
+  const wrapper = configureForMultipleAttemptTests({viewHistorical: true});
+  await flushPromises();
+
+  // Check dropdown exists, but isn't expanded.
+  const attemptsNotExpanded = () => {
+    expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
+    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu').length).toEqual(0, 'dropdown content not yet visible');
+  };
+  attemptsNotExpanded();
+
+  // Click on attempt dropdown
+  wrapper.get('.job-attempt-dropdown .ui.dropdown').trigger('click');
+  await flushPromises();
+
+  // Check dropdown is expanded and both options are displayed
+  const attemptsExpanded = () => {
+    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu').length).toEqual(1);
+    expect(wrapper.get('.job-attempt-dropdown .action-job-menu').isVisible()).toBe(true);
+    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu a').filter((a) => a.text() === 'Run attempt 2 yesterday').length).toEqual(1);
+    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu a').filter((a) => a.text() === 'Run attempt 1 two days ago').length).toEqual(1);
+  };
+  attemptsExpanded();
+
+  // Normally dismiss occurs on a body click event; simulate that by calling `closeDropdown()`
+  wrapper.vm.closeDropdown();
+  await flushPromises();
+
+  // Should return to not expanded.
+  attemptsNotExpanded();
+
+  // Click on the gear dropdown
+  wrapper.get('.job-gear-dropdown').trigger('click');
+  await flushPromises();
+
+  // Check that gear's menu is expanded, and attempt dropdown isn't.
+  expect(wrapper.findAll('.job-gear-dropdown .action-job-menu').length).toEqual(1);
+  expect(wrapper.get('.job-gear-dropdown .action-job-menu').isVisible()).toBe(true);
+  attemptsNotExpanded();
+
+  // Click on attempt dropdown
+  wrapper.get('.job-attempt-dropdown .ui.dropdown').trigger('click');
+  await flushPromises();
+
+  // Check that attempt dropdown expanded again, gear dropdown disappeared (mutually exclusive)
+  expect(wrapper.findAll('.job-gear-dropdown .action-job-menu').length).toEqual(0);
+  attemptsExpanded();
+
+  // Click on the other option in the dropdown to verify it navigates to the target attempt
+  wrapper.findAll('.job-attempt-dropdown .action-job-menu a').find((a) => a.text() === 'Run attempt 2 yesterday').trigger('click');
+  expect(window.location.href).toEqual(toAbsoluteUrl('/user1/repo2/actions/runs/123/jobs/1/attempt/2'));
 });
 
 test('artifacts download links', async () => {
@@ -264,6 +463,7 @@ test('artifacts download links', async () => {
               status: 'success',
             },
           ],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
         },
       },
       logs: {
@@ -285,6 +485,7 @@ test('artifacts download links', async () => {
       runIndex: '10',
       runID: '1001',
       jobIndex: '2',
+      attemptNumber: '1',
       locale: {
         approve: '',
         cancel: '',

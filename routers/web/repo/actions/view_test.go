@@ -141,7 +141,7 @@ func Test_artifactsFindByNameOrID(t *testing.T) {
 	}
 }
 
-func baseExpectedResponse() *ViewResponse {
+func baseExpectedViewResponse() *ViewResponse {
 	return &ViewResponse{
 		State: ViewState{
 			Run: ViewRunInfo{
@@ -193,6 +193,23 @@ func baseExpectedResponse() *ViewResponse {
 						Status:  "waiting",
 					},
 				},
+				AllAttempts: []*TaskAttempt{
+					{
+						Number:  3,
+						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:  "running",
+					},
+					{
+						Number:  2,
+						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:  "success",
+					},
+					{
+						Number:  1,
+						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:  "success",
+					},
+				},
 			},
 		},
 		Logs: ViewLogs{
@@ -208,22 +225,27 @@ func TestActionsViewViewPost(t *testing.T) {
 		name           string
 		runIndex       int64
 		jobIndex       int64
+		attemptNumber  int64
 		expected       *ViewResponse
 		expectedTweaks func(*ViewResponse)
 	}{
 		{
-			name:     "base case",
-			runIndex: 187,
-			jobIndex: 0,
-			expected: baseExpectedResponse(),
+			name:          "base case",
+			runIndex:      187,
+			jobIndex:      0,
+			attemptNumber: 1,
+			expected:      baseExpectedViewResponse(),
 			expectedTweaks: func(resp *ViewResponse) {
+				resp.State.CurrentJob.Steps[0].Status = "success"
+				resp.State.CurrentJob.Steps[1].Status = "success"
 			},
 		},
 		{
-			name:     "run with waiting jobs",
-			runIndex: 189,
-			jobIndex: 0,
-			expected: baseExpectedResponse(),
+			name:          "run with waiting jobs",
+			runIndex:      189,
+			jobIndex:      0,
+			attemptNumber: 1,
+			expected:      baseExpectedViewResponse(),
 			expectedTweaks: func(resp *ViewResponse) {
 				// Variations from runIndex 187 -> runIndex 189 that are not the subject of this test...
 				resp.State.Run.Link = "/user5/repo4/actions/runs/189"
@@ -257,11 +279,29 @@ func TestActionsViewViewPost(t *testing.T) {
 						Status:  "success",
 					},
 				}
+				resp.State.CurrentJob.AllAttempts = []*TaskAttempt{
+					{
+						Number:  1,
+						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:  "success",
+					},
+				}
 
 				// Under test in this case: verify that Done is set to false; in the fixture data, job.ID=195 is status
 				// Success, but job.ID=196 is status Waiting, and so we expect to signal Done=false to indicate to the
 				// UI to continue refreshing the page.
 				resp.State.Run.Done = false
+			},
+		},
+		{
+			name:          "attempt 3",
+			runIndex:      187,
+			jobIndex:      0,
+			attemptNumber: 3,
+			expected:      baseExpectedViewResponse(),
+			expectedTweaks: func(resp *ViewResponse) {
+				resp.State.CurrentJob.Steps[0].Status = "running"
+				resp.State.CurrentJob.Steps[1].Status = "waiting"
 			},
 		},
 	}
@@ -273,10 +313,11 @@ func TestActionsViewViewPost(t *testing.T) {
 			contexttest.LoadRepo(t, ctx, 4)
 			ctx.SetParams(":run", fmt.Sprintf("%d", tt.runIndex))
 			ctx.SetParams(":job", fmt.Sprintf("%d", tt.jobIndex))
+			ctx.SetParams(":attempt", fmt.Sprintf("%d", tt.attemptNumber))
 			web.SetForm(ctx, &ViewRequest{})
 
 			ViewPost(ctx)
-			require.Equal(t, http.StatusOK, resp.Result().StatusCode)
+			require.Equal(t, http.StatusOK, resp.Result().StatusCode, "failure in ViewPost(): %q", resp.Body.String())
 
 			var actual ViewResponse
 			err := json.Unmarshal(resp.Body.Bytes(), &actual)
@@ -298,6 +339,74 @@ func TestActionsViewViewPost(t *testing.T) {
 			tt.expectedTweaks(tt.expected)
 
 			assert.Equal(t, *tt.expected, actual)
+		})
+	}
+}
+
+func TestActionsViewRedirectToLatestAttempt(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	tests := []struct {
+		name         string
+		runIndex     int64
+		jobIndex     int64
+		expectedCode int
+		expectedURL  string
+	}{
+		{
+			name:        "no job index",
+			runIndex:    187,
+			jobIndex:    -1,
+			expectedURL: "https://try.gitea.io/user2/repo1/actions/runs/187/jobs/0/attempt/1",
+		},
+		{
+			name:        "job w/ 1 attempt",
+			runIndex:    187,
+			jobIndex:    0,
+			expectedURL: "https://try.gitea.io/user2/repo1/actions/runs/187/jobs/0/attempt/1",
+		},
+		{
+			name:        "job w/ multiple attempts",
+			runIndex:    187,
+			jobIndex:    2,
+			expectedURL: "https://try.gitea.io/user2/repo1/actions/runs/187/jobs/2/attempt/2",
+		},
+		{
+			name:         "run out-of-range",
+			runIndex:     5000,
+			jobIndex:     -1,
+			expectedCode: http.StatusNotFound,
+		},
+		// Odd behavior with an out-of-bound jobIndex -- defaults to the first job.  This is existing behavior
+		// documented in the getRunJobs internal helper which... seems not perfect for the redirect... but it's high
+		// risk to change and it's an OK user outcome to be redirected to something valid in the requested run.
+		{
+			name:        "job out-of-range",
+			runIndex:    187,
+			jobIndex:    500,
+			expectedURL: "https://try.gitea.io/user2/repo1/actions/runs/187/jobs/0/attempt/1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, resp := contexttest.MockContext(t, "user2/repo1/actions/runs/0")
+			contexttest.LoadUser(t, ctx, 2)
+			contexttest.LoadRepo(t, ctx, 1)
+			ctx.SetParams(":run", fmt.Sprintf("%d", tt.runIndex))
+			if tt.jobIndex != -1 {
+				ctx.SetParams(":job", fmt.Sprintf("%d", tt.jobIndex))
+			}
+
+			RedirectToLatestAttempt(ctx)
+			if tt.expectedCode == 0 {
+				assert.Equal(t, http.StatusTemporaryRedirect, resp.Code)
+				url, err := resp.Result().Location()
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedURL, url.String())
+			} else {
+				assert.Equal(t, tt.expectedCode, resp.Code)
+			}
 		})
 	}
 }
