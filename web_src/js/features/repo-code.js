@@ -5,8 +5,8 @@ import {createTippy} from '../modules/tippy.js';
 import {clippie} from 'clippie';
 import {toAbsoluteUrl} from '../utils.js';
 
-export const singleAnchorRegex = /^#(L|n)([1-9][0-9]*)$/;
-export const rangeAnchorRegex = /^#(L[1-9][0-9]*)-(L[1-9][0-9]*)$/;
+export const singleAnchorRegex = /^#[Ln]([1-9][0-9]*)$/;
+export const rangeAnchorRegex = /^#[Ln]([1-9][0-9]*)-[Ln]?([1-9][0-9]*)$/;
 
 function changeHash(hash) {
   if (window.history.pushState) {
@@ -156,9 +156,9 @@ export function initRepoCodeView() {
       const $linesEls = $(getLineEls());
       let $first;
       if (m) {
-        $first = $linesEls.filter(`[rel=${m[1]}]`);
+        $first = $linesEls.filter(`[rel=L${m[1]}]`);
         if ($first.length) {
-          const $last = $linesEls.filter(`[rel=${m[2]}]`);
+          const $last = $linesEls.filter(`[rel=L${m[2]}]`);
           selectRange($linesEls, $first, $last.length ? $last : $linesEls.last());
 
           // show code view menu marker (don't show in blame page)
@@ -172,7 +172,7 @@ export function initRepoCodeView() {
       }
       m = window.location.hash.match(singleAnchorRegex);
       if (m) {
-        $first = $linesEls.filter(`[rel=L${m[2]}]`);
+        $first = $linesEls.filter(`[rel=L${m[1]}]`);
         if ($first.length) {
           selectRange($linesEls, $first);
 

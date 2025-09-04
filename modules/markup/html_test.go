@@ -1109,6 +1109,39 @@ func TestRender_FilePreview(t *testing.T) {
 		)
 	})
 
+	t.Run("rendered file with lines L1-2 instead of L1-L2", func(t *testing.T) {
+		testRender(
+			commitFileURL+"#L1-2",
+			`<p></p>`+
+				`<div class="file-preview-box">`+
+				`<div class="header">`+
+				`<div>`+
+				`<a href="http://localhost:3000/gogits/gogs/src/commit/c9913120ed2c1e27c1d7752ecdb7a504dc7cf6be/path/to/file.md?display=source#L1-2" class="muted" rel="nofollow">path/to/file.md</a>`+
+				`</div>`+
+				`<span class="text grey">`+
+				`Lines 1 to 2 in <a href="http://localhost:3000/gogits/gogs/src/commit/c9913120ed2c1e27c1d7752ecdb7a504dc7cf6be" class="text black" rel="nofollow">c991312</a>`+
+				`</span>`+
+				`</div>`+
+				`<div class="ui table">`+
+				`<table class="file-preview">`+
+				`<tbody>`+
+				`<tr>`+
+				`<td class="lines-num"><span data-line-number="1"></span></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="gh"># A`+"\n"+`</span></code></td>`+
+				`</tr>`+
+				`<tr>`+
+				`<td class="lines-num"><span data-line-number="2"></span></td>`+
+				`<td class="lines-code chroma"><code class="code-inner"><span class="gh"></span>B`+"\n"+`</code></td>`+
+				`</tr>`+
+				`</tbody>`+
+				`</table>`+
+				`</div>`+
+				`</div>`+
+				`<p></p>`,
+			localMetas,
+		)
+	})
+
 	commitFileURL = util.URLJoin(markup.TestRepoURL, "src", "commit", "190d9492934af498c3f669d6a2431dc5459e5b20", "path", "to", "file.go")
 
 	t.Run("normal file with ?display=source", func(t *testing.T) {
