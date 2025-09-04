@@ -3777,3 +3777,49 @@ func issuePosters(ctx *context.Context, isPullList bool) {
 	}
 	ctx.JSON(http.StatusOK, resp)
 }
+
+func getIssueParticipants(ctx *context.Context, issue *issues_model.Issue) []*user_model.User {
+	var (
+		participants = make([]*user_model.User, 1, 10)
+		comment      *issues_model.Comment
+	)
+
+	participants[0] = issue.Poster
+
+	if err := issue.LoadComments(ctx); err != nil {
+		ctx.ServerError("loadComments", err)
+		return nil
+	}
+
+	if err := issue.Comments.LoadPosters(ctx); err != nil {
+		ctx.ServerError("LoadPosters", err)
+		return nil
+	}
+
+	for _, comment = range issue.Comments {
+		if comment.Type == issues_model.CommentTypeComment ||
+			comment.Type == issues_model.CommentTypeReview ||
+			comment.Type == issues_model.CommentTypePullRequestPush {
+			participants = addParticipant(comment.Poster, participants)
+		} else if comment.Type.HasContentSupport() {
+			participants = addParticipant(comment.Poster, participants)
+
+			if comment.Review == nil {
+				continue
+			}
+			if err := comment.Review.LoadCodeComments(ctx); err != nil {
+				ctx.ServerError("Review.LoadCodeComments", err)
+				return nil
+			}
+			for _, codeComments := range comment.Review.CodeComments {
+				for _, lineComments := range codeComments {
+					for _, c := range lineComments {
+						participants = addParticipant(c.Poster, participants)
+					}
+				}
+			}
+		}
+	}
+
+	return participants
+}
