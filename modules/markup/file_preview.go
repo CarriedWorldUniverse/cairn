@@ -25,7 +25,7 @@ import (
 )
 
 // filePreviewPattern matches "http://domain/org/repo/src/commit/COMMIT/filepath#L1-L2"
-var filePreviewPattern = regexp.MustCompile(`https?://((?:\S+/){3})src/commit/([0-9a-f]{4,64})/(\S+)#(L\d+(?:-L\d+)?)`)
+var filePreviewPattern = regexp.MustCompile(`https?://((?:\S+/){3})src/commit/([0-9a-f]{4,64})/(\S+)#(L\d+(?:-L?\d+)?)`)
 
 type FilePreview struct {
 	fileContent []template.HTML
@@ -78,17 +78,17 @@ func newFilePreview(ctx *RenderContext, node *html.Node, locale translation.Loca
 
 	commitSha := node.Data[m[4]:m[5]]
 	filePath := node.Data[m[6]:m[7]]
+	hash := node.Data[m[8]:m[9]]
 	urlFullSource := urlFull
 	if strings.HasSuffix(filePath, "?display=source") {
 		filePath = strings.TrimSuffix(filePath, "?display=source")
 	} else if Type(filePath) != "" {
-		urlFullSource = node.Data[m[0]:m[6]] + filePath + "?display=source#" + node.Data[m[8]:m[1]]
+		urlFullSource = node.Data[m[0]:m[6]] + filePath + "?display=source#" + hash
 	}
 	filePath, err := url.QueryUnescape(filePath)
 	if err != nil {
 		return nil
 	}
-	hash := node.Data[m[8]:m[9]]
 
 	preview.start = m[0]
 	preview.end = m[1]

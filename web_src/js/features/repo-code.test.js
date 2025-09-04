@@ -14,4 +14,7 @@ test('rangeAnchorRegex', () => {
   expect(rangeAnchorRegex.test('#L1-L10')).toEqual(true);
   expect(rangeAnchorRegex.test('#L01-L10')).toEqual(false);
   expect(rangeAnchorRegex.test('#L1-L01')).toEqual(false);
+  expect(rangeAnchorRegex.test('#L1-10')).toEqual(true);
+  expect(rangeAnchorRegex.test('#n1-n10')).toEqual(true);
+  expect(rangeAnchorRegex.test('#n1-10')).toEqual(true);
 });
