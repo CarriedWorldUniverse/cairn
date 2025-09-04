@@ -1167,6 +1167,13 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 	}
 	ctx.Data["Assignees"] = MakeSelfOnTop(ctx.Doer, assigneeUsers)
 
+	participants := getIssueParticipants(ctx, issue)
+	if ctx.Written() {
+		return
+	}
+	ctx.Data["Participants"] = participants
+	ctx.Data["NumParticipants"] = len(participants)
+
 	handleTeamMentions(ctx)
 	if ctx.Written() {
 		return

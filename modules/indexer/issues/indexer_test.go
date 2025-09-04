@@ -84,7 +84,7 @@ func searchIssueWithKeyword(t *testing.T) {
 		issueIDs, _, err := SearchIssues(t.Context(), &test.opts)
 		require.NoError(t, err)
 
-		assert.Equal(t, test.expectedIDs, issueIDs)
+		assert.Equal(t, test.expectedIDs, issueIDs, test.opts.Keyword)
 	}
 }
 
