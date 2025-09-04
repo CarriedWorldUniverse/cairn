@@ -44,6 +44,31 @@ func init() {
 	db.RegisterModel(new(ActionRunJob))
 }
 
+func (job *ActionRunJob) HTMLURL(ctx context.Context) (string, error) {
+	if job.Run == nil || job.Run.Repo == nil {
+		return "", fmt.Errorf("action_run_job: load run and repo before accessing HTMLURL")
+	}
+
+	// Find the "index" of the currently selected job... kinda ugly that the URL uses the index rather than some other
+	// unique identifier of the job which could actually be stored upon it.  But hard to change that now.
+	allJobs, err := GetRunJobsByRunID(ctx, job.RunID)
+	if err != nil {
+		return "", err
+	}
+	jobIndex := -1
+	for i, otherJob := range allJobs {
+		if job.ID == otherJob.ID {
+			jobIndex = i
+			break
+		}
+	}
+	if jobIndex == -1 {
+		return "", fmt.Errorf("action_run_job: unable to find job on run: %d", job.ID)
+	}
+
+	return fmt.Sprintf("%s/actions/runs/%d/jobs/%d/attempt/%d", job.Run.Repo.HTMLURL(), job.Run.Index, jobIndex, job.Attempt), nil
+}
+
 func (job *ActionRunJob) Duration() time.Duration {
 	return calculateDuration(job.Started, job.Stopped, job.Status)
 }

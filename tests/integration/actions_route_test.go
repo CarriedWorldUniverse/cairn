@@ -90,7 +90,12 @@ func TestActionsWebRouteLatestWorkflowRun(t *testing.T) {
 			// Fetch the page that shows information about the run initiated by "workflow-1.yml".
 			// routers/web/repo/actions/view.go: data-workflow-url is constructed using data-workflow-name.
 			req := NewRequest(t, "GET", workflowOneURI)
+			intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
+
+			finalURL := intermediateRedirect.Result().Header.Get("Location")
+			req = NewRequest(t, "GET", finalURL)
 			resp := MakeRequest(t, req, http.StatusOK)
+
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			// Verify that URL of the workflow is shown correctly.

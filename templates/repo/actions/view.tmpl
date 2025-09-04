@@ -6,6 +6,7 @@
 		data-run-index="{{.RunIndex}}"
 		data-run-id="{{.RunID}}"
 		data-job-index="{{.JobIndex}}"
+		data-attempt-number="{{.AttemptNumber}}"
 		data-actions-url="{{.ActionsURL}}"
 		data-workflow-name="{{.WorkflowName}}"
 		data-workflow-url="{{.WorkflowURL}}"
@@ -27,6 +28,9 @@
 		data-locale-show-log-seconds="{{ctx.Locale.Tr "show_log_seconds"}}"
 		data-locale-show-full-screen="{{ctx.Locale.Tr "show_full_screen"}}"
 		data-locale-download-logs="{{ctx.Locale.Tr "download_logs"}}"
+		data-locale-run-attempt-label="{{ctx.Locale.Tr "actions.runs.run_attempt_label"}}"
+		data-locale-viewing-out-of-date-run="{{ctx.Locale.Tr "actions.runs.viewing_out_of_date_run"}}"
+		data-locale-view-most-recent-run="{{ctx.Locale.Tr "actions.runs.view_most_recent_run"}}"
 	>
 	</div>
 </div>
