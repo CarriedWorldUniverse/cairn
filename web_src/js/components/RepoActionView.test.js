@@ -559,3 +559,68 @@ test('initial load data is used without calling fetch()', async () => {
   await flushPromises();
   expect(fetchSpy).not.toHaveBeenCalled();
 });
+
+test('view non-picked action run job', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  const wrapper = mount(RepoActionView, {
+    props: {
+      actionsURL: 'https://example.com/example-org/example-repo/actions',
+      runIndex: '10',
+      runID: '1001',
+      jobIndex: '2',
+      attemptNumber: '1',
+      initialJobData: {
+        ...minimalInitialJobData,
+        // Definitions here should match the same type of content as the related backend test,
+        // "TestActionsViewViewPost/attempt out-of-bounds on non-picked task", so that we're sure we can handle in the
+        // UI what the backend will deliver in this case.
+        state: {
+          run: {
+            done: false,
+            status: 'waiting',
+            commit: {
+              pusher: {},
+            },
+            jobs: [
+              {
+                id: 161,
+                name: 'check-1',
+                status: 'waiting',
+                canRerun: false,
+                duration: '0s',
+              },
+              {
+                id: 162,
+                name: 'check-2',
+                status: 'waiting',
+                canRerun: false,
+                duration: '0s',
+              },
+              {
+                id: 163,
+                name: 'check-3',
+                status: 'waiting',
+                canRerun: false,
+                duration: '0s',
+              },
+            ],
+          },
+          currentJob: {
+            title: 'check-1',
+            detail: 'waiting (locale)', // locale-specific, not exact match to backend test
+            steps: [],
+            allAttempts: null,
+          },
+        },
+      },
+      initialArtifactData: minimalInitialArtifactData,
+      locale: testLocale,
+    },
+  });
+  await flushPromises();
+
+  expect(wrapper.get('.job-info-header-detail').text()).toEqual('waiting (locale)');
+  expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(1) .job-brief-name').text()).toEqual('check-1');
+  expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(2) .job-brief-name').text()).toEqual('check-2');
+  expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(3) .job-brief-name').text()).toEqual('check-3');
+});

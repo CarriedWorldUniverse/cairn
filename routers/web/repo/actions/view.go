@@ -336,6 +336,11 @@ func getViewResponse(ctx *context_module.Context, req *ViewRequest, runIndex, jo
 	}
 
 	var task *actions_model.ActionTask
+	// TaskID will be set only when the ActionRunJob has been picked by a runner, resulting in an ActionTask being
+	// created representing the specific task.  If current.TaskID is not set, then the user is attempting to view a job
+	// that hasn't been picked up by a runner... in this case we're not going to try to fetch the specific attempt.
+	// This helps to support the UI displaying a useful and error-free page when viewing a job that is queued but not
+	// picked, or an attempt that is queued for rerun but not yet picked.
 	if current.TaskID > 0 {
 		var err error
 		task, err = actions_model.GetTaskByJobAttempt(ctx, current.ID, attemptNumber)
@@ -357,6 +362,7 @@ func getViewResponse(ctx *context_module.Context, req *ViewRequest, runIndex, jo
 	}
 	resp.State.CurrentJob.Steps = make([]*ViewJobStep, 0) // marshal to '[]' instead of 'null' in json
 	resp.Logs.StepsLog = make([]*ViewStepLog, 0)          // marshal to '[]' instead of 'null' in json
+	// As noted above with TaskID; task will be nil when the job hasn't be picked yet...
 	if task != nil {
 		taskAttempts, err := task.GetAllAttempts(ctx)
 		if err != nil {
@@ -452,6 +458,12 @@ func getViewResponse(ctx *context_module.Context, req *ViewRequest, runIndex, jo
 	return resp
 }
 
+// When used with the JS `linkAction` handler (typically a <button> with class="link-action" and a data-url), will cause
+// the browser to redirect to the target page.
+type redirectObject struct {
+	Redirect string `json:"redirect"`
+}
+
 // Rerun will rerun jobs in the given run
 // If jobIndexStr is a blank string, it means rerun all jobs
 func Rerun(ctx *context_module.Context) {
@@ -493,6 +505,7 @@ func Rerun(ctx *context_module.Context) {
 	}
 
 	if jobIndexStr == "" { // rerun all jobs
+		var redirectURL string
 		for _, j := range jobs {
 			// if the job has needs, it should be set to "blocked" status to wait for other jobs
 			shouldBlock := len(j.Needs) > 0
@@ -500,13 +513,31 @@ func Rerun(ctx *context_module.Context) {
 				ctx.Error(http.StatusInternalServerError, err.Error())
 				return
 			}
+			if redirectURL == "" {
+				// ActionRunJob's `Attempt` field won't be updated to reflect the rerun until the job is picked by a
+				// runner. But we need to redirect the user somewhere; if they stay on the current attempt then the
+				// rerun's logs won't appear. So, we redirect to the upcoming new attempt and then we'll handle the
+				// weirdness in the UI if the attempt doesn't exist yet.
+				j.Attempt++ // note: this is intentionally not persisted
+				redirectURL, err = j.HTMLURL(ctx)
+				if err != nil {
+					ctx.Error(http.StatusInternalServerError, err.Error())
+					return
+				}
+			}
 		}
-		ctx.JSON(http.StatusOK, struct{}{})
+
+		if redirectURL != "" {
+			ctx.JSON(http.StatusOK, &redirectObject{Redirect: redirectURL})
+		} else {
+			ctx.Error(http.StatusInternalServerError, "unable to determine redirectURL for job rerun")
+		}
 		return
 	}
 
 	rerunJobs := actions_service.GetAllRerunJobs(job, jobs)
 
+	var redirectURL string
 	for _, j := range rerunJobs {
 		// jobs other than the specified one should be set to "blocked" status
 		shouldBlock := j.JobID != job.JobID
@@ -514,9 +545,22 @@ func Rerun(ctx *context_module.Context) {
 			ctx.Error(http.StatusInternalServerError, err.Error())
 			return
 		}
+		if j.JobID == job.JobID {
+			// see earlier comment about redirectURL, applicable here as well
+			j.Attempt++ // note: this is intentionally not persisted
+			redirectURL, err = j.HTMLURL(ctx)
+			if err != nil {
+				ctx.Error(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
 	}
 
-	ctx.JSON(http.StatusOK, struct{}{})
+	if redirectURL != "" {
+		ctx.JSON(http.StatusOK, &redirectObject{Redirect: redirectURL})
+	} else {
+		ctx.Error(http.StatusInternalServerError, "unable to determine redirectURL for job rerun")
+	}
 }
 
 func rerunJob(ctx *context_module.Context, job *actions_model.ActionRunJob, shouldBlock bool) error {
