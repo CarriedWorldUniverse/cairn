@@ -2,6 +2,58 @@ import {mount, flushPromises} from '@vue/test-utils';
 import {toAbsoluteUrl} from '../utils.js';
 import RepoActionView from './RepoActionView.vue';
 
+const testLocale = {
+  approve: 'Locale Approve',
+  cancel: 'Locale Cancel',
+  rerun: 'Locale Re-run',
+  artifactsTitle: 'artifactTitleHere',
+  areYouSure: '',
+  confirmDeleteArtifact: '',
+  rerun_all: '',
+  showTimeStamps: '',
+  showLogSeconds: '',
+  showFullScreen: '',
+  downloadLogs: '',
+  runAttemptLabel: 'Run attempt %[1]s %[2]s',
+  viewingOutOfDateRun: 'oh no, out of date since %[1]s give or take or so',
+  viewMostRecentRun: '',
+  status: {
+    unknown: '',
+    waiting: '',
+    running: '',
+    success: '',
+    failure: '',
+    cancelled: '',
+    skipped: '',
+    blocked: '',
+  },
+};
+const minimalInitialJobData = {
+  state: {
+    run: {
+      status: 'success',
+      commit: {
+        pusher: {},
+      },
+    },
+    currentJob: {
+      steps: [
+        {
+          summary: 'Test Job',
+          duration: '1s',
+          status: 'success',
+        },
+      ],
+    },
+  },
+  logs: {
+    stepsLog: [],
+  },
+};
+const minimalInitialArtifactData = {
+  artifacts: [],
+};
+
 test('processes ##[group] and ##[endgroup]', async () => {
   Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
   vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {
@@ -56,32 +108,9 @@ test('processes ##[group] and ##[endgroup]', async () => {
     props: {
       jobIndex: '1',
       attemptNumber: '1',
-      locale: {
-        approve: '',
-        cancel: '',
-        rerun: '',
-        artifactsTitle: '',
-        areYouSure: '',
-        confirmDeleteArtifact: '',
-        rerun_all: '',
-        showTimeStamps: '',
-        showLogSeconds: '',
-        showFullScreen: '',
-        downloadLogs: '',
-        runAttemptLabel: '',
-        viewingOutOfDateRun: '',
-        viewMostRecentRun: '',
-        status: {
-          unknown: '',
-          waiting: '',
-          running: '',
-          success: '',
-          failure: '',
-          cancelled: '',
-          skipped: '',
-          blocked: '',
-        },
-      },
+      initialJobData: minimalInitialJobData,
+      initialArtifactData: minimalInitialArtifactData,
+      locale: testLocale,
     },
   });
   await flushPromises();
@@ -181,37 +210,15 @@ test('load multiple steps on a finished action', async () => {
   const wrapper = mount(RepoActionView, {
     props: {
       actionsURL: 'https://example.com/example-org/example-repo/actions',
+      initialJobData: minimalInitialJobData,
+      initialArtifactData: minimalInitialArtifactData,
       runIndex: '1',
       jobIndex: '2',
       attemptNumber: '1',
-      locale: {
-        approve: '',
-        cancel: '',
-        rerun: '',
-        artifactsTitle: '',
-        areYouSure: '',
-        confirmDeleteArtifact: '',
-        rerun_all: '',
-        showTimeStamps: '',
-        showLogSeconds: '',
-        showFullScreen: '',
-        downloadLogs: '',
-        runAttemptLabel: '',
-        viewingOutOfDateRun: '',
-        viewMostRecentRun: '',
-        status: {
-          unknown: '',
-          waiting: '',
-          running: '',
-          success: '',
-          failure: '',
-          cancelled: '',
-          skipped: '',
-          blocked: '',
-        },
-      },
+      locale: testLocale,
     },
   });
+  wrapper.vm.loadJob(); // simulate intermittent reload immediately so UI switches from minimalInitialJobData to the mock data from the test's fetch spy.
   await flushPromises();
   // Click on both steps to start their log loading in fast succession...
   await wrapper.get('.job-step-section:nth-of-type(1) .job-step-summary').trigger('click');
@@ -229,6 +236,30 @@ test('load multiple steps on a finished action', async () => {
 
 function configureForMultipleAttemptTests({viewHistorical}) {
   Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  const myJobState = {
+    run: {
+      canApprove: true,
+      canCancel: true,
+      canRerun: true,
+      status: 'success',
+      commit: {
+        pusher: {},
+      },
+    },
+    currentJob: {
+      steps: [
+        {
+          summary: 'Test Job',
+          duration: '1s',
+          status: 'success',
+        },
+      ],
+      allAttempts: [
+        {number: 2, time_since_started_html: 'yesterday', status: 'success'},
+        {number: 1, time_since_started_html: 'two days ago', status: 'failure'},
+      ],
+    },
+  };
   vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {
     const artifacts_value = {
       artifacts: [],
@@ -241,30 +272,7 @@ function configureForMultipleAttemptTests({viewHistorical}) {
       },
     ];
     const jobs_value = {
-      state: {
-        run: {
-          canApprove: true,
-          canCancel: true,
-          canRerun: true,
-          status: 'success',
-          commit: {
-            pusher: {},
-          },
-        },
-        currentJob: {
-          steps: [
-            {
-              summary: 'Test Job',
-              duration: '1s',
-              status: 'success',
-            },
-          ],
-          allAttempts: [
-            {number: 2, time_since_started_html: 'yesterday', status: 'success'},
-            {number: 1, time_since_started_html: 'two days ago', status: 'failure'},
-          ],
-        },
-      },
+      state: myJobState,
       logs: {
         stepsLog: opts.body?.includes('"cursor":null') ? stepsLog_value : [],
       },
@@ -284,32 +292,9 @@ function configureForMultipleAttemptTests({viewHistorical}) {
       jobIndex: '1',
       attemptNumber: viewHistorical ? '1' : '2',
       actionsURL: toAbsoluteUrl('/user1/repo2/actions'),
-      locale: {
-        approve: 'Locale Approve',
-        cancel: 'Locale Cancel',
-        rerun: 'Locale Re-run',
-        artifactsTitle: '',
-        areYouSure: '',
-        confirmDeleteArtifact: '',
-        rerun_all: '',
-        showTimeStamps: '',
-        showLogSeconds: '',
-        showFullScreen: '',
-        downloadLogs: '',
-        runAttemptLabel: 'Run attempt %[1]s %[2]s',
-        viewingOutOfDateRun: 'oh no, out of date since %[1]s give or take or so',
-        viewMostRecentRun: '',
-        status: {
-          unknown: '',
-          waiting: '',
-          running: '',
-          success: '',
-          failure: '',
-          cancelled: '',
-          skipped: '',
-          blocked: '',
-        },
-      },
+      initialJobData: {...minimalInitialJobData, state: myJobState},
+      initialArtifactData: minimalInitialArtifactData,
+      locale: testLocale,
     },
   });
   return wrapper;
@@ -482,38 +467,95 @@ test('artifacts download links', async () => {
   const wrapper = mount(RepoActionView, {
     props: {
       actionsURL: 'https://example.com/example-org/example-repo/actions',
+      initialJobData: minimalInitialJobData,
+      initialArtifactData: minimalInitialArtifactData,
       runIndex: '10',
       runID: '1001',
       jobIndex: '2',
       attemptNumber: '1',
-      locale: {
-        approve: '',
-        cancel: '',
-        rerun: '',
-        artifactsTitle: 'artifactTitleHere',
-        areYouSure: '',
-        confirmDeleteArtifact: '',
-        rerun_all: '',
-        showTimeStamps: '',
-        showLogSeconds: '',
-        showFullScreen: '',
-        downloadLogs: '',
-        status: {
-          unknown: '',
-          waiting: '',
-          running: '',
-          success: '',
-          failure: '',
-          cancelled: '',
-          skipped: '',
-          blocked: '',
-        },
-      },
+      locale: testLocale,
     },
   });
+  wrapper.vm.loadJob(); // simulate intermittent reload immediately so UI switches from minimalInitialJobData to the mock data from the test's fetch spy.
   await flushPromises();
 
   expect(wrapper.get('.job-artifacts .job-artifacts-title').text()).toEqual('artifactTitleHere');
   expect(wrapper.get('.job-artifacts .job-artifacts-item:nth-of-type(1) .job-artifacts-link').attributes('href')).toEqual('https://example.com/example-org/example-repo/actions/runs/1001/artifacts/artifactname1');
   expect(wrapper.get('.job-artifacts .job-artifacts-item:nth-of-type(2) .job-artifacts-link').attributes('href')).toEqual('https://example.com/example-org/example-repo/actions/runs/1001/artifacts/artifactname2');
+});
+
+test('initial load schedules refresh when job is not done', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  vi.spyOn(global, 'fetch').mockImplementation((url, _opts) => {
+    return Promise.resolve({
+      ok: true,
+      json: vi.fn().mockResolvedValue(
+        url.endsWith('/artifacts') ? minimalInitialArtifactData : minimalInitialJobData,
+      ),
+    });
+  });
+
+  // Provide a job that is "done" so that the component doesn't start incremental refresh...
+  {
+    const doneInitialJobData = structuredClone(minimalInitialJobData);
+    doneInitialJobData.state.run.done = true;
+    const wrapper = mount(RepoActionView, {
+      props: {
+        jobIndex: '1',
+        attemptNumber: '1',
+        initialJobData: doneInitialJobData,
+        initialArtifactData: minimalInitialArtifactData,
+        locale: testLocale,
+      },
+    });
+    await flushPromises();
+    const container = wrapper.find('.action-view-container');
+    expect(container.exists()).toBe(true);
+    expect(container.classes()).not.toContain('interval-pending');
+    wrapper.unmount();
+  }
+
+  // Provide a job that is *not* "done" so that the component does start incremental refresh...
+  {
+    const runningInitialJobData = structuredClone(minimalInitialJobData);
+    runningInitialJobData.state.run.done = false;
+    const wrapper = mount(RepoActionView, {
+      props: {
+        jobIndex: '1',
+        attemptNumber: '1',
+        initialJobData: runningInitialJobData,
+        initialArtifactData: minimalInitialArtifactData,
+        locale: testLocale,
+      },
+    });
+    await flushPromises();
+    const container = wrapper.find('.action-view-container');
+    expect(container.exists()).toBe(true);
+    expect(container.classes()).toContain('interval-pending');
+    wrapper.unmount();
+  }
+});
+
+test('initial load data is used without calling fetch()', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation((url, _opts) => {
+    return Promise.resolve({
+      ok: true,
+      json: vi.fn().mockResolvedValue(
+        url.endsWith('/artifacts') ? minimalInitialArtifactData : minimalInitialJobData,
+      ),
+    });
+  });
+
+  mount(RepoActionView, {
+    props: {
+      jobIndex: '1',
+      attemptNumber: '1',
+      initialJobData: minimalInitialJobData,
+      initialArtifactData: minimalInitialArtifactData,
+      locale: testLocale,
+    },
+  });
+  await flushPromises();
+  expect(fetchSpy).not.toHaveBeenCalled();
 });

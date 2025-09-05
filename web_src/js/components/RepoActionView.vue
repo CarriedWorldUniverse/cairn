@@ -14,6 +14,8 @@ const sfc = {
     ActionRunStatus,
   },
   props: {
+    initialJobData: Object,
+    initialArtifactData: Object,
     runIndex: String,
     runID: String,
     jobIndex: String,
@@ -96,10 +98,10 @@ const sfc = {
   },
 
   async mounted() {
-    // load job data and then auto-reload periodically
-    // need to await first loadJob so this.currentJobStepsStates is initialized and can be used in hashChangeListener
-    await this.loadJob();
-    this.intervalID = setInterval(this.loadJob, 1000);
+    // Need to await first loadJob so this.currentJobStepsStates is initialized and can be used in hashChangeListener,
+    // but with the initializing data being passed in this should end up as a synchronous invocation.  loadJob is
+    // responsible for setting up its refresh interval during this first invocation.
+    await this.loadJob({initialJobData: this.initialJobData, initialArtifactData: this.initialArtifactData});
     document.body.addEventListener('click', this.closeDropdown);
     this.hashChangeListener();
     window.addEventListener('hashchange', this.hashChangeListener);
@@ -312,7 +314,8 @@ const sfc = {
       return await resp.json();
     },
 
-    async loadJob() {
+    async loadJob(initializationData) {
+      const isInitializing = initializationData !== undefined;
       let myLoadingLogCursors = this.getLogCursors();
       if (this.loading) {
         // loadJob is already executing; but it's possible that our log cursor request has changed since it started.  If
@@ -335,10 +338,18 @@ const sfc = {
 
         while (true) {
           try {
-            [job, artifacts] = await Promise.all([
-              this.fetchJob(myLoadingLogCursors),
-              this.fetchArtifacts(), // refresh artifacts if upload-artifact step done
-            ]);
+            if (initializationData) {
+              job = initializationData.initialJobData;
+              artifacts = initializationData.initialArtifactData;
+              // don't think it's possible that we loop retrying for 'needLoadingWithLogCursors' during initialization,
+              // but just in case, we'll ensure initializationData can only be used once and go to the network on retry
+              initializationData = undefined;
+            } else {
+              [job, artifacts] = await Promise.all([
+                this.fetchJob(myLoadingLogCursors),
+                this.fetchArtifacts(), // refresh artifacts if upload-artifact step done
+              ]);
+            }
           } catch (err) {
             if (err instanceof TypeError) return; // avoid network error while unloading page
             throw err;
@@ -374,9 +385,14 @@ const sfc = {
           this.appendLogs(logs.step, logs.lines, logs.started);
         }
 
-        if (this.run.done && this.intervalID) {
-          clearInterval(this.intervalID);
-          this.intervalID = null;
+        if (this.run.done) {
+          if (this.intervalID) {
+            clearInterval(this.intervalID);
+            this.intervalID = null;
+          }
+        } else if (isInitializing) {
+          // Begin refresh interval since we know this job isn't done.
+          this.intervalID = setInterval(this.loadJob, 1000);
         }
       } finally {
         this.loading = false;
@@ -485,7 +501,12 @@ export function initRepositoryActionView() {
   const parentFullHeight = document.querySelector('body > div.full.height');
   if (parentFullHeight) parentFullHeight.style.paddingBottom = '0';
 
+  const initialJobData = JSON.parse(el.getAttribute('data-initial-post-response'));
+  const initialArtifactData = JSON.parse(el.getAttribute('data-initial-artifacts-response'));
+
   const view = createApp(sfc, {
+    initialJobData,
+    initialArtifactData,
     runIndex: el.getAttribute('data-run-index'),
     runID: el.getAttribute('data-run-id'),
     jobIndex: el.getAttribute('data-job-index'),
@@ -524,7 +545,7 @@ export function initRepositoryActionView() {
 }
 </script>
 <template>
-  <div class="ui container fluid padded action-view-container">
+  <div class="ui container fluid padded action-view-container" :class="{ 'interval-pending': intervalID }">
     <div class="action-view-header job-out-of-date-warning" v-if="!currentingViewingMostRecentAttempt">
       <div class="ui warning message">
         <!-- eslint-disable-next-line vue/no-v-html -->
