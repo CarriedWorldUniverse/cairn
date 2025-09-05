@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestActionsViewArtifactDeletion(t *testing.T) {
+func TestActionViewsArtifactDeletion(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
@@ -155,4 +155,36 @@ func TestActionViewsView(t *testing.T) {
 		return assert.JSONEq(t, "{\"state\":{\"run\":{\"link\":\"/user5/repo4/actions/runs/187\",\"title\":\"update actions\",\"titleHTML\":\"update actions\",\"status\":\"success\",\"canCancel\":false,\"canApprove\":false,\"canRerun\":false,\"canDeleteArtifact\":false,\"done\":true,\"jobs\":[{\"id\":192,\"name\":\"job_2\",\"status\":\"success\",\"canRerun\":false,\"duration\":\"_duration_\"}],\"commit\":{\"localeCommit\":\"Commit\",\"localePushedBy\":\"pushed by\",\"localeWorkflow\":\"Workflow\",\"shortSHA\":\"c2d72f5484\",\"link\":\"/user5/repo4/commit/c2d72f548424103f01ee1dc02889c1e2bff816b0\",\"pusher\":{\"displayName\":\"user1\",\"link\":\"/user1\"},\"branch\":{\"name\":\"master\",\"link\":\"/user5/repo4/src/branch/master\",\"isDeleted\":false}}},\"currentJob\":{\"title\":\"job_2\",\"detail\":\"Success\",\"steps\":[{\"summary\":\"Set up job\",\"duration\":\"_duration_\",\"status\":\"success\"},{\"summary\":\"Complete job\",\"duration\":\"_duration_\",\"status\":\"success\"}],\"allAttempts\":[{\"number\":3,\"time_since_started_html\":\"_time_\",\"status\":\"running\"},{\"number\":2,\"time_since_started_html\":\"_time_\",\"status\":\"success\"},{\"number\":1,\"time_since_started_html\":\"_time_\",\"status\":\"success\"}]}},\"logs\":{\"stepsLog\":[]}}\n", actualClean)
 	})
 	htmlDoc.AssertAttrEqual(t, selector, "data-initial-artifacts-response", "{\"artifacts\":[{\"name\":\"multi-file-download\",\"size\":2048,\"status\":\"completed\"}]}\n")
+}
+
+// Action re-run will redirect the user to an attempt that may not exist in the database yet, since attempts are only
+// updated in the DB when jobs are picked up by runners.  This test is intended to ensure that a "future" attempt number
+// can still be loaded into the repo-action-view, which will handle waiting & polling for it to have data.
+func TestActionViewsViewAttemptOutOfRange(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	// For this test to accurately reflect an attempt not yet picked, it needs to be accessing an ActionRunJob with
+	// TaskID: null... otherwise we can't fetch future unpersisted attempts.
+	req := NewRequest(t, "GET", "/user5/repo4/actions/runs/190/jobs/0/attempt/100")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	selector := "#repo-action-view"
+	// Verify key properties going into the `repo-action-view` to initialize the Vue component.
+	htmlDoc.AssertAttrEqual(t, selector, "data-run-index", "190")
+	htmlDoc.AssertAttrEqual(t, selector, "data-job-index", "0")
+	htmlDoc.AssertAttrEqual(t, selector, "data-attempt-number", "100")
+	htmlDoc.AssertAttrPredicate(t, selector, "data-initial-post-response", func(actual string) bool {
+		// Remove dynamic "duration" fields for comparison.
+		pattern := `"duration":"[^"]*"`
+		re := regexp.MustCompile(pattern)
+		actualClean := re.ReplaceAllString(actual, `"duration":"_duration_"`)
+		// Remove "time_since_started_html" fields for comparison since they're TZ-sensitive in the test
+		pattern = `"time_since_started_html":".*?\\u003c/relative-time\\u003e"`
+		re = regexp.MustCompile(pattern)
+		actualClean = re.ReplaceAllString(actualClean, `"time_since_started_html":"_time_"`)
+
+		return assert.JSONEq(t, "{\"state\":{\"run\":{\"link\":\"/user5/repo4/actions/runs/190\",\"title\":\"job output\",\"titleHTML\":\"job output\",\"status\":\"success\",\"canCancel\":false,\"canApprove\":false,\"canRerun\":false,\"canDeleteArtifact\":false,\"done\":false,\"jobs\":[{\"id\":396,\"name\":\"job_2\",\"status\":\"waiting\",\"canRerun\":false,\"duration\":\"_duration_\"}],\"commit\":{\"localeCommit\":\"Commit\",\"localePushedBy\":\"pushed by\",\"localeWorkflow\":\"Workflow\",\"shortSHA\":\"c2d72f5484\",\"link\":\"/user5/repo4/commit/c2d72f548424103f01ee1dc02889c1e2bff816b0\",\"pusher\":{\"displayName\":\"user1\",\"link\":\"/user1\"},\"branch\":{\"name\":\"test\",\"link\":\"/user5/repo4/src/branch/test\",\"isDeleted\":true}}},\"currentJob\":{\"title\":\"job_2\",\"detail\":\"Waiting\",\"steps\":[],\"allAttempts\":null}},\"logs\":{\"stepsLog\":[]}}\n", actualClean)
+	})
+	htmlDoc.AssertAttrEqual(t, selector, "data-initial-artifacts-response", "{\"artifacts\":[]}\n")
 }
