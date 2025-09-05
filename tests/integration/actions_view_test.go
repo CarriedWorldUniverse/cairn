@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -128,7 +129,7 @@ func TestActionViewsArtifactDownload(t *testing.T) {
 func TestActionViewsView(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
-	req := NewRequest(t, "GET", "/user2/repo1/actions/runs/187")
+	req := NewRequest(t, "GET", "/user5/repo4/actions/runs/187")
 	intermediateRedirect := MakeRequest(t, req, http.StatusTemporaryRedirect)
 
 	finalURL := intermediateRedirect.Result().Header.Get("Location")
@@ -141,4 +142,17 @@ func TestActionViewsView(t *testing.T) {
 	htmlDoc.AssertAttrEqual(t, selector, "data-run-index", "187")
 	htmlDoc.AssertAttrEqual(t, selector, "data-job-index", "0")
 	htmlDoc.AssertAttrEqual(t, selector, "data-attempt-number", "1")
+	htmlDoc.AssertAttrPredicate(t, selector, "data-initial-post-response", func(actual string) bool {
+		// Remove dynamic "duration" fields for comparison.
+		pattern := `"duration":"[^"]*"`
+		re := regexp.MustCompile(pattern)
+		actualClean := re.ReplaceAllString(actual, `"duration":"_duration_"`)
+		// Remove "time_since_started_html" fields for comparison since they're TZ-sensitive in the test
+		pattern = `"time_since_started_html":".*?\\u003c/relative-time\\u003e"`
+		re = regexp.MustCompile(pattern)
+		actualClean = re.ReplaceAllString(actualClean, `"time_since_started_html":"_time_"`)
+
+		return assert.JSONEq(t, "{\"state\":{\"run\":{\"link\":\"/user5/repo4/actions/runs/187\",\"title\":\"update actions\",\"titleHTML\":\"update actions\",\"status\":\"success\",\"canCancel\":false,\"canApprove\":false,\"canRerun\":false,\"canDeleteArtifact\":false,\"done\":true,\"jobs\":[{\"id\":192,\"name\":\"job_2\",\"status\":\"success\",\"canRerun\":false,\"duration\":\"_duration_\"}],\"commit\":{\"localeCommit\":\"Commit\",\"localePushedBy\":\"pushed by\",\"localeWorkflow\":\"Workflow\",\"shortSHA\":\"c2d72f5484\",\"link\":\"/user5/repo4/commit/c2d72f548424103f01ee1dc02889c1e2bff816b0\",\"pusher\":{\"displayName\":\"user1\",\"link\":\"/user1\"},\"branch\":{\"name\":\"master\",\"link\":\"/user5/repo4/src/branch/master\",\"isDeleted\":false}}},\"currentJob\":{\"title\":\"job_2\",\"detail\":\"Success\",\"steps\":[{\"summary\":\"Set up job\",\"duration\":\"_duration_\",\"status\":\"success\"},{\"summary\":\"Complete job\",\"duration\":\"_duration_\",\"status\":\"success\"}],\"allAttempts\":[{\"number\":3,\"time_since_started_html\":\"_time_\",\"status\":\"running\"},{\"number\":2,\"time_since_started_html\":\"_time_\",\"status\":\"success\"},{\"number\":1,\"time_since_started_html\":\"_time_\",\"status\":\"success\"}]}},\"logs\":{\"stepsLog\":[]}}\n", actualClean)
+	})
+	htmlDoc.AssertAttrEqual(t, selector, "data-initial-artifacts-response", "{\"artifacts\":[{\"name\":\"multi-file-download\",\"size\":2048,\"status\":\"completed\"}]}\n")
 }
