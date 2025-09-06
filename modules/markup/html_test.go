@@ -91,6 +91,9 @@ func TestRender_Commits(t *testing.T) {
 	test(sha[:14]+".", `<p>`+expected14+`.</p>`)
 	test(sha[:14]+",", `<p>`+expected14+`,</p>`)
 	test("["+sha[:14]+"]", `<p>[`+expected14+`]</p>`)
+
+	fileStrangeChars := util.URLJoin(repo, "src", "commit", "eeb243c3395e1921c5d90e73bd739827251fc99d", "path", "to", "file%20%23.txt")
+	test(fileStrangeChars, `<p><a href="`+fileStrangeChars+`" rel="nofollow"><code>eeb243c339/path/to/file #.txt</code></a></p>`)
 }
 
 func TestRender_CrossReferences(t *testing.T) {

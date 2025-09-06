@@ -557,9 +557,13 @@ func createCodeLink(href, content, class string) *html.Node {
 		a.Attr = append(a.Attr, html.Attribute{Key: "class", Val: class})
 	}
 
+	unescaped, err := url.QueryUnescape(content)
+	if err != nil {
+		unescaped = content
+	}
 	text := &html.Node{
 		Type: html.TextNode,
-		Data: content,
+		Data: unescaped,
 	}
 
 	code := &html.Node{
