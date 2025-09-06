@@ -248,15 +248,14 @@ type nopCloser struct {
 func (nopCloser) Close() error { return nil }
 
 func renderIFrame(ctx *RenderContext, output io.Writer) error {
-	// set height="0" ahead, otherwise the scrollHeight would be max(150, realHeight)
+	// set height="300", otherwise if the postMessage mechanism breaks, we are left with a 0-height iframe
 	// at the moment, only "allow-scripts" is allowed for sandbox mode.
 	// "allow-same-origin" should never be used, it leads to XSS attack, and it makes the JS in iframe can access parent window's config and CSRF token
 	// TODO: when using dark theme, if the rendered content doesn't have proper style, the default text color is black, which is not easy to read
 	_, err := io.WriteString(output, fmt.Sprintf(`
 <iframe src="%s/%s/%s/render/%s/%s"
-name="giteaExternalRender"
-onload="this.height=giteaExternalRender.document.documentElement.scrollHeight"
-width="100%%" height="0" scrolling="no" frameborder="0" style="overflow: hidden"
+class="external-render"
+width="100%%" height="300" frameborder="0"
 sandbox="allow-scripts"
 ></iframe>`,
 		setting.AppSubURL,
@@ -316,6 +315,12 @@ func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Wr
 
 	if err1 := renderer.Render(ctx, input, pw); err1 != nil {
 		return err1
+	}
+
+	if r, ok := renderer.(ExternalRenderer); ok && r.DisplayInIFrame() {
+		// Append a short script to the iframe's contents, which will communicate the scroll height of the embedded document via postMessage, either once loaded (in case the containing page loads first) in response to a postMessage from external.js, in case the iframe loads first
+		// We use '*' as a target origin for postMessage, because can be certain we are embedded on the same domain, due to X-Frame-Options configured elsewhere. (Plus, the offsetHeight of an embedded document is likely not sensitive data anyway.)
+		_, _ = pw.Write([]byte("<script>{let postHeight = () => {window.parent.postMessage({frameHeight: document.documentElement.offsetHeight}, '*')}; window.addEventListener('load', postHeight); window.addEventListener('message', (event) => {if (event.source === window.parent && event.data.requestOffsetHeight) postHeight()});}</script>"))
 	}
 	_ = pw.Close()
 
