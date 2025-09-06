@@ -882,6 +882,27 @@ foo: bar
 	}
 }
 
+func TestRenderCheckList(t *testing.T) {
+	input := `- [ ] a
+- [x] b
+1. [x] a
+2. [ ] b
+5. [ ] e`
+	expected := `<ul>
+<li class="task-list-item"><input type="checkbox" disabled="" data-source-position="2"/>a</li>
+<li class="task-list-item"><input type="checkbox" disabled="" data-source-position="10" checked=""/>b</li>
+</ul>
+<ol>
+<li class="task-list-item"><input type="checkbox" disabled="" data-source-position="19" checked=""/>a</li>
+<li class="task-list-item"><input type="checkbox" disabled="" data-source-position="28"/>b</li>
+<li class="task-list-item"><input type="checkbox" disabled="" data-source-position="37"/>e</li>
+</ol>
+`
+	res, err := markdown.RenderString(&markup.RenderContext{Ctx: git.DefaultContext}, input)
+	require.NoError(t, err)
+	assert.Equal(t, template.HTML(expected), res)
+}
+
 func TestRenderLinks(t *testing.T) {
 	input := `  space @mention-user${SPACE}${SPACE}
 /just/a/path.bin

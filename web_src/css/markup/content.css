@@ -153,7 +153,7 @@
   list-style-type: none;
 }
 
-.markup .task-list-item {
+.markup ul .task-list-item {
   list-style-type: none;
 }
 
@@ -162,9 +162,12 @@
 }
 
 .markup .task-list-item input[type="checkbox"] {
-  margin: 0 .3em .25em -1.4em;
-  vertical-align: middle;
+  margin: 0 .4em .25em -1.4em;
   padding: 0;
+}
+
+.markup ol .task-list-item input[type="checkbox"] {
+  margin-left: 0;
 }
 
 .markup .task-list-item input[type="checkbox"] + p {
