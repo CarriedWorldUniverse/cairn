@@ -23,8 +23,9 @@ body:
       It is running the latest development branch and will confirm the problem is not already fixed.
       If you can reproduce it, provide a URL in the description.
     options:
-    - "Yes"
-    - "No"
+    - "Yes, I've linked the repository below"
+    - "No, I've tried it and the problem is not present there"
+    - "No, I can't try it on the test instance for some reason"
   validations:
     required: true
 - type: textarea
