@@ -248,11 +248,7 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
     file.previewTemplate.append(copyLinkElement);
   };
   const updateDropzoneState = () => {
-    if (dropzoneEl.querySelector('.dz-preview')) {
-      dropzoneEl.classList.add('dz-started');
-    } else {
-      dropzoneEl.classList.remove('dz-started');
-    }
+    dropzoneEl.classList.toggle('dz-started', dropzoneEl.querySelector('.dz-preview'));
   };
 
   const dz = await createDropzone(dropzoneEl, {
