@@ -83,28 +83,43 @@ func assertEvaluation(t *testing.T, rule quota_model.Rule, used quota_model.Used
 	t.Helper()
 
 	t.Run(subject.String(), func(t *testing.T) {
-		ok, has := rule.Evaluate(used, subject)
-		assert.True(t, has)
-		assert.Equal(t, expected, ok)
+		match, allow := rule.Evaluate(used, subject)
+		assert.True(t, match)
+		assert.Equal(t, expected, allow)
 	})
 }
 
-func TestQuotaRuleNoEvaluation(t *testing.T) {
-	rule := quota_model.Rule{
-		Limit: 1024,
-		Subjects: quota_model.LimitSubjects{
-			quota_model.LimitSubjectSizeAssetsAttachmentsAll,
-		},
+func TestQuotaRuleNoMatch(t *testing.T) {
+	testSets := []struct {
+		name  string
+		limit int64
+	}{
+		{"unlimited", -1},
+		{"limit-0", 0},
+		{"limit-1k", 1024},
+		{"limit-1M", 1024 * 1024},
 	}
-	used := quota_model.Used{}
-	used.Size.Repos.Public = 4096
 
-	_, has := rule.Evaluate(used, quota_model.LimitSubjectSizeReposAll)
+	for _, testSet := range testSets {
+		t.Run(testSet.name, func(t *testing.T) {
+			rule := quota_model.Rule{
+				Limit: testSet.limit,
+				Subjects: quota_model.LimitSubjects{
+					quota_model.LimitSubjectSizeAssetsAttachmentsAll,
+				},
+			}
+			used := quota_model.Used{}
+			used.Size.Repos.Public = 4096
 
-	// We have a rule for "size:assets:attachments:all", and query for
-	// "size:repos:all". We don't cover that subject, so the evaluation returns
-	// with no rules found.
-	assert.False(t, has)
+			match, allow := rule.Evaluate(used, quota_model.LimitSubjectSizeReposAll)
+
+			// We have a rule for "size:assets:attachments:all", and query for
+			// "size:repos:all". We don't cover that subject, so the rule does not match
+			// regardless of the limit.
+			assert.False(t, match)
+			assert.False(t, allow)
+		})
+	}
 }
 
 func TestQuotaRuleDirectEvaluation(t *testing.T) {
@@ -129,13 +144,12 @@ func TestQuotaRuleDirectEvaluation(t *testing.T) {
 	}
 
 	t.Run("limit:0", func(t *testing.T) {
-		// With limit:0, nothing used is fine.
+		// With limit:0, any usage will fail evaluation, including 0
 		t.Run("used:0", func(t *testing.T) {
 			for subject := quota_model.LimitSubjectFirst; subject <= quota_model.LimitSubjectLast; subject++ {
-				runTest(t, subject, 0, 0, true)
+				runTest(t, subject, 0, 0, false)
 			}
 		})
-		// With limit:0, any usage will fail evaluation
 		t.Run("used:512", func(t *testing.T) {
 			for subject := quota_model.LimitSubjectFirst; subject <= quota_model.LimitSubjectLast; subject++ {
 				runTest(t, subject, 0, 512, false)
@@ -170,14 +184,6 @@ func TestQuotaRuleDirectEvaluation(t *testing.T) {
 }
 
 func TestQuotaRuleCombined(t *testing.T) {
-	rule := quota_model.Rule{
-		Limit: 1024,
-		Subjects: quota_model.LimitSubjects{
-			quota_model.LimitSubjectSizeGitLFS,
-			quota_model.LimitSubjectSizeAssetsAttachmentsReleases,
-			quota_model.LimitSubjectSizeAssetsPackagesAll,
-		},
-	}
 	used := quota_model.Used{
 		Size: quota_model.UsedSize{
 			Repos: quota_model.UsedSizeRepos{
@@ -198,107 +204,112 @@ func TestQuotaRuleCombined(t *testing.T) {
 		},
 	}
 
-	expectationMap := map[quota_model.LimitSubject]bool{
-		quota_model.LimitSubjectSizeGitLFS:                    false,
-		quota_model.LimitSubjectSizeAssetsAttachmentsReleases: false,
-		quota_model.LimitSubjectSizeAssetsPackagesAll:         false,
+	expectMatch := map[quota_model.LimitSubject]bool{
+		quota_model.LimitSubjectSizeGitLFS:                    true,
+		quota_model.LimitSubjectSizeAssetsAttachmentsReleases: true,
+		quota_model.LimitSubjectSizeAssetsPackagesAll:         true,
 	}
 
-	for subject := quota_model.LimitSubjectFirst; subject <= quota_model.LimitSubjectLast; subject++ {
-		t.Run(subject.String(), func(t *testing.T) {
-			evalOk, evalHas := rule.Evaluate(used, subject)
-			expected, expectedHas := expectationMap[subject]
+	testSets := []struct {
+		name        string
+		limit       int64
+		expectAllow bool
+	}{
+		{"unlimited", -1, true},
+		{"limit-allow", 1024 * 1024, true},
+		{"limit-deny", 1024, false},
+	}
 
-			assert.Equal(t, expectedHas, evalHas)
-			if expectedHas {
-				assert.Equal(t, expected, evalOk)
+	for _, testSet := range testSets {
+		t.Run(testSet.name, func(t *testing.T) {
+			rule := quota_model.Rule{
+				Limit: testSet.limit,
+				Subjects: quota_model.LimitSubjects{
+					quota_model.LimitSubjectSizeGitLFS,
+					quota_model.LimitSubjectSizeAssetsAttachmentsReleases,
+					quota_model.LimitSubjectSizeAssetsPackagesAll,
+				},
+			}
+
+			for subject := quota_model.LimitSubjectFirst; subject <= quota_model.LimitSubjectLast; subject++ {
+				t.Run(subject.String(), func(t *testing.T) {
+					match, allow := rule.Evaluate(used, subject)
+
+					assert.Equal(t, expectMatch[subject], match)
+					if expectMatch[subject] {
+						assert.Equal(t, testSet.expectAllow, allow)
+					} else {
+						assert.False(t, allow)
+					}
+				})
 			}
 		})
 	}
 }
 
 func TestQuotaRuleSizeAll(t *testing.T) {
-	runTests := func(t *testing.T, rule quota_model.Rule, expected bool) {
-		t.Helper()
-
-		subject := quota_model.LimitSubjectSizeAll
-
-		t.Run("used:0", func(t *testing.T) {
-			used := quota_model.Used{}
-
-			assertEvaluation(t, rule, used, subject, true)
-		})
-
-		t.Run("used:some-each", func(t *testing.T) {
-			used := makeFullyUsed()
-
-			assertEvaluation(t, rule, used, subject, expected)
-		})
-
-		t.Run("used:some", func(t *testing.T) {
-			used := makePartiallyUsed()
-
-			assertEvaluation(t, rule, used, subject, expected)
-		})
+	type Test struct {
+		name        string
+		limit       int64
+		expectAllow bool
 	}
 
-	// With all limits set to 0, evaluation always fails if usage > 0
-	t.Run("rule:0", func(t *testing.T) {
-		rule := quota_model.Rule{
-			Limit: 0,
-			Subjects: quota_model.LimitSubjects{
-				quota_model.LimitSubjectSizeAll,
+	usedSets := []struct {
+		name     string
+		used     quota_model.Used
+		testSets []Test
+	}{
+		{
+			"empty",
+			quota_model.Used{},
+			[]Test{
+				{"unlimited", -1, true},
+				{"limit-1M", 1024 * 1024, true},
+				{"limit-5k", 5 * 1024, true},
+				{"limit-0", 0, false},
 			},
-		}
-
-		runTests(t, rule, false)
-	})
-
-	// With no limits, evaluation always succeeds
-	t.Run("rule:unlimited", func(t *testing.T) {
-		rule := quota_model.Rule{
-			Limit: -1,
-			Subjects: quota_model.LimitSubjects{
-				quota_model.LimitSubjectSizeAll,
+		},
+		{
+			"partial",
+			makePartiallyUsed(),
+			[]Test{
+				{"unlimited", -1, true},
+				{"limit-1M", 1024 * 1024, true},
+				{"limit-5k", 5 * 1024, true},
+				{"limit-0", 0, false},
 			},
-		}
-
-		runTests(t, rule, true)
-	})
-
-	// With a specific, very generous limit, evaluation succeeds if the limit isn't exhausted
-	t.Run("rule:generous", func(t *testing.T) {
-		rule := quota_model.Rule{
-			Limit: 102400,
-			Subjects: quota_model.LimitSubjects{
-				quota_model.LimitSubjectSizeAll,
+		},
+		{
+			"full",
+			makeFullyUsed(),
+			[]Test{
+				{"unlimited", -1, true},
+				{"limit-1M", 1024 * 1024, true},
+				{"limit-5k", 5 * 1024, false},
+				{"limit-0", 0, false},
 			},
-		}
+		},
+	}
 
-		runTests(t, rule, true)
+	for _, usedSet := range usedSets {
+		t.Run(usedSet.name, func(t *testing.T) {
+			testSets := usedSet.testSets
+			used := usedSet.used
 
-		t.Run("limit exhaustion", func(t *testing.T) {
-			used := quota_model.Used{
-				Size: quota_model.UsedSize{
-					Repos: quota_model.UsedSizeRepos{
-						Public: 204800,
-					},
-				},
+			for _, testSet := range testSets {
+				t.Run(testSet.name, func(t *testing.T) {
+					rule := quota_model.Rule{
+						Limit: testSet.limit,
+						Subjects: quota_model.LimitSubjects{
+							quota_model.LimitSubjectSizeAll,
+						},
+					}
+
+					match, allow := rule.Evaluate(used, quota_model.LimitSubjectSizeAll)
+					assert.True(t, match)
+					assert.Equal(t, testSet.expectAllow, allow)
+				})
 			}
-
-			assertEvaluation(t, rule, used, quota_model.LimitSubjectSizeAll, false)
 		})
-	})
-
-	// With a specific, small limit, evaluation fails
-	t.Run("rule:limited", func(t *testing.T) {
-		rule := quota_model.Rule{
-			Limit: 512,
-			Subjects: quota_model.LimitSubjects{
-				quota_model.LimitSubjectSizeAll,
-			},
-		}
-
-		runTests(t, rule, false)
-	})
+	}
 }

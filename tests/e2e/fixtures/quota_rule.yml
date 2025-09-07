@@ -4,9 +4,9 @@
   subjects: [6]
 
 -
-  name: "all:assets"
+  name: "repos:all"
   limit: -1
-  subjects: [7]
+  subjects: [2]
 
 - name: "Multi subjects"
   limit: 5000000000

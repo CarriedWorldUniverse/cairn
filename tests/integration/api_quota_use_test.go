@@ -187,16 +187,6 @@ func (e *quotaEnv) SetupWithMultipleQuotaRules(t *testing.T) {
 	cleaner = createQuotaGroup(t, "default")
 	e.cleanups = append(e.cleanups, cleaner)
 
-	// Create three rules: all, repo-size, and asset-size
-	zero := int64(0)
-	ruleAll := api.CreateQuotaRuleOptions{
-		Name:     "all",
-		Limit:    &zero,
-		Subjects: []string{"size:all"},
-	}
-	cleaner = createQuotaRule(t, ruleAll)
-	e.cleanups = append(e.cleanups, cleaner)
-
 	fifteenMb := int64(1024 * 1024 * 15)
 	ruleRepoSize := api.CreateQuotaRuleOptions{
 		Name:     "repo-size",
@@ -215,8 +205,6 @@ func (e *quotaEnv) SetupWithMultipleQuotaRules(t *testing.T) {
 	e.cleanups = append(e.cleanups, cleaner)
 
 	// Add these rules to the group
-	cleaner = e.AddRuleToGroup(t, "default", "all")
-	e.cleanups = append(e.cleanups, cleaner)
 	cleaner = e.AddRuleToGroup(t, "default", "repo-size")
 	e.cleanups = append(e.cleanups, cleaner)
 	cleaner = e.AddRuleToGroup(t, "default", "asset-size")
@@ -1414,7 +1402,6 @@ func TestAPIQuotaUserBasics(t *testing.T) {
 
 				// Temporarily disable quota checking
 				defer env.SetRuleLimit(t, "repo-size", -1)()
-				defer env.SetRuleLimit(t, "all", -1)()
 
 				// Create a branch
 				req := NewRequestWithJSON(t, "POST", env.APIPathForRepo("/branches"), api.CreateBranchRepoOption{
@@ -1424,7 +1411,6 @@ func TestAPIQuotaUserBasics(t *testing.T) {
 
 				// Set the limit back. No need to defer, the first one will set it
 				// back to the correct value.
-				env.SetRuleLimit(t, "all", 0)
 				env.SetRuleLimit(t, "repo-size", 0)
 
 				// Deleting a branch does not incur quota enforcement

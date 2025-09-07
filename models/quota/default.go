@@ -7,7 +7,7 @@ import (
 	"forgejo.org/modules/setting"
 )
 
-func EvaluateDefault(used Used, forSubject LimitSubject) (bool, int64) {
+func EvaluateDefault(used Used, forSubject LimitSubject) bool {
 	groups := GroupList{
 		&Group{
 			Name: "builtin-default-group",

@@ -16,6 +16,21 @@ type Rule struct {
 	Subjects LimitSubjects `json:"subjects,omitempty"`
 }
 
+var subjectToParent = map[LimitSubject]LimitSubject{
+	LimitSubjectSizeGitAll:                    LimitSubjectSizeAll,
+	LimitSubjectSizeGitLFS:                    LimitSubjectSizeGitAll,
+	LimitSubjectSizeReposAll:                  LimitSubjectSizeGitAll,
+	LimitSubjectSizeReposPublic:               LimitSubjectSizeReposAll,
+	LimitSubjectSizeReposPrivate:              LimitSubjectSizeReposAll,
+	LimitSubjectSizeAssetsAll:                 LimitSubjectSizeAll,
+	LimitSubjectSizeAssetsAttachmentsAll:      LimitSubjectSizeAssetsAll,
+	LimitSubjectSizeAssetsAttachmentsIssues:   LimitSubjectSizeAssetsAttachmentsAll,
+	LimitSubjectSizeAssetsAttachmentsReleases: LimitSubjectSizeAssetsAttachmentsAll,
+	LimitSubjectSizeAssetsArtifacts:           LimitSubjectSizeAssetsAll,
+	LimitSubjectSizeAssetsPackagesAll:         LimitSubjectSizeAssetsAll,
+	LimitSubjectSizeWiki:                      LimitSubjectSizeAssetsAll,
+}
+
 func (r *Rule) TableName() string {
 	return "quota_rule"
 }
@@ -36,18 +51,25 @@ func (r Rule) Sum(used Used) int64 {
 	return sum
 }
 
-func (r Rule) Evaluate(used Used, forSubject LimitSubject) (bool, bool) {
-	// If there's no limit, short circuit out
-	if r.Limit == -1 {
-		return true, true
-	}
-
-	// If the rule does not cover forSubject, bail out early
+func (r Rule) Evaluate(used Used, forSubject LimitSubject) (match, allow bool) {
 	if !slices.Contains(r.Subjects, forSubject) {
+		// this rule does not match the subject being tested
+		parent := subjectToParent[forSubject]
+		if parent != LimitSubjectNone {
+			return r.Evaluate(used, parent)
+		}
 		return false, false
 	}
 
-	return r.Sum(used) <= r.Limit, true
+	match = true
+
+	if r.Limit == -1 {
+		// Unlimited, any value is allowed
+		allow = true
+	} else {
+		allow = r.Sum(used) < r.Limit
+	}
+	return match, allow
 }
 
 func (r *Rule) Edit(ctx context.Context, limit *int64, subjects *LimitSubjects) (*Rule, error) {
