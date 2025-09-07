@@ -799,6 +799,7 @@ export default tseslint.config(
       'unicorn/prefer-array-some': [2],
       'unicorn/prefer-at': [0],
       'unicorn/prefer-blob-reading-methods': [2],
+      'unicorn/prefer-classlist-toggle': [2],
       'unicorn/prefer-code-point': [0],
       'unicorn/prefer-date-now': [2],
       'unicorn/prefer-default-parameters': [0],

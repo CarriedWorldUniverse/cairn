@@ -198,11 +198,7 @@ const sfc = {
     toggleGroupLogs(event) {
       const line = event.target.parentElement;
       const list = line.nextSibling;
-      if (event.newState === 'open') {
-        list.classList.remove('hidden');
-      } else {
-        list.classList.add('hidden');
-      }
+      list.classList.toggle('hidden', event.newState !== 'open');
     },
 
     createLogLine(line, startTime, stepIndex, group) {
