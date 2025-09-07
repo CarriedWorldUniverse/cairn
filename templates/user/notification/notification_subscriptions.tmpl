@@ -1,7 +1,7 @@
 {{template "base/head" .}}
 <div role="main" aria-label="{{.Title}}" class="page-content user notification">
 	<div class="ui container">
-		<div class="tw-flex tw-items-center tw-justify-between tw-mb-4">
+		<div class="tw-flex tw-items-center tw-justify-between tw-mb-4 tw-gap-2">
 			<div class="switch">
 				<a href="{{AppSubUrl}}/notifications/subscriptions" class="{{if eq .Status 1}}active {{end}}item">
 					{{ctx.Locale.Tr "notification.subscriptions"}}
@@ -16,23 +16,21 @@
 		</div>
 		<div class="ui bottom active tab segment">
 			{{if eq .Status 1}}
-				<div class="tw-flex tw-justify-between">
-					<div class="tw-flex">
-						<div class="small-menu-items ui compact tiny menu">
-							<a class="{{if eq .State "all"}}active {{end}}item" href="?sort={{$.SortType}}&state=all&issueType={{$.IssueType}}&labels={{$.Labels}}">
-								{{ctx.Locale.Tr "all"}}
-							</a>
-							<a class="{{if eq .State "open"}}active {{end}}item" href="?sort={{$.SortType}}&state=open&issueType={{$.IssueType}}&labels={{$.Labels}}">
-								{{svg "octicon-issue-opened" 16 "tw-mr-2"}}
-								{{ctx.Locale.Tr "repo.issues.open_title"}}
-							</a>
-							<a class="{{if eq .State "closed"}}active {{end}}item" href="?sort={{$.SortType}}&state=closed&issueType={{$.IssueType}}&labels={{$.Labels}}">
-								{{svg "octicon-issue-closed" 16 "tw-mr-2"}}
-								{{ctx.Locale.Tr "repo.issues.closed_title"}}
-							</a>
-						</div>
+				<div class="tw-flex tw-justify-between tw-flex-wrap tw-gap-y-4 tw-gap-x-2">
+					<div class="switch">
+						<a class="{{if eq .State "all"}}active {{end}}item" href="?sort={{$.SortType}}&state=all&issueType={{$.IssueType}}&labels={{$.Labels}}">
+							{{ctx.Locale.Tr "all"}}
+						</a>
+						<a class="{{if eq .State "open"}}active {{end}}item" href="?sort={{$.SortType}}&state=open&issueType={{$.IssueType}}&labels={{$.Labels}}">
+							{{svg "octicon-issue-opened" 16}}
+							{{ctx.Locale.Tr "repo.issues.open_title"}}
+						</a>
+						<a class="{{if eq .State "closed"}}active {{end}}item" href="?sort={{$.SortType}}&state=closed&issueType={{$.IssueType}}&labels={{$.Labels}}">
+							{{svg "octicon-issue-closed" 16}}
+							{{ctx.Locale.Tr "repo.issues.closed_title"}}
+						</a>
 					</div>
-					<div class="tw-flex tw-justify-between">
+					<div class="tw-flex">
 						<div class="ui right aligned secondary filter menu labels">
 							<!-- Type -->
 								<div class="ui dropdown type jump item">
