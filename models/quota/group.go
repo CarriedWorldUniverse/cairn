@@ -5,7 +5,6 @@ package quota
 
 import (
 	"context"
-	"math"
 
 	"forgejo.org/models/db"
 	user_model "forgejo.org/models/user"
@@ -179,78 +178,40 @@ func (g *Group) RemoveRuleByName(ctx context.Context, ruleName string) error {
 	return committer.Commit()
 }
 
-var affectsMap = map[LimitSubject]LimitSubjects{
-	LimitSubjectSizeAll: {
-		LimitSubjectSizeReposAll,
-		LimitSubjectSizeGitLFS,
-		LimitSubjectSizeAssetsAll,
-	},
-	LimitSubjectSizeReposAll: {
-		LimitSubjectSizeReposPublic,
-		LimitSubjectSizeReposPrivate,
-	},
-	LimitSubjectSizeAssetsAll: {
-		LimitSubjectSizeAssetsAttachmentsAll,
-		LimitSubjectSizeAssetsArtifacts,
-		LimitSubjectSizeAssetsPackagesAll,
-	},
-	LimitSubjectSizeAssetsAttachmentsAll: {
-		LimitSubjectSizeAssetsAttachmentsIssues,
-		LimitSubjectSizeAssetsAttachmentsReleases,
-	},
-}
-
-// Evaluate returns whether the size used is acceptable for the topic if a rule
-// was found, and returns the smallest limit of all applicable rules or the
-// first limit found to be unacceptable for the size used.
-func (g *Group) Evaluate(used Used, forSubject LimitSubject) (bool, bool, int64) {
-	var found bool
-	foundLimit := int64(math.MaxInt64)
+// Group.Evaluate returns whether the group contains a matching rule for the subject
+// and if so, whether the group allows the action given the size used
+func (g *Group) Evaluate(used Used, forSubject LimitSubject) (match, allow bool) {
 	for _, rule := range g.Rules {
-		ok, has := rule.Evaluate(used, forSubject)
-		if has {
-			if !ok {
-				return false, true, rule.Limit
+		ruleMatch, ruleAllow := rule.Evaluate(used, forSubject)
+		if ruleMatch {
+			// evaluation stops as soon as we find a matching rule that denies the action
+			if !ruleAllow {
+				return true, false
 			}
-			found = true
-			foundLimit = min(foundLimit, rule.Limit)
+
+			match = true
+			allow = true
 		}
 	}
 
-	if !found {
-		// If Evaluation for forSubject did not succeed, try evaluating against
-		// subjects below
-
-		for _, subject := range affectsMap[forSubject] {
-			ok, has, limit := g.Evaluate(used, subject)
-			if has {
-				if !ok {
-					return false, true, limit
-				}
-				found = true
-				foundLimit = min(foundLimit, limit)
-			}
-		}
-	}
-
-	return true, found, foundLimit
+	return match, allow
 }
 
-// Evaluate returns if the used size is acceptable for the subject and the
-// lowest limit that is acceptable for the subject.
-func (gl *GroupList) Evaluate(used Used, forSubject LimitSubject) (bool, int64) {
+// GroupList.Evaluate returns whether the grouplist allows the action given the size used
+func (gl *GroupList) Evaluate(used Used, forSubject LimitSubject) (pass bool) {
 	// If there are no groups, use the configured defaults:
 	if gl == nil || len(*gl) == 0 {
 		return EvaluateDefault(used, forSubject)
 	}
 
 	for _, group := range *gl {
-		ok, has, limit := group.Evaluate(used, forSubject)
-		if has && ok {
-			return true, limit
+		groupMatch, groupAllow := group.Evaluate(used, forSubject)
+		if groupMatch && groupAllow {
+			// evaluation stops as soon as we find a matching group that allows the action
+			return true
 		}
 	}
-	return false, 0
+	return false
 }
 
 func GetGroupByName(ctx context.Context, name string) (*Group, error) {

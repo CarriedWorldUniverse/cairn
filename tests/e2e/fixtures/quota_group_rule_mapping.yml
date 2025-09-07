@@ -6,7 +6,7 @@
 -
   id: 1002
   group_name: trusted-user
-  rule_name: "all:assets"
+  rule_name: "repos:all"
 
 -
   id: 1003
