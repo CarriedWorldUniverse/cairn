@@ -212,6 +212,7 @@ jobs:
           destination-repo: forgejo/end-to-end
           destination-branch: main
           destination-token: ${{ secrets.CASCADE_DESTINATION_TOKEN }}
+          close: true
           update: .forgejo/cascading-release-end-to-end
 
       - name: copy to experimental
