@@ -517,3 +517,36 @@ test('Multiple combo markdown: insert table', async ({page}) => {
   await expect(comboboxTwo).toHaveValue('| Header  | Header  | Header  |\n|---------|---------|---------|\n| Content | Content | Content |\n| Content | Content | Content |\n');
   await save_visual(page);
 });
+
+test('Markdown bold/italic toolbar and shortcut', async ({page}) => {
+  const initText = `line 1\nline 2\nline 3\nline 4`;
+
+  const response = await page.goto('/user2/repo1/issues/new');
+  expect(response?.status()).toBe(200);
+
+  const textarea = page.locator('textarea[name=content]');
+  await textarea.fill(initText);
+  await textarea.focus();
+  await textarea.evaluate((it:HTMLTextAreaElement) => it.setSelectionRange(it.value.indexOf('line 1'), it.value.indexOf('line 2')));
+
+  // Cases: bold via toolbar, bold via shortcut, repeat w/ italics
+  page.locator('md-bold').click();
+  await expect(textarea).toHaveValue(`**line 1**\nline 2\nline 3\nline 4`);
+  page.locator('md-bold').click();
+  await expect(textarea).toHaveValue(`line 1\nline 2\nline 3\nline 4`);
+
+  await textarea.press('ControlOrMeta+KeyB');
+  await expect(textarea).toHaveValue(`**line 1**\nline 2\nline 3\nline 4`);
+  await textarea.press('ControlOrMeta+KeyB');
+  await expect(textarea).toHaveValue(`line 1\nline 2\nline 3\nline 4`);
+
+  page.locator('md-italic').click();
+  await expect(textarea).toHaveValue(`_line 1_\nline 2\nline 3\nline 4`);
+  page.locator('md-italic').click();
+  await expect(textarea).toHaveValue(`line 1\nline 2\nline 3\nline 4`);
+
+  await textarea.press('ControlOrMeta+KeyI');
+  await expect(textarea).toHaveValue(`_line 1_\nline 2\nline 3\nline 4`);
+  await textarea.press('ControlOrMeta+KeyI');
+  await expect(textarea).toHaveValue(`line 1\nline 2\nline 3\nline 4`);
+});
