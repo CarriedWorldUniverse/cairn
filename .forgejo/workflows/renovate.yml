@@ -63,6 +63,10 @@ jobs:
 
           OSV_OFFLINE_ROOT_DIR: ${{ github.workspace }}/.tmp/osv
 
+          # use direct connection for these domains for renovate go datasource instead of the go proxy
+          # allows faster lookups
+          GONOPROXY: code.forgejo.org
+
       - name: Save renovate repo cache
         if: always() && env.RENOVATE_DRY_RUN != 'full'
         uses: https://data.forgejo.org/actions/cache/save@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
