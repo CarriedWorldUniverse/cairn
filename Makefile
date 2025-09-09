@@ -115,9 +115,6 @@ LDFLAGS := $(LDFLAGS) -X "main.ReleaseVersion=$(RELEASE_VERSION)" -X "main.MakeV
 
 LINUX_ARCHS ?= linux/amd64,linux/386,linux/arm-5,linux/arm-6,linux/arm64
 
-ifeq ($(HAS_GO), yes)
-	GO_TEST_PACKAGES ?= $(filter-out $(shell $(GO) list forgejo.org/models/migrations/...) $(shell $(GO) list forgejo.org/models/forgejo_migrations/...) forgejo.org/tests/integration/migration-test forgejo.org/tests forgejo.org/tests/integration forgejo.org/tests/e2e,$(shell $(GO) list ./...))
-endif
 REMOTE_CACHER_MODULES ?= cache nosql session queue
 GO_TEST_REMOTE_CACHER_PACKAGES ?= $(addprefix forgejo.org/modules/,$(REMOTE_CACHER_MODULES))
 
@@ -159,9 +156,6 @@ GO_SOURCES += $(shell find $(GO_DIRS) -type f -name "*.go" ! -path modules/optio
 GO_SOURCES += $(GENERATED_GO_DEST)
 GO_SOURCES_NO_BINDATA := $(GO_SOURCES)
 
-ifeq ($(HAS_GO), yes)
-	MIGRATION_PACKAGES := $(shell $(GO) list forgejo.org/models/migrations/... forgejo.org/models/forgejo_migrations/...)
-endif
 
 ifeq ($(filter $(TAGS_SPLIT),bindata),bindata)
 	GO_SOURCES += $(BINDATA_DEST)
@@ -284,6 +278,24 @@ show-version-minor: verify-version
 .PHONY: show-version-api
 show-version-api: verify-version
 	@echo ${FORGEJO_VERSION_API}
+
+###
+# Package computation targets
+###
+
+# Target to compute GO_TEST_PACKAGES - only runs when needed
+.PHONY: compute-go-test-packages
+compute-go-test-packages:
+ifeq ($(HAS_GO), yes)
+	$(eval GO_TEST_PACKAGES ?= $(filter-out $(shell $(GO) list forgejo.org/models/migrations/...) $(shell $(GO) list forgejo.org/models/forgejo_migrations/...) forgejo.org/tests/integration/migration-test forgejo.org/tests forgejo.org/tests/integration forgejo.org/tests/e2e,$(shell $(GO) list ./...)))
+endif
+
+# Target to compute MIGRATION_PACKAGES - only runs when needed
+.PHONY: compute-migration-packages
+compute-migration-packages:
+ifeq ($(HAS_GO), yes)
+	$(eval MIGRATION_PACKAGES := $(shell $(GO) list forgejo.org/models/migrations/... forgejo.org/models/forgejo_migrations/...))
+endif
 
 ###
 # Check system and environment requirements
@@ -525,7 +537,7 @@ watch-backend: go-check
 test: test-frontend test-backend
 
 .PHONY: test-backend
-test-backend:
+test-backend: | compute-go-test-packages
 	@echo "Running go test with $(GOTESTFLAGS) -tags '$(TEST_TAGS)'..."
 	@TZ=UTC $(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' $(GO_TEST_PACKAGES)
 
@@ -555,7 +567,7 @@ test-check:
 	fi
 
 .PHONY: test\#%
-test\#%:
+test\#%: | compute-go-test-packages
 	@echo "Running go test with $(GOTESTFLAGS) -tags '$(TEST_TAGS)'..."
 	@TZ=UTC $(GOTEST) $(GOTESTFLAGS) -tags='$(TEST_TAGS)' -run $(subst .,/,$*) $(GO_TEST_PACKAGES)
 
@@ -573,10 +585,10 @@ coverage-show-html: coverage-convert
 coverage-show-percentage: coverage-convert
 	go tool cover -func=coverage/textfmt.out
 
-coverage-run:
+coverage-run: | compute-go-test-packages
 	contrib/coverage-helper.sh test_packages $(COVERAGE_TEST_PACKAGES)
 
-coverage-run-%: generate-ini-%
+coverage-run-%: generate-ini-% | compute-migration-packages
   #
   # Migration tests go first
   #
@@ -755,7 +767,7 @@ migrations.sqlite.test: $(GO_SOURCES) generate-ini-sqlite
 	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTESTCOMPILEDRUNPREFIX) ./migrations.sqlite.test $(GOTESTCOMPILEDRUNSUFFIX)
 
 .PHONY: migrations.individual.mysql.test
-migrations.individual.mysql.test: $(GO_SOURCES)
+migrations.individual.mysql.test: $(GO_SOURCES) | compute-migration-packages
 	for pkg in $(MIGRATION_PACKAGES); do \
 		GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/mysql.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' $$pkg || exit 1; \
 	done
@@ -765,7 +777,7 @@ migrations.individual.sqlite.test\#%: $(GO_SOURCES) generate-ini-sqlite
 	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/migrations/$*
 
 .PHONY: migrations.individual.pgsql.test
-migrations.individual.pgsql.test: $(GO_SOURCES)
+migrations.individual.pgsql.test: $(GO_SOURCES) | compute-migration-packages
 	for pkg in $(MIGRATION_PACKAGES); do \
 		GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' $$pkg || exit 1;\
 	done
@@ -775,7 +787,7 @@ migrations.individual.pgsql.test\#%: $(GO_SOURCES) generate-ini-pgsql
 	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/migrations/$*
 
 .PHONY: migrations.individual.sqlite.test
-migrations.individual.sqlite.test: $(GO_SOURCES) generate-ini-sqlite
+migrations.individual.sqlite.test: $(GO_SOURCES) generate-ini-sqlite | compute-migration-packages
 	for pkg in $(MIGRATION_PACKAGES); do \
 		GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' $$pkg || exit 1; \
 	done
