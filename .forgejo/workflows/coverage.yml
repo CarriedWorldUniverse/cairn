@@ -58,7 +58,7 @@ jobs:
           POSTGRESQL_EXTRA_FLAGS: -c full_page_writes=off
         options: --tmpfs /bitnami/postgresql
       cacher:
-        image: registry.redict.io/redict:7.3.0-scratch
+        image: registry.redict.io/redict:7.3.5-scratch
         options: --tmpfs /data:noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
