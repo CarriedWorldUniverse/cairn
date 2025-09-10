@@ -24,8 +24,8 @@ import (
 	"forgejo.org/modules/webhook"
 	"forgejo.org/services/convert"
 
-	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
-	act_model "code.forgejo.org/forgejo/runner/v9/act/model"
+	"code.forgejo.org/forgejo/runner/v11/act/jobparser"
+	act_model "code.forgejo.org/forgejo/runner/v11/act/model"
 )
 
 type InputRequiredErr struct {
