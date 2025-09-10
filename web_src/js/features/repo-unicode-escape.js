@@ -9,6 +9,11 @@ export function initUnicodeEscapeButton() {
 
     const fileContent = btn.closest('.file-content, .non-diff-file-content, .file-preview-box');
     const fileView = fileContent?.querySelectorAll('.file-code, .file-view, .file-preview');
+    if (!fileContent || !fileView) {
+      console.error('initUnicodeEscapeButton file-content or view not found');
+      return;
+    }
+
     if (btn.matches('.escape-button')) {
       for (const el of fileView) el.classList.add('unicode-escaped');
       hideElem(btn);
