@@ -6,7 +6,7 @@ package actions
 import (
 	"fmt"
 
-	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
+	"code.forgejo.org/forgejo/runner/v11/act/jobparser"
 )
 
 func jobParser(workflow []byte, options ...jobparser.ParseOption) ([]*jobparser.SingleWorkflow, error) {

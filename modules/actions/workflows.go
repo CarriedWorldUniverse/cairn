@@ -13,9 +13,9 @@ import (
 	api "forgejo.org/modules/structs"
 	webhook_module "forgejo.org/modules/webhook"
 
-	"code.forgejo.org/forgejo/runner/v9/act/jobparser"
-	"code.forgejo.org/forgejo/runner/v9/act/model"
-	"code.forgejo.org/forgejo/runner/v9/act/workflowpattern"
+	"code.forgejo.org/forgejo/runner/v11/act/jobparser"
+	"code.forgejo.org/forgejo/runner/v11/act/model"
+	"code.forgejo.org/forgejo/runner/v11/act/workflowpattern"
 	"github.com/gobwas/glob"
 	"go.yaml.in/yaml/v3"
 )

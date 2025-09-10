@@ -27,7 +27,7 @@ import (
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
 
-	"code.forgejo.org/forgejo/runner/v9/act/model"
+	"code.forgejo.org/forgejo/runner/v11/act/model"
 )
 
 const (
