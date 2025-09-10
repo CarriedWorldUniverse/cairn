@@ -2,7 +2,7 @@
 <div role="main" aria-label="{{.Title}}" class="page-content repository wiki view">
 	{{template "repo/header" .}}
 	{{$title := .title}}
-	<div class="ui container">
+	<div class="ui container file-content">
 		<div class="repo-button-row">
 			<div class="tw-flex tw-items-center">
 				<div class="ui floating filter dropdown" data-no-results="{{ctx.Locale.Tr "repo.pulls.no_results"}}">
@@ -53,17 +53,17 @@
 					</div>
 				</div>
 				<div class="eight wide right aligned column">
-					{{if .EscapeStatus.Escaped}}
-						<a class="ui small button unescape-button tw-hidden">{{ctx.Locale.Tr "repo.unescape_control_characters"}}</a>
-						<a class="ui small button escape-button">{{ctx.Locale.Tr "repo.escape_control_characters"}}</a>
-					{{end}}
-					{{if and .CanWriteWiki (not .Repository.IsMirror)}}
-						<div class="ui right">
+					<div class="ui right">
+						{{if .EscapeStatus.Escaped}}
+							<a class="ui small button unescape-button tw-hidden">{{ctx.Locale.Tr "repo.unescape_control_characters"}}</a>
+							<a class="ui small button escape-button">{{ctx.Locale.Tr "repo.escape_control_characters"}}</a>
+						{{end}}
+						{{if and .CanWriteWiki (not .Repository.IsMirror)}}
 							<a class="ui small button" href="{{.RepoLink}}/wiki/{{.PageURL}}?action=_edit">{{ctx.Locale.Tr "repo.wiki.edit_page_button"}}</a>
 							<a class="ui small primary button" href="{{.RepoLink}}/wiki?action=_new">{{ctx.Locale.Tr "repo.wiki.new_page_button"}}</a>
 							<a class="ui small red button delete-button" href="" data-url="{{.RepoLink}}/wiki/{{.PageURL}}?action=_delete" data-id="{{.PageURL}}" data-modal-id="delete-wiki-page">{{ctx.Locale.Tr "repo.wiki.delete_page_button"}}</a>
-						</div>
-					{{end}}
+						{{end}}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -80,17 +80,17 @@
 			</div>
 			{{end}}
 
-			<div class="markup wiki-content-main {{if or .sidebarTocContent .sidebarPresent}}with-sidebar{{end}}">
+			<div class="file-view markup wiki-content-main {{if or .sidebarTocContent .sidebarPresent}}with-sidebar{{end}}">
 				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .EscapeStatus "root" $}}
 				{{.content | SafeHTML}}
 			</div>
 
 			{{if .sidebarPresent}}
-			<div class="markup wiki-content-sidebar">
+			<div class="file-view markup wiki-content-sidebar">
+				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .sidebarEscapeStatus "root" $}}
 				{{if and .CanWriteWiki (not .Repository.IsMirror)}}
 					<a class="tw-float-right muted" href="{{.RepoLink}}/wiki/_Sidebar?action=_edit" aria-label="{{ctx.Locale.Tr "repo.wiki.edit_page_button"}}">{{svg "octicon-pencil"}}</a>
 				{{end}}
-				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .sidebarEscapeStatus "root" $}}
 				{{.sidebarContent | SafeHTML}}
 			</div>
 			{{end}}
@@ -98,11 +98,11 @@
 			<div class="tw-clear-both"></div>
 
 			{{if .footerPresent}}
-			<div class="markup wiki-content-footer">
+			<div class="file-view markup wiki-content-footer">
+				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .sidebarEscapeStatus "root" $}}
 				{{if and .CanWriteWiki (not .Repository.IsMirror)}}
 					<a class="tw-float-right muted" href="{{.RepoLink}}/wiki/_Footer?action=_edit" aria-label="{{ctx.Locale.Tr "repo.wiki.edit_page_button"}}">{{svg "octicon-pencil"}}</a>
 				{{end}}
-				{{template "repo/unicode_escape_prompt" dict "footerEscapeStatus" .sidebarEscapeStatus "root" $}}
 				{{.footerContent | SafeHTML}}
 			</div>
 			{{end}}
