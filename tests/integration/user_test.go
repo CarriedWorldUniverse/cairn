@@ -1092,22 +1092,21 @@ func TestUserActivate(t *testing.T) {
 	})
 }
 
-func TestUserPasswordReset(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
-
-	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+func parseMailHelper(t *testing.T, expectedTo, expectedSubject string) (cleanup func(), codeRes *string, calledRes *bool) {
+	t.Helper()
 
 	called := false
 	code := ""
-	defer test.MockVariableValue(&mailer.SendAsync, func(msgs ...*mailer.Message) {
+
+	cleanup = test.MockVariableValue(&mailer.SendAsync, func(msgs ...*mailer.Message) {
 		if called {
 			return
 		}
 		called = true
 
 		assert.Len(t, msgs, 1)
-		assert.Equal(t, user2.EmailTo(), msgs[0].To)
-		assert.EqualValues(t, translation.NewLocale("en-US").Tr("mail.reset_password"), msgs[0].Subject)
+		assert.Equal(t, expectedTo, msgs[0].To)
+		assert.Equal(t, expectedSubject, msgs[0].Subject)
 
 		messageDoc := NewHTMLParser(t, bytes.NewBuffer([]byte(msgs[0].Body)))
 		link, ok := messageDoc.Find("a").Attr("href")
@@ -1115,7 +1114,18 @@ func TestUserPasswordReset(t *testing.T) {
 		u, err := url.Parse(link)
 		require.NoError(t, err)
 		code = u.Query()["code"][0]
-	})()
+	})
+
+	return cleanup, &code, &called
+}
+
+func TestUserPasswordReset(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+	cleanup, code, called := parseMailHelper(t, user2.EmailTo(), string(translation.NewLocale("en-US").Tr("mail.reset_password")))
+	defer cleanup()
 
 	session := emptyTestSession(t)
 	req := NewRequestWithValues(t, "POST", "/user/forgot_password", map[string]string{
@@ -1123,9 +1133,9 @@ func TestUserPasswordReset(t *testing.T) {
 		"email": user2.Email,
 	})
 	session.MakeRequest(t, req, http.StatusOK)
-	assert.True(t, called)
+	assert.True(t, *called)
 
-	queryCode, err := url.QueryUnescape(code)
+	queryCode, err := url.QueryUnescape(*code)
 	require.NoError(t, err)
 
 	lookupKey, validator, ok := strings.Cut(queryCode, ":")
@@ -1141,7 +1151,7 @@ func TestUserPasswordReset(t *testing.T) {
 
 	req = NewRequestWithValues(t, "POST", "/user/recover_account", map[string]string{
 		"_csrf":    GetCSRF(t, session, "/user/recover_account"),
-		"code":     code,
+		"code":     *code,
 		"password": "new_password",
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
@@ -1150,31 +1160,78 @@ func TestUserPasswordReset(t *testing.T) {
 	assert.True(t, unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}).ValidatePassword(t.Context(), "new_password"))
 }
 
+func TestUserPasswordResetOAuth2(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestUserPasswordResetOAuth2")()
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("OAuth2 user without password", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1001})
+		assert.True(t, user.IsOAuth2())
+		assert.False(t, user.IsPasswordSet())
+		assert.False(t, user.IsLocal())
+
+		session := emptyTestSession(t)
+		req := NewRequestWithValues(t, "POST", "/user/forgot_password", map[string]string{
+			"_csrf": GetCSRF(t, session, "/user/forgot_password"),
+			"email": user.Email,
+		})
+		resp := session.MakeRequest(t, req, http.StatusOK)
+
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		assert.Contains(t,
+			htmlDoc.doc.Find(".ui.negative.message").Text(),
+			translation.NewLocale("en-US").TrString("auth.non_local_account"),
+		)
+	})
+
+	t.Run("OAuth2 user with password", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1000})
+		assert.True(t, user.IsOAuth2())
+		assert.True(t, user.IsPasswordSet())
+		assert.False(t, user.IsLocal())
+
+		cleanup, code, called := parseMailHelper(t, user.EmailTo(), string(translation.NewLocale("en-US").Tr("mail.reset_password")))
+		defer cleanup()
+
+		session := emptyTestSession(t)
+		req := NewRequestWithValues(t, "POST", "/user/forgot_password", map[string]string{
+			"_csrf": GetCSRF(t, session, "/user/forgot_password"),
+			"email": user.Email,
+		})
+		session.MakeRequest(t, req, http.StatusOK)
+		assert.True(t, *called)
+
+		user.Passwd = ""
+		err := user_model.UpdateUserCols(db.DefaultContext, user, "passwd")
+		require.NoError(t, err)
+
+		req = NewRequestWithValues(t, "POST", "/user/recover_account", map[string]string{
+			"_csrf":    GetCSRF(t, session, "/user/recover_account"),
+			"code":     *code,
+			"password": "new_password",
+		})
+		resp := session.MakeRequest(t, req, http.StatusOK)
+
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		assert.Contains(t,
+			htmlDoc.doc.Find(".ui.negative.message").Text(),
+			translation.NewLocale("en-US").TrString("auth.non_local_account"),
+		)
+	})
+}
+
 func TestActivateEmailAddress(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	defer test.MockVariableValue(&setting.Service.RegisterEmailConfirm, true)()
 
 	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
-	called := false
-	code := ""
-	defer test.MockVariableValue(&mailer.SendAsync, func(msgs ...*mailer.Message) {
-		if called {
-			return
-		}
-		called = true
-
-		assert.Len(t, msgs, 1)
-		assert.Equal(t, "newemail@example.org", msgs[0].To)
-		assert.EqualValues(t, translation.NewLocale("en-US").Tr("mail.activate_email"), msgs[0].Subject)
-
-		messageDoc := NewHTMLParser(t, bytes.NewBuffer([]byte(msgs[0].Body)))
-		link, ok := messageDoc.Find("a").Attr("href")
-		assert.True(t, ok)
-		u, err := url.Parse(link)
-		require.NoError(t, err)
-		code = u.Query()["code"][0]
-	})()
+	cleanup, code, called := parseMailHelper(t, "newemail@example.org", string(translation.NewLocale("en-US").Tr("mail.activate_email")))
+	defer cleanup()
 
 	session := loginUser(t, user2.Name)
 	req := NewRequestWithValues(t, "POST", "/user/settings/account/email", map[string]string{
@@ -1182,9 +1239,9 @@ func TestActivateEmailAddress(t *testing.T) {
 		"email": "newemail@example.org",
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
-	assert.True(t, called)
+	assert.True(t, *called)
 
-	queryCode, err := url.QueryUnescape(code)
+	queryCode, err := url.QueryUnescape(*code)
 	require.NoError(t, err)
 
 	lookupKey, validator, ok := strings.Cut(queryCode, ":")
@@ -1199,7 +1256,7 @@ func TestActivateEmailAddress(t *testing.T) {
 	assert.Equal(t, authToken.HashedValidator, auth_model.HashValidator(rawValidator))
 
 	req = NewRequestWithValues(t, "POST", "/user/activate_email", map[string]string{
-		"code":  code,
+		"code":  *code,
 		"email": "newemail@example.org",
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
