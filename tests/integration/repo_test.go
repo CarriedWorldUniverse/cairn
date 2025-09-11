@@ -775,7 +775,7 @@ func TestViewCommitSignature(t *testing.T) {
 			resp = testCtx.Session.MakeRequest(t, req, http.StatusOK)
 
 			htmlDoc := NewHTMLParser(t, resp.Body)
-			htmlDoc.AssertElement(t, ".commit-header-row.message.isSigned.isVerified", true)
+			htmlDoc.AssertElement(t, ".signature-row.message.isSigned.isVerified", true)
 		})
 	})
 }

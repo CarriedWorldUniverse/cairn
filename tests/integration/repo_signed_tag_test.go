@@ -68,8 +68,8 @@ func TestRepoSSHSignedTags(t *testing.T) {
 		resp := MakeRequest(t, req, http.StatusOK)
 		doc := NewHTMLParser(t, resp.Body)
 
-		doc.AssertElement(t, ".tag-signature-row .gitea-unlock", !isSigned)
-		doc.AssertElement(t, ".tag-signature-row .gitea-lock", isSigned)
+		doc.AssertElement(t, ".signature-row .gitea-unlock", !isSigned)
+		doc.AssertElement(t, ".signature-row .gitea-lock", isSigned)
 	}
 
 	t.Run("unverified", func(t *testing.T) {
