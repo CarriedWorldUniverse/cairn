@@ -76,8 +76,8 @@ PROVIDER_CONFIG = tests/{{TEST_TYPE}}/gitea-{{TEST_TYPE}}-mysql/data/sessions
 [log]
 MODE                 = {{TEST_LOGGER}}
 ROOT_PATH            = {{REPO_TEST_DIR}}mysql-log
-ENABLE_SSH_LOG       = true
 LOGGER_XORM_MODE     = file
+LOGGER_SSH_MODE      = ,
 
 [log.test]
 LEVEL                = Info

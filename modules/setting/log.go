@@ -23,8 +23,6 @@ type LogGlobalConfig struct {
 	StacktraceLogLevel log.Level
 	BufferLen          int
 
-	EnableSSHLog bool
-
 	AccessLogTemplate string
 	RequestIDHeaders  []string
 }
@@ -46,8 +44,6 @@ func loadLogGlobalFrom(rootCfg ConfigProvider) {
 		Log.RootPath = filepath.Join(AppWorkPath, Log.RootPath)
 	}
 	Log.RootPath = util.FilePathJoinAbs(Log.RootPath)
-
-	Log.EnableSSHLog = sec.Key("ENABLE_SSH_LOG").MustBool(false)
 
 	Log.AccessLogTemplate = sec.Key("ACCESS_LOG_TEMPLATE").MustString(accessLogTemplateDefault)
 	Log.RequestIDHeaders = sec.Key("REQUEST_ID_HEADERS").Strings(",")
@@ -123,6 +119,16 @@ func prepareLoggerConfig(rootCfg ConfigProvider) {
 	}
 	if hasNoValue {
 		sec.Key("LOGGER_XORM_MODE").SetValue(",") // use default logger
+	}
+
+	// Priority: `LOGGER_SSH_MODE` -> `ENABLE_SSH_LOG`
+	deprecatedSettingWarning(rootCfg, "log", "ENABLE_SSH_LOG", "log", "LOGGER_SSH_MODE")
+	if !sec.HasKey("LOGGER_SSH_MODE") && sec.HasKey("ENABLE_SSH_LOG") {
+		if sec.Key("ENABLE_SSH_LOG").MustBool() {
+			sec.Key("LOGGER_SSH_MODE").SetValue(",") // use default logger
+		} else {
+			sec.Key("LOGGER_SSH_MODE").SetValue("") // disable ssh logger
+		}
 	}
 }
 
@@ -245,6 +251,7 @@ func initManagedLoggers(manager *log.LoggerManager, cfg ConfigProvider) {
 	initLoggerByName(manager, cfg, "access")
 	initLoggerByName(manager, cfg, "router")
 	initLoggerByName(manager, cfg, "xorm")
+	initLoggerByName(manager, cfg, "ssh")
 }
 
 func initLoggerByName(manager *log.LoggerManager, rootCfg ConfigProvider, loggerName string) {
