@@ -145,5 +145,8 @@
     "settings.twofa_reenroll.description": "Richt dien Twee-Faktooren-Anmellen neei in",
     "settings.must_enable_2fa": "Deese Forgejo-Instanz verlangt, dat Brukers Twee-Faktooren-Anmellen anknipsen, ehr se up hör Konten togriepen könen.",
     "user.ghost.tooltip": "Deeser Bruker is lösket worden of kann nich funnen worden.",
-    "migrate.form.error.url_credentials": "De URL enthollt Anmell-Daten, legg se in de Felden för Brukernaam un Passwoord"
+    "migrate.form.error.url_credentials": "De URL enthollt Anmell-Daten, legg se in de Felden för Brukernaam un Passwoord",
+    "actions.runs.viewing_out_of_date_run": "Du bekiekst eenen verollten Loop vun deeser Upgaav, wat %[1]s utföhrt worden is.",
+    "actions.runs.view_most_recent_run": "Neeisten Loop ankieken",
+    "actions.runs.run_attempt_label": "Loop-Versöök #%[1]s (%[2]s)"
 }
