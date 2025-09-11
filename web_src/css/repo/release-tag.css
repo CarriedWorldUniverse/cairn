@@ -125,3 +125,11 @@
 .repository.new.release .markup {
   min-height: 240px;
 }
+
+.ui.label.basic.tag-label {
+  border-color: var(--color-primary);
+}
+
+a.ui.label.basic.tag-label:hover {
+  border-color: var(--color-primary-dark-1);
+}
