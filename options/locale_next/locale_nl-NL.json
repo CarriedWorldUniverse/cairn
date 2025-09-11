@@ -141,5 +141,9 @@
     "admin.config.global_2fa_requirement.all": "Alle gebruikers",
     "admin.config.global_2fa_requirement.admin": "Beheerders",
     "settings.twofa_reenroll": "Herinschrijven voor tweefactorauthenticatie",
-    "settings.twofa_reenroll.description": "Herhaal uw tweefactorauthenticatie"
+    "settings.twofa_reenroll.description": "Herhaal uw tweefactorauthenticatie",
+    "settings.must_enable_2fa": "Deze Forgejo-instantie vereist dat gebruikers tweefactorauthenticatie inschakelen voordat ze toegang krijgen tot hun accounts.",
+    "user.ghost.tooltip": "Deze gebruiker is verwijderd of kan niet worden gevonden.",
+    "error.must_enable_2fa": "Deze Forgejo-instantie vereist dat gebruikers tweefactorauthenticatie inschakelen voordat ze toegang krijgen tot hun accounts. Schakel dit in op: %s",
+    "migrate.form.error.url_credentials": "De URL bevat inloggegevens. Vul deze in de velden voor gebruikersnaam en wachtwoord respectievelijk"
 }

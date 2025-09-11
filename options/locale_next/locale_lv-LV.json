@@ -152,5 +152,9 @@
     "settings.twofa_unroll_unavailable": "Tavam kontam ir nepieciešama divpakāpju autentificēšanās, un to nevar atspējot.",
     "settings.twofa_reenroll": "Atkārtoti ieslēgt divpakāpju autentificēšanos",
     "settings.must_enable_2fa": "Šis Forgejo serveris pieprasa lietotājiem iespējot divpakāpju autentificēšanos, pirms viņi var piekļūt savam kontam.",
-    "user.ghost.tooltip": "Šis lietotājs ir izdzēsts vai to nevar salāgot."
+    "user.ghost.tooltip": "Šis lietotājs ir izdzēsts vai to nevar salāgot.",
+    "migrate.form.error.url_credentials": "URL satur pieteikšanās datus, tie ir attiecīgi jāievieto lietotājvārda un paroles laukā",
+    "actions.runs.view_most_recent_run": "Apskatīt visnesenāko palaišanu",
+    "actions.runs.run_attempt_label": "Palaišanas mēģinājums #%[1]s (%[2]s)",
+    "actions.runs.viewing_out_of_date_run": "Tu skati novecojušu šī darba palaišanu, kas tika izpildīta %[1]s."
 }
