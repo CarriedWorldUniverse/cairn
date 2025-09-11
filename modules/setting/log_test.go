@@ -590,4 +590,29 @@ logger.xorm.MODE = console
 			},
 		})
 	})
+
+	t.Run("ssh", func(t *testing.T) {
+		runCases(t, "LOGGER_SSH_MODE", Cases{
+			{
+				"uses default value for ssh logger",
+				"",
+				"",
+			},
+			{
+				"deprecated config can enable logger",
+				`[log]
+ENABLE_SSH_LOG = true
+`,
+				",",
+			},
+			{
+				"check priority",
+				`[log]
+LOGGER_SSH_MODE = file
+ENABLE_SSH_LOG = true
+`,
+				"file",
+			},
+		})
+	})
 }

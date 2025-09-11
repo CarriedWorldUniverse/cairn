@@ -275,7 +275,10 @@ func testOptionsGitPush(t *testing.T, u *url.URL) {
 
 		t.Run("Collaborator with write access fails to change private & template via push options", func(t *testing.T) {
 			logChecker, cleanup := test.NewLogChecker(log.DEFAULT, log.TRACE)
-			logChecker.Filter("permission denied for changing repo settings").StopMark("Git push options validation")
+			logChecker.StopMark("Git push options validation")
+			defer cleanup()
+			sshLogChecker, cleanup := test.NewLogChecker("ssh", log.ERROR)
+			sshLogChecker.Filter("permission denied for changing repo settings")
 			defer cleanup()
 			branchName := "branch4"
 			doGitCreateBranch(gitPath, branchName)(t)
@@ -284,7 +287,8 @@ func testOptionsGitPush(t *testing.T, u *url.URL) {
 			require.NoError(t, err)
 			require.False(t, repo.IsPrivate)
 			require.False(t, repo.IsTemplate)
-			logFiltered, logStopped := logChecker.Check(5 * time.Second)
+			_, logStopped := logChecker.Check(5 * time.Second)
+			logFiltered, _ := sshLogChecker.Check(5 * time.Second)
 			assert.True(t, logStopped)
 			assert.True(t, logFiltered[0])
 		})

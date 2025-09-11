@@ -15,6 +15,8 @@ import (
 	"forgejo.org/modules/setting"
 )
 
+var logger = log.GetManager().GetLogger("ssh")
+
 func Init() error {
 	if setting.SSH.Disabled {
 		builtinUnused()
