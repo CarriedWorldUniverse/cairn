@@ -151,5 +151,7 @@
     "migrate.onedev.description": "ترحيل البيانات من code.onedev.io أو مثيلات OneDev الأخرى.",
     "migrate.gitbucket.description": "ترحيل البيانات من مثيلات GitBucket.",
     "migrate.codebase.description": "ترحيل البيانات من codebasehq.com.",
-    "migrate.forgejo.description": "ترحيل المعلومات من كودبيرج أو خوادم فورجيو الأخرى."
+    "migrate.forgejo.description": "ترحيل المعلومات من كودبيرج أو خوادم فورجيو الأخرى.",
+    "user.ghost.tooltip": "تم حذف هذا المستخدم أو لا يمكن مطابقته.",
+    "migrate.form.error.url_credentials": "يحتوي عنوان الرابط على بيانات اعتماد، ضعها في حقلي اسم المستخدم وكلمة المرور على التوالي"
 }

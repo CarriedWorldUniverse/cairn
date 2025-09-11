@@ -144,5 +144,9 @@
     "settings.twofa_reenroll.description": "Deine Zwei-Faktor-Authentifizierung neu ausrollen",
     "error.must_enable_2fa": "Diese Forgejo-Instanz verlangt von den Benutzern, dass sie die Zwei-Faktor-Authentifizierung aktivieren, bevor sie auf ihren Accounts zugreifen können. Dies kann aktiviert werden bei: %s",
     "admin.config.global_2fa_requirement.title": "Globale Zwei-Faktor-Anforderung",
-    "user.ghost.tooltip": "Dieser Benutzer wurde gelöscht oder konnte nicht gefunden werden."
+    "user.ghost.tooltip": "Dieser Benutzer wurde gelöscht oder konnte nicht gefunden werden.",
+    "actions.runs.view_most_recent_run": "Letzten Run betrachten",
+    "actions.runs.viewing_out_of_date_run": "Sie sehen einen veralteten Run dieses Jobs, der %[1]s ausgeführt wurde.",
+    "actions.runs.run_attempt_label": "Run-Versuch #%[1]s (%[2]s)",
+    "migrate.form.error.url_credentials": "Die URL enthält Anmeldedaten; diese sollten in das jeweilige Benutzername- und Passwortfeld eingetragen werden"
 }
