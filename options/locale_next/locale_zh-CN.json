@@ -115,11 +115,14 @@
     "settings.must_enable_2fa": "此 Forgejo 实例要求用户启用双因子认证。",
     "migrate.pagure.incorrect_url": "提供了错误的源仓库URL",
     "migrate.pagure.project_url": "Pagure 项目 URL",
-    "migrate.pagure.project_example": "Pagure 项目的 URL，例如：https://pagure.io/pagure",
+    "migrate.pagure.project_example": "Pagure 项目 URL，例如：https://pagure.io/pagure",
     "migrate.pagure.token_label": "令牌",
     "migrate.pagure.token_body_a": "提供可访问私有议题的 Pagure API 令牌以创建一个只有私有议题的仓库",
     "migrate.pagure.token_body_b": "如果你希望此仓库为私有，记得选择上面的私有仓库选项！",
     "repo.pulls.already_merged": "合并失败：此合并请求已被合并。",
     "user.ghost.tooltip": "该用户已被删除或无法找到。",
-    "migrate.form.error.url_credentials": "URL 包含凭据，分别将其填入用户名和密码字段"
+    "migrate.form.error.url_credentials": "URL 包含凭据，请分别将凭据填入用户名和密码字段",
+    "actions.runs.view_most_recent_run": "查看最新运行",
+    "actions.runs.run_attempt_label": "运行尝试 #%[1]s（%[2]s）",
+    "actions.runs.viewing_out_of_date_run": "您正在查看于 %[1]s 执行的过期运行。"
 }

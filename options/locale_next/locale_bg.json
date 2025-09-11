@@ -93,5 +93,10 @@
     "migrate.onedev.description": "Мигриране на данни от code.onedev.io или други OneDev инстанции.",
     "migrate.gitbucket.description": "Мигриране на данни от GitBucket инстанции.",
     "migrate.codebase.description": "Мигриране на данни от codebasehq.com.",
-    "migrate.forgejo.description": "Мигриране на данни от codeberg.org или други Forgejo инстанции."
+    "migrate.forgejo.description": "Мигриране на данни от codeberg.org или други Forgejo инстанции.",
+    "keys.ssh.link": "SSH ключове",
+    "feed.atom.link": "Atom емисия",
+    "keys.gpg.link": "GPG ключове",
+    "profile.edit.link": "Редактиране на профила",
+    "profile.actions.tooltip": "Още действия"
 }

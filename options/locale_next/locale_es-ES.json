@@ -42,11 +42,11 @@
     "followers.incoming.list.self.none": "Nadie está siguiendo tu perfil.",
     "followers.incoming.list.none": "Nadie está siguiendo a este usuario.",
     "followers.outgoing.list.self.none": "No estás siguiendo a nadie.",
-    "followers.outgoing.list.none": "%s ya no me está siguiendo.",
+    "followers.outgoing.list.none": "%s no sigue a nadie.",
     "relativetime.1week": "la semana pasada",
     "relativetime.2weeks": "hace dos semanas",
     "relativetime.1month": "el mes pasado",
-    "alert.asset_load_failed": "Error al cargar recursos desde {path}. Por favor, asegúrage de que se puede acceder a los recursos.",
+    "alert.asset_load_failed": "Error al cargar recursos desde {path}. Por favor, asegúrate de que se puede acceder a los recursos.",
     "install.invalid_lfs_path": "Imposible crear la raíz LFS en la ruta indicada: %[1]s",
     "alert.range_error": " debe ser un número entre %[1]s y %[2]s.",
     "relativetime.days": {
@@ -75,7 +75,7 @@
     "admin.moderation.no_open_reports": "Actualmente no hay informes abiertos.",
     "moderation.report_abuse_form.invalid": "Argumentos inválidos",
     "admin.moderation.reports": "Informes",
-    "incorrect_root_url": "Esta instancia de Forgejo está configurada para servirse en \"%s\". Estás viendo Forgejo a través de una URL distinta, lo que puede hacer que se rompan partes de la aplicación. La URL canónica la controlan los administdadores xd Forgejo a través del ajuste ROOT_URL en app.ini.",
+    "incorrect_root_url": "Esta instancia de Forgejo está configurada para servirse en \"%s\". Estás viendo Forgejo a través de una URL distinta, lo que puede hacer que se rompan partes de la aplicación. La URL canónica la controlan los administradores de Forgejo a través del ajuste ROOT_URL en app.ini.",
     "admin.moderation.moderation_reports": "Informes de moderación",
     "home.welcome.activity_hint": "Aún no hay nada en tu feed. Tus acciones y la actividad en los repositorios a los que sigues se mostrarán aquí.",
     "feed.atom.link": "Feed Atom",
@@ -85,7 +85,7 @@
     "admin.moderation.deleted_content_ref": "El contenido reportado con tipo %[1]v e id %[2]d ya no existe",
     "moderation.report_abuse": "Reportar abuso",
     "moderation.report_content": "Reportar contenido",
-    "moderation.report_abuse_form.header": "Reportar a uso a un administrador",
+    "moderation.report_abuse_form.header": "Reportar abuso a un administrador",
     "moderation.report_abuse_form.already_reported": "Ya has reportado este contenido",
     "moderation.abuse_category": "Categoría",
     "repo.issue_indexer.title": "Índice de incidencias",
@@ -114,5 +114,6 @@
     "migrate.onedev.description": "Migrar datos desde code.onedev.io u otra instancia de OneDev.",
     "migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
     "migrate.codebase.description": "Migrar datos desde codebasehq.com.",
-    "migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo."
+    "migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo.",
+    "moderation.abuse_category.spam": "Spam"
 }

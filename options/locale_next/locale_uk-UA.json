@@ -134,7 +134,7 @@
     "migrate.pagure.incorrect_url": "Вказано неправильну URL-адресу репозиторію-джерела",
     "migrate.pagure.token_body_a": "Уведіть токен API Pagure з доступом до приватних задач, щоб створити репозиторій, який міститиме лише приватні задачі",
     "migrate.github.description": "Перенести дані з github.com або сервера GitHub Enterprise.",
-    "migrate.git.description": "Перенесення лише репозиторію з будь-якої служби Git.",
+    "migrate.git.description": "Перенести репозиторій з будь-якої служби Git.",
     "migrate.gitea.description": "Перенести дані з gitea.com та інших екземплярів Gitea.",
     "migrate.gitlab.description": "Перенести дані з gitlab.com та інших екземплярів GitLab.",
     "migrate.gogs.description": "Перенести дані з notabug.org та інших екземплярів Gogs.",
@@ -153,5 +153,8 @@
     "settings.twofa_reenroll": "Увімкнути двофакторну автентифікацію",
     "settings.twofa_reenroll.description": "Повторно зареєструйте свою двофакторну автентифікацію",
     "user.ghost.tooltip": "Користувача не знайдено; ймовірно, його було видалено.",
-    "migrate.form.error.url_credentials": "URL-адреса містить дані для входу, введіть їх у поля «Ім'я користувача» і «Пароль» відповідно"
+    "migrate.form.error.url_credentials": "URL-адреса містить дані для входу, введіть їх у поля «Ім'я користувача» і «Пароль» відповідно",
+    "actions.runs.run_attempt_label": "Спроба запуску №%[1]s (%[2]s)",
+    "actions.runs.view_most_recent_run": "Переглянути останній запуск",
+    "actions.runs.viewing_out_of_date_run": "Ви переглядаєте застарілий запуск цього завдання, який було виконано %[1]s."
 }

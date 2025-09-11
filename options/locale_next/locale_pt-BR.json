@@ -153,5 +153,8 @@
     "settings.twofa_reenroll.description": "Recadastrar sua autenticação de dois fatores",
     "error.must_enable_2fa": "Este servidor do Forgejo exige que usuários habilitem a autenticação de dois fatores antes que possam acessar suas contas. Habilitar em: %s",
     "user.ghost.tooltip": "Este usuário foi excluído, ou não pode ser encontrado.",
-    "migrate.form.error.url_credentials": "A URL contém credenciais, coloque-as nos campos de usuário e senha respectivamente"
+    "migrate.form.error.url_credentials": "A URL contém credenciais, coloque-as nos campos de usuário e senha respectivamente",
+    "actions.runs.viewing_out_of_date_run": "Você está visualizando uma execução desatualizada deste trabalho que foi executada %[1]s.",
+    "actions.runs.view_most_recent_run": "Ver execução mais recente",
+    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)"
 }
