@@ -126,10 +126,15 @@
   min-height: 240px;
 }
 
-.ui.label.basic.tag-label {
-  border-color: var(--color-primary);
+.ui.ui.ui.tag-label {
+  margin-left: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  gap: 0.3rem;
 }
 
-a.ui.label.basic.tag-label:hover {
+.ui.ui.ui.tag-label.IsRelease {
+  border-color: var(--color-primary);
+}
+.ui.ui.ui.tag-label.IsRelease:hover {
   border-color: var(--color-primary-dark-1);
 }
