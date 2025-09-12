@@ -20,3 +20,15 @@
   context: ci/awesomeness
   context_hash: c65f4d64a3b14a3eced0c9b36799e66e1bd5ced7
   creator_id: 2
+
+-
+  id: 1002
+  index: 1
+  repo_id: 58
+  state: "success"
+  sha: "ffffffffffffffffffffffffffffffffffffffff"
+  target_url: https://example.com/builds/
+  description: My awesome CI-service
+  context: ci/awesomeness
+  context_hash: c65f4d64a3b14a3eced0c9b36799e66e1bd5ced7
+  creator_id: 2

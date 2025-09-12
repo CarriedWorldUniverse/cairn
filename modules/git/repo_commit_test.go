@@ -199,3 +199,40 @@ func TestCommitsByFileAndRange(t *testing.T) {
 		assert.Len(t, commits, testCase.ExpectedCommitCount, "file: '%s', page: %d", testCase.File, testCase.Page)
 	}
 }
+
+func TestGetCommitsFromIDs(t *testing.T) {
+	bareRepo1, err := openRepositoryWithDefaultContext(filepath.Join(testReposDir, "repo1_bare"))
+	require.NoError(t, err)
+
+	commitIDs := []string{"2839944139e0de9737a044f78b0e4b40d989a9e3", "2839944139e0de9737a044f78b0e4b40d989a9e4"}
+
+	t.Run("Normal", func(t *testing.T) {
+		commits := bareRepo1.GetCommitsFromIDs(commitIDs, false)
+		if assert.Len(t, commits, 1) {
+			assert.Equal(t, "2839944139e0de9737a044f78b0e4b40d989a9e3", commits[0].ID.String())
+			assert.Equal(t, "Example User", commits[0].Author.Name)
+		}
+	})
+
+	t.Run("Ignore existence", func(t *testing.T) {
+		commits := bareRepo1.GetCommitsFromIDs(commitIDs, true)
+		if assert.Len(t, commits, 2) {
+			assert.Equal(t, "2839944139e0de9737a044f78b0e4b40d989a9e3", commits[0].ID.String())
+			assert.Equal(t, "Example User", commits[0].Author.Name)
+
+			assert.Equal(t, "2839944139e0de9737a044f78b0e4b40d989a9e4", commits[1].ID.String())
+			assert.Nil(t, commits[1].Author)
+		}
+	})
+
+	t.Run("Not full commit ID", func(t *testing.T) {
+		commits := bareRepo1.GetCommitsFromIDs(append(commitIDs, "abba"), true)
+		if assert.Len(t, commits, 2) {
+			assert.Equal(t, "2839944139e0de9737a044f78b0e4b40d989a9e3", commits[0].ID.String())
+			assert.Equal(t, "Example User", commits[0].Author.Name)
+
+			assert.Equal(t, "2839944139e0de9737a044f78b0e4b40d989a9e4", commits[1].ID.String())
+			assert.Nil(t, commits[1].Author)
+		}
+	})
+}
