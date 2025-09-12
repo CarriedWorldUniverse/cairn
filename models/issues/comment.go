@@ -802,7 +802,7 @@ func (c *Comment) LoadPushCommits(ctx context.Context) (err error) {
 		return err
 	}
 	defer closer.Close()
-	c.Commits = git_model.ParseCommitsWithStatus(ctx, gitRepo.GetCommitsFromIDs(data.CommitIDs), c.Issue.Repo)
+	c.Commits = git_model.ParseCommitsWithStatus(ctx, gitRepo.GetCommitsFromIDs(data.CommitIDs, c.IsForcePush), c.Issue.Repo)
 	c.CommitsNum = int64(len(c.Commits))
 
 	return err
