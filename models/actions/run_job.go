@@ -66,7 +66,14 @@ func (job *ActionRunJob) HTMLURL(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("action_run_job: unable to find job on run: %d", job.ID)
 	}
 
-	return fmt.Sprintf("%s/actions/runs/%d/jobs/%d/attempt/%d", job.Run.Repo.HTMLURL(), job.Run.Index, jobIndex, job.Attempt), nil
+	attempt := job.Attempt
+	// If a job has never been fetched by a runner yet, it will have attempt 0 -- but this attempt will never have a
+	// valid UI since attempt is incremented to 1 if it is picked up by a runner.
+	if attempt == 0 {
+		attempt = 1
+	}
+
+	return fmt.Sprintf("%s/actions/runs/%d/jobs/%d/attempt/%d", job.Run.Repo.HTMLURL(), job.Run.Index, jobIndex, attempt), nil
 }
 
 func (job *ActionRunJob) Duration() time.Duration {

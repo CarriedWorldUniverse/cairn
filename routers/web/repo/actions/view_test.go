@@ -386,6 +386,8 @@ func TestActionsViewRedirectToLatestAttempt(t *testing.T) {
 		jobIndex     int64
 		expectedCode int
 		expectedURL  string
+		userID       int64
+		repoID       int64
 	}{
 		{
 			name:        "no job index",
@@ -420,13 +422,31 @@ func TestActionsViewRedirectToLatestAttempt(t *testing.T) {
 			jobIndex:    500,
 			expectedURL: "https://try.gitea.io/user2/repo1/actions/runs/187/jobs/0/attempt/1",
 		},
+		// This ActionRunJob has Attempt: 0 and TaskID: null, which indicates its first run is pending pickup by a
+		// runner.  Should redirect to the attempt/1 since that's what it will be when it is running.
+		{
+			name:        "redirect to non-picked task",
+			userID:      2,
+			repoID:      4,
+			runIndex:    190,
+			jobIndex:    0,
+			expectedURL: "https://try.gitea.io/user5/repo4/actions/runs/190/jobs/0/attempt/1",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, resp := contexttest.MockContext(t, "user2/repo1/actions/runs/0")
-			contexttest.LoadUser(t, ctx, 2)
-			contexttest.LoadRepo(t, ctx, 1)
+			if tt.userID == 0 {
+				contexttest.LoadUser(t, ctx, 2)
+			} else {
+				contexttest.LoadUser(t, ctx, tt.userID)
+			}
+			if tt.repoID == 0 {
+				contexttest.LoadRepo(t, ctx, 1)
+			} else {
+				contexttest.LoadRepo(t, ctx, tt.repoID)
+			}
 			ctx.SetParams(":run", fmt.Sprintf("%d", tt.runIndex))
 			if tt.jobIndex != -1 {
 				ctx.SetParams(":job", fmt.Sprintf("%d", tt.jobIndex))
