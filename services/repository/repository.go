@@ -119,6 +119,17 @@ func UpdateRepository(ctx context.Context, repo *repo_model.Repository, visibili
 	return committer.Commit()
 }
 
+// ConvertMirrorToNormalRepo converts a mirror to a normal repo
+func ConvertMirrorToNormalRepo(ctx context.Context, repo *repo_model.Repository) (err error) {
+	repo.IsMirror = false
+
+	if _, err := CleanUpMigrateInfo(ctx, repo); err != nil {
+		return err
+	}
+
+	return repo_model.DeleteMirrorByRepoID(ctx, repo.ID)
+}
+
 // LinkedRepository returns the linked repo if any
 func LinkedRepository(ctx context.Context, a *repo_model.Attachment) (*repo_model.Repository, unit.Type, error) {
 	if a.IssueID != 0 {

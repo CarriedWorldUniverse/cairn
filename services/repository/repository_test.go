@@ -41,3 +41,16 @@ func TestLinkedRepository(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertMirrorToNormalRepo(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	repo.IsMirror = true
+	err := repo_model.UpdateRepositoryCols(db.DefaultContext, repo, "is_mirror")
+
+	require.NoError(t, err)
+
+	err = ConvertMirrorToNormalRepo(db.DefaultContext, repo)
+	require.NoError(t, err)
+	assert.False(t, repo.IsMirror)
+}

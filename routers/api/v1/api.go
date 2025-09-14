@@ -1124,6 +1124,7 @@ func Routes() *web.Route {
 				m.Combo("").Get(reqAnyRepoReader(), repo.Get).
 					Delete(reqToken(), reqOwner(), repo.Delete).
 					Patch(reqToken(), reqAdmin(), bind(api.EditRepoOption{}), repo.Edit)
+				m.Post("/convert", reqOwner(), repo.Convert)
 				m.Post("/generate", reqToken(), reqRepoReader(unit.TypeCode), bind(api.GenerateRepoOption{}), repo.Generate)
 				m.Group("/transfer", func() {
 					m.Post("", reqOwner(), bind(api.TransferRepoOption{}), repo.Transfer)

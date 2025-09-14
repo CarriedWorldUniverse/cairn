@@ -7272,6 +7272,48 @@
         }
       }
     },
+    "/repos/{owner}/{repo}/convert": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Convert a mirror repo to a normal repo.",
+        "operationId": "repoConvert",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "owner of the repo to convert",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "name of the repo to convert",
+            "name": "repo",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Repository"
+          },
+          "403": {
+            "$ref": "#/responses/forbidden"
+          },
+          "404": {
+            "$ref": "#/responses/notFound"
+          },
+          "422": {
+            "$ref": "#/responses/validationError"
+          }
+        }
+      }
+    },
     "/repos/{owner}/{repo}/diffpatch": {
       "post": {
         "consumes": [
