@@ -84,3 +84,17 @@ func TestRepoEditNameChange(t *testing.T) {
 		ID: 1,
 	}, unittest.Cond("name = ?", opts.Name))
 }
+
+func TestRepoConvertToNormalRepo(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	ctx, _ := contexttest.MockAPIContext(t, "user3/repo5")
+	contexttest.LoadRepo(t, ctx, 5)
+	contexttest.LoadUser(t, ctx, 3)
+	ctx.Repo.Owner = ctx.Doer
+	assert.True(t, ctx.Repo.Repository.IsMirror)
+
+	Convert(ctx)
+	assert.Equal(t, http.StatusOK, ctx.Resp.Status())
+	assert.False(t, ctx.Repo.Repository.IsMirror)
+}

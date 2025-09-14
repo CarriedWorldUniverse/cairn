@@ -828,13 +828,9 @@ func SettingsPost(ctx *context.Context) {
 			ctx.Error(http.StatusNotFound)
 			return
 		}
-		repo.IsMirror = false
 
-		if _, err := repo_service.CleanUpMigrateInfo(ctx, repo); err != nil {
-			ctx.ServerError("CleanUpMigrateInfo", err)
-			return
-		} else if err = repo_model.DeleteMirrorByRepoID(ctx, ctx.Repo.Repository.ID); err != nil {
-			ctx.ServerError("DeleteMirrorByRepoID", err)
+		if err := repo_service.ConvertMirrorToNormalRepo(ctx, ctx.Repo.Repository); err != nil {
+			ctx.ServerError("ConvertMirror", err)
 			return
 		}
 		log.Trace("Repository converted from mirror to regular: %s", repo.FullName())
