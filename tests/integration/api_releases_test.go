@@ -480,3 +480,20 @@ func TestAPIMissingAssetRelease(t *testing.T) {
 		AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusBadRequest)
 }
+
+func TestAPIReleaseGithubFormat(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	token := getUserToken(t, user2.LowerName, auth_model.AccessTokenScopeReadRepository)
+
+	req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/%s/releases/1", user2.Name, repo.Name)).AddTokenAuth(token)
+	req.Header.Add("Accept", "application/vnd.github+json")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	var apiRelease *api.Release
+	DecodeJSON(t, resp, &apiRelease)
+
+	assert.True(t, strings.HasSuffix(apiRelease.UploadURL, "/api/v1/repos/user2/repo1/releases/1/assets{?name,label}"), apiRelease.UploadURL)
+}

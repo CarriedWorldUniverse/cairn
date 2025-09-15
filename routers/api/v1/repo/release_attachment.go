@@ -147,7 +147,7 @@ func ListReleaseAttachments(ctx *context.APIContext) {
 		ctx.Error(http.StatusInternalServerError, "LoadAttributes", err)
 		return
 	}
-	ctx.JSON(http.StatusOK, convert.ToAPIRelease(ctx, ctx.Repo.Repository, release).Attachments)
+	ctx.JSON(http.StatusOK, convert.ToAPIRelease(ctx, ctx.Repo.Repository, release, false).Attachments)
 }
 
 // CreateReleaseAttachment creates an attachment and saves the given file

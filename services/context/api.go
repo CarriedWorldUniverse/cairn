@@ -474,3 +474,10 @@ func (ctx *APIContext) IsUserRepoWriter(unitTypes []unit.Type) bool {
 
 	return false
 }
+
+// Returns true when the requests indicates that it accepts a Github response.
+// This should be used to return information in the way that the Github API
+// specifies it. Avoids breaking compatability with non-Github API clients.
+func (ctx *APIContext) AcceptsGithubResponse() bool {
+	return ctx.Req.Header.Get("Accept") == "application/vnd.github+json"
+}

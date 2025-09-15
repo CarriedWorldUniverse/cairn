@@ -432,7 +432,7 @@ func notifyRelease(ctx context.Context, doer *user_model.User, rel *repo_model.R
 		WithRef(git.RefNameFromTag(rel.TagName).String()).
 		WithPayload(&api.ReleasePayload{
 			Action:     action,
-			Release:    convert.ToAPIRelease(ctx, rel.Repo, rel),
+			Release:    convert.ToAPIRelease(ctx, rel.Repo, rel, false),
 			Repository: convert.ToRepo(ctx, rel.Repo, permission),
 			Sender:     convert.ToUser(ctx, doer, nil),
 		}).

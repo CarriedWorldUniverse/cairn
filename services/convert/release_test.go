@@ -21,9 +21,19 @@ func TestRelease_ToRelease(t *testing.T) {
 	release1 := unittest.AssertExistsAndLoadBean(t, &repo_model.Release{ID: 1})
 	release1.LoadAttributes(db.DefaultContext)
 
-	apiRelease := ToAPIRelease(db.DefaultContext, repo1, release1)
-	assert.NotNil(t, apiRelease)
-	assert.EqualValues(t, 1, apiRelease.ID)
-	assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1", apiRelease.URL)
-	assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1/assets", apiRelease.UploadURL)
+	t.Run("Normal", func(t *testing.T) {
+		apiRelease := ToAPIRelease(t.Context(), repo1, release1, false)
+		assert.NotNil(t, apiRelease)
+		assert.EqualValues(t, 1, apiRelease.ID)
+		assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1", apiRelease.URL)
+		assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1/assets", apiRelease.UploadURL)
+	})
+
+	t.Run("Github format", func(t *testing.T) {
+		apiRelease := ToAPIRelease(t.Context(), repo1, release1, true)
+		assert.NotNil(t, apiRelease)
+		assert.EqualValues(t, 1, apiRelease.ID)
+		assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1", apiRelease.URL)
+		assert.Equal(t, "https://try.gitea.io/api/v1/repos/user2/repo1/releases/1/assets{?name,label}", apiRelease.UploadURL)
+	})
 }

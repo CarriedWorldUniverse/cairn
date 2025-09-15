@@ -4,6 +4,7 @@
 package context
 
 import (
+	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"testing"
@@ -49,4 +50,27 @@ func TestGenAPILinks(t *testing.T) {
 
 		assert.Equal(t, links, response)
 	}
+}
+
+func TestAcceptsGithubResponse(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		resp := httptest.NewRecorder()
+		base, baseCleanUp := NewBaseContext(resp, req)
+		t.Cleanup(baseCleanUp)
+		ctx := &APIContext{Base: base}
+
+		assert.False(t, ctx.AcceptsGithubResponse())
+	})
+
+	t.Run("Accepts Github", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		req.Header.Add("Accept", "application/vnd.github+json")
+		resp := httptest.NewRecorder()
+		base, baseCleanUp := NewBaseContext(resp, req)
+		t.Cleanup(baseCleanUp)
+		ctx := &APIContext{Base: base}
+
+		assert.True(t, ctx.AcceptsGithubResponse())
+	})
 }
