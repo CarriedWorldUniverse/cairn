@@ -45,9 +45,16 @@ func CheckQuota(ctx *context.APIContext) {
 	//   description: name of the organization
 	//   type: string
 	//   required: true
+	// - name: subject
+	//   in: query
+	//   description: subject of the quota
+	//   type: string
+	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/boolean"
+	//     description: Returns true if the action is accepted.
+	//     schema:
+	//       type: boolean
 	//   "403":
 	//     "$ref": "#/responses/forbidden"
 	//   "404":

@@ -27,7 +27,8 @@ func GetThread(ctx *context.APIContext) {
 	// - name: id
 	//   in: path
 	//   description: id of notification thread
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "200":
@@ -62,7 +63,8 @@ func ReadThread(ctx *context.APIContext) {
 	// - name: id
 	//   in: path
 	//   description: id of notification thread
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: to-status
 	//   in: query

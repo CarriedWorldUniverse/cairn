@@ -184,6 +184,12 @@ func GetVerificationToken(ctx *context.APIContext) {
 	ctx.PlainText(http.StatusOK, token)
 }
 
+// swagger:parameters userVerifyGPGKey
+type swaggerUserVerifyGPGKey struct {
+	// in:body
+	Form api.VerifyGPGKeyOption
+}
+
 // VerifyUserGPGKey creates new GPG key to given user by ID.
 func VerifyUserGPGKey(ctx *context.APIContext) {
 	// swagger:operation POST /user/gpg_key_verify user userVerifyGPGKey
@@ -193,6 +199,11 @@ func VerifyUserGPGKey(ctx *context.APIContext) {
 	// - application/json
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/VerifyGPGKeyOption"
 	// responses:
 	//   "201":
 	//     "$ref": "#/responses/GPGKey"

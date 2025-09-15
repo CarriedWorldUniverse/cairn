@@ -70,6 +70,7 @@
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "description": "repository ID of the repo",
             "name": "repository-id",
             "in": "path",
@@ -96,6 +97,7 @@
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "description": "repository ID of the repo",
             "name": "repository-id",
             "in": "path",
@@ -129,6 +131,7 @@
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "description": "user ID of the user",
             "name": "user-id",
             "in": "path",
@@ -221,6 +224,7 @@
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "description": "user ID of the user",
             "name": "user-id",
             "in": "path",
@@ -2081,7 +2085,7 @@
             "in": "query"
           },
           {
-            "type": "string",
+            "type": "boolean",
             "description": "If true, mark all notifications on this repo. Default value is false",
             "name": "all",
             "in": "query"
@@ -2139,7 +2143,8 @@
         "operationId": "notifyGetThread",
         "parameters": [
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "id of notification thread",
             "name": "id",
             "in": "path",
@@ -2172,7 +2177,8 @@
         "operationId": "notifyReadThread",
         "parameters": [
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "id of notification thread",
             "name": "id",
             "in": "path",
@@ -2809,12 +2815,6 @@
           }
         ],
         "responses": {
-          "200": {
-            "$ref": "#/responses/ActionVariable"
-          },
-          "201": {
-            "description": "response when deleting a variable"
-          },
           "204": {
             "description": "response when deleting a variable"
           },
@@ -3190,6 +3190,17 @@
             "name": "org",
             "in": "path",
             "required": true
+          },
+          {
+            "enum": [
+              "mostissues",
+              "leastissues",
+              "reversealphabetically"
+            ],
+            "type": "string",
+            "description": "Specifies the sorting method: mostissues, leastissues, or reversealphabetically.",
+            "name": "sort",
+            "in": "query"
           },
           {
             "type": "integer",
@@ -3805,11 +3816,21 @@
             "name": "org",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "subject of the quota",
+            "name": "subject",
+            "in": "query",
+            "required": true
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/boolean"
+            "description": "Returns true if the action is accepted.",
+            "schema": {
+              "type": "boolean"
+            }
           },
           "403": {
             "$ref": "#/responses/forbidden"
@@ -4120,6 +4141,7 @@
             "description": "SearchResults of a successful search",
             "schema": {
               "type": "object",
+              "title": "TeamSearchResults",
               "properties": {
                 "data": {
                   "type": "array",
@@ -4787,12 +4809,27 @@
             "in": "query"
           },
           {
+            "enum": [
+              "alpha",
+              "created",
+              "updated",
+              "size",
+              "git_size",
+              "lfs_size",
+              "id",
+              "stars",
+              "forks"
+            ],
             "type": "string",
             "description": "sort repos by attribute. Supported values are \"alpha\", \"created\", \"updated\", \"size\", \"git_size\", \"lfs_size\", \"stars\", \"forks\" and \"id\". Default is \"alpha\"",
             "name": "sort",
             "in": "query"
           },
           {
+            "enum": [
+              "asc",
+              "desc"
+            ],
             "type": "string",
             "description": "sort order, either \"asc\" (ascending) or \"desc\" (descending). Default is \"asc\", ignored if \"sort\" is not specified.",
             "name": "order",
@@ -5610,12 +5647,6 @@
           }
         ],
         "responses": {
-          "200": {
-            "$ref": "#/responses/ActionVariable"
-          },
-          "201": {
-            "description": "response when deleting a variable"
-          },
           "204": {
             "description": "response when deleting a variable"
           },
@@ -7408,7 +7439,13 @@
         ],
         "responses": {
           "200": {
-            "description": "success"
+            "description": "definitions",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
           },
           "404": {
             "$ref": "#/responses/notFound"
@@ -10249,7 +10286,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -10302,7 +10340,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -10350,7 +10389,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -10703,7 +10743,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -10756,7 +10797,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -10807,7 +10849,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "index of the issue",
             "name": "index",
             "in": "path",
@@ -12341,6 +12384,17 @@
             "required": true
           },
           {
+            "enum": [
+              "mostissues",
+              "leastissues",
+              "reversealphabetically"
+            ],
+            "type": "string",
+            "description": "Specifies the sorting method: mostissues, leastissues, or reversealphabetically.",
+            "name": "sort",
+            "in": "query"
+          },
+          {
             "type": "integer",
             "description": "page number of results to return (1-based)",
             "name": "page",
@@ -12766,7 +12820,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "the milestone to get, identified by ID and if not available by name",
             "name": "id",
             "in": "path",
@@ -12804,7 +12859,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "the milestone to delete, identified by ID and if not available by name",
             "name": "id",
             "in": "path",
@@ -12848,7 +12904,8 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
             "description": "the milestone to edit, identified by ID and if not available by name",
             "name": "id",
             "in": "path",
@@ -13071,7 +13128,7 @@
             "required": true
           },
           {
-            "type": "string",
+            "type": "boolean",
             "description": "If true, mark all notifications on this repo. Default value is false",
             "name": "all",
             "in": "query"
@@ -16258,6 +16315,7 @@
           },
           {
             "type": "integer",
+            "format": "int64",
             "description": "id of the tag protect to get",
             "name": "id",
             "in": "path",
@@ -16299,6 +16357,7 @@
           },
           {
             "type": "integer",
+            "format": "int64",
             "description": "id of protected tag",
             "name": "id",
             "in": "path",
@@ -16343,6 +16402,7 @@
           },
           {
             "type": "integer",
+            "format": "int64",
             "description": "id of protected tag",
             "name": "id",
             "in": "path",
@@ -17756,6 +17816,7 @@
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "description": "id of the team to edit",
             "name": "id",
             "in": "path",
@@ -18187,7 +18248,19 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/TopicListResponse"
+            "description": "SearchResults of a successful search",
+            "schema": {
+              "type": "object",
+              "title": "TopicSearchResults",
+              "properties": {
+                "topics": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TopicResponse"
+                  }
+                }
+              }
+            }
           },
           "403": {
             "$ref": "#/responses/forbidden"
@@ -19151,6 +19224,15 @@
         ],
         "summary": "Verify a GPG key",
         "operationId": "userVerifyGPGKey",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/VerifyGPGKeyOption"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "$ref": "#/responses/GPGKey"
@@ -19825,9 +19907,21 @@
         ],
         "summary": "Check if the authenticated user is over quota for a given subject",
         "operationId": "userCheckQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "subject of the quota",
+            "name": "subject",
+            "in": "query",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
-            "$ref": "#/responses/boolean"
+            "description": "Returns true if the action is accepted.",
+            "schema": {
+              "type": "boolean"
+            }
           },
           "401": {
             "$ref": "#/responses/unauthorized"
@@ -20452,6 +20546,7 @@
             "description": "SearchResults of a successful search",
             "schema": {
               "type": "object",
+              "title": "UserSearchResults",
               "properties": {
                 "data": {
                   "type": "array",
@@ -27547,6 +27642,17 @@
       },
       "x-go-package": "forgejo.org/modules/structs"
     },
+    "RegistrationToken": {
+      "description": "RegistrationToken is a string used to register a runner with a server",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "forgejo.org/routers/api/v1/shared"
+    },
     "Release": {
       "description": "Release represents a repository release",
       "type": "object",
@@ -28972,6 +29078,25 @@
       },
       "x-go-package": "forgejo.org/modules/structs"
     },
+    "VerifyGPGKeyOption": {
+      "description": "VerifyGPGKeyOption options verifies user GPG key",
+      "type": "object",
+      "required": [
+        "key_id"
+      ],
+      "properties": {
+        "armored_signature": {
+          "type": "string",
+          "x-go-name": "Signature"
+        },
+        "key_id": {
+          "description": "An Signature for a GPG key token",
+          "type": "string",
+          "x-go-name": "KeyID"
+        }
+      },
+      "x-go-package": "forgejo.org/modules/structs"
+    },
     "WatchInfo": {
       "description": "WatchInfo represents an API watch status of one repository",
       "type": "object",
@@ -29891,10 +30016,8 @@
     },
     "RegistrationToken": {
       "description": "RegistrationToken is a string used to register a runner with a server",
-      "headers": {
-        "token": {
-          "type": "string"
-        }
+      "schema": {
+        "$ref": "#/definitions/RegistrationToken"
       }
     },
     "Release": {
@@ -30014,10 +30137,7 @@
     "SyncForkInfo": {
       "description": "SyncForkInfo",
       "schema": {
-        "type": "array",
-        "items": {
-          "$ref": "#/definitions/SyncForkInfo"
-        }
+        "$ref": "#/definitions/SyncForkInfo"
       }
     },
     "Tag": {

@@ -268,10 +268,6 @@ func (Action) DeleteVariable(ctx *context.APIContext) {
 	//   type: string
 	//   required: true
 	// responses:
-	//   "200":
-	//			"$ref": "#/responses/ActionVariable"
-	//   "201":
-	//     description: response when deleting a variable
 	//   "204":
 	//     description: response when deleting a variable
 	//   "400":

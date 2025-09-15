@@ -108,7 +108,8 @@ func GetMilestone(ctx *context.APIContext) {
 	// - name: id
 	//   in: path
 	//   description: the milestone to get, identified by ID and if not available by name
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "200":
@@ -202,7 +203,8 @@ func EditMilestone(ctx *context.APIContext) {
 	// - name: id
 	//   in: path
 	//   description: the milestone to edit, identified by ID and if not available by name
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -260,7 +262,8 @@ func DeleteMilestone(ctx *context.APIContext) {
 	// - name: id
 	//   in: path
 	//   description: the milestone to delete, identified by ID and if not available by name
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "204":

@@ -405,7 +405,11 @@ func GetEditorconfig(ctx *context.APIContext) {
 	//   required: false
 	// responses:
 	//   200:
-	//     description: success
+	//     description: definitions
+	//     schema:
+	//       type: object
+	//       additionalProperties:
+	//         type: string
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 

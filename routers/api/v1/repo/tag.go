@@ -380,6 +380,7 @@ func GetTagProtection(ctx *context.APIContext) {
 	//   in: path
 	//   description: id of the tag protect to get
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "200":
@@ -534,6 +535,7 @@ func EditTagProtection(ctx *context.APIContext) {
 	//   in: path
 	//   description: id of protected tag
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -639,6 +641,7 @@ func DeleteTagProtection(ctx *context.APIContext) {
 	//   in: path
 	//   description: id of protected tag
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "204":
