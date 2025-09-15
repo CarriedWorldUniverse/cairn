@@ -1181,32 +1181,75 @@ func TestRender_FilePreview(t *testing.T) {
 	})
 
 	commitFileURL = util.URLJoin(markup.TestRepoURL, "src", "commit", "eeb243c3395e1921c5d90e73bd739827251fc99d", "path", "to", "file%20%23.txt")
+	commitFileURLFirstLine := commitFileURL + "#L1"
+	filePreviewBox := `<div class="file-preview-box">` +
+		`<div class="header">` +
+		`<div>` +
+		`<a href="http://localhost:3000/gogits/gogs/src/commit/eeb243c3395e1921c5d90e73bd739827251fc99d/path/to/file%20%23.txt#L1" class="muted" rel="nofollow">path/to/file #.txt</a>` +
+		`</div>` +
+		`<span class="text grey">` +
+		`Line 1 in <a href="http://localhost:3000/gogits/gogs/src/commit/eeb243c3395e1921c5d90e73bd739827251fc99d" class="text black" rel="nofollow">eeb243c</a>` +
+		`</span>` +
+		`</div>` +
+		`<div class="ui table">` +
+		`<table class="file-preview">` +
+		`<tbody>` +
+		`<tr>` +
+		`<td class="lines-num"><span data-line-number="1"></span></td>` +
+		`<td class="lines-code chroma"><code class="code-inner">A` + "\n" + `</code></td>` +
+		`</tr>` +
+		`</tbody>` +
+		`</table>` +
+		`</div>` +
+		`</div>`
+	linkRendered := `<a href="` + commitFileURLFirstLine + `" rel="nofollow"><code>eeb243c339/path/to/file%20%23.txt (L1)</code></a>`
 
 	t.Run("file with strange characters in name", func(t *testing.T) {
 		testRender(
-			commitFileURL+"#L1",
-			`<p></p>`+
-				`<div class="file-preview-box">`+
-				`<div class="header">`+
-				`<div>`+
-				`<a href="http://localhost:3000/gogits/gogs/src/commit/eeb243c3395e1921c5d90e73bd739827251fc99d/path/to/file%20%23.txt#L1" class="muted" rel="nofollow">path/to/file #.txt</a>`+
-				`</div>`+
-				`<span class="text grey">`+
-				`Line 1 in <a href="http://localhost:3000/gogits/gogs/src/commit/eeb243c3395e1921c5d90e73bd739827251fc99d" class="text black" rel="nofollow">eeb243c</a>`+
-				`</span>`+
-				`</div>`+
-				`<div class="ui table">`+
-				`<table class="file-preview">`+
-				`<tbody>`+
-				`<tr>`+
-				`<td class="lines-num"><span data-line-number="1"></span></td>`+
-				`<td class="lines-code chroma"><code class="code-inner">A`+"\n"+`</code></td>`+
-				`</tr>`+
-				`</tbody>`+
-				`</table>`+
-				`</div>`+
-				`</div>`+
-				`<p></p>`,
+			commitFileURLFirstLine,
+			`<p></p>`+filePreviewBox+`<p></p>`,
+			localMetas,
+		)
+	})
+
+	t.Run("file preview with stuff before and after", func(t *testing.T) {
+		testRender(
+			":frog: before"+commitFileURLFirstLine+" :frog: after",
+			`<p><span class="emoji" aria-label="frog" data-alias="frog">🐸</span> before</p>`+
+				filePreviewBox+
+				`<p> <span class="emoji" aria-label="frog" data-alias="frog">🐸</span> after</p>`,
+			localMetas,
+		)
+	})
+
+	t.Run("file preview in <div>, <li>, <details> (not in <summary>) environments", func(t *testing.T) {
+		testRender(
+			"<div>"+commitFileURLFirstLine+"</div>\n"+
+				"<ul><li>"+commitFileURLFirstLine+"</li></ul>\n"+
+				"<details><summary>"+commitFileURLFirstLine+"</summary>"+commitFileURLFirstLine+"</details>",
+			`<div>`+filePreviewBox+`</div>`+"\n"+
+				`<ul><li>`+filePreviewBox+`</li></ul>`+"\n"+
+				`<details><summary>`+linkRendered+`</summary>`+filePreviewBox+`</details>`,
+			localMetas,
+		)
+	})
+
+	t.Run("file preview in <span>, <em> and <strong> environments", func(t *testing.T) {
+		testRender(
+			"<div><span>"+commitFileURLFirstLine+"</span> <em>"+commitFileURLFirstLine+"</em> <strong>"+commitFileURLFirstLine+"</strong></div>",
+			`<div><span></span>`+filePreviewBox+`<span></span> `+
+				`<em></em>`+filePreviewBox+`<em></em> `+
+				`<strong></strong>`+filePreviewBox+`<strong></strong></div>`,
+			localMetas,
+		)
+	})
+
+	t.Run("no file preview in heading, striked out, code environments", func(t *testing.T) {
+		testRender(
+			"<h1>"+commitFileURLFirstLine+"</h1>\n<del>"+commitFileURLFirstLine+"</del>\n<code>"+commitFileURLFirstLine+"</code>",
+			`<h1>`+linkRendered+`</h1>`+"\n"+
+				`<del>`+linkRendered+`</del>`+"\n"+
+				`<code>`+commitFileURLFirstLine+`</code>`,
 			localMetas,
 		)
 	})

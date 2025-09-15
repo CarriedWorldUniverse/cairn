@@ -1078,12 +1078,15 @@ func filePreviewPatternProcessor(ctx *RenderContext, node *html.Node) {
 
 	next := node.NextSibling
 	for node != nil && node != next {
+		if node.Parent == nil || node.Parent.Type != html.ElementNode {
+			node = node.NextSibling
+			continue
+		}
 		previews := NewFilePreviews(ctx, node, locale)
 		if previews == nil {
 			node = node.NextSibling
 			continue
 		}
-
 		offset := 0
 		for _, preview := range previews {
 			previewNode := preview.CreateHTML(locale)
@@ -1091,23 +1094,41 @@ func filePreviewPatternProcessor(ctx *RenderContext, node *html.Node) {
 			// Specialized version of replaceContent, so the parent paragraph element is not destroyed from our div
 			before := node.Data[:(preview.start - offset)]
 			after := node.Data[(preview.end - offset):]
-			afterPrefix := "<p>"
-			offset = preview.end - len(afterPrefix)
-			node.Data = before
-			nextSibling := node.NextSibling
-			node.Parent.InsertBefore(&html.Node{
-				Type: html.RawNode,
-				Data: "</p>",
-			}, nextSibling)
-			node.Parent.InsertBefore(previewNode, nextSibling)
 			afterNode := &html.Node{
-				Type: html.RawNode,
-				Data: afterPrefix + after,
+				Type: html.TextNode,
+				Data: after,
 			}
-			node.Parent.InsertBefore(afterNode, nextSibling)
-			node = afterNode
+			matched := true
+			switch node.Parent.Data {
+			case "div", "li", "td", "th", "details":
+				nextSibling := node.NextSibling
+				node.Parent.InsertBefore(previewNode, nextSibling)
+				node.Parent.InsertBefore(afterNode, nextSibling)
+			case "p", "span", "em", "strong":
+				nextSibling := node.Parent.NextSibling
+				node.Parent.Parent.InsertBefore(previewNode, nextSibling)
+				afterPNode := &html.Node{
+					Type: html.ElementNode,
+					Data: node.Parent.Data,
+					Attr: node.Parent.Attr,
+				}
+				afterPNode.AppendChild(afterNode)
+				node.Parent.Parent.InsertBefore(afterPNode, nextSibling)
+				siblingNode := node.NextSibling
+				if siblingNode != nil {
+					node.NextSibling = nil
+					siblingNode.PrevSibling = nil
+					afterPNode.AppendChild(siblingNode)
+				}
+			default:
+				matched = false
+			}
+			if matched {
+				offset = preview.end
+				node.Data = before
+				node = afterNode
+			}
 		}
-
 		node = node.NextSibling
 	}
 }
