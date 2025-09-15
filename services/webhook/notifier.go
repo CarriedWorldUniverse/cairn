@@ -824,7 +824,7 @@ func sendReleaseHook(ctx context.Context, doer *user_model.User, rel *repo_model
 	permission, _ := access_model.GetUserRepoPermission(ctx, rel.Repo, doer)
 	if err := PrepareWebhooks(ctx, EventSource{Repository: rel.Repo}, webhook_module.HookEventRelease, &api.ReleasePayload{
 		Action:     action,
-		Release:    convert.ToAPIRelease(ctx, rel.Repo, rel),
+		Release:    convert.ToAPIRelease(ctx, rel.Repo, rel, false),
 		Repository: convert.ToRepo(ctx, rel.Repo, permission),
 		Sender:     convert.ToUser(ctx, doer, nil),
 	}); err != nil {

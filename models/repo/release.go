@@ -180,7 +180,11 @@ func (r *Release) HTMLURL() string {
 }
 
 // APIUploadURL the api url to upload assets to a release. release must have attributes loaded
-func (r *Release) APIUploadURL() string {
+// If `githubFormat` is true, then `{?name,label}` is added to match the Github API.
+func (r *Release) APIUploadURL(githubFormat bool) string {
+	if githubFormat {
+		return r.APIURL() + "/assets{?name,label}"
+	}
 	return r.APIURL() + "/assets"
 }
 
