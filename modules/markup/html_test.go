@@ -1202,7 +1202,7 @@ func TestRender_FilePreview(t *testing.T) {
 		`</table>` +
 		`</div>` +
 		`</div>`
-	linkRendered := `<a href="` + commitFileURLFirstLine + `" rel="nofollow"><code>eeb243c339/path/to/file%20%23.txt (L1)</code></a>`
+	linkRendered := `<a href="` + commitFileURLFirstLine + `" rel="nofollow"><code>eeb243c339/path/to/file #.txt (L1)</code></a>`
 
 	t.Run("file with strange characters in name", func(t *testing.T) {
 		testRender(
