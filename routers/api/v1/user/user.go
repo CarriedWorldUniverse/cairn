@@ -51,6 +51,7 @@ func Search(ctx *context.APIContext) {
 	//     description: "SearchResults of a successful search"
 	//     schema:
 	//       type: object
+	//       title: "UserSearchResults"
 	//       properties:
 	//         ok:
 	//           type: boolean

@@ -109,7 +109,7 @@ func ReadNotifications(ctx *context.APIContext) {
 	// - name: all
 	//   in: query
 	//   description: If true, mark all notifications on this repo. Default value is false
-	//   type: string
+	//   type: boolean
 	//   required: false
 	// - name: status-types
 	//   in: query

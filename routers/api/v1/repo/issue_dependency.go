@@ -39,7 +39,8 @@ func GetIssueDependencies(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: page
 	//   in: query
@@ -177,7 +178,8 @@ func CreateIssueDependency(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -238,7 +240,8 @@ func RemoveIssueDependency(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -299,7 +302,8 @@ func GetIssueBlocks(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: page
 	//   in: query
@@ -405,7 +409,8 @@ func CreateIssueBlocking(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -462,7 +467,8 @@ func RemoveIssueBlocking(ctx *context.APIContext) {
 	// - name: index
 	//   in: path
 	//   description: index of the issue
-	//   type: string
+	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body

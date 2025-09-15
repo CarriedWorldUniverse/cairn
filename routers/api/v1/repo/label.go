@@ -35,6 +35,11 @@ func ListLabels(ctx *context.APIContext) {
 	//   description: name of the repo
 	//   type: string
 	//   required: true
+	// - name: sort
+	//   in: query
+	//   description: "Specifies the sorting method: mostissues, leastissues, or reversealphabetically."
+	//   type: string
+	//   enum: [mostissues, leastissues, reversealphabetically]
 	// - name: page
 	//   in: query
 	//   description: page number of results to return (1-based)

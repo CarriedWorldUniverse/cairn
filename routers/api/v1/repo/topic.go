@@ -276,7 +276,15 @@ func TopicSearch(ctx *context.APIContext) {
 	//     type: integer
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/TopicListResponse"
+	//     description: "SearchResults of a successful search"
+	//     schema:
+	//       type: object
+	//       title: "TopicSearchResults"
+	//       properties:
+	//         topics:
+	//           type: array
+	//           items:
+	//             "$ref": "#/definitions/TopicResponse"
 	//   "403":
 	//     "$ref": "#/responses/forbidden"
 	//   "404":

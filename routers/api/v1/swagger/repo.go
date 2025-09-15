@@ -460,7 +460,7 @@ type swaggerCompare struct {
 // swagger:response SyncForkInfo
 type swaggerSyncForkInfo struct {
 	// in:body
-	Body []api.SyncForkInfo `json:"body"`
+	Body api.SyncForkInfo `json:"body"`
 }
 
 // ActionRunList

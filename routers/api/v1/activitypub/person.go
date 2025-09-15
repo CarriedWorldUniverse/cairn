@@ -32,6 +32,7 @@ func Person(ctx *context.APIContext) {
 	//   in: path
 	//   description: user ID of the user
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "200":
@@ -67,6 +68,7 @@ func PersonInbox(ctx *context.APIContext) {
 	//   in: path
 	//   description: user ID of the user
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "202":

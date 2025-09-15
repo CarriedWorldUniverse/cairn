@@ -110,11 +110,13 @@ func Search(ctx *context.APIContext) {
 	//                "alpha", "created", "updated", "size", "git_size", "lfs_size", "stars", "forks" and "id".
 	//                Default is "alpha"
 	//   type: string
+	//   enum: [alpha, created, updated, size, git_size, lfs_size, id, stars, forks]
 	// - name: order
 	//   in: query
 	//   description: sort order, either "asc" (ascending) or "desc" (descending).
 	//                Default is "asc", ignored if "sort" is not specified.
 	//   type: string
+	//   enum: [asc, desc]
 	// - name: page
 	//   in: query
 	//   description: page number of results to return (1-based)

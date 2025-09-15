@@ -30,6 +30,7 @@ func Repository(ctx *context.APIContext) {
 	//   in: path
 	//   description: repository ID of the repo
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// responses:
 	//   "200":
@@ -59,6 +60,7 @@ func RepositoryInbox(ctx *context.APIContext) {
 	//   in: path
 	//   description: repository ID of the repo
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body

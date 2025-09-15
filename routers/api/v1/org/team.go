@@ -274,6 +274,7 @@ func EditTeam(ctx *context.APIContext) {
 	//   in: path
 	//   description: id of the team to edit
 	//   type: integer
+	//   format: int64
 	//   required: true
 	// - name: body
 	//   in: body
@@ -790,6 +791,7 @@ func SearchTeam(ctx *context.APIContext) {
 	//     description: "SearchResults of a successful search"
 	//     schema:
 	//       type: object
+	//       title: "TeamSearchResults"
 	//       properties:
 	//         ok:
 	//           type: boolean
