@@ -575,7 +575,7 @@ func fromDisplayName(u *user_model.User) string {
 	if setting.MailService.FromDisplayNameFormatTemplate != nil {
 		var ctx bytes.Buffer
 		err := setting.MailService.FromDisplayNameFormatTemplate.Execute(&ctx, map[string]any{
-			"DisplayName": u.DisplayName(),
+			"DisplayName": u.GetDisplayName(),
 			"AppName":     setting.AppName,
 			"Domain":      setting.Domain,
 		})
