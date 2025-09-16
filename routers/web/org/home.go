@@ -19,6 +19,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/markup"
 	"forgejo.org/modules/markup/markdown"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	shared_user "forgejo.org/routers/web/shared/user"
@@ -101,6 +102,7 @@ func Home(ctx *context.Context) {
 		},
 		Keyword:            keyword,
 		OwnerID:            org.ID,
+		Collaborate:        optional.Some(false), // A organisation doesn't collaborate to any repository, avoid doing expensive SQL query.
 		OrderBy:            orderBy,
 		Private:            ctx.IsSigned,
 		Actor:              ctx.Doer,
