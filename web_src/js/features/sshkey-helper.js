@@ -8,10 +8,3 @@ export function initSshKeyFormParser() {
     }
   });
 }
-
-export function initSshKeyCancelButton() {
-  document.getElementById('cancel-ssh-button')?.addEventListener('click', () => {
-    document.getElementById('ssh-key-title').value = '';
-    document.getElementById('ssh-key-content').value = '';
-  });
-}

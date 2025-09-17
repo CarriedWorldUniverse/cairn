@@ -51,6 +51,14 @@ export function isElemHidden(el) {
   return res[0];
 }
 
+export function resetForms(el) {
+  queryElemChildren(el, 'form', resetForm);
+}
+
+function resetForm(form) {
+  form.reset();
+}
+
 function applyElemsCallback(elems, fn) {
   if (fn) {
     for (const el of elems) {
