@@ -96,3 +96,16 @@ test('User: Canceling adding SSH key clears inputs', async ({browser}, workerInf
   const content = page.locator('#ssh-key-content');
   await expect(content).toHaveValue('');
 });
+
+test('User: Canceling adding GPG key clears input', async ({browser}, workerInfo) => {
+  const page = await login({browser}, workerInfo);
+  await page.goto('/user/settings/keys');
+  await page.locator('.show-panel[data-panel="#add-gpg-key-panel"]').click();
+
+  const gpgKeyContent = page.locator('#gpg-key-content');
+  await gpgKeyContent.fill('Wront key material');
+
+  await page.locator('.hide-panel[data-panel="#add-gpg-key-panel"]').click();
+
+  await expect(gpgKeyContent).toHaveValue('');
+});
