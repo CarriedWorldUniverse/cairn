@@ -29,7 +29,9 @@
 	{{template "custom/body_outer_pre" .}}
 
 	<div class="full height">
-		<noscript>{{ctx.Locale.Tr "enable_javascript"}}</noscript>
+		<noscript>
+			<div class="tw-ml-2 tw-mr-2 tw-text-center tw-text-text-light-2">{{ctx.Locale.Tr "enable_javascript"}}</div>
+		</noscript>
 
 		{{template "custom/body_inner_pre" .}}
 
