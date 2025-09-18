@@ -151,5 +151,10 @@
     "migrate.onedev.description": "Migrar dados de code.onedev.io ou de outras instâncias do OneDev.",
     "migrate.gitbucket.description": "Migrar dados de instâncias do GitBucket.",
     "migrate.codebase.description": "Migrar dados de codebasehq.com.",
-    "migrate.forgejo.description": "Migrar dados de codeberg.org ou de outras instâncias Forgejo."
+    "migrate.forgejo.description": "Migrar dados de codeberg.org ou de outras instâncias Forgejo.",
+    "migrate.form.error.url_credentials": "O URL contém credenciais, insira-as nos campos do nome de utilizador e palavra-passe, respetivamente",
+    "user.ghost.tooltip": "Este utilizador foi eliminado ou não é possível encontrar uma correspondência.",
+    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
+    "actions.runs.viewing_out_of_date_run": "Está a visualizar uma execução desatualizada deste trabalho que foi executado %[1]s.",
+    "actions.runs.view_most_recent_run": "Ver execução mais recente"
 }
