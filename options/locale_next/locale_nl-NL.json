@@ -145,5 +145,6 @@
     "settings.must_enable_2fa": "Deze Forgejo-instantie vereist dat gebruikers tweefactorauthenticatie inschakelen voordat ze toegang krijgen tot hun accounts.",
     "user.ghost.tooltip": "Deze gebruiker is verwijderd of kan niet worden gevonden.",
     "error.must_enable_2fa": "Deze Forgejo-instantie vereist dat gebruikers tweefactorauthenticatie inschakelen voordat ze toegang krijgen tot hun accounts. Schakel dit in op: %s",
-    "migrate.form.error.url_credentials": "De URL bevat inloggegevens. Vul deze in de velden voor gebruikersnaam en wachtwoord respectievelijk"
+    "migrate.form.error.url_credentials": "De URL bevat inloggegevens. Vul deze in de velden voor gebruikersnaam en wachtwoord respectievelijk",
+    "actions.runs.view_most_recent_run": "Bekijk de meest recente run"
 }

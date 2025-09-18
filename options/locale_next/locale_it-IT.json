@@ -136,7 +136,7 @@
     "avatar.constraints_hint": "L'avatar personalizzato non può superare %[1]s di dimensione o essere più grande di %[2]dx%[3]d pixels",
     "user.ghost.tooltip": "Questo utente è stato eliminato, o non può essere trovato.",
     "og.repo.summary_card.alt_description": "Scheda di riepilogo del repositorio %[1]s, descritta come: %[2]s",
-    "repo.commit.load_tags_failed": "Caricamento delle etichette fallito a causa di un errore interno",
+    "repo.commit.load_tags_failed": "Caricamento dei tag fallito a causa di un errore interno",
     "migrate.pagure.token_body_a": "Fornisci un token API di Pagure con accesso alle segnalazioni private per creare un repositorio che contenga solo le segnalazioni private",
     "actions.runs.run_attempt_label": "Esegui tentativo #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Stai visualizzando un'esecuzione obsoleta di questo lavoro che è stata eseguita il %[1]s.",
