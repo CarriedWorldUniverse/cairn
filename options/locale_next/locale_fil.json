@@ -144,5 +144,9 @@
     "admin.config.global_2fa_requirement.admin": "Mga tagapangasiwa",
     "settings.twofa_unroll_unavailable": "Kinakailangan ang authentikasyong two-factor para sa iyong account at hindi maaaring i-disable.",
     "settings.twofa_reenroll": "I-enroll muli ang authentikasyong two-factor",
-    "user.ghost.tooltip": "Binura ang user na ito, o hindi matugma."
+    "user.ghost.tooltip": "Binura ang user na ito, o hindi matugma.",
+    "migrate.form.error.url_credentials": "Naglalaman ng mga kredensyal ang URL, ilagay ang mga ito sa mga patlang ng username at password ayon sa pagkakabanggit",
+    "actions.runs.viewing_out_of_date_run": "Tumitingin ka sa isang hindi napapanahong paktabo ng trabahong ito na na-execute %[1]s.",
+    "actions.runs.view_most_recent_run": "Tignan ang pinakabagong pagtakbo",
+    "actions.runs.run_attempt_label": "Tangka sa pagtakbo #%[1]s (%[2]s)"
 }

@@ -119,5 +119,17 @@
     "migrate.onedev.description": "Tee migraatio code.onedev.io:sta tai muista OneDev-instansseista.",
     "migrate.gitbucket.description": "Tee migraatio GitBucket-instansseista.",
     "migrate.codebase.description": "Tee migraatio codebasehq.comista.",
-    "migrate.forgejo.description": "Tee migraatio codeberg.orgista tai muista Forgejo-instansseista."
+    "migrate.forgejo.description": "Tee migraatio codeberg.orgista tai muista Forgejo-instansseista.",
+    "moderation.report_abuse_form.invalid": "Virheelliset argumentit",
+    "admin.config.security": "Turvallisuusasetukset",
+    "admin.config.global_2fa_requirement.title": "Globaali kaksivaiheisen tunnistuksen vaatimus",
+    "admin.config.global_2fa_requirement.none": "Ei",
+    "settings.visibility.description": "Profiilin näkyvyys vaikuttaa muiden mahdollisuuteen päästä ei-yksityisiin tietovarastoihisi. <a href=\"%s\" target=\"_blank\">Lue lisää</a>.",
+    "settings.twofa_unroll_unavailable": "Kaksivaiheinen tunnistautuminen vaaditaan tilillesi, eikä sitä voi poistaa käytöstä.",
+    "settings.twofa_reenroll": "Ota uudelleen käyttöön kaksivaiheinen tunnistus",
+    "settings.must_enable_2fa": "Tämä Forgejo-instanssi vaatii käyttäjien ottavan käyttöön kaksivaiheisen tunnistuksen, ennen kuin käyttäjätiliä voi käyttää.",
+    "error.must_enable_2fa": "Tämä Forgejo-instanssi vaatii käyttäjien ottavan käyttöön kaksivaiheisen tunnistuksen, ennen kuin käyttäjätiliä voi käyttää. Ota se käyttöön: %s",
+    "avatar.constraints_hint": "Mukautettu profiilikuva voi olla kooltaan enintään %[1]s tai enintään %[2]dx%[3]d pikseliä",
+    "repo.commit.load_tags_failed": "Tagien lataaminen epäonnistui sisäisen virheen vuoksi",
+    "actions.runs.run_attempt_label": "Suoritusyritys #%[1]s (%[2]s)"
 }

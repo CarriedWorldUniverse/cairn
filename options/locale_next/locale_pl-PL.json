@@ -1,7 +1,15 @@
 {
-    "repo.pulls.merged_title_desc": "scala %[1]d commity/ów z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",
-    "repo.pulls.title_desc": "chce scalić %[1]d commity/ów z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",
-    "search.milestone_kind": "Wyszukaj kamienie milowe...",
+    "repo.pulls.merged_title_desc": {
+        "one": "scala %[1]d commit z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",
+        "few": "scala %[1]d commity z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",
+        "many": "scala %[1]d commitów z <code>%[2]s</code> do <code>%[3]s</code> %[4]s"
+    },
+    "repo.pulls.title_desc": {
+        "one": "chce scalić %[1]d commit z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",
+        "few": "chce scalić %[1]d commity z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",
+        "many": "chce scalić %[1]d commitów z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>"
+    },
+    "search.milestone_kind": "Wyszukaj kamienie milowe…",
     "incorrect_root_url": "Ta instancja Forgejo jest skonfigurowana do korzystania z \"%s\". Obecnie oglądasz Forgejo za pomocą innego URL, co może powodować błędne działanie tej aplikacji. URL kanoniczny jest kontrolowany przez administratorów Forgejo za pomocą ROOT_URL w app.ini.",
     "relativetime.now": "teraz",
     "stars.list.none": "Nikt nie dał gwiazdki temu repozytorium.",
@@ -29,5 +37,76 @@
     "migrate.onedev.description": "Migracja danych z code.onedev.io lub innych instancji OneDev.",
     "migrate.gitbucket.description": "Migruj dane z instancji GitBucket.",
     "migrate.codebase.description": "Migracja danych z codebasehq.com.",
-    "migrate.forgejo.description": "Migruj dane z codeberg.org lub innych instancji Forgejo."
+    "migrate.forgejo.description": "Migruj dane z codeberg.org lub innych instancji Forgejo.",
+    "relativetime.hours": {
+        "one": "godzinę temu",
+        "few": "%d godziny temu",
+        "many": "%d godzin temu"
+    },
+    "relativetime.days": {
+        "one": "dzień temu",
+        "few": "%d dni temu",
+        "many": "%d dni temu"
+    },
+    "relativetime.weeks": {
+        "one": "tydzień temu",
+        "few": "%d tygodni temu",
+        "many": "%d tygodni temu"
+    },
+    "relativetime.months": {
+        "one": "miesiąc temu",
+        "few": "%d miesiące temu",
+        "many": "%d miesięcy temu"
+    },
+    "relativetime.years": {
+        "one": "rok temu",
+        "few": "%d lata temu",
+        "many": "%d lat temu"
+    },
+    "relativetime.1day": "wczoraj",
+    "relativetime.2days": "2 dni temu",
+    "relativetime.1week": "w zeszłym tygodniu",
+    "relativetime.2weeks": "2 tygodnie temu",
+    "relativetime.1month": "w zeszłym miesiącu",
+    "relativetime.2months": "2 miesiące temu",
+    "relativetime.1year": "w zeszłym roku",
+    "relativetime.2years": "2 lata temu",
+    "repo.pulls.already_merged": "Merge zawiódł: Ten pull request został już scalony.",
+    "repo.form.cannot_create": "Wszystkie miejsca gdzie możesz tworzyć repozytoria osiągnęły limit repozytoriów.",
+    "keys.gpg.link": "klucze GPG",
+    "keys.ssh.link": "klucze SSH",
+    "repo.issue_indexer.title": "Indekser zgłoszeń",
+    "repo.settings.push_mirror.branch_filter.label": "Filtr gałęzi (opcjonalny)",
+    "repo.settings.push_mirror.branch_filter.description": "Gałęzie do skopiowania. Zostaw puste, aby kopia lustrzana obejmowała wszystkie gałęzie. Zobacz składnię na <a href=\"%[1]s\"> dokumentacja %[2]s </a>. Przykłady <code>main, release/*</code>",
+    "themes.names.forgejo-auto": "Forgejo (użyj motywu systemu)",
+    "themes.names.forgejo-light": "Forgejo jasny",
+    "themes.names.forgejo-dark": "Forgejo ciemny",
+    "error.not_found.title": "Strona nieznaleziona",
+    "profile.actions.tooltip": "Więcej akcji",
+    "profile.edit.link": "Edytuj profil",
+    "admin.moderation.reports": "Zgłoszenia",
+    "migrate.form.error.url_credentials": "URL zawiera kredencjały, przenieś je kolejno do pól nazwa użytkownika i hasło",
+    "warning.repository.out_of_sync": "Reprezentacja repozytorium w bazie danych jest rozsynchronizowana. Jeśli to ostrzeżenie dalej jest widoczne po wysłaniu commita do tego repozytorium, skontaktuj się z administratorem.",
+    "alert.asset_load_failed": "Nie udało się załadować zasobów z {path}. Upewnij się, że zasoby są dostępne.",
+    "alert.range_error": " musi być liczbą pomiędzy %[1]s a %[2]s.",
+    "install.invalid_lfs_path": "Nie udało się stworzyć korzenia LFS pod ścieżką: %[1]s",
+    "feed.atom.link": "kanał Atom",
+    "admin.config.moderation_config": "Konfiguracja moderacji",
+    "admin.moderation.moderation_reports": "Zgłoszenia moderacji",
+    "admin.moderation.no_open_reports": "Nie ma obecnie otwartych zgłoszeń.",
+    "moderation.abuse_category.malware": "Złośliwe oprogramowanie",
+    "moderation.abuse_category.illegal_content": "Nielegalna treść",
+    "moderation.abuse_category.other_violations": "Inne naruszenia zasad platformy",
+    "moderation.report_remarks": "Komentarze",
+    "moderation.report_content": "Zgłoś treść",
+    "moderation.report_abuse": "Zgłoś naruszenie",
+    "moderation.report_abuse_form.header": "Zgłoś naruszenie do administratora",
+    "moderation.abuse_category": "Kategoria",
+    "moderation.abuse_category.placeholder": "Wybierz kategorię",
+    "moderation.abuse_category.spam": "Spam",
+    "admin.moderation.deleted_content_ref": "Zgłoszona treść o typie %[1]v i id %[2]d nie istnieje",
+    "moderation.report_abuse_form.invalid": "Niepoprawne parametry",
+    "moderation.submit_report": "Wyślij zgłoszenie",
+    "repo.diff.commit.next-short": "Następny",
+    "repo.diff.commit.previous-short": "Poprzedni"
 }
