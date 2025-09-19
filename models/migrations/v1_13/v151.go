@@ -4,7 +4,6 @@
 package v1_13
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -61,7 +60,7 @@ func SetDefaultPasswordToArgon2(x *xorm.Engine) error {
 	tempTableName := "tmp_recreate__user"
 	column.Default = "'argon2'"
 
-	createTableSQL, _, err := x.Dialect().CreateTableSQL(context.Background(), x.DB(), table, tempTableName)
+	createTableSQL, _, err := x.Dialect().CreateTableSQL(table, tempTableName)
 	if err != nil {
 		return err
 	}
