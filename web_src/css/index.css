@@ -18,6 +18,7 @@
 @import "./modules/checkbox.css";
 @import "./modules/modal.css";
 @import "./modules/dimmer.css";
+@import "./modules/dialog.css";
 
 @import "./modules/switch.css";
 @import "./modules/dropdown.css";
