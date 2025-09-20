@@ -527,6 +527,60 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 	})
 }
 
+func TestPullReview_OldLatestCommitId(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	session := loginUser(t, "user1")
+
+	baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "user2", Name: "repo1"})
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: baseRepo.ID, Index: 3})
+
+	baseGitRepo, err := gitrepo.OpenRepository(db.DefaultContext, baseRepo)
+	require.NoError(t, err)
+	defer baseGitRepo.Close()
+
+	headCommitSHA, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+	require.NoError(t, err)
+
+	headCommit, err := baseGitRepo.GetCommit(headCommitSHA)
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, headCommit.ParentCount(), 1)
+
+	parentCommit, err := headCommit.Parent(0)
+	require.NoError(t, err)
+	oldCommitSHA := parentCommit.ID.String()
+	require.NotEqual(t, headCommitSHA, oldCommitSHA)
+
+	req := NewRequest(t, "GET", "/user2/repo1/pulls/3/files/reviews/new_comment")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	doc := NewHTMLParser(t, resp.Body)
+
+	const content = "TestPullReview_OldLatestCommitId"
+	req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
+		"_csrf":            doc.GetInputValueByName("_csrf"),
+		"origin":           doc.GetInputValueByName("origin"),
+		"latest_commit_id": oldCommitSHA,
+		"side":             "proposed",
+		"line":             "2",
+		"path":             "iso-8859-1.txt",
+		"diff_start_cid":   doc.GetInputValueByName("diff_start_cid"),
+		"diff_end_cid":     doc.GetInputValueByName("diff_end_cid"),
+		"diff_base_cid":    doc.GetInputValueByName("diff_base_cid"),
+		"content":          content,
+		"single_review":    "true",
+	})
+	session.MakeRequest(t, req, http.StatusOK)
+
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{IssueID: pr.IssueID, Content: content})
+	require.NotZero(t, comment.ReviewID)
+	assert.Equal(t, oldCommitSHA, comment.CommitSHA)
+	assert.NotEqual(t, headCommitSHA, comment.CommitSHA)
+
+	review := unittest.AssertExistsAndLoadBean(t, &issues_model.Review{ID: comment.ReviewID})
+	assert.Equal(t, issues_model.ReviewTypeComment, review.Type)
+	assert.Equal(t, oldCommitSHA, review.CommitID)
+	assert.NotEqual(t, headCommitSHA, review.CommitID)
+}
+
 func TestPullReviewInArchivedRepo(t *testing.T) {
 	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user2")
