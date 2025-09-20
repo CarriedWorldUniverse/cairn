@@ -237,12 +237,11 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 
 	// Only fetch diff if comment is review comment
 	if len(patch) == 0 && reviewID != 0 {
-		headCommitID, err := gitRepo.GetRefCommitID(pr.GetGitRefName())
-		if err != nil {
-			return nil, fmt.Errorf("GetRefCommitID[%s]: %w", pr.GetGitRefName(), err)
-		}
 		if len(commitID) == 0 {
-			commitID = headCommitID
+			commitID, err = gitRepo.GetRefCommitID(head)
+			if err != nil {
+				return nil, fmt.Errorf("GetRefCommitID[%s]: %w", head, err)
+			}
 		}
 		reader, writer := io.Pipe()
 		defer func() {
@@ -250,8 +249,8 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			_ = writer.Close()
 		}()
 		go func() {
-			if err := git.GetRepoRawDiffForFile(gitRepo, pr.MergeBase, headCommitID, git.RawDiffNormal, treePath, writer); err != nil {
-				_ = writer.CloseWithError(fmt.Errorf("GetRawDiffForLine[%s, %s, %s, %s]: %w", gitRepo.Path, pr.MergeBase, headCommitID, treePath, err))
+			if err := git.GetRepoRawDiffForFile(gitRepo, pr.MergeBase, commitID, git.RawDiffNormal, treePath, writer); err != nil {
+				_ = writer.CloseWithError(fmt.Errorf("GetRawDiffForLine[%s, %s, %s, %s]: %w", gitRepo.Path, pr.MergeBase, commitID, treePath, err))
 				return
 			}
 			_ = writer.Close()
