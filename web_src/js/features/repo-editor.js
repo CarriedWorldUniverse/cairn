@@ -6,6 +6,7 @@ import {initMarkupContent} from '../markup/content.js';
 import {attachRefIssueContextPopup} from './contextpopup.js';
 import {POST} from '../modules/fetch.js';
 import {initTab} from '../modules/tab.ts';
+import {showModal} from '../modules/modal.ts';
 
 function initEditPreviewTab($form) {
   const $tabMenu = $form.find('.tabular.menu');
@@ -183,14 +184,8 @@ export function initRepoEditor() {
     commitButton?.addEventListener('click', (e) => {
       // A modal which asks if an empty file should be committed
       if (!$editArea.val()) {
-        $('#edit-empty-content-modal')
-          .modal({
-            onApprove() {
-              document.querySelector('.edit.form').requestSubmit();
-            },
-          })
-          .modal('show');
         e.preventDefault();
+        showModal('edit-empty-content-modal', () => { document.querySelector('.edit.form').requestSubmit()});
       }
     });
   })();

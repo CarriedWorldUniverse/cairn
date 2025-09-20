@@ -56,19 +56,16 @@ test('Dimmed overflow', async ({page}, workerInfo) => {
   await page.locator('#commit-button').click();
 
   // Expect a 'are you sure, this file is empty' modal.
-  await expect(page.locator('.ui.dimmer')).toBeVisible();
-  await expect(page.locator('.ui.dimmer .header')).toContainText('Commit an empty file');
+  await expect(page.locator('#edit-empty-content-modal')).toBeVisible();
+  await expect(page.locator('#edit-empty-content-modal header')).toContainText('Commit an empty file');
   await save_visual(page);
 
-  // Trickery to check that the dimmer covers the whole page.
-  const viewport = page.viewportSize();
-  const box = await page.locator('.ui.dimmer').boundingBox();
-  expect(box.x).toBe(0);
-  expect(box.y).toBe(0);
-  expect(box.width).toBe(viewport.width);
-  expect(box.height).toBe(viewport.height);
-
   // Trickery to check the page cannot be scrolled.
-  const {scrollHeight, clientHeight} = await page.evaluate(() => document.body);
-  expect(scrollHeight).toBe(clientHeight);
+  const {overflow} = await page.evaluate(() => {
+    const s = getComputedStyle(document.body);
+    return {
+      overflow: s.overflow,
+    };
+  });
+  expect(overflow).toBe('hidden');
 });
