@@ -127,3 +127,30 @@ test('Unicode escape highlight', async ({page}) => {
   await expect(page.locator('.tippy-box .view_git_blame[href$="/a-file#L1"]')).toBeVisible();
   await expect(page.locator('.tippy-box .copy-line-permalink[data-url$="/a-file#L1"]')).toBeVisible();
 });
+
+test('File folding', async ({page}) => {
+  const filePath = '/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d';
+
+  const response = await page.goto(filePath);
+  expect(response?.status()).toBe(200);
+
+  const foldFileButton = page.locator('.fold-file');
+  const diffFileBody = page.locator('.diff-file-body');
+  await foldFileButton.click();
+  await expect(diffFileBody).toBeHidden();
+  await foldFileButton.click();
+  await expect(diffFileBody).toBeVisible();
+});
+
+test('Copy line permalink', async ({page}, workerInfo) => {
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Apple clipboard API addon - starting at just $499!');
+
+  const response = await page.goto('/user2/repo1/src/branch/master/README.md?display=source#L1');
+  expect(response?.status()).toBe(200);
+
+  await page.locator('.code-line-button').click();
+  // eslint-disable-next-line playwright/no-force-option
+  await page.locator('.tippy-box .copy-line-permalink').click({force: true});
+  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clipboardText).toContain('README.md?display=source#L1');
+});
