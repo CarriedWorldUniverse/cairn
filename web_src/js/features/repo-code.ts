@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import {svg} from '../svg.js';
 import {invertFileFolding} from './file-fold.js';
 import {createTippy} from '../modules/tippy.js';
@@ -20,12 +19,12 @@ function isBlame() {
   return Boolean(document.querySelector('div.blame'));
 }
 
-function getLineEls() {
-  return document.querySelectorAll(`.code-view td.lines-code${isBlame() ? '.blame-code' : ''}`);
+function getLineEls(): Element[] {
+  return Array.from(document.querySelectorAll(`.code-view td.lines-code${isBlame() ? '.blame-code' : ''}`));
 }
 
-function selectRange($linesEls, $selectionEndEl, $selectionStartEls) {
-  for (const el of $linesEls) {
+function selectRange(linesEls: Element[], selectionEndEl: Element, selectionStartEl?: Element) {
+  for (const el of linesEls) {
     el.closest('tr').classList.remove('active');
   }
 
@@ -59,9 +58,9 @@ function selectRange($linesEls, $selectionEndEl, $selectionStartEls) {
     copyPermalink.setAttribute('data-url', link);
   };
 
-  if ($selectionStartEls) {
-    let a = parseInt($selectionEndEl[0].getAttribute('rel').slice(1));
-    let b = parseInt($selectionStartEls[0].getAttribute('rel').slice(1));
+  if (selectionStartEl) {
+    let a = parseInt(selectionEndEl.getAttribute('rel').slice(1));
+    let b = parseInt(selectionStartEl.getAttribute('rel').slice(1));
     let c;
     if (a !== b) {
       if (a > b) {
@@ -73,9 +72,9 @@ function selectRange($linesEls, $selectionEndEl, $selectionStartEls) {
       for (let i = a; i <= b; i++) {
         classes.push(`[rel=L${i}]`);
       }
-      $linesEls.filter(classes.join(',')).each(function () {
-        this.closest('tr').classList.add('active');
-      });
+      for (const selectedLine of linesEls.filter((line) => line.matches(classes.join(',')))) {
+        selectedLine.closest('tr').classList.add('active');
+      }
       changeHash(`#L${a}-L${b}`);
 
       updateIssueHref(`L${a}-L${b}`);
@@ -84,12 +83,12 @@ function selectRange($linesEls, $selectionEndEl, $selectionStartEls) {
       return;
     }
   }
-  $selectionEndEl[0].closest('tr').classList.add('active');
-  changeHash(`#${$selectionEndEl[0].getAttribute('rel')}`);
+  selectionEndEl.closest('tr').classList.add('active');
+  changeHash(`#${selectionEndEl.getAttribute('rel')}`);
 
-  updateIssueHref($selectionEndEl[0].getAttribute('rel'));
-  updateViewGitBlameFragment($selectionEndEl[0].getAttribute('rel'));
-  updateCopyPermalinkUrl($selectionEndEl[0].getAttribute('rel'));
+  updateIssueHref(selectionEndEl.getAttribute('rel'));
+  updateViewGitBlameFragment(selectionEndEl.getAttribute('rel'));
+  updateCopyPermalinkUrl(selectionEndEl.getAttribute('rel'));
 }
 
 function showLineButton() {
@@ -127,70 +126,82 @@ function showLineButton() {
 }
 
 export function initRepoCodeView() {
-  if ($('.code-view .lines-num').length > 0) {
-    $(document).on('click', '.lines-num span', function (e) {
+  if (document.querySelector('.code-view .lines-num')) {
+    document.addEventListener('click', (e) => {
+      const target = e.target as Element;
+      if (!target.matches('.lines-num span')) {
+        return;
+      }
+
       const linesEls = getLineEls();
-      const selectedEls = Array.from(linesEls).filter((el) => {
-        return el.matches(`[rel=${this.getAttribute('id')}]`);
+      const selectedEl = linesEls.find((el) => {
+        return el.matches(`[rel=${target.id}]`);
       });
 
       let from;
       if (e.shiftKey) {
-        from = Array.from(linesEls).filter((el) => {
+        from = linesEls.find((el) => {
           return el.closest('tr').classList.contains('active');
         });
       }
-      selectRange($(linesEls), $(selectedEls), from ? $(from) : null);
+      selectRange(linesEls, selectedEl, from);
 
-      if (window.getSelection) {
-        window.getSelection().removeAllRanges();
-      } else {
-        document.selection.empty();
-      }
+      window.getSelection().removeAllRanges();
 
       showLineButton();
     });
 
-    $(window).on('hashchange', () => {
+    window.addEventListener('hashchange', () => {
       let m = window.location.hash.match(rangeAnchorRegex);
-      const $linesEls = $(getLineEls());
-      let $first;
+      const linesEls = getLineEls();
+      let first;
       if (m) {
-        $first = $linesEls.filter(`[rel=L${m[1]}]`);
-        if ($first.length) {
-          const $last = $linesEls.filter(`[rel=L${m[2]}]`);
-          selectRange($linesEls, $first, $last.length ? $last : $linesEls.last());
+        first = linesEls.find((el) => el.matches(`[rel=L${m[1]}]`));
+        if (first) {
+          const last = linesEls.findLast((el) => el.matches(`[rel=L${m[2]}]`));
+          selectRange(linesEls, first, last ?? linesEls.at(-1));
 
           // show code view menu marker (don't show in blame page)
           if (!isBlame()) {
             showLineButton();
           }
 
-          $('html, body').scrollTop($first.offset().top - 200);
+          window.scrollBy({top: first.getBoundingClientRect().top - 200});
           return;
         }
       }
       m = window.location.hash.match(singleAnchorRegex);
       if (m) {
-        $first = $linesEls.filter(`[rel=L${m[1]}]`);
-        if ($first.length) {
-          selectRange($linesEls, $first);
+        first = linesEls.find((el) => el.matches(`[rel=L${m[1]}]`));
+        if (first) {
+          selectRange(linesEls, first);
 
           // show code view menu marker (don't show in blame page)
           if (!isBlame()) {
             showLineButton();
           }
 
-          $('html, body').scrollTop($first.offset().top - 200);
+          window.scrollBy({top: first.getBoundingClientRect().top - 200});
         }
       }
     });
     window.dispatchEvent(new Event('hashchange'));
   }
-  $(document).on('click', '.fold-file', ({currentTarget}) => {
-    invertFileFolding(currentTarget.closest('.file-content'), currentTarget);
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const foldFileButton = target.closest('.fold-file');
+    if (!foldFileButton) {
+      return;
+    }
+
+    invertFileFolding(foldFileButton.closest('.file-content'), foldFileButton);
   });
-  $(document).on('click', '.copy-line-permalink', async ({currentTarget}) => {
-    await clippie(toAbsoluteUrl(currentTarget.getAttribute('data-url')));
+  document.addEventListener('click', async (e) => {
+    const target = e.target as Element;
+    if (!target.matches('.copy-line-permalink')) {
+      return;
+    }
+
+    await clippie(toAbsoluteUrl(target.getAttribute('data-url')));
   });
 }
