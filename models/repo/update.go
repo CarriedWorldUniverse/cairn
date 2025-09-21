@@ -105,9 +105,9 @@ func (err ErrRepoFilesAlreadyExist) Unwrap() error {
 	return util.ErrAlreadyExist
 }
 
-// CheckCreateRepository check if could created a repository
+// CheckCreateRepository check if a repository can be created
 func CheckCreateRepository(ctx context.Context, doer, u *user_model.User, name string, overwriteOrAdopt bool) error {
-	if !doer.CanCreateRepo() {
+	if !doer.IsAdmin && !u.CanCreateRepo() {
 		return ErrReachLimitOfRepo{u.MaxRepoCreation}
 	}
 
