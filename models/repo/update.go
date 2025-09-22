@@ -10,7 +10,6 @@ import (
 
 	"forgejo.org/models/db"
 	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
 	"forgejo.org/modules/util"
 )
 
@@ -106,7 +105,7 @@ func (err ErrRepoFilesAlreadyExist) Unwrap() error {
 }
 
 // CheckCreateRepository check if a repository can be created
-func CheckCreateRepository(ctx context.Context, doer, u *user_model.User, name string, overwriteOrAdopt bool) error {
+func CheckCreateRepository(ctx context.Context, doer, u *user_model.User, name string) error {
 	if !doer.IsAdmin && !u.CanCreateRepo() {
 		return ErrReachLimitOfRepo{u.MaxRepoCreation}
 	}
@@ -122,15 +121,6 @@ func CheckCreateRepository(ctx context.Context, doer, u *user_model.User, name s
 		return ErrRepoAlreadyExist{u.Name, name}
 	}
 
-	repoPath := RepoPath(u.Name, name)
-	isExist, err := util.IsExist(repoPath)
-	if err != nil {
-		log.Error("Unable to check if %s exists. Error: %v", repoPath, err)
-		return err
-	}
-	if !overwriteOrAdopt && isExist {
-		return ErrRepoFilesAlreadyExist{u.Name, name}
-	}
 	return nil
 }
 
