@@ -11,7 +11,7 @@
 						<a class="text primary name" href="{{.Owner.HomeLink}}">{{.Owner.Name}}</a>/
 						{{end}}
 						<a class="text primary name" href="{{.Link}}">{{.Name}}</a>
-						<span class="label-list">
+						<span>
 							{{if .IsArchived}}
 								<span class="ui label">{{ctx.Locale.Tr "repo.desc.archived"}}</span>
 							{{end}}
@@ -56,7 +56,7 @@
 					<div class="flex-item-body">{{$description}}</div>
 				{{end}}
 				{{if .Topics}}
-					<div class="label-list">
+					<div class="repo-topics">
 					{{range .Topics}}
 						{{if ne . ""}}<a class="ui label" href="{{AppSubUrl}}/explore/repos?q={{.}}&topic=1">{{.}}</a>{{end}}
 					{{end}}
