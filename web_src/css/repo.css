@@ -1984,6 +1984,11 @@ details.repo-search-result summary::marker {
   justify-content: space-between;
 }
 
+.signature-row > div {
+  display: flex;
+  align-items: center;
+}
+
 .commit-header-buttons {
   display: flex;
   gap: 4px;

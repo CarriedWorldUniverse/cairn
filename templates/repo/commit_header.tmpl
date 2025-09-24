@@ -209,7 +209,7 @@
 </div>
 {{if .Commit.Signature}}
 	<div class="ui bottom attached message signature-row tw-mb-0 {{$class}}">
-		<div class="tw-flex tw-items-center">
+		<div>
 			{{if .Verification.Verified}}
 				{{if ne .Verification.SigningUser.ID 0}}
 					{{svg "gitea-lock" 16 "tw-mr-2"}}
@@ -233,7 +233,7 @@
 				<span class="ui text">{{ctx.Locale.Tr .Verification.Reason}}</span>
 			{{end}}
 		</div>
-		<div class="tw-flex tw-items-center">
+		<div>
 			{{if .Verification.Verified}}
 				{{svg "octicon-verified" 16 "tw-mr-2"}}
 				{{if ne .Verification.SigningUser.ID 0}}

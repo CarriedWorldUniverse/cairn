@@ -10,7 +10,7 @@
 	{{end}}
 
 	<div class="ui bottom attached message signature-row tw-mb-4 tw-rounded {{$class}}">
-		<div class="tw-flex tw-content-center">
+		<div>
 			{{if $v.Verified}}
 				{{if ne $v.SigningUser.ID 0}}
 					{{svg "gitea-lock" 16 "tw-mr-2"}}
@@ -29,7 +29,7 @@
 			{{end}}
 		</div>
 
-		<div class="tw-flex tw-content-center">
+		<div>
 			{{if $v.Verified}}
 				{{if ne $v.SigningUser.ID 0}}
 					{{svg "octicon-verified" 16 "tw-mr-2"}}
