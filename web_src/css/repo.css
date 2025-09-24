@@ -2329,10 +2329,21 @@ tbody.commit-list {
   top: -2px;
 }
 
-#repo-topics .repo-topic {
+.repo-topics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.repo-topics .repo-topic {
   font-weight: var(--font-weight-normal);
   cursor: pointer;
   margin: 0;
+}
+
+.repo-topics .repo-topic:last-of-type {
+  margin-right: 0.5rem;
 }
 
 #new-dependency-drop-list.ui.selection.dropdown {
