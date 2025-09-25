@@ -131,5 +131,6 @@
     "error.must_enable_2fa": "Tämä Forgejo-instanssi vaatii käyttäjien ottavan käyttöön kaksivaiheisen tunnistuksen, ennen kuin käyttäjätiliä voi käyttää. Ota se käyttöön: %s",
     "avatar.constraints_hint": "Mukautettu profiilikuva voi olla kooltaan enintään %[1]s tai enintään %[2]dx%[3]d pikseliä",
     "repo.commit.load_tags_failed": "Tagien lataaminen epäonnistui sisäisen virheen vuoksi",
-    "actions.runs.run_attempt_label": "Suoritusyritys #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Suoritusyritys #%[1]s (%[2]s)",
+    "migrate.pagure.description": "Tee migraatio pagure.io:sta tai muista Pagure-instansseista."
 }
