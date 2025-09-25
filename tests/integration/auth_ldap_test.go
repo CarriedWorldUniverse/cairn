@@ -49,12 +49,7 @@ var gitLDAPUsers = []ldapUser{
 		Password: "hermes",
 		FullName: "Conrad Hermes",
 		Email:    "hermes@planetexpress.com",
-		SSHKeys: []string{
-			"SHA256:qLY06smKfHoW/92yXySpnxFR10QFrLdRjf/GNPvwcW8",
-			"SHA256:QlVTuM5OssDatqidn2ffY+Lc4YA5Fs78U+0KOHI51jQ",
-			"SHA256:DXdeUKYOJCSSmClZuwrb60hUq7367j4fA+udNC3FdRI",
-		},
-		IsAdmin: true,
+		IsAdmin:  true,
 	},
 	{
 		UserName: "fry",
@@ -72,8 +67,19 @@ var gitLDAPUsers = []ldapUser{
 	{
 		UserName: "bender",
 		Password: "bender",
-		FullName: "Bender Rodríguez",
+		FullName: "Bender Rodriguez",
 		Email:    "bender@planetexpress.com",
+	},
+	{
+		UserName: "sshuser",
+		Password: "sshuser",
+		FullName: "SSH User",
+		SSHKeys: []string{
+			"SHA256:qLY06smKfHoW/92yXySpnxFR10QFrLdRjf/GNPvwcW8",
+			"SHA256:QlVTuM5OssDatqidn2ffY+Lc4YA5Fs78U+0KOHI51jQ",
+			"SHA256:DXdeUKYOJCSSmClZuwrb60hUq7367j4fA+udNC3FdRI",
+		},
+		Email: "sshuser@planetexpress.com",
 	},
 }
 
@@ -107,7 +113,7 @@ func getLDAPServerHost() string {
 func getLDAPServerPort() string {
 	port := os.Getenv("TEST_LDAP_PORT")
 	if len(port) == 0 {
-		port = "389"
+		port = "10389"
 	}
 	return port
 }
