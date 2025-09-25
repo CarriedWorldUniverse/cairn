@@ -1,4 +1,13 @@
 {
     "relativetime.1day": "iḍelli",
-    "home.welcome.no_activity": "Ulac armud"
+    "home.welcome.no_activity": "Ulac armud",
+    "relativetime.now": "tura",
+    "admin.moderation.reports": "Ineqqisen",
+    "moderation.abuse_category": "Taggayt",
+    "moderation.abuse_category.spam": "Aspam",
+    "repo.diff.commit.next-short": "Uḍfir",
+    "repo.diff.commit.previous-short": "Uzwir",
+    "admin.config.global_2fa_requirement.none": "Uhu",
+    "admin.config.global_2fa_requirement.admin": "Inedbalen",
+    "migrate.pagure.token_label": "Ajiṭun"
 }
