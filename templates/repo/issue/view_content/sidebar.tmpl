@@ -54,13 +54,26 @@
 
 	{{if and
 		.Issue.IsPull
-		.IsIssuePoster
 		(not .Issue.IsClosed)
 		.Issue.PullRequest.HeadRepo
 		(not (eq .Issue.PullRequest.HeadRepo.FullName .Issue.PullRequest.BaseRepo.FullName))
-		.CanWriteToHeadRepo
 	}}
-		<div class="divider"></div>
-		{{template "repo/issue/view_content/sidebar/pull_maintainer_edits" .}}
+		{{if and
+			.IsIssuePoster
+			.CanWriteToHeadRepo
+		}}
+			<div class="divider"></div>
+			{{template "repo/issue/view_content/sidebar/pull_maintainer_edits" .}}
+		{{else if and
+			(not .IsIssuePoster)
+			.CanWriteCode
+		}}
+			<div class="divider"></div>
+			{{if .Issue.PullRequest.AllowMaintainerEdit}}
+				<span class="maintainers-can-edit-status">{{svg "octicon-check"}} {{ctx.Locale.Tr "repo.pulls.maintainers_can_edit"}}</span>
+			{{else}}
+				<span class="maintainers-can-edit-status">{{svg "octicon-x"}} {{ctx.Locale.Tr "repo.pulls.maintainers_cannot_edit"}}</span>
+			{{end}}
+		{{end}}
 	{{end}}
 </div>
