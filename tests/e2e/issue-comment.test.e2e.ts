@@ -2,10 +2,11 @@
 // web_src/js/features/comp/**
 // web_src/js/features/repo-**
 // templates/repo/issue/view_content/*
+// routers/web/repo/issue_content_history.go
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, save_visual} from './utils_e2e.ts';
+import {test, dynamic_id, save_visual} from './utils_e2e.ts';
 
 test.use({user: 'user2'});
 
@@ -235,4 +236,35 @@ test('Emoji suggestions', async ({page}) => {
 
   const item = suggestionList.locator(`li:has-text("forgejo")`);
   await expect(item.locator('img')).toHaveAttribute('src', '/assets/img/emoji/forgejo.png');
+});
+
+test('Comment history', async ({page}) => {
+  const response = await page.goto('/user2/repo1/issues/new');
+  expect(response?.status()).toBe(200);
+
+  // Create a new issue.
+  await page.getByPlaceholder('Title').fill('Just a title');
+  await page.getByPlaceholder('Leave a comment').fill('Hi, have you considered using a rotating fish as logo?');
+  await page.getByRole('button', {name: 'Create issue'}).click();
+  await expect(page).toHaveURL(/\/user2\/repo1\/issues\/\d+$/);
+
+  page.on('dialog', (dialog) => dialog.accept());
+
+  // Make a change.
+  const editorTextarea = page.locator('[id="_combo_markdown_editor_1"]');
+  await page.click('.comment-container .context-menu');
+  await page.click('.comment-container .menu>.edit-content');
+  await editorTextarea.fill(dynamic_id());
+  await page.click('.comment-container .edit .save');
+
+  // Reload the page so the edited bit is rendered.
+  await page.reload();
+
+  await page.getByText('• edited').click();
+  await page.click('.content-history-menu .item:nth-child(1)');
+  await page.getByText('Options').click();
+  await page.getByText('Delete from history').click();
+
+  await page.getByText('• edited').click();
+  await expect(page.locator(".content-history-menu .item s span[data-history-is-deleted='1']")).toBeVisible();
 });
