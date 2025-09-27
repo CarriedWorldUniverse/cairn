@@ -2132,6 +2132,10 @@ details.repo-search-result summary::marker {
   gap: 4px;
 }
 
+.comment-header-left > .content-history-menu.active s {
+  text-decoration-thickness: 10%;
+}
+
 .comment-body {
   background: var(--color-box-body);
   border: none !important;
