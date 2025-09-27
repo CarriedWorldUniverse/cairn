@@ -127,7 +127,7 @@
 		</span>
 		{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 		<div class="menu">
-			<a rel="nofollow" class="{{if eq .ViewType "all"}}active {{end}}item" href="?q={{$.Keyword}}&type=all&sort={{$.SortType}}&state={{$.State}}&labels={{.SelectLabels}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{ctx.Locale.Tr "repo.issues.filter_type.all_pull_requests"}}</a>
+			<a rel="nofollow" class="{{if eq .ViewType "all"}}active {{end}}item" href="?q={{$.Keyword}}&type=all&sort={{$.SortType}}&state={{$.State}}&labels={{.SelectLabels}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{if .PageIsPullList}}{{ctx.Locale.Tr "repo.issues.filter_type.all_pull_requests"}}{{else}}{{ctx.Locale.Tr "repo.issues.filter_type.all_issues"}}{{end}}</a>
 			<a rel="nofollow" class="{{if eq .ViewType "assigned"}}active {{end}}item" href="?q={{$.Keyword}}&type=assigned&sort={{$.SortType}}&state={{$.State}}&labels={{.SelectLabels}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{ctx.Locale.Tr "repo.issues.filter_type.assigned_to_you"}}</a>
 			<a rel="nofollow" class="{{if eq .ViewType "created_by"}}active {{end}}item" href="?q={{$.Keyword}}&type=created_by&sort={{$.SortType}}&state={{$.State}}&labels={{.SelectLabels}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{ctx.Locale.Tr "repo.issues.filter_type.created_by_you"}}</a>
 			{{if .PageIsPullList}}

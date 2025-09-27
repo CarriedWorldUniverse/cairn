@@ -30,6 +30,21 @@ func TestViewPulls(t *testing.T) {
 	assert.Equal(t, "Search pulls…", placeholder)
 }
 
+func TestViewPullsType(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+	session := loginUser(t, user.Name)
+	req := NewRequest(t, "GET", repo.Link()+"/pulls")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	pullsType := htmlDoc.doc.Find(".list-header-type > .menu .item[href*=\"type=all\"]").First()
+	assert.Equal(t, "All pull requests", pullsType.Text())
+}
+
 func TestPullViewConversation(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
