@@ -86,6 +86,21 @@ func TestViewIssues(t *testing.T) {
 	assert.Equal(t, "Search issues…", placeholder)
 }
 
+func TestViewIssuesType(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+	session := loginUser(t, user.Name)
+	req := NewRequest(t, "GET", repo.Link()+"/issues")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	issuesType := htmlDoc.doc.Find(".list-header-type > .menu .item[href*=\"type=all\"]").First()
+	assert.Equal(t, "All issues", issuesType.Text())
+}
+
 func TestViewIssuesSortByType(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
