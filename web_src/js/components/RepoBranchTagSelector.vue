@@ -1,26 +1,25 @@
 <script>
-import {createApp, nextTick} from 'vue';
+import {nextTick} from 'vue';
 import $ from 'jquery';
 import {SvgIcon} from '../svg.js';
 import {pathEscapeSegments} from '../utils/url.js';
 import {showErrorToast} from '../modules/toast.js';
 import {GET} from '../modules/fetch.js';
 
-const sfc = {
+export default {
   components: {SvgIcon},
 
   // no `data()`, at the moment, the `data()` is provided by the init code, which is not ideal and should be fixed in the future
 
   computed: {
+    active() {
+      return !this.filteredItems.length && this.showCreateNewBranch ? 0 : -1;
+    },
     filteredItems() {
-      const items = this.items.filter((item) => {
+      return this.items.filter((item) => {
         return ((this.mode === 'branches' && item.branch) || (this.mode === 'tags' && item.tag)) &&
           (!this.searchTerm || item.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
       });
-
-      // TODO: fix this anti-pattern: side-effects-in-computed-properties
-      this.active = !items.length && this.showCreateNewBranch ? 0 : -1;
-      return items;
     },
     showNoResults() {
       return !this.filteredItems.length && !this.showCreateNewBranch;
@@ -213,37 +212,6 @@ const sfc = {
     },
   },
 };
-
-export function initRepoBranchTagSelector(selector) {
-  for (const [elIndex, elRoot] of document.querySelectorAll(selector).entries()) {
-    const data = {
-      csrfToken: window.config.csrfToken,
-      items: [],
-      searchTerm: '',
-      refNameText: '',
-      menuVisible: false,
-      release: null,
-
-      isViewTag: false,
-      isViewBranch: false,
-      isViewTree: false,
-
-      active: 0,
-      isLoading: false,
-      // This means whether branch list/tag list has initialized
-      hasListInitialized: {
-        'branches': false,
-        'tags': false,
-      },
-      ...window.config.pageData.branchDropdownDataList[elIndex],
-    };
-
-    const comp = {...sfc, data() { return data }};
-    createApp(comp).mount(elRoot);
-  }
-}
-
-export default sfc; // activate IDE's Vue plugin
 </script>
 <template>
   <div class="ui dropdown custom">

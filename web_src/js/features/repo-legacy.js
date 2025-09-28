@@ -9,7 +9,7 @@ import {
 import {initUnicodeEscapeButton} from './repo-unicode-escape.js';
 import {svg} from '../svg.js';
 import {htmlEscape} from 'escape-goat';
-import {initRepoBranchTagSelector} from '../components/RepoBranchTagSelector.vue';
+import {initRepoBranchTagSelector} from './repo-branch-tag-selector.js';
 import {
   initRepoCloneLink, initRepoCommonBranchOrTagDropdown, initRepoCommonFilterSearchDropdown,
 } from './repo-common.js';

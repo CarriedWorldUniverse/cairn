@@ -1,10 +1,10 @@
 import {createApp} from 'vue';
-import PullRequestMergeForm from '../components/PullRequestMergeForm.vue';
 
-export function initRepoPullRequestMergeForm() {
+export async function initRepoPullRequestMergeForm() {
   const el = document.getElementById('pull-request-merge-form');
   if (!el) return;
 
+  const {default: PullRequestMergeForm} = await import(/* webpackChunkName: "pull-request-merge-form" */'../components/PullRequestMergeForm.vue');
   const view = createApp(PullRequestMergeForm);
   view.mount(el);
 }

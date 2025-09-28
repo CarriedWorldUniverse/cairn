@@ -1,8 +1,7 @@
 <script>
-import {createApp} from 'vue';
 import {hideElem, showElem} from '../utils/dom.js';
 
-const sfc = {
+export default {
   props: {
     isAdmin: {
       type: Boolean,
@@ -71,23 +70,6 @@ const sfc = {
     },
   },
 };
-
-export default sfc;
-
-/**
- * Initialize category toggle sections
- */
-export function initScopedAccessTokenCategories() {
-  for (const el of document.getElementsByClassName('scoped-access-token')) {
-    createApp(sfc, {
-      isAdmin: el.getAttribute('data-is-admin') === 'true',
-      noAccessLabel: el.getAttribute('data-no-access-label'),
-      readLabel: el.getAttribute('data-read-label'),
-      writeLabel: el.getAttribute('data-write-label'),
-    }).mount(el);
-  }
-}
-
 </script>
 <template>
   <div v-for="category in categories" :key="category" class="field tw-pl-1 tw-pb-1 access-token-category">

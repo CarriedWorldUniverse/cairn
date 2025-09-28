@@ -1,5 +1,4 @@
 import {createApp} from 'vue';
-import ContextPopup from '../components/ContextPopup.vue';
 import {parseIssueHref} from '../utils.js';
 import {createTippy} from '../modules/tippy.js';
 
@@ -8,7 +7,7 @@ export function initContextPopups() {
   attachRefIssueContextPopup(refIssues);
 }
 
-export function attachRefIssueContextPopup(refIssues) {
+export async function attachRefIssueContextPopup(refIssues) {
   for (const refIssue of refIssues) {
     if (refIssue.classList.contains('ref-external-issue')) {
       return;
@@ -20,6 +19,7 @@ export function attachRefIssueContextPopup(refIssues) {
     const el = document.createElement('div');
     refIssue.parentNode.insertBefore(el, refIssue.nextSibling);
 
+    const {default: ContextPopup} = await import(/* webpackChunkName: "context-popup" */'../components/ContextPopup.vue');
     const view = createApp(ContextPopup);
 
     try {
