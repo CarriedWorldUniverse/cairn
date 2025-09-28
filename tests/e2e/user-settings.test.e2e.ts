@@ -75,7 +75,21 @@ test('User: Storage overview', async ({browser}, workerInfo) => {
   await page.goto('/user/settings/storage_overview');
   await page.waitForLoadState();
   await page.getByLabel('Git LFS – 8 KiB').nth(1).hover({position: {x: 250, y: 2}});
-  await expect(page.getByText('Git LFS')).toBeVisible();
+  await expect(page.getByText('Git LFS – 8 KiB')).toBeVisible();
+
+  // Show/hide legend by clicking on the bar
+  await expect(page.locator('.stats ul').nth(1)).toBeHidden();
+  await expect(page.getByText('Git LFS 8 KiB').nth(1)).toBeHidden();
+
+  await page.locator('.stats summary').nth(1).click();
+  await expect(page.locator('.stats ul').nth(1)).toBeVisible();
+  await expect(page.getByText('Git LFS 8 KiB').nth(1)).toBeVisible();
+  await save_visual(page);
+
+  await page.locator('.stats summary').nth(1).click();
+  await expect(page.locator('.stats ul').nth(1)).toBeHidden();
+  await expect(page.getByText('Git LFS 8 KiB').nth(1)).toBeHidden();
+
   await save_visual(page);
 });
 

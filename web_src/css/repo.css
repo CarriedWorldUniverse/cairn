@@ -1901,14 +1901,6 @@ details.repo-search-result summary::marker {
   overflow: hidden;
 }
 
-.size-overview .segment:has(> .bar) {
-  display: flex;
-  height: 10px;
-  padding: 0;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
 #cite-repo-modal #citation-panel {
   display: flex;
   width: 100%;
