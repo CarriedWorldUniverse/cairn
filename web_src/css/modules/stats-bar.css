@@ -1,0 +1,81 @@
+/* Copyright 2025 The Forgejo Authors. All rights reserved.
+ * SPDX-License-Identifier: GPL-3.0-or-later */
+
+:root stats-bar {
+  --stats-bar-height: 0.75rem;
+}
+
+@media (pointer: coarse) {
+  :root stats-bar {
+    --stats-bar-height: 1rem;
+  }
+}
+
+/* General properties, can be reused by different kinds of stats bars */
+stats-bar {
+  display: flex !important;
+  height: var(--stats-bar-height);
+  width: 100%;
+  border-radius: var(--border-radius);
+
+  .slice {
+    display: inline-block;
+
+    &:first-child {
+      border-radius: var(--border-radius) 0 0 var(--border-radius);
+    }
+    &:last-child {
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    }
+    &:only-child {
+      border-radius: var(--border-radius);
+    }
+  }
+}
+
+/* Properties specific to the UI in storage overview */
+.size-overview .stats {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--border-radius);
+
+  &:hover,
+  &[open] {
+    background-color: var(--color-box-body-highlight);
+    stats-bar {
+      background-color: var(--color-secondary-dark-3);
+    }
+  }
+
+  &[open] {
+    gap: 0.25rem;
+    background-color: var(--color-box-body-highlight);
+  }
+
+  summary {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 1rem;
+
+    stats-bar {
+      /* Same as default background of `progress` */
+      background-color: var(--color-secondary-dark-1);
+    }
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    padding-top: 0;
+    margin: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+}
