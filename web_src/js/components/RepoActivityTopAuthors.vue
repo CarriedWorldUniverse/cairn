@@ -8,7 +8,6 @@ import {
   LinearScale,
 } from 'chart.js';
 import {chartJsColors} from '../utils/color.js';
-import {createApp} from 'vue';
 
 Chart.defaults.color = chartJsColors.text;
 Chart.defaults.borderColor = chartJsColors.border;
@@ -20,7 +19,7 @@ Chart.register(
   Tooltip,
 );
 
-const sfc = {
+export default {
   components: {Bar},
   props: {
     locale: {
@@ -42,53 +41,6 @@ const sfc = {
     activityTopAuthors: window.config.pageData.repoActivityTopAuthors || [],
     i18nCommitActivity: this,
   }),
-  methods: {
-    graphPoints() {
-      return {
-        datasets: [{
-          label: this.locale.commitActivity,
-          data: this.activityTopAuthors.map((item) => item.commits),
-          backgroundColor: this.colors.barColor,
-          barThickness: 40,
-          borderWidth: 0,
-          tension: 0.3,
-        }],
-        labels: this.activityTopAuthors.map((item) => item.name),
-      };
-    },
-    getOptions() {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: true,
-        scales: {
-          x: {
-            type: 'category',
-            grid: {
-              display: false,
-            },
-            ticks: {
-              // Disable the drawing of the labels on the x-asis and force them all
-              // of them to be 'shown', this avoids them being internally skipped
-              // for some data points. We rely on the internally generated ticks
-              // to know where to draw our own ticks. Set rotation to 90 degree
-              // and disable autoSkip. autoSkip is disabled to ensure no ticks are
-              // skipped and rotation is set to avoid messing with the width of the chart.
-              color: 'transparent',
-              minRotation: 90,
-              maxRotation: 90,
-              autoSkip: false,
-            },
-          },
-          y: {
-            ticks: {
-              stepSize: 1,
-            },
-          },
-        },
-      };
-    },
-  },
   mounted() {
     const refStyle = window.getComputedStyle(this.$refs.style);
     this.colors.barColor = refStyle.backgroundColor;
@@ -141,20 +93,54 @@ const sfc = {
       },
     });
   },
+  methods: {
+    graphPoints() {
+      return {
+        datasets: [{
+          label: this.locale.commitActivity,
+          data: this.activityTopAuthors.map((item) => item.commits),
+          backgroundColor: this.colors.barColor,
+          barThickness: 40,
+          borderWidth: 0,
+          tension: 0.3,
+        }],
+        labels: this.activityTopAuthors.map((item) => item.name),
+      };
+    },
+    getOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: true,
+        scales: {
+          x: {
+            type: 'category',
+            grid: {
+              display: false,
+            },
+            ticks: {
+              // Disable the drawing of the labels on the x-asis and force them all
+              // of them to be 'shown', this avoids them being internally skipped
+              // for some data points. We rely on the internally generated ticks
+              // to know where to draw our own ticks. Set rotation to 90 degree
+              // and disable autoSkip. autoSkip is disabled to ensure no ticks are
+              // skipped and rotation is set to avoid messing with the width of the chart.
+              color: 'transparent',
+              minRotation: 90,
+              maxRotation: 90,
+              autoSkip: false,
+            },
+          },
+          y: {
+            ticks: {
+              stepSize: 1,
+            },
+          },
+        },
+      };
+    },
+  },
 };
-
-export function initRepoActivityTopAuthorsChart() {
-  const el = document.getElementById('repo-activity-top-authors-chart');
-  if (el) {
-    createApp(sfc, {
-      locale: {
-        commitActivity: el.getAttribute('data-locale-commit-activity'),
-      },
-    }).mount(el);
-  }
-}
-
-export default sfc; // activate the IDE's Vue plugin
 </script>
 <template>
   <div>

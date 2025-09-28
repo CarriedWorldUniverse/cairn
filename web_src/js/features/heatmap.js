@@ -1,11 +1,11 @@
 import {createApp} from 'vue';
-import ActivityHeatmap from '../components/ActivityHeatmap.vue';
 import {translateMonth, translateDay} from '../utils.js';
 
-export function initHeatmap() {
+export async function initHeatmap() {
   const el = document.getElementById('user-heatmap');
   if (!el) return;
 
+  const {default: ActivityHeatmap} = await import(/* webpackChunkName: "activity-heatmap" */'../components/ActivityHeatmap.vue');
   try {
     const heatmap = {};
     for (const {contributions, timestamp} of JSON.parse(el.getAttribute('data-heatmap-data'))) {

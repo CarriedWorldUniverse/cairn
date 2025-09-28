@@ -1,5 +1,4 @@
 <script>
-import {createApp} from 'vue';
 import $ from 'jquery';
 import {SvgIcon} from '../svg.js';
 import {GET} from '../modules/fetch.js';
@@ -15,7 +14,7 @@ const commitStatus = {
   warning: {name: 'gitea-exclamation', color: 'yellow'},
 };
 
-const sfc = {
+export default {
   components: {SvgIcon},
   data() {
     const params = new URLSearchParams(window.location.search);
@@ -323,15 +322,6 @@ const sfc = {
     },
   },
 };
-
-export function initDashboardRepoList() {
-  const el = document.getElementById('dashboard-repo-list');
-  if (el) {
-    createApp(sfc).mount(el);
-  }
-}
-
-export default sfc; // activate the IDE's Vue plugin
 </script>
 <template>
   <div>

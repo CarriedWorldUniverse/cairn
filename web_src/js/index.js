@@ -1,9 +1,9 @@
 // bootstrap module must be the first one to be imported, it handles webpack lazy-loading and global errors
 import './bootstrap.js';
 
-import {initRepoActivityTopAuthorsChart} from './components/RepoActivityTopAuthors.vue';
-import {initScopedAccessTokenCategories} from './components/ScopedAccessTokenSelector.vue';
-import {initDashboardRepoList} from './components/DashboardRepoList.vue';
+import {initRepoActivityTopAuthorsChart} from './features/repo-activity-top-authors.ts';
+import {initScopedAccessTokenCategories} from './features/scoped-access-token-selector.ts';
+import {initDashboardRepoList} from './features/dashboard-repo-list.ts';
 
 import {initGlobalCopyToClipboardListener} from './features/clipboard.js';
 import {initContextPopups} from './features/contextpopup.js';
@@ -71,7 +71,7 @@ import {initRepoWikiForm} from './features/repo-wiki.js';
 import {initRepoCommentForm, initRepository} from './features/repo-legacy.js';
 import {initCopyContent} from './features/copycontent.js';
 import {initCaptcha} from './features/captcha.js';
-import {initRepositoryActionView} from './components/RepoActionView.vue';
+import {initRepositoryActionView} from './features/repo-action-view.ts';
 import {initGlobalTooltips} from './modules/tippy.js';
 import {initDropdowns} from './modules/dropdown.ts';
 import {initGiteaFomantic} from './modules/fomantic.js';
