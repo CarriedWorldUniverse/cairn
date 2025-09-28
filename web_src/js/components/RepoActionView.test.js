@@ -53,6 +53,18 @@ const minimalInitialJobData = {
 const minimalInitialArtifactData = {
   artifacts: [],
 };
+const defaultTestProps = {
+  actionsURL: 'https://example.com/example-org/example-repo/actions',
+  jobIndex: '1',
+  attemptNumber: '1',
+  runIndex: '10',
+  runID: '1001',
+  initialJobData: minimalInitialJobData,
+  initialArtifactData: minimalInitialArtifactData,
+  locale: testLocale,
+  workflowName: 'workflow name',
+  workflowURL: 'https://example.com/example-org/example-repo/actions?workflow=test.yml',
+};
 
 test('processes ##[group] and ##[endgroup]', async () => {
   Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
@@ -105,13 +117,7 @@ test('processes ##[group] and ##[endgroup]', async () => {
   });
 
   const wrapper = mount(RepoActionView, {
-    props: {
-      jobIndex: '1',
-      attemptNumber: '1',
-      initialJobData: minimalInitialJobData,
-      initialArtifactData: minimalInitialArtifactData,
-      locale: testLocale,
-    },
+    props: defaultTestProps,
   });
   await flushPromises();
   await wrapper.get('.job-step-summary').trigger('click');
@@ -208,15 +214,7 @@ test('load multiple steps on a finished action', async () => {
   });
 
   const wrapper = mount(RepoActionView, {
-    props: {
-      actionsURL: 'https://example.com/example-org/example-repo/actions',
-      initialJobData: minimalInitialJobData,
-      initialArtifactData: minimalInitialArtifactData,
-      runIndex: '1',
-      jobIndex: '2',
-      attemptNumber: '1',
-      locale: testLocale,
-    },
+    props: defaultTestProps,
   });
   wrapper.vm.loadJob(); // simulate intermittent reload immediately so UI switches from minimalInitialJobData to the mock data from the test's fetch spy.
   await flushPromises();
@@ -288,13 +286,11 @@ function configureForMultipleAttemptTests({viewHistorical}) {
 
   const wrapper = mount(RepoActionView, {
     props: {
+      ...defaultTestProps,
       runIndex: '123',
-      jobIndex: '1',
       attemptNumber: viewHistorical ? '1' : '2',
       actionsURL: toAbsoluteUrl('/user1/repo2/actions'),
       initialJobData: {...minimalInitialJobData, state: myJobState},
-      initialArtifactData: minimalInitialArtifactData,
-      locale: testLocale,
     },
   });
   return wrapper;
@@ -465,16 +461,7 @@ test('artifacts download links', async () => {
   });
 
   const wrapper = mount(RepoActionView, {
-    props: {
-      actionsURL: 'https://example.com/example-org/example-repo/actions',
-      initialJobData: minimalInitialJobData,
-      initialArtifactData: minimalInitialArtifactData,
-      runIndex: '10',
-      runID: '1001',
-      jobIndex: '2',
-      attemptNumber: '1',
-      locale: testLocale,
-    },
+    props: defaultTestProps,
   });
   wrapper.vm.loadJob(); // simulate intermittent reload immediately so UI switches from minimalInitialJobData to the mock data from the test's fetch spy.
   await flushPromises();
@@ -501,11 +488,8 @@ test('initial load schedules refresh when job is not done', async () => {
     doneInitialJobData.state.run.done = true;
     const wrapper = mount(RepoActionView, {
       props: {
-        jobIndex: '1',
-        attemptNumber: '1',
+        ...defaultTestProps,
         initialJobData: doneInitialJobData,
-        initialArtifactData: minimalInitialArtifactData,
-        locale: testLocale,
       },
     });
     await flushPromises();
@@ -520,13 +504,7 @@ test('initial load schedules refresh when job is not done', async () => {
     const runningInitialJobData = structuredClone(minimalInitialJobData);
     runningInitialJobData.state.run.done = false;
     const wrapper = mount(RepoActionView, {
-      props: {
-        jobIndex: '1',
-        attemptNumber: '1',
-        initialJobData: runningInitialJobData,
-        initialArtifactData: minimalInitialArtifactData,
-        locale: testLocale,
-      },
+      props: defaultTestProps,
     });
     await flushPromises();
     const container = wrapper.find('.action-view-container');
@@ -548,13 +526,7 @@ test('initial load data is used without calling fetch()', async () => {
   });
 
   mount(RepoActionView, {
-    props: {
-      jobIndex: '1',
-      attemptNumber: '1',
-      initialJobData: minimalInitialJobData,
-      initialArtifactData: minimalInitialArtifactData,
-      locale: testLocale,
-    },
+    props: defaultTestProps,
   });
   await flushPromises();
   expect(fetchSpy).not.toHaveBeenCalled();
@@ -564,11 +536,7 @@ test('view non-picked action run job', async () => {
   Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
   const wrapper = mount(RepoActionView, {
     props: {
-      actionsURL: 'https://example.com/example-org/example-repo/actions',
-      runIndex: '10',
-      runID: '1001',
-      jobIndex: '2',
-      attemptNumber: '1',
+      ...defaultTestProps,
       initialJobData: {
         ...minimalInitialJobData,
         // Definitions here should match the same type of content as the related backend test,
@@ -613,8 +581,6 @@ test('view non-picked action run job', async () => {
           },
         },
       },
-      initialArtifactData: minimalInitialArtifactData,
-      locale: testLocale,
     },
   });
   await flushPromises();
