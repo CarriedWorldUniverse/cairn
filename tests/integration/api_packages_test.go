@@ -574,6 +574,19 @@ func TestPackageCleanup(t *testing.T) {
 				},
 			},
 			{
+				Name: "KeepCountGreaterThanTotal",
+				Versions: []version{
+					{Version: "keep", ShouldExist: true},
+					{Version: "v1.0", ShouldExist: true},
+					{Version: "test-3", ShouldExist: true},
+					{Version: "test-4", ShouldExist: true},
+				},
+				Rule: &packages_model.PackageCleanupRule{
+					Enabled:   true,
+					KeepCount: 2000,
+				},
+			},
+			{
 				Name: "KeepPattern",
 				Versions: []version{
 					{Version: "keep", ShouldExist: true},

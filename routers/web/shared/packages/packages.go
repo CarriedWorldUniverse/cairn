@@ -172,7 +172,8 @@ func SetRulePreviewContext(ctx *context.Context, owner *user_model.User) {
 			ctx.ServerError("SearchVersions", err)
 			return
 		}
-		for _, pv := range pvs[pcr.KeepCount:] {
+		keep := min(len(pvs), pcr.KeepCount)
+		for _, pv := range pvs[keep:] {
 			if skip, err := container_service.ShouldBeSkipped(ctx, pcr, p, pv); err != nil {
 				ctx.ServerError("ShouldBeSkipped", err)
 				return
