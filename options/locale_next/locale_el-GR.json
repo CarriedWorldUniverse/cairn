@@ -148,5 +148,13 @@
     "settings.visibility.description": "Η ορατότητα το προφίλ σας, ελέγχει την δυνατότητα άλλων να έχουν πρόσβαση στα μη-ιδιωτικά σας αποθετήρια. <a href=\"%s\" target=\"_blank\">Μάθετε περισσότερα</a>.",
     "actions.runs.run_attempt_label": "Προσπάθεια εκτέλεσης #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Εμφανίζεται μια παρωχημένη εκτέλεση αυτής της εργασίας που έτρεξε %[1]s.",
-    "actions.runs.view_most_recent_run": "Εμφάνιση της πιο πρόσφατης εκτέλεσης"
+    "actions.runs.view_most_recent_run": "Εμφάνιση της πιο πρόσφατης εκτέλεσης",
+    "pulse.n_active_issues": {
+        "one": "%s ενεργό ζήτημα",
+        "other": "%s ενεργά ζητήματα"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s ενεργό pull request",
+        "other": "%s ενεργά pull request"
+    }
 }

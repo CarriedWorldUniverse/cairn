@@ -98,5 +98,13 @@
     "feed.atom.link": "Atom емисия",
     "keys.gpg.link": "GPG ключове",
     "profile.edit.link": "Редактиране на профила",
-    "profile.actions.tooltip": "Още действия"
+    "profile.actions.tooltip": "Още действия",
+    "pulse.n_active_issues": {
+        "one": "%s активна задача",
+        "other": "%s активни задачи"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s активна заявка за сливане",
+        "other": "%s активни заявки за сливане"
+    }
 }

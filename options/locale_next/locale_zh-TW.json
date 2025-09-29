@@ -81,5 +81,13 @@
     "migrate.onedev.description": "從 code.onedev.io 或其他 OneDev 站點遷移資料。",
     "migrate.gitbucket.description": "從 GitBucket 站點遷移資料。",
     "migrate.codebase.description": "從 codebasehq.com 遷移資料。",
-    "migrate.forgejo.description": "從 codeberg.org 或其他 Forgejo 站點遷移資料。"
+    "migrate.forgejo.description": "從 codeberg.org 或其他 Forgejo 站點遷移資料。",
+    "pulse.n_active_issues": {
+        "one": "%s 個問題",
+        "other": "%s 個問題"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s 個合併請求",
+        "other": "%s 個合併請求"
+    }
 }

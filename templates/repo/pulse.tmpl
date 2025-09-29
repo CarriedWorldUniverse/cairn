@@ -35,7 +35,7 @@
 				<a class="table-cell tiny tw-bg-grey"></a>
 			</div>
 			{{end}}
-			{{ctx.Locale.TrN .Activity.ActivePRCount "repo.activity.active_prs_count_1" "repo.activity.active_prs_count_n" .Activity.ActivePRCount}}
+			{{ctx.Locale.TrPluralString .Activity.ActivePRCount "pulse.n_active_prs" (printf "<strong>%d</strong>" .Activity.ActivePRCount | SafeHTML)}}
 		</div>
 	{{end}}
 	{{if .Permission.CanRead $.UnitTypeIssues}}
@@ -52,7 +52,7 @@
 				<a class="table-cell tiny tw-bg-grey"></a>
 			</div>
 			{{end}}
-			{{ctx.Locale.TrN .Activity.ActiveIssueCount "repo.activity.active_issues_count_1" "repo.activity.active_issues_count_n" .Activity.ActiveIssueCount}}
+			{{ctx.Locale.TrPluralString .Activity.ActiveIssueCount "pulse.n_active_issues" (printf "<strong>%d</strong>" .Activity.ActiveIssueCount | SafeHTML)}}
 		</div>
 	{{end}}
 </div>

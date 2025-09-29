@@ -158,5 +158,13 @@
     "actions.runs.view_most_recent_run": "Переглянути останній запуск",
     "actions.runs.viewing_out_of_date_run": "Ви переглядаєте застарілий запуск цього завдання, який було виконано %[1]s.",
     "repo.pulls.maintainers_can_edit": "Супроводжувачі можуть редагувати цей запит на злиття.",
-    "repo.pulls.maintainers_cannot_edit": "Супроводжувачі не можуть редагувати цей запит на злиття."
+    "repo.pulls.maintainers_cannot_edit": "Супроводжувачі не можуть редагувати цей запит на злиття.",
+    "pulse.n_active_issues": {
+        "one": "%s активна задача",
+        "many": "%s активних задач"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s активний запит на злиття",
+        "many": "%s активних запитів на злиття"
+    }
 }

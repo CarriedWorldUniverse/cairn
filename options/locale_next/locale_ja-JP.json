@@ -11,5 +11,13 @@
     "migrate.onedev.description": "code.onedev.io やその他の OneDev インスタンスからデータを移行します。",
     "migrate.gitbucket.description": "GitBucket インスタンスからデータを移行します。",
     "migrate.codebase.description": "codebasehq.com からデータを移行します。",
-    "migrate.forgejo.description": "codeberg.orgまたは他のインスタンスからデータを移行する。"
+    "migrate.forgejo.description": "codeberg.orgまたは他のインスタンスからデータを移行する。",
+    "pulse.n_active_issues": {
+        "one": "%s件のアクティブなイシュー",
+        "other": "%s件のアクティブなイシュー"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s件のアクティブなプルリクエスト",
+        "other": "%s件のアクティブなプルリクエスト"
+    }
 }

@@ -124,5 +124,13 @@
     "migrate.form.error.url_credentials": "URL 包含凭据，请分别将凭据填入用户名和密码字段",
     "actions.runs.view_most_recent_run": "查看最新运行",
     "actions.runs.run_attempt_label": "运行尝试 #%[1]s（%[2]s）",
-    "actions.runs.viewing_out_of_date_run": "您正在查看于 %[1]s 执行的过期运行。"
+    "actions.runs.viewing_out_of_date_run": "您正在查看于 %[1]s 执行的过期运行。",
+    "pulse.n_active_issues": {
+        "one": "%s 项活动的议题",
+        "other": "%s 项活动的议题"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s 个活跃合并请求",
+        "other": "%s 个活跃合并请求"
+    }
 }

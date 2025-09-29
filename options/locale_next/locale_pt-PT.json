@@ -156,5 +156,13 @@
     "user.ghost.tooltip": "Este utilizador foi eliminado ou não é possível encontrar uma correspondência.",
     "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Está a visualizar uma execução desatualizada deste trabalho que foi executado %[1]s.",
-    "actions.runs.view_most_recent_run": "Ver execução mais recente"
+    "actions.runs.view_most_recent_run": "Ver execução mais recente",
+    "pulse.n_active_issues": {
+        "one": "%s questão vigente",
+        "other": "%s questões vigentes"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s pedido de integração vigente",
+        "other": "%s pedidos de integração vigentes"
+    }
 }

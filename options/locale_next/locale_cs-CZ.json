@@ -156,5 +156,13 @@
     "migrate.form.error.url_credentials": "Adresa obsahuje údaje, zadejte je do odpovídajících polí uživatelského jména a hesla",
     "actions.runs.viewing_out_of_date_run": "Prohlížíte si zastaralý běh této úlohy, který byl spuštěn %[1]s.",
     "actions.runs.run_attempt_label": "Pokus o běh #%[1]s (%[2]s)",
-    "actions.runs.view_most_recent_run": "Zobrazit nejnovější běh"
+    "actions.runs.view_most_recent_run": "Zobrazit nejnovější běh",
+    "pulse.n_active_issues": {
+        "one": "%s aktivní problém",
+        "other": "%s aktivních problémů"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktivní žádost o sloučení",
+        "other": "%s aktivních žádostí o sloučení"
+    }
 }

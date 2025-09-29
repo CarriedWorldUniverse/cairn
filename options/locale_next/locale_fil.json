@@ -148,5 +148,13 @@
     "migrate.form.error.url_credentials": "Naglalaman ng mga kredensyal ang URL, ilagay ang mga ito sa mga patlang ng username at password ayon sa pagkakabanggit",
     "actions.runs.viewing_out_of_date_run": "Tumitingin ka sa isang hindi napapanahong paktabo ng trabahong ito na na-execute %[1]s.",
     "actions.runs.view_most_recent_run": "Tignan ang pinakabagong pagtakbo",
-    "actions.runs.run_attempt_label": "Tangka sa pagtakbo #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Tangka sa pagtakbo #%[1]s (%[2]s)",
+    "pulse.n_active_issues": {
+        "one": "%s aktibong isyu",
+        "other": "%s mga aktibong isyu"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktibong hiling sa paghila",
+        "other": "%s aktibong mga hiling sa paghila"
+    }
 }
