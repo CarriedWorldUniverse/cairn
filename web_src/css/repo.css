@@ -140,6 +140,13 @@
   }
 }
 
+@media (max-width: 390px) {
+  .repository .clone-panel #repo-clone-url {
+    width: 0;
+    flex-grow: 1;
+  }
+}
+
 .repository .ui.action.input.clone-panel > button + button,
 .repository .ui.action.input.clone-panel > button + input {
   margin-left: -1px; /* make the borders overlap to avoid double borders */

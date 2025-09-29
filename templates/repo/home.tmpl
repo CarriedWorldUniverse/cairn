@@ -117,10 +117,10 @@
 					</span>
 				{{end}}
 			</div>
-			<div class="tw-flex tw-items-center">
+			<div class="tw-flex tw-items-center max-[390px]:tw-w-full">
 				<!-- Only show clone panel in repository home page -->
 				{{if $isHomepage}}
-					<div class="clone-panel ui action tiny input">
+					<div class="clone-panel ui action tiny input max-[390px]:tw-w-full">
 						{{template "repo/clone_buttons" .}}
 						<button class="ui small jump dropdown icon button" data-tooltip-content="{{ctx.Locale.Tr "repo.more_operations"}}">
 							{{svg "octicon-kebab-horizontal"}}
