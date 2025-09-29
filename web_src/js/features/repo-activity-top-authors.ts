@@ -7,10 +7,10 @@ export async function initRepoActivityTopAuthorsChart() {
   }
 
   const {default: RepoActivityTopAuthors} = await import(/* webpackChunkName: "repo-activity-top-authors" */'../components/RepoActivityTopAuthors.vue');
-  const repoActivityTopAuthors = createApp(RepoActivityTopAuthors);
-  repoActivityTopAuthors.mount(el, {
+  const repoActivityTopAuthors = createApp(RepoActivityTopAuthors, {
     locale: {
       commitActivity: el.getAttribute('data-locale-commit-activity'),
     },
   });
+  repoActivityTopAuthors.mount(el);
 }
