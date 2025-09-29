@@ -103,5 +103,14 @@
     "repo.diff.commit.next-short": "Nästa",
     "repo.diff.commit.previous-short": "Föreg",
     "feed.atom.link": "Atom-flöde",
-    "repo.pulls.already_merged": "Sammanfogning misslyckades: Denna pulka förfrågning har redan blivit sammanfogad."
+    "repo.pulls.already_merged": "Sammanfogning misslyckades: Denna pulka förfrågning har redan blivit sammanfogad.",
+    "feed.atom.link": "Atom-flöde",
+    "pulse.n_active_issues": {
+        "one": "%s aktivt ärende",
+        "other": "%s aktiva ärenden"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktiv pull-förfrågan",
+        "other": "%s aktiva pull-förfrågningar"
+    }
 }

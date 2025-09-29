@@ -115,5 +115,13 @@
     "migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
     "migrate.codebase.description": "Migrar datos desde codebasehq.com.",
     "migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo.",
-    "moderation.abuse_category.spam": "Spam"
+    "moderation.abuse_category.spam": "Spam",
+    "pulse.n_active_issues": {
+        "one": "%s incidencia activa",
+        "other": "%s incidencias activas"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s pull request activa",
+        "other": "%s pull requests activas"
+    }
 }

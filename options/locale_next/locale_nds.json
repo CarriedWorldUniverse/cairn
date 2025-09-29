@@ -150,5 +150,13 @@
     "actions.runs.view_most_recent_run": "Neeisten Loop ankieken",
     "actions.runs.run_attempt_label": "Loop-Versöök #%[1]s (%[2]s)",
     "repo.pulls.maintainers_can_edit": "Liddmaten könen deesen Haalvörslag bewarken.",
-    "repo.pulls.maintainers_cannot_edit": "Liddmaten könen deesen Haalvörslag nich bewarken."
+    "repo.pulls.maintainers_cannot_edit": "Liddmaten könen deesen Haalvörslag nich bewarken.",
+    "pulse.n_active_issues": {
+        "one": "%s aktiiv Gefall",
+        "other": "%s aktiiv Gefallens"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktiiv Haalvörslag",
+        "other": "%s aktiiv Haalvörslagen"
+    }
 }

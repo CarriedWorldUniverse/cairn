@@ -150,5 +150,13 @@
     "actions.runs.run_attempt_label": "Uitvoerpoging #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "U bekijkt een verouderde uitvoer van deze opdracht die %[1]s is uitgevoerd.",
     "repo.pulls.maintainers_can_edit": "Maintainers kan deze pull request bewerken.",
-    "repo.pulls.maintainers_cannot_edit": "Maintainers kunnen deze pull request niet bewerken."
+    "repo.pulls.maintainers_cannot_edit": "Maintainers kunnen deze pull request niet bewerken.",
+    "pulse.n_active_issues": {
+        "one": "%s actieve issue",
+        "other": "%s actieve issues"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s actieve pull request",
+        "other": "%s actieve pull requests"
+    }
 }

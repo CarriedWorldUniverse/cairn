@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2024 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package integration
@@ -75,6 +76,9 @@ func TestRepoActivity(t *testing.T) {
 		assert.Equal(t, []string{"Pre-release", "Release", "Tag"}, labels)
 		assert.Equal(t, []string{"", "v0.1 Pre-release", "v1 Release"}, titles)
 
+		// Active pull requests
+		assert.Contains(t, htmlDoc.Find(".grid .column:first-child").Text(), "3 active pull requests")
+
 		// Should be 1 merged pull request
 		list = htmlDoc.doc.Find("#merged-pull-requests").Next().Find("p.desc")
 		assert.Len(t, list.Nodes, 1)
@@ -84,6 +88,9 @@ func TestRepoActivity(t *testing.T) {
 		list = htmlDoc.doc.Find("#proposed-pull-requests").Next().Find("p.desc")
 		assert.Len(t, list.Nodes, 2)
 		assert.Equal(t, "Proposed", list.Find(".label").First().Text())
+
+		// Active issues
+		assert.Contains(t, htmlDoc.Find(".grid .column:last-child").Text(), "3 active issues")
 
 		// Should be 0 closed issues
 		list = htmlDoc.doc.Find("#closed-issues").Next().Find("p.desc")

@@ -108,5 +108,13 @@
     "moderation.report_abuse_form.invalid": "Niepoprawne parametry",
     "moderation.submit_report": "Wyślij zgłoszenie",
     "repo.diff.commit.next-short": "Następny",
-    "repo.diff.commit.previous-short": "Poprzedni"
+    "repo.diff.commit.previous-short": "Poprzedni",
+    "pulse.n_active_issues": {
+        "one": "%s aktywne zgłoszenie",
+        "many": "%s aktywne zgłoszenia"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktywny pull request",
+        "many": "%s aktywne pull requesty"
+    }
 }

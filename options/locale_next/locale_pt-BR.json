@@ -158,5 +158,13 @@
     "actions.runs.view_most_recent_run": "Ver execução mais recente",
     "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
     "repo.pulls.maintainers_can_edit": "Mantenedores podem editar este pull request.",
-    "repo.pulls.maintainers_cannot_edit": "Mantenedores não podem editar este pull request."
+    "repo.pulls.maintainers_cannot_edit": "Mantenedores não podem editar este pull request.",
+    "pulse.n_active_issues": {
+        "one": "%s issue ativa",
+        "other": "%s issues ativas"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s pull request ativo",
+        "other": "%s pull requests ativos"
+    }
 }

@@ -110,5 +110,13 @@
     "migrate.onedev.description": "Migrer data fra code.onedev.io eller andre OneDev-instanser.",
     "migrate.gitbucket.description": "Migrer data fra GitBucket-instanser.",
     "migrate.codebase.description": "Migrer data fra codebasehq.com.",
-    "migrate.forgejo.description": "Migrer data fra codeberg.org eller andre Forgejo-instanser."
+    "migrate.forgejo.description": "Migrer data fra codeberg.org eller andre Forgejo-instanser.",
+    "pulse.n_active_issues": {
+        "one": "%s aktivt problem",
+        "other": "%s aktive problemer"
+    },
+    "pulse.n_active_prs": {
+        "one": "%s aktiv pull-anmodning",
+        "other": "%s aktive pull-anmodninger"
+    }
 }
