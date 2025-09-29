@@ -126,7 +126,9 @@ func TestAPIListUsers(t *testing.T) {
 		}
 	}
 	assert.True(t, found)
-	numberOfUsers := unittest.GetCount(t, &user_model.User{}, "type = 0")
+	numberOfUsers := unittest.GetCount(t, &user_model.User{}, "type = 0") +
+		unittest.GetCount(t, &user_model.User{}, "type = 5")
+
 	assert.Len(t, users, numberOfUsers)
 }
 

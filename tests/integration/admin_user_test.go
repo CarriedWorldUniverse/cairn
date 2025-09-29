@@ -39,6 +39,14 @@ func TestAdminViewUsers(t *testing.T) {
 		// 6th column is the 2FA column.
 		// One user that has TOTP and another user that has WebAuthn.
 		assert.Equal(t, 2, htmlDoc.Find(".admin-setting-content table tbody tr td:nth-child(6) .octicon-check").Length())
+
+		// account type 5 is for remote users (eg. users from the federation)
+		req = NewRequest(t, "GET", "/admin/users?status_filter[account_type]=5")
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		htmlDoc = NewHTMLParser(t, resp.Body)
+
+		// Only one user (id 42) is a remote user
+		assert.Equal(t, 1, htmlDoc.Find("table tbody tr").Length())
 	})
 
 	t.Run("Normal user", func(t *testing.T) {
@@ -148,7 +156,7 @@ func TestSourceId(t *testing.T) {
 	resp = session.MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &users)
 	assert.Len(t, users, 1)
-	assert.Equal(t, "the_34-user.with.all.allowedChars", users[0].UserName)
+	assert.Equal(t, "federated-example.net", users[0].UserName)
 
 	// Now our new user should be in the list, because we filter by source_id 23
 	req = NewRequest(t, "GET", "/api/v1/admin/users?limit=1&source_id=23").AddTokenAuth(token)
@@ -192,9 +200,9 @@ func TestAdminViewUsersSorted(t *testing.T) {
 		sortType      string
 		expectedUsers []string
 	}{
-		{0, "alphabetically", []string{"the_34-user.with.all.allowedChars", "user1", "user10", "user11"}},
+		{0, "alphabetically", []string{"federated-example.net", "the_34-user.with.all.allowedChars", "user1", "user10"}},
 		{0, "reversealphabetically", []string{"user9", "user8", "user5", "user40"}},
-		{0, "newest", []string{"user40", "user39", "user38", "user37"}},
+		{0, "newest", []string{"federated-example.net", "user40", "user39", "user38"}},
 		{0, "oldest", []string{"user1", "user2", "user4", "user5"}},
 		{44, "recentupdate", []string{"sorttest1", "sorttest2", "sorttest3", "sorttest4"}},
 		{44, "leastupdate", []string{"sorttest10", "sorttest9", "sorttest8", "sorttest7"}},

@@ -48,7 +48,7 @@ func Users(ctx *context.Context) {
 	ctx.Data["PageIsAdminUsers"] = true
 
 	extraParamStrings := map[string]string{}
-	statusFilterKeys := []string{"is_active", "is_admin", "is_restricted", "is_2fa_enabled", "is_prohibit_login"}
+	statusFilterKeys := []string{"is_active", "is_admin", "is_restricted", "is_2fa_enabled", "is_prohibit_login", "account_type"}
 	statusFilterMap := map[string]string{}
 	for _, filterKey := range statusFilterKeys {
 		paramKey := "status_filter[" + filterKey + "]"
@@ -57,6 +57,19 @@ func Users(ctx *context.Context) {
 		if paramVal != "" {
 			extraParamStrings[paramKey] = paramVal
 		}
+	}
+
+	accountType := statusFilterMap["account_type"]
+	accountTypeFilter := optional.None[user_model.UserType]()
+	if accountType != "" {
+		accountTypeInt, err := strconv.ParseInt(accountType, 10, 0)
+		if err != nil {
+			ctx.ServerError("account_type int", err)
+			return
+		}
+
+		accountTypeFilter = optional.Some(user_model.UserType(accountTypeInt))
+		extraParamStrings["account_type"] = accountType
 	}
 
 	sortType := ctx.FormString("sort")
@@ -81,6 +94,7 @@ func Users(ctx *context.Context) {
 		IsRestricted:       optional.ParseBool(statusFilterMap["is_restricted"]),
 		IsTwoFactorEnabled: optional.ParseBool(statusFilterMap["is_2fa_enabled"]),
 		IsProhibitLogin:    optional.ParseBool(statusFilterMap["is_prohibit_login"]),
+		AccountType:        accountTypeFilter,
 		IncludeReserved:    true, // administrator needs to list all accounts include reserved, bot, remote ones
 		Load2FAStatus:      true,
 		ExtraParamStrings:  extraParamStrings,

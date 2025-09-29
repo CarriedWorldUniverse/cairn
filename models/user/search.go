@@ -38,6 +38,7 @@ type SearchUserOptions struct {
 	IsRestricted       optional.Option[bool]
 	IsTwoFactorEnabled optional.Option[bool]
 	IsProhibitLogin    optional.Option[bool]
+	AccountType        optional.Option[UserType]
 	IncludeReserved    bool
 
 	Load2FAStatus     bool
@@ -121,6 +122,10 @@ func (opts *SearchUserOptions) toSearchQueryBase(ctx context.Context) *xorm.Sess
 
 	if opts.IsProhibitLogin.Has() {
 		cond = cond.And(builder.Eq{"prohibit_login": opts.IsProhibitLogin.Value()})
+	}
+
+	if opts.AccountType.Has() {
+		cond = cond.And(builder.Eq{"type": opts.AccountType.Value()})
 	}
 
 	e := db.GetEngine(ctx)
