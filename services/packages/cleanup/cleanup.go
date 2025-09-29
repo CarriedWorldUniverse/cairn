@@ -69,7 +69,8 @@ func ExecuteCleanupRules(outerCtx context.Context) error {
 				return fmt.Errorf("CleanupRule [%d]: SearchVersions failed: %w", pcr.ID, err)
 			}
 			versionDeleted := false
-			for _, pv := range pvs[pcr.KeepCount:] {
+			keep := min(len(pvs), pcr.KeepCount)
+			for _, pv := range pvs[keep:] {
 				if pcr.Type == packages_model.TypeContainer {
 					if skip, err := container_service.ShouldBeSkipped(ctx, pcr, p, pv); err != nil {
 						return fmt.Errorf("CleanupRule [%d]: container.ShouldBeSkipped failed: %w", pcr.ID, err)
