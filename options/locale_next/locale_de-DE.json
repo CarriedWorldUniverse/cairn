@@ -148,5 +148,7 @@
     "actions.runs.view_most_recent_run": "Letzten Run betrachten",
     "actions.runs.viewing_out_of_date_run": "Sie sehen einen veralteten Run dieses Jobs, der %[1]s ausgeführt wurde.",
     "actions.runs.run_attempt_label": "Run-Versuch #%[1]s (%[2]s)",
-    "migrate.form.error.url_credentials": "Die URL enthält Anmeldedaten; diese sollten in das jeweilige Benutzername- und Passwortfeld eingetragen werden"
+    "migrate.form.error.url_credentials": "Die URL enthält Anmeldedaten; diese sollten in das jeweilige Benutzername- und Passwortfeld eingetragen werden",
+    "repo.pulls.maintainers_can_edit": "Maintainer können diesen Pull-Request bearbeiten.",
+    "repo.pulls.maintainers_cannot_edit": "Maintainer können diesen Pull-Request nicht bearbeiten."
 }
