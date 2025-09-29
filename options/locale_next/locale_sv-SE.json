@@ -102,5 +102,6 @@
     "keys.ssh.link": "SSH-nycklar",
     "repo.diff.commit.next-short": "Nästa",
     "repo.diff.commit.previous-short": "Föreg",
-    "feed.atom.link": "Atom-flöde"
+    "feed.atom.link": "Atom-flöde",
+    "repo.pulls.already_merged": "Sammanfogning misslyckades: Denna pulka förfrågning har redan blivit sammanfogad."
 }

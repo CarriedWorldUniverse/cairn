@@ -156,5 +156,7 @@
     "migrate.form.error.url_credentials": "A URL contém credenciais, coloque-as nos campos de usuário e senha respectivamente",
     "actions.runs.viewing_out_of_date_run": "Você está visualizando uma execução desatualizada deste trabalho que foi executada %[1]s.",
     "actions.runs.view_most_recent_run": "Ver execução mais recente",
-    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
+    "repo.pulls.maintainers_can_edit": "Mantenedores podem editar este pull request.",
+    "repo.pulls.maintainers_cannot_edit": "Mantenedores não podem editar este pull request."
 }
