@@ -156,5 +156,7 @@
     "migrate.form.error.url_credentials": "Ссылка содержит данные авторизации. Поместите их в соответствующие поля",
     "actions.runs.run_attempt_label": "Попытка №%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Это устаревший результат. Задание было выполнено %[1]s.",
-    "actions.runs.view_most_recent_run": "Перейти к актуальному"
+    "actions.runs.view_most_recent_run": "Перейти к актуальному",
+    "repo.pulls.maintainers_can_edit": "Сопровождающие могут вносить правки.",
+    "repo.pulls.maintainers_cannot_edit": "Сопровождающие не могут вносить правки."
 }
