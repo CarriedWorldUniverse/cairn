@@ -156,5 +156,7 @@
     "migrate.form.error.url_credentials": "URL satur pieteikšanās datus, tie ir attiecīgi jāievieto lietotājvārda un paroles laukā",
     "actions.runs.view_most_recent_run": "Apskatīt visnesenāko palaišanu",
     "actions.runs.run_attempt_label": "Palaišanas mēģinājums #%[1]s (%[2]s)",
-    "actions.runs.viewing_out_of_date_run": "Tu skati novecojušu šī darba palaišanu, kas tika izpildīta %[1]s."
+    "actions.runs.viewing_out_of_date_run": "Tu skati novecojušu šī darba palaišanu, kas tika izpildīta %[1]s.",
+    "repo.pulls.maintainers_can_edit": "Uzturētāji var labot šo izmaiņu pieprasījumu.",
+    "repo.pulls.maintainers_cannot_edit": "Uzturētāji nevar labot šo izmaiņu pieprasījumu."
 }
