@@ -27,7 +27,7 @@ func ConvertTopicNameFrom25To50(x *xorm.Engine) error {
 	if err := sess.Begin(); err != nil {
 		return err
 	}
-	if err := base.RecreateTable(sess, new(Topic)); err != nil {
+	if err := base.LegacyRecreateTable(sess, new(Topic)); err != nil { //nolint:staticcheck
 		return err
 	}
 

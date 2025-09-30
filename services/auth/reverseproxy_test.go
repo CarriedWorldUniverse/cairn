@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"forgejo.org/models/db"
+	"forgejo.org/models/issues"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/setting"
@@ -22,7 +23,7 @@ func TestReverseProxyAuth(t *testing.T) {
 	defer test.MockVariableValue(&setting.Service.EnableReverseProxyFullName, true)()
 	require.NoError(t, unittest.PrepareTestDatabase())
 
-	require.NoError(t, db.TruncateBeans(db.DefaultContext, &user_model.User{}))
+	require.NoError(t, db.TruncateBeans(db.DefaultContext, &issues.TrackedTime{}, &issues.Stopwatch{}, &user_model.User{}))
 	require.EqualValues(t, 0, user_model.CountUsers(db.DefaultContext, nil))
 
 	t.Run("First user should be admin", func(t *testing.T) {

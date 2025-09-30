@@ -15,6 +15,7 @@ import (
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/models/issues"
 	"forgejo.org/models/moderation"
 	"forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
@@ -37,38 +38,81 @@ func TestMain(m *testing.M) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	test := func(userID int64) {
-		require.NoError(t, unittest.PrepareTestDatabase())
-		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userID})
+	// Note: an earlier revision of TestDeleteUser also tested for deleting user 2, but then failed to remove them from
+	// all organizations because ErrLastOrgOwner and considered a successful test -- since that didn't actually test
+	// DeleteUser in any way, that case has been removed from TestDeleteUser.
 
-		ownedRepos := make([]*repo_model.Repository, 0, 10)
-		require.NoError(t, db.GetEngine(db.DefaultContext).Find(&ownedRepos, &repo_model.Repository{OwnerID: userID}))
-		if len(ownedRepos) > 0 {
-			err := DeleteUser(db.DefaultContext, user, false)
-			require.Error(t, err)
-			assert.True(t, models.IsErrUserOwnRepos(err))
-			return
-		}
-
-		orgUsers := make([]*organization.OrgUser, 0, 10)
-		require.NoError(t, db.GetEngine(db.DefaultContext).Find(&orgUsers, &organization.OrgUser{UID: userID}))
-		for _, orgUser := range orgUsers {
-			if err := models.RemoveOrgUser(db.DefaultContext, orgUser.OrgID, orgUser.UID); err != nil {
-				assert.True(t, organization.IsErrLastOrgOwner(err))
-				return
-			}
-		}
-		require.NoError(t, DeleteUser(db.DefaultContext, user, false))
-		unittest.AssertNotExistsBean(t, &user_model.User{ID: userID})
-		unittest.CheckConsistencyFor(t, &user_model.User{}, &repo_model.Repository{})
+	testCases := []struct {
+		userID          int64
+		errUserOwnRepos bool
+		errContains     string
+	}{
+		{
+			userID:      3,
+			errContains: "is an organization not a user",
+		},
+		{
+			userID: 4,
+		},
+		{
+			userID: 8,
+		},
+		{
+			userID:          11,
+			errUserOwnRepos: true,
+		},
 	}
-	test(2)
-	test(4)
-	test(8)
-	test(11)
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("delete %d", tc.userID), func(t *testing.T) {
+			defer unittest.OverrideFixtures("services/user/TestDeleteUser")()
+			require.NoError(t, unittest.PrepareTestDatabase())
+			user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: tc.userID})
 
-	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
-	require.Error(t, DeleteUser(db.DefaultContext, org, false))
+			// Remove user from all organizations first
+			orgUsers := make([]*organization.OrgUser, 0, 10)
+			require.NoError(t, db.GetEngine(db.DefaultContext).Find(&orgUsers, &organization.OrgUser{UID: tc.userID}))
+			for _, orgUser := range orgUsers {
+				err := models.RemoveOrgUser(db.DefaultContext, orgUser.OrgID, orgUser.UID)
+				require.NoError(t, err)
+			}
+
+			err := DeleteUser(db.DefaultContext, user, false)
+			if tc.errUserOwnRepos {
+				require.Error(t, err)
+				assert.True(t, models.IsErrUserOwnRepos(err), "IsErrUserOwnRepos: %v", err)
+			} else if tc.errContains != "" {
+				assert.ErrorContains(t, err, tc.errContains)
+			} else {
+				require.NoError(t, err)
+				unittest.AssertNotExistsBean(t, &user_model.User{ID: tc.userID})
+				unittest.CheckConsistencyFor(t, &user_model.User{}, &repo_model.Repository{})
+			}
+		})
+	}
+}
+
+func TestDeleteUserRetainsTrackedTime(t *testing.T) {
+	defer unittest.OverrideFixtures("services/user/TestDeleteUser")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 8})
+
+	err := DeleteUser(db.DefaultContext, user, false)
+	require.NoError(t, err)
+
+	time := make([]*issues.TrackedTime, 0, 10)
+	err = db.GetEngine(db.DefaultContext).Find(&time, &issues.TrackedTime{IssueID: 22})
+	require.NoError(t, err)
+	require.Len(t, time, 1)
+	tt := time[0]
+	assert.EqualValues(t, 0, tt.UserID)
+	assert.EqualValues(t, 22, tt.IssueID)
+	assert.EqualValues(t, 401, tt.Time)
+
+	// Make sure other tracked time wasn't affected
+	time = make([]*issues.TrackedTime, 0, 10)
+	err = db.GetEngine(db.DefaultContext).Find(&time, &issues.TrackedTime{UserID: 2})
+	require.NoError(t, err)
+	assert.Len(t, time, 5)
 }
 
 func TestPurgeUser(t *testing.T) {

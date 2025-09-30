@@ -80,8 +80,13 @@ func InitFixtures(opts FixturesOptions, engine ...*xorm.Engine) (err error) {
 	}
 
 	var allTables container.Set[string]
-	if !opts.SkipCleanRegistedModels {
+	if opts.OnlyAffectModels == nil {
 		allTables = allTableNames().Clone()
+	} else {
+		allTables = make(container.Set[string])
+		for _, bean := range opts.OnlyAffectModels {
+			allTables.Add(e.TableName(bean))
+		}
 	}
 
 	fixturesLoader, err = newFixtureLoader(e.DB().DB, dialect, fixturePaths, allTables)

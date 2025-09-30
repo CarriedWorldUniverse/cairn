@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
+	"forgejo.org/models/db"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 
@@ -17,7 +19,12 @@ import (
 	"xorm.io/xorm/schemas"
 )
 
-// RecreateTables will recreate the tables for the provided beans using the newly provided bean definition and move all data to that new table
+// RecreateTables returns a function that will recreate the tables for the provided beans using the newly provided bean
+// definition, move all data to the new tables, and then replace the original tables with a drop and rename.
+//
+// If any 'base' table is requested to be rebuilt where one-or-more 'satellite' tables exists that references it through
+// a foreign key, you must rebuild the satellite tables as well or you will receive an error 'incomplete table set'.
+//
 // WARNING: YOU MUST PROVIDE THE FULL BEAN DEFINITION
 func RecreateTables(beans ...any) func(*xorm.Engine) error {
 	return func(x *xorm.Engine) error {
@@ -27,32 +34,177 @@ func RecreateTables(beans ...any) func(*xorm.Engine) error {
 			return err
 		}
 		sess = sess.StoreEngine("InnoDB")
+
+		tableNames := make(map[any]string, len(beans))
+		tempTableNames := make(map[any]string, len(beans))
+		tempTableNamesByOriginalName := make(map[string]string, len(beans))
 		for _, bean := range beans {
-			log.Info("Recreating Table: %s for Bean: %s", x.TableName(bean), reflect.Indirect(reflect.ValueOf(bean)).Type().Name())
-			if err := RecreateTable(sess, bean); err != nil {
+			tableName := sess.Engine().TableName(bean)
+			tableNames[bean] = tableName
+			tempTableName := fmt.Sprintf("tmp_recreate__%s", tableName)
+			tempTableNames[bean] = tempTableName
+			tempTableNamesByOriginalName[tableName] = tempTableName
+		}
+
+		// Create a set of temp tables.
+		for _, bean := range beans {
+			log.Info("Creating temp table: %s for Bean: %s", tempTableNames[bean], reflect.Indirect(reflect.ValueOf(bean)).Type().Name())
+			if err := createTempTable(sess, bean, tempTableNames[bean]); err != nil {
 				return err
 			}
 		}
+
+		// Our new temp tables tables will have foreign keys that point to the original tables we are recreating.
+		// Before we put data into these tables, we need to drop those foreign keys and add new foreign keys that point
+		// to the temp tables.
+		tableSchemas := make(map[any]*schemas.Table, len(beans))
+		for _, bean := range beans {
+			tableSchema, err := sess.Engine().TableInfo(bean)
+			if err != nil {
+				log.Error("Unable to get table info. Error: %v", err)
+				return err
+			}
+			tableSchemas[bean] = tableSchema
+			modifications := make([]schemas.TableModification, 0, len(tableSchema.ForeignKeys)*2)
+			for _, fk := range tableSchema.ForeignKeys {
+				targetTempTableName, ok := tempTableNamesByOriginalName[fk.TargetTableName]
+				if !ok {
+					return fmt.Errorf("incomplete table set: Found a foreign key reference to table %s, but it is not included in RecreateTables", fk.TargetTableName)
+				}
+				fkName := fk.Name
+				if setting.Database.Type.IsMySQL() {
+					// See MySQL explanation in createTempTable.
+					fkName = "_" + fkName
+				}
+				modifications = append(modifications, schemas.DropForeignKey{ForeignKey: schemas.ForeignKey{
+					Name:            fkName,
+					SourceFieldName: fk.SourceFieldName,
+					TargetTableName: fk.TargetTableName,
+					TargetFieldName: fk.TargetFieldName,
+				}})
+				modifications = append(modifications, schemas.AddForeignKey{ForeignKey: schemas.ForeignKey{
+					Name:            fkName,
+					SourceFieldName: fk.SourceFieldName,
+					TargetTableName: targetTempTableName, // FK changed to new temp table
+					TargetFieldName: fk.TargetFieldName,
+				}})
+			}
+
+			if len(modifications) != 0 {
+				log.Info("Modifying temp table %s foreign keys to point to other temp tables", tempTableNames[bean])
+				if err := sess.Table(tempTableNames[bean]).AlterTable(bean, modifications...); err != nil {
+					return fmt.Errorf("alter table failed: while rewriting foreign keys to temp tables, error occurred: %w", err)
+				}
+			}
+		}
+
+		// Insert into the set of temp tables in the right order, starting with base tables, working outwards to
+		// satellite tables.
+		orderedBeans := slices.Clone(beans)
+		slices.SortFunc(orderedBeans, func(b1, b2 any) int {
+			return db.TableNameInsertionOrderSortFunc(tableNames[b1], tableNames[b2])
+		})
+		for _, bean := range orderedBeans {
+			log.Info("Copying table %s to temp table %s", tableNames[bean], tempTableNames[bean])
+			if err := copyData(sess, bean, tableNames[bean], tempTableNames[bean]); err != nil {
+				// copyData does its own logging
+				return err
+			}
+		}
+
+		// Drop all the old tables in the right order, starting with satellite tables working inwards to base tables,
+		// and rename all the temp tables to the final tables.  The database will automatically update the foreign key
+		// references during the rename from temp to final tables.
+		for i := len(orderedBeans) - 1; i >= 0; i-- {
+			bean := orderedBeans[i]
+			log.Info("Dropping existing table %s, and renaming temp table %s in its place", tableNames[bean], tempTableNames[bean])
+			if err := renameTable(sess, bean, tableNames[bean], tempTableNames[bean], tableSchemas[bean]); err != nil {
+				// renameTable does its own logging
+				return err
+			}
+		}
+
 		return sess.Commit()
 	}
 }
 
-// RecreateTable will recreate the table using the newly provided bean definition and move all data to that new table
+// LegacyRecreateTable will recreate the table using the newly provided bean definition and move all data to that new
+// table.
+//
 // WARNING: YOU MUST PROVIDE THE FULL BEAN DEFINITION
+//
 // WARNING: YOU MUST COMMIT THE SESSION AT THE END
-func RecreateTable(sess *xorm.Session, bean any) error {
-	// TODO: This will not work if there are foreign keys
-
+//
+// Deprecated: LegacyRecreateTable exists for historical migrations and should not be used in current code -- tt does
+// not support foreign key management.  Use RecreateTables instead which provides foreign key support.
+func LegacyRecreateTable(sess *xorm.Session, bean any) error {
 	tableName := sess.Engine().TableName(bean)
 	tempTableName := fmt.Sprintf("tmp_recreate__%s", tableName)
+
+	tableSchema, err := sess.Engine().TableInfo(bean)
+	if err != nil {
+		log.Error("Unable to get table info. Error: %v", err)
+		return err
+	}
 
 	// We need to move the old table away and create a new one with the correct columns
 	// We will need to do this in stages to prevent data loss
 	//
 	// First create the temporary table
-	if err := sess.Table(tempTableName).CreateTable(bean); err != nil {
-		log.Error("Unable to create table %s. Error: %v", tempTableName, err)
+	if err := createTempTable(sess, bean, tempTableName); err != nil {
+		// createTempTable does its own logging
 		return err
+	}
+
+	if err := copyData(sess, bean, tableName, tempTableName); err != nil {
+		// copyData does its own logging
+		return err
+	}
+
+	if err := renameTable(sess, bean, tableName, tempTableName, tableSchema); err != nil {
+		// renameTable does its own logging
+		return err
+	}
+
+	return nil
+}
+
+func createTempTable(sess *xorm.Session, bean any, tempTableName string) error {
+	if setting.Database.Type.IsMySQL() {
+		// Can't have identical foreign key names in MySQL, and Table(tempTableName) only affects the table name and not
+		// the schema definition generated from the bean, so, we do a little adjusting by appending a `_` at the
+		// beginning of each foreign key name on the temp table. We'll remove this by renaming the constraint after we
+		// drop the original table, in renameTable.
+		originalTableSchema, err := sess.Engine().TableInfo(bean)
+		if err != nil {
+			log.Error("Unable to get table info. Error: %v", err)
+			return err
+		}
+
+		// `TableInfo()` will return a `*schema.Table` that is stored in a shared cache.  We don't want to mutate that
+		// object as it will stick around and affect other things.  Make a mostly-shallow clone, with a new slice for
+		// what we're changing.
+		tableSchema := *originalTableSchema
+		tableSchema.ForeignKeys = slices.Clone(originalTableSchema.ForeignKeys)
+		for i := range tableSchema.ForeignKeys {
+			tableSchema.ForeignKeys[i].Name = "_" + tableSchema.ForeignKeys[i].Name
+		}
+
+		sql, _, err := sess.Engine().Dialect().CreateTableSQL(&tableSchema, tempTableName)
+		if err != nil {
+			log.Error("Unable to generate CREATE TABLE query. Error: %v", err)
+			return err
+		}
+		_, err = sess.Exec(sql)
+		if err != nil {
+			log.Error("Unable to create table %s. Error: %v", tempTableName, err)
+			return err
+		}
+	} else {
+		if err := sess.Table(tempTableName).CreateTable(bean); err != nil {
+			log.Error("Unable to create table %s. Error: %v", tempTableName, err)
+			return err
+		}
 	}
 
 	if err := sess.Table(tempTableName).CreateUniques(bean); err != nil {
@@ -65,11 +217,14 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 		return err
 	}
 
+	return nil
+}
+
+func copyData(sess *xorm.Session, bean any, tableName, tempTableName string) error {
 	// Work out the column names from the bean - these are the columns to select from the old table and install into the new table
 	table, err := sess.Engine().TableInfo(bean)
 	if err != nil {
 		log.Error("Unable to get table info. Error: %v", err)
-
 		return err
 	}
 	newTableColumns := table.Columns()
@@ -128,9 +283,12 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 		return err
 	}
 
+	return nil
+}
+
+func renameTable(sess *xorm.Session, bean any, tableName, tempTableName string, tableSchema *schemas.Table) error {
 	switch {
 	case setting.Database.Type.IsSQLite3():
-		// SQLite will drop all the constraints on the old table
 		if _, err := sess.Exec(fmt.Sprintf("DROP TABLE `%s`", tableName)); err != nil {
 			log.Error("Unable to drop old table %s. Error: %v", tableName, err)
 			return err
@@ -157,32 +315,44 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 		}
 
 	case setting.Database.Type.IsMySQL():
-		// MySQL will drop all the constraints on the old table
 		if _, err := sess.Exec(fmt.Sprintf("DROP TABLE `%s`", tableName)); err != nil {
 			log.Error("Unable to drop old table %s. Error: %v", tableName, err)
 			return err
 		}
 
-		if err := sess.Table(tempTableName).DropIndexes(bean); err != nil {
-			log.Error("Unable to drop indexes on temporary table %s. Error: %v", tempTableName, err)
-			return err
-		}
-
-		// SQLite and MySQL will move all the constraints from the temporary table to the new table
+		// MySQL will move all the constraints that reference this table from the temporary table to the new table
 		if _, err := sess.Exec(fmt.Sprintf("ALTER TABLE `%s` RENAME TO `%s`", tempTableName, tableName)); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
 
-		if err := sess.Table(tableName).CreateIndexes(bean); err != nil {
-			log.Error("Unable to recreate indexes on table %s. Error: %v", tableName, err)
-			return err
+		// In `RecreateTables` the foreign keys were renamed with a '_' prefix to avoid conflicting on the original
+		// table's constraint names. Now that table has been dropped, so we can rename them back to leave the table in
+		// the right state. Unfortunately this will cause a recheck of the constraint's validity against the target
+		// table which will be slow for large tables, but it's unavoidable without the ability to rename constraints
+		// in-place. Awkwardly these FKs are still a reference to the tmp_recreate target table since we drop in reverse
+		// FK order -- the ALTER TABLE ... RENAME .. on those tmp tables will correct the FKs later.
+		modifications := make([]schemas.TableModification, 0, len(tableSchema.ForeignKeys)*2)
+		for _, fk := range tableSchema.ForeignKeys {
+			modifications = append(modifications, schemas.DropForeignKey{ForeignKey: schemas.ForeignKey{
+				Name:            "_" + fk.Name,
+				SourceFieldName: fk.SourceFieldName,
+				TargetTableName: fmt.Sprintf("tmp_recreate__%s", fk.TargetTableName),
+				TargetFieldName: fk.TargetFieldName,
+			}})
+			modifications = append(modifications, schemas.AddForeignKey{ForeignKey: schemas.ForeignKey{
+				Name:            fk.Name,
+				SourceFieldName: fk.SourceFieldName,
+				TargetTableName: fmt.Sprintf("tmp_recreate__%s", fk.TargetTableName),
+				TargetFieldName: fk.TargetFieldName,
+			}})
+		}
+		if len(modifications) != 0 {
+			if err := sess.Table(tableName).AlterTable(bean, modifications...); err != nil {
+				return fmt.Errorf("alter table failed: while rewriting foreign keys to original names, error occurred: %w", err)
+			}
 		}
 
-		if err := sess.Table(tableName).CreateUniques(bean); err != nil {
-			log.Error("Unable to recreate uniques on table %s. Error: %v", tableName, err)
-			return err
-		}
 	case setting.Database.Type.IsPostgreSQL():
 		var originalSequences []string
 		type sequenceData struct {
@@ -193,7 +363,7 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 
 		schema := sess.Engine().Dialect().URI().Schema
 		sess.Engine().SetSchema("")
-		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE ? || '_%' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&originalSequences); err != nil {
+		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE ? || '_id_seq' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&originalSequences); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
@@ -238,7 +408,7 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 
 		var sequences []string
 		sess.Engine().SetSchema("")
-		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE 'tmp_recreate__' || ? || '_%' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&sequences); err != nil {
+		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE 'tmp_recreate__' || ? || '_id_seq' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&sequences); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
@@ -275,6 +445,7 @@ func RecreateTable(sess *xorm.Session, bean any) error {
 	default:
 		log.Fatal("Unrecognized DB")
 	}
+
 	return nil
 }
 

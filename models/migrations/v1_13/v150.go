@@ -32,8 +32,8 @@ func AddPrimaryKeyToRepoTopic(x *xorm.Engine) error {
 		return err
 	}
 
-	base.RecreateTable(sess, &Topic{})
-	base.RecreateTable(sess, &RepoTopic{})
+	base.LegacyRecreateTable(sess, &Topic{})     //nolint:staticcheck
+	base.LegacyRecreateTable(sess, &RepoTopic{}) //nolint:staticcheck
 
 	return sess.Commit()
 }
