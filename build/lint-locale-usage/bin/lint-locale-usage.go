@@ -16,33 +16,13 @@ import (
 	"sort"
 	"strings"
 
+	llu "forgejo.org/build/lint-locale-usage"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/translation/localeiter"
 )
 
 // this works by first gathering all valid source string IDs from `en-US` reference files
 // and then checking if all used source strings are actually defined
-
-type LocatedError struct {
-	Location string
-	Kind     string
-	Err      error
-}
-
-func (e LocatedError) Error() string {
-	var sb strings.Builder
-
-	sb.WriteString(e.Location)
-	sb.WriteString(":\t")
-	if e.Kind != "" {
-		sb.WriteString(e.Kind)
-		sb.WriteString(": ")
-	}
-	sb.WriteString("ERROR: ")
-	sb.WriteString(e.Err.Error())
-
-	return sb.String()
-}
 
 func InitLocaleTrFunctions() map[string][]uint {
 	ret := make(map[string][]uint)
@@ -56,14 +36,6 @@ func InitLocaleTrFunctions() map[string][]uint {
 	ret["TrN"] = []uint{1, 2}
 
 	return ret
-}
-
-type Handler struct {
-	OnMsgid            func(fset *token.FileSet, pos token.Pos, msgid string)
-	OnMsgidPrefix      func(fset *token.FileSet, pos token.Pos, msgidPrefix string, truncated bool)
-	OnUnexpectedInvoke func(fset *token.FileSet, pos token.Pos, funcname string, argc int)
-	OnWarning          func(fset *token.FileSet, pos token.Pos, msg string)
-	LocaleTrFunctions  map[string][]uint
 }
 
 type StringTrie interface {
@@ -113,7 +85,7 @@ func (m StringTrieMap) Insert(key []string) {
 func ParseAllowedMaskedUsages(fname string, usedMsgids container.Set[string], allowedMaskedPrefixes StringTrieMap, chkMsgid func(msgid string) bool) error {
 	file, err := os.Open(fname)
 	if err != nil {
-		return LocatedError{
+		return llu.LocatedError{
 			Location: fname,
 			Kind:     "Open",
 			Err:      err,
@@ -133,7 +105,7 @@ func ParseAllowedMaskedUsages(fname string, usedMsgids container.Set[string], al
 			allowedMaskedPrefixes.Insert(strings.Split(linePrefix, "."))
 		} else {
 			if !chkMsgid(line) {
-				return LocatedError{
+				return llu.LocatedError{
 					Location: fmt.Sprintf("%s: line %d", fname, lno),
 					Kind:     "undefined msgid",
 					Err:      errors.New(line),
@@ -143,22 +115,13 @@ func ParseAllowedMaskedUsages(fname string, usedMsgids container.Set[string], al
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return LocatedError{
+		return llu.LocatedError{
 			Location: fname,
 			Kind:     "Scanner",
 			Err:      err,
 		}
 	}
 	return nil
-}
-
-// Truncating a message id prefix to the last dot
-func PrepareMsgidPrefix(s string) (string, bool) {
-	index := strings.LastIndexByte(s, 0x2e)
-	if index == -1 {
-		return "", true
-	}
-	return s[:index], index != len(s)-1
 }
 
 func Usage() {
@@ -210,6 +173,7 @@ func Usage() {
 func main() {
 	allowMissingMsgids := false
 	allowUnusedMsgids := false
+	allowWeakMissingMsgids := true
 	usedMsgids := make(container.Set[string])
 	allowedMaskedPrefixes := make(StringTrieMap)
 
@@ -227,6 +191,12 @@ func main() {
 		"allow-missing-msgids",
 		false,
 		"don't return an error code if missing message IDs are found",
+	)
+	flag.BoolVar(
+		&allowWeakMissingMsgids,
+		"allow-weak-missing-msgids",
+		true,
+		"Don't return an error code if missing 'weak' (e.g. \"form.$msgid\") message IDs are found",
 	)
 	flag.BoolVar(
 		&allowUnusedMsgids,
@@ -289,7 +259,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	handler := Handler{
+	handler := llu.Handler{
 		OnMsgidPrefix: func(fset *token.FileSet, pos token.Pos, msgidPrefix string, truncated bool) {
 			msgidPrefixSplit := strings.Split(msgidPrefix, ".")
 			if !truncated {
@@ -299,8 +269,11 @@ func main() {
 				fmt.Printf("%s:\tmissing msgid prefix: %s\n", fset.Position(pos).String(), msgidPrefix)
 			}
 		},
-		OnMsgid: func(fset *token.FileSet, pos token.Pos, msgid string) {
+		OnMsgid: func(fset *token.FileSet, pos token.Pos, msgid string, weak bool) {
 			if !msgids.Contains(msgid) {
+				if weak && allowWeakMissingMsgids {
+					return
+				}
 				gotAnyMsgidError = true
 				fmt.Printf("%s:\tmissing msgid: %s\n", fset.Position(pos).String(), msgid)
 			} else {
@@ -314,7 +287,7 @@ func main() {
 		OnWarning: func(fset *token.FileSet, pos token.Pos, msg string) {
 			fmt.Printf("%s:\tWARNING: %s\n", fset.Position(pos).String(), msg)
 		},
-		LocaleTrFunctions: InitLocaleTrFunctions(),
+		LocaleTrFunctions: llu.InitLocaleTrFunctions(),
 	}
 
 	if err := filepath.WalkDir(".", func(fpath string, d fs.DirEntry, err error) error {
@@ -332,7 +305,7 @@ func main() {
 		} else if name == "bindata.go" || fpath == "modules/translation/i18n/i18n_test.go" {
 			// skip false positives
 		} else if strings.HasSuffix(name, ".go") {
-			onError(handler.HandleGoFile(fpath, nil))
+			onError(HandleGoFile(handler, fpath, nil))
 		} else if strings.HasSuffix(name, ".tmpl") {
 			if strings.HasPrefix(fpath, "tests") && strings.HasSuffix(name, ".ini.tmpl") {
 				// skip false positives

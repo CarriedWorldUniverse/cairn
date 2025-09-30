@@ -38,6 +38,10 @@ routers/.* @gusted
 options/locale/.* @0ko
 options/locale_next/.* @0ko
 
-# Personal interest
+# lint-locale-usage
 build/lint-locale-usage/.* @fogti
+models/unit/.* @fogti
+services/migrations/lint-locale-usage/.* @fogti
+
+# Personal interest
 .*/webhook.* @oliverpool
