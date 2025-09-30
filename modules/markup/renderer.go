@@ -17,6 +17,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
+	"forgejo.org/modules/util/donotpanic"
 
 	"github.com/yuin/goldmark/ast"
 )
@@ -267,6 +268,15 @@ sandbox="allow-scripts"
 	return err
 }
 
+func postProcessOrCopy(ctx *RenderContext, renderer Renderer, reader io.Reader, writer io.Writer) (err error) {
+	if r, ok := renderer.(PostProcessRenderer); ok && r.NeedPostProcess() {
+		err = PostProcess(ctx, reader, writer)
+	} else {
+		_, err = io.Copy(writer, reader)
+	}
+	return err
+}
+
 func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Writer) error {
 	var wg sync.WaitGroup
 	var err error
@@ -293,7 +303,7 @@ func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Wr
 
 		wg.Add(1)
 		go func() {
-			err = SanitizeReader(pr2, renderer.Name(), output)
+			err = donotpanic.SafeFuncWithError(func() error { return SanitizeReader(pr2, renderer.Name(), output) })
 			_ = pr2.Close()
 			wg.Done()
 		}()
@@ -303,11 +313,7 @@ func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Wr
 
 	wg.Add(1)
 	go func() {
-		if r, ok := renderer.(PostProcessRenderer); ok && r.NeedPostProcess() {
-			err = PostProcess(ctx, pr, pw2)
-		} else {
-			_, err = io.Copy(pw2, pr)
-		}
+		err = donotpanic.SafeFuncWithError(func() error { return postProcessOrCopy(ctx, renderer, pr, pw2) })
 		_ = pr.Close()
 		_ = pw2.Close()
 		wg.Done()
