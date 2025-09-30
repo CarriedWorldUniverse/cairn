@@ -265,6 +265,29 @@ func deleteIssue(ctx context.Context, issue *issues_model.Issue) error {
 		return err
 	}
 
+	// delete all database data still assigned to this issue
+	if err := db.DeleteBeans(ctx,
+		&issues_model.ContentHistory{IssueID: issue.ID},
+		&issues_model.Comment{IssueID: issue.ID},
+		&issues_model.IssueLabel{IssueID: issue.ID},
+		&issues_model.IssueDependency{IssueID: issue.ID},
+		&issues_model.IssueAssignees{IssueID: issue.ID},
+		&issues_model.IssueUser{IssueID: issue.ID},
+		&activities_model.Notification{IssueID: issue.ID},
+		&issues_model.Reaction{IssueID: issue.ID},
+		&issues_model.IssueWatch{IssueID: issue.ID},
+		&issues_model.Stopwatch{IssueID: issue.ID},
+		&issues_model.TrackedTime{IssueID: issue.ID},
+		&project_model.ProjectIssue{IssueID: issue.ID},
+		&repo_model.Attachment{IssueID: issue.ID},
+		&issues_model.PullRequest{IssueID: issue.ID},
+		&issues_model.Comment{RefIssueID: issue.ID},
+		&issues_model.IssueDependency{DependencyID: issue.ID},
+		&issues_model.Comment{DependentIssueID: issue.ID},
+	); err != nil {
+		return err
+	}
+
 	if _, err := e.ID(issue.ID).NoAutoCondition().Delete(issue); err != nil {
 		return err
 	}
@@ -296,29 +319,6 @@ func deleteIssue(ctx context.Context, issue *issues_model.Issue) error {
 
 	for i := range issue.Attachments {
 		system_model.RemoveStorageWithNotice(ctx, storage.Attachments, "Delete issue attachment", issue.Attachments[i].RelativePath())
-	}
-
-	// delete all database data still assigned to this issue
-	if err := db.DeleteBeans(ctx,
-		&issues_model.ContentHistory{IssueID: issue.ID},
-		&issues_model.Comment{IssueID: issue.ID},
-		&issues_model.IssueLabel{IssueID: issue.ID},
-		&issues_model.IssueDependency{IssueID: issue.ID},
-		&issues_model.IssueAssignees{IssueID: issue.ID},
-		&issues_model.IssueUser{IssueID: issue.ID},
-		&activities_model.Notification{IssueID: issue.ID},
-		&issues_model.Reaction{IssueID: issue.ID},
-		&issues_model.IssueWatch{IssueID: issue.ID},
-		&issues_model.Stopwatch{IssueID: issue.ID},
-		&issues_model.TrackedTime{IssueID: issue.ID},
-		&project_model.ProjectIssue{IssueID: issue.ID},
-		&repo_model.Attachment{IssueID: issue.ID},
-		&issues_model.PullRequest{IssueID: issue.ID},
-		&issues_model.Comment{RefIssueID: issue.ID},
-		&issues_model.IssueDependency{DependencyID: issue.ID},
-		&issues_model.Comment{DependentIssueID: issue.ID},
-	); err != nil {
-		return err
 	}
 
 	return committer.Commit()

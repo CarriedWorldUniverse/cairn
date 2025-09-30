@@ -22,9 +22,9 @@ import (
 // TrackedTime represents a time that was spent for a specific issue.
 type TrackedTime struct {
 	ID          int64            `xorm:"pk autoincr"`
-	IssueID     int64            `xorm:"INDEX"`
+	IssueID     int64            `xorm:"INDEX REFERENCES(issue, id)"`
 	Issue       *Issue           `xorm:"-"`
-	UserID      int64            `xorm:"INDEX"`
+	UserID      int64            `xorm:"INDEX REFERENCES(user, id)"`
 	User        *user_model.User `xorm:"-"`
 	Created     time.Time        `xorm:"-"`
 	CreatedUnix int64            `xorm:"created"`

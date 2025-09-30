@@ -217,10 +217,9 @@ type FixturesOptions struct {
 	Files []string
 	Dirs  []string
 	Base  string
-	// By default all registered models are cleaned, even if they do not have
-	// fixture. Enabling this will skip that and only models with fixtures are
-	// considered.
-	SkipCleanRegistedModels bool
+	// By default all registered models are cleaned, even if they do not have fixture. When OnlyAffectModels is not-nil,
+	// cleaning registered models will be skipped and only these models with fixtures are considered.
+	OnlyAffectModels []any
 }
 
 // CreateTestEngine creates a memory database and loads the fixture data from fixturesDir

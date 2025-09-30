@@ -30,7 +30,7 @@ func UpdateReactionConstraint(x *xorm.Engine) error {
 		return err
 	}
 
-	if err := base.RecreateTable(sess, &Reaction{}); err != nil {
+	if err := base.LegacyRecreateTable(sess, &Reaction{}); err != nil { //nolint:staticcheck
 		return err
 	}
 

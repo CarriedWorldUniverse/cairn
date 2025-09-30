@@ -121,6 +121,8 @@ func checkDBConsistency(ctx context.Context, logger log.Logger, autofix bool) er
 		// find tracked times without existing issues/pulls
 		genericOrphanCheck("Orphaned TrackedTimes without existing issue",
 			"tracked_time", "issue", "tracked_time.issue_id=issue.id"),
+		genericOrphanCheck("Orphaned TrackedTimes without existing user",
+			"tracked_time", "user", "tracked_time.user_id=`user`.id"),
 		// find attachments without existing issues or releases
 		{
 			Name:    "Orphaned Attachments without existing issues or releases",
