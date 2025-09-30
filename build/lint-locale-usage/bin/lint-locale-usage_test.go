@@ -7,24 +7,26 @@ import (
 	"go/token"
 	"testing"
 
+	llu "forgejo.org/build/lint-locale-usage"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func buildHandler(ret *[]string) Handler {
-	return Handler{
-		OnMsgid: func(fset *token.FileSet, pos token.Pos, msgid string) {
+func buildHandler(ret *[]string) llu.Handler {
+	return llu.Handler{
+		OnMsgid: func(fset *token.FileSet, pos token.Pos, msgid string, weak bool) {
 			*ret = append(*ret, msgid)
 		},
 		OnUnexpectedInvoke: func(fset *token.FileSet, pos token.Pos, funcname string, argc int) {},
-		LocaleTrFunctions:  InitLocaleTrFunctions(),
+		LocaleTrFunctions:  llu.InitLocaleTrFunctions(),
 	}
 }
 
 func HandleGoFileWrapped(t *testing.T, fname, src string) []string {
 	var ret []string
 	handler := buildHandler(&ret)
-	require.NoError(t, handler.HandleGoFile(fname, src))
+	require.NoError(t, HandleGoFile(handler, fname, src))
 	return ret
 }
 
