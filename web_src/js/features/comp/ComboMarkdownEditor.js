@@ -476,7 +476,23 @@ class ComboMarkdownEditor {
     // Indent with 4 spaces, unindent 4 spaces or fewer or a lost tab.
     const indentPrefix = '    ';
     const unindentRegex = /^( {1,4}|\t|> {0,4})/;
-    const indentLevel = / {4}|\t|> /g;
+    const indentTokens = ['    ', '\t', '> '];
+
+    const indentLevel = (line) => {
+      let indent = 0;
+      let matchingToken;
+
+      do {
+        matchingToken = indentTokens.find((token) => line.startsWith(token));
+
+        if (matchingToken) {
+          indent++;
+          line = line.substr(matchingToken.length);
+        }
+      } while (matchingToken);
+
+      return indent;
+    };
 
     const value = this.textarea.value;
     const lines = value.split('\n');
@@ -525,8 +541,8 @@ class ComboMarkdownEditor {
       const match = line.match(listPrefixRegex);
       if (!match || !match[0].length) return false;
       // Check that the line isn't already indented in relation to parent.
-      const levels = line.match(indentLevel)?.length ?? 0;
-      const parentLevels = !firstLineIdx ? 0 : lines[firstLineIdx - 1].match(indentLevel)?.length ?? 0;
+      const levels = indentLevel(line);
+      const parentLevels = firstLineIdx > 0 ? indentLevel(lines.at(firstLineIdx - 1)) : 0;
       // Quotes can *begin* multiple levels in, so just allow whatever for now.
       if (levels - parentLevels > 0 && !isQuote) return false;
     }

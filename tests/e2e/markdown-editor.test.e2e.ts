@@ -196,6 +196,13 @@ test('markdown indentation with Tab', async ({page}) => {
   await textarea.pressSequentially('  ');
   await textarea.press('Shift+Tab');
   await expect(textarea).toHaveValue(initText);
+
+  // Check that indentation tokens not at the start of the string do not interrupt indentation
+  await textarea.focus();
+  await textarea.fill(initText);
+  await textarea.pressSequentially(tab);
+  await textarea.press('Tab');
+  await expect(textarea).toHaveValue(`* first\n* second\n* third\n    * last    `);
 });
 
 test('markdown block quote indentation', async ({page}) => {
