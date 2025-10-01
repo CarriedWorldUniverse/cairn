@@ -144,8 +144,5 @@ func timeSinceTo(then any, now time.Time) template.HTML {
 
 // TimeSince renders relative time HTML given a time
 func TimeSince(then any) template.HTML {
-	if setting.UI.PreferredTimestampTense == "absolute" {
-		return dateTimeFormat("full", then)
-	}
 	return timeSinceTo(then, time.Now())
 }
