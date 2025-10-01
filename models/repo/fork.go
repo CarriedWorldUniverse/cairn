@@ -5,6 +5,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/unit"
@@ -42,10 +43,51 @@ func HasForkedRepo(ctx context.Context, ownerID, repoID int64) bool {
 	return has
 }
 
+// HasForkedRepoLax checks if given user has already forked a repository with given ID,
+// or if it the target repository is itself a fork, whether the user has a fork of its base
+// (as that can also be used to make a PR).
+func HasForkedRepoLax(ctx context.Context, ownerID int64, baseRepo *Repository) bool {
+	query := db.GetEngine(ctx).
+		Table("repository").
+		Where("owner_id=?", ownerID)
+	if baseRepo.IsFork {
+		query = query.And("fork_id=? OR fork_id=?", baseRepo.ID, baseRepo.ForkID)
+	} else {
+		query = query.And("fork_id=?", baseRepo.ID)
+	}
+	has, _ := query.Exist()
+	return has
+}
+
 // GetUserFork return user forked repository from this repository, if not forked return nil
 func GetUserFork(ctx context.Context, repoID, userID int64) (*Repository, error) {
 	var forkedRepo Repository
 	has, err := db.GetEngine(ctx).Where("fork_id = ?", repoID).And("owner_id = ?", userID).Get(&forkedRepo)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return &forkedRepo, nil
+}
+
+// GetUserForkLax returns the user forked repository from this repository.
+// If the passed repository is itself a fork and we have a fork of its base, it will be used as
+// a fall-back. Otherwise return nil.
+func GetUserForkLax(ctx context.Context, baseRepo *Repository, userID int64) (*Repository, error) {
+	var forkedRepo Repository
+	query := db.GetEngine(ctx).Where("owner_id = ?", userID)
+	if baseRepo.IsFork {
+		query = query.And("fork_id = ? OR fork_id = ?", baseRepo.ID, baseRepo.ForkID)
+		// prefer any repository that is marked as an exact fork of the target
+		// (ordering by a boolean means returning the rows where the condition is false first,
+		// hence the counter-intuitive condition)
+		query.OrderBy(fmt.Sprintf("fork_id != %d", baseRepo.ID))
+	} else {
+		query = query.And("fork_id = ?", baseRepo.ID)
+	}
+	has, err := query.Get(&forkedRepo)
 	if err != nil {
 		return nil, err
 	}

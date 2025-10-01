@@ -349,7 +349,7 @@
   is_archived: false
   is_mirror: false
   status: 0
-  is_fork: false
+  is_fork: true
   fork_id: 10
   is_template: false
   template_id: 0
@@ -1921,3 +1921,4 @@
   is_fsck_enabled: true
   close_issues_via_commit_in_any_branch: false
   topics: '[]'
+

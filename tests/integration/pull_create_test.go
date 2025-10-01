@@ -591,3 +591,43 @@ func TestPullCreatePrFromBaseToFork(t *testing.T) {
 		assert.Regexp(t, "^/user1/repo1/pulls/[0-9]*$", url)
 	})
 }
+
+func TestPullCreatePrFromForkToFork(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		sessionFork1 := loginUser(t, "user1")
+		testRepoFork(t, sessionFork1, "user2", "repo1", "user1", "repo1")
+		sessionFork3 := loginUser(t, "user30")
+		testRepoFork(t, sessionFork3, "user2", "repo1", "user30", "repo1")
+
+		// Edit fork of user30
+		testEditFileToNewBranch(t, sessionFork3, "user30", "repo1", "master", "my-patch", "README.md", "Hello, World (Edited)\n")
+
+		// As user30, go to the PR page of the first fork, belonging to user1
+		req := NewRequest(t, "GET", path.Join("user1", "repo1", "pulls"))
+		resp := sessionFork3.MakeRequest(t, req, http.StatusOK)
+
+		// Check that the button to create PRs is enabled
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		defaultCompareLink, exists := htmlDoc.doc.Find(".new-pr-button").Attr("href")
+		assert.True(t, exists, "The template has changed")
+		assert.Regexp(t, "^/user1/repo1/compare/.*$", defaultCompareLink)
+
+		// The default compare page for the user1 fork should let us select a branch from our user30 fork
+		req = NewRequest(t, "GET", defaultCompareLink)
+		resp = sessionFork3.MakeRequest(t, req, http.StatusOK)
+		htmlDoc = NewHTMLParser(t, resp.Body)
+		ourCompareLink, exists := htmlDoc.doc.Find(".head-branch-list .item:contains('user30:my-patch')").Attr("data-url")
+		assert.True(t, exists, "The branch from our fork is not proposed in the /compare page of their fork")
+		assert.Equal(t, "/user1/repo1/compare/master...user30/repo1:my-patch", ourCompareLink)
+
+		// Go to the compare page for the branch we created, which should load fine
+		req = NewRequest(t, "GET", ourCompareLink)
+		sessionFork3.MakeRequest(t, req, http.StatusOK)
+
+		// Create a PR
+		resp = testPullCreateDirectly(t, sessionFork3, "user1", "repo1", "master", "user30", "repo1", "my-patch", "This is a pull title")
+		// check the redirected URL
+		url := test.RedirectURL(resp)
+		assert.Regexp(t, "^/user1/repo1/pulls/[0-9]*$", url)
+	})
+}
