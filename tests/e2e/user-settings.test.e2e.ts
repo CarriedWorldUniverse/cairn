@@ -123,3 +123,24 @@ test('User: Canceling adding GPG key clears input', async ({browser}, workerInfo
 
   await expect(gpgKeyContent).toHaveValue('');
 });
+
+test('User: Add access token', async ({browser}, workerInfo) => {
+  const page = await login({browser}, workerInfo);
+  await page.goto('/user/settings/applications');
+
+  await page.locator('#scoped-access-submit').click();
+  await page.locator('#name:invalid').isVisible();
+
+  await page.locator('details.optional.field').click();
+  await page.selectOption('#access-token-scope-activitypub', 'read:activitypub');
+  await page.locator('#scoped-access-submit').click();
+
+  await page.locator('#name:invalid').isVisible();
+  await expect(page.locator('#access-token-scope-activitypub')).toHaveValue('read:activitypub');
+
+  const tokenName = globalThis.crypto.randomUUID();
+  await page.locator('#name').fill(tokenName);
+  await page.locator('#scoped-access-submit').click();
+
+  await page.getByText(tokenName).isVisible();
+});

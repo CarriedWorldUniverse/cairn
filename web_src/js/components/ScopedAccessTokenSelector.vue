@@ -51,6 +51,13 @@ export default {
 
   methods: {
     onClickSubmit(e) {
+      const form = document.getElementById('scoped-access-form');
+      if (!form.checkValidity()) {
+        // some required inputs are not filled
+        return;
+      }
+
+      // prevent after validity-check to get native-required-popup
       e.preventDefault();
 
       const warningEl = document.getElementById('scoped-access-warning');
@@ -60,7 +67,7 @@ export default {
           // Hide the error if it was visible from previous attempt.
           hideElem(warningEl);
           // Submit the form.
-          document.getElementById('scoped-access-form').submit();
+          form.submit();
           // Don't show the warning.
           return;
         }
