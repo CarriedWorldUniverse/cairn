@@ -84,7 +84,7 @@
 }
 
 text-expander {
-  display: block;
+  display: flex;
   position: relative;
 }
 
