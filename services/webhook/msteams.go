@@ -373,7 +373,7 @@ func createMSTeamsPayload(r *api.Repository, s *api.User, title, text, actionTar
 		PotentialAction: []MSTeamsAction{
 			{
 				Type: "OpenUri",
-				Name: "View in Gitea",
+				Name: "View in Forgejo",
 				Targets: []MSTeamsActionTarget{
 					{
 						Os:  "default",
