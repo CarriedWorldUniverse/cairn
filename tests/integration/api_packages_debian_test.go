@@ -264,4 +264,35 @@ func TestPackageDebian(t *testing.T) {
 		assert.Contains(t, body, "Components: "+strings.Join(components, " ")+"\n")
 		assert.Contains(t, body, "Architectures: "+architectures[1]+"\n")
 	})
+
+	t.Run("Delete via UI", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		// Test precondition -- ensure that the packageVersion & packageVersion2 are listed in the index
+		indexURL := fmt.Sprintf("%s/dists/%s/%s/binary-%s/Packages", rootURL, distributions[1], components[0], architectures[0])
+		req := NewRequest(t, "GET", indexURL)
+		resp := MakeRequest(t, req, http.StatusOK)
+		body := resp.Body.String()
+		require.Contains(t, body, fmt.Sprintf("Version: %s", packageVersion))
+		require.Contains(t, body, fmt.Sprintf("Version: %s", packageVersion2))
+
+		// Perform backend request that simulates the "Delete package" UI option, which is a generic codepath without
+		// debian-specific package management awareness...
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		session := loginUser(t, user.Name)
+		settingsURL := fmt.Sprintf("/user2/-/packages/debian/%s/%s/settings", packageName, packageVersion)
+		uiURL := fmt.Sprintf("/user2/-/packages/debian/%s/%s", packageName, packageVersion)
+		req = NewRequestWithValues(t, "POST", settingsURL, map[string]string{
+			"_csrf":  GetCSRF(t, session, uiURL),
+			"action": "delete",
+		})
+		session.MakeRequest(t, req, http.StatusSeeOther)
+
+		// Ensure that the package index has been rebuilt without the deleted package, handled by debianPackageNotifier
+		req = NewRequest(t, "GET", indexURL)
+		resp = MakeRequest(t, req, http.StatusOK)
+		body = resp.Body.String()
+		assert.NotContains(t, body, fmt.Sprintf("Version: %s", packageVersion))
+		require.Contains(t, body, fmt.Sprintf("Version: %s", packageVersion2))
+	})
 }

@@ -298,11 +298,13 @@ func DeletePackageFile(ctx *context.Context) {
 
 	if pd != nil {
 		notify_service.PackageDelete(ctx, ctx.Doer, pd)
-	}
-
-	if err := debian_service.BuildSpecificRepositoryFiles(ctx, ctx.Package.Owner.ID, distribution, component, architecture); err != nil {
-		apiError(ctx, http.StatusInternalServerError, err)
-		return
+	} else {
+		// If the entire package version wasn't deleted and some other distribution/cmoponent/architecture remains for
+		// this package, we need to explicitly rebuild this part of the package index.
+		if err := debian_service.BuildSpecificRepositoryFiles(ctx, ctx.Package.Owner.ID, distribution, component, architecture); err != nil {
+			apiError(ctx, http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	ctx.Status(http.StatusNoContent)
