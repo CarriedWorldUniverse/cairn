@@ -4,7 +4,7 @@
 package structs
 
 // CommitStatusState holds the state of a CommitStatus
-// It can be "pending", "success", "error" and "failure"
+// It can be "pending", "success", "error", "failure" and "warning"
 type CommitStatusState string
 
 const (
