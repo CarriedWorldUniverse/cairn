@@ -225,7 +225,11 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
     input.name = 'files';
     input.type = 'hidden';
     input.value = data.uuid;
-    dropzoneEl.querySelector('.files').append(input);
+    const inputPath = document.createElement('input');
+    inputPath.name = `files_fullpath[${data.uuid}]`;
+    inputPath.type = 'hidden';
+    inputPath.value = htmlEscape(file.fullPath || file.name);
+    dropzoneEl.querySelector('.files').append(input, inputPath);
 
     // Create a "Copy Link" element, to conveniently copy the image
     // or file link as Markdown to the clipboard
@@ -270,6 +274,7 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
       this.on('success', initFilePreview);
       this.on('removedfile', async (file) => {
         document.getElementById(file.uuid)?.remove();
+        document.querySelector(`input[name="files_fullpath[${file.uuid}]"]`)?.remove();
         if (disableRemovedfileEvent) return;
         if (dropzoneEl.getAttribute('data-remove-url') && !fileUuidDict[file.uuid].submitted) {
           try {

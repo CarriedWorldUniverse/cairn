@@ -76,6 +76,10 @@ func DeclareGitRepos(t *testing.T) func() {
 				CommitMsg: "Another commit which mentions @user1 in the title\nand @user2 in the text",
 			},
 		}, nil),
+		newRepo(t, 2, "file-uploads", nil, []FileChanges{{
+			Filename: "UPLOAD_TEST.md",
+			Versions: []string{"# File upload test\nUse this repo to test various file upload features in new branches."},
+		}}, nil),
 		newRepo(t, 2, "unicode-escaping", &tests.DeclarativeRepoOptions{
 			EnabledUnits: optional.Some([]unit_model.Type{unit_model.TypeCode, unit_model.TypeWiki}),
 		}, []FileChanges{{
