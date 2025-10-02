@@ -97,12 +97,23 @@
 						<span class="help">{{ctx.Locale.Tr "repo.visibility_description"}}</span>
 					</div>
 					<div class="divider"></div>
-					<div class="inline field {{if .Err_Auth}}error{{end}}">
-						<label for="auth_token">{{ctx.Locale.Tr "migrate.pagure.token_label"}}</label>
-						<input id="auth_token" name="auth_token" value="{{.auth_token}}" {{if not .auth_token}}data-need-clear="true"{{end}}>
-						<span class="help">{{ctx.Locale.Tr "migrate.pagure.token_body_a"}}</span>
-						<span class="help">{{ctx.Locale.Tr "migrate.pagure.token_body_b"}}</span>
-					</div>
+					<details class="ui optional field">
+						<summary class="tw-p-1">
+							{{ctx.Locale.Tr "migrate.pagure.private_issues.summary"}}
+						</summary>
+						<div class="tw-p-1">
+							<div class="ui blue message">
+								{{ctx.Locale.Tr "migrate.pagure.private_issues.description"}}
+							</div>
+							<div class="ui red message">
+								{{ctx.Locale.Tr "migrate.pagure.private_issues.warning"}}
+							</div>
+							<div class="field {{if .Err_Auth}}error{{end}}">
+								<label for="auth_token">{{ctx.Locale.Tr "migrate.pagure.token_label"}}</label>
+								<input id="auth_token" name="auth_token" value="{{.auth_token}}" placeholder="{{ctx.Locale.Tr "migrate.pagure.token.placeholder"}}" {{if not .auth_token}}data-need-clear="true"{{end}}>
+							</div>
+						</div>
+					</details>
 					<div class="divider"></div>
 					<div class="inline field">
 						<label></label>
