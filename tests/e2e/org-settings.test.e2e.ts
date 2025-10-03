@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
@@ -17,11 +18,11 @@ test('org team settings', async ({page}, workerInfo) => {
 
   await page.locator('input[name="permission"][value="admin"]').click();
   await expect(page.locator('.hide-unless-checked')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 
   await page.locator('input[name="permission"][value="read"]').click();
   await expect(page.locator('.hide-unless-checked')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
 
   // we are validating the form here to include the part that could be hidden
   await validate_form({page});

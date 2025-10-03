@@ -7,7 +7,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -16,18 +17,18 @@ test('PR: Create review from files', async ({page}) => {
   expect(response?.status()).toBe(200);
 
   await expect(page.locator('.tippy-box .review-box-panel')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 
   // Review panel should appear after clicking Finish review
   await page.locator('#review-box .js-btn-review').click();
   await expect(page.locator('.tippy-box .review-box-panel')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
 
   await page.locator('.review-box-panel textarea#_combo_markdown_editor_0')
     .fill('This is a review');
   await page.locator('.review-box-panel button.btn-submit[value="approve"]').click();
   await page.waitForURL(/.*\/user2\/repo1\/pulls\/5#issuecomment-\d+/);
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('PR: Create review from commit', async ({page}) => {
@@ -39,7 +40,7 @@ test('PR: Create review from commit', async ({page}) => {
   await expect(code_comment).toBeVisible();
 
   await code_comment.fill('This is a code comment');
-  await save_visual(page);
+  await screenshot(page);
 
   const start_button = page.locator('.comment-code-cloud form button.btn-start-review');
   // Workaround for #7152, where there might already be a pending review state from previous
@@ -58,13 +59,13 @@ test('PR: Create review from commit', async ({page}) => {
 
   await page.locator('#review-box .js-btn-review').click();
   await expect(page.locator('.tippy-box .review-box-panel')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
 
   await page.locator('.review-box-panel textarea.markdown-text-editor')
     .fill('This is a review');
   await page.locator('.review-box-panel button.btn-submit[value="approve"]').click();
   await page.waitForURL(/.*\/user2\/repo1\/pulls\/3#issuecomment-\d+/);
-  await save_visual(page);
+  await screenshot(page);
 
   // In addition to testing the ability to delete comments, this also
   // performs clean up. If tests are run for multiple platforms, the data isn't reset
@@ -79,7 +80,7 @@ test('PR: Create review from commit', async ({page}) => {
   await page.locator('.comment-header-right.actions div.menu .delete-comment').click();
 
   await expect(page.locator('.comment-list .comment-container')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('PR: Navigate by single commit', async ({page}) => {
@@ -88,7 +89,7 @@ test('PR: Navigate by single commit', async ({page}) => {
 
   await page.locator('tbody.commit-list td.message a').nth(1).click();
   await page.waitForURL(/.*\/user2\/repo1\/pulls\/3\/commits\/4a357436d925b5c974181ff12a994538ddc5a269/);
-  await save_visual(page);
+  await screenshot(page);
 
   let prevButton = page.locator('.commit-header-buttons').getByText(/Prev/);
   let nextButton = page.locator('.commit-header-buttons').getByText(/Next/);
@@ -101,7 +102,7 @@ test('PR: Navigate by single commit', async ({page}) => {
   await nextButton.click();
 
   await page.waitForURL(/.*\/user2\/repo1\/pulls\/3\/commits\/5f22f7d0d95d614d25a5b68592adb345a4b5c7fd/);
-  await save_visual(page);
+  await screenshot(page);
 
   prevButton = page.locator('.commit-header-buttons').getByText(/Prev/);
   nextButton = page.locator('.commit-header-buttons').getByText(/Next/);
@@ -122,7 +123,7 @@ test('PR: Test mentions values', async ({page}) => {
 
   await page.locator('.review-box-panel textarea#_combo_markdown_editor_0')
     .fill('@');
-  await save_visual(page);
+  await screenshot(page);
 
   await expect(page.locator('ul.suggestions li span:first-of-type')).toContainText([
     'user1',

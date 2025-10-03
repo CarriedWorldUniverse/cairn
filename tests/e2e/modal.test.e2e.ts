@@ -7,7 +7,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, dynamic_id, test} from './utils_e2e.ts';
+import {dynamic_id, test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -33,7 +34,7 @@ test('Dialog modal', async ({page}, workerInfo) => {
   await page.keyboard.press('Backspace');
 
   await page.locator('#commit-button').click();
-  await save_visual(page);
+  await screenshot(page);
   await expect(page.locator('#edit-empty-content-modal')).toBeVisible();
 
   await page.locator('#edit-empty-content-modal .cancel').click();

@@ -24,5 +24,5 @@ test('Correct link and tooltip', async ({page}, testInfo) => {
   await expect(repoStatus).toHaveAttribute('href', '/user2/test_workflows/actions', {timeout: 10000});
   await expect(repoStatus).toHaveAttribute('data-tooltip-content', /^(Error|Failure)$/);
   // ToDo: Ensure stable screenshot of dashboard. Known to be flaky: https://code.forgejo.org/forgejo/visual-browser-testing/commit/206d4cfb7a4af6d8d7043026cdd4d63708798b2a
-  // await save_visual(page);
+  // await screenshot(page);
 });

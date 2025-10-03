@@ -7,7 +7,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test('Explore view taborder', async ({page}) => {
   await page.goto('/explore/repos');
@@ -42,5 +43,5 @@ test('Explore view taborder', async ({page}) => {
     }
   }
   expect(res).toBe(exp);
-  await save_visual(page);
+  await screenshot(page);
 });

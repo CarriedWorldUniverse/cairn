@@ -7,7 +7,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, save_visual} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
@@ -21,13 +22,13 @@ test('repo webhook settings', async ({page}) => {
 
   // check accessibility including the custom events (now visible) part
   await validate_form({page}, 'fieldset');
-  await save_visual(page);
+  await screenshot(page);
 
   await page.locator('input[name="events"][value="push_only"]').click();
   await expect(page.locator('.hide-unless-checked')).toBeHidden();
   await page.locator('input[name="events"][value="send_everything"]').click();
   await expect(page.locator('.hide-unless-checked')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test.describe('repo branch protection settings', () => {
@@ -53,11 +54,11 @@ test.describe('repo branch protection settings', () => {
     // verify header is new
     await expect(page.locator('h4')).toContainText('new');
     await page.locator('input[name="rule_name"]').fill('testrule');
-    await save_visual(page);
+    await screenshot(page);
     await page.locator('button:text("Save rule")').click();
     // verify header is in edit mode
     await page.waitForLoadState('domcontentloaded');
-    await save_visual(page);
+    await screenshot(page);
 
     // find the edit button and click it
     const editButton = page.locator('a[href="/user2/repo1/settings/branches/edit?rule_name=testrule"]');
@@ -65,6 +66,6 @@ test.describe('repo branch protection settings', () => {
 
     await page.waitForLoadState();
     await expect(page.locator('.repo-setting-content .header')).toContainText('Protection rules for branch', {ignoreCase: true, useInnerText: true});
-    await save_visual(page);
+    await screenshot(page);
   });
 });

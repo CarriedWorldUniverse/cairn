@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test('Commit graph overflow', async ({page}) => {
   const response = await page.goto('/user2/repo1/graph');
@@ -28,7 +29,7 @@ test('Commit graph overflow', async ({page}) => {
   await expect(page.getByRole('button', {name: 'Mono'})).toBeInViewport({ratio: 1});
   await expect(page.getByRole('button', {name: 'Color'})).toBeInViewport({ratio: 1});
   await expect(page.locator('.selection.search.dropdown')).toBeInViewport({ratio: 1});
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Switch branch', async ({page}) => {
@@ -45,5 +46,5 @@ test('Switch branch', async ({page}) => {
   await expect(page.locator('#loading-indicator')).toBeHidden();
   await expect(page.locator('#rel-container')).toBeVisible();
   await expect(page.locator('#rev-container')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
 });

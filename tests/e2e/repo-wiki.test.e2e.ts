@@ -4,7 +4,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 for (const searchTerm of ['space', 'consectetur']) {
   for (const width of [null, 2560, 4000]) {
@@ -25,7 +26,7 @@ for (const searchTerm of ['space', 'consectetur']) {
       await expect(page.locator('#wiki-search a[href]')).toBeInViewport({
         ratio: workerInfo.project.name === 'webkit' ? 0.9 : 1,
       });
-      await save_visual(page);
+      await screenshot(page);
     });
   }
 }
@@ -39,12 +40,12 @@ test(`Search results show titles (and not file names)`, async ({page}, workerInf
   // so we manually "type" the last letter
   await page.getByPlaceholder('Search wiki').dispatchEvent('keyup');
   await expect(page.locator('#wiki-search a[href] b')).toHaveText('Page With Spaced Name');
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Wiki unicode-escape', async ({page}) => {
   await page.goto('/user2/unicode-escaping/wiki');
-  await save_visual(page);
+  await screenshot(page);
 
   expect(await page.locator('.ui.message.unicode-escape-prompt').count()).toEqual(3);
 

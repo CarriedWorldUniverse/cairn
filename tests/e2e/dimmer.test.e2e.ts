@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -23,13 +24,13 @@ test('Dimmed modal', async ({page}) => {
   // Modal and dimmer should be visible.
   await expect(page.locator('#block-user')).toBeVisible();
   await expect(page.locator('.ui.dimmer')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page, page.locator('.ui.g-modal-confirm.delete.modal'), 50);
 
   // After canceling, modal and dimmer should be hidden.
   await page.locator('#block-user .cancel').click();
   await expect(page.locator('.ui.dimmer')).toBeHidden();
   await expect(page.locator('#block-user')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 
   // Open the block modal and make the dimmer visible again.
   await page.locator('.actions .dropdown').click();
@@ -37,7 +38,7 @@ test('Dimmed modal', async ({page}) => {
   await expect(page.locator('#block-user')).toBeVisible();
   await expect(page.locator('.ui.dimmer')).toBeVisible();
   await expect(page.locator('.ui.dimmer')).toHaveCount(1);
-  await save_visual(page);
+  await screenshot(page, page.locator('.ui.g-modal-confirm.delete.modal'), 50);
 });
 
 test('Dimmed overflow', async ({page}, workerInfo) => {
@@ -58,7 +59,7 @@ test('Dimmed overflow', async ({page}, workerInfo) => {
   // Expect a 'are you sure, this file is empty' modal.
   await expect(page.locator('#edit-empty-content-modal')).toBeVisible();
   await expect(page.locator('#edit-empty-content-modal header')).toContainText('Commit an empty file');
-  await save_visual(page);
+  await screenshot(page);
 
   // Trickery to check the page cannot be scrolled.
   const {overflow} = await page.evaluate(() => {

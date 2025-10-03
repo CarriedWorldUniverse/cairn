@@ -1,4 +1,4 @@
-import {expect, test as baseTest, type Browser, type BrowserContextOptions, type APIRequestContext, type TestInfo, type Page} from '@playwright/test';
+import {expect, test as baseTest, type Browser, type BrowserContextOptions, type APIRequestContext, type TestInfo} from '@playwright/test';
 
 import * as path from 'node:path';
 
@@ -82,49 +82,6 @@ export async function load_logged_in_context(browser: Browser, workerInfo: TestI
 export async function login({browser}: {browser: Browser}, workerInfo: TestInfo) {
   const context = await load_logged_in_context(browser, workerInfo, 'user2');
   return await context?.newPage();
-}
-
-export async function save_visual(page: Page) {
-  // Optionally include visual testing
-  if (process.env.VISUAL_TEST) {
-    await page.waitForLoadState('domcontentloaded');
-    // Mock/replace dynamic content which can have different size (and thus cannot simply be masked below)
-    await page.locator('footer .left-links').evaluate((node) => node.innerHTML = 'MOCK');
-    // replace timestamps in repos to mask them later down
-    await page.locator('.flex-item-body > relative-time').filter({hasText: /now|minute/}).evaluateAll((nodes) => {
-      for (const node of nodes) node.outerHTML = 'relative time in repo';
-    });
-    // dynamically generated UUIDs
-    await page.getByText('dyn-id-').evaluateAll((nodes) => {
-      for (const node of nodes) node.innerHTML = node.innerHTML.replaceAll(/dyn-id-[a-f0-9-]+/g, 'dynamic-id');
-    });
-    // repeat above, work around https://github.com/microsoft/playwright/issues/34152
-    await page.getByText('dyn-id-').evaluateAll((nodes) => {
-      for (const node of nodes) node.innerHTML = node.innerHTML.replaceAll(/dyn-id-[a-f0-9-]+/g, 'dynamic-id');
-    });
-    await page.locator('relative-time').evaluateAll((nodes) => {
-      for (const node of nodes) node.outerHTML = 'time element';
-    });
-    // used for instance for security keys
-    await page.locator('absolute-date').evaluateAll((nodes) => {
-      for (const node of nodes) node.outerHTML = 'time element';
-    });
-    await expect(page).toHaveScreenshot({
-      fullPage: true,
-      timeout: 20000,
-      mask: [
-        page.locator('.ui.avatar'),
-        page.locator('.sha'),
-        page.locator('#repo_migrating'),
-        // update order of recently created repos is not fully deterministic
-        page.locator('.flex-item-main').filter({hasText: 'relative time in repo'}),
-        page.locator('#activity-feed'),
-        page.locator('#user-heatmap'),
-        // dynamic IDs in fixed-size inputs
-        page.locator('input[value*="dyn-id-"]'),
-      ],
-    });
-  }
 }
 
 // Create a temporary user and login to that user and store session info.
