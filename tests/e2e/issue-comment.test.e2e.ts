@@ -6,7 +6,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, dynamic_id, save_visual} from './utils_e2e.ts';
+import {test, dynamic_id} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -75,7 +76,7 @@ test('Always focus edit tab first on edit', async ({page}) => {
 
   await expect(editTab).toHaveClass(/active/);
   await expect(previewTab).not.toHaveClass(/active/);
-  await save_visual(page);
+  await screenshot(page, page.locator('.issue-content-left'));
 });
 
 test('Reset content of comment edit field on cancel', async ({page}) => {
@@ -96,7 +97,7 @@ test('Reset content of comment edit field on cancel', async ({page}) => {
   await page.click('#issue-1 .comment-container .context-menu');
   await page.click('#issue-1 .comment-container .menu>.edit-content');
   await expect(editorTextarea).toHaveValue('content for the first issue');
-  await save_visual(page);
+  await screenshot(page, page.locator('.issue-content-left'));
 });
 
 test('Quote reply', async ({page}, workerInfo) => {

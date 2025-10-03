@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, save_visual} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -31,7 +32,7 @@ test('Issue timetracking', async ({page}) => {
   // Verify it is shown in the issue sidebar
   await expect(page.locator('.issue-content-right .comments')).toContainText('Total time spent: 5 hours 32 minutes');
 
-  await save_visual(page);
+  await screenshot(page);
 
   // Delete the added time.
   await page.getByRole('button', {name: 'Delete this time log'}).click();

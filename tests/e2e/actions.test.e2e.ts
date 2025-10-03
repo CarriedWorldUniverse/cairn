@@ -10,7 +10,8 @@
 // @watch end
 
 import {expect, type Page, type TestInfo} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 const workflow_trigger_notification_text = 'This workflow has a workflow_dispatch event trigger.';
 
@@ -21,13 +22,13 @@ async function dispatchSuccess(page: Page, testInfo: TestInfo) {
   await page.locator('#workflow_dispatch_dropdown>button').click();
 
   await page.fill('input[name="inputs[string2]"]', 'abc');
-  await save_visual(page);
+  await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   await page.locator('#workflow-dispatch-submit').click();
 
   await expect(page.getByText('Workflow run was successfully requested.')).toBeVisible();
 
   await expect(page.locator('.run-list>:first-child .run-list-meta', {hasText: 'now'})).toBeVisible();
-  await save_visual(page);
+  await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
 }
 
 test.describe('Workflow Authenticated user2', () => {
@@ -45,7 +46,7 @@ test.describe('Workflow Authenticated user2', () => {
     await expect(menu).toBeHidden();
     await run_workflow_btn.click();
     await expect(menu).toBeVisible();
-    await save_visual(page);
+    await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
   test('dispatch error: missing inputs', async ({page}, testInfo) => {
@@ -64,7 +65,7 @@ test.describe('Workflow Authenticated user2', () => {
     await page.locator('#workflow-dispatch-submit').click();
 
     await expect(page.getByText('Require value for input "String w/o. default".')).toBeVisible();
-    await save_visual(page);
+    await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
   // no assertions as the login in this test case is extracted for reuse
@@ -78,7 +79,7 @@ test('workflow dispatch box not available for unauthenticated users', async ({pa
   await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
   await expect(page.locator('body')).not.toContainText(workflow_trigger_notification_text);
-  await save_visual(page);
+  await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
 });
 
 async function completeDynamicRefresh(page: Page) {
@@ -119,7 +120,7 @@ test.describe('workflow list dynamic refresh', () => {
     });
     await completeDynamicRefresh(page);
     await expect(backgroundPage.locator('.run-list>:first-child .flex-item-body>b', {hasText: latestDispatchedRun})).toBeVisible();
-    await save_visual(backgroundPage);
+    await screenshot(backgroundPage, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
   test('refreshes on interval', async ({page}, testInfo) => {
@@ -137,7 +138,7 @@ test.describe('workflow list dynamic refresh', () => {
 
     await simulatePollingInterval(backgroundPage);
     await expect(backgroundPage.locator('.run-list>:first-child .flex-item-body>b', {hasText: latestDispatchedRun})).toBeVisible();
-    await save_visual(backgroundPage);
+    await screenshot(backgroundPage, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
   test('post-refresh the dropdowns continue to operate', async ({page}, testInfo) => {

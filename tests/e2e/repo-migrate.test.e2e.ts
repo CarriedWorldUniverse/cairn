@@ -3,7 +3,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, save_visual, test_context, dynamic_id} from './utils_e2e.ts';
+import {test, test_context, dynamic_id} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -22,7 +23,7 @@ test('Migration type seleciton screen', async ({page}) => {
   await expect(page.locator('svg.gitea-gitbucket')).toBeVisible();
   await expect(page.locator('svg.gitea-codebase')).toBeVisible();
 
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Migration Repo Name detection', async ({page}, workerInfo) => {
@@ -50,7 +51,7 @@ test('Migration Repo Name detection', async ({page}, workerInfo) => {
   await expect(form.getByRole('textbox', {name: 'Repository Name'})).toHaveValue('test');
 
   // Save screenshot only once
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Migration Progress Page', async ({page, browser}, workerInfo) => {
@@ -64,10 +65,10 @@ test('Migration Progress Page', async ({page, browser}, workerInfo) => {
   const form = page.locator('form');
   await form.getByRole('textbox', {name: 'Repository Name'}).fill(repoName);
   await form.getByRole('textbox', {name: 'Migrate / Clone from URL'}).fill(`https://codeberg.org/forgejo/${repoName}`);
-  await save_visual(page);
+  await screenshot(page);
   await form.locator('button.primary').click({timeout: 5000});
   await expect(page).toHaveURL(`user2/${repoName}`);
-  await save_visual(page);
+  await screenshot(page);
 
   const ctx = await test_context(browser, {storageState: {cookies: [], origins: []}});
   const unauthenticatedPage = await ctx.newPage();
@@ -76,13 +77,13 @@ test('Migration Progress Page', async ({page, browser}, workerInfo) => {
 
   await page.reload();
   await expect(page.locator('#repo_migrating_failed')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
   await page.getByRole('button', {name: 'Delete this repository'}).click();
   const deleteModal = page.locator('#delete-repo-modal');
   await deleteModal.getByRole('textbox', {name: 'Confirmation string'}).fill(`user2/${repoName}`);
-  await save_visual(page);
+  await screenshot(page);
   await deleteModal.getByRole('button', {name: 'Delete repository'}).click();
   await expect(page).toHaveURL('/');
   // checked last to preserve the order of screenshots from first run
-  await save_visual(unauthenticatedPage);
+  await screenshot(unauthenticatedPage);
 });

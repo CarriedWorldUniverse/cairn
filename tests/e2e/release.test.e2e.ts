@@ -9,12 +9,13 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
 
-test.describe('repo branch protection settings', () => {
+test.describe('Releases', () => {
   test('External Release Attachments', async ({page, isMobile}, workerInfo) => {
     test.skip(isMobile || workerInfo.project.name === 'webkit');
 
@@ -33,7 +34,7 @@ test.describe('repo branch protection settings', () => {
     await page.fill('input[name=attachment-new-name-2]', 'Test');
     await page.fill('input[name=attachment-new-exturl-2]', 'https://forgejo.org/');
     await page.click('.remove-rel-attach');
-    await save_visual(page);
+    await screenshot(page);
     await page.click('.button.small.primary');
 
     // Validate release page and click edit
@@ -52,7 +53,7 @@ test.describe('repo branch protection settings', () => {
 
     await expect(page.locator('.download[open] li:nth-of-type(3)')).toContainText('Test');
     await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://forgejo.org/');
-    await save_visual(page);
+    await screenshot(page);
     await page.locator('.octicon-pencil').first().click();
 
     // Validate edit page and edit the release
@@ -67,7 +68,7 @@ test.describe('repo branch protection settings', () => {
     await expect(page.locator('.attachment_edit:visible')).toHaveCount(4);
     await page.locator('.attachment_edit:visible').nth(2).fill('Test3');
     await page.locator('.attachment_edit:visible').nth(3).fill('https://gitea.com/');
-    await save_visual(page);
+    await screenshot(page);
     await page.click('.button.small.primary');
 
     // Validate release page and click edit
@@ -77,7 +78,7 @@ test.describe('repo branch protection settings', () => {
     await expect(page.locator('.download[open] li:nth-of-type(3) a')).toHaveAttribute('href', 'https://gitea.io/');
     await expect(page.locator('.download[open] li:nth-of-type(4)')).toContainText('Test3');
     await expect(page.locator('.download[open] li:nth-of-type(4) a')).toHaveAttribute('href', 'https://gitea.com/');
-    await save_visual(page);
+    await screenshot(page);
     await page.locator('.octicon-pencil').first().click();
   });
 

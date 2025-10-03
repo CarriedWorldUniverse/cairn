@@ -11,7 +11,8 @@
 // @watch end
 
 import {expect, type Page} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 import {accessibilityCheck} from './shared/accessibility.ts';
 
 async function assertSelectedLines(page: Page, nums: string[]) {
@@ -55,7 +56,7 @@ test('Line Range Selection', async ({page}) => {
   // out-of-bounds end line
   await page.goto(`${filePath}#L1-L100`);
   await assertSelectedLines(page, ['1', '2', '3']);
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Readable diff', async ({page}, workerInfo) => {
@@ -82,7 +83,7 @@ test('Readable diff', async ({page}, workerInfo) => {
       await expect(page.getByText(thisDiff.added, {exact: true})).toHaveCSS('background-color', 'rgb(134, 239, 172)');
     }
   }
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test.describe('As authenticated user', () => {
@@ -95,14 +96,14 @@ test.describe('As authenticated user', () => {
     await expect(page.getByRole('link', {name: '@user2'})).toHaveCSS('background-color', /(.*)/);
     await expect(page.getByRole('link', {name: '@user1'})).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await accessibilityCheck({page}, ['.commit-header'], [], []);
-    await save_visual(page);
+    await screenshot(page);
     // check second commit
     await page.goto('/user2/mentions-highlighted/commits/branch/main');
     await page.locator('tbody').getByRole('link', {name: 'Another commit which mentions'}).click();
     await expect(page.getByRole('link', {name: '@user2'})).toHaveCSS('background-color', /(.*)/);
     await expect(page.getByRole('link', {name: '@user1'})).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await accessibilityCheck({page}, ['.commit-header'], [], []);
-    await save_visual(page);
+    await screenshot(page);
   });
 });
 

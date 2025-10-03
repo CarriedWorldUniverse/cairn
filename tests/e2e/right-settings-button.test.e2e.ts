@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.describe('desktop viewport as user 2', () => {
   test.use({user: 'user2', viewport: {width: 1920, height: 300}});
@@ -54,7 +55,7 @@ test.describe('desktop viewport, unauthenticated', () => {
     await expect(page.locator('.overflow-menu-items>#settings-btn')).toHaveCount(0);
 
     await expect(page.locator('.overflow-menu-button')).toHaveCount(0);
-    await save_visual(page);
+    await screenshot(page);
   });
 });
 
@@ -79,7 +80,7 @@ test.describe('small viewport', () => {
 
     const items = shownItems.concat(overflowItems);
     expect(Array.from(new Set(items))).toHaveLength(items.length);
-    await save_visual(page);
+    await screenshot(page);
   });
 
   test('Settings button in overflow menu of org header', async ({page}) => {
@@ -123,6 +124,6 @@ test.describe('small viewport, unauthenticated', () => {
 
     const items = shownItems.concat(overflowItems);
     expect(Array.from(new Set(items))).toHaveLength(items.length);
-    await save_visual(page);
+    await screenshot(page);
   });
 });

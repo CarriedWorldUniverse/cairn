@@ -8,7 +8,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, save_visual, test_context} from './utils_e2e.ts';
+import {test, test_context} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test('Mismatched ROOT_URL', async ({browser}, workerInfo) => {
   test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'init script gets randomly ignored');
@@ -27,7 +28,7 @@ test('Mismatched ROOT_URL', async ({browser}, workerInfo) => {
   const response = await page.goto('/user/login');
   expect(response?.status()).toBe(200);
 
-  await save_visual(page);
+  await screenshot(page);
   const globalError = page.locator('.js-global-error');
   await expect(globalError).toContainText('This Forgejo instance is configured to be served on ');
   await expect(globalError).toContainText('You are currently viewing Forgejo through a different URL, which may cause parts of the application to break. The canonical URL is controlled by Forgejo admins via the ROOT_URL setting in the app.ini.');

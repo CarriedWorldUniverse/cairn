@@ -5,7 +5,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test('Language stats bar', async ({page}) => {
   const response = await page.goto('/user2/language-stats-test');
@@ -15,11 +16,11 @@ test('Language stats bar', async ({page}) => {
 
   await page.click('#language-stats-bar');
   await expect(page.locator('#language-stats-legend')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page);
 
   await page.click('#language-stats-bar');
   await expect(page.locator('#language-stats-legend')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page);
 });
 
 test('Branch selector commit icon', async ({page}) => {

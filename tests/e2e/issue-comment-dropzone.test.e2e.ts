@@ -9,7 +9,8 @@
 // @watch end
 
 import {expect, type Locator, type Page, type TestInfo} from '@playwright/test';
-import {test, save_visual, dynamic_id} from './utils_e2e.ts';
+import {test, dynamic_id} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -67,7 +68,7 @@ test('Paste image in new comment', async ({page}, workerInfo) => {
   await expect(preview.locator('.octicon-copy')).toBeVisible();
   await assertCopy(page, workerInfo, '![foo](');
 
-  await save_visual(page);
+  await screenshot(page, page.locator('.issue-content-left'));
 });
 
 test('Re-add images to dropzone on edit', async ({page}, workerInfo) => {
@@ -90,5 +91,5 @@ test('Re-add images to dropzone on edit', async ({page}, workerInfo) => {
   await expect(preview.locator('.octicon-copy')).toBeVisible();
   await assertCopy(page, workerInfo, '![foo](');
 
-  await save_visual(page);
+  await screenshot(page, page.locator('.issue-content-left'));
 });

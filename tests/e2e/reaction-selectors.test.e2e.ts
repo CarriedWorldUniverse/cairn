@@ -4,7 +4,8 @@
 // @watch end
 
 import {expect, type Locator} from '@playwright/test';
-import {save_visual, test} from './utils_e2e.ts';
+import {test} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -62,5 +63,5 @@ test('Reaction Selectors', async ({page}) => {
 
   await toggleReaction(topPicker, 'laugh');
   await assertReactionCounts(comment, {'laugh': 2});
-  await save_visual(page);
+  await screenshot(page);
 });

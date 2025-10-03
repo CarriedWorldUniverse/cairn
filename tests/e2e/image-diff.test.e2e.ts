@@ -6,7 +6,8 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {save_visual, test, dynamic_id} from './utils_e2e.ts';
+import {test, dynamic_id} from './utils_e2e.ts';
+import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
@@ -44,7 +45,7 @@ test('Repository image diff', async ({page}) => {
   await expect(page.locator('.tab[data-tab="diff-side-by-side-1"]')).toBeVisible();
   await expect(page.locator('.tab[data-tab="diff-swipe-1"]')).toBeHidden();
   await expect(page.locator('.tab[data-tab="diff-overlay-1"]')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page, page.locator('#diff-container'));
 
   await page.getByText('Swipe').click();
   await expect(page.locator('.item[data-tab="diff-side-by-side-1"]')).not.toContainClass('active');
@@ -53,7 +54,7 @@ test('Repository image diff', async ({page}) => {
   await expect(page.locator('.tab[data-tab="diff-side-by-side-1"]')).toBeHidden();
   await expect(page.locator('.tab[data-tab="diff-swipe-1"]')).toBeVisible();
   await expect(page.locator('.tab[data-tab="diff-overlay-1"]')).toBeHidden();
-  await save_visual(page);
+  await screenshot(page, page.locator('#diff-container'));
 
   await page.getByText('Overlay').click();
   await expect(page.locator('.item[data-tab="diff-side-by-side-1"]')).not.toContainClass('active');
@@ -62,5 +63,5 @@ test('Repository image diff', async ({page}) => {
   await expect(page.locator('.tab[data-tab="diff-side-by-side-1"]')).toBeHidden();
   await expect(page.locator('.tab[data-tab="diff-swipe-1"]')).toBeHidden();
   await expect(page.locator('.tab[data-tab="diff-overlay-1"]')).toBeVisible();
-  await save_visual(page);
+  await screenshot(page, page.locator('#diff-container'));
 });
