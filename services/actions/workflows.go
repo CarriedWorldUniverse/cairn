@@ -69,6 +69,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 	}
 
 	inputs := make(map[string]string)
+	inputsAny := make(map[string]any)
 	if workflowDispatch := wf.WorkflowDispatchConfig(); workflowDispatch != nil {
 		for key, input := range workflowDispatch.Inputs {
 			val := inputGetter(key)
@@ -89,6 +90,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 				val = strconv.FormatBool(val == "on")
 			}
 			inputs[key] = val
+			inputsAny[key] = val
 		}
 	}
 
@@ -138,6 +140,21 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		return nil, nil, err
 	}
 
+	err = ConfigureActionRunConcurrency(wf, run, vars, inputsAny)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if run.ConcurrencyType == actions_model.CancelInProgress {
+		if err := CancelPreviousWithConcurrencyGroup(
+			ctx,
+			run.RepoID,
+			run.ConcurrencyGroup,
+		); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	jobs, err := jobParser(content, jobparser.WithVars(vars))
 	if err != nil {
 		return nil, nil, err
@@ -179,4 +196,39 @@ func GetWorkflowFromCommit(gitRepo *git.Repository, ref, workflowID string) (*Wo
 		Commit:     commit,
 		GitEntry:   workflowEntry,
 	}, nil
+}
+
+// Sets the ConcurrencyGroup & ConcurrencyType on the provided ActionRun based upon the Workflow's `concurrency` data,
+// or appropriate defaults if not present.
+func ConfigureActionRunConcurrency(workflow *act_model.Workflow, run *actions_model.ActionRun, vars map[string]string, inputs map[string]any) error {
+	concurrencyGroup, cancelInProgress, err := jobparser.EvaluateWorkflowConcurrency(
+		workflow.RawConcurrency, generateGiteaContextForRun(run), vars, inputs)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate workflow `concurrency` block: %w", err)
+	}
+	if concurrencyGroup != "" {
+		run.SetConcurrencyGroup(concurrencyGroup)
+	} else {
+		run.SetDefaultConcurrencyGroup()
+	}
+	if cancelInProgress == nil {
+		// Maintain compatible behavior from before concurrency groups were implemented -- if `cancel-in-progress`
+		// isn't defined in the workflow, cancel on push & PR sync events.
+		if run.Event == webhook.HookEventPush || run.Event == webhook.HookEventPullRequestSync {
+			run.ConcurrencyType = actions_model.CancelInProgress
+		} else {
+			run.ConcurrencyType = actions_model.UnlimitedConcurrency
+		}
+	} else if *cancelInProgress {
+		run.ConcurrencyType = actions_model.CancelInProgress
+	} else if concurrencyGroup == "" {
+		// A workflow has explicitly listed `cancel-in-progress: false`, but has *not* provided a concurrency group.  In
+		// this case we want to trigger a different concurrency behavior -- we won't cancel in-progress builds (we were
+		// asked not to), we won't queue behind other builds (we weren't given a concurrency group so it's reasonable to
+		// assume the user doesn't want a concurrency limit).
+		run.ConcurrencyType = actions_model.UnlimitedConcurrency
+	} else {
+		run.ConcurrencyType = actions_model.QueueBehind
+	}
+	return nil
 }

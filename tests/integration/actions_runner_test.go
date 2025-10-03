@@ -25,7 +25,8 @@ import (
 )
 
 type mockRunner struct {
-	client *mockRunnerClient
+	client           *mockRunnerClient
+	lastTasksVersion int64
 }
 
 type mockRunnerClient struct {
@@ -83,8 +84,7 @@ func (r *mockRunner) doRegister(t *testing.T, name, token string, labels []strin
 
 func (r *mockRunner) registerAsRepoRunner(t *testing.T, ownerName, repoName, runnerName string, labels []string) {
 	if !setting.Database.Type.IsSQLite3() {
-		// registering a mock runner when using a database other than SQLite leaves leftovers
-		t.FailNow()
+		assert.FailNow(t, "registering a mock runner when using a database other than SQLite leaves leftovers")
 	}
 	session := loginUser(t, ownerName)
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
@@ -152,6 +152,15 @@ func (r *mockRunner) deleteRunner(t *testing.T, ownerName, repoName string, runn
 	MakeRequest(t, req, http.StatusNoContent)
 }
 
+func (r *mockRunner) maybeFetchTask(t *testing.T) *runnerv1.Task {
+	resp, err := r.client.runnerServiceClient.FetchTask(t.Context(), connect.NewRequest(&runnerv1.FetchTaskRequest{
+		TasksVersion: r.lastTasksVersion,
+	}))
+	require.NoError(t, err)
+	r.lastTasksVersion = resp.Msg.TasksVersion
+	return resp.Msg.Task
+}
+
 func (r *mockRunner) fetchTask(t *testing.T, timeout ...time.Duration) *runnerv1.Task {
 	fetchTimeout := 10 * time.Second
 	if len(timeout) > 0 {
@@ -159,13 +168,10 @@ func (r *mockRunner) fetchTask(t *testing.T, timeout ...time.Duration) *runnerv1
 	}
 
 	var task *runnerv1.Task
-	assert.Eventually(t, func() bool {
-		resp, err := r.client.runnerServiceClient.FetchTask(t.Context(), connect.NewRequest(&runnerv1.FetchTaskRequest{
-			TasksVersion: 0,
-		}))
-		require.NoError(t, err)
-		if resp.Msg.Task != nil {
-			task = resp.Msg.Task
+	require.Eventually(t, func() bool {
+		maybeTask := r.maybeFetchTask(t)
+		if maybeTask != nil {
+			task = maybeTask
 			return true
 		}
 		return false

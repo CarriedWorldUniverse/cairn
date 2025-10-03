@@ -25,11 +25,23 @@ import (
 	"xorm.io/builder"
 )
 
+type ConcurrencyMode int
+
+const (
+	// Don't enforce concurrency control.  Note that you won't find `UnlimitedConcurrency` implemented directly in the
+	// code; setting it on an `ActionRun` prevents the other limiting behaviors.
+	UnlimitedConcurrency ConcurrencyMode = iota
+	// Queue behind other jobs with the same concurrency group
+	QueueBehind
+	// Cancel other jobs with the same concurrency group
+	CancelInProgress
+)
+
 // ActionRun represents a run of a workflow file
 type ActionRun struct {
 	ID                int64
 	Title             string
-	RepoID            int64                  `xorm:"index unique(repo_index)"`
+	RepoID            int64                  `xorm:"index unique(repo_index) index(concurrency)"`
 	Repo              *repo_model.Repository `xorm:"-"`
 	OwnerID           int64                  `xorm:"index"`
 	WorkflowID        string                 `xorm:"index"`                    // the name of workflow file
@@ -56,6 +68,9 @@ type ActionRun struct {
 	Created          timeutil.TimeStamp `xorm:"created"`
 	Updated          timeutil.TimeStamp `xorm:"updated"`
 	NotifyEmail      bool
+
+	ConcurrencyGroup string `xorm:"'concurrency_group' index(concurrency)"`
+	ConcurrencyType  ConcurrencyMode
 }
 
 func init() {
@@ -161,6 +176,24 @@ func (run *ActionRun) GetPullRequestEventPayload() (*api.PullRequestPayload, err
 		return &payload, nil
 	}
 	return nil, fmt.Errorf("event %s is not a pull request event", run.Event)
+}
+
+func (run *ActionRun) SetConcurrencyGroup(concurrencyGroup string) {
+	// Concurrency groups are case insensitive identifiers, implemented by collapsing case here.  Unfortunately the
+	// `ConcurrencyGroup` field can't be made a private field because xorm doesn't map those fields -- using
+	// `SetConcurrencyGroup` is required for consistency but not enforced at compile-time.
+	run.ConcurrencyGroup = strings.ToLower(concurrencyGroup)
+}
+
+func (run *ActionRun) SetDefaultConcurrencyGroup() {
+	// Before ConcurrencyGroups were supported, Forgejo would automatically cancel runs with matching git refs, workflow
+	// IDs, and trigger events.  For backwards compatibility we emulate that behavior:
+	run.SetConcurrencyGroup(fmt.Sprintf(
+		"%s_%s_%s__auto",
+		run.Ref,
+		run.WorkflowID,
+		run.TriggerEvent,
+	))
 }
 
 func updateRepoRunsNumbers(ctx context.Context, repo *repo_model.Repository) error {

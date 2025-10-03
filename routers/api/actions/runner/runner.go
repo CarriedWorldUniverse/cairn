@@ -14,6 +14,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/actions"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	actions_service "forgejo.org/services/actions"
 
@@ -223,6 +224,15 @@ func (s *Service) UpdateTask(
 	if req.Msg.State.Result != runnerv1.Result_RESULT_UNSPECIFIED {
 		if err := actions_service.EmitJobsIfReady(task.Job.RunID); err != nil {
 			log.Error("Emit ready jobs of run %d: %v", task.Job.RunID, err)
+		}
+		// Reaching a finalized result for a task can cause other tasks in the same concurrency group to become
+		// unblocked. Increasing task version here allows all applicable runners to requery to the DB for that state.
+		// Because it is only useful for that condition, and it has system performance risks, only enable it when
+		// concurrency group queuing is enabled.
+		if setting.Actions.ConcurrencyGroupQueueEnabled {
+			if err := actions_model.IncreaseTaskVersion(ctx, runner.OwnerID, runner.RepoID); err != nil {
+				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("fail to increase task version: %w", err))
+			}
 		}
 	}
 

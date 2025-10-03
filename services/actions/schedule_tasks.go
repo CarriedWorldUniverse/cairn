@@ -57,20 +57,6 @@ func startTasks(ctx context.Context) error {
 
 		// Loop through each spec and create a schedule task for it
 		for _, row := range specs {
-			// cancel running jobs if the event is push
-			if row.Schedule.Event == webhook_module.HookEventPush {
-				// cancel running jobs of the same workflow
-				if err := CancelPreviousJobs(
-					ctx,
-					row.RepoID,
-					row.Schedule.Ref,
-					row.Schedule.WorkflowID,
-					webhook_module.HookEventSchedule,
-				); err != nil {
-					log.Error("CancelPreviousJobs: %v", err)
-				}
-			}
-
 			if row.Repo.IsArchived {
 				// Skip if the repo is archived
 				continue
@@ -166,6 +152,21 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 	}
 	run.NotifyEmail = notifications
 
+	err = ConfigureActionRunConcurrency(workflow, run, vars, map[string]any{})
+	if err != nil {
+		return err
+	}
+
+	if run.ConcurrencyType == actions_model.CancelInProgress {
+		if err := CancelPreviousWithConcurrencyGroup(
+			ctx,
+			run.RepoID,
+			run.ConcurrencyGroup,
+		); err != nil {
+			return err
+		}
+	}
+
 	// Parse the workflow specification from the cron schedule
 	workflows, err := jobParser(cron.Content, jobparser.WithVars(vars))
 	if err != nil {
@@ -185,7 +186,7 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 // It's useful when a new run is triggered, and all previous runs needn't be continued anymore.
 func CancelPreviousJobs(ctx context.Context, repoID int64, ref, workflowID string, event webhook_module.HookEventType) error {
 	// Find all runs in the specified repository, reference, and workflow with non-final status
-	runs, total, err := db.FindAndCount[actions_model.ActionRun](ctx, actions_model.FindRunOptions{
+	runs, _, err := db.FindAndCount[actions_model.ActionRun](ctx, actions_model.FindRunOptions{
 		RepoID:       repoID,
 		Ref:          ref,
 		WorkflowID:   workflowID,
@@ -196,58 +197,93 @@ func CancelPreviousJobs(ctx context.Context, repoID int64, ref, workflowID strin
 		return err
 	}
 
-	// If there are no runs found, there's no need to proceed with cancellation, so return nil.
-	if total == 0 {
-		return nil
+	// Iterate over each found run and cancel its associated jobs.
+	errorSlice := []error{}
+	for _, run := range runs {
+		err := cancelJobsForRun(ctx, run)
+		errorSlice = append(errorSlice, err)
+	}
+	err = errors.Join(errorSlice...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Cancels all pending jobs in the same repository with the same concurrency group.
+func CancelPreviousWithConcurrencyGroup(ctx context.Context, repoID int64, concurrencyGroup string) error {
+	runs, _, err := db.FindAndCount[actions_model.ActionRun](ctx, actions_model.FindRunOptions{
+		RepoID:           repoID,
+		ConcurrencyGroup: concurrencyGroup,
+		Status:           []actions_model.Status{actions_model.StatusRunning, actions_model.StatusWaiting, actions_model.StatusBlocked},
+	})
+	if err != nil {
+		return err
 	}
 
 	// Iterate over each found run and cancel its associated jobs.
+	errorSlice := []error{}
 	for _, run := range runs {
-		// Find all jobs associated with the current run.
-		jobs, err := db.Find[actions_model.ActionRunJob](ctx, actions_model.FindRunJobOptions{
-			RunID: run.ID,
-		})
-		if err != nil {
-			return err
+		err := cancelJobsForRun(ctx, run)
+		errorSlice = append(errorSlice, err)
+	}
+	err = errors.Join(errorSlice...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func cancelJobsForRun(ctx context.Context, run *actions_model.ActionRun) error {
+	// Find all jobs associated with the current run.
+	jobs, err := db.Find[actions_model.ActionRunJob](ctx, actions_model.FindRunJobOptions{
+		RunID: run.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Iterate over each job and attempt to cancel it.
+	errorSlice := []error{}
+	for _, job := range jobs {
+		// Skip jobs that are already in a terminal state (completed, cancelled, etc.).
+		status := job.Status
+		if status.IsDone() {
+			continue
 		}
 
-		// Iterate over each job and attempt to cancel it.
-		for _, job := range jobs {
-			// Skip jobs that are already in a terminal state (completed, cancelled, etc.).
-			status := job.Status
-			if status.IsDone() {
+		// If the job has no associated task (probably an error), set its status to 'Cancelled' and stop it.
+		if job.TaskID == 0 {
+			job.Status = actions_model.StatusCancelled
+			job.Stopped = timeutil.TimeStampNow()
+
+			// Update the job's status and stopped time in the database.
+			n, err := UpdateRunJob(ctx, job, builder.Eq{"task_id": 0}, "status", "stopped")
+			if err != nil {
+				errorSlice = append(errorSlice, err)
 				continue
 			}
 
-			// If the job has no associated task (probably an error), set its status to 'Cancelled' and stop it.
-			if job.TaskID == 0 {
-				job.Status = actions_model.StatusCancelled
-				job.Stopped = timeutil.TimeStampNow()
-
-				// Update the job's status and stopped time in the database.
-				n, err := UpdateRunJob(ctx, job, builder.Eq{"task_id": 0}, "status", "stopped")
-				if err != nil {
-					return err
-				}
-
-				// If the update affected 0 rows, it means the job has changed in the meantime, so we need to try again.
-				if n == 0 {
-					return errors.New("job has changed, try again")
-				}
-
-				// Continue with the next job.
+			// If the update affected 0 rows, it means the job has changed in the meantime, so we need to try again.
+			if n == 0 {
+				errorSlice = append(errorSlice, errors.New("job has changed, try again"))
 				continue
 			}
 
-			// If the job has an associated task, try to stop the task, effectively cancelling the job.
-			if err := StopTask(ctx, job.TaskID, actions_model.StatusCancelled); err != nil {
-				return err
-			}
+			// Continue with the next job.
+			continue
+		}
+
+		// If the job has an associated task, try to stop the task, effectively cancelling the job.
+		if err := StopTask(ctx, job.TaskID, actions_model.StatusCancelled); err != nil {
+			errorSlice = append(errorSlice, errors.New("job has changed, try again"))
+			continue
 		}
 	}
 
-	// Return nil to indicate successful cancellation of all running and waiting jobs.
-	return nil
+	return errors.Join(errorSlice...)
 }
 
 func CleanRepoScheduleTasks(ctx context.Context, repo *repo_model.Repository, cancelPreviousJobs bool) error {
