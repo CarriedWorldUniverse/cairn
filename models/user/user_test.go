@@ -837,6 +837,7 @@ func TestPronounsPrivacy(t *testing.T) {
 
 func TestGetUserByEmail(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
+	defer test.MockVariableValue(&setting.Service.NoReplyAddress, "noreply.example.org")()
 
 	t.Run("Normal", func(t *testing.T) {
 		u, err := user_model.GetUserByEmail(t.Context(), "user2@example.com")
@@ -854,5 +855,34 @@ func TestGetUserByEmail(t *testing.T) {
 		u, err := user_model.GetUserByEmail(t.Context(), "user1-3@example.com")
 		require.NoError(t, err)
 		assert.EqualValues(t, 1, u.ID)
+	})
+
+	t.Run("No-reply", func(t *testing.T) {
+		u, err := user_model.GetUserByEmail(t.Context(), "user1@noreply.example.org")
+		require.NoError(t, err)
+		assert.EqualValues(t, 1, u.ID)
+	})
+}
+
+func TestGetUserByEmailSimple(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	defer test.MockVariableValue(&setting.Service.NoReplyAddress, "noreply.example.org")()
+
+	t.Run("Normal", func(t *testing.T) {
+		u, err := user_model.GetUserByEmailSimple(t.Context(), "user2@example.com")
+		require.NoError(t, err)
+		assert.EqualValues(t, 2, u.ID)
+	})
+
+	t.Run("Not activated", func(t *testing.T) {
+		u, err := user_model.GetUserByEmailSimple(t.Context(), "user11@example.com")
+		require.NoError(t, err)
+		assert.EqualValues(t, 11, u.ID)
+	})
+
+	t.Run("No-reply", func(t *testing.T) {
+		u, err := user_model.GetUserByEmailSimple(t.Context(), "user1@noreply.example.org")
+		require.ErrorIs(t, err, user_model.ErrUserNotExist{Name: "user1@noreply.example.org"})
+		assert.Nil(t, u)
 	})
 }
