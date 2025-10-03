@@ -121,6 +121,8 @@ var migrations = []*Migration{
 	NewMigration("Add index for release sha1", AddIndexForReleaseSha1),
 	// v40 -> v41
 	NewMigration("Add foreign keys to stopwatch & tracked_time", AddForeignKeysStopwatchTrackedTime),
+	// v41 -> v42
+	NewMigration("Add action_run concurrency fields", AddActionRunConcurrency),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.

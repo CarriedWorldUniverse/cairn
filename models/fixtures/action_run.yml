@@ -525,6 +525,7 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   event: "workflow_dispatch"
+  trigger_event: "workflow_dispatch"
   is_fork_pull_request: 0
   status: 6 # running
   started: 1683636528

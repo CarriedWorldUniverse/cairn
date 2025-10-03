@@ -12,23 +12,25 @@ import (
 // Actions settings
 var (
 	Actions = struct {
-		Enabled               bool
-		LogStorage            *Storage          // how the created logs should be stored
-		LogRetentionDays      int64             `ini:"LOG_RETENTION_DAYS"`
-		LogCompression        logCompression    `ini:"LOG_COMPRESSION"`
-		ArtifactStorage       *Storage          // how the created artifacts should be stored
-		ArtifactRetentionDays int64             `ini:"ARTIFACT_RETENTION_DAYS"`
-		DefaultActionsURL     defaultActionsURL `ini:"DEFAULT_ACTIONS_URL"`
-		ZombieTaskTimeout     time.Duration     `ini:"ZOMBIE_TASK_TIMEOUT"`
-		EndlessTaskTimeout    time.Duration     `ini:"ENDLESS_TASK_TIMEOUT"`
-		AbandonedJobTimeout   time.Duration     `ini:"ABANDONED_JOB_TIMEOUT"`
-		SkipWorkflowStrings   []string          `ìni:"SKIP_WORKFLOW_STRINGS"`
-		LimitDispatchInputs   int64             `ini:"LIMIT_DISPATCH_INPUTS"`
+		Enabled                      bool
+		LogStorage                   *Storage          // how the created logs should be stored
+		LogRetentionDays             int64             `ini:"LOG_RETENTION_DAYS"`
+		LogCompression               logCompression    `ini:"LOG_COMPRESSION"`
+		ArtifactStorage              *Storage          // how the created artifacts should be stored
+		ArtifactRetentionDays        int64             `ini:"ARTIFACT_RETENTION_DAYS"`
+		DefaultActionsURL            defaultActionsURL `ini:"DEFAULT_ACTIONS_URL"`
+		ZombieTaskTimeout            time.Duration     `ini:"ZOMBIE_TASK_TIMEOUT"`
+		EndlessTaskTimeout           time.Duration     `ini:"ENDLESS_TASK_TIMEOUT"`
+		AbandonedJobTimeout          time.Duration     `ini:"ABANDONED_JOB_TIMEOUT"`
+		SkipWorkflowStrings          []string          `ìni:"SKIP_WORKFLOW_STRINGS"`
+		LimitDispatchInputs          int64             `ini:"LIMIT_DISPATCH_INPUTS"`
+		ConcurrencyGroupQueueEnabled bool              `ini:"CONCURRENCY_GROUP_QUEUE_ENABLED"`
 	}{
-		Enabled:             true,
-		DefaultActionsURL:   defaultActionsURLForgejo,
-		SkipWorkflowStrings: []string{"[skip ci]", "[ci skip]", "[no ci]", "[skip actions]", "[actions skip]"},
-		LimitDispatchInputs: 10,
+		Enabled:                      true,
+		DefaultActionsURL:            defaultActionsURLForgejo,
+		SkipWorkflowStrings:          []string{"[skip ci]", "[ci skip]", "[no ci]", "[skip actions]", "[actions skip]"},
+		LimitDispatchInputs:          10,
+		ConcurrencyGroupQueueEnabled: true,
 	}
 )
 

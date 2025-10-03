@@ -351,13 +351,16 @@ func handleWorkflows(
 			Status:            actions_model.StatusWaiting,
 		}
 
-		if workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content), false); err == nil {
-			notifications, err := workflow.Notifications()
-			if err != nil {
-				log.Error("Notifications: %w", err)
-			}
-			run.NotifyEmail = notifications
+		workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content), false)
+		if err != nil {
+			log.Error("unable to read workflow: %v", err)
 		}
+
+		notifications, err := workflow.Notifications()
+		if err != nil {
+			log.Error("Notifications: %w", err)
+		}
+		run.NotifyEmail = notifications
 
 		need, err := ifNeedApproval(ctx, run, input.Repo, input.Doer)
 		if err != nil {
@@ -378,6 +381,11 @@ func handleWorkflows(
 			continue
 		}
 
+		err = ConfigureActionRunConcurrency(workflow, run, vars, map[string]any{})
+		if err != nil {
+			log.Error("ConfigureActionRunConcurrency: %v", err)
+		}
+
 		jobs, err := jobParser(dwf.Content, jobparser.WithVars(vars))
 		if err != nil {
 			run.Status = actions_model.StatusFailure
@@ -387,17 +395,13 @@ func handleWorkflows(
 			}}
 		}
 
-		// cancel running jobs if the event is push or pull_request_sync
-		if run.Event == webhook_module.HookEventPush ||
-			run.Event == webhook_module.HookEventPullRequestSync {
-			if err := CancelPreviousJobs(
+		if run.ConcurrencyType == actions_model.CancelInProgress {
+			if err := CancelPreviousWithConcurrencyGroup(
 				ctx,
 				run.RepoID,
-				run.Ref,
-				run.WorkflowID,
-				run.Event,
+				run.ConcurrencyGroup,
 			); err != nil {
-				log.Error("CancelPreviousJobs: %v", err)
+				log.Error("CancelPreviousWithConcurrencyGroup: %v", err)
 			}
 		}
 

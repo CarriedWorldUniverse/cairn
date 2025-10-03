@@ -224,6 +224,9 @@ forgejo.org/services/context
 forgejo.org/services/federation
 	FollowRemoteActor
 
+forgejo.org/services/notify
+	UnregisterNotifier
+
 forgejo.org/services/repository
 	IsErrForkAlreadyExist
 

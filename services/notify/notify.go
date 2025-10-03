@@ -5,6 +5,7 @@ package notify
 
 import (
 	"context"
+	"slices"
 
 	actions_model "forgejo.org/models/actions"
 	issues_model "forgejo.org/models/issues"
@@ -22,6 +23,13 @@ var notifiers []Notifier
 func RegisterNotifier(notifier Notifier) {
 	go notifier.Run()
 	notifiers = append(notifiers, notifier)
+}
+
+// Intended for undoing RegisterNotifier in tests only, not for production usage
+func UnregisterNotifier(notifier Notifier) {
+	notifiers = slices.DeleteFunc(notifiers, func(maybeNotifier Notifier) bool {
+		return notifier == maybeNotifier
+	})
 }
 
 // NewWikiPage notifies creating new wiki pages to notifiers
