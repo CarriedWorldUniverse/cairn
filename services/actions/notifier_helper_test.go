@@ -144,3 +144,45 @@ func Test_OpenForkPullRequestEvent(t *testing.T) {
 	assert.Equal(t, webhook_module.HookEventPullRequest, runs[0].Event)
 	assert.True(t, runs[0].IsForkPullRequest)
 }
+
+func TestActionsPreExecutionErrorInvalidJobs(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 3})
+
+	commit := &git.Commit{
+		ID:            git.MustIDFromString("0000000000000000000000000000000000000000"),
+		CommitMessage: "test",
+	}
+	detectedWorkflows := []*actions_module.DetectedWorkflow{
+		{
+			EntryName: "test.yml",
+			TriggerEvent: &jobparser.Event{
+				Name: "pull_request",
+			},
+			Content: []byte("{ on: pull_request, jobs: 'hello, I am the jobs!' }"),
+		},
+	}
+	input := &notifyInput{
+		Repo:        repo,
+		Doer:        doer,
+		Event:       webhook_module.HookEventPullRequestSync,
+		PullRequest: pr,
+		Payload:     &api.PullRequestPayload{},
+	}
+
+	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "refs/head/main")
+	require.NoError(t, err)
+
+	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 1)
+	createdRun := runs[0]
+
+	assert.Equal(t, actions_model.StatusFailure, createdRun.Status)
+	assert.Contains(t, createdRun.PreExecutionError, "actions.workflow.job_parsing_error%!(EXTRA *fmt.wrapError=")
+}
