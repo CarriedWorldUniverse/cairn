@@ -151,5 +151,6 @@
     "actions.runs.viewing_out_of_date_run": "You are viewing an out-of-date run of this job that was executed %[1]s.",
     "actions.runs.view_most_recent_run": "View most recent run",
     "actions.workflow.job_parsing_error": "Unable to parse jobs in workflow: %v",
+    "actions.workflow.event_detection_error": "Unable to parse supported events in workflow: %v",
     "meta.last_line": "Thank you for translating Forgejo! This line isn't seen by the users but it serves other purposes in the translation management. You can place a fun fact in the translation instead of translating it."
 }
