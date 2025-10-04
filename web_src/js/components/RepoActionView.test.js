@@ -17,6 +17,7 @@ const testLocale = {
   runAttemptLabel: 'Run attempt %[1]s %[2]s',
   viewingOutOfDateRun: 'oh no, out of date since %[1]s give or take or so',
   viewMostRecentRun: '',
+  preExecutionError: 'pre-execution error',
   status: {
     unknown: '',
     waiting: '',
@@ -589,4 +590,36 @@ test('view non-picked action run job', async () => {
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(1) .job-brief-name').text()).toEqual('check-1');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(2) .job-brief-name').text()).toEqual('check-2');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(3) .job-brief-name').text()).toEqual('check-3');
+});
+
+test('view without pre-execution error', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  const wrapper = mount(RepoActionView, {
+    props: defaultTestProps,
+  });
+  await flushPromises();
+  expect(wrapper.find('.pre-execution-error').exists()).toBe(false);
+});
+
+test('view with pre-execution error', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  const wrapper = mount(RepoActionView, {
+    props: {
+      ...defaultTestProps,
+      initialJobData: {
+        ...minimalInitialJobData,
+        state: {
+          ...minimalInitialJobData.state,
+          run: {
+            ...minimalInitialJobData.state.run,
+            preExecutionError: 'Oops, I dropped it.',
+          },
+        },
+      },
+    },
+  });
+  await flushPromises();
+  const block = wrapper.find('.pre-execution-error');
+  expect(block.exists()).toBe(true);
+  expect(block.text()).toBe('pre-execution error Oops, I dropped it.');
 });
