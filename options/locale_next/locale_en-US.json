@@ -154,6 +154,7 @@
     "actions.runs.view_most_recent_run": "View most recent run",
     "actions.workflow.job_parsing_error": "Unable to parse jobs in workflow: %v",
     "actions.workflow.event_detection_error": "Unable to parse supported events in workflow: %v",
+    "actions.workflow.pre_execution_error": "Workflow was not executed due to an error that blocked the execution attempt.",
     "pulse.n_active_issues": {
         "one": "%s active issue",
         "other": "%s active issues"
