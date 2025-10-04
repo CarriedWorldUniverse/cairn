@@ -21,9 +21,10 @@ import (
 )
 
 type DetectedWorkflow struct {
-	EntryName    string
-	TriggerEvent *jobparser.Event
-	Content      []byte
+	EntryName           string
+	TriggerEvent        *jobparser.Event
+	Content             []byte
+	EventDetectionError error
 }
 
 func init() {
@@ -127,7 +128,8 @@ func DetectWorkflows(
 				TriggerEvent: &jobparser.Event{
 					Name: triggedEvent.Event(),
 				},
-				Content: content,
+				Content:             content,
+				EventDetectionError: err,
 			}
 			workflows = append(workflows, dwf)
 			continue
