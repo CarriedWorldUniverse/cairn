@@ -52,6 +52,7 @@ const sfc = {
         canApprove: false,
         canRerun: false,
         done: false,
+        preExecutionError: '',
         jobs: [
           // {
           //   id: 0,
@@ -525,6 +526,7 @@ export function initRepositoryActionView() {
       runAttemptLabel: el.getAttribute('data-locale-run-attempt-label'),
       viewingOutOfDateRun: el.getAttribute('data-locale-viewing-out-of-date-run'),
       viewMostRecentRun: el.getAttribute('data-locale-view-most-recent-run'),
+      preExecutionError: el.getAttribute('data-locale-pre-execution-error'),
       status: {
         unknown: el.getAttribute('data-locale-status-unknown'),
         waiting: el.getAttribute('data-locale-status-waiting'),
@@ -581,6 +583,12 @@ export function initRepositoryActionView() {
       <div class="action-summary">
         {{ run.commit.localeWorkflow }}
         <a class="muted" :href="workflowURL">{{ workflowName }}</a>
+      </div>
+      <div class="ui error message pre-execution-error" v-if="run.preExecutionError">
+        <div class="header">
+          {{ locale.preExecutionError }}
+        </div>
+        {{ run.preExecutionError }}
       </div>
     </div>
     <div class="action-view-body">

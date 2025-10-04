@@ -152,5 +152,6 @@
     "actions.runs.view_most_recent_run": "View most recent run",
     "actions.workflow.job_parsing_error": "Unable to parse jobs in workflow: %v",
     "actions.workflow.event_detection_error": "Unable to parse supported events in workflow: %v",
+    "actions.workflow.pre_execution_error": "Workflow was not executed due to an error that blocked the execution attempt.",
     "meta.last_line": "Thank you for translating Forgejo! This line isn't seen by the users but it serves other purposes in the translation management. You can place a fun fact in the translation instead of translating it."
 }

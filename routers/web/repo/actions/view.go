@@ -178,6 +178,7 @@ type ViewRunInfo struct {
 	Done              bool          `json:"done"`
 	Jobs              []*ViewJob    `json:"jobs"`
 	Commit            ViewCommit    `json:"commit"`
+	PreExecutionError string        `json:"preExecutionError"`
 }
 
 type ViewCurrentJob struct {
@@ -285,6 +286,7 @@ func getViewResponse(ctx *context_module.Context, req *ViewRequest, runIndex, jo
 	resp.State.Run.CanDeleteArtifact = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.Jobs = make([]*ViewJob, 0, len(jobs)) // marshal to '[]' instead of 'null' in json
 	resp.State.Run.Status = run.Status.String()
+	resp.State.Run.PreExecutionError = run.PreExecutionError
 
 	// It's possible for the run to be marked with a finalized status (eg. failure) because of a  single job within the
 	// run; eg. one job fails, the run fails. But other jobs can still be running. The frontend RepoActionView uses the
