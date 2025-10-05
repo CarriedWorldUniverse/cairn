@@ -71,6 +71,8 @@ type ActionRun struct {
 
 	ConcurrencyGroup string `xorm:"'concurrency_group' index(concurrency)"`
 	ConcurrencyType  ConcurrencyMode
+
+	PreExecutionError string `xorm:"LONGTEXT"` // used to report errors that blocked execution of a workflow
 }
 
 func init() {
