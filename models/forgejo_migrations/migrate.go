@@ -123,6 +123,8 @@ var migrations = []*Migration{
 	NewMigration("Add foreign keys to stopwatch & tracked_time", AddForeignKeysStopwatchTrackedTime),
 	// v41 -> v42
 	NewMigration("Add action_run concurrency fields", AddActionRunConcurrency),
+	// v42 -> v43
+	NewMigration("Add action_run pre_execution_error field", AddActionRunPreExecutionError),
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.
