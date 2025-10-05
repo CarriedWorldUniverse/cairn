@@ -20,26 +20,30 @@
 		{{end}}
 	</div>
 	{{if and (.Permission.CanRead $.UnitTypeCode) (not .IsEmptyRepo) .LanguageStats}}
-	<a class="ui segment show-panel toggle" id="language-stats-bar" data-panel="#language-stats-legend">
-		{{range .LanguageStats}}
-		<div class="bar" style="width: {{.Percentage}}%; background-color: {{.Color}}" data-tooltip-placement="top" data-tooltip-content={{.Language}} data-tooltip-follow-cursor="horizontal"></div>
-		{{end}}
-	</a>
-	<div class="ui segment sub-menu tw-hidden" id="language-stats-legend">
-		{{range .LanguageStats}}
-		<div class="item">
-			<i class="color-icon" style="background-color: {{.Color}}"></i>
-			<span class="tw-font-semibold">
-				{{if eq .Language "other"}}
-					{{ctx.Locale.Tr "repo.language_other"}}
-				{{else}}
-					{{.Language}}
+		<details class="stats" id="language-stats">
+			<summary>
+				<stats-bar>
+					{{range .LanguageStats}}
+						<div class="slice" style="width: {{.Percentage}}%; background-color: {{.Color}}" data-tooltip-placement="top" data-tooltip-content={{.Language}} data-tooltip-follow-cursor="horizontal"></div>
+					{{end}}
+				</stats-bar>
+			</summary>
+			<ul>
+				{{range .LanguageStats}}
+					<li>
+						<i class="color-icon" style="background-color: {{.Color}}"></i>
+						<span>
+							{{if eq .Language "other"}}
+								{{ctx.Locale.Tr "repo.language_other"}}
+							{{else}}
+								{{.Language}}
+							{{end}}
+						</span>
+						{{.Percentage}}%
+					</li>
 				{{end}}
-			</span>
-			{{.Percentage}}%
-		</div>
-		{{end}}
-	</div>
+			</ul>
+		</details>
 	{{end}}
 </div>
 {{end}}
