@@ -265,28 +265,6 @@ h1.error-code {
   user-select: none;
 }
 
-.button-row {
-  gap: var(--button-spacing);
-}
-
-.button-sequence {
-  display: flex;
-  flex-flow: wrap;
-  gap: var(--button-spacing);
-}
-
-.button-sequence.right {
-  justify-content: end;
-}
-
-.button-sequence .ui.button {
-  margin: 0 !important;
-}
-
-.button-row .ui.button {
-  margin-right: 0;
-}
-
 .ui.partial.secondary.menu {
   margin-bottom: 0;
 }

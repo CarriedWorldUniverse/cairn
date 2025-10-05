@@ -3,6 +3,7 @@
 
 // @watch start
 // web_src/css/modules/switch.css
+// web_src/css/modules/button.css
 // web_src/css/themes
 // @watch end
 
@@ -68,7 +69,7 @@ test('Switch CSS properties', async ({browser}) => {
 
   // E2E already runs clients with both fine and coarse pointer simulated
   // This test will verify that coarse-related CSS is working as intended
-  const itemHeight = await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches) ? 41 : 34;
+  const itemHeight = await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches) ? 38 : 34;
   // In Firefox Math.round is needed because .height is 33.99998474121094
   expect(Math.round((await page.locator('#issue-filters .switch > .item:nth-child(1)').boundingBox()).height)).toBe(itemHeight);
 });

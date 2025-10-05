@@ -14,7 +14,7 @@
 					{{template "org/follow_unfollow" .}}
 				{{end}}
 				{{if .IsOrganizationMember}}
-					<a class="ui basic button" href="{{.OrgLink}}/dashboard">{{ctx.Locale.Tr "org.open_dashboard"}}</a>
+					<a class="secondary button" href="{{.OrgLink}}/dashboard">{{ctx.Locale.Tr "org.open_dashboard"}}</a>
 				{{end}}
 				{{$moderationEntryNeeded := and .IsModerationEnabled .IsSigned (not .IsOrganizationOwner)}}
 				{{if or .EnableFeed $moderationEntryNeeded}}

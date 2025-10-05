@@ -113,7 +113,7 @@
 					</div>
 				{{end}}
 			</div>
-			<div class="right button-sequence">
+			<div class="button-sequence tw-justify-end">
 				{{if and $.CanMarkConversation $isNotPending}}
 					<button class="ui tiny basic button resolve-conversation" data-origin="timeline" data-action="{{if not $resolved}}Resolve{{else}}UnResolve{{end}}" data-comment-id="{{(index .comments 0).ID}}" data-update-url="{{$.RepoLink}}/issues/resolve_conversation">
 						{{if $resolved}}

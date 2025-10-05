@@ -30,14 +30,14 @@
 		</div>
 	</div>
 	{{if $showFollow}}
-		<div class="actions">
+		<div class="actions button-row">
 			<div class="primary-action" hx-target="#profile-avatar-card" hx-indicator="#profile-avatar-card">
 				{{if .IsFollowing}}
-					<button hx-post="{{.ContextUser.HomeLink}}?action=unfollow" class="ui basic red button tw-flex tw-gap-1">
+					<button hx-post="{{.ContextUser.HomeLink}}?action=unfollow" class="secondary button tw-w-full">
 						{{svg "octicon-person"}} {{ctx.Locale.Tr "user.unfollow"}}
 					</button>
 				{{else}}
-					<button hx-post="{{.ContextUser.HomeLink}}?action=follow" class="ui basic primary button tw-flex tw-gap-1">
+					<button hx-post="{{.ContextUser.HomeLink}}?action=follow" class="primary button tw-w-full">
 						{{svg "octicon-person"}} {{ctx.Locale.Tr "user.follow"}}
 					</button>
 				{{end}}

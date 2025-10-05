@@ -1,3 +1,6 @@
+/* Copyright 2025 The Forgejo Authors. All rights reserved.
+ * SPDX-License-Identifier: GPL-3.0-or-later */
+
 /* This is an implementation of a dropdown menu based on details HTML tag.
  * It is inspired by https://picocss.com/docs/dropdown.
  *
@@ -26,13 +29,14 @@ details.dropdown > summary {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  /* Cancel some of default styling */
-  user-select: none;
-  list-style-type: none;
+  justify-content: center;
   /* Main visual properties */
   border: 1px solid var(--color-light-border);
   border-radius: var(--border-radius);
   padding: 0.5rem;
+  /* Unset unwanted default properties */
+  user-select: none;
+  list-style-type: none;
 }
 
 details.dropdown > summary:hover,
