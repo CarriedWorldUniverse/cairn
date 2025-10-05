@@ -292,6 +292,11 @@ func composeIssueCommentMessages(ctx *mailCommentContext, lang string, recipient
 		"Language":        locale.Language(),
 		"CanReply":        setting.IncomingEmail.Enabled && commentType != issues_model.CommentTypePullRequestPush,
 	}
+	if closeIssueByCommit, ok := ctx.ActionAdditionalData.(ActionCloseIssueByCommit); ok {
+		mailMeta["CloseIssueByCommit"] = closeIssueByCommit.CommitID
+	} else {
+		mailMeta["CloseIssueByCommit"] = ""
+	}
 
 	var mailSubject bytes.Buffer
 	if err := subjectTemplates.ExecuteTemplate(&mailSubject, tplName, mailMeta); err == nil {

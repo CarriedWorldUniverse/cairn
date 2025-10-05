@@ -25,6 +25,16 @@ func fallbackMailSubject(issue *issues_model.Issue) string {
 	return fmt.Sprintf("[%s] %s (Issue #%d)", issue.Repo.FullName(), issue.Title, issue.Index)
 }
 
+type ActionAdditionalData interface {
+	isActionAdditionalData()
+}
+
+type ActionCloseIssueByCommit struct {
+	CommitID string
+}
+
+func (ActionCloseIssueByCommit) isActionAdditionalData() {}
+
 type mailCommentContext struct {
 	context.Context
 	Issue                 *issues_model.Issue
@@ -33,6 +43,7 @@ type mailCommentContext struct {
 	Content               string
 	Comment               *issues_model.Comment
 	ForceDoerNotification bool
+	ActionAdditionalData  ActionAdditionalData
 }
 
 const (
@@ -174,7 +185,7 @@ func mailIssueCommentBatch(ctx *mailCommentContext, users []*user_model.User, vi
 
 // MailParticipants sends new issue thread created emails to repository watchers
 // and mentioned people.
-func MailParticipants(ctx context.Context, issue *issues_model.Issue, doer *user_model.User, opType activities_model.ActionType, mentions []*user_model.User) error {
+func MailParticipants(ctx context.Context, issue *issues_model.Issue, doer *user_model.User, opType activities_model.ActionType, mentions []*user_model.User, additionalData ActionAdditionalData) error {
 	if setting.MailService == nil {
 		// No mail service configured
 		return nil
@@ -196,6 +207,7 @@ func MailParticipants(ctx context.Context, issue *issues_model.Issue, doer *user
 			Content:               content,
 			Comment:               nil,
 			ForceDoerNotification: forceDoerNotification,
+			ActionAdditionalData:  additionalData,
 		}, mentions); err != nil {
 		log.Error("mailIssueCommentToParticipants: %v", err)
 	}
