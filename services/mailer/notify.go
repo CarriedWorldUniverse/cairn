@@ -50,13 +50,14 @@ func (m *mailNotifier) CreateIssueComment(ctx context.Context, doer *user_model.
 }
 
 func (m *mailNotifier) NewIssue(ctx context.Context, issue *issues_model.Issue, mentions []*user_model.User) {
-	if err := MailParticipants(ctx, issue, issue.Poster, activities_model.ActionCreateIssue, mentions); err != nil {
+	if err := MailParticipants(ctx, issue, issue.Poster, activities_model.ActionCreateIssue, mentions, nil); err != nil {
 		log.Error("MailParticipants: %v", err)
 	}
 }
 
 func (m *mailNotifier) IssueChangeStatus(ctx context.Context, doer *user_model.User, commitID string, issue *issues_model.Issue, actionComment *issues_model.Comment, isClosed bool) {
 	var actionType activities_model.ActionType
+	var actionAdditionalData ActionAdditionalData
 	if issue.IsPull {
 		if isClosed {
 			actionType = activities_model.ActionClosePullRequest
@@ -66,12 +67,17 @@ func (m *mailNotifier) IssueChangeStatus(ctx context.Context, doer *user_model.U
 	} else {
 		if isClosed {
 			actionType = activities_model.ActionCloseIssue
+			if commitID != "" {
+				// An issue being closed *and* a commitID being present means that the issue was closed by a PR or
+				// commit message that closed it by reference.
+				actionAdditionalData = ActionCloseIssueByCommit{CommitID: commitID}
+			}
 		} else {
 			actionType = activities_model.ActionReopenIssue
 		}
 	}
 
-	if err := MailParticipants(ctx, issue, doer, actionType, nil); err != nil {
+	if err := MailParticipants(ctx, issue, doer, actionType, nil, actionAdditionalData); err != nil {
 		log.Error("MailParticipants: %v", err)
 	}
 }
@@ -82,14 +88,14 @@ func (m *mailNotifier) IssueChangeTitle(ctx context.Context, doer *user_model.Us
 		return
 	}
 	if issue.IsPull && issues_model.HasWorkInProgressPrefix(oldTitle) && !issue.PullRequest.IsWorkInProgress(ctx) {
-		if err := MailParticipants(ctx, issue, doer, activities_model.ActionPullRequestReadyForReview, nil); err != nil {
+		if err := MailParticipants(ctx, issue, doer, activities_model.ActionPullRequestReadyForReview, nil, nil); err != nil {
 			log.Error("MailParticipants: %v", err)
 		}
 	}
 }
 
 func (m *mailNotifier) NewPullRequest(ctx context.Context, pr *issues_model.PullRequest, mentions []*user_model.User) {
-	if err := MailParticipants(ctx, pr.Issue, pr.Issue.Poster, activities_model.ActionCreatePullRequest, mentions); err != nil {
+	if err := MailParticipants(ctx, pr.Issue, pr.Issue.Poster, activities_model.ActionCreatePullRequest, mentions, nil); err != nil {
 		log.Error("MailParticipants: %v", err)
 	}
 }
@@ -139,7 +145,7 @@ func (m *mailNotifier) MergePullRequest(ctx context.Context, doer *user_model.Us
 		log.Error("LoadIssue: %v", err)
 		return
 	}
-	if err := MailParticipants(ctx, pr.Issue, doer, activities_model.ActionMergePullRequest, nil); err != nil {
+	if err := MailParticipants(ctx, pr.Issue, doer, activities_model.ActionMergePullRequest, nil, nil); err != nil {
 		log.Error("MailParticipants: %v", err)
 	}
 }
@@ -149,7 +155,7 @@ func (m *mailNotifier) AutoMergePullRequest(ctx context.Context, doer *user_mode
 		log.Error("pr.LoadIssue: %v", err)
 		return
 	}
-	if err := MailParticipants(ctx, pr.Issue, doer, activities_model.ActionAutoMergePullRequest, nil); err != nil {
+	if err := MailParticipants(ctx, pr.Issue, doer, activities_model.ActionAutoMergePullRequest, nil, nil); err != nil {
 		log.Error("MailParticipants: %v", err)
 	}
 }

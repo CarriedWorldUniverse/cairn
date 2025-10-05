@@ -239,6 +239,13 @@ func TestMailerIssueTemplate(t *testing.T) {
 		Content: rejectComment.Content, Comment: rejectComment,
 	})
 	expect(t, msg, pull, rejectComment.Content)
+
+	msg = testCompose(t, &mailCommentContext{
+		Issue: issue, Doer: doer, ActionType: activities_model.ActionCloseIssue,
+		Content: comment.Content, Comment: comment,
+		ActionAdditionalData: ActionCloseIssueByCommit{CommitID: "abc123def"},
+	})
+	expect(t, msg, issue, comment.Content, "abc123def")
 }
 
 func TestTemplateSelection(t *testing.T) {
