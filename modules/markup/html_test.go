@@ -1298,4 +1298,20 @@ func TestRender_FilePreview(t *testing.T) {
 			localMetas,
 		)
 	})
+
+	t.Run("file previews followed by new line", func(t *testing.T) {
+		testRender(
+			commitFileURLFirstLine+"\nand\n"+commitFileURLFirstLine,
+			"<p></p>"+filePreviewBox+"<p><br/>\nand<br/>\n</p>"+filePreviewBox+"<p></p>",
+			localMetas,
+		)
+	})
+
+	t.Run("file previews followed by new line in div", func(t *testing.T) {
+		testRender(
+			"<div>"+commitFileURLFirstLine+"\nand\n"+commitFileURLFirstLine+"</div>",
+			"<div>"+filePreviewBox+"\nand\n"+filePreviewBox+"</div>",
+			localMetas,
+		)
+	})
 }
