@@ -56,6 +56,8 @@ type ActionRun struct {
 	Created          timeutil.TimeStamp `xorm:"created"`
 	Updated          timeutil.TimeStamp `xorm:"updated"`
 	NotifyEmail      bool
+
+	PreExecutionError string `xorm:"LONGTEXT"` // used to report errors that blocked execution of a workflow
 }
 
 func init() {

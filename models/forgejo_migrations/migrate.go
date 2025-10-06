@@ -119,6 +119,9 @@ var migrations = []*Migration{
 	NewMigration("Migrate `data` column of `secret` table to store keying material", MigrateActionSecretsToKeying),
 	// v39 -> v40
 	NewMigration("Add index for release sha1", AddIndexForReleaseSha1),
+	// NOTE: v42 -> v43 -- effectively backported into Forgejo v13 as part of backporting
+	// https://codeberg.org/forgejo/forgejo/pulls/9530, but the migration was omitted to avoid future upgrade conflicts.
+	// The migration will effectively occur automatically via table `Sync` on DB engine initialization.
 }
 
 // GetCurrentDBVersion returns the current Forgejo database version.

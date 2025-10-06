@@ -26,6 +26,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 	webhook_module "forgejo.org/modules/webhook"
 	"forgejo.org/services/convert"
@@ -378,13 +379,25 @@ func handleWorkflows(
 			continue
 		}
 
-		jobs, err := jobParser(dwf.Content, jobparser.WithVars(vars))
-		if err != nil {
+		var jobs []*jobparser.SingleWorkflow
+		if dwf.EventDetectionError != nil { // don't even bother trying to parse jobs due to event detection error
+			tr := translation.NewLocale(input.Doer.Language)
+			run.PreExecutionError = tr.TrString("actions.workflow.event_detection_error", dwf.EventDetectionError)
 			run.Status = actions_model.StatusFailure
-			log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
 			jobs = []*jobparser.SingleWorkflow{{
 				Name: dwf.EntryName,
 			}}
+		} else {
+			jobs, err = jobParser(dwf.Content, jobparser.WithVars(vars))
+			if err != nil {
+				log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
+				tr := translation.NewLocale(input.Doer.Language)
+				run.PreExecutionError = tr.TrString("actions.workflow.job_parsing_error", err)
+				run.Status = actions_model.StatusFailure
+				jobs = []*jobparser.SingleWorkflow{{
+					Name: dwf.EntryName,
+				}}
+			}
 		}
 
 		// cancel running jobs if the event is push or pull_request_sync
