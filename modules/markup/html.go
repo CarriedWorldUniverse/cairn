@@ -1254,7 +1254,7 @@ func filePreviewPatternProcessor(ctx *RenderContext, node *html.Node) {
 			// Specialized version of replaceContent, so the parent paragraph element is not destroyed from our div
 			before := node.Data[:(preview.start - offset)]
 			after := node.Data[(preview.end - offset):]
-			afterNode := &html.Node{
+			afterTextNode := &html.Node{
 				Type: html.TextNode,
 				Data: after,
 			}
@@ -1263,22 +1263,20 @@ func filePreviewPatternProcessor(ctx *RenderContext, node *html.Node) {
 			case "div", "li", "td", "th", "details":
 				nextSibling := node.NextSibling
 				node.Parent.InsertBefore(previewNode, nextSibling)
-				node.Parent.InsertBefore(afterNode, nextSibling)
+				node.Parent.InsertBefore(afterTextNode, nextSibling)
 			case "p", "span", "em", "strong":
-				nextSibling := node.Parent.NextSibling
-				node.Parent.Parent.InsertBefore(previewNode, nextSibling)
-				afterPNode := &html.Node{
+				nextParentSibling := node.Parent.NextSibling
+				node.Parent.Parent.InsertBefore(previewNode, nextParentSibling)
+				afterNode := &html.Node{
 					Type: html.ElementNode,
 					Data: node.Parent.Data,
 					Attr: node.Parent.Attr,
 				}
-				afterPNode.AppendChild(afterNode)
-				node.Parent.Parent.InsertBefore(afterPNode, nextSibling)
-				siblingNode := node.NextSibling
-				if siblingNode != nil {
-					node.NextSibling = nil
-					siblingNode.PrevSibling = nil
-					afterPNode.AppendChild(siblingNode)
+				afterNode.AppendChild(afterTextNode)
+				node.Parent.Parent.InsertBefore(afterNode, nextParentSibling)
+				for sibling := node.NextSibling; sibling != nil; sibling = node.NextSibling {
+					sibling.Parent.RemoveChild(sibling)
+					afterNode.AppendChild(sibling)
 				}
 			default:
 				matched = false
@@ -1286,7 +1284,7 @@ func filePreviewPatternProcessor(ctx *RenderContext, node *html.Node) {
 			if matched {
 				offset = preview.end
 				node.Data = before
-				node = afterNode
+				node = afterTextNode
 			}
 		}
 		node = node.NextSibling
