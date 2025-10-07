@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"forgejo.org/models/forgejo/semver"
+	"forgejo.org/models/forgejo_migrations"
 	forgejo_v1_20 "forgejo.org/models/forgejo_migrations_legacy/v1_20"
 	forgejo_v1_22 "forgejo.org/models/forgejo_migrations_legacy/v1_22"
 	"forgejo.org/modules/git"
@@ -168,8 +169,10 @@ func EnsureUpToDate(x *xorm.Engine) error {
 		return fmt.Errorf(`current Forgejo database version %d is not equal to the expected version %d. Please run "forgejo [--config /path/to/app.ini] migrate" to update the database version`, currentDB, expected)
 	}
 
-	return nil
+	return forgejoMigrationsEnsureUpToDate(x)
 }
+
+var forgejoMigrationsEnsureUpToDate = forgejo_migrations.EnsureUpToDate
 
 // Migrate Forgejo database to current version.
 func Migrate(x *xorm.Engine) error {
@@ -233,5 +236,9 @@ func Migrate(x *xorm.Engine) error {
 		return fmt.Errorf("sync: %w", err)
 	}
 
-	return semver.SetVersionStringWithEngine(x, setting.ForgejoVersion)
+	if err := semver.SetVersionStringWithEngine(x, setting.ForgejoVersion); err != nil {
+		return fmt.Errorf("SetVersionStringWithEngine: %w", err)
+	}
+
+	return forgejo_migrations.Migrate(x)
 }

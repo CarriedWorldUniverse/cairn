@@ -32,6 +32,9 @@ forgejo.org/models/forgejo/semver
 	SetVersionString
 	SetVersion
 
+forgejo.org/models/forgejo_migrations
+	resetMigrations
+
 forgejo.org/models/git
 	RemoveDeletedBranchByID
 

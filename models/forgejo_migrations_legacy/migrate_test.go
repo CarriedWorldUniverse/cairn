@@ -7,12 +7,18 @@ import (
 	"testing"
 
 	migration_tests "forgejo.org/models/gitea_migrations/test"
+	"forgejo.org/modules/test"
 
 	"github.com/stretchr/testify/require"
+	"xorm.io/xorm"
 )
 
 // TestEnsureUpToDate tests the behavior of EnsureUpToDate.
 func TestEnsureUpToDate(t *testing.T) {
+	defer test.MockVariableValue(&forgejoMigrationsEnsureUpToDate, func(x *xorm.Engine) error {
+		return nil
+	})()
+
 	x, deferable := migration_tests.PrepareTestEnv(t, 0, new(ForgejoVersion))
 	defer deferable()
 	if x == nil || t.Failed() {
