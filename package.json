@@ -24,7 +24,7 @@
     "dayjs": "1.11.18",
     "dropzone": "6.0.0-beta.2",
     "easymde": "2.18.0",
-    "esbuild-loader": "4.3.0",
+    "esbuild-loader": "4.4.0",
     "escape-goat": "4.0.0",
     "fast-glob": "3.3.3",
     "htmx.org": "2.0.7",
