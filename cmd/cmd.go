@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -38,6 +39,19 @@ func argsSet(c *cli.Command, args ...string) error {
 		}
 	}
 	return nil
+}
+
+// When a CLI command is intended to be used only with flags and no other arbitrary args, noDanglingArgs will validate
+// the end-user's usage.
+func noDanglingArgs(ctx context.Context, c *cli.Command) (context.Context, error) {
+	if c.Args().Len() != 0 {
+		args := c.Args().Slice()
+		if slices.Contains(args, "false") {
+			println("Hint: boolean false must be specified as a single arg, eg. '--restricted=false', not '--restricted false'")
+		}
+		return nil, fmt.Errorf("unexpected arguments: %s", strings.Join(c.Args().Slice(), ", "))
+	}
+	return nil, nil
 }
 
 // confirm waits for user input which confirms an action
@@ -132,6 +146,21 @@ func PrepareConsoleLoggerLevel(defaultLevel log.Level) func(ctx context.Context,
 			level = log.TRACE
 		}
 		log.SetConsoleLogger(log.DEFAULT, "console-default", level)
+		return ctx, nil
+	}
+}
+
+func multipleBefore(beforeFuncs ...cli.BeforeFunc) cli.BeforeFunc {
+	return func(ctx context.Context, cli *cli.Command) (context.Context, error) {
+		for _, beforeFunc := range beforeFuncs {
+			bctx, err := beforeFunc(ctx, cli)
+			if err != nil {
+				return bctx, err
+			}
+			if bctx != nil {
+				ctx = bctx
+			}
+		}
 		return ctx, nil
 	}
 }

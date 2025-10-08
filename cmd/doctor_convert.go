@@ -20,6 +20,7 @@ func cmdDoctorConvert() *cli.Command {
 		Name:        "convert",
 		Usage:       "Convert the database",
 		Description: "A command to convert an existing MySQL database from utf8 to utf8mb4",
+		Before:      noDanglingArgs,
 		Action:      runDoctorConvert,
 	}
 }

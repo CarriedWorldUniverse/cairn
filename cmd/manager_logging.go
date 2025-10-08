@@ -77,6 +77,7 @@ func subcmdLogging() *cli.Command {
 						Name: "debug",
 					},
 				},
+				Before: noDanglingArgs,
 				Action: runPauseLogging,
 			}, {
 				Name:  "resume",
@@ -86,6 +87,7 @@ func subcmdLogging() *cli.Command {
 						Name: "debug",
 					},
 				},
+				Before: noDanglingArgs,
 				Action: runResumeLogging,
 			}, {
 				Name:  "release-and-reopen",
@@ -95,6 +97,7 @@ func subcmdLogging() *cli.Command {
 						Name: "debug",
 					},
 				},
+				Before: noDanglingArgs,
 				Action: runReleaseReopenLogging,
 			}, {
 				Name:      "remove",
@@ -156,6 +159,7 @@ func subcmdLogging() *cli.Command {
 								Usage:   "Compression level to use",
 							},
 						}...),
+						Before: noDanglingArgs,
 						Action: runAddFileLogger,
 					}, {
 						Name:  "conn",
@@ -182,6 +186,7 @@ func subcmdLogging() *cli.Command {
 								Usage:   "Host address and port to connect to (defaults to :7020)",
 							},
 						}...),
+						Before: noDanglingArgs,
 						Action: runAddConnLogger,
 					},
 				},
@@ -197,6 +202,7 @@ func subcmdLogging() *cli.Command {
 						Usage: "Switch off SQL logging",
 					},
 				},
+				Before: noDanglingArgs,
 				Action: runSetLogSQL,
 			},
 		},

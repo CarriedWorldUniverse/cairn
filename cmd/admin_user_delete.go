@@ -40,6 +40,7 @@ func microcmdUserDelete() *cli.Command {
 				Usage: "Purge user, all their repositories, organizations and comments",
 			},
 		},
+		Before: noDanglingArgs,
 		Action: runDeleteUser,
 	}
 }

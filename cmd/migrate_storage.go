@@ -32,6 +32,7 @@ func cmdMigrateStorage() *cli.Command {
 		Name:        "migrate-storage",
 		Usage:       "Migrate the storage",
 		Description: "Copies stored files from storage configured in app.ini to parameter-configured storage",
+		Before:      noDanglingArgs,
 		Action:      runMigrateStorage,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

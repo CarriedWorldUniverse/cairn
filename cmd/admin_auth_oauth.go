@@ -136,6 +136,7 @@ func microcmdAuthAddOauth() *cli.Command {
 	return &cli.Command{
 		Name:   "add-oauth",
 		Usage:  "Add new Oauth authentication source",
+		Before: noDanglingArgs,
 		Action: newAuthService().addOauth,
 		Flags:  oauthCLIFlags(),
 	}
@@ -145,6 +146,7 @@ func microcmdAuthUpdateOauth() *cli.Command {
 	return &cli.Command{
 		Name:   "update-oauth",
 		Usage:  "Update existing Oauth authentication source",
+		Before: noDanglingArgs,
 		Action: newAuthService().updateOauth,
 		Flags:  append(oauthCLIFlags()[:1], append([]cli.Flag{idFlag()}, oauthCLIFlags()[1:]...)...),
 	}

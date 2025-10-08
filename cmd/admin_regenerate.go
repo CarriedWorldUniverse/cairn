@@ -17,17 +17,19 @@ var (
 	microcmdRegenHooks = &cli.Command{
 		Name:   "hooks",
 		Usage:  "Regenerate git-hooks",
+		Before: noDanglingArgs,
 		Action: runRegenerateHooks,
 	}
 
 	microcmdRegenKeys = &cli.Command{
 		Name:   "keys",
 		Usage:  "Regenerate authorized_keys file",
+		Before: noDanglingArgs,
 		Action: runRegenerateKeys,
 	}
 )
 
-func runRegenerateHooks(ctx context.Context, _ *cli.Command) error {
+func runRegenerateHooks(ctx context.Context, c *cli.Command) error {
 	ctx, cancel := installSignals(ctx)
 	defer cancel()
 
@@ -37,7 +39,7 @@ func runRegenerateHooks(ctx context.Context, _ *cli.Command) error {
 	return repo_service.SyncRepositoryHooks(graceful.GetManager().ShutdownContext())
 }
 
-func runRegenerateKeys(ctx context.Context, _ *cli.Command) error {
+func runRegenerateKeys(ctx context.Context, c *cli.Command) error {
 	ctx, cancel := installSignals(ctx)
 	defer cancel()
 

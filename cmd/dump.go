@@ -164,6 +164,7 @@ func cmdDump() *cli.Command {
 		Usage: "Dump Forgejo files and database",
 		Description: `Dump compresses all related files and database into zip file.
 It can be used for backup and capture Forgejo server image to send to maintainer`,
+		Before: noDanglingArgs,
 		Action: runDump,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

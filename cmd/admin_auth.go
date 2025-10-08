@@ -31,6 +31,7 @@ func microcmdAuthDelete() *cli.Command {
 		Name:   "delete",
 		Usage:  "Delete specific auth source",
 		Flags:  []cli.Flag{idFlag()},
+		Before: noDanglingArgs,
 		Action: runDeleteAuth,
 	}
 }
@@ -39,6 +40,7 @@ func microcmdAuthList() *cli.Command {
 	return &cli.Command{
 		Name:   "list",
 		Usage:  "List auth sources",
+		Before: noDanglingArgs,
 		Action: runListAuth,
 		Flags: []cli.Flag{
 			&cli.IntFlag{

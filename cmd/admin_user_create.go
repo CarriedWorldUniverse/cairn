@@ -23,6 +23,7 @@ func microcmdUserCreate() *cli.Command {
 	return &cli.Command{
 		Name:   "create",
 		Usage:  "Create a new user in database",
+		Before: noDanglingArgs,
 		Action: runCreateUser,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

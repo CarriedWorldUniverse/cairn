@@ -40,6 +40,7 @@ func microcmdUserGenerateAccessToken() *cli.Command {
 				Usage: `Comma separated list of scopes to apply to access token, examples: "all", "public-only,read:issue", "write:repository,write:user"`,
 			},
 		},
+		Before: noDanglingArgs,
 		Action: runGenerateAccessToken,
 	}
 }

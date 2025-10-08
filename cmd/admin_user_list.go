@@ -18,6 +18,7 @@ func microcmdUserList() *cli.Command {
 	return &cli.Command{
 		Name:   "list",
 		Usage:  "List users",
+		Before: noDanglingArgs,
 		Action: runListUsers,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
