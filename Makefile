@@ -514,7 +514,7 @@ lint-disposable-emails-fix:
 
 .PHONY: security-check
 security-check:
-	go run $(GOVULNCHECK_PACKAGE) -show color ./...
+	$(GO) run $(GOVULNCHECK_PACKAGE) -show color ./...
 
 ###
 # Development and testing targets
