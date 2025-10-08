@@ -94,6 +94,7 @@ linters:
         - all
     testifylint:
       disable:
+        - error-is-as
         - go-require
   exclusions:
     generated: lax
