@@ -28,7 +28,7 @@ jobs:
           ${{ toJSON(github.event) }}
           EOF
 
-      - uses: https://data.forgejo.org/actions/setup-go@v5
+      - uses: https://data.forgejo.org/actions/setup-go@v6
         with:
           go-version-file: "go.mod"
           cache: false
