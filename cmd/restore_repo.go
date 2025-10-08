@@ -19,6 +19,7 @@ func cmdRestoreRepository() *cli.Command {
 		Name:        "restore-repo",
 		Usage:       "Restore the repository from disk",
 		Description: "This is a command for restoring the repository data.",
+		Before:      noDanglingArgs,
 		Action:      runRestoreRepository,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

@@ -21,6 +21,7 @@ func microcmdUserChangePassword() *cli.Command {
 	return &cli.Command{
 		Name:   "change-password",
 		Usage:  "Change a user's password",
+		Before: noDanglingArgs,
 		Action: runChangePassword,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

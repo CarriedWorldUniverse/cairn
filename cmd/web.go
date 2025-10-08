@@ -39,7 +39,7 @@ func cmdWeb() *cli.Command {
 		Usage: "Start the Forgejo web server",
 		Description: `The Forgejo web server is the only thing you need to run,
 and it takes care of all the other things for you`,
-		Before: PrepareConsoleLoggerLevel(log.INFO),
+		Before: multipleBefore(noDanglingArgs, PrepareConsoleLoggerLevel(log.INFO)),
 		Action: runWeb,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

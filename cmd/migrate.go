@@ -20,6 +20,7 @@ func cmdMigrate() *cli.Command {
 		Name:        "migrate",
 		Usage:       "Migrate the database",
 		Description: "This is a command for migrating the database, so that you can run 'forgejo admin user create' before starting the server.",
+		Before:      noDanglingArgs,
 		Action:      runMigrate,
 	}
 }

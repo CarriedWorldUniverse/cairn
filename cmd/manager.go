@@ -39,6 +39,7 @@ func subcmdShutdown() *cli.Command {
 				Name: "debug",
 			},
 		},
+		Before: noDanglingArgs,
 		Action: runShutdown,
 	}
 }
@@ -52,6 +53,7 @@ func subcmdRestart() *cli.Command {
 				Name: "debug",
 			},
 		},
+		Before: noDanglingArgs,
 		Action: runRestart,
 	}
 }
@@ -65,6 +67,7 @@ func subcmdReloadTemplates() *cli.Command {
 				Name: "debug",
 			},
 		},
+		Before: noDanglingArgs,
 		Action: runReloadTemplates,
 	}
 }
@@ -73,6 +76,7 @@ func subcmdFlushQueues() *cli.Command {
 	return &cli.Command{
 		Name:   "flush-queues",
 		Usage:  "Flush queues in the running process",
+		Before: noDanglingArgs,
 		Action: runFlushQueues,
 		Flags: []cli.Flag{
 			&cli.DurationFlag{
@@ -95,6 +99,7 @@ func subCmdProcesses() *cli.Command {
 	return &cli.Command{
 		Name:   "processes",
 		Usage:  "Display running processes within the current process",
+		Before: noDanglingArgs,
 		Action: runProcesses,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{

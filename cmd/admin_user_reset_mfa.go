@@ -17,6 +17,7 @@ func microcmdUserResetMFA() *cli.Command {
 	return &cli.Command{
 		Name:   "reset-mfa",
 		Usage:  "Remove all two-factor authentication configurations for a user",
+		Before: noDanglingArgs,
 		Action: runResetMFA,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

@@ -21,7 +21,7 @@ func cmdKeys() *cli.Command {
 		Name:        "keys",
 		Usage:       "(internal) Should only be called by SSH server",
 		Description: "Queries the Forgejo database to get the authorized command for a given ssh key fingerprint",
-		Before:      PrepareConsoleLoggerLevel(log.FATAL),
+		Before:      multipleBefore(noDanglingArgs, PrepareConsoleLoggerLevel(log.FATAL)),
 		Action:      runKeys,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

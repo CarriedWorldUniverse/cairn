@@ -28,6 +28,7 @@ func subcmdActionsGenRunnerToken() *cli.Command {
 	return &cli.Command{
 		Name:    "generate-runner-token",
 		Usage:   "Generate a new token for a runner to use to register with the server",
+		Before:  noDanglingArgs,
 		Action:  runGenerateActionsRunnerToken,
 		Aliases: []string{"grt"},
 		Flags: []cli.Flag{

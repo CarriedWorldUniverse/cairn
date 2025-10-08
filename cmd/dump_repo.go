@@ -28,6 +28,7 @@ func cmdDumpRepository() *cli.Command {
 		Name:        "dump-repo",
 		Usage:       "Dump the repository from git/github/gitea/gitlab",
 		Description: "This is a command for dumping the repository data.",
+		Before:      noDanglingArgs,
 		Action:      runDumpRepository,
 		Flags: []cli.Flag{
 			&cli.StringFlag{

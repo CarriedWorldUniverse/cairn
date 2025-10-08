@@ -78,6 +78,7 @@ func microcmdAuthAddSMTP() *cli.Command {
 	return &cli.Command{
 		Name:   "add-smtp",
 		Usage:  "Add new SMTP authentication source",
+		Before: noDanglingArgs,
 		Action: runAddSMTP,
 		Flags:  smtpCLIFlags(),
 	}
@@ -87,6 +88,7 @@ func microcmdAuthUpdateSMTP() *cli.Command {
 	return &cli.Command{
 		Name:   "update-smtp",
 		Usage:  "Update existing SMTP authentication source",
+		Before: noDanglingArgs,
 		Action: runUpdateSMTP,
 		Flags:  append(smtpCLIFlags()[:1], append([]cli.Flag{idFlag()}, smtpCLIFlags()[1:]...)...),
 	}
