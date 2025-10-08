@@ -464,6 +464,10 @@ test('Combo Markdown: preview mode switch', async ({page}) => {
   await expect(toolbarItem).toBeVisible();
   await expect(editorPanel).toBeVisible();
   await expect(previewPanel).toBeHidden();
+
+  // Validate switch height: it is customized to be same height as other buttons on the panel
+  expect(await page.locator('markdown-toolbar .switch').evaluate((el) => getComputedStyle(el).height)).toBe(await page.locator('md-header.markdown-toolbar-button').evaluate((el) => getComputedStyle(el).height));
+
   await screenshot(page);
 });
 

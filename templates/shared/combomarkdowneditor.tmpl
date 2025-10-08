@@ -16,11 +16,9 @@ Template Attributes:
 
 	<markdown-toolbar>
 		{{if .MarkdownPreviewUrl}}
-		<div class="markdown-toolbar-switch">
 			<div class="switch">
 				<a href="#" class="active item" data-tab-for="markdown-writer">{{ctx.Locale.Tr "write"}}</a>
 				<a href="#" class="item" data-tab-for="markdown-previewer" data-preview-url="{{.MarkdownPreviewUrl}}" data-preview-context="{{.MarkdownPreviewContext}}">{{ctx.Locale.Tr "preview"}}</a>
-			</div>
 		</div>
 		{{end}}
 		<div class="markdown-toolbar-group">
@@ -31,7 +29,7 @@ Template Attributes:
 		<div class="markdown-toolbar-group">
 			<md-quote class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.quote.tooltip"}}">{{svg "octicon-quote"}}</md-quote>
 			<md-code class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.code.tooltip"}}">{{svg "octicon-code"}}</md-code>
-			<button class="markdown-toolbar-button show-modal button" data-md-button data-md-action="new-link" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.link.tooltip"}}">{{svg "octicon-link"}}</button>
+			<button class="markdown-toolbar-button show-modal" data-md-button data-md-action="new-link" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.link.tooltip"}}">{{svg "octicon-link"}}</button>
 		</div>
 		<div class="markdown-toolbar-group">
 			<md-unordered-list class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.list.unordered.tooltip"}}">{{svg "octicon-list-unordered"}}</md-unordered-list>
@@ -41,7 +39,7 @@ Template Attributes:
 			<button type="button" class="markdown-toolbar-button" data-md-button data-md-action="indent" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.indent.tooltip"}}">{{svg "octicon-arrow-right"}}</button>
 		</div>
 		<div class="markdown-toolbar-group">
-			<button type="button" class="markdown-toolbar-button show-modal button" data-md-button data-md-action="new-table" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.new_table.tooltip"}}">{{svg "octicon-table"}}</button>
+			<button type="button" class="markdown-toolbar-button show-modal" data-md-button data-md-action="new-table" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.new_table.tooltip"}}">{{svg "octicon-table"}}</button>
 			<md-mention class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.mention.tooltip"}}">{{svg "octicon-mention"}}</md-mention>
 			<md-ref class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "editor.buttons.ref.tooltip"}}">{{svg "octicon-cross-reference"}}</md-ref>
 		</div>
