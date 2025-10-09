@@ -19,19 +19,21 @@
 				{{$moderationEntryNeeded := and .IsModerationEnabled .IsSigned (not .IsOrganizationOwner)}}
 				{{if or .EnableFeed $moderationEntryNeeded}}
 					<details class="dropdown dir-rtl">
-						<summary data-tooltip-content="{{ctx.Locale.Tr "profile.actions.tooltip"}}">{{svg "octicon-kebab-horizontal" 20}}</summary>
+						<summary class="border" data-tooltip-content="{{ctx.Locale.Tr "profile.actions.tooltip"}}">
+							{{svg "octicon-kebab-horizontal" 20}}
+						</summary>
 						<ul>
 							{{if .EnableFeed}}
 								<li>
-									<a class="item" href="{{.Org.HomeLink}}.rss">{{svg "octicon-rss"}}{{ctx.Locale.Tr "rss_feed"}}</a>
+									<a href="{{.Org.HomeLink}}.rss">{{svg "octicon-rss"}}{{ctx.Locale.Tr "rss_feed"}}</a>
 								</li>
 								<li>
-									<a class="item" href="{{.Org.HomeLink}}.atom">{{svg "octicon-rss"}}{{ctx.Locale.Tr "feed.atom.link"}}</a>
+									<a href="{{.Org.HomeLink}}.atom">{{svg "octicon-rss"}}{{ctx.Locale.Tr "feed.atom.link"}}</a>
 								</li>
 							{{end}}
 							{{if $moderationEntryNeeded}}
 								<li>
-									<a class="item orange text" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{svg "octicon-stop"}}{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
+									<a class="orange text" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{svg "octicon-stop"}}{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
 								</li>
 							{{end}}
 						</ul>
