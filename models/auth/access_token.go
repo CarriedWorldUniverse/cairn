@@ -127,6 +127,13 @@ func (t *AccessToken) DisplayPublicOnly() bool {
 	return publicOnly
 }
 
+// UpdateLastUsed updates the time this token was last used to now.
+func (t *AccessToken) UpdateLastUsed(ctx context.Context) error {
+	t.UpdatedUnix = timeutil.TimeStampNow()
+	_, err := db.GetEngine(ctx).ID(t.ID).Cols("updated_unix").NoAutoTime().Update(t)
+	return err
+}
+
 func getAccessTokenIDFromCache(token string) int64 {
 	if successfulAccessTokenCache == nil {
 		return 0
@@ -220,12 +227,6 @@ func (opts ListAccessTokensOptions) ToOrders() string {
 	return "created_unix DESC"
 }
 
-// UpdateAccessToken updates information of access token.
-func UpdateAccessToken(ctx context.Context, t *AccessToken) error {
-	_, err := db.GetEngine(ctx).ID(t.ID).AllCols().Update(t)
-	return err
-}
-
 // DeleteAccessTokenByID deletes access token by given ID.
 func DeleteAccessTokenByID(ctx context.Context, id, userID int64) error {
 	cnt, err := db.GetEngine(ctx).ID(id).Delete(&AccessToken{
@@ -258,5 +259,6 @@ func RegenerateAccessTokenByID(ctx context.Context, id, userID int64) (*AccessTo
 	// Reset the creation time, token is unused
 	t.UpdatedUnix = timeutil.TimeStampNow()
 
-	return t, UpdateAccessToken(ctx, t)
+	_, err = db.GetEngine(ctx).ID(t.ID).Cols("token_salt", "token", "token_hash", "token_last_eight", "updated_unix").NoAutoTime().Update(t)
+	return t, err
 }

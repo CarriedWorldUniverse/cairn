@@ -5,10 +5,12 @@ package auth_test
 
 import (
 	"testing"
+	"time"
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -107,14 +109,17 @@ func TestListAccessTokens(t *testing.T) {
 	assert.Empty(t, tokens)
 }
 
-func TestUpdateAccessToken(t *testing.T) {
-	require.NoError(t, unittest.PrepareTestDatabase())
-	token, err := auth_model.GetAccessTokenBySHA(db.DefaultContext, "4c6f36e6cf498e2a448662f915d932c09c5a146c")
-	require.NoError(t, err)
-	token.Name = "Token Z"
+func TestUpdateLastUsed(t *testing.T) {
+	timeutil.MockSet(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+	defer timeutil.MockUnset()
 
-	require.NoError(t, auth_model.UpdateAccessToken(db.DefaultContext, token))
-	unittest.AssertExistsAndLoadBean(t, token)
+	require.NoError(t, unittest.PrepareTestDatabase())
+	token := unittest.AssertExistsAndLoadBean(t, &auth_model.AccessToken{ID: 2})
+
+	require.NoError(t, token.UpdateLastUsed(t.Context()))
+
+	token = unittest.AssertExistsAndLoadBean(t, &auth_model.AccessToken{ID: 2})
+	assert.Equal(t, timeutil.TimeStampNow(), token.UpdatedUnix)
 }
 
 func TestDeleteAccessTokenByID(t *testing.T) {
