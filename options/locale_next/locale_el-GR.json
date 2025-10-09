@@ -99,8 +99,6 @@
     "repo.pulls.already_merged": "Αποτυχία συγχώνευσης: Αυτό το pull request έχει ήδη συγχωνευτεί.",
     "repo.issue_indexer.title": "Ευρετηρητής Ζητημάτων",
     "migrate.pagure.token_label": "Διακριτικό",
-    "migrate.pagure.token_body_a": "Παρέχεται ένα διακριτικό Pagure API με πρόσβαση στα ιδιωτικά ζητήματα για τη δημιουργία ενός αποθετηρίου με μόνο τα ιδιωτικά ζητήματα σε αυτό",
-    "migrate.pagure.token_body_b": "Φροντίστε να ορίσετε το αποθετήριο με ιδιωτικό σήμα αν θέλετε από το αποθετήριο να είναι ιδιωτικό",
     "migrate.pagure.incorrect_url": "Δόθηκε λανθασμένο URL αποθετηρίου πηγής",
     "migrate.pagure.project_url": "URL έργου Pagure",
     "migrate.pagure.description": "Μετανάστευση δεδομένων από το pagure.io ή άλλες εγκαταστάσεις Pagure.",

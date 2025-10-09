@@ -111,10 +111,14 @@
     "repo.diff.commit.previous-short": "Poprzedni",
     "pulse.n_active_issues": {
         "one": "%s aktywne zgłoszenie",
-        "many": "%s aktywne zgłoszenia"
+        "few": "%s aktywne zgłoszenia",
+        "many": ""
     },
     "pulse.n_active_prs": {
         "one": "%s aktywny pull request",
-        "many": "%s aktywne pull requesty"
-    }
+        "few": "%s aktywne pull requesty",
+        "many": ""
+    },
+    "repo.pulls.maintainers_can_edit": "Opiekunowie mogą edytować ten pull request.",
+    "repo.pulls.maintainers_cannot_edit": "Opiekunowie nie mogą edytować tego pull requestu."
 }
