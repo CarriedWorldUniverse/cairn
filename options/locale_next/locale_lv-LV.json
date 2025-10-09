@@ -129,9 +129,7 @@
     "migrate.pagure.incorrect_url": "Ir norādīts nepareizs avota glabātavas URL",
     "migrate.pagure.project_url": "Pagure projekta URL",
     "migrate.pagure.project_example": "Pagure projekta URL, piem., https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Pilnvara",
-    "migrate.pagure.token_body_a": "Jānorāda Pagura API pilnvara ar piekļuvi privātajiem pieteikumiem, lai izveidotu glabātavu tikai ar privātiem pieteikumiem tajā",
-    "migrate.pagure.token_body_b": "Jāpārliecinās, ka augstāk ir iestatīts privātas glabātavas karogs, ja vēlies, lai šī glabātava būtu privāta",
+    "migrate.pagure.token_label": "Pagure API ilnvara",
     "migrate.github.description": "Pārcelt datus no github.com vai GitHub Enterprise servera.",
     "migrate.git.description": "Pārcelt tikai glabātavu no jebkura Git pakalpojuma.",
     "migrate.gitea.description": "Pārcelt datus no gitea.com vai citiem Gitea serveriem.",
@@ -160,11 +158,21 @@
     "repo.pulls.maintainers_can_edit": "Uzturētāji var labot šo izmaiņu pieprasījumu.",
     "repo.pulls.maintainers_cannot_edit": "Uzturētāji nevar labot šo izmaiņu pieprasījumu.",
     "pulse.n_active_issues": {
+        "zero": "%s atvērtu pieteikumu",
         "one": "%s atvērts pieteikums",
         "other": "%s atvērti pieteikumi"
     },
     "pulse.n_active_prs": {
+        "zero": "%s atvērtu izmaiņu pieprasījumu",
         "one": "%s atvērts izmaiņu pieprasījums",
         "other": "%s atvērti izmaiņu pieprasījumi"
-    }
+    },
+    "mail.issue.action.close_by_commit": "%[1] aizvēra %[2]s iesūtījumā %[3]s.",
+    "migrate.pagure.private_issues.summary": "Privātie pieteikumi (izvēles)",
+    "migrate.pagure.private_issues.description": "Šī iespēja ir izstrādāta, lai izveidotu otrēju glabātavu, kurā arhivēšanas nolūkā atrodas tikai privātie pieteikumi no Pagure projekta. Vispirms jāveic parasta pārcelšana (bez pilnvaras), lai ievietotu visu publisko saturu. Tad, ja ir saglabājami privāti pieteikumi, jāizveido atsevišķa glabātava, izmantojot šo pilnvaras iespēju, lai arhivētu privātos pieteikumus.",
+    "migrate.pagure.private_issues.warning": "Jāpārliecinās, ka glabātavas redzamība augstāk ir iestatīta kā privāta, ja izmanto API atslēgu, lai ievietotu privātos pieteikumus. Tas novērš nejaušu privāta satura atklāšanu publiskā glabātavā.",
+    "migrate.pagure.token.placeholder": "Tikai privātu pieteikumu arhīva izveidošanai",
+    "actions.workflow.job_parsing_error": "Nebija iespējams apstrādāt darbus darbplūsmā: %v",
+    "actions.workflow.event_detection_error": "Nebija iespējams apstrādāt atbalstītos notikumus darbplūsmā: %v",
+    "actions.workflow.pre_execution_error": "Darbplūsma netika izpildīta kļūdas, kura aizturēja izpildes mēģinājumu, dēļ."
 }

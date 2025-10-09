@@ -130,9 +130,7 @@
     "migrate.pagure.incorrect_url": "Byla zadána nesprávná adresa URL zdrojového repozitáře",
     "migrate.pagure.project_url": "Adresa projektu Pagure",
     "migrate.pagure.project_example": "Adresa URL projektu Pagure, např. https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
-    "migrate.pagure.token_body_a": "Zadejte token API Pagure s přístupem k soukromým problémům pro vytvoření repozitáře obsahujícího pouze soukromé problémy",
-    "migrate.pagure.token_body_b": "Nezapomeňte nastavit repozitář jako soukromý výše, pokud chcete, aby byl repozitář soukromý",
+    "migrate.pagure.token_label": "Token API Pagure",
     "migrate.github.description": "Migrovat data z github.com nebo serveru GitHub Enterprise.",
     "migrate.git.description": "Migrovat pouze repozitář z libovolné služby Git.",
     "migrate.gitea.description": "Migrovat data z gitea.com nebo jiných instancí Gitea.",
@@ -159,10 +157,22 @@
     "actions.runs.view_most_recent_run": "Zobrazit nejnovější běh",
     "pulse.n_active_issues": {
         "one": "%s aktivní problém",
+        "few": "%s aktivní problémy",
         "other": "%s aktivních problémů"
     },
     "pulse.n_active_prs": {
         "one": "%s aktivní žádost o sloučení",
+        "few": "%s aktivní žádosti o sloučení",
         "other": "%s aktivních žádostí o sloučení"
-    }
+    },
+    "repo.pulls.maintainers_can_edit": "Správci mohou upravit tuto žádost o sloučení.",
+    "repo.pulls.maintainers_cannot_edit": "Správci nemohou upravit tuto žádost o sloučení.",
+    "mail.issue.action.close_by_commit": "%[1]s zavřel/a %[2]s v revizi %[3]s.",
+    "migrate.pagure.private_issues.summary": "Soukromé problémy (volitelné)",
+    "migrate.pagure.private_issues.description": "Tato funkce je navržená pro vytvoření druhého repozitáře obsahujícího pouze soukromé problémy z vašeho projektu Pagure pro účely archivace. Nejprve proveďte normální migraci (bez tokenu) pro importování veškerého veřejného obsahu. Poté, pokud máte soukromé problémy k uchování, vytvořte oddělený repozitář pomocí této možnosti tokenu k archivování daných soukromých problémů.",
+    "migrate.pagure.private_issues.warning": "Ujistěte se, že je viditelnost repozitáře výše nastavena na Soukromou, pokud používáte klíč API k importování soukromých problémů. Tím zabráníte nechtěnému zveřejněný soukromého obsahu ve veřejném repozitáři.",
+    "migrate.pagure.token.placeholder": "Pouze pro vytvoření archivu soukromých problémů",
+    "actions.workflow.job_parsing_error": "Nepodařilo se zpracovat úlohy ve workflow: %v",
+    "actions.workflow.event_detection_error": "Nepodařilo se zpracovat podporované události ve workflow: %v",
+    "actions.workflow.pre_execution_error": "Workflow nebyl vykonán z důvodu chyby, která zablokovala pokus o vykonání."
 }

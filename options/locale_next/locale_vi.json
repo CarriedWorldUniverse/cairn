@@ -111,7 +111,6 @@
     "migrate.pagure.incorrect_url": "URL kho mã nguồn được cung cấp không chính xác",
     "migrate.pagure.project_url": "URL dự án Pagure",
     "migrate.pagure.project_example": "URL dự án Pagure, vd: https://pagure.io/pagure",
-    "migrate.pagure.token_body_b": "Đảm bảo đặt nhãn kho mã riêng tư ở trên nếu bạn muốn kho mã này trở nên riêng tư",
     "actions.runs.run_attempt_label": "Lần chạy #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Bạn đang xem một lần chạy lỗi thời của công việc này mà đã chạy %[1]s.",
     "actions.runs.view_most_recent_run": "Xem lần chạy gần đây nhất",
