@@ -9,7 +9,6 @@ import (
 	auth_model "forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/timeutil"
 	"forgejo.org/services/auth"
 )
 
@@ -38,9 +37,8 @@ func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, store auth.DataS
 		return nil, err
 	}
 
-	token.UpdatedUnix = timeutil.TimeStampNow()
-	if err := auth_model.UpdateAccessToken(req.Context(), token); err != nil {
-		log.Error("UpdateAccessToken:  %v", err)
+	if err := token.UpdateLastUsed(req.Context()); err != nil {
+		log.Error("UpdateLastUsed:  %v", err)
 	}
 
 	return u, nil

@@ -16,7 +16,6 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/actions"
@@ -190,9 +189,8 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store Dat
 		}
 		return 0
 	}
-	t.UpdatedUnix = timeutil.TimeStampNow()
-	if err = auth_model.UpdateAccessToken(ctx, t); err != nil {
-		log.Error("UpdateAccessToken: %v", err)
+	if err := t.UpdateLastUsed(ctx); err != nil {
+		log.Error("UpdateLastUsed: %v", err)
 	}
 	store.GetData()["IsApiToken"] = true
 	store.GetData()["ApiTokenScope"] = t.Scope

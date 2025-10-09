@@ -15,7 +15,6 @@ import (
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
 )
@@ -97,9 +96,8 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 			return nil, err
 		}
 
-		token.UpdatedUnix = timeutil.TimeStampNow()
-		if err = auth_model.UpdateAccessToken(req.Context(), token); err != nil {
-			log.Error("UpdateAccessToken:  %v", err)
+		if err = token.UpdateLastUsed(req.Context()); err != nil {
+			log.Error("UpdateLastUsed:  %v", err)
 		}
 
 		store.GetData()["IsApiToken"] = true

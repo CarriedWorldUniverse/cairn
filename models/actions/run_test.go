@@ -6,7 +6,11 @@ package actions
 import (
 	"testing"
 
+	repo_model "forgejo.org/models/repo"
+	"forgejo.org/models/unittest"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetRunBefore(t *testing.T) {
@@ -35,4 +39,50 @@ func TestSetDefaultConcurrencyGroup(t *testing.T) {
 	}
 	run.SetDefaultConcurrencyGroup()
 	assert.Equal(t, "refs/heads/main_testing_pull_request__auto", run.ConcurrencyGroup)
+}
+
+func TestUpdateRepoRunsNumbers(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	t.Run("Normal", func(t *testing.T) {
+		t.Run("Repo 1", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
+
+			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+			assert.Equal(t, 1, repo.NumActionRuns)
+			assert.Equal(t, 1, repo.NumClosedActionRuns)
+		})
+
+		t.Run("Repo 4", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
+
+			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
+
+			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
+			assert.Equal(t, 4, repo.NumActionRuns)
+			assert.Equal(t, 4, repo.NumClosedActionRuns)
+		})
+
+		t.Run("Repo 63", func(t *testing.T) {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
+
+			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
+
+			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
+			assert.Equal(t, 3, repo.NumActionRuns)
+			assert.Equal(t, 2, repo.NumClosedActionRuns)
+		})
+	})
+
+	t.Run("Columns specifc", func(t *testing.T) {
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		repo.Name = "ishouldnotbeupdated"
+
+		require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
+
+		repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		assert.Equal(t, "repo1", repo.Name)
+	})
 }

@@ -218,6 +218,7 @@ func updateRepoRunsNumbers(ctx context.Context, repo *repo_model.Repository) err
 				),
 				),
 		).
+		Cols("num_action_runs", "num_closed_action_runs").
 		Update(repo)
 	return err
 }
