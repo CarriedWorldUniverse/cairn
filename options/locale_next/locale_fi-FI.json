@@ -132,5 +132,14 @@
     "avatar.constraints_hint": "Mukautettu profiilikuva voi olla kooltaan enintään %[1]s tai enintään %[2]dx%[3]d pikseliä",
     "repo.commit.load_tags_failed": "Tagien lataaminen epäonnistui sisäisen virheen vuoksi",
     "actions.runs.run_attempt_label": "Suoritusyritys #%[1]s (%[2]s)",
-    "migrate.pagure.description": "Tee migraatio pagure.io:sta tai muista Pagure-instansseista."
+    "migrate.pagure.description": "Tee migraatio pagure.io:sta tai muista Pagure-instansseista.",
+    "repo.form.cannot_create": "Kaikki tilat, joihin voit luoda tietovarastoja, ovat saavuttaneet tietovarastojen rajan.",
+    "migrate.form.error.url_credentials": "URL-osoite sisältää valtuustiedot, laita ne vastaavasti käyttäjänimi- ja salasanakenttiin",
+    "warning.repository.out_of_sync": "Tämän tietotietovaraston tietokantaesitys ei ole synkronoitu. Jos tämä varoitus näkyy edelleen tämän tietovaraston sitoumuksen lähettämisen jälkeen, ota yhteyttä järjestelmänvalvojaan.",
+    "admin.moderation.deleted_content_ref": "Ilmoitettua sisältöä, jonka tyyppi on %[1]v ja tunnus %[2]d, ei enää ole olemassa",
+    "settings.twofa_reenroll.description": "Ota mukaan kaksivaiheinen todennus uudelleen",
+    "user.ghost.tooltip": "Tämä käyttäjä on poistettu tai häntä ei voida yhdistää.",
+    "og.repo.summary_card.alt_description": "Yhteenvetokortti tietovarastosta %[1]s, kuvattu seuraavasti: %[2]s",
+    "migrate.pagure.incorrect_url": "Virheellinen lähdetietovaraston URL-osoite on syötetty",
+    "actions.runs.viewing_out_of_date_run": "Katselet tämän työn vanhentunutta suorituskertaa, joka suoritettiin %[1]s."
 }

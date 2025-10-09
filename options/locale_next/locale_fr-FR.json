@@ -156,5 +156,10 @@
     "migrate.pagure.project_example": "L'URL du projet Pagure, ex. https://pagure.io/pagure",
     "migrate.pagure.token_label": "Jeton",
     "migrate.pagure.token_body_a": "Veuillez fournir un jeton API Pagure avec l'accès aux problèmes privés pour créer un dépôt contenant seulement les problèmes privés",
-    "migrate.pagure.token_body_b": "Assurez-vous de définir le drapeau dépôt privé ci-dessus si vous souhaitez que ce dépôt soit privé"
+    "migrate.pagure.token_body_b": "Assurez-vous de définir le drapeau dépôt privé ci-dessus si vous souhaitez que ce dépôt soit privé",
+    "migrate.pagure.private_issues.summary": "Tickets privés (Optionnel)",
+    "migrate.pagure.private_issues.description": "Cette fonctionnalité est conçue pour créer un deuxième dépôt contenant uniquement des tickets privés de votre projet Pagure à des fins d'archive. Premièrement, effectuer une migration normale (sans jeton) pour importer tout le contenu public. Ensuite, si vous avez des tickets privés à préserver, créez un dépôt séparé en utilisant cette option de jeton pour archiver ces tickets privés.",
+    "migrate.pagure.private_issues.warning": "Assurez-vous de définir la visibilité du dépôt ci-dessus à Privé si vous utilisez la clé API pour importer des tickets privés. Cela empêche d'exposer accidentellement du contenu privé dans un dépôt public.",
+    "migrate.pagure.token.placeholder": "Seulement pour créer des archives de tickets privés",
+    "actions.workflow.pre_execution_error": "Workflow n'a pas été exécuté en raison d'une erreur qui a bloqué la tentative d'exécution."
 }

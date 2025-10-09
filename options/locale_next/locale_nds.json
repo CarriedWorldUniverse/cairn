@@ -121,7 +121,7 @@
     "migrate.pagure.description": "Daten vun pagure.io of anner Pagure-Instanzen umtrecken.",
     "migrate.pagure.project_url": "Pagure-Projekt-URL",
     "migrate.pagure.project_example": "De URL vum Projekt up Pagure, to’n Bispööl https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Teken",
+    "migrate.pagure.token_label": "Pagure-API-Teken",
     "migrate.pagure.token_body_b": "Wees wiss, boven the Flagg för een privaates Repo to setten, wenn du willst, dat deeses Repo privaat wesen sall",
     "migrate.pagure.incorrect_url": "Ungültige Quell-Repositoriums-URL is angeven worden",
     "migrate.pagure.token_body_a": "Giff een Pagure-API-Teken mit Togang to de privaaten Gefallens an, um een Repositorium mit blots the privaaten Gefallens daarin to maken",
@@ -148,5 +148,12 @@
     "migrate.form.error.url_credentials": "De URL enthollt Anmell-Daten, legg se in de Felden för Brukernaam un Passwoord",
     "actions.runs.viewing_out_of_date_run": "Du bekiekst eenen verollten Loop vun deeser Upgaav, wat %[1]s utföhrt worden is.",
     "actions.runs.view_most_recent_run": "Neeisten Loop ankieken",
-    "actions.runs.run_attempt_label": "Loop-Versöök #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Loop-Versöök #%[1]s (%[2]s)",
+    "migrate.pagure.private_issues.summary": "Privaate Gefallens (wenn du willst)",
+    "migrate.pagure.private_issues.description": "Deese Funktioon lett di een twedes Repositorium maken, wat blots privaate Gefallens ut dienem Pagure-Projekt för Archivzwecken enthollt. Maak toeerst eenen normaalen Umtreck (sünner een Teken), um alle publiken Inhollen to importeren. Dann, wenn du privaate Gefallens hest, wat du behollen willst, maak noch een anner Repositorium mit deesem Teken, um deese privaaten Gefallens to archiveren.",
+    "migrate.pagure.private_issues.warning": "Wees wiss, de Sichtbaarkeid vun de Repositorium up Privaat to setten, wenn du de API-Slötel bruukst, um privaate Gefallens to importeren. Dat verhinnert, dat du privaaten Inholl ut Versehn in eenem publiken Repositorium blootmaakst.",
+    "migrate.pagure.token.placeholder": "Blots, um een Archiv vun privaaten Gefallens to maken",
+    "actions.workflow.job_parsing_error": "Kann de Upgaven in de Warkwies nich lesen: %v",
+    "actions.workflow.event_detection_error": "Kann de unnerstütt Vörfallen in de Warkwies nich lesen: %v",
+    "actions.workflow.pre_execution_error": "Warkwies is nich utföhrt worden, denn een Fehler is uptreden, wat de Utföhrens-Versöök blockeert hett."
 }

@@ -120,7 +120,7 @@
     "repo.pulls.already_merged": "Nabigo ang pagsasama: Naisama na ang hiling sa paghila na ito.",
     "migrate.pagure.incorrect_url": "Maling pinagmulang URL ng repositoryo ang ibinigay",
     "migrate.pagure.project_url": "URL ng Pagure na proyekto",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure API Token",
     "migrate.pagure.token_body_a": "Magbigay ng Pagure API token na may access sa mga pribadong isyu para gumawa ng repositoryo na may mga pribadong isyu lang",
     "migrate.pagure.project_example": "Ang URL ng Pagure na proyekto, hal. https://pagure.io/pagure",
     "migrate.pagure.token_body_b": "Siguraduhin na itakda ang pribadong repositoryo na flag sa itaas kung gusto mo na pribado ang repositoryong ito",
@@ -148,5 +148,12 @@
     "migrate.form.error.url_credentials": "Naglalaman ng mga kredensyal ang URL, ilagay ang mga ito sa mga patlang ng username at password ayon sa pagkakabanggit",
     "actions.runs.viewing_out_of_date_run": "Tumitingin ka sa isang hindi napapanahong paktabo ng trabahong ito na na-execute %[1]s.",
     "actions.runs.view_most_recent_run": "Tignan ang pinakabagong pagtakbo",
-    "actions.runs.run_attempt_label": "Tangka sa pagtakbo #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Tangka sa pagtakbo #%[1]s (%[2]s)",
+    "migrate.pagure.private_issues.summary": "Mga Pribadong Isyu (Opsyonal)",
+    "migrate.pagure.private_issues.description": "Dinisenyo ang feature na ito na gumawa ng isa pang repositoryo na naglalaman lamang ng mga pribadong isyu mula sa iyong proyekto sa Pagure para sa layunin ng pag-archive. Una, magsagawa ng isang normal na pag-migrate (nang walang token) para i-import ang lahat ng mga nilalaman. At, kung may mga pribadong isyu na gusto mong panatilihin, gumawa ng isang hiwalay na repositoryo gamit ng opsyon ng token na ito para i-archive ang mga pribadong isyu.",
+    "migrate.pagure.private_issues.warning": "Siguraduhing itakda ang visibility ng repositoryo sa itaas sa Pribado kung ginagamit mo ang API key para i-import ang mga pribadong isyu. Pinipigilan nito ang paglalantag ng mga pribadong nilalaman sa isang pampublikong repositoryo.",
+    "migrate.pagure.token.placeholder": "Para lamang sa paggawa ng archive ng mga pribadong isyu",
+    "actions.workflow.job_parsing_error": "Hindi ma-parse ang mga trabaho sa workflow: %v",
+    "actions.workflow.event_detection_error": "Hindi ma-parse ang mga sinusuportahang event sa workflow: %v",
+    "actions.workflow.pre_execution_error": "Hindi na-execute ang workflow dahil sa isang error na hinarang ang pagtangka sa pag-execute."
 }

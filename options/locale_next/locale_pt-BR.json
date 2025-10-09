@@ -11,7 +11,7 @@
     },
     "search.milestone_kind": "Pesquisar marcos…",
     "home.welcome.no_activity": "Sem atividade",
-    "home.welcome.activity_hint": "Ainda não tem nada no seu feed. Suas ações e atividade dos seus repositórios vigiados aparecerão aqui.",
+    "home.welcome.activity_hint": "Ainda não tem nada no seu feed. Suas Actions e atividade dos seus repositórios vigiados aparecerão aqui.",
     "home.explore_repos": "Explorar repositórios",
     "home.explore_users": "Explorar usuários",
     "home.explore_orgs": "Explorar organizações",
@@ -140,7 +140,7 @@
     "migrate.pagure.incorrect_url": "Uma URL incorreta do repositório fonte foi fornecida",
     "migrate.pagure.project_example": "URL do projeto Pagure, por exemplo: https://pagure.io/pagure",
     "migrate.pagure.project_url": "URL do projeto Pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Token de API Pagure",
     "migrate.pagure.token_body_b": "Certifique-se de definir o sinalizador de repositório privado acima se você deseja que este repositório seja privado",
     "admin.config.global_2fa_requirement.title": "Exigência global de segundo fator",
     "admin.config.global_2fa_requirement.none": "Não",
@@ -156,5 +156,12 @@
     "migrate.form.error.url_credentials": "A URL contém credenciais, coloque-as nos campos de usuário e senha respectivamente",
     "actions.runs.viewing_out_of_date_run": "Você está visualizando uma execução desatualizada deste trabalho que foi executada %[1]s.",
     "actions.runs.view_most_recent_run": "Ver execução mais recente",
-    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)"
+    "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
+    "migrate.pagure.private_issues.summary": "Questões Privadas (Opcional)",
+    "migrate.pagure.private_issues.description": "Esta funcionalidade foi projetada para criar um segundo repositório contendo somente questões privadas do seu projeto Pagure para a finalidade de arquivo. Primeiro, faça uma migração normal (sem token) para importar todo o conteúdo público. Depois, se você tem questões privadas que deseja preservar, crie um repositório separado usando esta opção de token para arquivar estas questões privadas.",
+    "migrate.pagure.private_issues.warning": "Certifique-se de definir a visibilidade do repositório acima para Privado se você está usando a chave de API para importar questões privadas. Isso evita expor acidentalmente conteúdo privado em um repositório público.",
+    "migrate.pagure.token.placeholder": "Somente para criar um arquivo de questões privadas",
+    "actions.workflow.job_parsing_error": "Não foi possível processar alguns trabalhos do workflow: %v",
+    "actions.workflow.event_detection_error": "Não foi possível processar eventos suportados no workflow: %v",
+    "actions.workflow.pre_execution_error": "Workflow não foi executado devido a um erro que bloqueou a tentativa de execução."
 }

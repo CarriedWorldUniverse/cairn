@@ -15,7 +15,7 @@
     "alert.asset_load_failed": "无法从 {path} 加载资源文件。请确保资源文件可被访问。",
     "install.invalid_lfs_path": "无法在指定路径创建 LFS 根目录：%[1]s",
     "alert.range_error": " 必须是一个介于 %[1]s 和 %[2]s 之间的数字。",
-    "meta.last_line": "感谢各位对Forgejo翻译的支持和帮助！不需要翻译这个。",
+    "meta.last_line": "感谢各位对Forgejo翻译的支持和帮助！不需要翻译这个。(三维鱼)。",
     "mail.actions.successful_run_after_failure_subject": "仓库 %[2]s 中的工作流 %[1]s 已恢复",
     "mail.actions.not_successful_run_subject": "仓库 %[2]s 中的工作流 %[1]s 已失败",
     "mail.actions.successful_run_after_failure": "仓库 %[2]s 中的工作流 %[1]s 已恢复",
@@ -116,7 +116,7 @@
     "migrate.pagure.incorrect_url": "提供了错误的源仓库URL",
     "migrate.pagure.project_url": "Pagure 项目 URL",
     "migrate.pagure.project_example": "Pagure 项目 URL，例如：https://pagure.io/pagure",
-    "migrate.pagure.token_label": "令牌",
+    "migrate.pagure.token_label": "Pagure API 令牌",
     "migrate.pagure.token_body_a": "提供可访问私有议题的 Pagure API 令牌以创建一个只有私有议题的仓库",
     "migrate.pagure.token_body_b": "如果你希望此仓库为私有，记得选择上面的私有仓库选项！",
     "repo.pulls.already_merged": "合并失败：此合并请求已被合并。",
@@ -124,5 +124,12 @@
     "migrate.form.error.url_credentials": "URL 包含凭据，请分别将凭据填入用户名和密码字段",
     "actions.runs.view_most_recent_run": "查看最新运行",
     "actions.runs.run_attempt_label": "运行尝试 #%[1]s（%[2]s）",
-    "actions.runs.viewing_out_of_date_run": "您正在查看于 %[1]s 执行的过期运行。"
+    "actions.runs.viewing_out_of_date_run": "您正在查看于 %[1]s 执行的过期运行。",
+    "migrate.pagure.private_issues.summary": "私有议题（可选）",
+    "migrate.pagure.private_issues.description": "此功能将创建一个单独的、只包含私有议题的仓库，以供存档。首先，不带令牌进行一次普通迁移以导入公开内容，然后若有需要，填写令牌并再次迁移以创建一个新的仓库并存档私有议题。",
+    "migrate.pagure.private_issues.warning": "请确保在导入私有议题时将仓库可见性设置为私有，以避免意外将私有内容泄漏至公开仓库。",
+    "migrate.pagure.token.placeholder": "仅用于创建私有议题归档",
+    "actions.workflow.job_parsing_error": "无法解析工作流中的任务：%v",
+    "actions.workflow.event_detection_error": "无法解析工作流中受支持的事件：%v",
+    "actions.workflow.pre_execution_error": "因有错误阻止了执行尝试，工作流未被执行。"
 }

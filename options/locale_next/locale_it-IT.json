@@ -156,5 +156,6 @@
     "migrate.pagure.project_url": "URL del progetto Pagure",
     "migrate.pagure.project_example": "L'URL del progetto Pagure, ad esempio https://pagure.io/pagure",
     "mail.actions.not_successful_run": "Flusso di lavoro %[1]s non riuscito nel repositorio %[2]s",
-    "settings.twofa_reenroll.description": "Reinserisci la verifica in due passaggi"
+    "settings.twofa_reenroll.description": "Reinserisci la verifica in due passaggi",
+    "migrate.pagure.private_issues.summary": "Segnalazioni Private (opzionale)"
 }
