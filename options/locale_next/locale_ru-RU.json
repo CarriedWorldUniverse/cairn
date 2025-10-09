@@ -140,9 +140,7 @@
     "migrate.pagure.incorrect_url": "Введена неправильная ссылка на источник",
     "migrate.pagure.project_url": "Ссылка проекта на Pagure",
     "migrate.pagure.project_example": "Ссылка проекта. Например, https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Токен",
-    "migrate.pagure.token_body_a": "Если предоставить токен API Pagure с доступом к секретным задачам проекта, будет создан отдельный репозиторий, в котором они будут размещены",
-    "migrate.pagure.token_body_b": "Поставьте флажок на пункте видимости репозитория выше, если хотите, чтобы этот репозиторий был частным",
+    "migrate.pagure.token_label": "Токен API Pagure",
     "migrate.github.description": "Перенести данные с github.com или сервера GitHub Enterprise.",
     "migrate.git.description": "Перенести Git-репозиторий из любого совместимого сервиса.",
     "migrate.gitea.description": "Перенести данные с gitea.com или другого сервера Gitea.",
@@ -161,10 +159,20 @@
     "repo.pulls.maintainers_cannot_edit": "Сопровождающие не могут вносить правки.",
     "pulse.n_active_issues": {
         "one": "%s активная задача",
+        "few": "%s активных задачи",
         "many": "%s активных задач"
     },
     "pulse.n_active_prs": {
         "one": "%s активный запрос слияния",
+        "few": "%s активных запроса слияния",
         "many": "%s активных запросов слияния"
-    }
+    },
+    "migrate.pagure.private_issues.summary": "Скрытые задачи (необязательно)",
+    "migrate.pagure.private_issues.description": "Эта функция позволяет создать дополнительный репозиторий для архивации в нём скрытых задач из вашего проекта Pagure. Сперва выполните нормальный перенос репозитория без токена, чтобы скопировать всё публичное содержимое. Затем, если нужно, выполните ещё один перенос и укажите токен, чтобы разместить скрытые задачи в дополнительном репозитории.",
+    "migrate.pagure.private_issues.warning": "Не забудьте указать видимость репозитория как Частную при переносе скрытых задач, чтобы их никто не увидел.",
+    "migrate.pagure.token.placeholder": "Только для переноса скрытых задач",
+    "mail.issue.action.close_by_commit": "%[1]s закрыл %[2]s из коммита %[2]s.",
+    "actions.workflow.job_parsing_error": "Не удалось прочитать задачи в раб. потоке: %v",
+    "actions.workflow.event_detection_error": "Не удалось прочитать поддерживаемые события в раб. потоке: %v",
+    "actions.workflow.pre_execution_error": "Рабочий поток не был выполнен из-за ошибки, возникшей при попытке начать выполнение."
 }

@@ -121,10 +121,8 @@
     "migrate.pagure.description": "Daten vun pagure.io of anner Pagure-Instanzen umtrecken.",
     "migrate.pagure.project_url": "Pagure-Projekt-URL",
     "migrate.pagure.project_example": "De URL vum Projekt up Pagure, to’n Bispööl https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Teken",
-    "migrate.pagure.token_body_b": "Wees wiss, boven the Flagg för een privaates Repo to setten, wenn du willst, dat deeses Repo privaat wesen sall",
+    "migrate.pagure.token_label": "Pagure-API-Teken",
     "migrate.pagure.incorrect_url": "Ungültige Quell-Repositoriums-URL is angeven worden",
-    "migrate.pagure.token_body_a": "Giff een Pagure-API-Teken mit Togang to de privaaten Gefallens an, um een Repositorium mit blots the privaaten Gefallens daarin to maken",
     "migrate.github.description": "Daten vun github.com of eenem GitHub-Enterprise-Server umtrecken.",
     "migrate.git.description": "Een Repositorium blots vun elkeen Git-Deenst umtrecken.",
     "migrate.gitea.description": "Daten vun gitea.com of anner Gitea-Instanzen umtrecken.",
@@ -158,5 +156,13 @@
     "pulse.n_active_prs": {
         "one": "%s aktiiv Haalvörslag",
         "other": "%s aktiiv Haalvörslagen"
-    }
+    },
+    "migrate.pagure.private_issues.summary": "Privaate Gefallens (wenn du willst)",
+    "migrate.pagure.token.placeholder": "Blots, um een Archiv vun privaaten Gefallens to maken",
+    "migrate.pagure.private_issues.description": "Deese Funktioon lett di een twedes Repositorium maken, wat blots privaate Gefallens ut dienem Pagure-Projekt för Archivzwecken enthollt. Maak toeerst eenen normaalen Umtreck (sünner een Teken), um alle publiken Inhollen to importeren. Dann, wenn du privaate Gefallens hest, wat du behollen willst, maak noch een anner Repositorium mit deesem Teken, um deese privaaten Gefallens to archiveren.",
+    "migrate.pagure.private_issues.warning": "Wees wiss, de Sichtbaarkeid vun de Repositorium up Privaat to setten, wenn du de API-Slötel bruukst, um privaate Gefallens to importeren. Dat verhinnert, dat du privaaten Inholl ut Versehn in eenem publiken Repositorium blootmaakst.",
+    "mail.issue.action.close_by_commit": "%[1]s hett %[2]s in Kommitteren %[3]s dichtmaakt.",
+    "actions.workflow.job_parsing_error": "Kann de Upgaven in de Warkwies nich lesen: %v",
+    "actions.workflow.event_detection_error": "Kann de unnerstütt Vörfallen in de Warkwies nich lesen: %v",
+    "actions.workflow.pre_execution_error": "Warkwies is nich utföhrt worden, denn een Fehler is uptreden, wat de Utföhrens-Versöök blockeert hett."
 }

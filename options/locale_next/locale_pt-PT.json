@@ -141,8 +141,6 @@
     "migrate.pagure.project_url": "URL do projeto Pagure",
     "migrate.pagure.project_example": "URL do projeto Pagure, por exemplo, https://pagure.io/pagure",
     "migrate.pagure.token_label": "Token",
-    "migrate.pagure.token_body_a": "Forneça um token da API Pagure com acesso às questões privadas para criar um repositório contendo apenas as questões privadas",
-    "migrate.pagure.token_body_b": "Certifique-se de definir o marcador de repositório privado acima se desejar que este repositório seja privado",
     "migrate.github.description": "Migrar dados do github.com ou do GitHub Enterprise server.",
     "migrate.git.description": "Migrar um repositório somente de qualquer serviço Git.",
     "migrate.gitea.description": "Migrar dados de gitea.com ou de outras instâncias do Gitea.",
@@ -159,10 +157,14 @@
     "actions.runs.view_most_recent_run": "Ver execução mais recente",
     "pulse.n_active_issues": {
         "one": "%s questão vigente",
-        "other": "%s questões vigentes"
+        "many": "%s questões vigentes",
+        "other": ""
     },
     "pulse.n_active_prs": {
         "one": "%s pedido de integração vigente",
-        "other": "%s pedidos de integração vigentes"
-    }
+        "many": "%s pedidos de integração vigentes",
+        "other": ""
+    },
+    "repo.pulls.maintainers_can_edit": "Os responsáveis podem editar este pedido de integração.",
+    "repo.pulls.maintainers_cannot_edit": "Os responsáveis não podem editar este pedido de integração."
 }
