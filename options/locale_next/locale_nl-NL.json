@@ -146,5 +146,7 @@
     "user.ghost.tooltip": "Deze gebruiker is verwijderd of kan niet worden gevonden.",
     "error.must_enable_2fa": "Deze Forgejo-instantie vereist dat gebruikers tweefactorauthenticatie inschakelen voordat ze toegang krijgen tot hun accounts. Schakel dit in op: %s",
     "migrate.form.error.url_credentials": "De URL bevat inloggegevens. Vul deze in de velden voor gebruikersnaam en wachtwoord respectievelijk",
-    "actions.runs.view_most_recent_run": "Bekijk de meest recente run"
+    "actions.runs.view_most_recent_run": "Bekijk de meest recente run",
+    "actions.runs.run_attempt_label": "Uitvoerpoging #%[1]s (%[2]s)",
+    "actions.runs.viewing_out_of_date_run": "U bekijkt een verouderde uitvoer van deze opdracht die %[1]s is uitgevoerd."
 }
