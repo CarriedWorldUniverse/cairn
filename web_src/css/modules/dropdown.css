@@ -27,16 +27,22 @@ details.dropdown {
 details.dropdown > summary {
   /* Optional flex+gap in case summary contains multiple elements */
   display: flex;
-  gap: 0.75rem;
+  gap: 0.25rem;
   align-items: center;
   justify-content: center;
   /* Main visual properties */
-  border: 1px solid var(--color-light-border);
   border-radius: var(--border-radius);
   padding: 0.5rem;
   /* Unset unwanted default properties */
   user-select: none;
   list-style-type: none;
+
+  &.border {
+    border: 1px solid var(--color-light-border);
+  }
+  &.options {
+    padding-inline: 0.75rem;
+  }
 }
 
 details.dropdown > summary:hover,
@@ -80,14 +86,33 @@ details.dropdown > summary + ul {
 details.dropdown > summary + ul > li {
   width: 100%;
   background: none;
-}
 
-details.dropdown > summary + ul > li:first-child {
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
+  > :is(a, button) {
+    padding: var(--dropdown-item-padding);
+    width: 100%;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    color: var(--color-text);
+    /* Suppress underline - hover is indicated by background color */
+    text-decoration: none;
 
-details.dropdown > summary + ul > li:last-child {
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+    &.active {
+      background: var(--color-active);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+  /* Cancel default styling of button elements */
+  > button {
+    background: none;
+  }
+
+  &:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
+  &:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
 }
 
 /* dir-auto option - switch the direction at a width point where most of layout changes occur. */
@@ -96,9 +121,9 @@ details.dropdown > summary + ul > li:last-child {
   details.dropdown.dir-auto > summary + ul {
     inset-inline: 0 auto;
     direction: rtl;
-  }
-  details.dropdown.dir-auto > summary + ul > li {
-    direction: ltr;
+    > li {
+      direction: ltr;
+    }
   }
 }
 /* Note: https://css-tricks.com/css-anchor-positioning-guide/
@@ -107,23 +132,7 @@ details.dropdown > summary + ul > li:last-child {
 details.dropdown.dir-rtl > summary + ul {
   inset-inline: 0 auto;
   direction: rtl;
-}
-details.dropdown.dir-rtl > summary + ul > li {
-  direction: ltr;
-}
-
-details.dropdown > summary + ul > li > .item {
-  padding: var(--dropdown-item-padding);
-  width: 100%;
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  color: var(--color-text);
-  /* Suppress underline - hover is indicated by background color */
-  text-decoration: none;
-}
-
-/* Cancel default styling of button elements */
-details.dropdown > summary + ul > li button {
-  background: none;
+  > li {
+    direction: ltr;
+  }
 }
