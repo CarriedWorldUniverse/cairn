@@ -123,8 +123,6 @@
     "migrate.pagure.project_url": "Pagure-project URL",
     "migrate.pagure.project_example": "De url van het Pagure-project, bijvoorbeeld https://pagure.io/pagure",
     "migrate.pagure.token_label": "Token",
-    "migrate.pagure.token_body_a": "Geef een Pagure API-token met toegang tot de privé-issues om een repository te maken met alleen de privé-issues erin",
-    "migrate.pagure.token_body_b": "Zorg ervoor dat u de vlag voor privé-repository hierboven instelt als u wilt dat deze repository privé is",
     "migrate.github.description": "Migreer gegevens van github.com of GitHub Enterprise server.",
     "migrate.git.description": "Migreer een repositorie van elke Git service.",
     "migrate.gitea.description": "Gegevens overzetten van gitea.com of andere Gitea instanties.",

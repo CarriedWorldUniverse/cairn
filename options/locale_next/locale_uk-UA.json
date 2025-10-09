@@ -127,12 +127,10 @@
     "warning.repository.out_of_sync": "База даних цього репозиторію не синхронізована. Якщо ви знову бачите це попередження після відправлення коміту в цей репозиторій, зверніться до адміністратора.",
     "repo.pulls.already_merged": "Не вдалося об'єднати: цей запит на злиття вже об'єднано.",
     "migrate.pagure.description": "Перенести дані з pagure.io або інших екземплярів Pagure.",
-    "migrate.pagure.token_label": "Токен",
+    "migrate.pagure.token_label": "Токен API Pagure",
     "migrate.pagure.project_url": "URL-адреса проєкту Pagure",
     "migrate.pagure.project_example": "URL-адреса проєкту Pagure, наприклад, https://pagure.io/pagure",
-    "migrate.pagure.token_body_b": "Якщо хочете зробити цей репозиторій приватним, обов'язково встановіть прапорець «Приватний репозиторій» вище",
     "migrate.pagure.incorrect_url": "Вказано неправильну URL-адресу репозиторію-джерела",
-    "migrate.pagure.token_body_a": "Уведіть токен API Pagure з доступом до приватних задач, щоб створити репозиторій, який міститиме лише приватні задачі",
     "migrate.github.description": "Перенести дані з github.com або сервера GitHub Enterprise.",
     "migrate.git.description": "Перенести репозиторій з будь-якої служби Git.",
     "migrate.gitea.description": "Перенести дані з gitea.com та інших екземплярів Gitea.",
@@ -161,10 +159,20 @@
     "repo.pulls.maintainers_cannot_edit": "Супроводжувачі не можуть редагувати цей запит на злиття.",
     "pulse.n_active_issues": {
         "one": "%s активна задача",
+        "few": "%s активних задачі",
         "many": "%s активних задач"
     },
     "pulse.n_active_prs": {
         "one": "%s активний запит на злиття",
+        "few": "%s активних запити на злиття",
         "many": "%s активних запитів на злиття"
-    }
+    },
+    "migrate.pagure.private_issues.summary": "Приватні задачі (необов'язково)",
+    "migrate.pagure.private_issues.description": "Ця функція дозволяє створити додатковий репозиторій для архівування в ньому приватних задач із вашого проєкту Pagure. Спочатку виконайте звичайну міграцію (без токена), щоб імпортувати весь публічний вміст. Потім, якщо у вас є приватні задачі, які потрібно зберегти, створіть окремий репозиторій, використовуючи токен, щоб архівувати ці приватні задачі.",
+    "migrate.pagure.private_issues.warning": "Обов'язково встановіть видимість репозиторію на «Приватний», якщо використовуєте ключ API для імпорту приватних задач. Це запобігає випадковому розкриттю приватного вмісту в публічному репозиторії.",
+    "migrate.pagure.token.placeholder": "Тільки для створення архіву приватних задач",
+    "mail.issue.action.close_by_commit": "%[1]s закриває %[2]s в коміті %[3]s.",
+    "actions.workflow.job_parsing_error": "Не вдалося розібрати завдання в робочому потоці: %v",
+    "actions.workflow.event_detection_error": "Не вдалося розібрати підтримувані події в робочому потоці: %v",
+    "actions.workflow.pre_execution_error": "Спробу виконання робочого потоку було заблоковано через помилку."
 }

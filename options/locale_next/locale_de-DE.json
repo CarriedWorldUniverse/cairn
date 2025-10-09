@@ -117,7 +117,6 @@
     "admin.auths.allow_username_change": "Benutzernamen ändern zulassen",
     "admin.auths.allow_username_change.description": "Benutzern erlauben, ihren Benutzernamen in den Profileinstellungen zu ändern",
     "warning.repository.out_of_sync": "Die Datenbankdarstellung dieses Repositorys ist nicht synchronisiert. Falls diese Warnung immer noch angezeigt wird, nachdem ein Commit zu diesem Repository gepusht wurde, kontaktieren Sie den Administrator.",
-    "migrate.pagure.token_body_b": "Stellen Sie sicher, dass das Flag für private Repos oben gesetzt ist, wenn Sie möchten, dass dieses Repo privat ist",
     "migrate.github.description": "Daten von github.com oder GitHub-Enterprise-Server migrieren.",
     "migrate.git.description": "Ein Repository von einem beliebigen Git-Dienst klonen.",
     "migrate.gitea.description": "Daten von gitea.com oder anderen Gitea-Instanzen migrieren.",
@@ -129,10 +128,9 @@
     "migrate.forgejo.description": "Daten von codeberg.org oder anderen Forgejo-Instanzen migrieren.",
     "repo.pulls.already_merged": "Zusammenführung fehlgeschlagen. Der Pull-Request wurde bereits zusammengeführt.",
     "migrate.pagure.incorrect_url": "Falsche Quellrepository-URL wurde angegeben",
-    "migrate.pagure.token_body_a": "Stellen Sie ein Pagure-API-Token mit Zugriff auf die privaten Issues zur Verfügung, um ein Repository mit nur den privaten Issues darin zu erstellen",
     "migrate.pagure.project_example": "Die URL des Pagure-Projekts, z. B. https://pagure.io/pagure",
     "migrate.pagure.description": "Daten von pagure.io oder anderen Pagure-Instanzen migrieren.",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure-API-Token",
     "migrate.pagure.project_url": "Pagure-Projekt-URL",
     "admin.config.security": "Sicherheitskonfiguration",
     "settings.twofa_unroll_unavailable": "Für deinen Account wird die Zwei-Faktor-Authentifizierung benötigt; sie kann nicht deaktiviert werden.",
@@ -158,5 +156,13 @@
     "pulse.n_active_prs": {
         "one": "%s aktiver Pull-Request",
         "other": "%s aktive Pull-Requests"
-    }
+    },
+    "migrate.pagure.private_issues.summary": "Private Issues (optional)",
+    "migrate.pagure.private_issues.description": "Dieses Feature wurde dafür entworfen, um ein zweites Repository zu erstellen, das nur private Issues von deinem Pagure-Projekt für Archivierungszwecke enthält. Nimm zuerst eine normale Migration (ohne ein Token) vor, um alle öffentliche Inhalte zu importieren. Anschließend, wenn du private Issues hast, die du aufbewahren willst, erstelle mit diesem Token ein separates Repository, um diese privaten Issues zu archivieren.",
+    "migrate.pagure.private_issues.warning": "Stell sicher, dass du die Repository-Sichtbarkeit oben auf Privat stellst, falls du den API-Schlüssel benutzt, um private Issues zu importieren. Damit verhindest du, dass du aus Versehen private Inhalte in einem öffentlichen Repository offenlegst.",
+    "migrate.pagure.token.placeholder": "Nur für die Erstellung eines privaten Issue-Archivs",
+    "mail.issue.action.close_by_commit": "%[1]s hat %[2]s in Commit %[3]s geschlossen.",
+    "actions.workflow.job_parsing_error": "Jobs im Workflow konnten nicht geparst werden: %v",
+    "actions.workflow.event_detection_error": "Unterstützte Ereignisse im Workflow konnten nicht geparst werden: %v",
+    "actions.workflow.pre_execution_error": "Der Workflow wurde aufgrund eines Fehlers, der den Ausführungsversuch blockierte, nicht ausgeführt."
 }
