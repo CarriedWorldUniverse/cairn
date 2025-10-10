@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s lejupielāde",
+        "other": "%s lejupielādes/žu"
+    },
     "repo.pulls.merged_title_desc": {
         "zero": "iekļāva %[1]d iesūtījumu no <code>%[2]s</code> <code>%[3]s</code> %[4]s",
         "one": "Iekļāva %[1]d iesūtījumu no <code>%[2]s</code> zarā <code>%[3]s</code> %[4]s",

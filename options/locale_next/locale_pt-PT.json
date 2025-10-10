@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s descarga",
+        "other": "%s descargas"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "integrou %[1]d cometimento do ramo <code>%[2]s</code> no ramo <code>%[3]s</code> %[4]s",
         "many": "integrou %[1]d cometimentos do ramo <code>%[2]s</code> no ramo <code>%[3]s</code> %[4]s",

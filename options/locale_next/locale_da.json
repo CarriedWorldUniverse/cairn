@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s download",
+        "other": "%s downloads"
+    },
     "search.milestone_kind": "Søg milepæle…",
     "repo.pulls.title_desc": {
         "one": "ønsker at flette %[1]d commit fra <code>%[2]s</code> til <code id=\"%[4]s\">%[3]s</code>",

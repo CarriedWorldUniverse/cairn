@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s téléchargement",
+        "other": "%s téléchargements"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "a fusionné %[1]d commit depuis <code>%[2]s</code> vers <code>%[3]s</code> %[4]s",
         "many": "fusionné %[1]d de commits depuis <code>%[2]s</code> vers <code>%[3]s</code> %[4]s",

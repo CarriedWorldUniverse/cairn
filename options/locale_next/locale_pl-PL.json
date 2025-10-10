@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s pobranie",
+        "many": "%s pobrania"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "scala %[1]d commit z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",
         "few": "scala %[1]d commity z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",

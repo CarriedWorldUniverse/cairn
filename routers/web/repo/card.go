@@ -381,12 +381,8 @@ func drawReleaseSummaryCard(ctx *context.Context, release *repo_model.Release) (
 		return nil, err
 	}
 
-	downloadCountText := ctx.Locale.TrN(
-		strconv.FormatInt(downloadCount, 10),
-		"repo.release.download_count_one",
-		"repo.release.download_count_few",
-		strconv.FormatInt(downloadCount, 10),
-	)
+	downloadCountText := ctx.Locale.TrPluralString(downloadCount,
+		"release.n_downloads", strconv.FormatInt(downloadCount, 10))
 
 	_, err = downloadCountCard.DrawText(string(downloadCountText), color.Gray{128}, 36, card.Bottom, card.Left)
 	if err != nil {

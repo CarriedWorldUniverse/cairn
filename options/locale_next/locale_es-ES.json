@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s descarga",
+        "other": "%s descargas"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "fusionó %[1]d confirmación de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
         "many": "fusionó %[1]d confirmaciones de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
