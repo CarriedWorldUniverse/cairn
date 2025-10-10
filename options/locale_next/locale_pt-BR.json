@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s download",
+        "other": "%s downloads"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "mesclou %[1]d commit de <code>%[2]s</code> em <code>%[3]s</code> %[4]s",
         "many": "mesclou %[1]d de commits de <code>%[2]s</code> em <code>%[3]s</code> %[4]s",

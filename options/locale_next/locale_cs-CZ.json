@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s stažení",
+        "other": "%s stažení"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "sloučil/a %[1]d revizi z větve <code>%[2]s</code> do větve <code>%[3]s</code> %[4]s",
         "few": "sloučil/a %[1]d revize z větve <code>%[2]s</code> do větve <code>%[3]s</code> před %[4]s",

@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s maal runnerladen",
+        "other": "%s maal runnerladen"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "hett %[4]s %[1]d Kommitteren vun <code>%[2]s</code> na <code>%[3]s</code> tosamenföhrt",
         "other": "hett %[4]s %[1]d Kommitterens vun <code>%[2]s</code> na <code>%[3]s</code> tosamenföhrt"

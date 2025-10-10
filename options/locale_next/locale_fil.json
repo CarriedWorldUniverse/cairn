@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s download",
+        "other": "%s mga download"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "isinali ang %[1]d commit mula <code>%[2]s</code> patungong <code>%[3]s</code> %[4]s",
         "other": "isinali ang %[1]d mga commit mula sa <code>%[2]s</code> patungong <code>%[3]s</code> %[4]s"

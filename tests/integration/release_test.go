@@ -357,12 +357,44 @@ func TestDownloadReleaseAttachment(t *testing.T) {
 
 	url := repo.Link() + "/releases/download/v1.1/README.md"
 
+	// user2/repo2 is private and can't be accessed anonymously
 	req := NewRequest(t, "GET", url)
 	MakeRequest(t, req, http.StatusNotFound)
 
+	// But the owner can access it
 	req = NewRequest(t, "GET", url)
 	session := loginUser(t, "user2")
 	session.MakeRequest(t, req, http.StatusOK)
+}
+
+func TestReleaseAttachmentDownloadCounter(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	tests.PrepareAttachmentsStorage(t)
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
+	session := loginUser(t, "user2")
+	zipAttachmentLink := fmt.Sprintf("%s/archive/v1.1.zip", repo.Link())
+	gzAttachmentLink := fmt.Sprintf("%s/archive/v1.1.tar.gz", repo.Link())
+	counterSelector := "details.download > ul > li:has(a[href='%s']) span"
+
+	// Assert zero downloads initially
+	doc := NewHTMLParser(t, session.MakeRequest(t, NewRequest(t, "GET", fmt.Sprintf("%s/releases", repo.Link())), http.StatusOK).Body)
+	zipDownloads := doc.Find(fmt.Sprintf(counterSelector, zipAttachmentLink)).Text()
+	gzDownloads := doc.Find(fmt.Sprintf(counterSelector, gzAttachmentLink)).Text()
+	assert.Contains(t, zipDownloads, "0 downloads")
+	assert.Contains(t, gzDownloads, "0 downloads")
+
+	// Generate downloads
+	session.MakeRequest(t, NewRequest(t, "GET", zipAttachmentLink), http.StatusOK)
+	session.MakeRequest(t, NewRequest(t, "GET", gzAttachmentLink), http.StatusOK)
+	session.MakeRequest(t, NewRequest(t, "GET", gzAttachmentLink), http.StatusOK)
+
+	// Check the new numbers
+	doc = NewHTMLParser(t, session.MakeRequest(t, NewRequest(t, "GET", fmt.Sprintf("%s/releases", repo.Link())), http.StatusOK).Body)
+	zipDownloads = doc.Find(fmt.Sprintf(counterSelector, zipAttachmentLink)).Text()
+	gzDownloads = doc.Find(fmt.Sprintf(counterSelector, gzAttachmentLink)).Text()
+	assert.Contains(t, zipDownloads, "1 download")
+	assert.Contains(t, gzDownloads, "2 downloads")
 }
 
 func TestReleaseHideArchiveLinksUI(t *testing.T) {

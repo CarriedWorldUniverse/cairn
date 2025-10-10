@@ -1,4 +1,8 @@
 {
+    "release.n_downloads": {
+        "one": "%s lataus",
+        "other": "%s latausta"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "yhdistetty %[1]d sitoumus <code>%[2]s</code>:sta kohteeseen <code>%[3]s</code> %[4]s",
         "other": "yhdistetty %[1]d sitoumusta <code>%[2]s</code>:sta kohteeseen <code>%[3]s</code> %[4]s"
