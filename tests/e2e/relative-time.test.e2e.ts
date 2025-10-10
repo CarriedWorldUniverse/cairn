@@ -24,7 +24,7 @@ test('Relative time after htmx swap', async ({page}, workerInfo) => {
   const body = page.locator('body');
   await body.evaluate(
     (element) =>
-      new Promise((resolve) =>
+      new Promise<void>((resolve) =>
         element.addEventListener('htmx:afterSwap', () => {
           resolve();
         }),

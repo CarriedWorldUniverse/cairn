@@ -1,7 +1,7 @@
 import {expect, type Page, type Locator} from '@playwright/test';
 
 // returns element that should be covered before taking the screenshot
-async function masks(page: Page) : Array<Locator> {
+async function masks(page: Page) : Promise<Locator[]> {
   return [
     page.locator('.ui.avatar'),
     page.locator('.sha'),
@@ -44,7 +44,7 @@ async function screenshot_prepare(page: Page) {
 
   // attachment IDs in text areas, required for issue-comment-dropzone.
   // playwright does not (yet?) support filtering for content in input elements, see https://github.com/microsoft/playwright/issues/36166
-  await page.locator('textarea.markdown-text-editor').evaluateAll((nodes) => {
+  await page.locator('textarea.markdown-text-editor').evaluateAll((nodes: HTMLTextAreaElement[]) => {
     for (const node of nodes) node.value = node.value.replaceAll(/attachments\/[a-f0-9-]+/g, '/attachments/c1ee9740-dad3-4747-b489-f6fb2e3dfcec');
   });
 

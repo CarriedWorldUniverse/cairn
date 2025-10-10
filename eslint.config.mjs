@@ -58,7 +58,14 @@ export default tseslint.config(
       sourceType: 'module',
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'off', // TODO: enable this rule again
+      '@typescript-eslint/no-unused-vars': [2, {
+        args: 'all',
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: false,
+      }],
 
       '@eslint-community/eslint-comments/disable-enable-pair': [2],
       '@eslint-community/eslint-comments/no-aggregating-enable': [2],
@@ -539,14 +546,7 @@ export default tseslint.config(
       'no-unused-labels': [2],
       'no-unused-private-class-members': [2],
 
-      'no-unused-vars': [2, {
-        args: 'all',
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-        destructuredArrayIgnorePattern: '^_',
-        ignoreRestSiblings: false,
-      }],
+      'no-unused-vars': [0],
 
       'no-use-before-define': [2, {
         functions: false,

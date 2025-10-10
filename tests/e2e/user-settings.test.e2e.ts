@@ -23,7 +23,7 @@ test('User: Profile settings', async ({browser}, workerInfo) => {
   await pronounsInput.click();
   const pronounsList = page.locator('datalist#pronouns');
   const pronounsOptions = pronounsList.locator('option');
-  const pronounsValues = await pronounsOptions.evaluateAll((opts) => opts.map((opt) => opt.value));
+  const pronounsValues = await pronounsOptions.evaluateAll((opts) => opts.map((opt: HTMLOptionElement) => opt.value));
   expect(pronounsValues).toEqual(['he/him', 'she/her', 'they/them', 'it/its', 'any pronouns']);
   await pronounsInput.fill('she/her');
 
