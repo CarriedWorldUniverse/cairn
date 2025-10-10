@@ -6,7 +6,6 @@ package issue
 import (
 	"context"
 	"fmt"
-	"time"
 
 	issues_model "forgejo.org/models/issues"
 	org_model "forgejo.org/models/organization"
@@ -18,22 +17,6 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 )
-
-func getMergeBase(repo *git.Repository, pr *issues_model.PullRequest, baseBranch, headBranch string) (string, error) {
-	// Add a temporary remote
-	tmpRemote := fmt.Sprintf("mergebase-%d-%d", pr.ID, time.Now().UnixNano())
-	if err := repo.AddRemote(tmpRemote, repo.Path, false); err != nil {
-		return "", fmt.Errorf("AddRemote: %w", err)
-	}
-	defer func() {
-		if err := repo.RemoveRemote(tmpRemote); err != nil {
-			log.Error("getMergeBase: RemoveRemote: %v", err)
-		}
-	}()
-
-	mergeBase, _, err := repo.GetMergeBase(tmpRemote, baseBranch, headBranch)
-	return mergeBase, err
-}
 
 type ReviewRequestNotifier struct {
 	Comment    *issues_model.Comment
@@ -81,8 +64,7 @@ func PullRequestCodeOwnersReview(ctx context.Context, issue *issues_model.Issue,
 		}
 	}
 
-	// get the mergebase
-	mergeBase, err := getMergeBase(repo, pr, git.BranchPrefix+pr.BaseBranch, pr.GetGitRefName())
+	mergeBase, err := repo.GetMergeBaseSimple(git.BranchPrefix+pr.BaseBranch, pr.GetGitRefName())
 	if err != nil {
 		return nil, err
 	}
