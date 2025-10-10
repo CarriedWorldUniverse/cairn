@@ -223,6 +223,7 @@ jobs:
         options: --tmpfs /bitnami/minio/data
       ldap:
         image: data.forgejo.org/oci/forgejo-test-openldap:1
+        options: --memory 500M
       pgsql:
         image: data.forgejo.org/oci/bitnami/postgresql:16
         env:
