@@ -30,6 +30,12 @@ type CompareInfo struct {
 	NumFiles     int
 }
 
+// GetMergeBaseSimple returns the merge base of base and head.
+func (repo *Repository) GetMergeBaseSimple(base, head string) (string, error) {
+	stdout, _, err := NewCommand(repo.Ctx, "merge-base").AddDashesAndList(base, head).RunStdString(&RunOpts{Dir: repo.Path})
+	return strings.TrimSpace(stdout), err
+}
+
 // GetMergeBase checks and returns merge base of two branches and the reference used as base.
 func (repo *Repository) GetMergeBase(tmpRemote, base, head string) (string, string, error) {
 	if tmpRemote == "" {
