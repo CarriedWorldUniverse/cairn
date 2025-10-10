@@ -41,7 +41,7 @@ import (
 	"forgejo.org/modules/web"
 	"forgejo.org/routers"
 	"forgejo.org/services/auth/source/remote"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/mailer"
 	user_service "forgejo.org/services/user"
 	"forgejo.org/tests"
@@ -297,7 +297,7 @@ func (s *TestSession) EnrollTOTP(t testing.TB) {
 	})
 	s.MakeRequest(t, req, http.StatusSeeOther)
 
-	flashCookie := s.GetCookie(gitea_context.CookieNameFlash)
+	flashCookie := s.GetCookie(app_context.CookieNameFlash)
 	assert.NotNil(t, flashCookie)
 	assert.Contains(t, flashCookie.Value, "success%3DYour%2Baccount%2Bhas%2Bbeen%2Bsuccessfully%2Benrolled.")
 }
@@ -522,7 +522,7 @@ func createApplicationSettingsToken(t testing.TB, session *TestSession, name str
 	// Log the flash values on failure
 	if !assert.Equal(t, []string{"/user/settings/applications"}, resp.Result().Header["Location"]) {
 		for _, cookie := range resp.Result().Cookies() {
-			if cookie.Name != gitea_context.CookieNameFlash {
+			if cookie.Name != app_context.CookieNameFlash {
 				continue
 			}
 			flash, _ := url.ParseQuery(cookie.Value)
@@ -668,7 +668,7 @@ func logUnexpectedResponse(t testing.TB, recorder *httptest.ResponseRecorder) {
 	if len(respBytes) == 0 {
 		// log the content of the flash cookie
 		for _, cookie := range recorder.Result().Cookies() {
-			if cookie.Name != gitea_context.CookieNameFlash {
+			if cookie.Name != app_context.CookieNameFlash {
 				continue
 			}
 			flash, _ := url.ParseQuery(cookie.Value)

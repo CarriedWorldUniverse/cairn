@@ -22,7 +22,7 @@ import (
 	cargo_module "forgejo.org/modules/packages/cargo"
 	"forgejo.org/modules/setting"
 	cargo_router "forgejo.org/routers/api/packages/cargo"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	cargo_service "forgejo.org/services/packages/cargo"
 	"forgejo.org/tests"
 
@@ -401,7 +401,7 @@ func TestRebuildCargo(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "error%3DCannot%2Brebuild%252C%2Bno%2Bindex%2Bis%2Binitialized.", flashCookie.Value)
 			unittest.AssertExistsIf(t, false, &repo_model.Repository{OwnerID: user.ID, Name: cargo_service.IndexRepositoryName})
@@ -439,7 +439,7 @@ func TestRebuildCargo(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DThe%2BCargo%2Bindex%2Bwas%2Bsuccessfully%2Brebuilt.", flashCookie.Value)
 		})

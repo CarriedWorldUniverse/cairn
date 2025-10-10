@@ -26,7 +26,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/mailer"
 	"forgejo.org/tests"
 
@@ -917,7 +917,7 @@ func TestUserTOTPReenroll(t *testing.T) {
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
-	flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+	flashCookie := session.GetCookie(app_context.CookieNameFlash)
 	assert.NotNil(t, flashCookie)
 	assert.Contains(t, flashCookie.Value, "success%3DYour%2Baccount%2Bhas%2Bbeen%2Bsuccessfully%2Benrolled.")
 }
@@ -945,7 +945,7 @@ func TestUserTOTPDisable(t *testing.T) {
 			session.MakeRequest(t, req, status)
 		}
 		if flashMessage != "" {
-			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			if disableAllowed {
 				assert.Contains(t, flashCookie.Value, fmt.Sprintf("success%%3D%s", flashMessage))

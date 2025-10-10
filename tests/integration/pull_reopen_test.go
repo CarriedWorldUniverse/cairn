@@ -20,7 +20,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/translation"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	issue_service "forgejo.org/services/issue"
 	pull_service "forgejo.org/services/pull"
 	repo_service "forgejo.org/services/repository"
@@ -152,7 +152,7 @@ func TestPullrequestReopen(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
-			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Contains(t, flashCookie.Value, "success%3DBranch%2B%2522"+branchName+"%2522%2Bhas%2Bbeen%2Brestored.")
 		}
@@ -166,7 +166,7 @@ func TestPullrequestReopen(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
-			flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Contains(t, flashCookie.Value, "success%3DBranch%2B%2522"+branchName+"%2522%2Bhas%2Bbeen%2Bdeleted.")
 		}

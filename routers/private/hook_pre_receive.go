@@ -23,12 +23,12 @@ import (
 	"forgejo.org/modules/private"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/web"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	pull_service "forgejo.org/services/pull"
 )
 
 type preReceiveContext struct {
-	*gitea_context.PrivateContext
+	*app_context.PrivateContext
 
 	// loadedPusher indicates that where the following information are loaded
 	loadedPusher        bool
@@ -175,7 +175,7 @@ func (ctx *preReceiveContext) quotaExceeded() {
 }
 
 // HookPreReceive checks whether a individual commit is acceptable
-func HookPreReceive(ctx *gitea_context.PrivateContext) {
+func HookPreReceive(ctx *app_context.PrivateContext) {
 	opts := web.GetForm(ctx).(*private.HookOptions)
 
 	ourCtx := &preReceiveContext{
