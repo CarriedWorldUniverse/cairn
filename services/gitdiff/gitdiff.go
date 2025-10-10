@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -1285,31 +1286,21 @@ type PullDiffStats struct {
 
 // GetPullDiffStats
 func GetPullDiffStats(gitRepo *git.Repository, opts *DiffOptions) (*PullDiffStats, error) {
-	repoPath := gitRepo.Path
-
 	diff := &PullDiffStats{}
-
-	separator := "..."
-	if opts.DirectComparison {
-		separator = ".."
-	}
 
 	objectFormat, err := gitRepo.GetObjectFormat()
 	if err != nil {
 		return nil, err
 	}
 
-	diffPaths := []string{opts.BeforeCommitID + separator + opts.AfterCommitID}
 	if len(opts.BeforeCommitID) == 0 || opts.BeforeCommitID == objectFormat.EmptyObjectID().String() {
-		diffPaths = []string{objectFormat.EmptyTree().String(), opts.AfterCommitID}
+		opts.BeforeCommitID = objectFormat.EmptyTree().String()
+		opts.DirectComparison = true
 	}
 
-	diff.NumFiles, diff.TotalAddition, diff.TotalDeletion, err = git.GetDiffShortStat(gitRepo.Ctx, repoPath, nil, diffPaths...)
-	if err != nil && strings.Contains(err.Error(), "no merge base") {
-		// git >= 2.28 now returns an error if base and head have become unrelated.
-		// previously it would return the results of git diff --shortstat base head so let's try that...
-		diffPaths = []string{opts.BeforeCommitID, opts.AfterCommitID}
-		diff.NumFiles, diff.TotalAddition, diff.TotalDeletion, err = git.GetDiffShortStat(gitRepo.Ctx, repoPath, nil, diffPaths...)
+	diff.NumFiles, diff.TotalAddition, diff.TotalDeletion, err = gitRepo.GetShortStat(opts.BeforeCommitID, opts.AfterCommitID, !opts.DirectComparison)
+	if errors.Is(err, git.ErrNoMergebaseFound) {
+		diff.NumFiles, diff.TotalAddition, diff.TotalDeletion, err = gitRepo.GetShortStat(opts.BeforeCommitID, opts.AfterCommitID, false)
 	}
 	if err != nil {
 		return nil, err
