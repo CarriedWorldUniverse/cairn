@@ -132,7 +132,7 @@
     "migrate.pagure.token_body_a": "Stellen Sie ein Pagure-API-Token mit Zugriff auf die privaten Issues zur Verfügung, um ein Repository mit nur den privaten Issues darin zu erstellen",
     "migrate.pagure.project_example": "Die URL des Pagure-Projekts, z. B. https://pagure.io/pagure",
     "migrate.pagure.description": "Daten von pagure.io oder anderen Pagure-Instanzen migrieren.",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure-API-Token",
     "migrate.pagure.project_url": "Pagure-Projekt-URL",
     "admin.config.security": "Sicherheitskonfiguration",
     "settings.twofa_unroll_unavailable": "Für deinen Account wird die Zwei-Faktor-Authentifizierung benötigt; sie kann nicht deaktiviert werden.",
@@ -148,5 +148,12 @@
     "actions.runs.view_most_recent_run": "Letzten Run betrachten",
     "actions.runs.viewing_out_of_date_run": "Sie sehen einen veralteten Run dieses Jobs, der %[1]s ausgeführt wurde.",
     "actions.runs.run_attempt_label": "Run-Versuch #%[1]s (%[2]s)",
-    "migrate.form.error.url_credentials": "Die URL enthält Anmeldedaten; diese sollten in das jeweilige Benutzername- und Passwortfeld eingetragen werden"
+    "migrate.form.error.url_credentials": "Die URL enthält Anmeldedaten; diese sollten in das jeweilige Benutzername- und Passwortfeld eingetragen werden",
+    "migrate.pagure.private_issues.summary": "Private Issues (optional)",
+    "migrate.pagure.private_issues.description": "Dieses Feature wurde dafür entworfen, um ein zweites Repository zu erstellen, das nur private Issues von deinem Pagure-Projekt für Archivierungszwecke enthält. Nimm zuerst eine normale Migration (ohne ein Token) vor, um alle öffentliche Inhalte zu importieren. Anschließend, wenn du private Issues hast, die du aufbewahren willst, erstelle mit diesem Token ein separates Repository, um diese privaten Issues zu archivieren.",
+    "migrate.pagure.private_issues.warning": "Stell sicher, dass du die Repository-Sichtbarkeit oben auf Privat stellst, falls du den API-Schlüssel benutzt, um private Issues zu importieren. Damit verhindest du, dass du aus Versehen private Inhalte in einem öffentlichen Repository offenlegst.",
+    "migrate.pagure.token.placeholder": "Nur für die Erstellung eines privaten Issue-Archivs",
+    "actions.workflow.job_parsing_error": "Jobs im Workflow konnten nicht geparst werden: %v",
+    "actions.workflow.event_detection_error": "Unterstützte Ereignisse im Workflow konnten nicht geparst werden: %v",
+    "actions.workflow.pre_execution_error": "Der Workflow wurde aufgrund eines Fehlers, der den Ausführungsversuch blockierte, nicht ausgeführt."
 }

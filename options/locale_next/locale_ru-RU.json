@@ -140,7 +140,7 @@
     "migrate.pagure.incorrect_url": "Введена неправильная ссылка на источник",
     "migrate.pagure.project_url": "Ссылка проекта на Pagure",
     "migrate.pagure.project_example": "Ссылка проекта. Например, https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Токен",
+    "migrate.pagure.token_label": "Токен API Pagure",
     "migrate.pagure.token_body_a": "Если предоставить токен API Pagure с доступом к секретным задачам проекта, будет создан отдельный репозиторий, в котором они будут размещены",
     "migrate.pagure.token_body_b": "Поставьте флажок на пункте видимости репозитория выше, если хотите, чтобы этот репозиторий был частным",
     "migrate.github.description": "Перенести данные с github.com или сервера GitHub Enterprise.",
@@ -156,5 +156,12 @@
     "migrate.form.error.url_credentials": "Ссылка содержит данные авторизации. Поместите их в соответствующие поля",
     "actions.runs.run_attempt_label": "Попытка №%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Это устаревший результат. Задание было выполнено %[1]s.",
-    "actions.runs.view_most_recent_run": "Перейти к актуальному"
+    "actions.runs.view_most_recent_run": "Перейти к актуальному",
+    "migrate.pagure.private_issues.summary": "Скрытые задачи (необязательно)",
+    "migrate.pagure.private_issues.description": "Эта функция позволяет создать дополнительный репозиторий для архивации в нём скрытых задач из вашего проекта Pagure. Сперва выполните нормальный перенос репозитория без токена, чтобы скопировать всё публичное содержимое. Затем, если нужно, выполните ещё один перенос и укажите токен, чтобы разместить скрытые задачи в дополнительном репозитории.",
+    "migrate.pagure.private_issues.warning": "Не забудьте указать видимость репозитория как Частную при переносе скрытых задач, чтобы их никто не увидел.",
+    "migrate.pagure.token.placeholder": "Только для переноса скрытых задач",
+    "actions.workflow.job_parsing_error": "Не удалось прочитать задачи в раб. потоке: %v",
+    "actions.workflow.event_detection_error": "Не удалось прочитать поддерживаемые события в раб. потоке: %v",
+    "actions.workflow.pre_execution_error": "Рабочий поток не был выполнен из-за ошибки, возникшей при попытке начать выполнение."
 }
