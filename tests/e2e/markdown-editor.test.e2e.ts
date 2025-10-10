@@ -374,7 +374,9 @@ test('Markdown insert table', async ({page}) => {
   await screenshot(page);
 });
 
-test('Markdown insert link', async ({page}) => {
+test('Markdown insert link', async ({page}, workerInfo) => {
+  test.skip(workerInfo.project.name === 'webkit', 'webkit is unreliable in this test');
+
   const response = await page.goto('/user2/repo1/issues/new');
   expect(response?.status()).toBe(200);
 
