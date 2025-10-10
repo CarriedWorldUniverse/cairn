@@ -432,7 +432,7 @@ lint: lint-frontend lint-backend
 lint-fix: lint-frontend-fix lint-backend-fix
 
 .PHONY: lint-frontend
-lint-frontend: lint-js lint-css
+lint-frontend: lint-js tsc lint-css
 
 .PHONY: lint-frontend-fix
 lint-frontend-fix: lint-js-fix lint-css-fix
@@ -515,6 +515,10 @@ lint-disposable-emails-fix:
 .PHONY: security-check
 security-check:
 	$(GO) run $(GOVULNCHECK_PACKAGE) -show color ./...
+
+.PHONY: tsc
+tsc: node_modules
+	npx tsc --noEmit
 
 ###
 # Development and testing targets
