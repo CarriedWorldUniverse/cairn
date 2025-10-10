@@ -24,7 +24,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
 	webhook_module "forgejo.org/modules/webhook"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	"forgejo.org/services/webhook/shared"
 
@@ -47,7 +47,7 @@ var _ binding.Validator = &discordForm{}
 
 // Validate implements binding.Validator.
 func (d *discordForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
-	ctx := gitea_context.GetWebContext(req)
+	ctx := app_context.GetWebContext(req)
 	if len([]rune(d.IconURL)) > 2048 {
 		errs = append(errs, binding.Error{
 			FieldNames: []string{"IconURL"},

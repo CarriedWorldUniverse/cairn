@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/webhook"
 	"forgejo.org/tests"
 
@@ -447,7 +447,7 @@ func assertHasFlashMessages(t *testing.T, resp *httptest.ResponseRecorder, expec
 	seenKeys := make(map[string][]string, len(expectedKeys))
 
 	for _, cookie := range resp.Result().Cookies() {
-		if cookie.Name != gitea_context.CookieNameFlash {
+		if cookie.Name != app_context.CookieNameFlash {
 			continue
 		}
 		flash, _ := url.ParseQuery(cookie.Value)

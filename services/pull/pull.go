@@ -28,7 +28,7 @@ import (
 	repo_module "forgejo.org/modules/repository"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/sync"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	issue_service "forgejo.org/services/issue"
 	notify_service "forgejo.org/services/notify"
 )
@@ -911,7 +911,7 @@ type CommitInfo struct {
 // GetPullCommits returns all commits on given pull request and the last review commit sha
 // Attention: The last review commit sha must be from the latest review whose commit id is not empty.
 // So the type of the latest review cannot be "ReviewTypeRequest".
-func GetPullCommits(ctx *gitea_context.Context, issue *issues_model.Issue) ([]CommitInfo, string, error) {
+func GetPullCommits(ctx *app_context.Context, issue *issues_model.Issue) ([]CommitInfo, string, error) {
 	pull := issue.PullRequest
 
 	baseGitRepo := ctx.Repo.GitRepo

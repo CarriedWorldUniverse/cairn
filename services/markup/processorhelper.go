@@ -15,7 +15,7 @@ import (
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/markup"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	file_service "forgejo.org/services/repository/files"
 )
 
@@ -28,7 +28,7 @@ func ProcessorHelper() *markup.ProcessorHelper {
 				return false
 			}
 
-			giteaCtx, ok := ctx.(*gitea_context.Context)
+			giteaCtx, ok := ctx.(*app_context.Context)
 			if !ok {
 				// when using general context, use user's visibility to check
 				return mentionedUser.Visibility.IsPublic()
@@ -45,7 +45,7 @@ func ProcessorHelper() *markup.ProcessorHelper {
 
 			var user *user.User
 
-			giteaCtx, ok := ctx.(*gitea_context.Context)
+			giteaCtx, ok := ctx.(*app_context.Context)
 			if ok {
 				user = giteaCtx.Doer
 			}

@@ -21,7 +21,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/translation"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestCreateFileOnProtectedBranch(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 		// Check if master branch has been locked successfully
-		flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "success%3DBranch%2Bprotection%2Bfor%2Brule%2B%2522master%2522%2Bhas%2Bbeen%2Bupdated.", flashCookie.Value)
 
@@ -82,7 +82,7 @@ func TestCreateFileOnProtectedBranch(t *testing.T) {
 		assert.Equal(t, "/user2/repo1/settings/branches", res["redirect"])
 
 		// Check if master branch has been locked successfully
-		flashCookie = session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie = session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "error%3DRemoving%2Bbranch%2Bprotection%2Brule%2B%25221%2522%2Bfailed.", flashCookie.Value)
 	})

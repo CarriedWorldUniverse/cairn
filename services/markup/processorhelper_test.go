@@ -11,7 +11,7 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	"forgejo.org/models/user"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
@@ -40,9 +40,9 @@ func TestProcessorHelper(t *testing.T) {
 	// when using web context, use user.IsUserVisibleToViewer to check
 	req, err := http.NewRequest("GET", "/", nil)
 	require.NoError(t, err)
-	base, baseCleanUp := gitea_context.NewBaseContext(httptest.NewRecorder(), req)
+	base, baseCleanUp := app_context.NewBaseContext(httptest.NewRecorder(), req)
 	defer baseCleanUp()
-	giteaCtx := gitea_context.NewWebContext(base, &contexttest.MockRender{}, nil)
+	giteaCtx := app_context.NewWebContext(base, &contexttest.MockRender{}, nil)
 
 	assert.True(t, ProcessorHelper().IsUsernameMentionable(giteaCtx, userPublic))
 	assert.False(t, ProcessorHelper().IsUsernameMentionable(giteaCtx, userPrivate))

@@ -27,12 +27,12 @@ import (
 	timeutil "forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	repo_service "forgejo.org/services/repository"
 )
 
 // HookPostReceive updates services and users
-func HookPostReceive(ctx *gitea_context.PrivateContext) {
+func HookPostReceive(ctx *app_context.PrivateContext) {
 	opts := web.GetForm(ctx).(*private.HookOptions)
 
 	// We don't rely on RepoAssignment here because:
@@ -325,7 +325,7 @@ func loadContextCacheUser(ctx context.Context, id int64) (*user_model.User, erro
 }
 
 // handlePullRequestMerging handle pull request merging, a pull request action should push at least 1 commit
-func handlePullRequestMerging(ctx *gitea_context.PrivateContext, opts *private.HookOptions, ownerName, repoName string, updates []*repo_module.PushUpdateOptions) {
+func handlePullRequestMerging(ctx *app_context.PrivateContext, opts *private.HookOptions, ownerName, repoName string, updates []*repo_module.PushUpdateOptions) {
 	if len(updates) == 0 {
 		ctx.JSON(http.StatusInternalServerError, private.HookPostReceiveResult{
 			Err: fmt.Sprintf("Pushing a merged PR (pr:%d) no commits pushed ", opts.PullRequestID),

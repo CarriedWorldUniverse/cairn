@@ -11,11 +11,11 @@ import (
 	"forgejo.org/modules/private"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/agit"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
 // HookProcReceive proc-receive hook - only handles agit Proc-Receive requests at present
-func HookProcReceive(ctx *gitea_context.PrivateContext) {
+func HookProcReceive(ctx *app_context.PrivateContext) {
 	opts := web.GetForm(ctx).(*private.HookOptions)
 
 	results, err := agit.ProcReceive(ctx, ctx.Repo.Repository, ctx.Repo.GitRepo, opts)

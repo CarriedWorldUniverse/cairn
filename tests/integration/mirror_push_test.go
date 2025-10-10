@@ -31,7 +31,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	doctor "forgejo.org/services/doctor"
 	"forgejo.org/services/migrations"
 	mirror_service "forgejo.org/services/mirror"
@@ -173,7 +173,7 @@ func doCreatePushMirror(ctx APITestContext, address, username, password string) 
 		})
 		ctx.Session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := ctx.Session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := ctx.Session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "success")
 	}
@@ -194,7 +194,7 @@ func doCreatePushMirrorWithBranchFilter(ctx APITestContext, address, username, p
 		})
 		ctx.Session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := ctx.Session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := ctx.Session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "success")
 	}
@@ -215,7 +215,7 @@ func doRemovePushMirror(ctx APITestContext, address, username, password string, 
 		})
 		ctx.Session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := ctx.Session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := ctx.Session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "success")
 	}
@@ -308,7 +308,7 @@ func TestSSHPushMirror(t *testing.T) {
 				})
 				sess.MakeRequest(t, req, http.StatusSeeOther)
 
-				flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
+				flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 				assert.NotNil(t, flashCookie)
 				assert.Contains(t, flashCookie.Value, "success")
 
@@ -615,7 +615,7 @@ func TestPushMirrorSettings(t *testing.T) {
 			})
 			sess.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Contains(t, flashCookie.Value, "success")
 		})
@@ -650,7 +650,7 @@ func TestPushMirrorSettings(t *testing.T) {
 			})
 			sess.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := sess.GetCookie(gitea_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Contains(t, flashCookie.Value, "success")
 		})

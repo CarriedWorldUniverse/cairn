@@ -17,7 +17,7 @@ import (
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
 	webhook_module "forgejo.org/modules/webhook"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	"forgejo.org/services/webhook/shared"
 
@@ -42,7 +42,7 @@ var _ binding.Validator = &slackForm{}
 
 // Validate implements binding.Validator.
 func (s *slackForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
-	ctx := gitea_context.GetWebContext(req)
+	ctx := app_context.GetWebContext(req)
 	if !IsValidSlackChannel(strings.TrimSpace(s.Channel)) {
 		errs = append(errs, binding.Error{
 			FieldNames:     []string{"Channel"},

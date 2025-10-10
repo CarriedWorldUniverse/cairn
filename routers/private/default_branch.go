@@ -10,11 +10,11 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/private"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
 // SetDefaultBranch updates the default branch
-func SetDefaultBranch(ctx *gitea_context.PrivateContext) {
+func SetDefaultBranch(ctx *app_context.PrivateContext) {
 	ownerName := ctx.Params(":owner")
 	repoName := ctx.Params(":repo")
 	branch := ctx.Params(":branch")

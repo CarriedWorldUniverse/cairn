@@ -11,7 +11,7 @@ import (
 	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -105,7 +105,7 @@ func testRenameBranch(t *testing.T, u *url.URL) {
 			"to":    "branch1",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
-		flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "error")
 
@@ -133,7 +133,7 @@ func testRenameBranch(t *testing.T, u *url.URL) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie = session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie = session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "success")
 
@@ -163,7 +163,7 @@ func testRenameBranch(t *testing.T, u *url.URL) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "error%3DCannot%2Brename%2Bbranch%2Bmain2%2Bbecause%2Bit%2Bis%2Ba%2Bprotected%2Bbranch.", flashCookie.Value)
 

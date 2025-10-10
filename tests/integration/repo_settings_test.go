@@ -16,7 +16,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
-	gitea_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	repo_service "forgejo.org/services/repository"
 	user_service "forgejo.org/services/user"
 	"forgejo.org/tests"
@@ -298,7 +298,7 @@ func TestProtectedBranch(t *testing.T) {
 			"require_signed_": "true",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
-		flashCookie := session.GetCookie(gitea_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "error%3DThere%2Bis%2Balready%2Ba%2Brule%2Bfor%2Bthis%2Bset%2Bof%2Bbranches", flashCookie.Value)
 
