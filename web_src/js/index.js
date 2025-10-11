@@ -38,6 +38,7 @@ import {
   initGlobalButtonClickOnEnter,
   initGlobalButtons,
   initGlobalCommon,
+  initDisabledInputs,
   initGlobalDropzone,
   initGlobalEnterQuickSubmit,
   initGlobalFormDirtyLeaveConfirm,
@@ -95,6 +96,7 @@ initDirAuto();
 onDomReady(() => {
   initGlobalCommon();
 
+  initDisabledInputs();
   initGlobalTooltips();
   initGlobalButtonClickOnEnter();
   initGlobalButtons();

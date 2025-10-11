@@ -68,17 +68,17 @@ Template Attributes:
 		<div class="header">{{ctx.Locale.Tr "editor.table_modal.header"}}</div>
 
 		<div class="ui form content" data-selector-name="form">
-			<input type="hidden" name="table-header" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.header"}}">
-			<input type="hidden" name="table-content" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.content"}}">
+			<input type="hidden" name="table-header" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.header"}}" disabled>
+			<input type="hidden" name="table-content" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.content"}}" disabled>
 			<table>
 				<tbody>
 					<tr>
 						<td><label>{{ctx.Locale.Tr "editor.table_modal.label.rows"}}</label></td>
-						<td><input type="number" name="table-rows" min="1" value="2" required></td>
+						<td><input type="number" name="table-rows" class="js-enable" min="1" value="2" disabled required></td>
 					</tr>
 					<tr>
 						<td><label>{{ctx.Locale.Tr "editor.table_modal.label.columns"}}</label></td>
-						<td><input type="number" name="table-columns" min="1" value="2" required></td>
+						<td><input type="number" name="table-columns" class="js-enable" min="1" value="2" disabled required></td>
 					</tr>
 				</tbody>
 			</table>
@@ -97,11 +97,11 @@ Template Attributes:
 			<div class="ui form" data-selector-name="form">
 				<label>
 					{{ctx.Locale.Tr "editor.link_modal.url"}}
-					<input name="link-url" required dir="auto" autocomplete="off">
+					<input name="link-url" class="js-enable" disabled required dir="auto" autocomplete="off">
 				</label>
 				<label>
 					{{ctx.Locale.Tr "editor.link_modal.description"}}
-					<input name="link-description" required dir="auto" autocomplete="off">
+					<input name="link-description" class="js-enable" disabled required dir="auto" autocomplete="off">
 				</label>
 
 				<div class="help">
