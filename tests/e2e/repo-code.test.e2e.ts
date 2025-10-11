@@ -38,7 +38,7 @@ async function assertSelectedLines(page: Page, nums: string[]) {
 }
 
 test('Line Range Selection', async ({page}, workerInfo) => {
-  test.skip(workerInfo.project.name === 'webkit', 'webkit is unreliable in this test');
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Unreliable in this test');
 
   const filePath = '/user2/repo1/src/branch/master/README.md?display=source';
 
