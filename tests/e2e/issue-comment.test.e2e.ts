@@ -6,10 +6,61 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test, dynamic_id} from './utils_e2e.ts';
+import {test, dynamic_id, login_user} from './utils_e2e.ts';
 import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
+
+for (const run of [
+  {title: 'JS off', js: true},
+  {title: 'JS on', js: false},
+]) {
+  test.describe(`Create issue & comment`, () => {
+    // playwright/valid-title says: [error] Title must be a string
+    test(`${run.title}`, async ({browser}, workerInfo) => {
+      test.skip(['Mobile Chrome', 'Mobile Safari'].includes(workerInfo.project.name), 'Mobile Chrome has trouble clicking Comment button with JS enabled, Mobile Safari is flaky and only passes on retry');
+
+      const issueTitle = dynamic_id();
+      const issueContent = dynamic_id();
+      const commentContent = dynamic_id();
+
+      const context = await login_user(browser, workerInfo, 'user2', {javaScriptEnabled: run.js});
+      const page = await context.newPage();
+
+      let response = await page.goto('/user2/repo1/issues/new');
+      expect(response?.status()).toBe(200);
+
+      // Create a new issue
+      await page.getByPlaceholder('Title').fill(issueTitle);
+      await page.getByPlaceholder('Leave a comment').fill(issueContent);
+      await page.getByRole('button', {name: 'Create issue'}).click();
+
+      if (run.js) {
+        await expect(page).toHaveURL(/\/user2\/repo1\/issues\/\d+$/);
+      } else {
+        // NoJS clients end up on a .../comments JSON file and browsers surround it with some HTML
+        const redirectUrl = await JSON.parse(await page.locator('body').textContent())['redirect'];
+        response = await page.goto(redirectUrl);
+        expect(response?.status()).toBe(200);
+      }
+
+      // Leave a comment
+      await page.locator('#comment-form').getByPlaceholder('Leave a comment').fill(commentContent);
+      await page.locator('#comment-form button.primary').filter({hasText: 'Comment'}).click();
+
+      if (!run.js) {
+        const redirectUrl = await JSON.parse(await page.locator('body').textContent())['redirect'];
+        response = await page.goto(redirectUrl);
+        expect(response?.status()).toBe(200);
+      }
+
+      // Validate the page contents that actions above made a difference
+      await expect(page.locator('h1')).toContainText(issueTitle);
+      await expect(page.locator('.comment').filter({hasText: issueContent})).toHaveCount(1);
+      await expect(page.locator('.comment').filter({hasText: commentContent})).toHaveCount(1);
+    });
+  });
+}
 
 test('Menu accessibility', async ({page}) => {
   await page.goto('/user2/repo1/issues/1');

@@ -205,6 +205,15 @@ export function initGlobalCommon() {
   document.addEventListener('click', linkAction);
 }
 
+// Sometimes unrelated inputs are stored in forms for convenience, for example,
+// modal inputs. To prevent them from breaking the forms they are in they are
+// disabled by default
+export function initDisabledInputs() {
+  for (const el of document.querySelectorAll('input.js-enable[disabled]')) {
+    el.removeAttribute('disabled');
+  }
+}
+
 export function initGlobalDropzone() {
   for (const el of document.querySelectorAll('.dropzone')) {
     initDropzone(el);
