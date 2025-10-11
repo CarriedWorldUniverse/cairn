@@ -2,7 +2,7 @@
 {{$canReadCode := $.Permission.CanRead $.UnitTypeCode}}
 
 {{if $canReadReleases}}
-	<div class="list-header">
+	<div class="list-header tw-justify-between">
 		<div class="switch">
 			<a class="{{if and .PageIsReleaseList (not .PageIsSingleTag)}}active {{end}}item" href="{{.RepoLink}}/releases{{if .Keyword}}?q={{.Keyword}}{{end}}">{{ctx.Locale.TrN .NumReleases "repo.n_release_one" "repo.n_release_few" (ctx.Locale.PrettyNumber .NumReleases)}}</a>
 			{{if $canReadCode}}
