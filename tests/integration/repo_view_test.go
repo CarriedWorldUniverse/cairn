@@ -62,7 +62,7 @@ func createRepoAndGetContext(t *testing.T, files []string, deleteMdReadme bool) 
 }
 
 func TestRepoView_FindReadme(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		t.Run("PrioOneLocalizedMdReadme", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			ctx, f := createRepoAndGetContext(t, []string{"README.en.md", "README.en.org", "README.org", "README.txt", "README.tex"}, false)
@@ -155,7 +155,7 @@ func TestRepoView_FindReadme(t *testing.T) {
 }
 
 func TestRepoViewFileLines(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		repo, _, f := tests.CreateDeclarativeRepo(t, user, "file-lines", []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
 			{

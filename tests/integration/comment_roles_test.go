@@ -29,7 +29,7 @@ func TestCommentRoles(t *testing.T) {
 	newContributorTooltip := locale.TrString("repo.issues.role.first_time_contributor_helper")
 
 	// Test pulls
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		sessionUser1 := loginUser(t, "user1")
 		sessionUser2 := loginUser(t, "user2")
 		sessionUser11 := loginUser(t, "user11")
@@ -109,7 +109,7 @@ func TestCommentRoles(t *testing.T) {
 	})
 
 	// Test issues
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		sessionUser1 := loginUser(t, "user1")
 		sessionUser2 := loginUser(t, "user2")
 		sessionUser5 := loginUser(t, "user5")

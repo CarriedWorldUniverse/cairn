@@ -18,7 +18,7 @@ import (
 )
 
 func TestRenameBranch(t *testing.T) {
-	onGiteaRun(t, testRenameBranch)
+	onApplicationRun(t, testRenameBranch)
 }
 
 func testRenameBranch(t *testing.T, u *url.URL) {

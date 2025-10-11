@@ -314,7 +314,7 @@ func doAPIGetPullFiles(ctx APITestContext, pr *api.PullRequest, callback func(*t
 }
 
 func TestAPIPullDeleteBranchPerms(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		user2Session := loginUser(t, "user2")
 		user4Session := loginUser(t, "user4")
 		testRepoFork(t, user4Session, "user2", "repo1", "user4", "repo1")

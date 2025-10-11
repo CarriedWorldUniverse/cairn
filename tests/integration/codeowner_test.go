@@ -204,7 +204,7 @@ type CodeownerTest struct {
 }
 
 func TestCodeOwner(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		tests := []CodeownerTest{
 			{Name: "root", Path: "CODEOWNERS"},
 			{Name: "docs", Path: "docs/CODEOWNERS"},

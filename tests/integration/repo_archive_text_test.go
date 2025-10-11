@@ -20,7 +20,7 @@ import (
 )
 
 func TestArchiveText(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		testUser := "user2"
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: testUser})
 		session := loginUser(t, testUser)

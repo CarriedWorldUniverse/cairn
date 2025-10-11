@@ -18,7 +18,7 @@ import (
 )
 
 func TestBranchActions(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 		repo1 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		branch3 := unittest.AssertExistsAndLoadBean(t, &git_model.Branch{ID: 3, RepoID: repo1.ID})

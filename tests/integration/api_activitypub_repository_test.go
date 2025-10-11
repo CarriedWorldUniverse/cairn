@@ -32,7 +32,7 @@ func TestActivityPubRepository(t *testing.T) {
 	federatedSrv := mock.DistantServer(t)
 	defer federatedSrv.Close()
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		repositoryID := 2
 
 		localRepository := fmt.Sprintf("%sapi/v1/activitypub/repository-id/%d", u, repositoryID)
@@ -76,7 +76,7 @@ func TestActivityPubRepositoryInboxValid(t *testing.T) {
 	federatedSrv := mock.DistantServer(t)
 	defer federatedSrv.Close()
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		repositoryID := 2
 		timeNow := time.Now().UTC()
 		localRepoInbox := u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d/inbox", repositoryID)).String()
@@ -156,7 +156,7 @@ func TestActivityPubRepositoryInboxInvalid(t *testing.T) {
 	defer test.MockVariableValue(&setting.Federation.SignatureEnforced, false)()
 	defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		apServerActor := user.NewAPServerActor()
 		repositoryID := 2
 		localRepo2Inbox := u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d/inbox", repositoryID)).String()

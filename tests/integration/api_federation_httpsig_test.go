@@ -28,7 +28,7 @@ func TestFederationHttpSigValidation(t *testing.T) {
 	defer test.MockVariableValue(&setting.Federation.Enabled, true)()
 	defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		userID := 2
 		userURL := fmt.Sprintf("%sapi/v1/activitypub/user-id/%d", u, userID)
 

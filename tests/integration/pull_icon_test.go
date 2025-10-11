@@ -30,7 +30,7 @@ import (
 )
 
 func TestPullRequestIcons(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		repo, _, f := tests.CreateDeclarativeRepo(t, user, "pr-icons", []unit_model.Type{unit_model.TypeCode, unit_model.TypePullRequests}, nil, nil)
 		defer f()

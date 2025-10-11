@@ -250,7 +250,7 @@ func getExpectedFileResponseForRepofilesUpdate(commitID, filename, lastCommitSHA
 }
 
 func TestChangeRepoFiles(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 
@@ -414,7 +414,7 @@ func TestChangeRepoFiles(t *testing.T) {
 
 func TestChangeRepoFilesErrors(t *testing.T) {
 	// setup
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 

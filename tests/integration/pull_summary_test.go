@@ -14,7 +14,7 @@ import (
 )
 
 func TestPullSummaryCommits(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		testUser := "user2"
 		testRepo := "repo1"
 		branchOld := "master"

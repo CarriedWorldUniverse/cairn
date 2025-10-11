@@ -25,7 +25,7 @@ import (
 )
 
 func TestWebhookPayloadRef(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		w := unittest.AssertExistsAndLoadBean(t, &webhook_model.Webhook{ID: 1})
 		w.HookEvent = &webhook_module.HookEvent{
 			SendEverything: true,

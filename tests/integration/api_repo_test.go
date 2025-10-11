@@ -402,7 +402,7 @@ func TestAPIRepoMigrate(t *testing.T) {
 }
 
 func TestAPIRepoMigrateConflict(t *testing.T) {
-	onGiteaRun(t, testAPIRepoMigrateConflict)
+	onApplicationRun(t, testAPIRepoMigrateConflict)
 }
 
 func testAPIRepoMigrateConflict(t *testing.T, u *url.URL) {
@@ -485,7 +485,7 @@ func TestAPIOrgRepoCreate(t *testing.T) {
 }
 
 func TestAPIRepoCreateConflict(t *testing.T) {
-	onGiteaRun(t, testAPIRepoCreateConflict)
+	onApplicationRun(t, testAPIRepoCreateConflict)
 }
 
 func testAPIRepoCreateConflict(t *testing.T, u *url.URL) {

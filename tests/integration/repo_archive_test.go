@@ -46,7 +46,7 @@ func TestRepoDownloadArchive(t *testing.T) {
 }
 
 func TestRepoDownloadArchiveSubdir(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		defer test.MockVariableValue(&setting.EnableGzip, true)()
 		defer test.MockVariableValue(&web.GzipMinSize, 10)()
 		defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()

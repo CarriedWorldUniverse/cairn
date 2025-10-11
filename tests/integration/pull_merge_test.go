@@ -133,7 +133,7 @@ func retrieveHookTasks(t *testing.T, hookID int64, activateWebhook bool) []*webh
 }
 
 func TestPullMerge(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		hookTasks := retrieveHookTasks(t, 1, true)
 		hookTasksLenBefore := len(hookTasks)
 
@@ -153,7 +153,7 @@ func TestPullMerge(t *testing.T) {
 }
 
 func TestPullRebase(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		hookTasks := retrieveHookTasks(t, 1, true)
 		hookTasksLenBefore := len(hookTasks)
 
@@ -173,7 +173,7 @@ func TestPullRebase(t *testing.T) {
 }
 
 func TestPullRebaseMerge(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		hookTasks := retrieveHookTasks(t, 1, true)
 		hookTasksLenBefore := len(hookTasks)
 
@@ -193,7 +193,7 @@ func TestPullRebaseMerge(t *testing.T) {
 }
 
 func TestPullSquash(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		hookTasks := retrieveHookTasks(t, 1, true)
 		hookTasksLenBefore := len(hookTasks)
 
@@ -214,7 +214,7 @@ func TestPullSquash(t *testing.T) {
 }
 
 func TestPullCleanUpAfterMerge(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "feature/test", "README.md", "Hello, World (Edited - TestPullCleanUpAfterMerge)\n")
@@ -249,7 +249,7 @@ func TestPullCleanUpAfterMerge(t *testing.T) {
 }
 
 func TestCantMergeWorkInProgress(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFile(t, session, "user1", "repo1", "master", "README.md", "Hello, World (Edited)\n")
@@ -268,7 +268,7 @@ func TestCantMergeWorkInProgress(t *testing.T) {
 }
 
 func TestCantMergeConflict(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "conflict", "README.md", "Hello, World (Edited Once)\n")
@@ -338,7 +338,7 @@ func TestCantMergeConflict(t *testing.T) {
 }
 
 func TestCantMergeUnrelated(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "base", "README.md", "Hello, World (Edited Twice)\n")
@@ -433,7 +433,7 @@ func TestCantMergeUnrelated(t *testing.T) {
 }
 
 func TestFastForwardOnlyMerge(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "update", "README.md", "Hello, World 2\n")
@@ -474,7 +474,7 @@ func TestFastForwardOnlyMerge(t *testing.T) {
 }
 
 func TestCantFastForwardOnlyMergeDiverging(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "diverging", "README.md", "Hello, World diverged\n")
@@ -517,7 +517,7 @@ func TestCantFastForwardOnlyMergeDiverging(t *testing.T) {
 }
 
 func TestPullRetargetChildOnBranchDelete(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testEditFileToNewBranch(t, session, "user2", "repo1", "master", "base-pr", "README.md", "Hello, World\n(Edited - TestPullRetargetOnCleanup - base PR)\n")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
@@ -547,7 +547,7 @@ func TestPullRetargetChildOnBranchDelete(t *testing.T) {
 }
 
 func TestPullDontRetargetChildOnWrongRepo(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testEditFileToNewBranch(t, session, "user1", "repo1", "master", "base-pr", "README.md", "Hello, World\n(Edited - TestPullDontRetargetChildOnWrongRepo - base PR)\n")
@@ -577,7 +577,7 @@ func TestPullDontRetargetChildOnWrongRepo(t *testing.T) {
 }
 
 func TestPullMergeIndexerNotifier(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		// create a pull request
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
@@ -650,7 +650,7 @@ func testResetRepo(t *testing.T, repoPath, branch, commitID string) {
 }
 
 func TestPullMergeBranchProtect(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		admin := "user1"
 		owner := "user5"
 		notOwner := "user4"
@@ -925,7 +925,7 @@ func testPullAutoMergeAfterCommitStatusSucceed(t *testing.T, ctx APITestContext,
 }
 
 func TestPullAutoMergeAfterCommitStatusSucceed(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		for _, testCase := range []struct {
 			name         string
 			forkName     string
@@ -981,7 +981,7 @@ func TestPullAutoMergeAfterCommitStatusSucceed(t *testing.T) {
 }
 
 func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		// create a pull request
 		baseAPITestContext := NewAPITestContext(t, "user2", "repo1", auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
 
@@ -1106,7 +1106,7 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 }
 
 func TestPullDeleteBranchPerms(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		user2Session := loginUser(t, "user2")
 		user4Session := loginUser(t, "user4")
 		testRepoFork(t, user4Session, "user2", "repo1", "user4", "repo1")
@@ -1138,7 +1138,7 @@ func TestPullDeleteBranchPerms(t *testing.T) {
 
 // Test that rebasing only happens when its necessary.
 func TestRebaseWhenNecessary(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 

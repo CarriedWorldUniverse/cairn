@@ -224,7 +224,7 @@ func TestRepoCreateFormTrimSpace(t *testing.T) {
 }
 
 func TestRepoGenerateTemplating(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		input := `# $REPO_NAME
 	This is a Repo By $REPO_OWNER
 	ThisIsThe${REPO_NAME}InAnInlineWay`

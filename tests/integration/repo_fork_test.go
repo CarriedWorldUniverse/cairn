@@ -75,7 +75,7 @@ func testRepoForkLegacyRedirect(t *testing.T, session *TestSession, ownerName, r
 }
 
 func TestRepoFork(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user5 := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: "user5"})
 		session := loginUser(t, user5.Name)
 
@@ -210,7 +210,7 @@ func TestRepoFork(t *testing.T) {
 }
 
 func TestRepoForkToOrg(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 		org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: "org3"})
 
@@ -243,7 +243,7 @@ func TestRepoForkToOrg(t *testing.T) {
 func TestForkListPrivateRepo(t *testing.T) {
 	forkItemSelector := ".tw-flex.tw-items-center.tw-py-2"
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user5")
 		org23 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 23, Visibility: structs.VisibleTypePrivate})
 

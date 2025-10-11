@@ -40,7 +40,7 @@ import (
 )
 
 func TestAPIPushMirror(t *testing.T) {
-	onGiteaRun(t, testAPIPushMirror)
+	onApplicationRun(t, testAPIPushMirror)
 }
 
 func testAPIPushMirror(t *testing.T, u *url.URL) {
@@ -144,7 +144,7 @@ func testAPIPushMirror(t *testing.T, u *url.URL) {
 }
 
 func TestAPIPushMirrorBranchFilter(t *testing.T) {
-	onGiteaRun(t, testAPIPushMirrorBranchFilter)
+	onApplicationRun(t, testAPIPushMirrorBranchFilter)
 }
 
 func testAPIPushMirrorBranchFilter(t *testing.T, u *url.URL) {
@@ -302,7 +302,7 @@ func TestAPIPushMirrorSSH(t *testing.T) {
 		t.Skip("SSH executable not present")
 	}
 
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		defer test.MockVariableValue(&setting.SSH.RootPath, t.TempDir())()

@@ -35,7 +35,7 @@ import (
 )
 
 func TestWebQuotaEnforcementRepoMigrate(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -48,7 +48,7 @@ func TestWebQuotaEnforcementRepoMigrate(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoCreate(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -57,7 +57,7 @@ func TestWebQuotaEnforcementRepoCreate(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoFork(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -69,7 +69,7 @@ func TestWebQuotaEnforcementRepoFork(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementIssueAttachment(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -94,7 +94,7 @@ func TestWebQuotaEnforcementIssueAttachment(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementMirrorSync(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -115,7 +115,7 @@ func TestWebQuotaEnforcementMirrorSync(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoContentEditing(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -164,7 +164,7 @@ func TestWebQuotaEnforcementRepoContentEditing(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoBranches(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -227,7 +227,7 @@ func TestWebQuotaEnforcementRepoBranches(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoReleases(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -262,7 +262,7 @@ func TestWebQuotaEnforcementRepoReleases(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoPulls(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -300,7 +300,7 @@ func TestWebQuotaEnforcementRepoPulls(t *testing.T) {
 }
 
 func TestWebQuotaEnforcementRepoTransfer(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -366,7 +366,7 @@ func TestWebQuotaEnforcementRepoTransfer(t *testing.T) {
 }
 
 func TestGitQuotaEnforcement(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 
@@ -549,7 +549,7 @@ func TestGitQuotaEnforcement(t *testing.T) {
 }
 
 func TestQuotaConfigDefault(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		env := createQuotaWebEnv(t)
 		defer env.Cleanup()
 

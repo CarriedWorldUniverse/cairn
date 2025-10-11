@@ -77,25 +77,25 @@ func syncForkTest(t *testing.T, forkName, branchName string, webSync bool) {
 }
 
 func TestAPIRepoSyncForkDefault(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		syncForkTest(t, "SyncForkDefault", "master", false)
 	})
 }
 
 func TestAPIRepoSyncForkBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		syncForkTest(t, "SyncForkBranch", "master", false)
 	})
 }
 
 func TestWebRepoSyncForkBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		syncForkTest(t, "SyncForkBranch", "master", true)
 	})
 }
 
 func TestWebRepoSyncForkHomepage(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		baseOwner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: baseRepo.OwnerID})
 		baseOwnerSession := loginUser(t, baseOwner.Name)

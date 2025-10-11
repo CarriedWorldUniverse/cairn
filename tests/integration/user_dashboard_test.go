@@ -45,7 +45,7 @@ func testUserDashboardFeedType(t *testing.T, page *HTMLDoc, isEmpty bool) {
 }
 
 func TestDashboardTitleRendering(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
 		sess := loginUser(t, user4.Name)
 
@@ -91,7 +91,7 @@ func TestDashboardTitleRendering(t *testing.T) {
 }
 
 func TestDashboardActionEscaping(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
 		sess := loginUser(t, user4.Name)
 
@@ -126,7 +126,7 @@ func TestDashboardActionEscaping(t *testing.T) {
 }
 
 func TestDashboardReviewWorkflows(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
 		sess := loginUser(t, user4.Name)
 

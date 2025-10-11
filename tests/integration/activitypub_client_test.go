@@ -24,7 +24,7 @@ func TestActivityPubClientBodySize(t *testing.T) {
 	defer test.MockVariableValue(&setting.Federation.Enabled, true)()
 	defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		url := u.JoinPath("/api/v1/nodeinfo").String()
 

@@ -15,7 +15,7 @@ import (
 )
 
 func TestNewOrganizationForm(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 		locale := translation.NewLocale("en-US")
 

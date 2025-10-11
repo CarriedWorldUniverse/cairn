@@ -242,7 +242,7 @@ func TestCompareBranches(t *testing.T) {
 }
 
 func TestCompareWithPRsDisabled(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")
 		testCreateBranch(t, session, "user1", "repo1", "branch/master", "recent-push", http.StatusSeeOther)
@@ -303,7 +303,7 @@ func TestCompareWithPRsDisabled(t *testing.T) {
 }
 
 func TestCompareCrossRepo(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1-copy")
 		testCreateBranch(t, session, "user1", "repo1-copy", "branch/master", "recent-push", http.StatusSeeOther)
@@ -332,7 +332,7 @@ func TestCompareCrossRepo(t *testing.T) {
 }
 
 func TestCompareCodeExpand(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 
 		// Create a new repository, with a file that has many lines
@@ -405,7 +405,7 @@ func TestCompareCodeExpand(t *testing.T) {
 }
 
 func TestCompareSignedIn(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		// Setup the test with a connected user
 		session := loginUser(t, "user1")
 		testRepoFork(t, session, "user2", "repo1", "user1", "repo1")

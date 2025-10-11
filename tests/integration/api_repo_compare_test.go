@@ -27,7 +27,7 @@ func TestAPICompareCommits(t *testing.T) {
 }
 
 func testAPICompareCommits(t *testing.T, objectFormat git.ObjectFormat) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		newBranchAndFile := func(ctx APITestContext, user *user_model.User, branch, filename string) func(*testing.T) {
 			return func(t *testing.T) {
 				doAPICreateFile(ctx, filename, &api.CreateFileOptions{

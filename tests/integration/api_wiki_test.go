@@ -432,7 +432,7 @@ func TestAPIListPageRevisions(t *testing.T) {
 }
 
 func TestAPIWikiNonMasterBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		repo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
 			WikiBranch: optional.Some("main"),

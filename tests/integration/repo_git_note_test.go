@@ -11,7 +11,7 @@ import (
 )
 
 func TestRepoModifyGitNotes(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		session := loginUser(t, "user2")
 
 		req := NewRequest(t, "GET", "/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d")
@@ -46,7 +46,7 @@ func TestRepoModifyGitNotes(t *testing.T) {
 }
 
 func TestRepoGitNotesButtonsVisible(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		t.Run("With Permission", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 

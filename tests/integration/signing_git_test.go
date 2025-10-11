@@ -35,7 +35,7 @@ func TestInstanceSigning(t *testing.T) {
 		require.NoError(t, git.InitFull(context.Background()))
 	})
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Repository.Signing.SigningName, "UwU")()
 		defer test.MockVariableValue(&setting.Repository.Signing.SigningEmail, "fox@example.com")()
 		defer test.MockProtect(&setting.Repository.Signing.InitialCommit)()

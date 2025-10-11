@@ -20,7 +20,7 @@ import (
 )
 
 func TestOrgCounts(t *testing.T) {
-	onGiteaRun(t, testOrgCounts)
+	onApplicationRun(t, testOrgCounts)
 }
 
 func testOrgCounts(t *testing.T, u *url.URL) {
