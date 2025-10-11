@@ -12,7 +12,7 @@ import (
 )
 
 func TestRepoLanguages(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 
 		// Request editor page

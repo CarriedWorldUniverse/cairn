@@ -84,7 +84,7 @@ func TestPushMirrorRedactCredential(t *testing.T) {
 }
 
 func TestMirrorPush(t *testing.T) {
-	onGiteaRun(t, testMirrorPush)
+	onApplicationRun(t, testMirrorPush)
 }
 
 func testMirrorPush(t *testing.T, u *url.URL) {
@@ -227,7 +227,7 @@ func TestSSHPushMirror(t *testing.T) {
 		t.Skip("SSH executable not present")
 	}
 
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		defer test.MockVariableValue(&setting.SSH.RootPath, t.TempDir())()
@@ -389,7 +389,7 @@ func TestSSHPushMirror(t *testing.T) {
 }
 
 func TestPushMirrorBranchFilterWebUI(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		require.NoError(t, migrations.Init())
@@ -490,7 +490,7 @@ func TestPushMirrorBranchFilterWebUI(t *testing.T) {
 }
 
 func TestPushMirrorBranchFilterIntegration(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		require.NoError(t, migrations.Init())
@@ -579,7 +579,7 @@ func TestPushMirrorBranchFilterIntegration(t *testing.T) {
 }
 
 func TestPushMirrorSettings(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		require.NoError(t, migrations.Init())
@@ -658,7 +658,7 @@ func TestPushMirrorSettings(t *testing.T) {
 }
 
 func TestPushMirrorBranchFilterSyncOperations(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		require.NoError(t, migrations.Init())
@@ -892,7 +892,7 @@ func TestPushMirrorBranchFilterSyncOperations(t *testing.T) {
 }
 
 func TestPushMirrorWebUIToAPIIntegration(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.Mirror.Enabled, true)()
 		require.NoError(t, migrations.Init())

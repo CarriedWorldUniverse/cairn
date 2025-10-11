@@ -28,7 +28,7 @@ import (
 )
 
 func TestDumpRestore(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		AllowLocalNetworks := setting.Migrations.AllowLocalNetworks
 		setting.Migrations.AllowLocalNetworks = true
 		AppVer := setting.AppVer

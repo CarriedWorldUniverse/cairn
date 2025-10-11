@@ -31,7 +31,7 @@ import (
 )
 
 func TestBadges(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		prep := func(t *testing.T) (*repo_model.Repository, func()) {
 			owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 

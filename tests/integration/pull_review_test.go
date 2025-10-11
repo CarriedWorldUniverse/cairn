@@ -72,7 +72,7 @@ func loadComment(t *testing.T, commentID string) *issues_model.Comment {
 }
 
 func TestPullView_SelfReviewNotification(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		user1Session := loginUser(t, "user1")
 		user2Session := loginUser(t, "user2")
 
@@ -349,7 +349,7 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 }
 
 func TestPullView_CodeOwner(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "test_codeowner", nil, nil, []*files_service.ChangeRepoFile{
@@ -448,7 +448,7 @@ func TestPullView_CodeOwner(t *testing.T) {
 }
 
 func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		user1Session := loginUser(t, "user1")
 		user2Session := loginUser(t, "user2")
 
@@ -582,7 +582,7 @@ func TestPullReview_OldLatestCommitId(t *testing.T) {
 }
 
 func TestPullReviewInArchivedRepo(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user2")
 
 		// Open a PR
@@ -821,7 +821,7 @@ func updateFileInBranch(user *user_model.User, repo *repo_model.Repository, tree
 }
 
 func TestPullRequestStaleReview(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user2.Name)
 

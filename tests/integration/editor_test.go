@@ -29,7 +29,7 @@ import (
 )
 
 func TestCreateFileOnProtectedBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 
 		csrf := GetCSRF(t, session, "/user2/repo1/settings/branches")
@@ -150,14 +150,14 @@ func testEditFileToNewBranch(t *testing.T, session *TestSession, user, repo, bra
 }
 
 func TestEditFile(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 		testEditFile(t, session, "user2", "repo1", "master", "README.md", "Hello, World (Edited)\n")
 	})
 }
 
 func TestEditFileToNewBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 		testEditFileToNewBranch(t, session, "user2", "repo1", "master", "feature/test", "README.md", "Hello, World (Edited)\n")
 	})
@@ -177,7 +177,7 @@ func TestEditorAddTranslation(t *testing.T) {
 }
 
 func TestCommitMail(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		// Require that the user has KeepEmailPrivate enabled, because it needs
 		// to be tested that even with this setting enabled, it will use the

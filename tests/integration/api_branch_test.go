@@ -108,7 +108,7 @@ func TestAPIGetBranch(t *testing.T) {
 }
 
 func TestAPICreateBranch(t *testing.T) {
-	onGiteaRun(t, testAPICreateBranches)
+	onApplicationRun(t, testAPICreateBranches)
 }
 
 func testAPICreateBranches(t *testing.T, giteaURL *url.URL) {
@@ -189,7 +189,7 @@ func testAPICreateBranch(t testing.TB, session *TestSession, user, repo, oldBran
 }
 
 func TestAPIUpdateBranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, _ *url.URL) {
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
 		t.Run("UpdateBranchWithEmptyRepo", func(t *testing.T) {
 			testAPIUpdateBranch(t, "user10", "repo6", "master", "test", http.StatusNotFound)
 		})
@@ -265,7 +265,7 @@ func TestAPIBranchProtection(t *testing.T) {
 }
 
 func TestAPICreateBranchWithSyncBranches(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		unittest.AssertCount(t, &git_model.Branch{RepoID: 1}, 4)
 
 		// make a broke repository with no branch on database

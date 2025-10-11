@@ -28,7 +28,7 @@ import (
 )
 
 func TestRepoActivity(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := loginUser(t, "user1")
 
 		// Create PRs (1 merged & 2 proposed)

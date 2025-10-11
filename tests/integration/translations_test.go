@@ -44,7 +44,7 @@ func TestMissingTranslationHandling(t *testing.T) {
 
 // TestDataSizeTranslation is a test for usage of TrSize in file size display
 func TestDataSizeTranslation(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		testUser := "user2"
 		testRepoName := "data_size_test"
 		noDigits := regexp.MustCompile("[0-9]+")

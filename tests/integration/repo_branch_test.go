@@ -46,7 +46,7 @@ func testCreateBranch(t testing.TB, session *TestSession, user, repo, oldRefSubU
 }
 
 func TestCreateBranch(t *testing.T) {
-	onGiteaRun(t, testCreateBranches)
+	onApplicationRun(t, testCreateBranches)
 }
 
 func testCreateBranches(t *testing.T, giteaURL *url.URL) {
@@ -161,7 +161,7 @@ func TestCreateBranchInvalidCSRF(t *testing.T) {
 }
 
 func TestDatabaseMissingABranch(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, URL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, URL *url.URL) {
 		session := loginUser(t, "user2")
 
 		// Create two branches
@@ -206,7 +206,7 @@ func TestDatabaseMissingABranch(t *testing.T) {
 }
 
 func TestCreateBranchButtonVisibility(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user1")
 
 		t.Run("Check create branch button", func(t *testing.T) {

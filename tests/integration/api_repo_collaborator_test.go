@@ -19,7 +19,7 @@ import (
 )
 
 func TestAPIRepoCollaboratorPermission(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		repo2 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
 		repo2Owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo2.OwnerID})
 

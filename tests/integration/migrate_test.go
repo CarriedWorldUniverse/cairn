@@ -59,7 +59,7 @@ func TestMigrateLocalPath(t *testing.T) {
 }
 
 func TestMigrate(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.AppVer, "1.16.0")()
 		require.NoError(t, migrations.Init())
@@ -115,7 +115,7 @@ func TestMigrate(t *testing.T) {
 }
 
 func TestMigrateWithWiki(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.AppVer, "1.16.0")()
 		require.NoError(t, migrations.Init())
@@ -174,7 +174,7 @@ func TestMigrateWithWiki(t *testing.T) {
 }
 
 func TestMigrateWithReleases(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		defer test.MockVariableValue(&setting.AppVer, "1.16.0")()
 		require.NoError(t, migrations.Init())

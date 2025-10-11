@@ -13,7 +13,7 @@ import (
 )
 
 func TestIssueSubscribe(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, giteaURL *url.URL) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		session := emptyTestSession(t)
 		testIssueSubscribe(t, *session, true)
 	})

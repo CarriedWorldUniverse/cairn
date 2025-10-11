@@ -56,7 +56,7 @@ func getExpectedContentsResponseForContents(ref, refType, lastCommitSHA string) 
 }
 
 func TestAPIGetContents(t *testing.T) {
-	onGiteaRun(t, testAPIGetContents)
+	onApplicationRun(t, testAPIGetContents)
 }
 
 func testAPIGetContents(t *testing.T, u *url.URL) {
@@ -171,7 +171,7 @@ func testAPIGetContents(t *testing.T, u *url.URL) {
 }
 
 func TestAPIGetContentsRefFormats(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		file := "README.md"
 		sha := "65f1bf27bc3bf70f64657658635e66094edbcb4d"
 		content := "# repo1\n\nDescription for repo1"

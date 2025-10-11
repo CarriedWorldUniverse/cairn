@@ -26,7 +26,7 @@ import (
 )
 
 func TestIssueTitles(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		repo, _, f := tests.CreateDeclarativeRepo(t, user, "issue-titles", nil, nil, nil)
 		defer f()

@@ -37,7 +37,7 @@ func TestActivityPubPersonInboxNoteToDistant(t *testing.T) {
 	federatedSrv := mock.DistantServer(t)
 	defer federatedSrv.Close()
 
-	onGiteaRun(t, func(t *testing.T, localUrl *url.URL) {
+	onApplicationRun(t, func(t *testing.T, localUrl *url.URL) {
 		defer test.MockVariableValue(&setting.AppURL, localUrl.String())()
 
 		distantURL := federatedSrv.URL

@@ -20,7 +20,7 @@ import (
 )
 
 func TestCitation(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 
 		session := loginUser(t, user.LoginName)

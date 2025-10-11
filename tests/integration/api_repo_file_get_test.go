@@ -17,7 +17,7 @@ import (
 )
 
 func TestAPIGetRawFileOrLFS(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		t.Run("Normal raw file", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 

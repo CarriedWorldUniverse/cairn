@@ -31,7 +31,7 @@ import (
 )
 
 func TestPackageCargo(t *testing.T) {
-	onGiteaRun(t, testPackageCargo)
+	onApplicationRun(t, testPackageCargo)
 }
 
 func testPackageCargo(t *testing.T, _ *neturl.URL) {
@@ -388,7 +388,7 @@ func testPackageCargo(t *testing.T, _ *neturl.URL) {
 }
 
 func TestRebuildCargo(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *neturl.URL) {
+	onApplicationRun(t, func(t *testing.T, u *neturl.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user.Name)
 		unittest.AssertExistsIf(t, false, &repo_model.Repository{OwnerID: user.ID, Name: cargo_service.IndexRepositoryName})

@@ -722,7 +722,7 @@ func TestViewCommitSignature(t *testing.T) {
 	fromBranch := "master"
 	toBranch := "branch-signed"
 
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		// Use a new GNUPGPHOME to avoid messing with the existing GPG keyring.
 		tmpDir := t.TempDir()
 		require.NoError(t, os.Chmod(tmpDir, 0o700))
@@ -931,7 +931,7 @@ func TestRepoHomeViewRedirect(t *testing.T) {
 }
 
 func TestRepoFilesList(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
 		// create the repo
@@ -1492,7 +1492,7 @@ func TestRepoIssueFilterLinks(t *testing.T) {
 }
 
 func TestRepoSubmoduleView(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
 		defer f()

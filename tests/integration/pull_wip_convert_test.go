@@ -14,7 +14,7 @@ import (
 )
 
 func TestPullWIPConvertSidebar(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		testRepo := "repo1"
 		branchOld := "master"
 		branchNew := "wip"

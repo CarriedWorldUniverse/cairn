@@ -44,7 +44,7 @@ func doAddChangesToCheckout(dstPath, filename string) func(*testing.T) {
 }
 
 func TestPushDeployKeyOnEmptyRepo(t *testing.T) {
-	onGiteaRun(t, testPushDeployKeyOnEmptyRepo)
+	onApplicationRun(t, testPushDeployKeyOnEmptyRepo)
 }
 
 func testPushDeployKeyOnEmptyRepo(t *testing.T, u *url.URL) {
@@ -88,7 +88,7 @@ func testPushDeployKeyOnEmptyRepo(t *testing.T, u *url.URL) {
 }
 
 func TestKeyOnlyOneType(t *testing.T) {
-	onGiteaRun(t, testKeyOnlyOneType)
+	onApplicationRun(t, testKeyOnlyOneType)
 }
 
 func testKeyOnlyOneType(t *testing.T, u *url.URL) {

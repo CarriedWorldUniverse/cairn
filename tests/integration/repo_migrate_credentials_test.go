@@ -21,7 +21,7 @@ import (
 )
 
 func TestRepoMigrateWithCredentials(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		defer test.MockVariableValue(&setting.Migrations.AllowLocalNetworks, true)()
 		require.NoError(t, migrations.Init())
 

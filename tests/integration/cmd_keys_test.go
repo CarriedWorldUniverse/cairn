@@ -17,7 +17,7 @@ import (
 )
 
 func Test_CmdKeys(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		tests := []struct {
 			name           string
 			args           []string

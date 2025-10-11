@@ -34,7 +34,7 @@ func assertFileEqual(t *testing.T, p string, content []byte) {
 }
 
 func TestRepoCloneWiki(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		dstPath := t.TempDir()
 
 		r := fmt.Sprintf("%suser2/repo1.wiki.git", u.String())

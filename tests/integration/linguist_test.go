@@ -24,7 +24,7 @@ import (
 )
 
 func TestLinguistSupport(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		/******************
 		 ** Preparations **
 		 ******************/

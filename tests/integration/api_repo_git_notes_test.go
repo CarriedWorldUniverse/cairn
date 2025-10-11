@@ -19,7 +19,7 @@ import (
 )
 
 func TestAPIReposGetGitNotes(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		// Login as User2.
 		session := loginUser(t, user.Name)
@@ -48,7 +48,7 @@ func TestAPIReposGetGitNotes(t *testing.T) {
 }
 
 func TestAPIReposSetGitNotes(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
 
@@ -76,7 +76,7 @@ func TestAPIReposSetGitNotes(t *testing.T) {
 }
 
 func TestAPIReposDeleteGitNotes(t *testing.T) {
-	onGiteaRun(t, func(*testing.T, *url.URL) {
+	onApplicationRun(t, func(*testing.T, *url.URL) {
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
 

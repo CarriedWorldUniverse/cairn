@@ -24,7 +24,7 @@ import (
 )
 
 func TestGitSmartHTTP(t *testing.T) {
-	onGiteaRun(t, testGitSmartHTTP)
+	onApplicationRun(t, testGitSmartHTTP)
 }
 
 func testGitSmartHTTP(t *testing.T, u *url.URL) {

@@ -36,7 +36,7 @@ func TestRenderFileSVGIsInImgTag(t *testing.T) {
 }
 
 func TestAmbiguousCharacterDetection(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user2.Name)
 
@@ -132,7 +132,7 @@ func TestAmbiguousCharacterDetection(t *testing.T) {
 }
 
 func TestCommitListActions(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user2.Name)
 		repo, commitID, f := tests.CreateDeclarativeRepo(t, user2, "",

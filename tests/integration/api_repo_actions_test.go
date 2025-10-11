@@ -48,7 +48,7 @@ func TestActionsAPISearchActionJobs_RepoRunner(t *testing.T) {
 }
 
 func TestActionsAPIWorkflowDispatchReturnInfo(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		workflowName := "dispatch.yml"
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		token := getUserToken(t, user2.LowerName, auth_model.AccessTokenScopeWriteRepository)

@@ -25,7 +25,7 @@ import (
 )
 
 func TestActionsUserGit(t *testing.T) {
-	onGiteaRun(t, testActionsUserGit)
+	onApplicationRun(t, testActionsUserGit)
 }
 
 func NewActionsUserTestContext(t *testing.T, username, reponame string) APITestContext {

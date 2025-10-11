@@ -582,7 +582,7 @@ func TestSignInOAuthCallbackWithoutPKCEWhenUnsupported(t *testing.T) {
 }
 
 func TestSignInOAuthCallbackPKCE(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		// Setup authentication source
 		sourceName := "oidc"
 		authSource := addAuthSource(t, authSourcePayloadOpenIDConnect(sourceName, u.String()))

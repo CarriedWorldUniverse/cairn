@@ -49,11 +49,11 @@ const (
 )
 
 func TestGit(t *testing.T) {
-	onGiteaRun(t, testGit)
+	onApplicationRun(t, testGit)
 }
 
 func TestActionsTokenAuth(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
 		task.GenerateToken()
 		actions_model.UpdateTask(db.DefaultContext, task)
@@ -1098,7 +1098,7 @@ func doCreateAgitFlowPull(dstPath string, ctx *APITestContext, headBranch string
 }
 
 func TestDataAsync_Issue29101(t *testing.T) {
-	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 

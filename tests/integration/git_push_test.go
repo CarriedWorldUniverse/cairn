@@ -38,7 +38,7 @@ func forEachObjectFormat(t *testing.T, f func(t *testing.T, objectFormat git.Obj
 }
 
 func TestGitPush(t *testing.T) {
-	onGiteaRun(t, testGitPush)
+	onApplicationRun(t, testGitPush)
 }
 
 func testGitPush(t *testing.T, u *url.URL) {
@@ -205,7 +205,7 @@ func runTestGitPush(t *testing.T, u *url.URL, objectFormat git.ObjectFormat, git
 }
 
 func TestOptionsGitPush(t *testing.T) {
-	onGiteaRun(t, testOptionsGitPush)
+	onApplicationRun(t, testOptionsGitPush)
 }
 
 func testOptionsGitPush(t *testing.T, u *url.URL) {
