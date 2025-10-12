@@ -649,11 +649,11 @@ img.ui.avatar,
 }
 
 .text.red {
-  color: var(--color-red) !important;
+  color: var(--color-thin-red, var(--color-red)) !important;
 }
 
 .text.orange {
-  color: var(--color-orange) !important;
+  color: var(--color-thin-orange, var(--color-orange)) !important;
 }
 
 .text.yellow {
@@ -661,7 +661,7 @@ img.ui.avatar,
 }
 
 .text.green {
-  color: var(--color-green) !important;
+  color: var(--color-thin-green, var(--color-green)) !important;
 }
 
 .text.teal {
@@ -673,7 +673,7 @@ img.ui.avatar,
 }
 
 .text.purple {
-  color: var(--color-purple) !important;
+  color: var(--color-thin-purple, var(--color-purple)) !important;
 }
 
 .text.brown {
@@ -999,20 +999,6 @@ overflow-menu .ui.label {
 
 .archived-icon {
   color: var(--color-secondary-dark-2) !important;
-}
-
-/* colors of colorful icons */
-svg.text.green,
-.text.green svg {
-  color: var(--color-icon-green) !important;
-}
-svg.text.red,
-.text.red svg {
-  color: var(--color-icon-red) !important;
-}
-svg.text.purple,
-.text.purple svg {
-  color: var(--color-icon-purple) !important;
 }
 
 .oauth2-authorize-application-box {
