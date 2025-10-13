@@ -17,8 +17,8 @@ Template Attributes:
 	<markdown-toolbar>
 		{{if .MarkdownPreviewUrl}}
 			<div class="switch">
-				<a href="#" class="active item" data-tab-for="markdown-writer">{{ctx.Locale.Tr "write"}}</a>
-				<a href="#" class="item" data-tab-for="markdown-previewer" data-preview-url="{{.MarkdownPreviewUrl}}" data-preview-context="{{.MarkdownPreviewContext}}">{{ctx.Locale.Tr "preview"}}</a>
+				<button type="button" class="active item" data-tab-for="markdown-writer">{{ctx.Locale.Tr "write"}}</button>
+				<button type="button" class="item" data-tab-for="markdown-previewer" data-preview-url="{{.MarkdownPreviewUrl}}" data-preview-context="{{.MarkdownPreviewContext}}">{{ctx.Locale.Tr "preview"}}</button>
 		</div>
 		{{end}}
 		<div class="markdown-toolbar-group">
