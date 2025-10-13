@@ -29,8 +29,8 @@
   min-width: 100px;
 }
 
-.admin code,
-.admin pre {
+:is(.admin, #detail-modal) code,
+:is(.admin, #detail-modal) pre {
   white-space: pre-wrap;
   word-wrap: break-word;
 }

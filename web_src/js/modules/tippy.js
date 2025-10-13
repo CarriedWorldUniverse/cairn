@@ -81,6 +81,7 @@ function attachTooltip(target, content = null) {
     hideOnClick,
     placement: target.getAttribute('data-tooltip-placement') || 'top-start',
     followCursor: target.getAttribute('data-tooltip-follow-cursor') || false,
+    ...(target.getAttribute('data-tooltip-appendto') === 'parent' ? {appendTo: 'parent'} : {}),
     ...(target.getAttribute('data-tooltip-interactive') === 'true' ? {interactive: true, aria: {content: 'describedby', expanded: false}} : {}),
   };
 

@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import {showModal} from '../../modules/modal.ts';
 
 function isExclusiveScopeName(name) {
   return /.*[^/]\/[^/].*/.test(name);
@@ -27,16 +28,14 @@ export function initCompLabelEdit(selector) {
   // Create label
   $('.new-label.button').on('click', () => {
     updateExclusiveLabelEdit('.new-label');
-    $('.new-label.modal').modal({
-      onApprove() {
-        const form = document.querySelector('.new-label.form');
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return false;
-        }
-        document.querySelector('.new-label.form').requestSubmit();
-      },
-    }).modal('show');
+    showModal('new-label-modal', () => {
+      const form = document.querySelector('.new-label.form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+      }
+      document.querySelector('.new-label.form').requestSubmit();
+    });
     return false;
   });
 
@@ -64,16 +63,14 @@ export function initCompLabelEdit(selector) {
     colorInput.value = this.getAttribute('data-color');
     colorInput.dispatchEvent(new Event('input', {bubbles: true}));
 
-    $('.edit-label.modal').modal({
-      onApprove() {
-        const form = document.querySelector('.edit-label.form');
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return false;
-        }
-        document.querySelector('.edit-label.form').requestSubmit();
-      },
-    }).modal('show');
+    showModal('edit-label-modal', () => {
+      const form = document.querySelector('.edit-label.form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+      }
+      document.querySelector('.edit-label.form').requestSubmit();
+    });
     return false;
   });
 

@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import {showModal} from '../../modules/modal.ts';
 
 export function initAdminEmails() {
   function linkEmailAction(e) {
@@ -7,7 +8,7 @@ export function initAdminEmails() {
     $('#form-email').val($this.data('email'));
     $('#form-primary').val($this.data('primary'));
     $('#form-activate').val($this.data('activate'));
-    $('#change-email-modal').modal('show');
+    showModal('change-email-modal', undefined);
     e.preventDefault();
   }
   $('.link-email-action').on('click', linkEmailAction);
