@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 
 	_ "image/gif"  // for processing gif images
 	_ "image/jpeg" // for processing jpeg images
@@ -17,6 +18,7 @@ import (
 	"forgejo.org/modules/avatar/identicon"
 	"forgejo.org/modules/setting"
 
+	exif_terminator "code.superseriousbusiness.org/exif-terminator"
 	"golang.org/x/image/draw"
 
 	_ "golang.org/x/image/webp" // for processing webp images
@@ -66,15 +68,29 @@ func processAvatarImage(data []byte, maxOriginSize int64) ([]byte, error) {
 		return nil, fmt.Errorf("image height is too large: %d > %d", imgCfg.Height, setting.Avatar.MaxHeight)
 	}
 
+	var cleanedBytes []byte
+	if imgType != "gif" { // "gif" is the only imgType supported above, but not supported by exif_terminator
+		cleanedData, err := exif_terminator.Terminate(bytes.NewReader(data), imgType)
+		if err != nil {
+			return nil, fmt.Errorf("error cleaning exif data: %w", err)
+		}
+		cleanedBytes, err = io.ReadAll(cleanedData)
+		if err != nil {
+			return nil, fmt.Errorf("error reading cleaned data: %w", err)
+		}
+	} else { // gif
+		cleanedBytes = data
+	}
+
 	// If the origin is small enough, just use it, then APNG could be supported,
 	// otherwise, if the image is processed later, APNG loses animation.
 	// And one more thing, webp is not fully supported, for animated webp, image.DecodeConfig works but Decode fails.
 	// So for animated webp, if the uploaded file is smaller than maxOriginSize, it will be used, if it's larger, there will be an error.
 	if len(data) < int(maxOriginSize) {
-		return data, nil
+		return cleanedBytes, nil
 	}
 
-	img, _, err := image.Decode(bytes.NewReader(data))
+	img, _, err := image.Decode(bytes.NewReader(cleanedBytes))
 	if err != nil {
 		return nil, fmt.Errorf("image.Decode: %w", err)
 	}
@@ -94,7 +110,7 @@ func processAvatarImage(data []byte, maxOriginSize int64) ([]byte, error) {
 
 	// usually the png compression is not good enough, use the original image (no cropping/resizing) if the origin is smaller
 	if len(data) <= len(resized) {
-		return data, nil
+		return cleanedBytes, nil
 	}
 
 	return resized, nil

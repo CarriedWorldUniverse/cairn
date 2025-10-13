@@ -11,7 +11,10 @@ import (
 	"testing"
 
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 
+	jpegstructure "code.superseriousbusiness.org/go-jpeg-image-structure/v2"
+	"github.com/dsoprea/go-exif/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +33,8 @@ func Test_RandomImage(t *testing.T) {
 }
 
 func Test_ProcessAvatarPNG(t *testing.T) {
-	setting.Avatar.MaxWidth = 4096
-	setting.Avatar.MaxHeight = 4096
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 4096)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 4096)()
 
 	data, err := os.ReadFile("testdata/avatar.png")
 	require.NoError(t, err)
@@ -41,8 +44,8 @@ func Test_ProcessAvatarPNG(t *testing.T) {
 }
 
 func Test_ProcessAvatarJPEG(t *testing.T) {
-	setting.Avatar.MaxWidth = 4096
-	setting.Avatar.MaxHeight = 4096
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 4096)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 4096)()
 
 	data, err := os.ReadFile("testdata/avatar.jpeg")
 	require.NoError(t, err)
@@ -51,17 +54,28 @@ func Test_ProcessAvatarJPEG(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func Test_ProcessAvatarGIF(t *testing.T) {
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 4096)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 4096)()
+
+	data, err := os.ReadFile("testdata/avatar.gif")
+	require.NoError(t, err)
+
+	_, err = processAvatarImage(data, 262144)
+	require.NoError(t, err)
+}
+
 func Test_ProcessAvatarInvalidData(t *testing.T) {
-	setting.Avatar.MaxWidth = 5
-	setting.Avatar.MaxHeight = 5
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 5)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 5)()
 
 	_, err := processAvatarImage([]byte{}, 12800)
 	assert.EqualError(t, err, "image.DecodeConfig: image: unknown format")
 }
 
 func Test_ProcessAvatarInvalidImageSize(t *testing.T) {
-	setting.Avatar.MaxWidth = 5
-	setting.Avatar.MaxHeight = 5
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 5)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 5)()
 
 	data, err := os.ReadFile("testdata/avatar.png")
 	require.NoError(t, err)
@@ -71,8 +85,8 @@ func Test_ProcessAvatarInvalidImageSize(t *testing.T) {
 }
 
 func Test_ProcessAvatarImage(t *testing.T) {
-	setting.Avatar.MaxWidth = 4096
-	setting.Avatar.MaxHeight = 4096
+	defer test.MockVariableValue(&setting.Avatar.MaxWidth, 4096)()
+	defer test.MockVariableValue(&setting.Avatar.MaxHeight, 4096)()
 	scaledSize := DefaultAvatarSize * setting.Avatar.RenderedSizeFactor
 
 	newImgData := func(size int, optHeight ...int) []byte {
@@ -134,4 +148,41 @@ func Test_ProcessAvatarImage(t *testing.T) {
 	origin = newImgData(10)
 	_, err = processAvatarImage(origin, 262144)
 	require.ErrorContains(t, err, "image width is too large: 10 > 5")
+}
+
+func safeExifJpeg(t *testing.T, jpeg []byte) {
+	t.Helper()
+
+	parser := jpegstructure.NewJpegMediaParser()
+	mediaContext, err := parser.ParseBytes(jpeg)
+	require.NoError(t, err)
+
+	sl := mediaContext.(*jpegstructure.SegmentList)
+
+	rootIfd, _, err := sl.Exif()
+	require.NoError(t, err)
+	err = rootIfd.EnumerateTagsRecursively(func(ifd *exif.Ifd, ite *exif.IfdTagEntry) error {
+		assert.Equal(t, "Orientation", ite.TagName(), "only Orientation EXIF tag expected")
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+func Test_ProcessAvatarExif(t *testing.T) {
+	t.Run("greater than max origin size", func(t *testing.T) {
+		data, err := os.ReadFile("testdata/exif.jpg")
+		require.NoError(t, err)
+
+		processedData, err := processAvatarImage(data, 12800)
+		require.NoError(t, err)
+		safeExifJpeg(t, processedData)
+	})
+	t.Run("smaller than max origin size", func(t *testing.T) {
+		data, err := os.ReadFile("testdata/exif.jpg")
+		require.NoError(t, err)
+
+		processedData, err := processAvatarImage(data, 128000)
+		require.NoError(t, err)
+		safeExifJpeg(t, processedData)
+	})
 }
