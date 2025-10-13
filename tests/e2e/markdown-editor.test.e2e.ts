@@ -438,7 +438,7 @@ test('Combo Markdown: preview mode switch', async ({page}) => {
   await textarea.fill('**Content** :100: _100_');
 
   // Switch to preview mode
-  await page.locator('a[data-tab-for="markdown-previewer"]').click();
+  await page.locator('[data-tab-for="markdown-previewer"]').click();
 
   // Verify that the related UI elements were switched correctly
   await expect(toolbarItem).toBeHidden();
@@ -450,7 +450,7 @@ test('Combo Markdown: preview mode switch', async ({page}) => {
   await expect(page.locator('[data-tab-panel="markdown-previewer"] .emoji[data-alias="100"]')).toBeVisible();
 
   // Switch back to edit mode
-  await page.locator('a[data-tab-for="markdown-writer"]').click();
+  await page.locator('[data-tab-for="markdown-writer"]').click();
 
   // Verify that the related UI elements were switched back correctly
   await expect(toolbarItem).toBeVisible();

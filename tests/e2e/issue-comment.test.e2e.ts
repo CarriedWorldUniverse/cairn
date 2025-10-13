@@ -61,7 +61,7 @@ test('Always focus edit tab first on edit', async ({page}) => {
   // Switch to preview tab and save
   await page.click('#issue-1 .comment-container .context-menu');
   await page.click('#issue-1 .comment-container .menu>.edit-content');
-  await page.locator('#issue-1 .comment-container a[data-tab-for=markdown-previewer]').click();
+  await page.locator('#issue-1 .comment-container [data-tab-for=markdown-previewer]').click();
   await page.click('#issue-1 .comment-container .save');
 
   await page.waitForLoadState();
@@ -69,8 +69,8 @@ test('Always focus edit tab first on edit', async ({page}) => {
   // Edit again and assert that edit tab should be active (and not preview tab)
   await page.click('#issue-1 .comment-container .context-menu');
   await page.click('#issue-1 .comment-container .menu>.edit-content');
-  const editTab = page.locator('#issue-1 .comment-container a[data-tab-for=markdown-writer]');
-  const previewTab = page.locator('#issue-1 .comment-container a[data-tab-for=markdown-previewer]');
+  const editTab = page.locator('#issue-1 .comment-container [data-tab-for=markdown-writer]');
+  const previewTab = page.locator('#issue-1 .comment-container [data-tab-for=markdown-previewer]');
 
   await expect(editTab).toHaveClass(/active/);
   await expect(previewTab).not.toHaveClass(/active/);
