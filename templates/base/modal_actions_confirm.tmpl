@@ -22,7 +22,7 @@ The ".ok.button" and ".cancel.button" selectors are also used by Fomantic Modal 
 		{{if .ModalButtonCancelText}}{{$textNegitive = .ModalButtonCancelText}}{{end}}
 		{{if .ModalButtonOkText}}{{$textPositive = .ModalButtonOkText}}{{end}}
 
-		<button class="ui cancel button">{{svg "octicon-x"}} {{$textNegitive}}</button>
+		<button type="button" class="ui cancel button">{{svg "octicon-x"}} {{$textNegitive}}</button>
 		<button class="ui primary ok button">{{svg "octicon-check"}} {{$textPositive}}</button>
 	{{end}}
 </div>
