@@ -239,6 +239,77 @@ January where the year starts on a Monday :)`, commitFromReader.Signature.Payloa
 	assert.Equal(t, "Nicole Patricia Mazzuca <nicole@strega-nil.co>", commitFromReader.Author.String())
 }
 
+func TestGitbutlerCustomHeaderFields(t *testing.T) {
+	// example from: https://github.com/go-gitea/gitea/issues/34529#issuecomment-2908481092
+	commitString := `tree a29321bf9e3ec433ed9e47b1cbbac6906c71fc60
+parent c0d83043ade7fa3ca10659608799477e9daa670b
+author Sebastian Thiel <sebastian.thiel@icloud.com> 1747920681 +0200
+committer Sebastian Thiel <sebastian.thiel@icloud.com> 1748010747 +0200
+gitbutler-headers-version 2
+gitbutler-change-id 1063f7ea-d841-43b3-903a-01747681c40d
+gpgsig -----BEGIN PGP SIGNATURE-----
+ 
+ iQIzBAABCAAdFiEE6vnM/NCHZAjyl8YKnLXueJXoJosFAmgwhvsACgkQnLXueJXo
+ JovXUxAAq0WKJILCUAxyhwh5tRdxJTB2NjiCLf+ggLfjyrWPtMWPi/YUt7iGPB2H
+ Wbv9U7l5t+54fPX8TQtBKZ79YaDMfYdjlfDSijmPruf8/MXB4G0rAaIajtCr0usZ
+ kJDOgmmYS7bVMybDe6guwFZappiuSS2dCEYgeJun+q7Y6IYsfvdAluJmGubQIkPT
+ rrEffqoQz3URmDYnAKW3sTRUVwCkYIJDxpl/W0Rvc0jmELdkHu7JYX7XvZBYSUDq
+ FWgzCPjyErtkKk8AqoeWtTCpL+9ozzNIXNRKjGCOL2LG4H/uuNFdM46HB+KW/7+B
+ wMGcpZk8T/zN9Cf348M+y+o09QX1OWavDS6LgvWJaDtG/swgxV96KKR5lEtdd1IU
+ JHuXfPUfGp4r378FIrbPK+Thu5bn9Yq8qGvdZOpTqDxHPU9/o9wLpJghcWJZ5O3X
+ MpK4HdN+bME2zgBd08QsOjANogbJIz9MVaMGRFlCO5iOiz2DxG+v2KkO8IRwGXaO
+ OKKQ7BD04fS2wFma862BaTtB9M9f9UTWV4e2mgRpSDJWTQKrj+HkJ63gAFQYFnfp
+ ppgqZLkmzH1Ta2U56JSMMfOoKVFgjuxRx1d+tzdC+TpQyo06NI1KkNMepK1rhFBW
+ p8hej6n/7Bl9LL/W+DKsNqW9jQbTYu66JqKs3Kg7xga6w/ss0iw=
+ =VG6I
+ -----END PGP SIGNATURE-----
+
+asdf
+asdf
+asdf
+`
+
+	sha := &Sha1Hash{0xe6, 0x69, 0x11, 0x91, 0x44, 0x14, 0xb0, 0xda, 0xa8, 0x5d, 0x4a, 0x42, 0x8c, 0x8d, 0x60, 0x7b, 0x9b, 0x24, 0x9a, 0x2c}
+	gitRepo, err := openRepositoryWithDefaultContext(filepath.Join(testReposDir, "repo1_bare"))
+	require.NoError(t, err)
+	assert.NotNil(t, gitRepo)
+	defer gitRepo.Close()
+
+	commitFromReader, err := CommitFromReader(gitRepo, sha, strings.NewReader(commitString))
+	require.NoError(t, err)
+	require.NotNil(t, commitFromReader)
+	assert.EqualValues(t, sha, commitFromReader.ID)
+	assert.Equal(t, `-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEE6vnM/NCHZAjyl8YKnLXueJXoJosFAmgwhvsACgkQnLXueJXo
+JovXUxAAq0WKJILCUAxyhwh5tRdxJTB2NjiCLf+ggLfjyrWPtMWPi/YUt7iGPB2H
+Wbv9U7l5t+54fPX8TQtBKZ79YaDMfYdjlfDSijmPruf8/MXB4G0rAaIajtCr0usZ
+kJDOgmmYS7bVMybDe6guwFZappiuSS2dCEYgeJun+q7Y6IYsfvdAluJmGubQIkPT
+rrEffqoQz3URmDYnAKW3sTRUVwCkYIJDxpl/W0Rvc0jmELdkHu7JYX7XvZBYSUDq
+FWgzCPjyErtkKk8AqoeWtTCpL+9ozzNIXNRKjGCOL2LG4H/uuNFdM46HB+KW/7+B
+wMGcpZk8T/zN9Cf348M+y+o09QX1OWavDS6LgvWJaDtG/swgxV96KKR5lEtdd1IU
+JHuXfPUfGp4r378FIrbPK+Thu5bn9Yq8qGvdZOpTqDxHPU9/o9wLpJghcWJZ5O3X
+MpK4HdN+bME2zgBd08QsOjANogbJIz9MVaMGRFlCO5iOiz2DxG+v2KkO8IRwGXaO
+OKKQ7BD04fS2wFma862BaTtB9M9f9UTWV4e2mgRpSDJWTQKrj+HkJ63gAFQYFnfp
+ppgqZLkmzH1Ta2U56JSMMfOoKVFgjuxRx1d+tzdC+TpQyo06NI1KkNMepK1rhFBW
+p8hej6n/7Bl9LL/W+DKsNqW9jQbTYu66JqKs3Kg7xga6w/ss0iw=
+=VG6I
+-----END PGP SIGNATURE-----
+`, commitFromReader.Signature.Signature)
+	assert.Equal(t, `tree a29321bf9e3ec433ed9e47b1cbbac6906c71fc60
+parent c0d83043ade7fa3ca10659608799477e9daa670b
+author Sebastian Thiel <sebastian.thiel@icloud.com> 1747920681 +0200
+committer Sebastian Thiel <sebastian.thiel@icloud.com> 1748010747 +0200
+gitbutler-headers-version 2
+gitbutler-change-id 1063f7ea-d841-43b3-903a-01747681c40d
+
+asdf
+asdf
+asdf
+`, commitFromReader.Signature.Payload)
+	assert.Equal(t, "Sebastian Thiel <sebastian.thiel@icloud.com>", commitFromReader.Author.String())
+}
+
 func TestHasPreviousCommit(t *testing.T) {
 	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
 
