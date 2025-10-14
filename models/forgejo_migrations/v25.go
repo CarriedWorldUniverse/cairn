@@ -23,7 +23,7 @@ func MigrateTwoFactorToKeying(x *xorm.Engine) error {
 	var err error
 
 	// When upgrading from Forgejo v9 to v10, this migration will already be
-	// called from models/migrations/migrations.go migration 304 and must not
+	// called from models/gitea_migrations/migrations.go migration 304 and must not
 	// be run twice.
 	var version int
 	_, err = x.Table("version").Where("`id` = 1").Select("version").Get(&version)

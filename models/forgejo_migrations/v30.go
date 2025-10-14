@@ -6,7 +6,7 @@ package forgejo_migrations
 import (
 	"time"
 
-	"forgejo.org/models/migrations/base"
+	"forgejo.org/models/gitea_migrations/base"
 	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"

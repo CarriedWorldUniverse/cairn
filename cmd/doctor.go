@@ -15,8 +15,8 @@ import (
 	"text/tabwriter"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/migrations"
-	migrate_base "forgejo.org/models/migrations/base"
+	"forgejo.org/models/gitea_migrations"
+	migrate_base "forgejo.org/models/gitea_migrations/base"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/container"
@@ -159,7 +159,7 @@ func runRecreateTable(stdCtx context.Context, ctx *cli.Command) error {
 			return err
 		}
 
-		if err := migrations.EnsureUpToDate(engine); err != nil {
+		if err := gitea_migrations.EnsureUpToDate(engine); err != nil {
 			return err
 		}
 

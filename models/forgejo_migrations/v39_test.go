@@ -6,7 +6,7 @@ package forgejo_migrations
 import (
 	"testing"
 
-	migration_tests "forgejo.org/models/migrations/test"
+	migration_tests "forgejo.org/models/gitea_migrations/test"
 	"forgejo.org/models/secret"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/timeutil"

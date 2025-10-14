@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"forgejo.org/models/auth"
-	migration_tests "forgejo.org/models/migrations/test"
+	migration_tests "forgejo.org/models/gitea_migrations/test"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/timeutil"
 

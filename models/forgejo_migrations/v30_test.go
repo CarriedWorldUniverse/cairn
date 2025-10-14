@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	migration_tests "forgejo.org/models/migrations/test"
+	migration_tests "forgejo.org/models/gitea_migrations/test"
 	"forgejo.org/modules/timeutil"
 
 	"github.com/stretchr/testify/require"

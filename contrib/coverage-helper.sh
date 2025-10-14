@@ -8,7 +8,7 @@ PS4='${BASH_SOURCE[0]}:$LINENO: ${FUNCNAME[0]}:  '
 # Those must be explicitly required and are excluded from the full list of packages because they
 # would interfere with the testing fixtures.
 #
-excluded+='forgejo.org/models/migrations|'                # must be run before database specific tests
+excluded+='forgejo.org/models/gitea_migrations|'                # must be run before database specific tests
 excluded+='forgejo.org/models/forgejo_migrations|'        # must be run before database specific tests
 excluded+='forgejo.org/tests/integration/migration-test|' # must be run before database specific tests
 excluded+='forgejo.org/tests|'                            # only tests, no coverage to get there

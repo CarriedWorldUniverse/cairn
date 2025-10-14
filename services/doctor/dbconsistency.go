@@ -10,8 +10,8 @@ import (
 	activities_model "forgejo.org/models/activities"
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/models/gitea_migrations"
 	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/migrations"
 	org_model "forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/log"
@@ -83,7 +83,7 @@ func checkDBConsistency(ctx context.Context, logger log.Logger, autofix bool) er
 		if err != nil {
 			return err
 		}
-		return migrations.EnsureUpToDate(engine)
+		return gitea_migrations.EnsureUpToDate(engine)
 	}
 	if err := db.InitEngineWithMigration(ctx, ensureUpToDateWrapper); err != nil {
 		logger.Critical("Model version on the database does not match the current Gitea version. Model consistency will not be checked until the database is upgraded")
