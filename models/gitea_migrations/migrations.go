@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/forgejo_migrations"
+	"forgejo.org/models/forgejo_migrations_legacy"
 	"forgejo.org/models/gitea_migrations/v1_10"
 	"forgejo.org/models/gitea_migrations/v1_11"
 	"forgejo.org/models/gitea_migrations/v1_12"
@@ -367,7 +367,7 @@ func prepareMigrationTasks() []*migration {
 
 		// Migration to Forgejo v10
 		newMigration(303, "Gitea last drop", v1_23.GiteaLastDrop),
-		newMigration(304, "Migrate `secret` column to store keying material", forgejo_migrations.MigrateTwoFactorToKeying),
+		newMigration(304, "Migrate `secret` column to store keying material", forgejo_migrations_legacy.MigrateTwoFactorToKeying),
 	}
 	return preparedMigrations
 }
@@ -426,7 +426,7 @@ func EnsureUpToDate(x *xorm.Engine) error {
 		return fmt.Errorf(`current database version %d is not equal to the expected version %d. Please run "forgejo [--config /path/to/app.ini] migrate" to update the database version`, currentDB, expectedDB)
 	}
 
-	return forgejo_migrations.EnsureUpToDate(x)
+	return forgejo_migrations_legacy.EnsureUpToDate(x)
 }
 
 func getPendingMigrations(curDBVer int64, migrations []*migration) []*migration {
@@ -510,7 +510,7 @@ Please try upgrading to a lower version first (suggested v1.6.4), then upgrade t
 	}
 
 	// Execute Forgejo specific migrations.
-	return forgejo_migrations.Migrate(x)
+	return forgejo_migrations_legacy.Migrate(x)
 }
 
 // WrapperMigrate is a wrapper for Migrate to be called in diagnostics

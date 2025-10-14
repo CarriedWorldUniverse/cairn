@@ -9,7 +9,7 @@ PS4='${BASH_SOURCE[0]}:$LINENO: ${FUNCNAME[0]}:  '
 # would interfere with the testing fixtures.
 #
 excluded+='forgejo.org/models/gitea_migrations|'                # must be run before database specific tests
-excluded+='forgejo.org/models/forgejo_migrations|'        # must be run before database specific tests
+excluded+='forgejo.org/models/forgejo_migrations_legacy|'        # must be run before database specific tests
 excluded+='forgejo.org/tests/integration/migration-test|' # must be run before database specific tests
 excluded+='forgejo.org/tests|'                            # only tests, no coverage to get there
 excluded+='forgejo.org/tests/e2e|'                        # JavaScript is not in scope here and if it adds coverage it should not be counted
