@@ -24,6 +24,7 @@ func CommitFromReader(gitRepo *Repository, objectID ObjectID, reader io.Reader) 
 	payloadSB := new(strings.Builder)
 	signatureSB := new(strings.Builder)
 	messageSB := new(strings.Builder)
+	firstLine := true
 	message := false
 	pgpsig := false
 
@@ -83,21 +84,25 @@ readLoop:
 				commit.Committer = &Signature{}
 				commit.Committer.Decode(data)
 				_, _ = payloadSB.Write(line)
-			case "encoding":
-				_, _ = payloadSB.Write(line)
-			case "change-id": // jj-vcs specific header.
-				_, _ = payloadSB.Write(line)
 			case "gpgsig":
 				fallthrough
 			case "gpgsig-sha256": // FIXME: no intertop, so only 1 exists at present.
 				_, _ = signatureSB.Write(data)
 				_ = signatureSB.WriteByte('\n')
 				pgpsig = true
+			default:
+				// If the first line is not any of the known headers, then it is probably the prefix added when git cat-file is called with --batch, and that is not part of the payload
+				if !firstLine {
+					// Every subsequent header field is added to the payload
+					_, _ = payloadSB.Write(line)
+				}
 			}
 		} else {
 			_, _ = messageSB.Write(line)
 			_, _ = payloadSB.Write(line)
 		}
+
+		firstLine = false
 	}
 	commit.CommitMessage = messageSB.String()
 	commit.Signature = &ObjectSignature{
