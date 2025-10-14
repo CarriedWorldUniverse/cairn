@@ -79,3 +79,22 @@ func (s Set[T]) Seq() iter.Seq[T] {
 func (s Set[T]) Clone() Set[T] {
 	return maps.Clone(s)
 }
+
+// Computes the elements that are in this set, that aren't in the other set.
+func (s Set[T]) Difference(other Set[T]) Set[T] {
+	result := make(Set[T])
+	for key := range s {
+		if !other.Contains(key) {
+			result.Add(key)
+		}
+	}
+	return result
+}
+
+func (s Set[T]) Slice() []T {
+	retval := make([]T, 0, len(s))
+	for key := range s {
+		retval = append(retval, key)
+	}
+	return retval
+}
