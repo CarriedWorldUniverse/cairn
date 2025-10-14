@@ -9,7 +9,7 @@
   "baseBranchPatterns": [
     "$default",
     "/^v11\\.\\d+/forgejo$/",
-    "/^v12\\.\\d+/forgejo$/"
+    "/^v13\\.\\d+/forgejo$/"
   ],
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths", "npmDedupe"],
   "prConcurrentLimit": 10,
