@@ -135,6 +135,7 @@ func Test_Cmd_AdminFirstUser(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				db.GetEngine(db.DefaultContext).Exec("DELETE FROM `stopwatch`")
 				db.GetEngine(db.DefaultContext).Exec("DELETE FROM `tracked_time`")
+				db.GetEngine(db.DefaultContext).Exec("DELETE FROM `access`")
 				db.GetEngine(db.DefaultContext).Exec("DELETE FROM `user`")
 				db.GetEngine(db.DefaultContext).Exec("DELETE FROM `email_address`")
 				assert.Equal(t, int64(0), user_model.CountUsers(db.DefaultContext, nil))
