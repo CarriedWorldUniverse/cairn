@@ -5,6 +5,7 @@ package integration
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActionsAPISearchActionJobs_RepoRunner(t *testing.T) {
@@ -99,6 +101,24 @@ jobs:
 		assert.NotZero(t, run.ID)
 		assert.NotZero(t, run.RunNumber)
 		assert.Len(t, run.Jobs, 2)
+
+		req = NewRequestWithJSON(
+			t,
+			http.MethodPost,
+			fmt.Sprintf(
+				"/api/v1/repos/%s/%s/actions/workflows/%s/dispatches",
+				repo.OwnerName, repo.Name, workflowName,
+			),
+			&api.DispatchWorkflowOption{
+				Ref:           repo.DefaultBranch,
+				ReturnRunInfo: false,
+			},
+		)
+		req.AddTokenAuth(token)
+		res = MakeRequest(t, req, http.StatusNoContent)
+		body, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
+		assert.Empty(t, body) // 204 No Content doesn't support a body, so should be empty
 	})
 }
 

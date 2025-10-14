@@ -807,7 +807,7 @@ func DispatchWorkflow(ctx *context.APIContext) {
 	if opt.ReturnRunInfo {
 		ctx.JSON(http.StatusCreated, workflowRun)
 	} else {
-		ctx.JSON(http.StatusNoContent, nil)
+		ctx.Status(http.StatusNoContent)
 	}
 }
 
