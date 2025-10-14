@@ -74,7 +74,7 @@ func newFileCollector(fileFilter string, batchSize int) (*fileCollector, error) 
 		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`tests/integration/migration-test`))
 		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`modules/git/tests`))
 		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`models/fixtures`))
-		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`models/migrations/fixtures`))
+		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`models/gitea_migrations/fixtures`))
 		co.excludePatterns = append(co.excludePatterns, regexp.MustCompile(`services/gitdiff/testdata`))
 	}
 

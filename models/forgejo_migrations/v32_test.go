@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	migration_tests "forgejo.org/models/migrations/test"
+	migration_tests "forgejo.org/models/gitea_migrations/test"
 	"forgejo.org/models/packages"
 
 	"github.com/stretchr/testify/assert"

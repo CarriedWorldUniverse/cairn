@@ -117,7 +117,7 @@ func TableNameInsertionOrderSortFunc(table1, table2 string) int {
 	}
 
 	// Since this is typically used by `slices.SortFunc` it can't return an error.  If a table is referenced that isn't
-	// a registered model then it will be sorted at the beginning -- this case is used in models/migrations/test.
+	// a registered model then it will be sorted at the beginning -- this case is used in models/gitea_migrations/test.
 	val1, ok := lookupMap[table1]
 	if !ok {
 		val1 = -1

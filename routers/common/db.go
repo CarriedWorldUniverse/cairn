@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/migrations"
+	"forgejo.org/models/gitea_migrations"
 	system_model "forgejo.org/models/system"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
@@ -43,15 +43,15 @@ func InitDBEngine(ctx context.Context) (err error) {
 
 func migrateWithSetting(x *xorm.Engine) error {
 	if setting.Database.AutoMigration {
-		return migrations.Migrate(x)
+		return gitea_migrations.Migrate(x)
 	}
 
-	if current, err := migrations.GetCurrentDBVersion(x); err != nil {
+	if current, err := gitea_migrations.GetCurrentDBVersion(x); err != nil {
 		return err
 	} else if current < 0 {
 		// execute migrations when the database isn't initialized even if AutoMigration is false
-		return migrations.Migrate(x)
-	} else if expected := migrations.ExpectedDBVersion(); current != expected {
+		return gitea_migrations.Migrate(x)
+	} else if expected := gitea_migrations.ExpectedDBVersion(); current != expected {
 		log.Fatal(`"database.AUTO_MIGRATION" is disabled, but current database version %d is not equal to the expected version %d.`+
 			`You can set "database.AUTO_MIGRATION" to true or migrate manually by running "forgejo [--config /path/to/app.ini] migrate"`, current, expected)
 	}

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/migrations"
+	"forgejo.org/models/gitea_migrations"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 
@@ -44,7 +44,7 @@ func runMigrate(stdCtx context.Context, ctx *cli.Command) error {
 		if err != nil {
 			return err
 		}
-		return migrations.Migrate(masterEngine)
+		return gitea_migrations.Migrate(masterEngine)
 	}); err != nil {
 		log.Fatal("Failed to initialize ORM engine: %v", err)
 		return err

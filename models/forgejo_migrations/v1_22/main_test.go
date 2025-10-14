@@ -6,7 +6,7 @@ package v1_22
 import (
 	"testing"
 
-	migration_tests "forgejo.org/models/migrations/test"
+	migration_tests "forgejo.org/models/gitea_migrations/test"
 )
 
 func TestMain(m *testing.M) {
