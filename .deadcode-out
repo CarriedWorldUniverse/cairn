@@ -18,9 +18,12 @@ forgejo.org/models/auth
 
 forgejo.org/models/db
 	TruncateBeans
+	TruncateBeansCascade
 	InTransaction
 	DumpTables
 	GetTableNames
+	sortBeans
+	extendBeansForCascade
 
 forgejo.org/models/dbfs
 	file.renameTo

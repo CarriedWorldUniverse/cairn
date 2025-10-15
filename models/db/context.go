@@ -298,6 +298,31 @@ func TruncateBeans(ctx context.Context, beans ...any) (err error) {
 	return nil
 }
 
+// TruncateBeansCascade deletes all given beans. Beans MUST NOT contain delete conditions, as tables related by foreign
+// keys will also be truncated.
+func TruncateBeansCascade(ctx context.Context, beans ...any) (err error) {
+	// Expand the list of beans to any other table with a foreign key reference to the beans
+	cascadeTables, err := extendBeansForCascade(beans)
+	if err != nil {
+		return err
+	}
+
+	// Sort the beans in inverse foreign key delete order
+	cascadeSorted, err := sortBeans(cascadeTables, foreignKeySortDelete)
+	if err != nil {
+		return err
+	}
+
+	// Execute the truncate
+	e := GetEngine(ctx)
+	for i := range cascadeSorted {
+		if _, err = e.Truncate(cascadeSorted[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CountByBean counts the number of database records according non-empty fields of the bean as conditions.
 func CountByBean(ctx context.Context, bean any) (int64, error) {
 	return GetEngine(ctx).Count(bean)
