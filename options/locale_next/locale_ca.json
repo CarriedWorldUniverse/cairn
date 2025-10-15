@@ -170,5 +170,14 @@
     "relativetime.future": "en el futur",
     "migrate.pagure.private_issues.warning": "Assegureu-vos de configurar la visibilitat del repositori com a privada si esteu usant la clau API per importar incidències privades. Això evitarà exposar accidentalment el contingut privat en un repositori públic.",
     "actions.runs.run_attempt_label": "Intent d'execució #%[1]s (%[2]s)",
-    "actions.workflow.job_parsing_error": "No s'han pogut analitzar les tasques al flux de treball: %v"
+    "actions.workflow.job_parsing_error": "No s'han pogut analitzar les tasques al flux de treball: %v",
+    "release.n_downloads": {
+        "one": "%s baixada",
+        "many": "%s baixades",
+        "other": "%s baixades"
+    },
+    "actions.workflow.event_detection_error": "No s'han pogut analitzar els esdeveniments compatibles al flux de treball: %v",
+    "og.repo.summary_card.alt_description": "La targeta de resum del repositori %[1]s, descrita com a: %[2]s",
+    "stars.list.none": "Ningú ha marcat aquest repositori com a favorit.",
+    "mail.actions.run_info_trigger": "Activat per: %[1]s per: %[2]s"
 }

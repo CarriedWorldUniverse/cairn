@@ -1,6 +1,7 @@
 {
     "release.n_downloads": {
         "one": "%s descarga",
+        "many": "%s descargas",
         "other": "%s descargas"
     },
     "repo.pulls.merged_title_desc": {
@@ -144,7 +145,7 @@
     "migrate.pagure.incorrect_url": "Foi fornecida uma URL incorreta do repositório de origem",
     "migrate.pagure.project_url": "URL do projeto Pagure",
     "migrate.pagure.project_example": "URL do projeto Pagure, por exemplo, https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Código da API do Pagure",
     "migrate.github.description": "Migrar dados do github.com ou do GitHub Enterprise server.",
     "migrate.git.description": "Migrar um repositório somente de qualquer serviço Git.",
     "migrate.gitea.description": "Migrar dados de gitea.com ou de outras instâncias do Gitea.",
@@ -162,13 +163,21 @@
     "pulse.n_active_issues": {
         "one": "%s questão vigente",
         "many": "%s questões vigentes",
-        "other": ""
+        "other": "%s questões vigentes"
     },
     "pulse.n_active_prs": {
         "one": "%s pedido de integração vigente",
         "many": "%s pedidos de integração vigentes",
-        "other": ""
+        "other": "%s pedidos de integração vigentes"
     },
     "repo.pulls.maintainers_can_edit": "Os responsáveis podem editar este pedido de integração.",
-    "repo.pulls.maintainers_cannot_edit": "Os responsáveis não podem editar este pedido de integração."
+    "repo.pulls.maintainers_cannot_edit": "Os responsáveis não podem editar este pedido de integração.",
+    "mail.issue.action.close_by_commit": "%[1]s fechou %[2]s no cometimento %[3]s.",
+    "migrate.pagure.private_issues.summary": "Questões privadas (opcional)",
+    "migrate.pagure.private_issues.description": "Esta funcionalidade está desenhada para criar um segundo repositório contendo apenas questões privadas do seu repositório Pagure para efeitos de arquivo. Primeiro, faça uma migração normal (sem um código) para importar todo o conteúdo público. Depois, se tiver questões privadas a preservar, crie um repositório separado usando esta opção com código para arquivar essas questões privadas.",
+    "migrate.pagure.private_issues.warning": "Certifique-se que passa a visibilidade do repositório para Privado se estiver a usar a chave de API para importar questões privadas. Isso irá evitar que exponha acidentalmente conteúdo privado num repositório público.",
+    "migrate.pagure.token.placeholder": "Somente para criar arquivo com questões privadas",
+    "actions.workflow.job_parsing_error": "Não foi possível analisar os trabalhos na sequência de trabalho: %v",
+    "actions.workflow.event_detection_error": "Não foi possível analisar eventos suportados na sequência de trabalho: %v",
+    "actions.workflow.pre_execution_error": "A sequência de trabalho não foi executada por causa de um erro que bloqueou a tentativa de execução."
 }
