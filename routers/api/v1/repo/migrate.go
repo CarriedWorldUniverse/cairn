@@ -4,7 +4,6 @@
 package repo
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -195,10 +194,9 @@ func Migrate(ctx *context.APIContext) {
 
 	defer func() {
 		if e := recover(); e != nil {
-			var buf bytes.Buffer
-			fmt.Fprintf(&buf, "Handler crashed with error: %v", log.Stack(2))
-
-			err = errors.New(buf.String())
+			log.Error("PANIC recovered: %v\nStacktrace: %s", e, log.Stack(2))
+			err = fmt.Errorf("PANIC recover with error %v", e)
+			ctx.Error(http.StatusInternalServerError, "Recovered PANIC with error", err)
 		}
 
 		if err == nil {
