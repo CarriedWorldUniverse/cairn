@@ -17,8 +17,8 @@ import (
 	"testing"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/migrations"
-	migrate_base "forgejo.org/models/migrations/base"
+	"forgejo.org/models/gitea_migrations"
+	migrate_base "forgejo.org/models/gitea_migrations/base"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/charset"
@@ -262,7 +262,7 @@ func restoreOldDB(t *testing.T, version string) bool {
 
 func wrappedMigrate(x *xorm.Engine) error {
 	currentEngine = x
-	return migrations.Migrate(x)
+	return gitea_migrations.Migrate(x)
 }
 
 func doMigrationTest(t *testing.T, version string) {

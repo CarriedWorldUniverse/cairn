@@ -287,14 +287,14 @@ show-version-api: verify-version
 .PHONY: compute-go-test-packages
 compute-go-test-packages:
 ifeq ($(HAS_GO), yes)
-	$(eval GO_TEST_PACKAGES ?= $(filter-out $(shell $(GO) list forgejo.org/models/migrations/...) $(shell $(GO) list forgejo.org/models/forgejo_migrations/...) forgejo.org/tests/integration/migration-test forgejo.org/tests forgejo.org/tests/integration forgejo.org/tests/e2e,$(shell $(GO) list ./...)))
+	$(eval GO_TEST_PACKAGES ?= $(filter-out $(shell $(GO) list forgejo.org/models/gitea_migrations/...) $(shell $(GO) list forgejo.org/models/forgejo_migrations_legacy/...) $(shell $(GO) list forgejo.org/models/forgejo_migrations/...) forgejo.org/tests/integration/migration-test forgejo.org/tests forgejo.org/tests/integration forgejo.org/tests/e2e,$(shell $(GO) list ./...)))
 endif
 
 # Target to compute MIGRATION_PACKAGES - only runs when needed
 .PHONY: compute-migration-packages
 compute-migration-packages:
 ifeq ($(HAS_GO), yes)
-	$(eval MIGRATION_PACKAGES := $(shell $(GO) list forgejo.org/models/migrations/... forgejo.org/models/forgejo_migrations/...))
+	$(eval MIGRATION_PACKAGES := $(shell $(GO) list forgejo.org/models/gitea_migrations/... forgejo.org/models/forgejo_migrations_legacy/... forgejo.org/models/forgejo_migrations/...))
 endif
 
 ###
@@ -778,7 +778,7 @@ migrations.individual.mysql.test: $(GO_SOURCES) | compute-migration-packages
 
 .PHONY: migrations.individual.sqlite.test\#%
 migrations.individual.sqlite.test\#%: $(GO_SOURCES) generate-ini-sqlite
-	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/migrations/$*
+	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/gitea_migrations/$*
 
 .PHONY: migrations.individual.pgsql.test
 migrations.individual.pgsql.test: $(GO_SOURCES) | compute-migration-packages
@@ -788,7 +788,7 @@ migrations.individual.pgsql.test: $(GO_SOURCES) | compute-migration-packages
 
 .PHONY: migrations.individual.pgsql.test\#%
 migrations.individual.pgsql.test\#%: $(GO_SOURCES) generate-ini-pgsql
-	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/migrations/$*
+	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/pgsql.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/gitea_migrations/$*
 
 .PHONY: migrations.individual.sqlite.test
 migrations.individual.sqlite.test: $(GO_SOURCES) generate-ini-sqlite | compute-migration-packages
@@ -798,7 +798,7 @@ migrations.individual.sqlite.test: $(GO_SOURCES) generate-ini-sqlite | compute-m
 
 .PHONY: migrations.individual.sqlite.test\#%
 migrations.individual.sqlite.test\#%: $(GO_SOURCES) generate-ini-sqlite
-	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/migrations/$*
+	GITEA_ROOT="$(CURDIR)" GITEA_CONF=tests/sqlite.ini $(GOTEST) $(GOTESTFLAGS) -tags '$(TEST_TAGS)' forgejo.org/models/gitea_migrations/$*
 
 e2e.mysql.test: $(GO_SOURCES)
 	$(GOTEST) $(GOTESTFLAGS) -c forgejo.org/tests/e2e -o e2e.mysql.test
