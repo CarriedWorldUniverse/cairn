@@ -1,1 +1,45 @@
-{}
+{
+    "home.explore_repos": "Omborlarni kashf etish",
+    "home.explore_users": "Foydalanuvchilarni kashf etish",
+    "home.explore_orgs": "`tashkilotlarni` kashf etish",
+    "stars.list.none": "Hech kim bu omborga yulduz bosmagan.",
+    "watch.list.none": "Bu ombor hech kimning ko'ruv'ida emas",
+    "followers.incoming.list.self.none": "Hech kim sizning profilingizga tirkalmagan.",
+    "followers.incoming.list.none": "Hech kim bu foydalanuvchiga tirkalmagan.",
+    "followers.outgoing.list.self.none": "Siz hech kimga tirkalmagansiz.",
+    "followers.outgoing.list.none": "%s hech kimga tirkalmagan.",
+    "relativetime.now": "hozir",
+    "relativetime.future": "kelajakda",
+    "relativetime.mins": {
+        "one": "%d daqiqa oldin.",
+        "other": "%d daqiqa oldin."
+    },
+    "relativetime.hours": {
+        "one": "%d soat oldin.",
+        "other": "%d soat oldin."
+    },
+    "relativetime.days": {
+        "one": "%d kun oldin.",
+        "other": "%d kun oldin."
+    },
+    "relativetime.weeks": {
+        "one": "%d hafta oldin.",
+        "other": "%d hafta oldin."
+    },
+    "relativetime.months": {
+        "one": "%d oy oldin.",
+        "other": "%d oy oldin."
+    },
+    "relativetime.years": {
+        "one": "%d yil oldin.",
+        "other": "%d yil oldin."
+    },
+    "relativetime.1day": "kecha",
+    "relativetime.2days": "2 kun oldin",
+    "relativetime.1week": "oxirgi hafta",
+    "relativetime.2weeks": "ikki hafta oldin",
+    "relativetime.1month": "oxirgi oy",
+    "relativetime.2months": "ikki oy oldin",
+    "relativetime.1year": "oxirgi yil",
+    "relativetime.2years": "ikki yil oldin"
+}

@@ -1,3 +1,62 @@
 {
-    "search.milestone_kind": "Serĉi celojn..."
+    "search.milestone_kind": "Serĉi celojn…",
+    "home.welcome.no_activity": "Neniu aktiveco",
+    "home.explore_repos": "Esplori deponejojn",
+    "home.explore_users": "Esplori uzantojn",
+    "home.explore_orgs": "Esplori organizaĵojn",
+    "stars.list.none": "Neniu stelumis ĉi tiun deponejon.",
+    "relativetime.now": "nun",
+    "relativetime.mins": {
+        "one": "antaŭ %d minuto",
+        "other": "antaŭ %d minutoj"
+    },
+    "relativetime.hours": {
+        "one": "antaŭ %d horo",
+        "other": "antaŭ %d horoj"
+    },
+    "relativetime.days": {
+        "one": "antaŭ %d tago",
+        "other": "antaŭ %d tagoj"
+    },
+    "relativetime.weeks": {
+        "one": "antaŭ %d semajno",
+        "other": "antaŭ %d semajnoj"
+    },
+    "relativetime.months": {
+        "one": "antaŭ %d monato",
+        "other": "antaŭ %d monatoj"
+    },
+    "relativetime.years": {
+        "one": "antaŭ %d jaro",
+        "other": "antaŭ %d jaroj"
+    },
+    "relativetime.1day": "hieraŭ",
+    "relativetime.2days": "antaŭ du tagoj",
+    "relativetime.1week": "je lasta semajno",
+    "relativetime.2weeks": "antaŭ du semajnoj",
+    "relativetime.1month": "je lasta monato",
+    "relativetime.2months": "antaŭ du monatoj",
+    "relativetime.1year": "je lasta jaro",
+    "relativetime.2years": "antaŭ du jaroj",
+    "migrate.github.description": "Migrigi datumojn el github.com aŭ Github Enterprise server.",
+    "migrate.git.description": "Migrigi nur deponejon el ajna Git servilo.",
+    "migrate.gitea.description": "Migrigi datumojn el gitea.com aŭ aliaj Gitea instancoj.",
+    "migrate.gitlab.description": "Migrigi datumojn el gitlab.com aŭ aliaj GitLab instancoj.",
+    "migrate.gogs.description": "Migrigi datumojn el notabug.org aŭ aliaj Gogs instancoj.",
+    "migrate.onedev.description": "Migrigi datumojn el code.onedev.io aŭ aliaj OneDev instancoj.",
+    "migrate.gitbucket.description": "Migrigi datumojn el GitBucket instancoj.",
+    "migrate.codebase.description": "Migrigi datumojn el codebasehq.com.",
+    "migrate.forgejo.description": "Migrigi datumojn el codeberg.org aŭ aliaj Forgejo instancoj.",
+    "repo.settings.push_mirror.branch_filter.label": "Branĉa filtrilo (malnepra)",
+    "themes.names.forgejo-auto": "Forgejo (konformi kun sistema etoso)",
+    "themes.names.forgejo-light": "Forgejo hela",
+    "themes.names.forgejo-dark": "Forgejo malhela",
+    "error.not_found.title": "Paĝo ne trovita",
+    "alert.range_error": " devas esti nombro inter %[1]s kaj %[2]s.",
+    "profile.edit.link": "Redakti profilon",
+    "feed.atom.link": "Atomfluo",
+    "keys.ssh.link": "SSH ŝlosiloj",
+    "keys.gpg.link": "GPG ŝlosiloj",
+    "admin.moderation.reports": "Raportoj",
+    "admin.moderation.no_open_reports": "Ne estas malfermataj raportoj."
 }
