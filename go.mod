@@ -17,6 +17,8 @@ require (
 	code.forgejo.org/go-chi/session v1.0.2
 	code.gitea.io/actions-proto-go v0.4.0
 	code.gitea.io/sdk/gitea v0.21.0
+	code.superseriousbusiness.org/exif-terminator v0.11.0
+	code.superseriousbusiness.org/go-jpeg-image-structure/v2 v2.3.0
 	codeberg.org/gusted/mcaptcha v0.0.0-20220723083913-4f3072e1d570
 	connectrpc.com/connect v1.18.1
 	github.com/42wim/httpsig v1.2.3
@@ -34,6 +36,7 @@ require (
 	github.com/djherbis/buffer v1.2.0
 	github.com/djherbis/nio/v3 v3.0.1
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707
+	github.com/dsoprea/go-exif/v3 v3.0.0-20210625224831-a6301f85c82b
 	github.com/dustin/go-humanize v1.0.1
 	github.com/editorconfig/editorconfig-core-go/v2 v2.6.3
 	github.com/emersion/go-imap v1.2.1
@@ -116,6 +119,7 @@ require (
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
+	code.superseriousbusiness.org/go-png-image-structure/v2 v2.3.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	git.sr.ht/~mariusor/go-xsd-duration v0.0.0-20220703122237-02e73435a078 // indirect
@@ -160,6 +164,10 @@ require (
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/dsoprea/go-iptc v0.0.0-20200609062250-162ae6b44feb // indirect
+	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
+	github.com/dsoprea/go-photoshop-info-format v0.0.0-20200609050348-3db9b63b202c // indirect
+	github.com/dsoprea/go-utility/v2 v2.0.0-20200717064901-2fccff4aa15e // indirect
 	github.com/emersion/go-sasl v0.0.0-20231106173351-e73c9f7bad43 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -167,6 +175,7 @@ require (
 	github.com/go-ap/errors v0.0.0-20231003111023-183eef4b31b7 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.5 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
+	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
@@ -176,8 +185,10 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-webauthn/x v0.1.25 // indirect
+	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -249,6 +260,7 @@ require (
 	golang.org/x/tools v0.36.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
