@@ -53,6 +53,7 @@ type AdminEditUserForm struct {
 	ProhibitLogin           bool
 	Reset2FA                bool `form:"reset_2fa"`
 	Visibility              structs.VisibleType
+	HideEmail               bool `form:"hide_email"`
 }
 
 // Validate validates form fields

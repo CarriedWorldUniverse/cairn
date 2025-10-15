@@ -254,6 +254,7 @@ func EditUser(ctx *context.APIContext) {
 		MaxRepoCreation:         optional.FromPtr(form.MaxRepoCreation),
 		AllowCreateOrganization: optional.FromPtr(form.AllowCreateOrganization),
 		IsRestricted:            optional.FromPtr(form.Restricted),
+		KeepEmailPrivate:        optional.FromPtr(form.HideEmail),
 	}
 
 	if err := user_service.UpdateUser(ctx, ctx.ContextUser, opts); err != nil {
