@@ -116,7 +116,7 @@ type Issue struct {
 
 	DeadlineUnix timeutil.TimeStamp `xorm:"INDEX"`
 
-	Created timeutil.TimeStampNano
+	Created timeutil.TimeStampNano // more precise Created, but may not be populated for older issues
 
 	CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
 	UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
