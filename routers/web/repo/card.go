@@ -330,7 +330,7 @@ func drawIssueSummaryCard(ctx *context.Context, issue *issue_model.Issue) (*card
 		fmt.Sprintf(
 			"%s - %s",
 			issue.Poster.Name,
-			issue.Created.AsTime().Format(time.DateOnly),
+			issue.CreatedUnix.AsTime().Format(time.DateOnly),
 		),
 		color.Gray{128}, 36, card.Middle, card.Left)
 	if err != nil {
