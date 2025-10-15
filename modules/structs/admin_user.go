@@ -50,4 +50,5 @@ type EditUserOption struct {
 	AllowCreateOrganization *bool   `json:"allow_create_organization"`
 	Restricted              *bool   `json:"restricted"`
 	Visibility              string  `json:"visibility" binding:"In(,public,limited,private)"`
+	HideEmail               *bool   `json:"hide_email"`
 }

@@ -83,6 +83,55 @@ func TestAdminEditUser(t *testing.T) {
 	testSuccessfullEdit(t, user_model.User{ID: 2, Name: "newusername", LoginName: "otherlogin", Email: "new@e-mail.gitea"})
 }
 
+func TestAdminEditUserHideEmail(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user1")
+	userID := int64(2) // user2 from fixtures
+
+	// Test setting hide_email to false
+	csrf := GetCSRF(t, session, fmt.Sprintf("/admin/users/%d/edit", userID))
+	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/admin/users/%d/edit", userID), map[string]string{
+		"_csrf":      csrf,
+		"user_name":  "user2",
+		"login_name": "user2",
+		"login_type": "0-0",
+		"email":      "user2@example.com",
+		"hide_email": "false",
+	})
+	session.MakeRequest(t, req, http.StatusSeeOther)
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userID})
+	assert.False(t, user.KeepEmailPrivate)
+
+	// Verify the form now loads with hide_email not checked
+	req = NewRequest(t, "GET", fmt.Sprintf("/admin/users/%d/edit", userID))
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertElement(t, `input[name="hide_email"]:not([checked])`, true)
+
+	// Test setting hide_email to true
+	csrf = GetCSRF(t, session, fmt.Sprintf("/admin/users/%d/edit", userID))
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/admin/users/%d/edit", userID), map[string]string{
+		"_csrf":      csrf,
+		"user_name":  "user2",
+		"login_name": "user2",
+		"login_type": "0-0",
+		"email":      "user2@example.com",
+		"hide_email": "true",
+	})
+	session.MakeRequest(t, req, http.StatusSeeOther)
+
+	user = unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userID})
+	assert.True(t, user.KeepEmailPrivate)
+
+	// Verify the form loads with hide_email checked
+	req = NewRequest(t, "GET", fmt.Sprintf("/admin/users/%d/edit", userID))
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc = NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertElement(t, `input[name="hide_email"][checked]`, true)
+}
+
 func testSuccessfullEdit(t *testing.T, formData user_model.User) {
 	makeRequest(t, formData, http.StatusSeeOther)
 }

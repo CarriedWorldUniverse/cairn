@@ -454,6 +454,7 @@ func EditUserPost(ctx *context.Context) {
 		IsRestricted:            optional.Some(form.Restricted),
 		Visibility:              optional.Some(form.Visibility),
 		Language:                optional.Some(form.Language),
+		KeepEmailPrivate:        optional.Some(form.HideEmail),
 	}
 
 	if err := user_service.UpdateUser(ctx, u, opts); err != nil {
