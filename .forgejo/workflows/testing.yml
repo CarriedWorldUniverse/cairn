@@ -126,7 +126,7 @@ jobs:
           echo "all=1" >> "$GITHUB_OUTPUT"
       - name: Get changed files
         id: changed-files
-        uses: https://data.forgejo.org/tj-actions/changed-files@v46
+        uses: https://data.forgejo.org/tj-actions/changed-files@v47
         with:
           separator: '\n'
       - run: |
