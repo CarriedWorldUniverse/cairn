@@ -1,6 +1,7 @@
 {
     "release.n_downloads": {
         "one": "%s download",
+        "many": "%s downloads",
         "other": "%s downloads"
     },
     "repo.pulls.merged_title_desc": {

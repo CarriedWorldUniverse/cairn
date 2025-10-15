@@ -144,7 +144,29 @@
     "migrate.pagure.description": "Migrera data från pagure.io eller andra Pagure-instanser.",
     "migrate.pagure.project_url": "Pagure projekt-URL",
     "migrate.pagure.project_example": "Pagure-projektets URL, t.ex. https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure API-token",
     "actions.runs.run_attempt_label": "Kör försök #%[1]s (%[2]s)",
-    "migrate.github.description": "Migrera data från github.com eller GitHub Enterprise server."
+    "migrate.github.description": "Migrera data från github.com eller GitHub Enterprise server.",
+    "repo.pulls.maintainers_can_edit": "Underhållsansvariga kan redigera denna pull-begäran.",
+    "repo.pulls.maintainers_cannot_edit": "Underhållsansvariga kan inte redigera denna pull-begäran.",
+    "mail.issue.action.close_by_commit": "%[1]s stängde %[2]s i commit %[3]s.",
+    "user.ghost.tooltip": "Denna användare har tagits bort eller kan inte matchas.",
+    "migrate.pagure.private_issues.summary": "Privata ärenden (valfritt)",
+    "release.n_downloads": {
+        "one": "%s nedladdning",
+        "other": "%s nedladdningar"
+    },
+    "actions.runs.view_most_recent_run": "Visa senaste körning",
+    "actions.workflow.job_parsing_error": "Kunde inte tolka jobb i arbetsflöde: %v",
+    "actions.workflow.pre_execution_error": "Arbetsflödet kördes inte på grund av ett fel som blockerade körningsförsöket.",
+    "warning.repository.out_of_sync": "Databasrepresentationen av detta arkiv är inte synkroniserad. Om denna varning fortfarande visas efter att du har skickat en commit till detta arkiv, kontakta administratören.",
+    "admin.moderation.deleted_content_ref": "Rapporterat innehåll med typ %[1]v och id %[2]d finns inte längre",
+    "settings.twofa_reenroll": "Registrera om tvåfaktorsautentisering",
+    "settings.twofa_reenroll.description": "Registrera om din tvåfaktorsautentisering",
+    "migrate.pagure.incorrect_url": "Felaktig URL till källarkivet har angetts",
+    "migrate.pagure.private_issues.description": "Denna funktion är utformad för att skapa ett andra arkiv som endast innehåller privata ärenden från ditt Pagure-projekt för arkiveringsändamål. Utför först en normal migrering (utan token) för att importera allt publika innehåll. Om du har privata ärenden som du vill bevara skapar du sedan ett separat arkiv med hjälp av denna token-option för att arkivera dessa privata ärenden.",
+    "migrate.pagure.private_issues.warning": "Se till att ställa in synligheten för arkivet ovan till Privat om du använder API-nyckeln för att importera privata ärenden. Detta förhindrar att privat innehåll av misstag exponeras i ett publikt arkiv.",
+    "migrate.pagure.token.placeholder": "Endast för att skapa privata ärendearkiv",
+    "actions.runs.viewing_out_of_date_run": "Du tittar på en föråldrad körning av detta jobb som utfördes %[1]s.",
+    "actions.workflow.event_detection_error": "Det går inte att tolka stödda händelser i arbetsflödet: %v"
 }
