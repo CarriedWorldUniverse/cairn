@@ -11,3 +11,18 @@
   status: 0
   lfs_size: 8192
   topics: '[]'
+
+
+-
+  id: 1002
+  owner_id: 2
+  owner_name: user2
+  lower_name: rendering-test
+  name: rendering-test
+  default_branch: master
+  is_empty: false
+  is_archived: false
+  is_private: false
+  status: 0
+  num_issues: 0
+  topics: '[]'
