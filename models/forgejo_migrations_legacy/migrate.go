@@ -184,6 +184,7 @@ func Migrate(x *xorm.Engine) error {
 
 	currentVersion := &ForgejoVersion{ID: 1}
 	has, err := x.Get(currentVersion)
+	freshDB := false
 	if err != nil {
 		return fmt.Errorf("get: %w", err)
 	} else if !has {
@@ -191,6 +192,7 @@ func Migrate(x *xorm.Engine) error {
 		// it is a fresh installation and we can skip all migrations.
 		currentVersion.ID = 0
 		currentVersion.Version = ExpectedVersion()
+		freshDB = true
 
 		if _, err = x.InsertOne(currentVersion); err != nil {
 			return fmt.Errorf("insert: %w", err)
@@ -240,5 +242,5 @@ func Migrate(x *xorm.Engine) error {
 		return fmt.Errorf("SetVersionStringWithEngine: %w", err)
 	}
 
-	return forgejo_migrations.Migrate(x)
+	return forgejo_migrations.Migrate(x, freshDB)
 }
