@@ -43,6 +43,7 @@ type ChangeRepoFile struct {
 	ContentReader io.ReadSeeker
 	SHA           string
 	Options       *RepoFileOptions
+	Symlink       bool
 }
 
 // ChangeRepoFilesOptions holds the repository files update options
@@ -62,6 +63,7 @@ type RepoFileOptions struct {
 	treePath     string
 	fromTreePath string
 	executable   bool
+	symlink      bool
 }
 
 // ChangeRepoFiles adds, updates or removes multiple files in the given repository
@@ -116,6 +118,7 @@ func ChangeRepoFiles(ctx context.Context, repo *repo_model.Repository, doer *use
 			treePath:     treePath,
 			fromTreePath: fromTreePath,
 			executable:   false,
+			symlink:      file.Symlink,
 		}
 		treePaths = append(treePaths, treePath)
 	}
@@ -421,14 +424,14 @@ func CreateOrUpdateFile(ctx context.Context, t *TemporaryUploadRepository, file 
 	}
 
 	// Add the object to the index
+	mode := "100644" // regular file
 	if file.Options.executable {
-		if err := t.AddObjectToIndex("100755", objectHash, file.Options.treePath); err != nil {
-			return err
-		}
-	} else {
-		if err := t.AddObjectToIndex("100644", objectHash, file.Options.treePath); err != nil {
-			return err
-		}
+		mode = "100755"
+	} else if file.Options.symlink {
+		mode = "120644"
+	}
+	if err := t.AddObjectToIndex(mode, objectHash, file.Options.treePath); err != nil {
+		return err
 	}
 
 	if lfsMetaObject != nil {
