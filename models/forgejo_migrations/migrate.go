@@ -98,7 +98,7 @@ func resolveMigrations() {
 	migrationResolutionComplete = true
 }
 
-func inDBMigrationIDs(x *xorm.Engine) (container.Set[string], error) {
+func getInDBMigrationIDs(x *xorm.Engine) (container.Set[string], error) {
 	var inDBMigrations []ForgejoMigration
 	err := x.Find(&inDBMigrations)
 	if err != nil {
@@ -117,7 +117,7 @@ func inDBMigrationIDs(x *xorm.Engine) (container.Set[string], error) {
 func EnsureUpToDate(x *xorm.Engine) error {
 	resolveMigrations()
 
-	inDBMigrationIDs, err := inDBMigrationIDs(x)
+	inDBMigrationIDs, err := getInDBMigrationIDs(x)
 	if err != nil {
 		return err
 	}
@@ -137,8 +137,18 @@ func EnsureUpToDate(x *xorm.Engine) error {
 	return nil
 }
 
+func recordMigrationComplete(x *xorm.Engine, migration *Migration) error {
+	affected, err := x.Insert(&ForgejoMigration{ID: migration.id})
+	if err != nil {
+		return err
+	} else if affected != 1 {
+		return fmt.Errorf("migration[%s]: failed to insert into DB, %d records affected", migration.id, affected)
+	}
+	return nil
+}
+
 // Migrate Forgejo database to current version.
-func Migrate(x *xorm.Engine) error {
+func Migrate(x *xorm.Engine, freshDB bool) error {
 	resolveMigrations()
 
 	// Set a new clean the default mapper to GonicMapper as that is the default for .
@@ -147,9 +157,25 @@ func Migrate(x *xorm.Engine) error {
 		return fmt.Errorf("sync: %w", err)
 	}
 
-	inDBMigrationIDs, err := inDBMigrationIDs(x)
+	inDBMigrationIDs, err := getInDBMigrationIDs(x)
 	if err != nil {
 		return err
+	} else if len(inDBMigrationIDs) == 0 && freshDB {
+		// During startup on a new, empty database, and during integration tests, we rely only on `SyncAllTables` to
+		// create the DB schema.  No migrations can be applied because `SyncAllTables` occurs later in the
+		// initialization cycle.  We mark all migrations as complete up to this point and only run future migrations.
+		for _, migration := range orderedMigrations {
+			err := recordMigrationComplete(x, migration)
+			if err != nil {
+				return err
+			}
+		}
+		inDBMigrationIDs, err = getInDBMigrationIDs(x)
+		if err != nil {
+			return err
+		}
+	} else if freshDB {
+		return fmt.Errorf("unexpected state: migrator called with freshDB=true, but existing migrations in DB %#v", inDBMigrationIDs)
 	}
 
 	// invalidMigrations are those that are in the database, but aren't registered.
@@ -186,11 +212,9 @@ func Migrate(x *xorm.Engine) error {
 			return fmt.Errorf("migration[%s]: %s failed: %w", migration.id, migration.Description, err)
 		}
 
-		affected, err := x.Insert(&ForgejoMigration{ID: migration.id})
+		err := recordMigrationComplete(x, migration)
 		if err != nil {
 			return err
-		} else if affected != 1 {
-			return fmt.Errorf("migration[%s]: failed to insert into DB, %d records affected", migration.id, affected)
 		}
 	}
 

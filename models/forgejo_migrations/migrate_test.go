@@ -104,12 +104,12 @@ func TestResolveMigrations(t *testing.T) {
 	})
 }
 
-func TestInDBMigrationIDs(t *testing.T) {
+func TestGetInDBMigrationIDs(t *testing.T) {
 	x, deferable := migration_tests.PrepareTestEnv(t, 0, new(ForgejoMigration))
 	defer deferable()
 	require.NotNil(t, x)
 
-	migrationIDs, err := inDBMigrationIDs(x)
+	migrationIDs, err := getInDBMigrationIDs(x)
 	require.NoError(t, err)
 	require.NotNil(t, migrationIDs)
 	assert.Empty(t, migrationIDs)
@@ -119,7 +119,7 @@ func TestInDBMigrationIDs(t *testing.T) {
 	_, err = x.Insert(&ForgejoMigration{ID: "v99b_neat_migration"})
 	require.NoError(t, err)
 
-	migrationIDs, err = inDBMigrationIDs(x)
+	migrationIDs, err = getInDBMigrationIDs(x)
 	require.NoError(t, err)
 	require.NotNil(t, migrationIDs)
 	assert.Len(t, migrationIDs, 2)
@@ -232,13 +232,13 @@ func TestMigrate(t *testing.T) {
 		},
 	})
 
-	err = Migrate(x)
+	err = Migrate(x, false)
 	require.NoError(t, err)
 
 	assert.False(t, v77aRun, "v77aRun") // was already marked as run in the DB so shouldn't have run again
 	assert.True(t, v99bRun, "v99bRun")
 	assert.True(t, v99cRun, "v99cRun")
-	migrationIDs, err := inDBMigrationIDs(x)
+	migrationIDs, err := getInDBMigrationIDs(x)
 	require.NoError(t, err)
 	assert.Contains(t, migrationIDs, "v77a_neat_migration")
 	assert.Contains(t, migrationIDs, "v99b_neat_migration")
@@ -249,4 +249,66 @@ func TestMigrate(t *testing.T) {
 	rec := make([]map[string]any, 0)
 	err = x.Cols("id", "name", "new_field").Table("forgejo_magic_functionality").Find(&rec)
 	assert.NoError(t, err)
+}
+
+func TestMigrateFreshDB(t *testing.T) {
+	resetMigrations()
+	x, deferable := migration_tests.PrepareTestEnv(t, 0, new(ForgejoMigration))
+	defer deferable()
+	require.NotNil(t, x)
+
+	v77aRun := false
+	defer test.MockVariableValue(&getMigrationFilename, func() string {
+		return "some-path/v77a_neat_migration.go"
+	})()
+	registerMigration(&Migration{
+		Description: "nothing",
+		Upgrade: func(x *xorm.Engine) error {
+			v77aRun = true
+			return nil
+		},
+	})
+
+	v99bRun := false
+	defer test.MockVariableValue(&getMigrationFilename, func() string {
+		return "some-path/v99b_neat_migration.go"
+	})()
+	registerMigration(&Migration{
+		Description: "nothing",
+		Upgrade: func(x *xorm.Engine) error {
+			v99bRun = true
+			type ForgejoMagicFunctionality struct {
+				ID   int64 `xorm:"pk autoincr"`
+				Name string
+			}
+			return x.Sync(new(ForgejoMagicFunctionality))
+		},
+	})
+
+	v99cRun := false
+	defer test.MockVariableValue(&getMigrationFilename, func() string {
+		return "some-path/v99c_neat_migration.go"
+	})()
+	registerMigration(&Migration{
+		Description: "nothing",
+		Upgrade: func(x *xorm.Engine) error {
+			v99cRun = true
+			type ForgejoMagicFunctionality struct {
+				NewField string
+			}
+			return x.Sync(new(ForgejoMagicFunctionality))
+		},
+	})
+
+	err := Migrate(x, true)
+	require.NoError(t, err)
+
+	assert.False(t, v77aRun, "v77aRun") // none should be run due to freshDB flag
+	assert.False(t, v99bRun, "v99bRun")
+	assert.False(t, v99cRun, "v99cRun")
+	migrationIDs, err := getInDBMigrationIDs(x)
+	require.NoError(t, err)
+	assert.Contains(t, migrationIDs, "v77a_neat_migration")
+	assert.Contains(t, migrationIDs, "v99b_neat_migration")
+	assert.Contains(t, migrationIDs, "v99c_neat_migration")
 }
