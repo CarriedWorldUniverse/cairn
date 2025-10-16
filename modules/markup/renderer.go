@@ -326,7 +326,7 @@ func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Wr
 	if r, ok := renderer.(ExternalRenderer); ok && r.DisplayInIFrame() {
 		// Append a short script to the iframe's contents, which will communicate the scroll height of the embedded document via postMessage, either once loaded (in case the containing page loads first) in response to a postMessage from external.js, in case the iframe loads first
 		// We use '*' as a target origin for postMessage, because can be certain we are embedded on the same domain, due to X-Frame-Options configured elsewhere. (Plus, the offsetHeight of an embedded document is likely not sensitive data anyway.)
-		_, _ = pw.Write([]byte("<script>{let postHeight = () => {window.parent.postMessage({frameHeight: document.documentElement.offsetHeight}, '*')}; window.addEventListener('load', postHeight); window.addEventListener('message', (event) => {if (event.source === window.parent && event.data.requestOffsetHeight) postHeight()});}</script>"))
+		_, _ = pw.Write([]byte("<script>{let postHeight = () => {window.parent.postMessage({frameHeight: document.documentElement.offsetHeight || document.documentElement.scrollHeight}, '*')}; window.addEventListener('load', postHeight); window.addEventListener('message', (event) => {if (event.source === window.parent && event.data.requestOffsetHeight) postHeight()});}</script>"))
 	}
 	_ = pw.Close()
 

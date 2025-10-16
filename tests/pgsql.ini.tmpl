@@ -139,3 +139,11 @@ ENABLED = false
 
 [cron.check_repo_stats]
 ENABLED = false
+
+# For iframe rendering tests
+[markup.iframehtml]
+ENABLED = true
+FILE_EXTENSIONS = .iframehtml
+RENDER_COMMAND = cat
+RENDER_CONTENT_MODE = iframe
+NEED_POSTPROCESS = false
