@@ -69,7 +69,7 @@ func TestCheckUnadoptedRepositories(t *testing.T) {
 func TestListUnadoptedRepositories_ListOptions(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	username := "user2"
-	unadoptedList := []string{path.Join(username, "unadopted1"), path.Join(username, "unadopted2")}
+	unadoptedList := []string{path.Join(username, "rendering-test"), path.Join(username, "unadopted1"), path.Join(username, "unadopted2")}
 	for _, unadopted := range unadoptedList {
 		_ = os.Mkdir(path.Join(setting.RepoRootPath, unadopted+".git"), 0o755)
 	}
@@ -77,13 +77,13 @@ func TestListUnadoptedRepositories_ListOptions(t *testing.T) {
 	opts := db.ListOptions{Page: 1, PageSize: 1}
 	repoNames, count, err := ListUnadoptedRepositories(db.DefaultContext, "", &opts)
 	require.NoError(t, err)
-	assert.Equal(t, 2, count)
+	assert.Equal(t, 3, count)
 	assert.Equal(t, unadoptedList[0], repoNames[0])
 
 	opts = db.ListOptions{Page: 2, PageSize: 1}
 	repoNames, count, err = ListUnadoptedRepositories(db.DefaultContext, "", &opts)
 	require.NoError(t, err)
-	assert.Equal(t, 2, count)
+	assert.Equal(t, 3, count)
 	assert.Equal(t, unadoptedList[1], repoNames[0])
 }
 
@@ -97,7 +97,7 @@ func TestAdoptRepository(t *testing.T) {
 		path.Join(setting.RepoRootPath, username, unadopted+".git"),
 	))
 
-	opts := db.ListOptions{Page: 1, PageSize: 1}
+	opts := db.ListOptions{Page: 2, PageSize: 1}
 	repoNames, _, err := ListUnadoptedRepositories(db.DefaultContext, "", &opts)
 	require.NoError(t, err)
 	require.Contains(t, repoNames, path.Join(username, unadopted))
