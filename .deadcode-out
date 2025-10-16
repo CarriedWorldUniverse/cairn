@@ -22,7 +22,6 @@ forgejo.org/models/db
 	InTransaction
 	DumpTables
 	GetTableNames
-	sortBeans
 	extendBeansForCascade
 
 forgejo.org/models/dbfs
