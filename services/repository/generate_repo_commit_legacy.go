@@ -163,3 +163,44 @@ func generateRepoCommit(ctx context.Context, repo, templateRepo, generateRepo *r
 
 	return initRepoCommit(ctx, tmpDir, repo, repo.Owner, defaultBranch)
 }
+
+func checkGiteaTemplate(tmpDir string) (*GiteaTemplate, error) {
+	configDirs := []string{".forgejo", ".gitea"}
+	var templateFilePath string
+
+	// All file access should be done through `root` to avoid file traversal attacks, especially with symlinks
+	root, err := os.OpenRoot(tmpDir)
+	if err != nil {
+		return nil, fmt.Errorf("open root: %w", err)
+	}
+	defer root.Close()
+
+	for _, dir := range configDirs {
+		candidatePath := filepath.Join(dir, "template")
+		if _, err := root.Stat(candidatePath); err == nil {
+			templateFilePath = candidatePath
+			break
+		} else if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+
+	if templateFilePath == "" {
+		return nil, nil
+	}
+
+	// FIXME: root.ReadFile(relPath) in go 1.25
+	file, err := root.Open(templateFilePath)
+	if err != nil {
+		return nil, err
+	}
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GiteaTemplate{
+		Path:    templateFilePath,
+		Content: content,
+	}, nil
+}
