@@ -406,3 +406,43 @@ func TestRepoGenerateTemplatingSymlink(t *testing.T) {
 		}
 	})
 }
+
+func TestRepoGenerateTemplatingSymlinkGlobFile(t *testing.T) {
+	onGiteaRun(t, func(t *testing.T, u *url.URL) {
+		templateName := "my_template"
+		generatedName := "my_generated"
+
+		userName := "user1"
+		session := loginUser(t, userName)
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: userName})
+
+		template, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
+			Name:       optional.Some(templateName),
+			IsTemplate: optional.Some(true),
+			Files: optional.Some([]*files_service.ChangeRepoFile{
+				{
+					Operation:     "create",
+					TreePath:      ".forgejo/template",
+					ContentReader: strings.NewReader("/etc/passwd"),
+					Symlink:       true,
+				},
+			}),
+		})
+		defer f()
+
+		// The repo.TemplateID field is not initialized. Luckily, the ID field holds the expected value
+		templateID := strconv.FormatInt(template.ID, 10)
+
+		resp := testRepoGenerateFailure(
+			t,
+			session,
+			templateID,
+			user.Name,
+			templateName,
+			user,
+			user,
+			generatedName,
+		)
+		assert.Contains(t, resp.Body.String(), "statat .forgejo/template: path escapes from parent")
+	})
+}

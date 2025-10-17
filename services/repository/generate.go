@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -118,35 +117,6 @@ func (gt *GiteaTemplate) Globs() []glob.Glob {
 		gt.globs = append(gt.globs, g)
 	}
 	return gt.globs
-}
-
-func checkGiteaTemplate(tmpDir string) (*GiteaTemplate, error) {
-	configDirs := []string{".forgejo", ".gitea"}
-	var templateFilePath string
-
-	for _, dir := range configDirs {
-		candidatePath := filepath.Join(tmpDir, dir, "template")
-		if _, err := os.Stat(candidatePath); err == nil {
-			templateFilePath = candidatePath
-			break
-		} else if !os.IsNotExist(err) {
-			return nil, err
-		}
-	}
-
-	if templateFilePath == "" {
-		return nil, nil
-	}
-
-	content, err := os.ReadFile(templateFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	return &GiteaTemplate{
-		Path:    templateFilePath,
-		Content: content,
-	}, nil
 }
 
 func generateGitContent(ctx context.Context, repo, templateRepo, generateRepo *repo_model.Repository) (err error) {
