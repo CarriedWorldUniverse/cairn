@@ -11,10 +11,12 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
 	"forgejo.org/models/db"
+	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
@@ -121,6 +123,12 @@ func TestPullCreate(t *testing.T) {
 		assert.Regexp(t, "diff", resp.Body)
 		assert.Regexp(t, `Subject: \[PATCH\] Update README.md`, resp.Body)
 		assert.NotRegexp(t, "diff.*diff", resp.Body) // not two diffs, just one
+
+		// Check that mergebase is set.
+		index, err := strconv.ParseInt(url[strings.LastIndexByte(url, '/')+1:], 10, 64)
+		require.NoError(t, err)
+		pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: 1, HeadBranch: "master", BaseBranch: "master", Index: index})
+		assert.NotEmpty(t, pr.MergeBase)
 	})
 }
 
