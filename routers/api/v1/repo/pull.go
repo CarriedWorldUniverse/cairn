@@ -1593,25 +1593,21 @@ func GetPullRequestFiles(ctx *context.APIContext) {
 
 	baseGitRepo := ctx.Repo.GitRepo
 
-	var prInfo *git.CompareInfo
+	baseRef := pr.BaseBranch
 	if pr.HasMerged {
-		prInfo, err = baseGitRepo.GetCompareInfo(pr.BaseRepo.RepoPath(), pr.MergeBase, pr.GetGitRefName(), true, false)
-	} else {
-		prInfo, err = baseGitRepo.GetCompareInfo(pr.BaseRepo.RepoPath(), pr.BaseBranch, pr.GetGitRefName(), true, false)
+		baseRef = pr.MergeBase
 	}
+	startCommitID, err := baseGitRepo.GetMergeBaseSimple(baseRef, pr.GetGitRefName())
 	if err != nil {
-		ctx.ServerError("GetCompareInfo", err)
-		return
+		// No merge base exists, fallback to use base reference.
+		startCommitID = baseRef
 	}
 
-	headCommitID, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
+	endCommitID, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
 	if err != nil {
 		ctx.ServerError("GetRefCommitID", err)
 		return
 	}
-
-	startCommitID := prInfo.MergeBase
-	endCommitID := headCommitID
 
 	maxLines := setting.Git.MaxGitDiffLines
 
