@@ -126,8 +126,13 @@ func TestAPICreatePullSuccess(t *testing.T) {
 		Base:  "master",
 		Title: "create a failure pr",
 	}).AddTokenAuth(token)
-	MakeRequest(t, req, http.StatusCreated)
+	res := MakeRequest(t, req, http.StatusCreated)
 	MakeRequest(t, req, http.StatusUnprocessableEntity) // second request should fail
+
+	pull := new(api.PullRequest)
+	DecodeJSON(t, res, pull)
+
+	assert.Equal(t, "65f1bf27bc3bf70f64657658635e66094edbcb4d", pull.MergeBase)
 }
 
 func TestAPICreatePullSameRepoSuccess(t *testing.T) {
@@ -143,8 +148,13 @@ func TestAPICreatePullSameRepoSuccess(t *testing.T) {
 		Base:  "master",
 		Title: "successfully create a PR between branches of the same repository",
 	}).AddTokenAuth(token)
-	MakeRequest(t, req, http.StatusCreated)
+	res := MakeRequest(t, req, http.StatusCreated)
 	MakeRequest(t, req, http.StatusUnprocessableEntity) // second request should fail
+
+	pull := new(api.PullRequest)
+	DecodeJSON(t, res, pull)
+
+	assert.Equal(t, "65f1bf27bc3bf70f64657658635e66094edbcb4d", pull.MergeBase)
 }
 
 func TestAPICreatePullWithFieldsSuccess(t *testing.T) {

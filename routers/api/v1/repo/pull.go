@@ -433,7 +433,7 @@ func CreatePullRequest(ctx *context.APIContext) {
 	)
 
 	// Get repo/branch information
-	headRepo, headGitRepo, compareInfo, baseBranch, headBranch := parseCompareInfo(ctx, form)
+	headRepo, headGitRepo, _, baseBranch, headBranch := parseCompareInfo(ctx, form)
 	if ctx.Written() {
 		return
 	}
@@ -522,7 +522,6 @@ func CreatePullRequest(ctx *context.APIContext) {
 		BaseBranch: baseBranch,
 		HeadRepo:   headRepo,
 		BaseRepo:   repo,
-		MergeBase:  compareInfo.MergeBase,
 		Type:       issues_model.PullRequestGitea,
 	}
 
