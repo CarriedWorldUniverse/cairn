@@ -79,7 +79,7 @@
 			<article>
 				<header>{{ctx.Locale.Tr "admin.emails.change_email_header"}}</header>
 				<div class="content">
-					<p class="center">{{ctx.Locale.Tr "admin.emails.change_email_text"}}</p>
+					{{ctx.Locale.Tr "admin.emails.change_email_text"}}
 				</div>
 				<form class="ui form" id="email-action-form" action="{{AppSubUrl}}/admin/emails/activate" method="post">
 					{{$.CsrfTokenHtml}}
@@ -94,9 +94,7 @@
 					<input type="hidden" id="form-primary" name="primary" value="" required>
 					<input type="hidden" id="form-activate" name="activate" value="" required>
 
-					<div class="center">
-						{{template "base/modal_actions_confirm" .}}
-					</div>
+					{{template "base/modal_actions_confirm" .}}
 				</form>
 			</article>
 		</dialog>
