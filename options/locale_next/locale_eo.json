@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s disbranĉigo",
+        "other": "%s disbranĉigoj"
+    },
+    "stars.n_stars": {
+        "one": "%s stelo",
+        "other": "%s steloj"
+    },
     "search.milestone_kind": "Serĉi celojn…",
     "home.welcome.no_activity": "Neniu aktiveco",
     "home.explore_repos": "Esplori deponejojn",

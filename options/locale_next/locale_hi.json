@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s फोर्क",
+        "other": "%s फोर्कस"
+    },
+    "stars.n_stars": {
+        "one": "%s सितारा",
+        "other": "%s सितारे"
+    },
     "relativetime.2days": "दो दिन पहले",
     "relativetime.1day": "कल",
     "repo.form.cannot_create": "वो जगह जहाँ पे रिपॉजिटरी रखीं जातीं हैं वहां जगह ख़त्म",

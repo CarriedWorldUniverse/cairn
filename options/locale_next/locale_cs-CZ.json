@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s fork",
+        "other": "%s forků"
+    },
+    "stars.n_stars": {
+        "one": "%s hvězda",
+        "other": "%s hvězd"
+    },
     "release.n_downloads": {
         "one": "%s stažení",
         "other": "%s stažení"

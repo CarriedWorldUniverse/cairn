@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s atzarojums",
+        "other": "%s atzarojumi"
+    },
+    "stars.n_stars": {
+        "one": "%s zvaigzne",
+        "other": "%s zvaignznes"
+    },
     "release.n_downloads": {
         "zero": "%s lejupielāžu",
         "one": "%s lejupielāde",

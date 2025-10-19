@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s fork",
+        "other": "%s forks"
+    },
+    "stars.n_stars": {
+        "one": "%s αστέρι",
+        "other": "%s αστέρια"
+    },
     "release.n_downloads": {
         "one": "%s λήψη",
         "other": "%s λήψεις"

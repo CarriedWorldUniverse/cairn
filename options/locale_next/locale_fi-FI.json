@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s forkki",
+        "other": "%s forkkia"
+    },
+    "stars.n_stars": {
+        "one": "%s tähti",
+        "other": "%s tähteä"
+    },
     "release.n_downloads": {
         "one": "%s lataus",
         "other": "%s latausta"

@@ -7,7 +7,9 @@
 				{{svg "octicon-star"}}<span class="text not-mobile">{{ctx.Locale.Tr "repo.star"}}</span>
 			{{end}}
 		</button>
-		<a hx-boost="false" class="ui basic label" href="{{$.RepoLink}}/stars">
+		<a hx-boost="false" class="ui basic label" href="{{$.RepoLink}}/stars"
+			aria-label="{{ctx.Locale.TrPluralString .Repository.NumStars "stars.n_stars" (printf "%d" .Repository.NumStars)}}"
+			>
 			{{CountFmt .Repository.NumStars}}
 		</a>
 	</div>

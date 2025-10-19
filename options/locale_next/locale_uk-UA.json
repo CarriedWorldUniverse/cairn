@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s форк",
+        "many": "%s форків"
+    },
+    "stars.n_stars": {
+        "one": "%s зірка",
+        "many": "%s зірок"
+    },
     "release.n_downloads": {
         "one": "%s завантаження",
         "few": "%s завантаження",

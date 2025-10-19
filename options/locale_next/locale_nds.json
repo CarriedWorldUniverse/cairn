@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s Gabel",
+        "other": "%s Gabels"
+    },
+    "stars.n_stars": {
+        "one": "%s Steern",
+        "other": "%s Steerns"
+    },
     "release.n_downloads": {
         "one": "%s maal runnerladen",
         "other": "%s maal runnerladen"

@@ -1,4 +1,8 @@
 {
+    "stars.n_stars": {
+        "one": "%s tärn",
+        "other": "%s tärni"
+    },
     "search.milestone_kind": "Otsi verstaposte…",
     "relativetime.2years": "kaks aastat tagasi",
     "error.not_found.title": "Lehte ei leidu",

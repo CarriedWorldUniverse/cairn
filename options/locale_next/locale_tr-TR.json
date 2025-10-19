@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s çatal",
+        "other": "%s çatal"
+    },
+    "stars.n_stars": {
+        "one": "%s yıldız",
+        "other": "%s yıldız"
+    },
     "repo.pulls.merged_title_desc": "%[4]s <code>%[2]s</code> içindeki %[1]d işlemeyi <code>%[3]s</code> ile birleştirdi",
     "repo.pulls.title_desc": "<code>%[2]s</code> içindeki %[1]d işlemeyi <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor",
     "search.milestone_kind": "Kilometre taşlarını ara...",

@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s fork",
+        "other": "%s forks"
+    },
+    "stars.n_stars": {
+        "one": "%s estrella",
+        "other": "%s estrelles"
+    },
     "search.milestone_kind": "Cerca fites…",
     "moderation.abuse_category.malware": "Programari maliciós",
     "relativetime.mins": {
