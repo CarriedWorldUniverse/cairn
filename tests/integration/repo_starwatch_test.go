@@ -42,6 +42,14 @@ func testRepoStarringOrWatching(t *testing.T, action, listURI string, expectEmpt
 	text := strings.ToLower(actionButton.Find("button span.text").Text())
 	assert.Equal(t, oppositeAction, text)
 
+	listLink := htmlDoc.Find(fmt.Sprintf("a[href$='/%s']", listURI))
+	ariaLabel, _ := listLink.Attr("aria-label")
+	if listURI == "stars" {
+		assert.Equal(t, "1 star", ariaLabel)
+	} else {
+		assert.Equal(t, "5 watchers", ariaLabel)
+	}
+
 	// Load stargazers/watchers as user5
 	req = NewRequestf(t, "GET", "/user2/repo1/%s", listURI)
 	resp = session.MakeRequest(t, req, http.StatusOK)

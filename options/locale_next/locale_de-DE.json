@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s Fork",
+        "other": "%s Forks"
+    },
+    "stars.n_stars": {
+        "one": "%s Favorisierung",
+        "other": "%s Favorisierungen"
+    },
     "release.n_downloads": {
         "one": "%s Download",
         "other": "%s Downloads"

@@ -44,7 +44,9 @@
 				{{end}}
 			</div>
 		</div>
-		<a class="ui basic label" href="{{.Link}}/forks">
+		<a class="ui basic label" href="{{.Link}}/forks"
+			aria-label="{{ctx.Locale.TrPluralString .NumForks "fork.n_forks" (printf "%d" .NumForks)}}"
+			>
 			{{CountFmt .NumForks}}
 		</a>
 	</div>

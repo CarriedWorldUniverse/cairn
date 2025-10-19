@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s 個分叉",
+        "other": "%s 個分叉"
+    },
+    "stars.n_stars": {
+        "one": "%s 顆星星",
+        "other": "%s 顆星星"
+    },
     "release.n_downloads": {
         "one": "%s 次下載",
         "other": "%s 次下載"

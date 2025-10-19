@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s fork",
+        "many": "%s forki"
+    },
+    "stars.n_stars": {
+        "one": "%s gwiazdka",
+        "many": "%s gwiazdek"
+    },
     "release.n_downloads": {
         "one": "%s pobranie",
         "many": "%s pobrania"

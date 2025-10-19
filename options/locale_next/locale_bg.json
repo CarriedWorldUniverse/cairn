@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s разклонение",
+        "other": "%s разклонения"
+    },
+    "stars.n_stars": {
+        "one": "%s звезда",
+        "other": "%s звезди"
+    },
     "release.n_downloads": {
         "one": "%s изтегляне",
         "other": "%s изтегляния"

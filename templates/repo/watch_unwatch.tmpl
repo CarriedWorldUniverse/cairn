@@ -7,7 +7,9 @@
 				{{svg "octicon-eye"}}<span class="text not-mobile">{{ctx.Locale.Tr "repo.watch"}}</span>
 			{{end}}
 		</button>
-		<a hx-boost="false" class="ui basic label" href="{{.RepoLink}}/watchers">
+		<a hx-boost="false" class="ui basic label" href="{{.RepoLink}}/watchers"
+			aria-label="{{ctx.Locale.TrPluralString .Repository.NumWatches "watch.n_watchers" (printf "%d" .Repository.NumWatches)}}"
+			>
 			{{CountFmt .Repository.NumWatches}}
 		</a>
 	</div>

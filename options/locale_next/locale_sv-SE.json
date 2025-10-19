@@ -1,4 +1,8 @@
 {
+    "stars.n_stars": {
+        "one": "%s stjärna",
+        "other": "%s stjärnor"
+    },
     "repo.pulls.merged_title_desc": {
         "one": "sammanfogade %[1]d incheckning från <code>%[2]s</code> in i <code>%[3]s</code> %[4]s",
         "other": "sammanfogade %[1]d incheckningar från <code>%[2]s</code> in i <code>%[3]s</code> %[4]s"

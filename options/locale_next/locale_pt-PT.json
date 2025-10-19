@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s derivação",
+        "other": "%s derivações"
+    },
+    "stars.n_stars": {
+        "one": "%s estrela",
+        "other": "%s estrelas"
+    },
     "release.n_downloads": {
         "one": "%s descarga",
         "many": "%s descargas",

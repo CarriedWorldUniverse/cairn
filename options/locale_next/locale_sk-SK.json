@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s fork",
+        "other": "%s forky"
+    },
+    "stars.n_stars": {
+        "one": "%s hviezda",
+        "other": "%s hviezdy"
+    },
     "error.not_found.title": "Stránka nebola nájedná",
     "incorrect_root_url": "Táto inštancia Forgejo je nakonfigurovaná tak, aby bola obsluhovaná na „%s“. Momentálne zobrazujete Forgejo prostredníctvom inej adresy URL, čo môže spôsobiť poruchu niektorých častí aplikácie. Kanonickú adresu URL kontrolujú správcovia aplikácie Forgejo prostredníctvom nastavenia ROOT_URL v súbore app.ini.",
     "themes.names.forgejo-auto": "Forgejo (sleduj systémovú tému)",

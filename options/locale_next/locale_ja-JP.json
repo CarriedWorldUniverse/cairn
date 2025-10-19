@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s のフォーク",
+        "other": "%s のフォーク"
+    },
+    "stars.n_stars": {
+        "one": "%s のスター",
+        "other": "%s のスター"
+    },
     "release.n_downloads": {
         "one": "%s のダウンロード",
         "other": "%s のダウンロード"

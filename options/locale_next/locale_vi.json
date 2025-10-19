@@ -1,4 +1,12 @@
 {
+    "fork.n_forks": {
+        "one": "%s phân nhánh",
+        "other": "%s phân nhánh"
+    },
+    "stars.n_stars": {
+        "one": "%s sao",
+        "other": "%s sao"
+    },
     "moderation.abuse_category.malware": "Mã độc",
     "home.welcome.no_activity": "Chưa có hoạt động",
     "home.explore_users": "Khám phá người dùng",
