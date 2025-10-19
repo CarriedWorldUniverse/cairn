@@ -292,42 +292,10 @@ func UpdateRepoStats(ctx context.Context, id int64) error {
 	return nil
 }
 
-func updateUserStarNumbers(ctx context.Context, users []user_model.User) error {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer committer.Close()
-
-	for _, user := range users {
-		if _, err = db.Exec(ctx, "UPDATE `user` SET num_stars=(SELECT COUNT(*) FROM `star` WHERE uid=?) WHERE id=?", user.ID, user.ID); err != nil {
-			return err
-		}
-	}
-
-	return committer.Commit()
-}
-
 // DoctorUserStarNum recalculate Stars number for all user
 func DoctorUserStarNum(ctx context.Context) (err error) {
-	const batchSize = 100
-
-	for start := 0; ; start += batchSize {
-		users := make([]user_model.User, 0, batchSize)
-		if err = db.GetEngine(ctx).Limit(batchSize, start).Where("type = ?", 0).Cols("id").Find(&users); err != nil {
-			return err
-		}
-		if len(users) == 0 {
-			break
-		}
-
-		if err = updateUserStarNumbers(ctx, users); err != nil {
-			return err
-		}
-	}
-
+	_, err = db.Exec(ctx, "UPDATE `user` SET num_stars=(SELECT COUNT(*) FROM `star` WHERE uid=`user`.id) WHERE type = 0")
 	log.Debug("recalculate Stars number for all user finished")
-
 	return err
 }
 
