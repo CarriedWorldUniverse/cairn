@@ -645,6 +645,7 @@ func TestMustHaveTwoFactor(t *testing.T) {
 	org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 17})
 	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
 	ghostUser := user_model.NewGhostUser()
+	actionsUser := user_model.NewActionsUser()
 
 	t.Run("NoneTwoFactorRequirement", func(t *testing.T) {
 		// this should be the default, so don't have to set the variable
@@ -653,6 +654,7 @@ func TestMustHaveTwoFactor(t *testing.T) {
 		assert.False(t, restrictedUser.MustHaveTwoFactor())
 		assert.False(t, org.MustHaveTwoFactor())
 		assert.False(t, ghostUser.MustHaveTwoFactor())
+		assert.False(t, actionsUser.MustHaveTwoFactor())
 	})
 
 	t.Run("AllTwoFactorRequirement", func(t *testing.T) {
@@ -663,6 +665,7 @@ func TestMustHaveTwoFactor(t *testing.T) {
 		assert.True(t, restrictedUser.MustHaveTwoFactor())
 		assert.False(t, org.MustHaveTwoFactor())
 		assert.True(t, ghostUser.MustHaveTwoFactor())
+		assert.False(t, actionsUser.MustHaveTwoFactor())
 	})
 
 	t.Run("AdminTwoFactorRequirement", func(t *testing.T) {
@@ -673,6 +676,7 @@ func TestMustHaveTwoFactor(t *testing.T) {
 		assert.False(t, restrictedUser.MustHaveTwoFactor())
 		assert.False(t, org.MustHaveTwoFactor())
 		assert.False(t, ghostUser.MustHaveTwoFactor())
+		assert.False(t, actionsUser.MustHaveTwoFactor())
 	})
 }
 
@@ -696,6 +700,7 @@ func TestIsAccessAllowed(t *testing.T) {
 	restrictedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 29})
 	prohibitLoginUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 37})
 	ghostUser := user_model.NewGhostUser()
+	actionsUser := user_model.NewActionsUser()
 
 	// users with enabled WebAuthn
 	normalWebAuthnUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 32})
@@ -711,6 +716,7 @@ func TestIsAccessAllowed(t *testing.T) {
 			runTest(t, restrictedUser, false, true)
 			runTest(t, prohibitLoginUser, false, false)
 			runTest(t, ghostUser, false, false)
+			runTest(t, actionsUser, false, true)
 		})
 
 		t.Run("enabled 2fa", func(t *testing.T) {
@@ -736,6 +742,7 @@ func TestIsAccessAllowed(t *testing.T) {
 			runTest(t, restrictedUser, false, false)
 			runTest(t, prohibitLoginUser, false, false)
 			runTest(t, ghostUser, false, false)
+			runTest(t, actionsUser, false, true)
 		})
 
 		t.Run("enabled 2fa", func(t *testing.T) {
@@ -761,6 +768,7 @@ func TestIsAccessAllowed(t *testing.T) {
 			runTest(t, restrictedUser, false, true)
 			runTest(t, prohibitLoginUser, false, false)
 			runTest(t, ghostUser, false, false)
+			runTest(t, actionsUser, false, true)
 		})
 
 		t.Run("enabled 2fa", func(t *testing.T) {
