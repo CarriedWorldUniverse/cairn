@@ -6,9 +6,7 @@
   --button-padding-inline: 1.35rem;
 }
 
-:root .small.button,
-:root .small.button-row,
-:root .small.button-sequence {
+:root .small:is(.button, .button-row, .button-sequence) {
   --button-min-height: 34px;
   --button-padding-inline: 1.25rem;
 }
@@ -18,9 +16,7 @@
     --button-min-height: 40px;
   }
 
-  :root .small.button,
-  :root .small.button-row,
-  :root .small.button-sequence {
+  :root .small:is(.button, .button-row, .button-sequence) {
     --button-min-height: 38px;
   }
 }
@@ -34,38 +30,50 @@
   justify-content: center;
   gap: 0.5rem;
   border-radius: var(--border-radius);
-}
 
-.button:hover,
-.button:focus {
-  text-decoration: none;
+  &:hover,
+  &:focus {
+    text-decoration: none;
+  }
 }
 
 .button.primary {
   background: var(--color-primary);
   color: var(--color-primary-contrast);
-}
 
-.button.primary:hover,
-.button.primary:focus {
-  background: var(--color-primary-hover);
+  &:hover,
+  &:focus {
+    background-color: var(--color-primary-hover);
+  }
 }
 
 .button.secondary {
   background: var(--color-button);
   border: 1px solid var(--color-light-border);
   color: var(--color-text-light);
+
+  &:hover,
+  &:focus {
+    color: var(--color-text);
+  }
 }
 
-.button.secondary:hover,
-.button.secondary:focus {
-  color: var(--color-text);
+.button.danger {
+  /* Fallbacks are needed while -thin vars are not supplied by all themes */
+  background: var(--color-danger-bg, var(--color-error-bg));
+  border: 1px solid var(--color-thin-red, var(--color-red));
+  color: var(--color-thin-red, var(--color-red));
+  font-weight: var(--font-weight-medium);
+
+  &:hover,
+  &:focus {
+    color: var(--color-thin-red-highlight, var(--color-red));
+  }
 }
 
 /* Dropdown openers should be at least tall as buttons they are in line with, and
  * as wide as they are tall */
-.button-row details.dropdown summary,
-.button-sequence details.dropdown summary {
+:is(.button-row, .button-sequence) details.dropdown summary {
   min-height: var(--button-min-height);
   min-width: var(--button-min-height);
 }

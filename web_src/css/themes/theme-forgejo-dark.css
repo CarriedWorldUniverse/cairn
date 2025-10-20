@@ -198,12 +198,21 @@
   --color-orange-badge-hover-bg: #ea580c44;
 
   /* Colors for thin elements: octicons, text, borders */
-  --color-chroma: 0.19;
-  --color-thin-lightness: 0.68;
-  --color-thin-green: oklch(var(--color-thin-lightness) var(--color-chroma) 145deg);
-  --color-thin-red: oklch(var(--color-thin-lightness) var(--color-chroma) 27deg);
-  --color-thin-purple: oklch(var(--color-thin-lightness) var(--color-chroma) 298deg);
-  --color-thin-orange: oklch(var(--color-thin-lightness) var(--color-chroma) 41deg);
+  --thin-lightness: 0.68;
+  --regular-chroma: 0.19;
+  --color-thin-green: oklch(var(--thin-lightness) var(--regular-chroma) 145deg);
+  --color-thin-red: oklch(var(--thin-lightness) var(--regular-chroma) 27deg);
+  --color-thin-purple: oklch(var(--thin-lightness) var(--regular-chroma) 298deg);
+  --color-thin-orange: oklch(var(--thin-lightness) var(--regular-chroma) 41deg);
+
+  /* Ditto but when additional highlight is needed, e.g. on user interaction */
+  --thin-lightness-highlight: 0.75;
+  --color-thin-red-highlight: oklch(var(--thin-lightness-highlight) var(--regular-chroma) 27deg);
+
+  /* Background colors. WIP, currently only covers danger buttons */
+  --bg-lightness: 0.23;
+  --bg-chroma: 0.05;
+  --color-danger-bg: oklch(var(--bg-lightness) var(--bg-chroma) 27deg);
 
   /* target-based colors */
   --color-body: var(--steel-800);

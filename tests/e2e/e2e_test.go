@@ -70,7 +70,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
-// TestE2e should be the only test e2e necessary. It will collect all "*.test.e2e.js" files in this directory and build a test for each.
+// TestE2e should be the only test e2e necessary. It will collect all "*.test.e2e.ts" files in this directory and build a test for each.
 func TestE2e(t *testing.T) {
 	// Find the paths of all e2e test files in test directory.
 	searchGlob := filepath.Join(filepath.Dir(setting.AppPath), "tests", "e2e", "*.test.e2e.ts")
@@ -105,6 +105,10 @@ func TestE2e(t *testing.T) {
 		t.Run(testname, func(t *testing.T) {
 			if testname == "user-settings.test.e2e" {
 				defer test.MockVariableValue(&setting.Quota.Enabled, true)()
+				defer test.MockVariableValue(&testE2eWebRoutes, routers.NormalRoutes())()
+			}
+			if testname == "buttons.test.e2e" {
+				defer test.MockVariableValue(&setting.IsProd, false)()
 				defer test.MockVariableValue(&testE2eWebRoutes, routers.NormalRoutes())()
 			}
 
