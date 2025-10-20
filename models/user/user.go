@@ -236,7 +236,7 @@ func GetAllAdmins(ctx context.Context) ([]*User, error) {
 
 // MustHaveTwoFactor returns true if the user is a individual and requires 2fa
 func (u *User) MustHaveTwoFactor() bool {
-	if !u.IsIndividual() || setting.GlobalTwoFactorRequirement.IsNone() {
+	if u.IsActions() || !u.IsIndividual() || setting.GlobalTwoFactorRequirement.IsNone() {
 		return false
 	}
 

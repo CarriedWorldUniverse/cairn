@@ -139,7 +139,6 @@ func (ctx *Context) validateTwoFactorRequirement() {
 	hasTwoFactor, err := auth.HasTwoFactorByUID(ctx, ctx.Doer.ID)
 	if err != nil {
 		log.ErrorWithSkip(2, "Error getting 2fa: %s", err)
-		// fallthrough to set the variables
 	}
 	ctx.Data["MustEnableTwoFactor"] = !hasTwoFactor
 	ctx.Data["HideNavbarLinks"] = !hasTwoFactor
