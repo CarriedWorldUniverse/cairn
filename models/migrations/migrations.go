@@ -449,27 +449,38 @@ func Migrate(x *xorm.Engine) error {
 	}
 
 	var previousVersion int64
-	currentVersion := &Version{ID: 1}
-	has, err := x.Get(currentVersion)
-	if err != nil {
-		return fmt.Errorf("get: %w", err)
-	} else if !has {
-		// If the version record does not exist, it is a fresh installation, and we can skip all migrations.
-		// XORM model framework will create all tables when initializing.
-		currentVersion.ID = 0
-		currentVersion.Version = maxDBVer
-		if _, err = x.InsertOne(currentVersion); err != nil {
+	var versionRecords []*Version
+	if err := x.Find(&versionRecords); err != nil {
+		return fmt.Errorf("find: %w", err)
+	}
+	if len(versionRecords) == 0 {
+		// If the version record does not exist we think it is a fresh installation and we can skip all migrations;
+		// engine init calls `SyncAllTables` which will create the fresh database.
+		upToDate := &Version{ID: 1, Version: maxDBVer}
+		if _, err := x.InsertOne(upToDate); err != nil {
 			return fmt.Errorf("insert: %w", err)
 		}
+		// continue with the migration routine, but nothing will be applied; this allows transition into the newer
+		// forgejo library and for it to be configured and populated.
+		versionRecords = []*Version{upToDate}
+	} else if len(versionRecords) > 1 {
+		return fmt.Errorf(
+			"corrupt migrations: Forgejo database has unexpected records in the table `version`; a single record is expected w/ ID=1, but %d records were found",
+			len(versionRecords))
 	} else {
-		previousVersion = currentVersion.Version
+		previousVersion = versionRecords[0].Version
+	}
+	currentVersion := versionRecords[0]
+	if currentVersion.ID != 1 {
+		return fmt.Errorf(
+			"corrupt migrations: Forgejo database has corrupted records in the table `version`; a single record with ID=1 is expected, but a record with ID=%d was found instead", currentVersion.ID)
 	}
 
 	curDBVer := currentVersion.Version
 	// Outdated Forgejo database version is not supported
 	if curDBVer < minDBVersion {
 		log.Fatal(`Forgejo no longer supports auto-migration from your previously installed version.
-Please try upgrading to a lower version first (suggested v1.6.4), then upgrade to this version.`)
+ Please try upgrading to a lower version first (suggested v1.6.4), then upgrade to this version.`)
 		return nil
 	}
 
@@ -486,7 +497,7 @@ Please try upgrading to a lower version first (suggested v1.6.4), then upgrade t
 
 	// Some migration tasks depend on the git command
 	if git.DefaultContext == nil {
-		if err = git.InitSimple(context.Background()); err != nil {
+		if err := git.InitSimple(context.Background()); err != nil {
 			return err
 		}
 	}
@@ -500,11 +511,11 @@ Please try upgrading to a lower version first (suggested v1.6.4), then upgrade t
 		log.Info("Migration[%d]: %s", m.idNumber, m.description)
 		// Reset the mapper between each migration - migrations are not supposed to depend on each other
 		x.SetMapper(names.GonicMapper{})
-		if err = m.Migrate(x); err != nil {
+		if err := m.Migrate(x); err != nil {
 			return fmt.Errorf("migration[%d]: %s failed: %w", m.idNumber, m.description, err)
 		}
 		currentVersion.Version = migrationIDNumberToDBVersion(m.idNumber)
-		if _, err = x.ID(1).Update(currentVersion); err != nil {
+		if _, err := x.ID(1).Update(currentVersion); err != nil {
 			return err
 		}
 	}

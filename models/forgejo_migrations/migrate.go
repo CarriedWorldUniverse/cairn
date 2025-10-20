@@ -174,19 +174,29 @@ func Migrate(x *xorm.Engine) error {
 		return fmt.Errorf("sync: %w", err)
 	}
 
-	currentVersion := &ForgejoVersion{ID: 1}
-	has, err := x.Get(currentVersion)
-	if err != nil {
-		return fmt.Errorf("get: %w", err)
-	} else if !has {
-		// If the version record does not exist we think
-		// it is a fresh installation and we can skip all migrations.
-		currentVersion.ID = 0
-		currentVersion.Version = ExpectedVersion()
-
-		if _, err = x.InsertOne(currentVersion); err != nil {
+	var versionRecords []*ForgejoVersion
+	if err := x.Find(&versionRecords); err != nil {
+		return fmt.Errorf("find: %w", err)
+	}
+	if len(versionRecords) == 0 {
+		// If the version record does not exist we think it is a fresh installation and we can skip all migrations;
+		// engine init calls `SyncAllTables` which will create the fresh database.
+		upToDate := &ForgejoVersion{ID: 1, Version: ExpectedVersion()}
+		if _, err := x.InsertOne(upToDate); err != nil {
 			return fmt.Errorf("insert: %w", err)
 		}
+		// continue with the migration routine, but nothing will be applied; this allows transition into the newer
+		// forgejo_migration library and for it to be configured and populated.
+		versionRecords = []*ForgejoVersion{upToDate}
+	} else if len(versionRecords) > 1 {
+		return fmt.Errorf(
+			"corrupt migrations: Forgejo database has unexpected records in the table `forgejo_version`; a single record is expected w/ ID=1, but %d records were found",
+			len(versionRecords))
+	}
+	currentVersion := versionRecords[0]
+	if currentVersion.ID != 1 {
+		return fmt.Errorf(
+			"corrupt migrations: Forgejo database has corrupted records in the table `forgejo_version`; a single record with ID=1 is expected, but a record with ID=%d was found instead", currentVersion.ID)
 	}
 
 	v := currentVersion.Version
@@ -205,7 +215,7 @@ func Migrate(x *xorm.Engine) error {
 
 	// Some migration tasks depend on the git command
 	if git.DefaultContext == nil {
-		if err = git.InitSimple(context.Background()); err != nil {
+		if err := git.InitSimple(context.Background()); err != nil {
 			return err
 		}
 	}
@@ -215,11 +225,11 @@ func Migrate(x *xorm.Engine) error {
 		log.Info("Migration[%d]: %s", v+int64(i), m.description)
 		// Reset the mapper between each migration - migrations are not supposed to depend on each other
 		x.SetMapper(names.GonicMapper{})
-		if err = m.migrate(x); err != nil {
+		if err := m.migrate(x); err != nil {
 			return fmt.Errorf("migration[%d]: %s failed: %w", v+int64(i), m.description, err)
 		}
 		currentVersion.Version = v + int64(i) + 1
-		if _, err = x.ID(1).Update(currentVersion); err != nil {
+		if _, err := x.ID(1).Update(currentVersion); err != nil {
 			return err
 		}
 	}
