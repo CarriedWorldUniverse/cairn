@@ -122,25 +122,40 @@ test('Visual properties', async ({browser, isMobile}) => {
   await summary.click();
   expect(await summary.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
 
+  async function evaluateDropdownItems(page, selector, direction, height) {
+    const computedStyles = await page.locator(selector).evaluateAll((items) =>
+      items.map((item) => {
+        const s = getComputedStyle(item);
+        return {
+          direction: s.direction,
+          height: s.height,
+        };
+      }),
+    );
+    for (const cs of computedStyles) {
+      expect(cs.direction).toBe(direction);
+      expect(cs.height).toBe(height);
+    }
+  }
+
   // Direction and item height
   const content = page.locator('details.dropdown > ul');
-  const firstItem = page.locator('details.dropdown > ul > li:first-child');
+  const itemsSel = 'details.dropdown > ul > li';
   if (isMobile) {
     // `<ul>`'s direction is reversed
     expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
-    expect(await firstItem.evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
     // `@media (pointer: coarse)` makes items taller
-    expect(await firstItem.evaluate((el) => getComputedStyle(el).height)).toBe('41px');
+    await evaluateDropdownItems(page, itemsSel, 'ltr', '40px');
   } else {
-    // Both use default
+    // Both use default direction
     expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
-    expect(await firstItem.evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
     // Regular item height
-    expect(await firstItem.evaluate((el) => getComputedStyle(el).height)).toBe('34px');
+    await evaluateDropdownItems(page, itemsSel, 'ltr', '34px');
   }
 
   // `/explore/users` has dropdown used as a sort options menu with text in the opener
   await page.goto('/explore/users');
+  await summary.click();
 
   // No `.border` and increased `inline-padding:` from `.options`
   expect(await summary.evaluate((el) => getComputedStyle(el).borderWidth)).toBe('0px');
@@ -148,7 +163,7 @@ test('Visual properties', async ({browser, isMobile}) => {
 
   // `<ul>`'s direction is reversed
   expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
-  expect(await firstItem.evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
+  await evaluateDropdownItems(page, itemsSel, 'ltr', isMobile ? '40px' : '34px');
 
   // Background of inactive and `.active` items
   const activeItem = page.locator('details.dropdown > ul > li:first-child > a');
