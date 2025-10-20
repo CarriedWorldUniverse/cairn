@@ -1,4 +1,5 @@
 name: Integration tests for the release process
+enable-email-notifications: true
 
 on:
   push:

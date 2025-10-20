@@ -1,4 +1,5 @@
 name: testing
+enable-email-notifications: true
 
 on:
   pull_request:
