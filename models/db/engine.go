@@ -167,6 +167,7 @@ func SyncAllTables() error {
 	}
 	_, err = x.StoreEngine("InnoDB").SyncWithOptions(xorm.SyncOptions{
 		WarnIfDatabaseColumnMissed: true,
+		IgnoreDropIndices:          true,
 	}, sortedTables...)
 	return err
 }
