@@ -25,7 +25,7 @@ import (
 // ActionTask represents a distribution of job
 type ActionTask struct {
 	ID       int64
-	JobID    int64
+	JobID    int64             `xorm:"index"`
 	Job      *ActionRunJob     `xorm:"-"`
 	Steps    []*ActionTaskStep `xorm:"-"`
 	Attempt  int64
