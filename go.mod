@@ -70,7 +70,7 @@ require (
 	github.com/jhillyerd/enmime/v2 v2.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-	github.com/klauspost/compress v1.18.0
+	github.com/klauspost/compress v1.18.1
 	github.com/klauspost/cpuid/v2 v2.2.11
 	github.com/lib/pq v1.10.9
 	github.com/markbates/goth v1.80.0
