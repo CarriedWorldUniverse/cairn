@@ -176,5 +176,9 @@
     "mail.issue.action.close_by_commit": "%[1]s hat %[2]s in Commit %[3]s geschlossen.",
     "actions.workflow.job_parsing_error": "Jobs im Workflow konnten nicht geparst werden: %v",
     "actions.workflow.event_detection_error": "Unterstützte Ereignisse im Workflow konnten nicht geparst werden: %v",
-    "actions.workflow.pre_execution_error": "Der Workflow wurde aufgrund eines Fehlers, der den Ausführungsversuch blockierte, nicht ausgeführt."
+    "actions.workflow.pre_execution_error": "Der Workflow wurde aufgrund eines Fehlers, der den Ausführungsversuch blockierte, nicht ausgeführt.",
+    "watch.n_watchers": {
+        "one": "%s Beobachter",
+        "other": "%s Beobachter"
+    }
 }
