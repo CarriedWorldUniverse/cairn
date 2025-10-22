@@ -14,6 +14,7 @@ export default defineConfig({
     passWithNoTests: true,
     globals: true,
     watch: false,
+    mockReset: true,
     alias: {
       'monaco-editor': resolve(import.meta.dirname, '/node_modules/monaco-editor/esm/vs/editor/editor.api'),
     },
