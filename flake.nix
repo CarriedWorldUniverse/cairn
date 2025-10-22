@@ -1,22 +1,13 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
   outputs =
+    { self, nixpkgs }:
     {
-      nixpkgs,
-      flake-utils,
-      ...
-    }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        devShells.default = import ./shell.nix { inherit pkgs; };
-        formatter = pkgs.nixfmt-rfc-style;
-      }
-    );
+      devShells = builtins.mapAttrs (system: pkgs: {
+        default = import ./shell.nix { inherit pkgs; };
+      }) nixpkgs.legacyPackages;
+      formatter = builtins.mapAttrs (system: pkgs: pkgs.nixfmt-rfc-style) nixpkgs.legacyPackages;
+    };
 }
