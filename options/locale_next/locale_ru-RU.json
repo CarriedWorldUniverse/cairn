@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
         "one": "%s ответвление",
+        "few": "%s ответвления",
         "many": "%s ответвлений"
     },
     "stars.n_stars": {
-        "one": "В избранном у %s пользователя",
-        "many": "В избранном у %s пользователей"
+        "one": "В избранном у %s",
+        "few": "В избранном у %s-х",
+        "many": "В избранном у %s-и"
     },
     "release.n_downloads": {
         "one": "%s скачивание",
@@ -36,7 +38,7 @@
     "alert.asset_load_failed": "Не удалось получить ресурсы из {path}. Убедитесь, что файлы ресурсов доступны.",
     "install.invalid_lfs_path": "Не удалось расположить корень LFS по указанному пути: %[1]s",
     "alert.range_error": " - число должно быть в диапазоне от %[1]s-%[2]s.",
-    "meta.last_line": "This magic string will cause Codeberg Translate to create a new pull request in the Forgejo repository. Again.",
+    "meta.last_line": "This magic string will cause Codeberg Translate to create a new pull request in the Forgejo repository.",
     "mail.actions.not_successful_run_subject": "Провал раб. потока %[1]s в репозитории %[2]s",
     "mail.actions.successful_run_after_failure_subject": "Возобновление раб. потока %[1]s в репозитории %[2]s",
     "mail.actions.run_info_trigger": "Причина срабатывания: %[1]s by: %[2]s",
@@ -187,5 +189,10 @@
     "mail.issue.action.close_by_commit": "%[1]s закрыл %[2]s из коммита %[2]s.",
     "actions.workflow.job_parsing_error": "Не удалось прочитать задачи в раб. потоке: %v",
     "actions.workflow.event_detection_error": "Не удалось прочитать поддерживаемые события в раб. потоке: %v",
-    "actions.workflow.pre_execution_error": "Рабочий поток не был выполнен из-за ошибки, возникшей при попытке начать выполнение."
+    "actions.workflow.pre_execution_error": "Рабочий поток не был выполнен из-за ошибки, возникшей при попытке начать выполнение.",
+    "watch.n_watchers": {
+        "one": "%s наблюдатель",
+        "few": "%s наблюдателя",
+        "many": "%s наблюдателей"
+    }
 }

@@ -176,5 +176,9 @@
     "mail.issue.action.close_by_commit": "%[1]s hett %[2]s in Kommitteren %[3]s dichtmaakt.",
     "actions.workflow.job_parsing_error": "Kann de Upgaven in de Warkwies nich lesen: %v",
     "actions.workflow.event_detection_error": "Kann de unnerstütt Vörfallen in de Warkwies nich lesen: %v",
-    "actions.workflow.pre_execution_error": "Warkwies is nich utföhrt worden, denn een Fehler is uptreden, wat de Utföhrens-Versöök blockeert hett."
+    "actions.workflow.pre_execution_error": "Warkwies is nich utföhrt worden, denn een Fehler is uptreden, wat de Utföhrens-Versöök blockeert hett.",
+    "watch.n_watchers": {
+        "one": "%s Belurer",
+        "other": "%s Belurers"
+    }
 }

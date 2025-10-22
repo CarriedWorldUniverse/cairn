@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
+        "zero": "%s atzarojumu",
         "one": "%s atzarojums",
         "other": "%s atzarojumi"
     },
     "stars.n_stars": {
-        "one": "%s zvaigzne",
-        "other": "%s zvaignznes"
+        "zero": "%s zvaigžņu",
+        "one": "%s zvaignzne",
+        "other": "%s zvaigznes"
     },
     "release.n_downloads": {
         "zero": "%s lejupielāžu",
@@ -187,5 +189,10 @@
     "migrate.pagure.token.placeholder": "Tikai privātu pieteikumu arhīva izveidošanai",
     "actions.workflow.job_parsing_error": "Nebija iespējams apstrādāt darbus darbplūsmā: %v",
     "actions.workflow.event_detection_error": "Nebija iespējams apstrādāt atbalstītos notikumus darbplūsmā: %v",
-    "actions.workflow.pre_execution_error": "Darbplūsma netika izpildīta kļūdas, kura aizturēja izpildes mēģinājumu, dēļ."
+    "actions.workflow.pre_execution_error": "Darbplūsma netika izpildīta kļūdas, kura aizturēja izpildes mēģinājumu, dēļ.",
+    "watch.n_watchers": {
+        "zero": "%s vērotāju",
+        "one": "%s vērotājs",
+        "other": "%s vērotāji"
+    }
 }
