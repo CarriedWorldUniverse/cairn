@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
         "one": "%s fork",
-        "other": "%s forks"
+        "many": "%s forks",
+        "other": ""
     },
     "stars.n_stars": {
         "one": "%s estrella",
-        "other": "%s estrelles"
+        "many": "%s estrelles",
+        "other": ""
     },
     "search.milestone_kind": "Cerca fites…",
     "moderation.abuse_category.malware": "Programari maliciós",
@@ -187,5 +189,10 @@
     "actions.workflow.event_detection_error": "No s'han pogut analitzar els esdeveniments compatibles al flux de treball: %v",
     "og.repo.summary_card.alt_description": "La targeta de resum del repositori %[1]s, descrita com a: %[2]s",
     "stars.list.none": "Ningú ha marcat aquest repositori com a favorit.",
-    "mail.actions.run_info_trigger": "Activat per: %[1]s per: %[2]s"
+    "mail.actions.run_info_trigger": "Activat per: %[1]s per: %[2]s",
+    "watch.n_watchers": {
+        "one": "%s observador",
+        "many": "%s observadors",
+        "other": "%s observadors"
+    }
 }

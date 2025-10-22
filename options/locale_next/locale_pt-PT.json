@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
         "one": "%s derivação",
-        "other": "%s derivações"
+        "many": "%s derivações",
+        "other": ""
     },
     "stars.n_stars": {
         "one": "%s estrela",
-        "other": "%s estrelas"
+        "many": "%s estrelas",
+        "other": ""
     },
     "release.n_downloads": {
         "one": "%s descarga",
@@ -187,5 +189,10 @@
     "migrate.pagure.token.placeholder": "Somente para criar arquivo com questões privadas",
     "actions.workflow.job_parsing_error": "Não foi possível analisar os trabalhos na sequência de trabalho: %v",
     "actions.workflow.event_detection_error": "Não foi possível analisar eventos suportados na sequência de trabalho: %v",
-    "actions.workflow.pre_execution_error": "A sequência de trabalho não foi executada por causa de um erro que bloqueou a tentativa de execução."
+    "actions.workflow.pre_execution_error": "A sequência de trabalho não foi executada por causa de um erro que bloqueou a tentativa de execução.",
+    "watch.n_watchers": {
+        "one": "%s vigilante",
+        "many": "%s vigilantes",
+        "other": "%s vigilantes"
+    }
 }

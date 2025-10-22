@@ -1,14 +1,17 @@
 {
     "fork.n_forks": {
         "one": "%s fork",
+        "few": "%s forky",
         "other": "%s forků"
     },
     "stars.n_stars": {
-        "one": "%s hvězda",
-        "other": "%s hvězd"
+        "one": "%s oblíbení",
+        "few": "%s oblíbení",
+        "other": "%s oblíbení"
     },
     "release.n_downloads": {
         "one": "%s stažení",
+        "few": "%s stažení",
         "other": "%s stažení"
     },
     "repo.pulls.merged_title_desc": {
@@ -186,5 +189,10 @@
     "migrate.pagure.token.placeholder": "Pouze pro vytvoření archivu soukromých problémů",
     "actions.workflow.job_parsing_error": "Nepodařilo se zpracovat úlohy ve workflow: %v",
     "actions.workflow.event_detection_error": "Nepodařilo se zpracovat podporované události ve workflow: %v",
-    "actions.workflow.pre_execution_error": "Workflow nebyl vykonán z důvodu chyby, která zablokovala pokus o vykonání."
+    "actions.workflow.pre_execution_error": "Workflow nebyl vykonán z důvodu chyby, která zablokovala pokus o vykonání.",
+    "watch.n_watchers": {
+        "one": "%s sledující",
+        "few": "%s sledující",
+        "other": "%s sledujících"
+    }
 }

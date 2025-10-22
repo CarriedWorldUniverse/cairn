@@ -134,7 +134,7 @@
     "migrate.pagure.incorrect_url": "Er is een onjuiste URL voor de bronrepository opgegeven",
     "migrate.pagure.project_url": "Pagure-project URL",
     "migrate.pagure.project_example": "De url van het Pagure-project, bijvoorbeeld https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure API-token",
     "migrate.github.description": "Migreer gegevens van github.com of GitHub Enterprise server.",
     "migrate.git.description": "Migreer een repositorie van elke Git service.",
     "migrate.gitea.description": "Gegevens overzetten van gitea.com of andere Gitea instanties.",
@@ -168,5 +168,17 @@
     "pulse.n_active_prs": {
         "one": "%s actieve pull request",
         "other": "%s actieve pull requests"
-    }
+    },
+    "watch.n_watchers": {
+        "one": "%s volger",
+        "other": "%s volgers"
+    },
+    "mail.issue.action.close_by_commit": "%[1]s sloot %[2]s in commit %[3]s.",
+    "migrate.pagure.private_issues.summary": "Privé-issues (optioneel)",
+    "migrate.pagure.private_issues.description": "Deze functie is ontworpen om een tweede repository aan te maken met alleen privé-issues van je Pagure project voor archiefdoeleinden. Voer eerst een normale migratie uit (zonder token) om alle publieke content te importeren. Als u vervolgens privé-issues wilt bewaren, maak dan een aparte repository aan met deze tokenoptie om die privé-issues te archiveren.",
+    "migrate.pagure.private_issues.warning": "Zorg ervoor dat je de repository zichtbaarheid hierboven op Privé zet als je de API sleutel gebruikt om privézaken te importeren. Dit voorkomt dat je per ongeluk privé-inhoud blootstelt in een openbare repository.",
+    "migrate.pagure.token.placeholder": "Alleen voor het aanmaken van een privé-archief met issues",
+    "actions.workflow.job_parsing_error": "Taken in workflow kunnen niet worden geparseerd: %v",
+    "actions.workflow.event_detection_error": "Ondersteunde gebeurtenissen in workflow kunnen niet worden geparseerd: %v",
+    "actions.workflow.pre_execution_error": "Workflow is niet uitgevoerd vanwege een fout die de uitvoeringspoging blokkeerde."
 }
