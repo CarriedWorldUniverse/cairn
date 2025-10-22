@@ -176,5 +176,9 @@
     "mail.issue.action.close_by_commit": "Isinara ni %[1]s ang %[2]s sa commit na %[3]s.",
     "actions.workflow.job_parsing_error": "Hindi ma-parse ang mga trabaho sa workflow: %v",
     "actions.workflow.event_detection_error": "Hindi ma-parse ang mga sinusuportahang event sa workflow: %v",
-    "actions.workflow.pre_execution_error": "Hindi na-execute ang workflow dahil sa isang error na hinarang ang pagtangka sa pag-execute."
+    "actions.workflow.pre_execution_error": "Hindi na-execute ang workflow dahil sa isang error na hinarang ang pagtangka sa pag-execute.",
+    "watch.n_watchers": {
+        "one": "%s nanonood",
+        "other": "%s (mga) nanonood"
+    }
 }

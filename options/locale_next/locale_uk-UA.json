@@ -1,10 +1,12 @@
 {
     "fork.n_forks": {
         "one": "%s форк",
+        "few": "%s форки",
         "many": "%s форків"
     },
     "stars.n_stars": {
         "one": "%s зірка",
+        "few": "%s зірки",
         "many": "%s зірок"
     },
     "release.n_downloads": {
@@ -187,5 +189,10 @@
     "mail.issue.action.close_by_commit": "%[1]s закриває %[2]s в коміті %[3]s.",
     "actions.workflow.job_parsing_error": "Не вдалося розібрати завдання в робочому потоці: %v",
     "actions.workflow.event_detection_error": "Не вдалося розібрати підтримувані події в робочому потоці: %v",
-    "actions.workflow.pre_execution_error": "Спробу виконання робочого потоку було заблоковано через помилку."
+    "actions.workflow.pre_execution_error": "Спробу виконання робочого потоку було заблоковано через помилку.",
+    "watch.n_watchers": {
+        "one": "%s спостерігач",
+        "few": "%s спостерігачі",
+        "many": "%s спостерігачів"
+    }
 }

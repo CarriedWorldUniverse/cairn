@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
         "one": "%s fork",
-        "other": "%s forks"
+        "many": "%s forks",
+        "other": ""
     },
     "stars.n_stars": {
         "one": "%s estrela",
-        "other": "%s estrelas"
+        "many": "%s estrelas",
+        "other": ""
     },
     "release.n_downloads": {
         "one": "%s download",
@@ -187,5 +189,10 @@
     "mail.issue.action.close_by_commit": "%[1]s fechou %[2]s no commit %[3]s.",
     "actions.workflow.job_parsing_error": "Não foi possível processar alguns trabalhos do workflow: %v",
     "actions.workflow.event_detection_error": "Não foi possível processar eventos suportados no workflow: %v",
-    "actions.workflow.pre_execution_error": "Workflow não foi executado devido a um erro que bloqueou a tentativa de execução."
+    "actions.workflow.pre_execution_error": "Workflow não foi executado devido a um erro que bloqueou a tentativa de execução.",
+    "watch.n_watchers": {
+        "one": "%s observador",
+        "many": "%s observadores",
+        "other": "%s observadores"
+    }
 }

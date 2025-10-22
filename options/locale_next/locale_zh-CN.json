@@ -1,10 +1,8 @@
 {
     "fork.n_forks": {
-        "one": "%s 派生",
         "other": "%s 派生"
     },
     "stars.n_stars": {
-        "one": "%s 点赞",
         "other": "%s 点赞"
     },
     "release.n_downloads": "%s 次下载",
@@ -143,5 +141,6 @@
     "mail.issue.action.close_by_commit": "%[1]s 于提交 %[3]s 中关闭了 %[2]s。",
     "actions.workflow.job_parsing_error": "无法解析工作流中的任务：%v",
     "actions.workflow.event_detection_error": "无法解析工作流中受支持的事件：%v",
-    "actions.workflow.pre_execution_error": "因有错误阻止了执行尝试，工作流未被执行。"
+    "actions.workflow.pre_execution_error": "因有错误阻止了执行尝试，工作流未被执行。",
+    "watch.n_watchers": "%s 关注者"
 }
