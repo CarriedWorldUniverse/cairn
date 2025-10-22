@@ -48,7 +48,7 @@ jobs:
           MYSQL_EXTRA_FLAGS: --innodb-adaptive-flushing=OFF --innodb-buffer-pool-size=4G --innodb-log-buffer-size=128M --innodb-flush-log-at-trx-commit=0 --innodb-flush-log-at-timeout=30 --innodb-flush-method=nosync --innodb-fsync-threshold=1000000000 --disable-log-bin
         options: --tmpfs /bitnami/mysql/data:noatime
       ldap:
-        image: data.forgejo.org/oci/test-openldap:latest
+        image: data.forgejo.org/oci/forgejo-test-openldap:latest
       pgsql:
         image: data.forgejo.org/oci/bitnami/postgresql:16
         env:
