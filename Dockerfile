@@ -51,7 +51,7 @@ RUN chmod 755 /tmp/local/usr/bin/entrypoint \
               /go/src/forgejo.org/environment-to-ini
 RUN chmod 644 /go/src/forgejo.org/contrib/autocompletion/bash_autocomplete
 
-FROM data.forgejo.org/oci/alpine:3.21
+FROM data.forgejo.org/oci/alpine:3.22
 ARG RELEASE_VERSION
 LABEL maintainer="contact@forgejo.org" \
       org.opencontainers.image.authors="Forgejo" \
