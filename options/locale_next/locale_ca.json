@@ -158,5 +158,9 @@
     "actions.runs.viewing_out_of_date_run": "Esteu veient una execució desactualitzada d'aquesta tasca que va ser executada %[1]s.",
     "actions.runs.view_most_recent_run": "Veure l'execució més recent",
     "actions.workflow.job_parsing_error": "No s'han pogut analitzar les tasques al flux de treball: %v",
-    "actions.workflow.pre_execution_error": "No s'ha executat el flux de treball degut a un error que ha bloquejat l'intent d'execució."
+    "actions.workflow.pre_execution_error": "No s'ha executat el flux de treball degut a un error que ha bloquejat l'intent d'execució.",
+    "stars.list.none": "Ningú ha marcat aquest repositori com a favorit.",
+    "mail.actions.run_info_trigger": "Activat per: %[1]s per: %[2]s",
+    "og.repo.summary_card.alt_description": "La targeta de resum del repositori %[1]s, descrita com a: %[2]s",
+    "actions.workflow.event_detection_error": "No s'han pogut analitzar els esdeveniments compatibles al flux de treball: %v"
 }
