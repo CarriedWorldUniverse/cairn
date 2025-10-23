@@ -45,7 +45,8 @@ func Test_AddUniqueIndexForProjectIssue(t *testing.T) {
 	for _, index := range tables[0].Indexes {
 		if index.Type == schemas.UniqueType {
 			found = true
-			slices.Equal(index.Cols, []string{"project_id", "issue_id"})
+			slices.Sort(index.Cols)
+			assert.Equal(t, []string{"issue_id", "project_id"}, index.Cols)
 			break
 		}
 	}
