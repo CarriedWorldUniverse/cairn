@@ -122,7 +122,7 @@
     "migrate.pagure.incorrect_url": "Er is een onjuiste URL voor de bronrepository opgegeven",
     "migrate.pagure.project_url": "Pagure-project URL",
     "migrate.pagure.project_example": "De url van het Pagure-project, bijvoorbeeld https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Pagure API-token",
     "migrate.pagure.token_body_a": "Geef een Pagure API-token met toegang tot de privé-issues om een repository te maken met alleen de privé-issues erin",
     "migrate.pagure.token_body_b": "Zorg ervoor dat u de vlag voor privé-repository hierboven instelt als u wilt dat deze repository privé is",
     "migrate.github.description": "Migreer gegevens van github.com of GitHub Enterprise server.",
@@ -148,5 +148,12 @@
     "migrate.form.error.url_credentials": "De URL bevat inloggegevens. Vul deze in de velden voor gebruikersnaam en wachtwoord respectievelijk",
     "actions.runs.view_most_recent_run": "Bekijk de meest recente run",
     "actions.runs.run_attempt_label": "Uitvoerpoging #%[1]s (%[2]s)",
-    "actions.runs.viewing_out_of_date_run": "U bekijkt een verouderde uitvoer van deze opdracht die %[1]s is uitgevoerd."
+    "actions.runs.viewing_out_of_date_run": "U bekijkt een verouderde uitvoer van deze opdracht die %[1]s is uitgevoerd.",
+    "migrate.pagure.private_issues.summary": "Privé-issues (optioneel)",
+    "migrate.pagure.private_issues.description": "Deze functie is ontworpen om een tweede repository aan te maken met alleen privé-issues van je Pagure project voor archiefdoeleinden. Voer eerst een normale migratie uit (zonder token) om alle publieke content te importeren. Als u vervolgens privé-issues wilt bewaren, maak dan een aparte repository aan met deze tokenoptie om die privé-issues te archiveren.",
+    "migrate.pagure.private_issues.warning": "Zorg ervoor dat je de repository zichtbaarheid hierboven op Privé zet als je de API sleutel gebruikt om privézaken te importeren. Dit voorkomt dat je per ongeluk privé-inhoud blootstelt in een openbare repository.",
+    "migrate.pagure.token.placeholder": "Alleen voor het aanmaken van een privé-archief met issues",
+    "actions.workflow.job_parsing_error": "Taken in workflow kunnen niet worden geparseerd: %v",
+    "actions.workflow.event_detection_error": "Ondersteunde gebeurtenissen in workflow kunnen niet worden geparseerd: %v",
+    "actions.workflow.pre_execution_error": "Workflow is niet uitgevoerd vanwege een fout die de uitvoeringspoging blokkeerde."
 }
