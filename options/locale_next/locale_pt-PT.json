@@ -140,7 +140,7 @@
     "migrate.pagure.incorrect_url": "Foi fornecida uma URL incorreta do repositório de origem",
     "migrate.pagure.project_url": "URL do projeto Pagure",
     "migrate.pagure.project_example": "URL do projeto Pagure, por exemplo, https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Código da API do Pagure",
     "migrate.pagure.token_body_a": "Forneça um token da API Pagure com acesso às questões privadas para criar um repositório contendo apenas as questões privadas",
     "migrate.pagure.token_body_b": "Certifique-se de definir o marcador de repositório privado acima se desejar que este repositório seja privado",
     "migrate.github.description": "Migrar dados do github.com ou do GitHub Enterprise server.",
@@ -156,5 +156,12 @@
     "user.ghost.tooltip": "Este utilizador foi eliminado ou não é possível encontrar uma correspondência.",
     "actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Está a visualizar uma execução desatualizada deste trabalho que foi executado %[1]s.",
-    "actions.runs.view_most_recent_run": "Ver execução mais recente"
+    "actions.runs.view_most_recent_run": "Ver execução mais recente",
+    "migrate.pagure.private_issues.summary": "Questões privadas (opcional)",
+    "migrate.pagure.private_issues.description": "Esta funcionalidade está desenhada para criar um segundo repositório contendo apenas questões privadas do seu repositório Pagure para efeitos de arquivo. Primeiro, faça uma migração normal (sem um código) para importar todo o conteúdo público. Depois, se tiver questões privadas a preservar, crie um repositório separado usando esta opção com código para arquivar essas questões privadas.",
+    "migrate.pagure.private_issues.warning": "Certifique-se que passa a visibilidade do repositório para Privado se estiver a usar a chave de API para importar questões privadas. Isso irá evitar que exponha acidentalmente conteúdo privado num repositório público.",
+    "migrate.pagure.token.placeholder": "Somente para criar arquivo com questões privadas",
+    "actions.workflow.job_parsing_error": "Não foi possível analisar os trabalhos na sequência de trabalho: %v",
+    "actions.workflow.event_detection_error": "Não foi possível analisar eventos suportados na sequência de trabalho: %v",
+    "actions.workflow.pre_execution_error": "A sequência de trabalho não foi executada por causa de um erro que bloqueou a tentativa de execução."
 }
