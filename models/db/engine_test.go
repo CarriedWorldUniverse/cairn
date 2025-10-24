@@ -44,14 +44,20 @@ func TestDeleteOrphanedObjects(t *testing.T) {
 	countBefore, err := db.GetEngine(db.DefaultContext).Count(&issues_model.PullRequest{})
 	require.NoError(t, err)
 
-	_, err = db.GetEngine(db.DefaultContext).Insert(&issues_model.PullRequest{IssueID: 1000}, &issues_model.PullRequest{IssueID: 1001}, &issues_model.PullRequest{IssueID: 1003})
+	// As progress is made in adding foreign keys to Forgejo's schema, eventually this test will have to be removed or
+	// changed to something completely illogical... in the mean time, `head_repo_id` has no foreign key yet:
+	_, err = db.GetEngine(db.DefaultContext).Insert(
+		&issues_model.PullRequest{IssueID: 2, BaseRepoID: 1, HeadRepoID: 1000},
+		&issues_model.PullRequest{IssueID: 2, BaseRepoID: 1, HeadRepoID: 1001},
+		&issues_model.PullRequest{IssueID: 2, BaseRepoID: 1, HeadRepoID: 1003},
+	)
 	require.NoError(t, err)
 
-	orphaned, err := db.CountOrphanedObjects(db.DefaultContext, "pull_request", "issue", "pull_request.issue_id=issue.id")
+	orphaned, err := db.CountOrphanedObjects(db.DefaultContext, "pull_request", "repository", "pull_request.head_repo_id=repository.id")
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, orphaned)
 
-	err = db.DeleteOrphanedObjects(db.DefaultContext, "pull_request", "issue", "pull_request.issue_id=issue.id")
+	err = db.DeleteOrphanedObjects(db.DefaultContext, "pull_request", "repository", "pull_request.head_repo_id=repository.id")
 	require.NoError(t, err)
 
 	countAfter, err := db.GetEngine(db.DefaultContext).Count(&issues_model.PullRequest{})

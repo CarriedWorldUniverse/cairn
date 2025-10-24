@@ -161,7 +161,7 @@ type PullRequest struct {
 
 	ChangedProtectedFiles []string `xorm:"TEXT JSON"`
 
-	IssueID                    int64  `xorm:"INDEX"`
+	IssueID                    int64  `xorm:"INDEX REFERENCES(issue, id)"`
 	Issue                      *Issue `xorm:"-"`
 	Index                      int64
 	RequestedReviewers         []*user_model.User `xorm:"-"`
@@ -170,7 +170,7 @@ type PullRequest struct {
 
 	HeadRepoID          int64                  `xorm:"INDEX"`
 	HeadRepo            *repo_model.Repository `xorm:"-"`
-	BaseRepoID          int64                  `xorm:"INDEX"`
+	BaseRepoID          int64                  `xorm:"INDEX REFERENCES(repository, id)"`
 	BaseRepo            *repo_model.Repository `xorm:"-"`
 	HeadBranch          string
 	HeadCommitID        string `xorm:"-"`

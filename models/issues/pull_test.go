@@ -421,27 +421,6 @@ func TestPullRequest_GetWorkInProgressPrefixWorkInProgress(t *testing.T) {
 	assert.Equal(t, "[wip]", pr.GetWorkInProgressPrefix(db.DefaultContext))
 }
 
-func TestDeleteOrphanedObjects(t *testing.T) {
-	require.NoError(t, unittest.PrepareTestDatabase())
-
-	countBefore, err := db.GetEngine(db.DefaultContext).Count(&issues_model.PullRequest{})
-	require.NoError(t, err)
-
-	_, err = db.GetEngine(db.DefaultContext).Insert(&issues_model.PullRequest{IssueID: 1000}, &issues_model.PullRequest{IssueID: 1001}, &issues_model.PullRequest{IssueID: 1003})
-	require.NoError(t, err)
-
-	orphaned, err := db.CountOrphanedObjects(db.DefaultContext, "pull_request", "issue", "pull_request.issue_id=issue.id")
-	require.NoError(t, err)
-	assert.EqualValues(t, 3, orphaned)
-
-	err = db.DeleteOrphanedObjects(db.DefaultContext, "pull_request", "issue", "pull_request.issue_id=issue.id")
-	require.NoError(t, err)
-
-	countAfter, err := db.GetEngine(db.DefaultContext).Count(&issues_model.PullRequest{})
-	require.NoError(t, err)
-	assert.Equal(t, countBefore, countAfter)
-}
-
 func TestParseCodeOwnersLine(t *testing.T) {
 	type CodeOwnerTest struct {
 		Line   string
@@ -504,7 +483,8 @@ func TestMigrate_InsertPullRequests(t *testing.T) {
 	}
 
 	p := &issues_model.PullRequest{
-		Issue: i,
+		Issue:      i,
+		BaseRepoID: repo.ID,
 	}
 
 	err := issues_model.InsertPullRequests(db.DefaultContext, p)
