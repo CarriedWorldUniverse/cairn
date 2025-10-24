@@ -15,6 +15,7 @@ import (
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/models/git"
 	"forgejo.org/models/issues"
 	"forgejo.org/models/moderation"
 	"forgejo.org/models/organization"
@@ -113,6 +114,26 @@ func TestDeleteUserRetainsTrackedTime(t *testing.T) {
 	err = db.GetEngine(db.DefaultContext).Find(&time, &issues.TrackedTime{UserID: 2})
 	require.NoError(t, err)
 	assert.Len(t, time, 5)
+}
+
+func TestDeleteUserCleansUpBranchProtectionRules(t *testing.T) {
+	defer unittest.OverrideFixtures("services/user/TestDeleteUserCleansUpBranchProtectionRules")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 8})
+
+	err := DeleteUser(db.DefaultContext, user, false)
+	require.NoError(t, err)
+
+	protectedBranches := make([]*git.ProtectedBranch, 0, 10)
+	err = db.GetEngine(db.DefaultContext).Find(&protectedBranches, &git.ProtectedBranch{})
+	require.NoError(t, err)
+	require.Len(t, protectedBranches, 3)
+
+	for _, pb := range protectedBranches {
+		assert.Equal(t, []int64{1}, pb.ApprovalsWhitelistUserIDs)
+		assert.Equal(t, []int64{1}, pb.WhitelistUserIDs)
+		assert.Equal(t, []int64{1}, pb.MergeWhitelistUserIDs)
+	}
 }
 
 func TestPurgeUser(t *testing.T) {
