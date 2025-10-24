@@ -9,7 +9,7 @@ import (
 
 func init() {
 	registerMigration(&Migration{
-		Description: "add forgejo_migration table",
+		Description: "add foreign keys to collaboration, repo_id & user_id",
 		Upgrade:     addForeignKeysCollaboration,
 	})
 }

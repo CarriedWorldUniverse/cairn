@@ -183,6 +183,11 @@ func DeleteRepositoryDirectly(ctx context.Context, doer *user_model.User, repoID
 		return fmt.Errorf("deleteBeans: %w", err)
 	}
 
+	// Delete Pulls and related objects
+	if err := issues_model.DeletePullsByBaseRepoID(ctx, repoID); err != nil {
+		return err
+	}
+
 	if cnt, err := sess.ID(repoID).Delete(&repo_model.Repository{}); err != nil {
 		return err
 	} else if cnt != 1 {
@@ -195,11 +200,6 @@ func DeleteRepositoryDirectly(ctx context.Context, doer *user_model.User, repoID
 
 	// Delete Labels and related objects
 	if err := issues_model.DeleteLabelsByRepoID(ctx, repoID); err != nil {
-		return err
-	}
-
-	// Delete Pulls and related objects
-	if err := issues_model.DeletePullsByBaseRepoID(ctx, repoID); err != nil {
 		return err
 	}
 
