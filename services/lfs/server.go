@@ -579,9 +579,6 @@ func authenticate(ctx *context.Context, repository *repo_model.Repository, autho
 }
 
 func handleLFSToken(ctx stdCtx.Context, tokenSHA string, target *repo_model.Repository, mode perm.AccessMode) (*user_model.User, error) {
-	if !strings.Contains(tokenSHA, ".") {
-		return nil, nil
-	}
 	token, err := jwt.ParseWithClaims(tokenSHA, &Claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
@@ -589,7 +586,7 @@ func handleLFSToken(ctx stdCtx.Context, tokenSHA string, target *repo_model.Repo
 		return setting.LFS.JWTSecretBytes, nil
 	})
 	if err != nil {
-		return nil, nil
+		return nil, errors.New("invalid token")
 	}
 
 	claims, claimsOk := token.Claims.(*Claims)
