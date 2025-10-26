@@ -238,7 +238,7 @@ func ToVerification(ctx context.Context, c *git.Commit) *api.PayloadCommitVerifi
 	if verif.SigningUser != nil {
 		commitVerification.Signer = &api.PayloadUser{
 			Name:  verif.SigningUser.Name,
-			Email: verif.SigningUser.Email,
+			Email: verif.SigningEmail,
 		}
 	}
 	return commitVerification
