@@ -218,9 +218,9 @@
 					<br/><span class=help>{{ctx.Locale.Tr "avatar.constraints_hint" (ctx.Locale.TrSize .MaxAvatarFileSize) .MaxAvatarWidth .MaxAvatarHeight}}</span>
 				</div>
 
-				<div class="field">
-					<button class="ui primary button">{{ctx.Locale.Tr "settings.update_avatar"}}</button>
-					<button class="ui red button link-action" data-url="./avatar/delete">{{ctx.Locale.Tr "settings.delete_current_avatar"}}</button>
+				<div class="field button-sequence">
+					<button class="primary button">{{ctx.Locale.Tr "settings.update_avatar"}}</button>
+					<button class="danger button link-action" data-url="./avatar/delete">{{ctx.Locale.Tr "settings.delete_current_avatar"}}</button>
 				</div>
 			</form>
 		</div>

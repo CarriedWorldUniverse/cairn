@@ -66,7 +66,7 @@ test('Button visuals', async ({page}) => {
   expect(primary.backgroundColor).not.toBe(danger.backgroundColor);
 
   // Evaluate font weights
-  expect(primary.fontWeight).toBe('400');
-  expect(secondary.fontWeight).toBe('400');
+  expect(primary.fontWeight).toBe('500');
+  expect(secondary.fontWeight).toBe('500');
   expect(danger.fontWeight).toBe('500');
 });
