@@ -102,6 +102,15 @@ function showContentHistoryMenu(issueBaseUrl, $item, commentId) {
 
   $headerLeft.find(`.content-history-menu`).remove();
   $headerLeft.append($(menuHtml));
+
+  // Should be run before fomantic's dropdown component.
+  $headerLeft.find('.dropdown').on('click', function (ev) {
+    if (ev.target !== this || this.classList.contains('active')) {
+      return;
+    }
+    this.classList.add('is-loading');
+  });
+
   $headerLeft.find('.dropdown').dropdown({
     action: 'hide',
     apiSettings: {
@@ -116,6 +125,9 @@ function showContentHistoryMenu(issueBaseUrl, $item, commentId) {
       if (value && !$item.find('[data-history-is-deleted=1]').length) {
         showContentHistoryDetail(issueBaseUrl, commentId, value, itemHtml);
       }
+    },
+    onShow() {
+      this.classList.remove('is-loading');
     },
   });
 }
