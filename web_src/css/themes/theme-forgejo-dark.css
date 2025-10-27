@@ -210,7 +210,7 @@
   --color-thin-red-highlight: oklch(var(--thin-lightness-highlight) var(--regular-chroma) 27deg);
 
   /* Background colors. WIP, currently only covers danger buttons */
-  --bg-lightness: 0.23;
+  --bg-lightness: 0.26;
   --bg-chroma: 0.05;
   --color-danger-bg: oklch(var(--bg-lightness) var(--bg-chroma) 27deg);
 
