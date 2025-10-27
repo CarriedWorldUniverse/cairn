@@ -290,33 +290,78 @@ test('Emoji suggestions', async ({page}) => {
   await expect(item.locator('img')).toHaveAttribute('src', '/assets/img/emoji/forgejo.png');
 });
 
-test('Comment history', async ({page}) => {
-  const response = await page.goto('/user2/repo1/issues/new');
-  expect(response?.status()).toBe(200);
+test.describe('Comment history', () => {
+  let issueURL = '';
+  test('Deleted items in comment history menu', async ({page}) => {
+    const response = await page.goto('/user2/repo1/issues/new');
+    expect(response?.status()).toBe(200);
 
-  // Create a new issue.
-  await page.getByPlaceholder('Title').fill('Just a title');
-  await page.getByPlaceholder('Leave a comment').fill('Hi, have you considered using a rotating fish as logo?');
-  await page.getByRole('button', {name: 'Create issue'}).click();
-  await expect(page).toHaveURL(/\/user2\/repo1\/issues\/\d+$/);
+    // Create a new issue.
+    await page.getByPlaceholder('Title').fill('Just a title');
+    await page.getByPlaceholder('Leave a comment').fill('Hi, have you considered using a rotating fish as logo?');
+    await page.getByRole('button', {name: 'Create issue'}).click();
+    await expect(page).toHaveURL(/\/user2\/repo1\/issues\/\d+$/);
+    issueURL = page.url();
 
-  page.on('dialog', (dialog) => dialog.accept());
+    page.on('dialog', (dialog) => dialog.accept());
 
-  // Make a change.
-  const editorTextarea = page.locator('[id="_combo_markdown_editor_1"]');
-  await page.click('.comment-container .context-menu');
-  await page.click('.comment-container .menu>.edit-content');
-  await editorTextarea.fill(dynamic_id());
-  await page.click('.comment-container .edit .save');
+    // Make a change.
+    const editorTextarea = page.locator('[id="_combo_markdown_editor_1"]');
+    await page.click('.comment-container .context-menu');
+    await page.click('.comment-container .menu>.edit-content');
+    await editorTextarea.fill(dynamic_id());
+    await page.click('.comment-container .edit .save');
 
-  // Reload the page so the edited bit is rendered.
-  await page.reload();
+    // Reload the page so the edited bit is rendered.
+    await page.reload();
 
-  await page.getByText('• edited').click();
-  await page.click('.content-history-menu .item:nth-child(1)');
-  await page.getByText('Options').click();
-  await page.getByText('Delete from history').click();
+    await page.getByText('• edited').click();
+    await page.click('.content-history-menu .item:nth-child(1)');
+    await page.getByText('Options').click();
+    await page.getByText('Delete from history').click();
 
-  await page.getByText('• edited').click();
-  await expect(page.locator(".content-history-menu .item s span[data-history-is-deleted='1']")).toBeVisible();
+    await page.getByText('• edited').click();
+    await expect(page.locator(".content-history-menu .item s span[data-history-is-deleted='1']")).toBeVisible();
+  });
+
+  test('Animation spinner', async ({page}) => {
+    test.skip(issueURL === '', 'previous test failed');
+
+    const response = await page.goto(issueURL);
+    expect(response?.status()).toBe(200);
+
+    // Intercept request to get content history list.
+    let called = false;
+    page.on('request', async (request) => {
+      if (!request.url().includes('/content-history/list')) {
+        return;
+      }
+      called = true;
+      // Assert the dropdown has a animation spinner.
+      await expect(page.getByText('• edited')).toHaveClass(/is-loading/);
+    });
+
+    // Open the menu.
+    await page.getByText('• edited').click();
+    // Wait until the menu is visible.
+    await expect(page.locator('.content-history-menu .item:nth-child(1)')).toBeVisible();
+    // Expect that there was a request by fomantic.
+    expect(called).toBeTruthy();
+    // Expect that there is no longer a animation spinner.
+    await expect(page.getByText('• edited')).not.toHaveClass(/is-loading/);
+
+    // Expect that there is no animation spinner after clicking inside the dropdown.
+    await page.click('.content-history-menu .item:nth-child(2)');
+    await expect(page.getByText('• edited')).not.toHaveClass(/is-loading/);
+    await page.click('.content-history-detail-dialog .close');
+
+    // Open the menu.
+    await page.getByText('• edited').click();
+    // Wait until the menu is visible.
+    await expect(page.locator('.content-history-menu .item:nth-child(1)')).toBeVisible();
+    // Close the menu.
+    await page.getByText('• edited').click();
+    // Expect that there is no animation spinner.
+    await expect(page.getByText('• edited')).not.toHaveClass(/is-loading/);
+  });
 });
