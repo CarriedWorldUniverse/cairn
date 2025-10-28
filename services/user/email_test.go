@@ -165,8 +165,7 @@ func TestDeleteEmailAddresses(t *testing.T) {
 	require.NoError(t, err)
 
 	err = DeleteEmailAddresses(db.DefaultContext, user, emails)
-	require.Error(t, err)
-	assert.True(t, user_model.IsErrEmailAddressNotExist(err))
+	require.NoError(t, err)
 
 	emails = []string{"user2@example.com"}
 

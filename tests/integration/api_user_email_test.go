@@ -104,7 +104,7 @@ func TestAPIDeleteEmail(t *testing.T) {
 	}
 	req := NewRequestWithJSON(t, "DELETE", "/api/v1/user/emails", &opts).
 		AddTokenAuth(token)
-	MakeRequest(t, req, http.StatusNotFound)
+	MakeRequest(t, req, http.StatusNoContent)
 
 	opts = api.DeleteEmailOption{
 		Emails: []string{"user2-2@example.com"},

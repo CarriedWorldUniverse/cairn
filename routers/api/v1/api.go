@@ -1673,6 +1673,9 @@ func Routes() *web.Route {
 					m.Post("/orgs", bind(api.CreateOrgOption{}), admin.CreateOrg)
 					m.Post("/repos", bind(api.CreateRepoOption{}), admin.CreateRepo)
 					m.Post("/rename", bind(api.RenameUserOption{}), admin.RenameUser)
+					m.Combo("/emails").
+						Get(admin.ListUserEmails).
+						Delete(bind(api.DeleteEmailOption{}), admin.DeleteUserEmails)
 					if setting.Quota.Enabled {
 						m.Group("/quota", func() {
 							m.Get("", admin.GetUserQuota)
