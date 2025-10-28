@@ -12,7 +12,7 @@ import (
 	"forgejo.org/models/unittest"
 	base "forgejo.org/modules/migration"
 
-	"github.com/google/go-github/v64/github"
+	"github.com/google/go-github/v74/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -456,5 +456,38 @@ func TestGithubMultiToken(t *testing.T) {
 
 			assert.Equal(t, tC.expectedCloneURL, cloneURL)
 		})
+	}
+}
+
+func TestGithubIssuePagination(t *testing.T) {
+	GithubLimitRateRemaining = 3 // Wait at 3 remaining since we could have 3 CI in //
+
+	token := os.Getenv("GITHUB_READ_TOKEN")
+	if token == "" {
+		t.Skip()
+	}
+
+	downloader := NewGithubDownloaderV3(t.Context(), "https://api.github.com", true, true, "", "", token, "galaxyproject", "galaxy")
+	downloader.SkipReactions = true
+	err := downloader.RefreshRate()
+	require.NoError(t, err)
+
+	repo, err := downloader.GetRepoInfo()
+	require.NoError(t, err)
+
+	assertRepositoryEqual(t, &base.Repository{
+		Name:          "galaxy",
+		Owner:         "galaxyproject",
+		Description:   "Data intensive science for everyone.",
+		CloneURL:      "https://github.com/galaxyproject/galaxy.git",
+		OriginalURL:   "https://github.com/galaxyproject/galaxy",
+		DefaultBranch: "dev",
+		Website:       "https://galaxyproject.org",
+	}, repo)
+
+	perPage := 45
+	for page := 1; page <= 250; page++ {
+		_, _, err = downloader.GetIssues(page, perPage)
+		require.NoError(t, err)
 	}
 }
