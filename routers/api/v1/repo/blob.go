@@ -15,7 +15,7 @@ import (
 func GetBlobs(ctx *context.APIContext) {
 	// swagger:operation GET /repos/{owner}/{repo}/git/blobs repository GetBlobs
 	// ---
-	// summary: Gets multiplbe blobs of a repository.
+	// summary: Gets multiple blobs of a repository.
 	// produces:
 	// - application/json
 	// parameters:
