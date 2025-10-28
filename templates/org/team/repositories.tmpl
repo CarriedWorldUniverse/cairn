@@ -20,8 +20,8 @@
 							<button class="ui primary button tw-ml-2">{{ctx.Locale.Tr "add"}}</button>
 						</form>
 						<div class="tw-inline-block">
-							<button class="ui primary button link-action" data-modal-confirm="{{ctx.Locale.Tr "org.teams.add_all_repos_desc"}}" data-url="{{$.OrgLink}}/teams/{{$.Team.LowerName | PathEscape}}/action/repo/addall">{{ctx.Locale.Tr "add_all"}}</button>
-							<button class="ui red button link-action" data-modal-confirm="{{ctx.Locale.Tr "org.teams.remove_all_repos_desc"}}" data-url="{{$.OrgLink}}/teams/{{$.Team.LowerName | PathEscape}}/action/repo/removeall">{{ctx.Locale.Tr "remove_all"}}</button>
+							<button class="ui primary button show-modal" data-modal="#addall-repos-modal">{{ctx.Locale.Tr "add_all"}}</button>
+							<button class="ui red button show-modal" data-modal="#removeall-repos-modal">{{ctx.Locale.Tr "remove_all"}}</button>
 						</div>
 					</div>
 				{{end}}
@@ -57,5 +57,32 @@
 		</div>
 	</div>
 </div>
+
+<dialog id="addall-repos-modal">
+	<article>
+		<header>{{ctx.Locale.Tr "teams.add_all_repos.modal.header"}}</header>
+		<div class="content">
+			<span>{{ctx.Locale.Tr "org.teams.add_all_repos_desc"}}</span>
+		</div>
+		<form class="ui form" action="{{$.OrgLink}}/teams/{{$.Team.LowerName | PathEscape}}/action/repo/addall" method="post">
+			{{$.CsrfTokenHtml}}
+			{{template "base/modal_actions_confirm" .}}
+		</form>
+	</article>
+</dialog>
+
+<dialog id="removeall-repos-modal">
+	<article>
+		<header>{{ctx.Locale.Tr "teams.remove_all_repos.modal.header"}}</header>
+		<div class="content">
+			<span>{{ctx.Locale.Tr "org.teams.remove_all_repos_desc"}}</span>
+		</div>
+		<form class="ui form" action="{{$.OrgLink}}/teams/{{$.Team.LowerName | PathEscape}}/action/repo/removeall" method="post">
+			{{$.CsrfTokenHtml}}
+			{{template "base/modal_actions_confirm" .}}
+		</form>
+	</article>
+</dialog>
+
 
 {{template "base/footer" .}}

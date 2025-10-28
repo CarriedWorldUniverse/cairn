@@ -262,10 +262,6 @@ func TeamsRepoAction(ctx *context.Context) {
 		return
 	}
 
-	if action == "addall" || action == "removeall" {
-		ctx.JSONRedirect(ctx.Org.OrgLink + "/teams/" + url.PathEscape(ctx.Org.Team.LowerName) + "/repositories")
-		return
-	}
 	ctx.Redirect(ctx.Org.OrgLink + "/teams/" + url.PathEscape(ctx.Org.Team.LowerName) + "/repositories")
 }
 
