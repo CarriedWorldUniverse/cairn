@@ -37,3 +37,55 @@ func TestActionsAPISearchActionJobs_GlobalRunner(t *testing.T) {
 	assert.Len(t, jobs, 1)
 	assert.Equal(t, job.ID, jobs[0].ID)
 }
+
+func TestActionsAPISearchActionJobs_GlobalRunnerAllPendingJobsWithoutLabels(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	job196 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 196})
+	job397 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 397})
+
+	adminUsername := "user1"
+	token := getUserToken(t, adminUsername, auth_model.AccessTokenScopeWriteAdmin)
+
+	req := NewRequest(t, "GET", "/api/v1/admin/runners/jobs?labels=").AddTokenAuth(token)
+	res := MakeRequest(t, req, http.StatusOK)
+
+	var jobs []*api.ActionRunJob
+	DecodeJSON(t, res, &jobs)
+
+	assert.Len(t, jobs, 2)
+	assert.Equal(t, job397.ID, jobs[0].ID)
+	assert.Equal(t, job196.ID, jobs[1].ID)
+}
+
+func TestActionsAPISearchActionJobs_GlobalRunnerAllPendingJobs(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	job196 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 196})
+	job393 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 393})
+	job394 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 394})
+	job395 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 395})
+	job396 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 396})
+	job397 := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 397})
+
+	adminUsername := "user1"
+	token := getUserToken(t, adminUsername, auth_model.AccessTokenScopeWriteAdmin)
+
+	req := NewRequest(
+		t,
+		"GET",
+		"/api/v1/admin/runners/jobs",
+	).AddTokenAuth(token)
+	res := MakeRequest(t, req, http.StatusOK)
+
+	var jobs []*api.ActionRunJob
+	DecodeJSON(t, res, &jobs)
+
+	assert.Len(t, jobs, 6)
+	assert.Equal(t, job397.ID, jobs[0].ID)
+	assert.Equal(t, job396.ID, jobs[1].ID)
+	assert.Equal(t, job395.ID, jobs[2].ID)
+	assert.Equal(t, job394.ID, jobs[3].ID)
+	assert.Equal(t, job393.ID, jobs[4].ID)
+	assert.Equal(t, job196.ID, jobs[5].ID)
+}
