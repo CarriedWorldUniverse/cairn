@@ -36,3 +36,41 @@ func TestActionsAPISearchActionJobs_UserRunner(t *testing.T) {
 	assert.Len(t, jobs, 1)
 	assert.Equal(t, job.ID, jobs[0].ID)
 }
+
+func TestActionsAPISearchActionJobs_UserRunnerAllPendingJobsWithoutLabels(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	normalUsername := "user1"
+	session := loginUser(t, normalUsername)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
+	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 196})
+
+	req := NewRequest(t, "GET", "/api/v1/user/actions/runners/jobs?labels=").
+		AddTokenAuth(token)
+	res := MakeRequest(t, req, http.StatusOK)
+
+	var jobs []*api.ActionRunJob
+	DecodeJSON(t, res, &jobs)
+
+	assert.Len(t, jobs, 1)
+	assert.Equal(t, job.ID, jobs[0].ID)
+}
+
+func TestActionsAPISearchActionJobs_UserRunnerAllPendingJobs(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	normalUsername := "user2"
+	session := loginUser(t, normalUsername)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
+	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 394})
+
+	req := NewRequest(t, "GET", "/api/v1/user/actions/runners/jobs").
+		AddTokenAuth(token)
+	res := MakeRequest(t, req, http.StatusOK)
+
+	var jobs []*api.ActionRunJob
+	DecodeJSON(t, res, &jobs)
+
+	assert.Len(t, jobs, 1)
+	assert.Equal(t, job.ID, jobs[0].ID)
+}
