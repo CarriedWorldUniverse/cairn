@@ -522,3 +522,88 @@ func RenameUser(ctx *context.APIContext) {
 	log.Trace("User name changed: %s -> %s", oldName, newName)
 	ctx.Status(http.StatusNoContent)
 }
+
+// ListUserEmails lists all email addresses for a user
+func ListUserEmails(ctx *context.APIContext) {
+	// swagger:operation GET /admin/users/{username}/emails admin adminListUserEmails
+	// ---
+	// summary: List all email addresses for a user
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: username
+	//   in: path
+	//   description: username of user to get email addresses of
+	//   type: string
+	//   required: true
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/EmailList"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	if ctx.ContextUser.IsOrganization() {
+		ctx.Error(http.StatusUnprocessableEntity, "", fmt.Errorf("%s is an organization not a user", ctx.ContextUser.Name))
+		return
+	}
+
+	emails, err := user_model.GetEmailAddresses(ctx, ctx.ContextUser.ID)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "GetEmailAddresses", err)
+		return
+	}
+	apiEmails := make([]*api.Email, len(emails))
+	for i := range emails {
+		apiEmails[i] = convert.ToEmail(emails[i])
+	}
+	ctx.JSON(http.StatusOK, &apiEmails)
+}
+
+// DeleteUserEmails deletes email addresses from a user's account
+func DeleteUserEmails(ctx *context.APIContext) {
+	// swagger:operation DELETE /admin/users/{username}/emails admin adminDeleteUserEmails
+	// ---
+	// summary: Delete email addresses from a user's account
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: username
+	//   in: path
+	//   description: username of user to delete email addresses from
+	//   type: string
+	//   required: true
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/DeleteEmailOption"
+	// responses:
+	//   "204":
+	//     "$ref": "#/responses/empty"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "422":
+	//     "$ref": "#/responses/validationError"
+
+	if ctx.ContextUser.IsOrganization() {
+		ctx.Error(http.StatusUnprocessableEntity, "", fmt.Errorf("%s is an organization not a user", ctx.ContextUser.Name))
+		return
+	}
+
+	form := web.GetForm(ctx).(*api.DeleteEmailOption)
+	if len(form.Emails) == 0 {
+		ctx.Status(http.StatusNoContent)
+		return
+	}
+
+	if err := user_service.DeleteEmailAddresses(ctx, ctx.ContextUser, form.Emails); err != nil {
+		if user_model.IsErrPrimaryEmailCannotDelete(err) {
+			ctx.Error(http.StatusUnprocessableEntity, "DeleteEmailAddresses", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "DeleteEmailAddresses", err)
+		}
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
