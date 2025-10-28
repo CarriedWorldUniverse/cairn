@@ -396,7 +396,7 @@ func handleWorkflows(
 				Name: dwf.EntryName,
 			}}
 		} else {
-			jobs, err = jobParser(dwf.Content, jobparser.WithVars(vars))
+			jobs, err = actions_module.JobParser(dwf.Content, jobparser.WithVars(vars))
 			if err != nil {
 				log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
 				tr := translation.NewLocale(input.Doer.Language)
