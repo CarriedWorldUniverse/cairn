@@ -12,8 +12,6 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/packages"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
 	packages_service "forgejo.org/services/packages"
 
 	_ "forgejo.org/models"
@@ -60,7 +58,6 @@ func preparePackage(t *testing.T, owner *user_model.User, name string) {
 
 func TestSearchPackages(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
-	defer test.MockVariableValue(&setting.Database.IterateBufferSize, 1)()
 
 	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	user3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
