@@ -10,7 +10,6 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/packages"
 	debian_module "forgejo.org/modules/packages/debian"
-	"forgejo.org/modules/setting"
 
 	"xorm.io/builder"
 )
@@ -77,41 +76,22 @@ func ExistPackages(ctx context.Context, opts *PackageSearchOptions) (bool, error
 
 // SearchPackages gets the packages matching the search options
 func SearchPackages(ctx context.Context, opts *PackageSearchOptions, iter func(*packages.PackageFileDescriptor)) error {
-	var start int
-	batchSize := setting.Database.IterateBufferSize
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			beans := make([]*packages.PackageFile, 0, batchSize)
-
-			if err := db.GetEngine(ctx).
-				Table("package_file").
-				Select("package_file.*").
-				Join("INNER", "package_version", "package_version.id = package_file.version_id").
-				Join("INNER", "package", "package.id = package_version.package_id").
-				Where(opts.toCond()).
-				Asc("package.lower_name", "package_version.created_unix").
-				Limit(batchSize, start).
-				Find(&beans); err != nil {
+	return db.GetEngine(ctx).
+		Table("package_file").
+		Select("package_file.*").
+		Join("INNER", "package_version", "package_version.id = package_file.version_id").
+		Join("INNER", "package", "package.id = package_version.package_id").
+		Where(opts.toCond()).
+		Asc("package.lower_name", "package_version.created_unix").
+		Iterate(&packages.PackageFile{}, func(i int, bean any) error {
+			pf := bean.(*packages.PackageFile)
+			pfd, err := packages.GetPackageFileDescriptor(ctx, pf)
+			if err != nil {
 				return err
 			}
-			if len(beans) == 0 {
-				return nil
-			}
-			start += len(beans)
-
-			for _, bean := range beans {
-				pfd, err := packages.GetPackageFileDescriptor(ctx, bean)
-				if err != nil {
-					return err
-				}
-
-				iter(pfd)
-			}
-		}
-	}
+			iter(pfd)
+			return nil
+		})
 }
 
 // GetDistributions gets all available distributions
