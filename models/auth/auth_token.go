@@ -36,7 +36,7 @@ func EmailActivation(email string) AuthorizationPurpose {
 // AuthorizationToken represents a authorization token to a user.
 type AuthorizationToken struct {
 	ID              int64  `xorm:"pk autoincr"`
-	UID             int64  `xorm:"INDEX"`
+	UID             int64  `xorm:"INDEX REFERENCES(user, id)"`
 	LookupKey       string `xorm:"INDEX UNIQUE"`
 	HashedValidator string
 	Purpose         AuthorizationPurpose `xorm:"NOT NULL DEFAULT 'long_term_authorization'"`
