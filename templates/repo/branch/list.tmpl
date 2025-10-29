@@ -228,7 +228,6 @@
 
 	<form class="ui form" id="create-branch-form" action="" data-base-action="{{.Link}}/_new/branch/" method="post">
 		<div class="content">
-			{{.CsrfTokenHtml}}
 			<div class="field">
 				{{ctx.Locale.Tr "repo.branch.create_new_branch"}}
 				<span id="modal-create-branch-from-span"></span>
@@ -248,7 +247,6 @@
 	</div>
 	<form class="ui form" action="{{$.Repository.Link}}/settings/rename_branch" method="post">
 		<div class="content">
-			{{.CsrfTokenHtml}}
 			<div class="field default-branch-warning">
 				<span class="text red">{{ctx.Locale.Tr "repo.branch.warning_rename_default_branch"}}</span>
 			</div>

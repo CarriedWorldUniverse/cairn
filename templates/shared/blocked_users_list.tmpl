@@ -14,7 +14,6 @@
 			</div>
 			<div class="flex-item-trailing">
 				<form action="{{$.Link}}/unblock" method="post">
-					{{$.CsrfTokenHtml}}
 					<input type="hidden" name="user_id" value="{{.ID}}">
 					<button class="ui red button">{{ctx.Locale.Tr "user.unblock"}}</button>
 				</form>

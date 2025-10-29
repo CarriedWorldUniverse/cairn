@@ -28,7 +28,6 @@ func TestPullWIPConvertSidebar(t *testing.T) {
 		url := path.Join(userOwner, testRepo, "compare", branchOld+"..."+branchNew)
 		req := NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, sessionOwner, url),
 				"title": "pull used for testing wip offering",
 			},
 		)
@@ -39,7 +38,6 @@ func TestPullWIPConvertSidebar(t *testing.T) {
 		// Add WIP: prefix and check who is seeing the Remove WIP offering
 		req = NewRequestWithValues(t, "POST", path.Join(userOwner, testRepo, "pulls/6/title"),
 			map[string]string{
-				"_csrf": GetCSRF(t, sessionOwner, path.Join(userOwner, testRepo, "pulls/6")),
 				"title": "WIP: pull used for testing wip offering",
 			},
 		)

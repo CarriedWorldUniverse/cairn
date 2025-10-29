@@ -5,7 +5,6 @@ $.fn.dropdown = () => undefined;
 window.__webpack_public_path__ = '';
 
 window.config = {
-  csrfToken: 'test-csrf-token-123456',
   pageData: {},
   i18n: {},
   customEmojis: new Set(['forgejo', 'frogejo', 'blobnom']),

@@ -29,7 +29,6 @@ func TestPullCreate_CommitStatus(t *testing.T) {
 		url := path.Join("user1", "repo1", "compare", "master...status1")
 		req := NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, session, url),
 				"title": "pull request from status1",
 			},
 		)
@@ -129,7 +128,6 @@ func TestPullCreate_EmptyChangesWithDifferentCommits(t *testing.T) {
 		url := path.Join("user1", "repo1", "compare", "master...status1")
 		req := NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, session, url),
 				"title": "pull request from status1",
 			},
 		)
@@ -152,7 +150,6 @@ func TestPullCreate_EmptyChangesWithSameCommits(t *testing.T) {
 		url := path.Join("user1", "repo1", "compare", "master...status1")
 		req := NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, session, url),
 				"title": "pull request from status1",
 			},
 		)

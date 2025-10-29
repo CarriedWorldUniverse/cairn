@@ -19,13 +19,11 @@ func TestArchivedLabelVisualProperties(t *testing.T) {
 
 		// Create labels
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", "user2/repo1/labels/new", map[string]string{
-			"_csrf":       GetCSRF(t, session, "user2/repo1/labels"),
 			"title":       "active_label",
 			"description": "",
 			"color":       "#aa00aa",
 		}), http.StatusSeeOther)
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", "user2/repo1/labels/new", map[string]string{
-			"_csrf":       GetCSRF(t, session, "user2/repo1/labels"),
 			"title":       "archived_label",
 			"description": "",
 			"color":       "#00aa00",
@@ -45,7 +43,6 @@ func TestArchivedLabelVisualProperties(t *testing.T) {
 
 		// Make label archived
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", "user2/repo1/labels/edit", map[string]string{
-			"_csrf":       GetCSRF(t, session, "user2/repo1/labels"),
 			"id":          id,
 			"title":       "archived_label",
 			"is_archived": "on",

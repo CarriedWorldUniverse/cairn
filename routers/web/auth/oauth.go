@@ -1275,9 +1275,6 @@ func handleOAuth2SignIn(ctx *context.Context, source *auth.Source, u *user_model
 			return
 		}
 
-		// Clear whatever CSRF cookie has right now, force to generate a new one
-		ctx.Csrf.DeleteCookie(ctx)
-
 		opts := &user_service.UpdateOptions{
 			SetLastLogin: true,
 		}

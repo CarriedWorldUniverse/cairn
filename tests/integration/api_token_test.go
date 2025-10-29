@@ -611,8 +611,10 @@ func TestAPITokenCreation(t *testing.T) {
 	t.Run("Via OAuth2", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
+		// Make a call to `/login/oauth/authorize` to get some session data.
+		session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"), http.StatusOK)
+
 		req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
-			"_csrf":        GetCSRF(t, session, "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"),
 			"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
 			"redirect_uri": "b",
 			"state":        "thestate",

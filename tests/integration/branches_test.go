@@ -31,9 +31,7 @@ func TestBranchActions(t *testing.T) {
 
 		t.Run("Delete branch", func(t *testing.T) {
 			link := fmt.Sprintf("/%s/branches/delete?name=%s", repo1.FullName(), branch3.Name)
-			req := NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf": GetCSRF(t, session, branchesLink),
-			})
+			req := NewRequestWithValues(t, "POST", link, map[string]string{})
 			session.MakeRequest(t, req, http.StatusOK)
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
@@ -44,9 +42,7 @@ func TestBranchActions(t *testing.T) {
 
 		t.Run("Restore branch", func(t *testing.T) {
 			link := fmt.Sprintf("/%s/branches/restore?branch_id=%d&name=%s", repo1.FullName(), branch3.ID, branch3.Name)
-			req := NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf": GetCSRF(t, session, branchesLink),
-			})
+			req := NewRequestWithValues(t, "POST", link, map[string]string{})
 			session.MakeRequest(t, req, http.StatusOK)
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)

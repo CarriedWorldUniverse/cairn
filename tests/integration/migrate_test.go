@@ -95,7 +95,6 @@ func TestMigrate(t *testing.T) {
 				// Step 4: submit the migration to only migrate issues
 				migratedRepoName := "otherrepo-" + s.svc.Name()
 				req = NewRequestWithValues(t, "POST", link, map[string]string{
-					"_csrf":       htmlDoc.GetCSRF(),
 					"service":     fmt.Sprintf("%d", s.svc),
 					"clone_addr":  fmt.Sprintf("%s%s/%s", u, ownerName, repoName),
 					"auth_token":  token,
@@ -151,7 +150,6 @@ func TestMigrateWithWiki(t *testing.T) {
 				// Step 4: submit the migration to only migrate issues
 				migratedRepoName := "otherrepo-" + s.svc.Name()
 				req = NewRequestWithValues(t, "POST", "/repo/migrate", map[string]string{
-					"_csrf":       GetCSRF(t, session, "/repo/migrate"),
 					"service":     fmt.Sprintf("%d", s.svc),
 					"clone_addr":  fmt.Sprintf("%s%s", u, repo.FullName()),
 					"auth_token":  token,
@@ -207,7 +205,6 @@ func TestMigrateWithReleases(t *testing.T) {
 				// Step 4: submit the migration to only migrate issues
 				migratedRepoName := "otherrepo-" + s.svc.Name()
 				req = NewRequestWithValues(t, "POST", "/repo/migrate", map[string]string{
-					"_csrf":       GetCSRF(t, session, "/repo/migrate"),
 					"service":     fmt.Sprintf("%d", s.svc),
 					"clone_addr":  fmt.Sprintf("%s%s/%s", u, ownerName, repoName),
 					"auth_token":  token,

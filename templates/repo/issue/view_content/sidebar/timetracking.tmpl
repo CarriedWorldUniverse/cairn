@@ -4,10 +4,8 @@
 		<span class="text"><strong>{{ctx.Locale.Tr "repo.issues.tracker"}}</strong></span>
 		<div class="tw-mt-2">
 			<form method="post" action="{{.Issue.Link}}/times/stopwatch/toggle" id="toggle_stopwatch_form">
-				{{$.CsrfTokenHtml}}
 			</form>
 			<form method="post" action="{{.Issue.Link}}/times/stopwatch/cancel" id="cancel_stopwatch_form">
-				{{$.CsrfTokenHtml}}
 			</form>
 			{{if $.IsStopwatchRunning}}
 				<button class="ui fluid button issue-stop-time">
@@ -32,7 +30,6 @@
 					<div class="header">{{ctx.Locale.Tr "repo.issues.add_time"}}</div>
 					<div class="content">
 						<form method="post" id="add_time_manual_form" action="{{.Issue.Link}}/times/add" class="ui input fluid tw-gap-2">
-							{{$.CsrfTokenHtml}}
 							<input placeholder='{{ctx.Locale.Tr "repo.issues.add_time_hours"}}' type="number" name="hours">
 							<input placeholder='{{ctx.Locale.Tr "repo.issues.add_time_minutes"}}' type="number" name="minutes" class="ui compact">
 						</form>

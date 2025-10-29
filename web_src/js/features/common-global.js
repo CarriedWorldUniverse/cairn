@@ -14,7 +14,7 @@ import {request, POST, GET} from '../modules/fetch.js';
 import '../htmx.js';
 import {initTab} from '../modules/tab.ts';
 
-const {appUrl, appSubUrl, csrfToken, i18n} = window.config;
+const {appUrl, appSubUrl, i18n} = window.config;
 
 export function initGlobalFormDirtyLeaveConfirm() {
   // Warn users that try to leave a page after entering data into a form.
@@ -266,7 +266,6 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
 
   const dz = await createDropzone(dropzoneEl, {
     url: dropzoneEl.getAttribute('data-upload-url'),
-    headers: {'X-Csrf-Token': csrfToken},
     maxFiles: dropzoneEl.getAttribute('data-max-file'),
     maxFilesize: dropzoneEl.getAttribute('data-max-size'),
     acceptedFiles: (['*/*', ''].includes(dropzoneEl.getAttribute('data-accepts')) ? null : dropzoneEl.getAttribute('data-accepts')),

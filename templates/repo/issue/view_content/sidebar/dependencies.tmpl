@@ -102,7 +102,6 @@
 	{{if and .CanCreateIssueDependencies (not .Repository.IsArchived)}}
 		<div>
 			<form method="post" action="{{.Issue.Link}}/dependency/add" id="addDependencyForm">
-				{{$.CsrfTokenHtml}}
 				<div class="ui fluid action input">
 					<div class="ui search selection dropdown" id="new-dependency-drop-list" data-issue-id="{{.Issue.ID}}">
 						<input name="newDependency" type="hidden">
@@ -129,7 +128,6 @@
 		</div>
 		<div class="content">
 			<form method="post" action="{{.Issue.Link}}/dependency/delete" id="removeDependencyForm">
-				{{$.CsrfTokenHtml}}
 				<input type="hidden" value="" name="removeDependencyID" id="removeDependencyID">
 				<input type="hidden" value="" name="dependencyType" id="dependencyType">
 			</form>

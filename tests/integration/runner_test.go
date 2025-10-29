@@ -36,23 +36,18 @@ func TestRunnerModification(t *testing.T) {
 	adminURL := "/admin/actions/runners"
 
 	adminSess := loginUser(t, admin.Name)
-	adminCSRF := GetCSRF(t, adminSess, "/")
 	sess := loginUser(t, user.Name)
-	csrf := GetCSRF(t, sess, "/")
 
 	test := func(t *testing.T, fail bool, baseURL string, id int64) {
 		defer tests.PrintCurrentTest(t, 1)()
 		t.Helper()
 
 		sess := sess
-		csrf := csrf
 		if baseURL == adminURL {
 			sess = adminSess
-			csrf = adminCSRF
 		}
 
 		req := NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d", id), map[string]string{
-			"_csrf":       csrf,
 			"description": "New Description",
 		})
 		if fail {
@@ -64,9 +59,7 @@ func TestRunnerModification(t *testing.T) {
 			assert.Equal(t, "success%3DRunner%2Bupdated%2Bsuccessfully", flashCookie.Value)
 		}
 
-		req = NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id), map[string]string{
-			"_csrf": csrf,
-		})
+		req = NewRequest(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id))
 		if fail {
 			sess.MakeRequest(t, req, http.StatusNotFound)
 		} else {

@@ -128,7 +128,6 @@ func TestPullCombinedReviewRequest(t *testing.T) {
 		t.Helper()
 
 		req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/request_review", map[string]string{
-			"_csrf":     GetCSRF(t, session, "/user2/repo1/pulls/3"),
 			"issue_ids": "3",
 			"action":    action,
 			"id":        userID,

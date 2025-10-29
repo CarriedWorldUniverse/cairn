@@ -151,7 +151,6 @@ func CodeOwnerTestCommon(t *testing.T, u *url.URL, codeownerTest CodeownerTest) 
 		require.NoError(t, err)
 
 		req := NewRequestWithValues(t, "POST", repo.FullName()+"/compare/main...user1/"+codeownerTest.Name+":branch", map[string]string{
-			"_csrf": GetCSRF(t, session, repo.FullName()+"/compare/main...user1/"+codeownerTest.Name+":branch"),
 			"title": "pull request",
 		})
 		session.MakeRequest(t, req, http.StatusOK)

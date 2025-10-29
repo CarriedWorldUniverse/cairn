@@ -62,21 +62,15 @@ func testPullMerge(t *testing.T, session *TestSession, user, repo, pullnum strin
 }
 
 func testPullMergeForm(t *testing.T, session *TestSession, expectedCode int, user, repo, pullnum string, addOptions optionsPullMerge) *httptest.ResponseRecorder {
-	req := NewRequest(t, "GET", path.Join(user, repo, "pulls", pullnum))
-	resp := session.MakeRequest(t, req, http.StatusOK)
-
-	htmlDoc := NewHTMLParser(t, resp.Body)
 	link := path.Join(user, repo, "pulls", pullnum, "merge")
 
-	options := map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
-	}
+	options := map[string]string{}
 	for k, v := range addOptions {
 		options[k] = v
 	}
 
-	req = NewRequestWithValues(t, "POST", link, options)
-	resp = session.MakeRequest(t, req, expectedCode)
+	req := NewRequestWithValues(t, "POST", link, options)
+	resp := session.MakeRequest(t, req, expectedCode)
 
 	if expectedCode == http.StatusOK {
 		respJSON := struct {
@@ -98,9 +92,7 @@ func testPullCleanUp(t *testing.T, session *TestSession, user, repo, pullnum str
 	htmlDoc := NewHTMLParser(t, resp.Body)
 	link, exists := htmlDoc.doc.Find(".timeline-item .delete-button").Attr("data-url")
 	assert.True(t, exists, "The template has changed, can not find delete button url")
-	req = NewRequestWithValues(t, "POST", link, map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
-	})
+	req = NewRequestWithValues(t, "POST", link, map[string]string{})
 	resp = session.MakeRequest(t, req, http.StatusOK)
 
 	return resp
@@ -900,10 +892,7 @@ func testPullAutoMergeAfterCommitStatusSucceed(t *testing.T, ctx APITestContext,
 
 		// approve the PR from non-author
 		approveSession := loginUser(t, "user2")
-		req := NewRequest(t, "GET", fmt.Sprintf("/user2/repo1/pulls/%d", pr.Index))
-		resp := approveSession.MakeRequest(t, req, http.StatusOK)
-		htmlDoc := NewHTMLParser(t, resp.Body)
-		testSubmitReview(t, approveSession, htmlDoc.GetCSRF(), "user2", "repo1", strconv.Itoa(int(pr.Index)), sha, "approve", http.StatusOK)
+		testSubmitReview(t, approveSession, "user2", "repo1", strconv.Itoa(int(pr.Index)), sha, "approve", http.StatusOK)
 	}
 
 	// reload PR again
@@ -1036,11 +1025,8 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 		})
 
 		session := loginUser(t, "user1")
-		// add protected branch for commit status
-		csrf := GetCSRF(t, session, "/user2/repo1/settings/branches")
 		// Change master branch to protected
 		req := NewRequestWithValues(t, "POST", "/user2/repo1/settings/branches/edit", map[string]string{
-			"_csrf":                 csrf,
 			"rule_name":             "master",
 			"enable_push":           "true",
 			"enable_status_check":   "true",
@@ -1091,10 +1077,7 @@ func TestPullAutoMergeAfterCommitStatusSucceedAndApprovalForAgitFlow(t *testing.
 
 		// approve the PR from non-author
 		approveSession := loginUser(t, "user1")
-		req = NewRequest(t, "GET", fmt.Sprintf("/user2/repo1/pulls/%d", pr.Index))
-		resp := approveSession.MakeRequest(t, req, http.StatusOK)
-		htmlDoc := NewHTMLParser(t, resp.Body)
-		testSubmitReview(t, approveSession, htmlDoc.GetCSRF(), "user2", "repo1", strconv.Itoa(int(pr.Index)), sha, "approve", http.StatusOK)
+		testSubmitReview(t, approveSession, "user2", "repo1", strconv.Itoa(int(pr.Index)), sha, "approve", http.StatusOK)
 
 		// realod pr again
 		pr = unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: pr.ID})
@@ -1113,14 +1096,12 @@ func TestPullDeleteBranchPerms(t *testing.T) {
 		testEditFileToNewBranch(t, user2Session, "user2", "repo1", "master", "base-pr", "README.md", "Hello, World\n(Edited - base PR)\n")
 
 		req := NewRequestWithValues(t, "POST", "/user4/repo1/compare/master...user2/repo1:base-pr", map[string]string{
-			"_csrf": GetCSRF(t, user4Session, "/user4/repo1/compare/master...user2/repo1:base-pr"),
 			"title": "Testing PR",
 		})
 		resp := user4Session.MakeRequest(t, req, http.StatusOK)
 		elem := strings.Split(test.RedirectURL(resp), "/")
 
 		req = NewRequestWithValues(t, "POST", "/user4/repo1/pulls/"+elem[4]+"/merge", map[string]string{
-			"_csrf":                     GetCSRF(t, user4Session, "/user4/repo1/pulls/"+elem[4]),
 			"do":                        "merge",
 			"delete_branch_after_merge": "on",
 		})
@@ -1176,7 +1157,6 @@ func TestRebaseWhenNecessary(t *testing.T) {
 
 			// To avoid conflicts, create a new file on /user/repo1.
 			session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user1/repo1/_new/master", map[string]string{
-				"_csrf":          GetCSRF(t, session, "/user/settings"),
 				"commit_choice":  "direct",
 				"tree_path":      "test-file.md",
 				"content":        "newly-added-test-file",

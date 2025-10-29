@@ -13,7 +13,6 @@
 		</h2>
 		{{template "base/alert" .}}
 		<form class="ui form" action="{{.Link}}" method="post">
-			{{.CsrfTokenHtml}}
 			<div class="ui seven wide target">
 				<div class="inline field {{if .Err_TagName}}error{{end}}">
 					{{if .PageIsEditRelease}}

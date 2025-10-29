@@ -87,7 +87,6 @@ func testChangeUserActivityVisibility(t *testing.T, session *TestSession, newSta
 	t.Helper()
 	session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user/settings",
 		map[string]string{
-			"_csrf":                 GetCSRF(t, session, "/user/settings"),
 			"keep_activity_private": newState,
 		}), http.StatusSeeOther)
 }
@@ -96,7 +95,6 @@ func testChangeUserActivityVisibility(t *testing.T, session *TestSession, newSta
 func testChangeUserProfileVisibility(t *testing.T, session *TestSession, newValue structs.VisibleType) {
 	t.Helper()
 	session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user/settings", map[string]string{
-		"_csrf":      GetCSRF(t, session, "/user/settings"),
 		"visibility": strconv.Itoa(int(newValue)),
 	}), http.StatusSeeOther)
 }

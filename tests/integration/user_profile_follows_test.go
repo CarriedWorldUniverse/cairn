@@ -118,10 +118,7 @@ func TestUserProfileFollows(t *testing.T) {
 // testUserFollowUser simply follows a user `following` by session of user `follower`
 func testUserFollowUser(t *testing.T, follower *TestSession, following string) {
 	t.Helper()
-	follower.MakeRequest(t, NewRequestWithValues(t, "POST", fmt.Sprintf("/%s?action=follow", following),
-		map[string]string{
-			"_csrf": GetCSRF(t, follower, fmt.Sprintf("/%s", following)),
-		}), http.StatusOK)
+	follower.MakeRequest(t, NewRequest(t, "POST", fmt.Sprintf("/%s?action=follow", following)), http.StatusOK)
 }
 
 // testSelectorEquals prevents duplication of a lot of code for tests with many checks

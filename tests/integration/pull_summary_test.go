@@ -26,7 +26,6 @@ func TestPullSummaryCommits(t *testing.T) {
 		url := path.Join(testUser, testRepo, "compare", branchOld+"..."+branchNew)
 		req := NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, session, url),
 				"title": "1st pull request to test summary",
 			},
 		)
@@ -42,7 +41,6 @@ func TestPullSummaryCommits(t *testing.T) {
 		testEditFile(t, session, testUser, testRepo, branchNew, "README.md", "test of pull summary (the 3rd)")
 		req = NewRequestWithValues(t, "POST", url,
 			map[string]string{
-				"_csrf": GetCSRF(t, session, url),
 				"title": "2nd pull request to test summary",
 			},
 		)

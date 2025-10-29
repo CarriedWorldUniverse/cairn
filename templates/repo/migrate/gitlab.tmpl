@@ -3,7 +3,6 @@
 	<div class="ui middle very relaxed page grid">
 		<div class="column">
 			<form class="ui form" action="{{.Link}}" method="post">
-				{{.CsrfTokenHtml}}
 				<h3 class="ui top attached header">
 					{{ctx.Locale.Tr "repo.migrate.migrate" .service.Title}}
 					<input id="service_type" type="hidden" name="service" value="{{.service}}">

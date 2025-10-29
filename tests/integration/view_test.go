@@ -54,7 +54,6 @@ func TestAmbiguousCharacterDetection(t *testing.T) {
 		defer f()
 
 		req := NewRequestWithValues(t, "POST", repo.Link()+"/wiki?action=new", map[string]string{
-			"_csrf":   GetCSRF(t, session, repo.Link()+"/wiki?action=new"),
 			"title":   "Normal",
 			"content": "Hello – Hello",
 		})
@@ -148,7 +147,6 @@ func TestCommitListActions(t *testing.T) {
 		defer f()
 
 		req := NewRequestWithValues(t, "POST", repo.Link()+"/wiki?action=new", map[string]string{
-			"_csrf":   GetCSRF(t, session, repo.Link()+"/wiki?action=new"),
 			"title":   "Normal",
 			"content": "Hello world!",
 		})

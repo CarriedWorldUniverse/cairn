@@ -76,11 +76,9 @@ func TestPullView_SelfReviewNotification(t *testing.T) {
 		user1Session := loginUser(t, "user1")
 		user2Session := loginUser(t, "user2")
 
-		user1csrf := GetCSRF(t, user1Session, "/")
-		oldUser1NotificationCount := getUserNotificationCount(t, user1Session, user1csrf)
+		oldUser1NotificationCount := getUserNotificationCount(t, user1Session)
 
-		user2csrf := GetCSRF(t, user2Session, "/")
-		oldUser2NotificationCount := getUserNotificationCount(t, user2Session, user2csrf)
+		oldUser2NotificationCount := getUserNotificationCount(t, user2Session)
 
 		user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -117,17 +115,14 @@ func TestPullView_SelfReviewNotification(t *testing.T) {
 		issueID, ok := doc.Find(attributeFilter).Attr("data-issue-id")
 		assert.True(t, ok, "doc must contain data-issue-id")
 
-		user1csrf = GetCSRF(t, user1Session, "/")
-		testAssignReviewer(t, user1Session, user1csrf, user2.Name, repo.Name, issueID, "1", http.StatusOK)
+		testAssignReviewer(t, user1Session, user2.Name, repo.Name, issueID, "1", http.StatusOK)
 
 		// both user notification should keep the same notification count since
 		// user2 added itself as reviewer.
-		user1csrf = GetCSRF(t, user1Session, "/")
-		notificationCount := getUserNotificationCount(t, user1Session, user1csrf)
+		notificationCount := getUserNotificationCount(t, user1Session)
 		assert.Equal(t, oldUser1NotificationCount, notificationCount)
 
-		user2csrf = GetCSRF(t, user2Session, "/")
-		notificationCount = getUserNotificationCount(t, user2Session, user2csrf)
+		notificationCount = getUserNotificationCount(t, user2Session)
 		assert.Equal(t, oldUser2NotificationCount, notificationCount)
 	})
 }
@@ -145,7 +140,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		resp := session.MakeRequest(t, req, http.StatusOK)
 		doc := NewHTMLParser(t, resp.Body)
 		req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-			"_csrf":            doc.GetInputValueByName("_csrf"),
 			"origin":           doc.GetInputValueByName("origin"),
 			"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
 			"side":             "proposed",
@@ -160,7 +154,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		session.MakeRequest(t, req, http.StatusOK)
 
 		req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/submit", map[string]string{
-			"_csrf":     doc.GetInputValueByName("_csrf"),
 			"commit_id": doc.GetInputValueByName("latest_commit_id"),
 			"content":   "looks good",
 			"type":      "comment",
@@ -184,7 +177,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		}))
 
 		req = NewRequestWithValues(t, "POST", "/user2/repo1/issues/resolve_conversation", map[string]string{
-			"_csrf":      doc.GetInputValueByName("_csrf"),
 			"origin":     "timeline",
 			"action":     "Resolve",
 			"comment_id": commentID,
@@ -207,7 +199,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		{
 			// first (outdated) review
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-				"_csrf":            doc.GetInputValueByName("_csrf"),
 				"origin":           doc.GetInputValueByName("origin"),
 				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
 				"side":             "proposed",
@@ -222,7 +213,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			session.MakeRequest(t, req, http.StatusOK)
 
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/submit", map[string]string{
-				"_csrf":     doc.GetInputValueByName("_csrf"),
 				"commit_id": doc.GetInputValueByName("latest_commit_id"),
 				"content":   "looks good",
 				"type":      "comment",
@@ -255,7 +245,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			// second (up-to-date) review on the same line
 			// make a second review
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-				"_csrf":            doc.GetInputValueByName("_csrf"),
 				"origin":           doc.GetInputValueByName("origin"),
 				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
 				"side":             "proposed",
@@ -270,7 +259,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			session.MakeRequest(t, req, http.StatusOK)
 
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/submit", map[string]string{
-				"_csrf":     doc.GetInputValueByName("_csrf"),
 				"commit_id": doc.GetInputValueByName("latest_commit_id"),
 				"content":   "looks better",
 				"type":      "comment",
@@ -301,7 +289,6 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		}
 
 		req = NewRequestWithValues(t, "POST", "/user2/repo1/issues/resolve_conversation", map[string]string{
-			"_csrf":      doc.GetInputValueByName("_csrf"),
 			"origin":     "timeline",
 			"action":     "Resolve",
 			"comment_id": commentID,
@@ -481,16 +468,11 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 			sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
 			require.NoError(t, err)
 
-			// Grab the CSRF token.
-			req := NewRequest(t, "GET", path.Join(elem[1], elem[2], "pulls", elem[4]))
-			resp = user2Session.MakeRequest(t, req, http.StatusOK)
-			htmlDoc := NewHTMLParser(t, resp.Body)
-
 			// Submit an approve review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
+			testSubmitReview(t, user2Session, "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
 
 			// Submit a reject review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
+			testSubmitReview(t, user2Session, "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
 		})
 
 		t.Run("Submit approve/reject review on closed PR", func(t *testing.T) {
@@ -513,16 +495,11 @@ func TestPullView_GivenApproveOrRejectReviewOnClosedPR(t *testing.T) {
 			sha, err := baseGitRepo.GetRefCommitID(pr.GetGitRefName())
 			require.NoError(t, err)
 
-			// Grab the CSRF token.
-			req := NewRequest(t, "GET", path.Join(elem[1], elem[2], "pulls", elem[4]))
-			resp = user2Session.MakeRequest(t, req, http.StatusOK)
-			htmlDoc := NewHTMLParser(t, resp.Body)
-
 			// Submit an approve review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
+			testSubmitReview(t, user2Session, "user2", "repo1", elem[4], sha, "approve", http.StatusOK)
 
 			// Submit a reject review on the PR.
-			testSubmitReview(t, user2Session, htmlDoc.GetCSRF(), "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
+			testSubmitReview(t, user2Session, "user2", "repo1", elem[4], sha, "reject", http.StatusOK)
 		})
 	})
 }
@@ -556,7 +533,6 @@ func TestPullReview_OldLatestCommitId(t *testing.T) {
 
 	const content = "TestPullReview_OldLatestCommitId"
 	req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-		"_csrf":            doc.GetInputValueByName("_csrf"),
 		"origin":           doc.GetInputValueByName("origin"),
 		"latest_commit_id": oldCommitSHA,
 		"side":             "proposed",
@@ -604,7 +580,6 @@ func TestPullReviewInArchivedRepo(t *testing.T) {
 
 			// Archive the repo
 			resp = session.MakeRequest(t, NewRequestWithValues(t, "POST", path.Join(elem[1], elem[2], "settings"), map[string]string{
-				"_csrf":  GetCSRF(t, session, path.Join(elem[1], elem[2], "settings")),
 				"action": "archive",
 			}), http.StatusSeeOther)
 
@@ -616,18 +591,15 @@ func TestPullReviewInArchivedRepo(t *testing.T) {
 	})
 }
 
-func testNofiticationCount(t *testing.T, session *TestSession, csrf string, expectedSubmitStatus int) *httptest.ResponseRecorder {
-	options := map[string]string{
-		"_csrf": csrf,
-	}
+func testNofiticationCount(t *testing.T, session *TestSession, expectedSubmitStatus int) *httptest.ResponseRecorder {
+	options := map[string]string{}
 
 	req := NewRequestWithValues(t, "GET", "/", options)
 	return session.MakeRequest(t, req, expectedSubmitStatus)
 }
 
-func testAssignReviewer(t *testing.T, session *TestSession, csrf, owner, repo, pullID, reviewer string, expectedSubmitStatus int) *httptest.ResponseRecorder {
+func testAssignReviewer(t *testing.T, session *TestSession, owner, repo, pullID, reviewer string, expectedSubmitStatus int) *httptest.ResponseRecorder {
 	options := map[string]string{
-		"_csrf":     csrf,
 		"action":    "attach",
 		"issue_ids": pullID,
 		"id":        reviewer,
@@ -638,9 +610,8 @@ func testAssignReviewer(t *testing.T, session *TestSession, csrf, owner, repo, p
 	return session.MakeRequest(t, req, expectedSubmitStatus)
 }
 
-func testSubmitReview(t *testing.T, session *TestSession, csrf, owner, repo, pullNumber, commitID, reviewType string, expectedSubmitStatus int) *httptest.ResponseRecorder {
+func testSubmitReview(t *testing.T, session *TestSession, owner, repo, pullNumber, commitID, reviewType string, expectedSubmitStatus int) *httptest.ResponseRecorder {
 	options := map[string]string{
-		"_csrf":     csrf,
 		"commit_id": commitID,
 		"content":   "test",
 		"type":      reviewType,
@@ -652,27 +623,15 @@ func testSubmitReview(t *testing.T, session *TestSession, csrf, owner, repo, pul
 }
 
 func testIssueClose(t *testing.T, session *TestSession, owner, repo, issueNumber string, isPull bool) *httptest.ResponseRecorder {
-	issueType := "issues"
-	if isPull {
-		issueType = "pulls"
-	}
-	req := NewRequest(t, "GET", path.Join(owner, repo, issueType, issueNumber))
-	resp := session.MakeRequest(t, req, http.StatusOK)
-
-	htmlDoc := NewHTMLParser(t, resp.Body)
 	closeURL := path.Join(owner, repo, "issues", issueNumber, "comments")
-
-	options := map[string]string{
-		"_csrf":  htmlDoc.GetCSRF(),
+	req := NewRequestWithValues(t, "POST", closeURL, map[string]string{
 		"status": "close",
-	}
-
-	req = NewRequestWithValues(t, "POST", closeURL, options)
+	})
 	return session.MakeRequest(t, req, http.StatusOK)
 }
 
-func getUserNotificationCount(t *testing.T, session *TestSession, csrf string) string {
-	resp := testNofiticationCount(t, session, csrf, http.StatusOK)
+func getUserNotificationCount(t *testing.T, session *TestSession) string {
+	resp := testNofiticationCount(t, session, http.StatusOK)
 	doc := NewHTMLParser(t, resp.Body)
 	return doc.Find(`.notification_count`).Text()
 }
@@ -695,7 +654,6 @@ func TestPullRequestReplyMail(t *testing.T) {
 		review := unittest.AssertExistsAndLoadBean(t, &issues_model.Review{ID: 1002}, "type = 0")
 
 		req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-			"_csrf":   GetCSRF(t, session, "/user2/repo1/pulls/2"),
 			"origin":  "diff",
 			"content": "Just a comment!",
 			"side":    "proposed",
@@ -718,7 +676,6 @@ func TestPullRequestReplyMail(t *testing.T) {
 		})()
 
 		req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-			"_csrf":   GetCSRF(t, session, "/user2/repo1/pulls/2"),
 			"origin":  "diff",
 			"content": "Notification time 2!",
 			"side":    "proposed",
@@ -748,7 +705,6 @@ func TestPullRequestReplyMail(t *testing.T) {
 			review := unittest.AssertExistsAndLoadBean(t, &issues_model.Review{ID: 1001, Type: issues_model.ReviewTypeComment})
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-				"_csrf":   GetCSRF(t, session, "/user2/repo1/pulls/2"),
 				"origin":  "diff",
 				"content": "Notification time!",
 				"side":    "proposed",
@@ -775,7 +731,6 @@ func TestPullRequestReplyMail(t *testing.T) {
 			})()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-				"_csrf":         GetCSRF(t, session, "/user2/repo1/pulls/2"),
 				"origin":        "diff",
 				"content":       "Notification time 2!",
 				"side":          "proposed",
@@ -899,7 +854,6 @@ func TestPullRequestStaleReview(t *testing.T) {
 			doc := NewHTMLParser(t, resp.Body)
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/pulls/%d/files/reviews/comments", repo.FullName(), index), map[string]string{
-				"_csrf":            doc.GetCSRF(),
 				"origin":           doc.GetInputValueByName("origin"),
 				"latest_commit_id": firstCommitID,
 				"side":             "proposed",
@@ -914,7 +868,6 @@ func TestPullRequestStaleReview(t *testing.T) {
 			session.MakeRequest(t, req, http.StatusOK)
 
 			req = NewRequestWithValues(t, "POST", "/"+repo.FullName()+"/pulls/1/files/reviews/submit", map[string]string{
-				"_csrf":     doc.GetCSRF(),
 				"commit_id": firstCommitID,
 				"content":   "looks good",
 				"type":      "comment",
@@ -926,7 +879,6 @@ func TestPullRequestStaleReview(t *testing.T) {
 			// Review based on the first commit, which is a stale review because the
 			// PR's head is at the seconnd commit.
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/pulls/%d/files/reviews/submit", repo.FullName(), index), map[string]string{
-				"_csrf":     GetCSRF(t, session, fmt.Sprintf("/%s/pulls/%d/files/reviews/new_comment", repo.FullName(), index)),
 				"commit_id": firstCommitID,
 				"content":   "looks good",
 				"type":      "approve",
@@ -946,7 +898,6 @@ func TestPullRequestStaleReview(t *testing.T) {
 			// Create PR across repositories.
 			require.NoError(t, git.NewCommand(t.Context(), "push", "origin", "main").Run(&git.RunOpts{Dir: dstPath}))
 			session.MakeRequest(t, NewRequestWithValues(t, "POST", repo.FullName()+"/compare/main...org3/forked-repo:main", map[string]string{
-				"_csrf": GetCSRF(t, session, repo.FullName()+"/compare/main...org3/forked-repo:main"),
 				"title": "pull request",
 			}), http.StatusOK)
 			pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{Index: 1, BaseRepoID: repo.ID})

@@ -37,7 +37,6 @@ func TestActivityPubRepoFollowing(t *testing.T) {
 		link := fmt.Sprintf("/%s/settings", repo.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":           GetCSRF(t, session, link),
 			"action":          "federation",
 			"following_repos": fmt.Sprintf("%s/api/v1/activitypub/repository-id/1", federatedSrv.URL),
 		})
@@ -55,9 +54,7 @@ func TestActivityPubRepoFollowing(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 		repoLink := fmt.Sprintf("/%s", repo.FullName())
 		link := fmt.Sprintf("%s/action/star", repoLink)
-		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf": GetCSRF(t, session, repoLink),
-		})
+		req := NewRequestWithValues(t, "POST", link, map[string]string{})
 
 		session.MakeRequest(t, req, http.StatusOK)
 

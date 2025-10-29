@@ -292,7 +292,6 @@ func (s *TestSession) EnrollTOTP(t testing.TB) {
 	require.NoError(t, err)
 
 	req = NewRequestWithValues(t, "POST", "/user/settings/security/two_factor/enroll", map[string]string{
-		"_csrf":    htmlDoc.GetCSRF(),
 		"passcode": currentTOTP,
 	})
 	s.MakeRequest(t, req, http.StatusSeeOther)
@@ -326,7 +325,6 @@ func mockCompleteUserAuth(mock func(res http.ResponseWriter, req *http.Request) 
 
 func addAuthSource(t *testing.T, payload map[string]string) *auth.Source {
 	session := loginUser(t, "user1")
-	payload["_csrf"] = GetCSRF(t, session, "/admin/auths/new")
 	req := NewRequestWithValues(t, "POST", "/admin/auths/new", payload)
 	session.MakeRequest(t, req, http.StatusSeeOther)
 	return unittest.AssertExistsAndLoadBean(t, &auth.Source{Name: payload["name"]})
@@ -419,17 +417,12 @@ func loginUserWithPassword(t testing.TB, userName, password string) *TestSession
 
 func loginUserWithPasswordRemember(t testing.TB, userName, password string, rememberMe bool) *TestSession {
 	t.Helper()
-	req := NewRequest(t, "GET", "/user/login")
-	resp := MakeRequest(t, req, http.StatusOK)
-
-	doc := NewHTMLParser(t, resp.Body)
-	req = NewRequestWithValues(t, "POST", "/user/login", map[string]string{
-		"_csrf":     doc.GetCSRF(),
+	req := NewRequestWithValues(t, "POST", "/user/login", map[string]string{
 		"user_name": userName,
 		"password":  password,
 		"remember":  strconv.FormatBool(rememberMe),
 	})
-	resp = MakeRequest(t, req, http.StatusSeeOther)
+	resp := MakeRequest(t, req, http.StatusSeeOther)
 
 	ch := http.Header{}
 	ch.Add("Cookie", strings.Join(resp.Header()["Set-Cookie"], ";"))
@@ -459,7 +452,6 @@ func loginUserWithTOTP(t testing.TB, user *user_model.User) *TestSession {
 	require.NoError(t, err)
 
 	req := NewRequestWithValues(t, "POST", "/user/two_factor", map[string]string{
-		"_csrf":    GetCSRF(t, session, "/user/two_factor"),
 		"passcode": passcode,
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
@@ -493,31 +485,15 @@ func getTokenForLoggedInUser(t testing.TB, session *TestSession, scopes ...auth.
 }
 
 // createApplicationSettingsToken creates a token with given name and scopes for the currently logged in user.
-// It will assert CSRF token and redirect to the application settings page.
+// It will redirect to the application settings page.
 func createApplicationSettingsToken(t testing.TB, session *TestSession, name string, scopes ...auth.AccessTokenScope) {
-	req := NewRequest(t, "GET", "/user/settings/applications")
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	var csrf string
-	for _, cookie := range resp.Result().Cookies() {
-		if cookie.Name != "_csrf" {
-			continue
-		}
-		csrf = cookie.Value
-		break
-	}
-	if csrf == "" {
-		doc := NewHTMLParser(t, resp.Body)
-		csrf = doc.GetCSRF()
-	}
-	assert.NotEmpty(t, csrf)
 	urlValues := url.Values{}
-	urlValues.Add("_csrf", csrf)
 	urlValues.Add("name", name)
 	for _, scope := range scopes {
 		urlValues.Add("scope", string(scope))
 	}
-	req = NewRequestWithURLValues(t, "POST", "/user/settings/applications", urlValues)
-	resp = session.MakeRequest(t, req, http.StatusSeeOther)
+	req := NewRequestWithURLValues(t, "POST", "/user/settings/applications", urlValues)
+	resp := session.MakeRequest(t, req, http.StatusSeeOther)
 
 	// Log the flash values on failure
 	if !assert.Equal(t, []string{"/user/settings/applications"}, resp.Result().Header["Location"]) {
@@ -727,19 +703,6 @@ func VerifyJSONSchema(t testing.TB, resp *httptest.ResponseRecorder, schemaFile 
 
 	schemaValidation := schema.Validate(data)
 	require.NoError(t, schemaValidation)
-}
-
-// GetCSRF returns CSRF token from body
-// If it fails, it means the CSRF token is not found in the response body returned by the url with the given session.
-// In this case, you should find a better url to get it.
-func GetCSRF(t testing.TB, session *TestSession, urlStr string) string {
-	t.Helper()
-	req := NewRequest(t, "GET", urlStr)
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	doc := NewHTMLParser(t, resp.Body)
-	csrf := doc.GetCSRF()
-	require.NotEmpty(t, csrf)
-	return csrf
 }
 
 func GetHTMLTitle(t testing.TB, session *TestSession, urlStr string) string {

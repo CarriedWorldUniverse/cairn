@@ -361,9 +361,7 @@ func TestRepositoryFlagsUI(t *testing.T) {
 			flagged := flaggedRepo.IsFlagged(db.DefaultContext)
 			assert.True(t, flagged)
 
-			req := NewRequestWithValues(t, "POST", flaggedRepoManageURL, map[string]string{
-				"_csrf": GetCSRF(t, session, flaggedRepoManageURL),
-			})
+			req := NewRequestWithValues(t, "POST", flaggedRepoManageURL, map[string]string{})
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
 			flagged = flaggedRepo.IsFlagged(db.DefaultContext)
@@ -380,7 +378,6 @@ func TestRepositoryFlagsUI(t *testing.T) {
 			assert.False(t, flagged)
 
 			req := NewRequestWithValues(t, "POST", unflaggedRepoManageURL, map[string]string{
-				"_csrf": GetCSRF(t, session, unflaggedRepoManageURL),
 				"flags": "test-flag",
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)

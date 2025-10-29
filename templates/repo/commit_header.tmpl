@@ -90,7 +90,6 @@
 								</div>
 								<div class="content">
 									<form class="ui form" id="create-branch-form" action="" data-base-action="{{.RepoLink}}/branches/_new/commit/" method="post">
-										{{.CsrfTokenHtml}}
 										<div class="field">
 											<label>
 												{{ctx.Locale.Tr "repo.branch.new_branch_from" (`<span class="text" id="modal-create-branch-from-span"></span>`|SafeHTML)}}
@@ -114,7 +113,6 @@
 								</div>
 								<div class="content">
 									<form class="ui form" id="create-tag-form" action="" data-base-action="{{.RepoLink}}/branches/_new/commit/" method="post">
-										{{.CsrfTokenHtml}}
 										<input type="hidden" name="create_tag" value="true">
 										<div class="field">
 											<label>
@@ -310,7 +308,6 @@
 					<p>{{ctx.Locale.Tr "repo.diff.git-notes.remove-body"}}</p>
 					<div class="text right actions">
 						<form action="{{.Link}}/notes/remove" method="post">
-							{{.CsrfTokenHtml}}
 							<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 							<button type="submit" class="ui red button" href="{{.Link}}/notes/remove">{{ctx.Locale.Tr "remove"}}</button>
 						</form>
@@ -325,7 +322,6 @@
 	{{if and ($.Permission.CanWrite $.UnitTypeCode) (not $.Repository.IsArchived) (not .IsDeleted)}}
 		<div id="commit-notes-edit-area" class="ui bottom attached info segment git-notes tw-hidden">
 			<form class="ui form" action="{{.Link}}/notes" method="post">
-				{{.CsrfTokenHtml}}
 
 				<div class="field">
 					<textarea name="notes">{{.NoteRendered | SanitizeHTML}}</textarea>
@@ -340,7 +336,6 @@
 {{else if and ($.Permission.CanWrite $.UnitTypeCode) (not $.Repository.IsArchived) (not .IsDeleted)}}
 	<div id="commit-notes-add-area" class="ui tw-mt-3 segment tw-hidden">
 		<form class="ui form" action="{{.Link}}/notes" method="post">
-			{{.CsrfTokenHtml}}
 
 			<div class="field">
 				<textarea name="notes"></textarea>

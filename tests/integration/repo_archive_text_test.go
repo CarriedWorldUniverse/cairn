@@ -41,7 +41,6 @@ func TestArchiveText(t *testing.T) {
 		// Archive repo
 		req = NewRequestWithValues(t, "POST", link, map[string]string{
 			"action": "archive",
-			"_csrf":  GetCSRF(t, session, link),
 		})
 		_ = session.MakeRequest(t, req, http.StatusSeeOther)
 

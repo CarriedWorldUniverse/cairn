@@ -71,7 +71,6 @@ func TestLTACookie(t *testing.T) {
 	sess := emptyTestSession(t)
 
 	req := NewRequestWithValues(t, "POST", "/user/login", map[string]string{
-		"_csrf":     GetCSRF(t, sess, "/user/login"),
 		"user_name": user.Name,
 		"password":  userPassword,
 		"remember":  "true",
@@ -106,7 +105,6 @@ func TestLTAPasswordChange(t *testing.T) {
 
 	// Make a simple password change.
 	req := NewRequestWithValues(t, "POST", "/user/settings/account", map[string]string{
-		"_csrf":        GetCSRF(t, sess, "/user/settings/account"),
 		"old_password": userPassword,
 		"password":     "password2",
 		"retype":       "password2",

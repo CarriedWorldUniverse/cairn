@@ -4,7 +4,6 @@
 			<span class="tw-float-right">
 				<div class="ui mini modal issue-delete-time-modal" data-id="{{.comment.Time.ID}}">
 					<form method="post" class="delete-time-form" action="{{.ctxData.RepoLink}}/issues/{{.ctxData.Issue.Index}}/times/{{.comment.TimeID}}/delete">
-						{{.ctxData.CsrfTokenHtml}}
 					</form>
 					<div class="header">{{ctx.Locale.Tr "repo.issues.del_time"}}</div>
 					{{template "base/modal_actions_confirm"}}

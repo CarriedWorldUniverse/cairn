@@ -101,11 +101,6 @@ func (doc *HTMLDoc) FindByText(selector, text string) *goquery.Selection {
 	})
 }
 
-// GetCSRF for getting CSRF token value from input
-func (doc *HTMLDoc) GetCSRF() string {
-	return doc.GetInputValueByName("_csrf")
-}
-
 // AssertSelection check if selection exists or does not exist depending on checkExists
 func (doc *HTMLDoc) AssertSelection(t testing.TB, selection *goquery.Selection, checkExists bool) {
 	if checkExists {

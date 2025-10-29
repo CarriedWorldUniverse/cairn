@@ -34,7 +34,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":          GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":         "transfer",
 				"repo_name":      "repo1",
 				"new_owner_name": "user1",
@@ -46,7 +45,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":          GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":         "transfer",
 				"repo_name":      "user2/repo1",
 				"new_owner_name": "user1",
@@ -66,7 +64,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user20/big_test_public_fork_7/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user20/big_test_public_fork_7/settings"),
 				"action":    "convert_fork",
 				"repo_name": "big_test_public_fork_7",
 			})
@@ -77,7 +74,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user20/big_test_public_fork_7/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user20/big_test_public_fork_7/settings"),
 				"action":    "convert_fork",
 				"repo_name": "user20/big_test_public_fork_7",
 			})
@@ -99,7 +95,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "rename-wiki-branch",
 				"repo_name": "repo1",
 			})
@@ -110,7 +105,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "rename-wiki-branch",
 				"repo_name": "user2/repo1",
 			})
@@ -129,7 +123,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "delete-wiki",
 				"repo_name": "repo1",
 			})
@@ -140,7 +133,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "delete-wiki",
 				"repo_name": "user2/repo1",
 			})
@@ -159,7 +151,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "delete",
 				"repo_name": "repo1",
 			})
@@ -170,7 +161,6 @@ func TestDangerZoneConfirmation(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-				"_csrf":     GetCSRF(t, session, "/user2/repo1/settings"),
 				"action":    "delete",
 				"repo_name": "user2/repo1",
 			})

@@ -21,7 +21,6 @@ func TestRepoModifyGitNotes(t *testing.T) {
 
 		t.Run("Set", func(t *testing.T) {
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d/notes", map[string]string{
-				"_csrf": GetCSRF(t, session, "/user2/repo1"),
 				"notes": "This is a new note",
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
@@ -33,9 +32,7 @@ func TestRepoModifyGitNotes(t *testing.T) {
 		})
 
 		t.Run("Delete", func(t *testing.T) {
-			req = NewRequestWithValues(t, "POST", "/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d/notes/remove", map[string]string{
-				"_csrf": GetCSRF(t, session, "/user2/repo1"),
-			})
+			req = NewRequest(t, "POST", "/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d/notes/remove")
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
 			req = NewRequest(t, "GET", "/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d")

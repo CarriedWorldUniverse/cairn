@@ -51,7 +51,6 @@ func testSelectedTheme(t *testing.T, session *TestSession, expectedTheme, expect
 func testChangeTheme(t *testing.T, session *TestSession, newTheme string) {
 	t.Helper()
 	session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user/settings/appearance/theme", map[string]string{
-		"_csrf": GetCSRF(t, session, "/user/settings/appearance"),
 		"theme": newTheme,
 	}), http.StatusSeeOther)
 }

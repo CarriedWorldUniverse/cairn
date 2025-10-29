@@ -83,7 +83,6 @@ func autoSignIn(ctx *context.Context) (bool, error) {
 		return false, err
 	}
 
-	ctx.Csrf.DeleteCookie(ctx)
 	return true, nil
 }
 
@@ -337,9 +336,6 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 		ctx.Locale = middleware.Locale(ctx.Resp, ctx.Req)
 	}
 
-	// Clear whatever CSRF cookie has right now, force to generate a new one
-	ctx.Csrf.DeleteCookie(ctx)
-
 	// Register last login
 	if err := user_service.UpdateUser(ctx, u, &user_service.UpdateOptions{SetLastLogin: true}); err != nil {
 		ctx.ServerError("UpdateUser", err)
@@ -375,7 +371,6 @@ func HandleSignOut(ctx *context.Context) {
 	_ = ctx.Session.Flush()
 	_ = ctx.Session.Destroy(ctx.Resp, ctx.Req)
 	ctx.DeleteSiteCookie(setting.CookieRememberName)
-	ctx.Csrf.DeleteCookie(ctx)
 	middleware.DeleteRedirectToCookie(ctx.Resp)
 }
 

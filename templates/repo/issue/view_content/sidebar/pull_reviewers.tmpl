@@ -24,7 +24,6 @@
 											{{ctx.Locale.Tr "repo.issues.dismiss_review_warning"}}
 										</div>
 										<form class="ui form dismiss-review-form" id="dismiss-review-{{.Review.ID}}" action="{{$.RepoLink}}/issues/dismiss_review" method="post">
-											{{$.CsrfTokenHtml}}
 											<input type="hidden" name="review_id" value="{{.Review.ID}}">
 											<div class="field">
 												<label for="message">{{ctx.Locale.Tr "action.review_dismissed_reason"}}</label>
