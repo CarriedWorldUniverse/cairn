@@ -67,7 +67,6 @@
 						</div>
 					{{end}}
 
-					{{.CsrfTokenHtml}}
 					<input type="hidden" name="ref" value="{{if $.Repo.BranchName}}{{$.Repo.BranchName}}{{else}}{{$.Repo.Repository.DefaultBranch}}{{end}}">
 					<input type="hidden" name="workflow" value="{{$.CurWorkflow}}">
 					<input type="hidden" name="actor" value="{{$.CurActor}}">

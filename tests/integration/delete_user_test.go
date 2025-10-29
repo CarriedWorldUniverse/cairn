@@ -36,11 +36,8 @@ func TestUserDeleteAccount(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	session := loginUser(t, "user8")
-	csrf := GetCSRF(t, session, "/user/settings/account")
 	urlStr := fmt.Sprintf("/user/settings/account/delete?password=%s", userPassword)
-	req := NewRequestWithValues(t, "POST", urlStr, map[string]string{
-		"_csrf": csrf,
-	})
+	req := NewRequestWithValues(t, "POST", urlStr, map[string]string{})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
 	assertUserDeleted(t, 8, false)
@@ -51,11 +48,8 @@ func TestUserDeleteAccountStillOwnRepos(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	session := loginUser(t, "user2")
-	csrf := GetCSRF(t, session, "/user/settings/account")
 	urlStr := fmt.Sprintf("/user/settings/account/delete?password=%s", userPassword)
-	req := NewRequestWithValues(t, "POST", urlStr, map[string]string{
-		"_csrf": csrf,
-	})
+	req := NewRequestWithValues(t, "POST", urlStr, map[string]string{})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
 	// user should not have been deleted, because the user still owns repos

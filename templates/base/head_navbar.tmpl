@@ -92,7 +92,6 @@
 						</span>
 					</a>
 					<form class="stopwatch-commit" method="post" action="{{.ActiveStopwatch.IssueLink}}/times/stopwatch/toggle">
-						{{.CsrfTokenHtml}}
 						<button
 							type="submit"
 							class="ui button mini compact basic icon"
@@ -100,7 +99,6 @@
 						>{{svg "octicon-square-fill"}}</button>
 					</form>
 					<form class="stopwatch-cancel" method="post" action="{{.ActiveStopwatch.IssueLink}}/times/stopwatch/cancel">
-						{{.CsrfTokenHtml}}
 						<button
 							type="submit"
 							class="ui button mini compact basic icon"

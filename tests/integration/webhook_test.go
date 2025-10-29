@@ -38,21 +38,15 @@ func TestWebhookPayloadRef(t *testing.T) {
 
 		session := loginUser(t, "user2")
 		// create new branch
-		csrf := GetCSRF(t, session, "user2/repo1")
-		req := NewRequestWithValues(t, "POST", "user2/repo1/branches/_new/branch/master",
-			map[string]string{
-				"_csrf":           csrf,
-				"new_branch_name": "arbre",
-				"create_tag":      "false",
-			},
-		)
+		req := NewRequestWithValues(t, "POST", "user2/repo1/branches/_new/branch/master", map[string]string{
+			"new_branch_name": "arbre",
+			"create_tag":      "false",
+		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 		// delete the created branch
-		req = NewRequestWithValues(t, "POST", "user2/repo1/branches/delete?name=arbre",
-			map[string]string{
-				"_csrf": csrf,
-			},
-		)
+		req = NewRequestWithValues(t, "POST", "user2/repo1/branches/delete", map[string]string{
+			"name": "arbre",
+		})
 		session.MakeRequest(t, req, http.StatusOK)
 
 		// check the newly created hooktasks

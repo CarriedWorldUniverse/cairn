@@ -260,7 +260,6 @@ func TestOwnerTeamUnit(t *testing.T) {
 	unittest.AssertExistsAndLoadBean(t, &organization.TeamUnit{TeamID: 1, Type: unit.TypeIssues, AccessMode: perm.AccessModeOwner})
 
 	req := NewRequestWithValues(t, "GET", fmt.Sprintf("/org/%s/teams/owners/edit", org.Name), map[string]string{
-		"_csrf":       GetCSRF(t, session, fmt.Sprintf("/org/%s/teams/owners/edit", org.Name)),
 		"team_name":   "Owners",
 		"Description": "Just a description",
 	})
@@ -308,7 +307,6 @@ func TestTeamWithoutPermissionToShowTable(t *testing.T) {
 
 	// set all units to "No access"
 	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name), map[string]string{
-		"_csrf":       GetCSRF(t, session, fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name)),
 		"team_name":   team.Name,
 		"description": "",
 		"repo_access": "all",
@@ -324,9 +322,7 @@ func TestTeamWithoutPermissionToShowTable(t *testing.T) {
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
-	req = NewRequestWithValues(t, "GET", fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name), map[string]string{
-		"_csrf": GetCSRF(t, session, fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name)),
-	})
+	req = NewRequestWithValues(t, "GET", fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name), map[string]string{})
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	htmlDoc := NewHTMLParser(t, resp.Body)
 

@@ -1,6 +1,5 @@
 {{if or .PinEnabled .Issue.IsPinned}}
 	<form class="tw-mt-1 form-fetch-action single-button-form" method="post" {{if $.NewPinAllowed}}action="{{.Issue.Link}}/pin"{{else}}data-tooltip-content="{{ctx.Locale.Tr "repo.issues.max_pinned"}}"{{end}}>
-		{{$.CsrfTokenHtml}}
 		<button class="fluid ui button {{if not $.NewPinAllowed}}disabled{{end}}">
 			{{if not .Issue.IsPinned}}
 				{{svg "octicon-pin" 16 "tw-mr-2"}}
@@ -44,7 +43,6 @@
 
 		<form class="ui form form-fetch-action" action="{{.Issue.Link}}{{if .Issue.IsLocked}}/unlock{{else}}/lock{{end}}"
 			method="post">
-			{{.CsrfTokenHtml}}
 
 			{{if not .Issue.IsLocked}}
 				<div class="field">
@@ -108,7 +106,6 @@
 		</p>
 	</div>
 	<form action="{{.Issue.Link}}/delete" method="post">
-		{{.CsrfTokenHtml}}
 		{{template "base/modal_actions_confirm" .}}
 	</form>
 </div>

@@ -8,7 +8,6 @@
 			{{end}}
 		</h4>
 		<form class="ui form attached segment" action="{{.Link}}" method="post">
-			{{.CsrfTokenHtml}}
 			<input name="rule_id" type="hidden" value="{{.Rule.ID}}">
 			<fieldset class="branch-protection">
 				<legend>{{ctx.Locale.Tr "repo.settings.protect_patterns"}}</legend>

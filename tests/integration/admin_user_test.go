@@ -90,9 +90,7 @@ func TestAdminEditUserHideEmail(t *testing.T) {
 	userID := int64(2) // user2 from fixtures
 
 	// Test setting hide_email to false
-	csrf := GetCSRF(t, session, fmt.Sprintf("/admin/users/%d/edit", userID))
 	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/admin/users/%d/edit", userID), map[string]string{
-		"_csrf":      csrf,
 		"user_name":  "user2",
 		"login_name": "user2",
 		"login_type": "0-0",
@@ -111,9 +109,7 @@ func TestAdminEditUserHideEmail(t *testing.T) {
 	htmlDoc.AssertElement(t, `input[name="hide_email"]:not([checked])`, true)
 
 	// Test setting hide_email to true
-	csrf = GetCSRF(t, session, fmt.Sprintf("/admin/users/%d/edit", userID))
 	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/admin/users/%d/edit", userID), map[string]string{
-		"_csrf":      csrf,
 		"user_name":  "user2",
 		"login_name": "user2",
 		"login_type": "0-0",
@@ -138,9 +134,7 @@ func testSuccessfullEdit(t *testing.T, formData user_model.User) {
 
 func makeRequest(t *testing.T, formData user_model.User, headerCode int) {
 	session := loginUser(t, "user1")
-	csrf := GetCSRF(t, session, "/admin/users/"+strconv.Itoa(int(formData.ID))+"/edit")
 	req := NewRequestWithValues(t, "POST", "/admin/users/"+strconv.Itoa(int(formData.ID))+"/edit", map[string]string{
-		"_csrf":      csrf,
 		"user_name":  formData.Name,
 		"login_name": formData.LoginName,
 		"login_type": "0-0",
@@ -164,9 +158,7 @@ func TestAdminDeleteUser(t *testing.T) {
 
 	unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{PosterID: userID})
 
-	csrf := GetCSRF(t, session, fmt.Sprintf("/admin/users/%d/edit", userID))
 	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/admin/users/%d/delete", userID), map[string]string{
-		"_csrf": csrf,
 		"purge": "true",
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)

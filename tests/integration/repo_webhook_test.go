@@ -32,7 +32,6 @@ func TestNewWebHookLink(t *testing.T) {
 		baseurl + "/1",
 	}
 
-	var csrfToken string
 	for _, url := range tests {
 		resp := session.MakeRequest(t, NewRequest(t, "GET", url), http.StatusOK)
 		htmlDoc := NewHTMLParser(t, resp.Body)
@@ -40,19 +39,17 @@ func TestNewWebHookLink(t *testing.T) {
 			webhooksLen,
 			htmlDoc.Find(`a[href^="`+baseurl+`/"][href$="/new"]`).Length(),
 			"not all webhooks are listed in the 'new' dropdown")
-
-		csrfToken = htmlDoc.GetCSRF()
 	}
 
 	// ensure that the "failure" pages has the full dropdown as well
-	resp := session.MakeRequest(t, NewRequestWithValues(t, "POST", baseurl+"/gitea/new", map[string]string{"_csrf": csrfToken}), http.StatusUnprocessableEntity)
+	resp := session.MakeRequest(t, NewRequestWithValues(t, "POST", baseurl+"/gitea/new", map[string]string{}), http.StatusUnprocessableEntity)
 	htmlDoc := NewHTMLParser(t, resp.Body)
 	assert.Equal(t,
 		webhooksLen,
 		htmlDoc.Find(`a[href^="`+baseurl+`/"][href$="/new"]`).Length(),
 		"not all webhooks are listed in the 'new' dropdown on failure")
 
-	resp = session.MakeRequest(t, NewRequestWithValues(t, "POST", baseurl+"/1", map[string]string{"_csrf": csrfToken}), http.StatusUnprocessableEntity)
+	resp = session.MakeRequest(t, NewRequestWithValues(t, "POST", baseurl+"/1", map[string]string{}), http.StatusUnprocessableEntity)
 	htmlDoc = NewHTMLParser(t, resp.Body)
 	assert.Equal(t,
 		webhooksLen,
@@ -341,7 +338,6 @@ func testWebhookFormsShared(t *testing.T, endpoint, name string, session *TestSe
 
 	// fill the form
 	payload := map[string]string{
-		"_csrf":  htmlForm.Find(`input[name="_csrf"]`).AttrOr("value", ""),
 		"events": "send_everything",
 	}
 	for k, v := range validFields {
@@ -383,7 +379,6 @@ func testWebhookFormsShared(t *testing.T, endpoint, name string, session *TestSe
 
 	// fill the form
 	payload = map[string]string{
-		"_csrf":  htmlForm.Find(`input[name="_csrf"]`).AttrOr("value", ""),
 		"events": "push_only",
 	}
 	for k, v := range validFields {
@@ -411,7 +406,6 @@ func testWebhookFormsShared(t *testing.T, endpoint, name string, session *TestSe
 			t.Run("invalid", func(t *testing.T) {
 				// fill the form
 				payload := map[string]string{
-					"_csrf":  htmlForm.Find(`input[name="_csrf"]`).AttrOr("value", ""),
 					"events": "send_everything",
 				}
 				for k, v := range validFields {
@@ -429,7 +423,7 @@ func testWebhookFormsShared(t *testing.T, endpoint, name string, session *TestSe
 				// check that the invalid form is pre-filled
 				htmlForm = NewHTMLParser(t, resp.Body).Find(`form[action^="` + endpoint + `/"]`)
 				for k, v := range payload {
-					if k == "_csrf" || k == "events" || v == "" {
+					if k == "events" || v == "" {
 						// the 'events' is a radio input, which is buggy below
 						continue
 					}

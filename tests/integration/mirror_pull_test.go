@@ -111,7 +111,6 @@ func TestPullMirrorRedactCredentials(t *testing.T) {
 
 	session := loginUser(t, "user2")
 	session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user2/repo1001/settings", map[string]string{
-		"_csrf":  GetCSRF(t, session, "/user2/repo1001/settings"),
 		"action": "mirror-sync",
 	}), http.StatusSeeOther)
 

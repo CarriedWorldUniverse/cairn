@@ -42,9 +42,7 @@ func TestOrgTeamEmailInvite(t *testing.T) {
 	session := loginUser(t, "user1")
 
 	teamURL := fmt.Sprintf("/org/%s/teams/%s", org.Name, team.Name)
-	csrf := GetCSRF(t, session, teamURL)
 	req := NewRequestWithValues(t, "POST", teamURL+"/action/add", map[string]string{
-		"_csrf": csrf,
 		"uid":   "1",
 		"uname": user.Email,
 	})
@@ -61,10 +59,7 @@ func TestOrgTeamEmailInvite(t *testing.T) {
 
 	// join the team
 	inviteURL := fmt.Sprintf("/org/invite/%s", invites[0].Token)
-	csrf = GetCSRF(t, session, inviteURL)
-	req = NewRequestWithValues(t, "POST", inviteURL, map[string]string{
-		"_csrf": csrf,
-	})
+	req = NewRequestWithValues(t, "POST", inviteURL, map[string]string{})
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -96,7 +91,6 @@ func TestOrgTeamEmailInviteRedirectsExistingUser(t *testing.T) {
 
 	teamURL := fmt.Sprintf("/org/%s/teams/%s", org.Name, team.Name)
 	req := NewRequestWithValues(t, "POST", teamURL+"/action/add", map[string]string{
-		"_csrf": GetCSRF(t, session, teamURL),
 		"uid":   "1",
 		"uname": user.Email,
 	})
@@ -114,9 +108,7 @@ func TestOrgTeamEmailInviteRedirectsExistingUser(t *testing.T) {
 	req = NewRequest(t, "GET", fmt.Sprintf("/user/login?redirect_to=%s", url.QueryEscape(inviteURL)))
 	resp = MakeRequest(t, req, http.StatusOK)
 
-	doc := NewHTMLParser(t, resp.Body)
 	req = NewRequestWithValues(t, "POST", "/user/login", map[string]string{
-		"_csrf":     doc.GetCSRF(),
 		"user_name": "user5",
 		"password":  "password",
 	})
@@ -138,9 +130,7 @@ func TestOrgTeamEmailInviteRedirectsExistingUser(t *testing.T) {
 	session.jar.SetCookies(baseURL, cr.Cookies())
 
 	// make the request
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{
-		"_csrf": GetCSRF(t, session, test.RedirectURL(resp)),
-	})
+	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{})
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -167,7 +157,6 @@ func TestOrgTeamEmailInviteRedirectsNewUser(t *testing.T) {
 
 	teamURL := fmt.Sprintf("/org/%s/teams/%s", org.Name, team.Name)
 	req := NewRequestWithValues(t, "POST", teamURL+"/action/add", map[string]string{
-		"_csrf": GetCSRF(t, session, teamURL),
 		"uid":   "1",
 		"uname": "doesnotexist@example.com",
 	})
@@ -185,9 +174,7 @@ func TestOrgTeamEmailInviteRedirectsNewUser(t *testing.T) {
 	req = NewRequest(t, "GET", fmt.Sprintf("/user/sign_up?redirect_to=%s", url.QueryEscape(inviteURL)))
 	resp = MakeRequest(t, req, http.StatusOK)
 
-	doc := NewHTMLParser(t, resp.Body)
 	req = NewRequestWithValues(t, "POST", "/user/sign_up", map[string]string{
-		"_csrf":     doc.GetCSRF(),
 		"user_name": "doesnotexist",
 		"email":     "doesnotexist@example.com",
 		"password":  "examplePassword!1",
@@ -211,9 +198,7 @@ func TestOrgTeamEmailInviteRedirectsNewUser(t *testing.T) {
 	session.jar.SetCookies(baseURL, cr.Cookies())
 
 	// make the redirected request
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{
-		"_csrf": GetCSRF(t, session, test.RedirectURL(resp)),
-	})
+	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{})
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -244,7 +229,6 @@ func TestOrgTeamEmailInviteRedirectsNewUserWithActivation(t *testing.T) {
 
 	teamURL := fmt.Sprintf("/org/%s/teams/%s", org.Name, team.Name)
 	req := NewRequestWithValues(t, "POST", teamURL+"/action/add", map[string]string{
-		"_csrf": GetCSRF(t, session, teamURL),
 		"uid":   "1",
 		"uname": "doesnotexist@example.com",
 	})
@@ -262,9 +246,7 @@ func TestOrgTeamEmailInviteRedirectsNewUserWithActivation(t *testing.T) {
 	req = NewRequest(t, "GET", fmt.Sprintf("/user/sign_up?redirect_to=%s", url.QueryEscape(inviteURL)))
 	inviteResp := MakeRequest(t, req, http.StatusOK)
 
-	doc := NewHTMLParser(t, resp.Body)
 	req = NewRequestWithValues(t, "POST", "/user/sign_up", map[string]string{
-		"_csrf":     doc.GetCSRF(),
 		"user_name": "doesnotexist",
 		"email":     "doesnotexist@example.com",
 		"password":  "examplePassword!1",
@@ -304,9 +286,7 @@ func TestOrgTeamEmailInviteRedirectsNewUserWithActivation(t *testing.T) {
 	// should be redirected to accept the invite
 	assert.Equal(t, inviteURL, test.RedirectURL(resp))
 
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{
-		"_csrf": GetCSRF(t, session, test.RedirectURL(resp)),
-	})
+	req = NewRequest(t, "POST", test.RedirectURL(resp))
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -340,7 +320,6 @@ func TestOrgTeamEmailInviteRedirectsExistingUserWithLogin(t *testing.T) {
 
 	teamURL := fmt.Sprintf("/org/%s/teams/%s", org.Name, team.Name)
 	req := NewRequestWithValues(t, "POST", teamURL+"/action/add", map[string]string{
-		"_csrf": GetCSRF(t, session, teamURL),
 		"uid":   "1",
 		"uname": user.Email,
 	})
@@ -363,9 +342,7 @@ func TestOrgTeamEmailInviteRedirectsExistingUserWithLogin(t *testing.T) {
 	assert.Equal(t, inviteURL, test.RedirectURL(resp))
 
 	// make the request
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{
-		"_csrf": GetCSRF(t, session, test.RedirectURL(resp)),
-	})
+	req = NewRequest(t, "POST", test.RedirectURL(resp))
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)

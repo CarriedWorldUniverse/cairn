@@ -48,7 +48,6 @@ func testRepoFork(t *testing.T, session *TestSession, ownerName, repoName, forkO
 	_, exists = htmlDoc.doc.Find(fmt.Sprintf(".owner.dropdown .item[data-value=\"%d\"]", forkOwner.ID)).Attr("data-value")
 	assert.True(t, exists, "Fork owner %q is not present in select box", forkOwnerName)
 	req = NewRequestWithValues(t, "POST", link, map[string]string{
-		"_csrf":     htmlDoc.GetCSRF(),
 		"uid":       fmt.Sprintf("%d", forkOwner.ID),
 		"repo_name": forkRepoName,
 	})

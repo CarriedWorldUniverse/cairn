@@ -4,7 +4,7 @@ import {createMonaco} from './codeeditor.js';
 import {onInputDebounce, toggleElem} from '../utils/dom.js';
 import {POST} from '../modules/fetch.js';
 
-const {appSubUrl, csrfToken} = window.config;
+const {appSubUrl} = window.config;
 
 export function initRepoSettingsCollaboration() {
   // Change collaborator access mode
@@ -52,7 +52,6 @@ export function initRepoSettingSearchTeamBox() {
     minCharacters: 2,
     apiSettings: {
       url: `${appSubUrl}/org/${searchTeamBox.getAttribute('data-org-name')}/teams/-/search?q={query}`,
-      headers: {'X-Csrf-Token': csrfToken},
       onResponse(response) {
         const items = [];
         for (const item of response.data) {

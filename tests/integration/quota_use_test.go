@@ -640,8 +640,6 @@ type quotaWebEnvAsContext struct {
 
 	Payload Payload
 
-	CSRFPath *string
-
 	gitPath string
 
 	request  *RequestWrapper
@@ -649,9 +647,8 @@ type quotaWebEnvAsContext struct {
 }
 
 type Context struct {
-	Repo     *repo_model.Repository
-	Payload  *Payload
-	CSRFPath *string
+	Repo    *repo_model.Repository
+	Payload *Payload
 }
 
 func (ctx *quotaWebEnvAsContext) With(opts Context) *quotaWebEnvAsContext {
@@ -662,9 +659,6 @@ func (ctx *quotaWebEnvAsContext) With(opts Context) *quotaWebEnvAsContext {
 		for key, value := range *opts.Payload {
 			ctx.Payload[key] = value
 		}
-	}
-	if opts.CSRFPath != nil {
-		ctx.CSRFPath = opts.CSRFPath
 	}
 	return ctx
 }
@@ -756,12 +750,6 @@ func (ctx *quotaWebEnvAsContext) PostToPage(page string) *quotaWebEnvAsContext {
 	ctx.t.Helper()
 
 	payload := ctx.Payload
-	csrfPath := page
-	if ctx.CSRFPath != nil {
-		csrfPath = *ctx.CSRFPath
-	}
-
-	payload["_csrf"] = GetCSRF(ctx.t, ctx.Doer.Session, csrfPath)
 
 	ctx.request = NewRequestWithValues(ctx.t, "POST", page, payload)
 
@@ -771,8 +759,7 @@ func (ctx *quotaWebEnvAsContext) PostToPage(page string) *quotaWebEnvAsContext {
 func (ctx *quotaWebEnvAsContext) PostToRepoPage(page string) *quotaWebEnvAsContext {
 	ctx.t.Helper()
 
-	csrfPath := ctx.Repo.Link()
-	return ctx.With(Context{CSRFPath: &csrfPath}).PostToPage(ctx.Repo.Link() + page)
+	return ctx.PostToPage(ctx.Repo.Link() + page)
 }
 
 func (ctx *quotaWebEnvAsContext) CreateAttachment(filename, attachmentType string) *quotaWebEnvAsContext {
@@ -790,10 +777,7 @@ func (ctx *quotaWebEnvAsContext) CreateAttachment(filename, attachmentType strin
 	err = writer.Close()
 	require.NoError(ctx.t, err)
 
-	csrf := GetCSRF(ctx.t, ctx.Doer.Session, ctx.Repo.Link())
-
 	ctx.request = NewRequestWithBody(ctx.t, "POST", fmt.Sprintf("%s/%s/attachments", ctx.Repo.Link(), attachmentType), body)
-	ctx.request.Header.Add("X-Csrf-Token", csrf)
 	ctx.request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	return ctx
@@ -949,12 +933,10 @@ func (env *quotaWebEnv) RunVisitAndPostToRepoPageTests(t *testing.T, page string
 
 	// Posting as the limited user, to the limited repo, fails due to being over
 	// quota.
-	csrfPath := env.Users.Limited.Repo.Link()
 	env.As(t, env.Users.Limited).
 		With(Context{
-			Payload:  payload,
-			CSRFPath: &csrfPath,
-			Repo:     env.Users.Limited.Repo,
+			Payload: payload,
+			Repo:    env.Users.Limited.Repo,
 		}).
 		PostToRepoPage(page).
 		ExpectStatus(http.StatusRequestEntityTooLarge)
@@ -967,12 +949,10 @@ func (env *quotaWebEnv) RunVisitAndPostToRepoPageTests(t *testing.T, page string
 
 	// Posting as the limited user, to a limited org's repo, fails for the same
 	// reason.
-	csrfPath = env.Orgs.Limited.Repo.Link()
 	env.As(t, env.Users.Limited).
 		With(Context{
-			Payload:  payload,
-			CSRFPath: &csrfPath,
-			Repo:     env.Orgs.Limited.Repo,
+			Payload: payload,
+			Repo:    env.Orgs.Limited.Repo,
 		}).
 		PostToRepoPage(page).
 		ExpectStatus(http.StatusRequestEntityTooLarge)
@@ -984,12 +964,10 @@ func (env *quotaWebEnv) RunVisitAndPostToRepoPageTests(t *testing.T, page string
 		ExpectStatus(http.StatusOK)
 
 	// Posting as the limited user, to an unlimited org's repo, succeeds.
-	csrfPath = env.Orgs.Unlimited.Repo.Link()
 	env.As(t, env.Users.Limited).
 		With(Context{
-			Payload:  payload,
-			CSRFPath: &csrfPath,
-			Repo:     env.Orgs.Unlimited.Repo,
+			Payload: payload,
+			Repo:    env.Orgs.Unlimited.Repo,
 		}).
 		PostToRepoPage(page).
 		ExpectStatus(successStatus)

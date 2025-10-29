@@ -30,7 +30,7 @@ func generateImg() bytes.Buffer {
 	return buff
 }
 
-func createAttachment(t *testing.T, session *TestSession, csrf, repoURL, filename string, buff bytes.Buffer, expectedStatus int) string {
+func createAttachment(t *testing.T, session *TestSession, repoURL, filename string, buff bytes.Buffer, expectedStatus int) string {
 	body := &bytes.Buffer{}
 
 	// Setup multi-part
@@ -43,7 +43,6 @@ func createAttachment(t *testing.T, session *TestSession, csrf, repoURL, filenam
 	require.NoError(t, err)
 
 	req := NewRequestWithBody(t, "POST", repoURL+"/issues/attachments", body)
-	req.Header.Add("X-Csrf-Token", csrf)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	resp := session.MakeRequest(t, req, expectedStatus)
 
@@ -58,14 +57,14 @@ func createAttachment(t *testing.T, session *TestSession, csrf, repoURL, filenam
 func TestCreateAnonymousAttachment(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	session := emptyTestSession(t)
-	createAttachment(t, session, GetCSRF(t, session, "/user/login"), "user2/repo1", "image.png", generateImg(), http.StatusSeeOther)
+	createAttachment(t, session, "user2/repo1", "image.png", generateImg(), http.StatusSeeOther)
 }
 
 func TestCreateIssueAttachment(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	const repoURL = "user2/repo1"
 	session := loginUser(t, "user2")
-	uuid := createAttachment(t, session, GetCSRF(t, session, repoURL), repoURL, "image.png", generateImg(), http.StatusOK)
+	uuid := createAttachment(t, session, repoURL, "image.png", generateImg(), http.StatusOK)
 
 	req := NewRequest(t, "GET", repoURL+"/issues/new")
 	resp := session.MakeRequest(t, req, http.StatusOK)
@@ -75,7 +74,6 @@ func TestCreateIssueAttachment(t *testing.T) {
 	assert.True(t, exists, "The template has changed")
 
 	postData := map[string]string{
-		"_csrf":   htmlDoc.GetCSRF(),
 		"title":   "New Issue With Attachment",
 		"content": "some content",
 		"files":   uuid,

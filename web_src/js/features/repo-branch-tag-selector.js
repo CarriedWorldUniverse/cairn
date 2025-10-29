@@ -10,7 +10,6 @@ export async function initRepoBranchTagSelector() {
       ...RepoBranchTagSelector,
       data() {
         return {
-          csrfToken: window.config.csrfToken,
           items: [],
           searchTerm: '',
           refNameText: '',

@@ -31,7 +31,6 @@ func BlockUser(t *testing.T, doer, blockedUser *user_model.User) {
 
 	session := loginUser(t, doer.Name)
 	req := NewRequestWithValues(t, "POST", "/"+blockedUser.Name, map[string]string{
-		"_csrf":  GetCSRF(t, session, "/"+blockedUser.Name),
 		"action": "block",
 	})
 	session.MakeRequest(t, req, http.StatusOK)
@@ -57,7 +56,6 @@ func TestBlockUser(t *testing.T) {
 	t.Run("Unblock", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 		req := NewRequestWithValues(t, "POST", "/"+blockedUser.Name, map[string]string{
-			"_csrf":  GetCSRF(t, session, "/"+blockedUser.Name),
 			"action": "unblock",
 		})
 		session.MakeRequest(t, req, http.StatusOK)
@@ -71,7 +69,6 @@ func TestBlockUser(t *testing.T) {
 
 		t.Run("Block", func(t *testing.T) {
 			req := NewRequestWithValues(t, "POST", "/"+targetOrg.Name, map[string]string{
-				"_csrf":  GetCSRF(t, session, "/"+targetOrg.Name),
 				"action": "block",
 			})
 			resp := session.MakeRequest(t, req, http.StatusBadRequest)
@@ -81,7 +78,6 @@ func TestBlockUser(t *testing.T) {
 
 		t.Run("Unblock", func(t *testing.T) {
 			req := NewRequestWithValues(t, "POST", "/"+targetOrg.Name, map[string]string{
-				"_csrf":  GetCSRF(t, session, "/"+targetOrg.Name),
 				"action": "unblock",
 			})
 			resp := session.MakeRequest(t, req, http.StatusBadRequest)
@@ -105,7 +101,6 @@ func TestBlockUserFromOrganization(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", org.OrganisationLink()+"/settings/blocked_users/block", map[string]string{
-			"_csrf": GetCSRF(t, session, org.OrganisationLink()+"/settings/blocked_users"),
 			"uname": blockedUser.Name,
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
@@ -116,7 +111,6 @@ func TestBlockUserFromOrganization(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", org.OrganisationLink()+"/settings/blocked_users/unblock", map[string]string{
-			"_csrf":   GetCSRF(t, session, org.OrganisationLink()+"/settings/blocked_users"),
 			"user_id": strconv.FormatInt(blockedUser.ID, 10),
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
@@ -130,7 +124,6 @@ func TestBlockUserFromOrganization(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", org.OrganisationLink()+"/settings/blocked_users/block", map[string]string{
-				"_csrf": GetCSRF(t, session, org.OrganisationLink()+"/settings/blocked_users"),
 				"uname": targetOrg.Name,
 			})
 			session.MakeRequest(t, req, http.StatusInternalServerError)
@@ -141,7 +134,6 @@ func TestBlockUserFromOrganization(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", org.OrganisationLink()+"/settings/blocked_users/unblock", map[string]string{
-				"_csrf":   GetCSRF(t, session, org.OrganisationLink()+"/settings/blocked_users"),
 				"user_id": strconv.FormatInt(targetOrg.ID, 10),
 			})
 			session.MakeRequest(t, req, http.StatusInternalServerError)
@@ -152,7 +144,6 @@ func TestBlockUserFromOrganization(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", org.OrganisationLink()+"/settings/blocked_users/block", map[string]string{
-			"_csrf": GetCSRF(t, session, org.OrganisationLink()+"/settings/blocked_users"),
 			"uname": doer.Name,
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
@@ -201,7 +192,6 @@ func TestBlockActions(t *testing.T) {
 		link := fmt.Sprintf("%s/issues/new", repo2.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":   GetCSRF(t, session, link),
 			"title":   "Title",
 			"content": "Hello!",
 		})
@@ -221,7 +211,6 @@ func TestBlockActions(t *testing.T) {
 		link := fmt.Sprintf("%s/compare/v1.1...master", repo1.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":   GetCSRF(t, session, link),
 			"title":   "Title",
 			"content": "Hello!",
 		})
@@ -244,7 +233,6 @@ func TestBlockActions(t *testing.T) {
 			session := loginUser(t, blockedUser.Name)
 
 			req := NewRequestWithValues(t, "POST", path.Join(issue10URL, "/comments"), map[string]string{
-				"_csrf":   GetCSRF(t, session, issue10URL),
 				"content": "Not a kind comment",
 			})
 			resp := session.MakeRequest(t, req, http.StatusBadRequest)
@@ -271,7 +259,6 @@ func TestBlockActions(t *testing.T) {
 			issueURL := fmt.Sprintf("/%s/%s/issues/%d", url.PathEscape(repo5.OwnerName), url.PathEscape(repo5.Name), issue15.Index)
 
 			req := NewRequestWithValues(t, "POST", path.Join(issueURL, "/comments"), map[string]string{
-				"_csrf":   GetCSRF(t, session, issueURL),
 				"content": "Not a kind comment",
 			})
 			resp := session.MakeRequest(t, req, http.StatusBadRequest)
@@ -302,7 +289,6 @@ func TestBlockActions(t *testing.T) {
 			session := loginUser(t, blockedUser.Name)
 
 			req := NewRequestWithValues(t, "POST", path.Join(issue4URL, "/reactions/react"), map[string]string{
-				"_csrf":   GetCSRF(t, session, issue4URL),
 				"content": "eyes",
 			})
 			resp := session.MakeRequest(t, req, http.StatusOK)
@@ -321,7 +307,6 @@ func TestBlockActions(t *testing.T) {
 			session := loginUser(t, blockedUser.Name)
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/comments/%d/reactions/react", repo2.FullName(), comment.ID), map[string]string{
-				"_csrf":   GetCSRF(t, session, issue4URL),
 				"content": "eyes",
 			})
 			resp := session.MakeRequest(t, req, http.StatusOK)
@@ -346,7 +331,6 @@ func TestBlockActions(t *testing.T) {
 			session := loginUser(t, doer.Name)
 
 			req := NewRequestWithValues(t, "POST", "/"+blockedUser.Name, map[string]string{
-				"_csrf":  GetCSRF(t, session, "/"+blockedUser.Name),
 				"action": "follow",
 			})
 			resp := session.MakeRequest(t, req, http.StatusOK)
@@ -365,7 +349,6 @@ func TestBlockActions(t *testing.T) {
 			session := loginUser(t, blockedUser.Name)
 
 			req := NewRequestWithValues(t, "POST", "/"+doer.Name, map[string]string{
-				"_csrf":  GetCSRF(t, session, "/"+doer.Name),
 				"action": "follow",
 			})
 			resp := session.MakeRequest(t, req, http.StatusOK)
@@ -386,7 +369,6 @@ func TestBlockActions(t *testing.T) {
 			link := fmt.Sprintf("/%s/settings/collaboration", repo2.FullName())
 
 			req := NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf":        GetCSRF(t, session, link),
 				"collaborator": blockedUser2.Name,
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
@@ -403,7 +385,6 @@ func TestBlockActions(t *testing.T) {
 			link := fmt.Sprintf("/%s/settings/collaboration", repo7.FullName())
 
 			req := NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf":        GetCSRF(t, session, link),
 				"collaborator": doer.Name,
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
@@ -422,7 +403,6 @@ func TestBlockActions(t *testing.T) {
 		link := fmt.Sprintf("%s/settings", repo7.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":          GetCSRF(t, session, link),
 			"action":         "transfer",
 			"repo_name":      repo7.FullName(),
 			"new_owner_name": doer.Name,
@@ -456,7 +436,6 @@ func TestBlockedNotification(t *testing.T) {
 		t.Helper()
 
 		req := NewRequestWithValues(t, "POST", issueURL+"/comments", map[string]string{
-			"_csrf":   GetCSRF(t, session, issueURL),
 			"content": "I'm annoying. Pinging @" + doer.Name,
 		})
 		session.MakeRequest(t, req, http.StatusOK)

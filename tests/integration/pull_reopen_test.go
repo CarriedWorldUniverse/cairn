@@ -137,7 +137,6 @@ func TestPullrequestReopen(t *testing.T) {
 
 			link := fmt.Sprintf("%s/pulls/%d/comments", baseRepo.FullName(), issue.Index)
 			req := NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf":  GetCSRF(t, session, fmt.Sprintf("%s/pulls/%d", baseRepo.FullName(), issue.Index)),
 				"status": "reopen",
 			})
 			return session.MakeRequest(t, req, expectedStatus)
@@ -147,9 +146,7 @@ func TestPullrequestReopen(t *testing.T) {
 			t.Helper()
 
 			link := fmt.Sprintf("/%s/branches", repoName)
-			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/restore?branch_id=%d&name=%s", link, branchID, branchName), map[string]string{
-				"_csrf": GetCSRF(t, session, link),
-			})
+			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/restore?branch_id=%d&name=%s", link, branchID, branchName), map[string]string{})
 			session.MakeRequest(t, req, http.StatusOK)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)
@@ -161,9 +158,7 @@ func TestPullrequestReopen(t *testing.T) {
 			t.Helper()
 
 			link := fmt.Sprintf("/%s/branches", repoName)
-			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/delete?name=%s", link, branchName), map[string]string{
-				"_csrf": GetCSRF(t, session, link),
-			})
+			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/delete?name=%s", link, branchName), map[string]string{})
 			session.MakeRequest(t, req, http.StatusOK)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)

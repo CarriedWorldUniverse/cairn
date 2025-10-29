@@ -54,7 +54,6 @@ func TestPushMirrorRedactCredential(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		resp := session.MakeRequest(t, NewRequestWithValues(t, "POST", "/user2/repo1/settings", map[string]string{
-			"_csrf":                GetCSRF(t, session, "/user2/repo1/settings"),
 			"action":               "push-mirror-add",
 			"push_mirror_address":  cloneAddr,
 			"push_mirror_interval": "0",
@@ -161,10 +160,7 @@ func testMirrorPush(t *testing.T, u *url.URL) {
 
 func doCreatePushMirror(ctx APITestContext, address, username, password string) func(t *testing.T) {
 	return func(t *testing.T) {
-		csrf := GetCSRF(t, ctx.Session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
-
 		req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)), map[string]string{
-			"_csrf":                csrf,
 			"action":               "push-mirror-add",
 			"push_mirror_address":  address,
 			"push_mirror_username": username,
@@ -181,10 +177,7 @@ func doCreatePushMirror(ctx APITestContext, address, username, password string) 
 
 func doCreatePushMirrorWithBranchFilter(ctx APITestContext, address, username, password, branchFilter string) func(t *testing.T) {
 	return func(t *testing.T) {
-		csrf := GetCSRF(t, ctx.Session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
-
 		req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)), map[string]string{
-			"_csrf":                     csrf,
 			"action":                    "push-mirror-add",
 			"push_mirror_address":       address,
 			"push_mirror_username":      username,
@@ -202,10 +195,7 @@ func doCreatePushMirrorWithBranchFilter(ctx APITestContext, address, username, p
 
 func doRemovePushMirror(ctx APITestContext, address, username, password string, pushMirrorID int) func(t *testing.T) {
 	return func(t *testing.T) {
-		csrf := GetCSRF(t, ctx.Session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)))
-
 		req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(ctx.Username), url.PathEscape(ctx.Reponame)), map[string]string{
-			"_csrf":                csrf,
 			"action":               "push-mirror-remove",
 			"push_mirror_id":       strconv.Itoa(pushMirrorID),
 			"push_mirror_address":  address,
@@ -249,7 +239,6 @@ func TestSSHPushMirror(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 				"action":               "push-mirror-add",
 				"push_mirror_address":  sshURL,
 				"push_mirror_username": "username",
@@ -271,7 +260,6 @@ func TestSSHPushMirror(t *testing.T) {
 			defer test.MockVariableValue(&git.HasSSHExecutable, false)()
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 				"action":               "push-mirror-add",
 				"push_mirror_address":  sshURL,
 				"push_mirror_use_ssh":  "true",
@@ -300,7 +288,6 @@ func TestSSHPushMirror(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
 				req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-					"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 					"action":               "push-mirror-add",
 					"push_mirror_address":  sshURL,
 					"push_mirror_use_ssh":  "true",
@@ -333,7 +320,6 @@ func TestSSHPushMirror(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
 				req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings/keys", pushToRepo.FullName()), map[string]string{
-					"_csrf":       GetCSRF(t, sess, fmt.Sprintf("/%s/settings/keys", pushToRepo.FullName())),
 					"title":       "push mirror key",
 					"content":     publickey,
 					"is_writable": "true",
@@ -347,7 +333,6 @@ func TestSSHPushMirror(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
 				req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-					"_csrf":          GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 					"action":         "push-mirror-sync",
 					"push_mirror_id": strconv.FormatInt(pushMirror.ID, 10),
 				})
@@ -600,7 +585,6 @@ func TestPushMirrorSettings(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo2.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo2.FullName())),
 				"action":               "push-mirror-add",
 				"push_mirror_address":  u.String() + pushToRepo.FullName(),
 				"push_mirror_interval": "0",
@@ -608,7 +592,6 @@ func TestPushMirrorSettings(t *testing.T) {
 			sess.MakeRequest(t, req, http.StatusSeeOther)
 
 			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 				"action":               "push-mirror-add",
 				"push_mirror_address":  u.String() + pushToRepo.FullName(),
 				"push_mirror_interval": "0",
@@ -635,7 +618,6 @@ func TestPushMirrorSettings(t *testing.T) {
 			unittest.AssertExistsAndLoadBean(t, &repo_model.PushMirror{ID: mirrorID - 1})
 
 			req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 				"action":               "push-mirror-update",
 				"push_mirror_id":       strconv.FormatInt(mirrorID-1, 10),
 				"push_mirror_interval": "10m0s",
@@ -643,7 +625,6 @@ func TestPushMirrorSettings(t *testing.T) {
 			sess.MakeRequest(t, req, http.StatusNotFound)
 
 			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/settings", srcRepo.FullName()), map[string]string{
-				"_csrf":                GetCSRF(t, sess, fmt.Sprintf("/%s/settings", srcRepo.FullName())),
 				"action":               "push-mirror-update",
 				"push_mirror_id":       strconv.FormatInt(mirrorID, 10),
 				"push_mirror_interval": "10m0s",
@@ -1022,7 +1003,6 @@ func TestPushMirrorWebUIToAPIIntegration(t *testing.T) {
 			// Update branch filter via web form (using existing repo settings endpoint)
 			updatedFilter := "main,develop,feature-*"
 			req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name)), map[string]string{
-				"_csrf":                     GetCSRF(t, session, fmt.Sprintf("/%s/%s/settings", url.PathEscape(user.Name), url.PathEscape(srcRepo.Name))),
 				"action":                    "push-mirror-update",
 				"push_mirror_id":            fmt.Sprintf("%d", dbMirrors[0].ID),
 				"push_mirror_interval":      "8h",

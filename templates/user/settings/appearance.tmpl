@@ -12,7 +12,6 @@
 				</div>
 
 			<form class="ui form" action="{{.Link}}/theme" method="post">
-				{{.CsrfTokenHtml}}
 					<div class="field">
 						<label for="ui">{{ctx.Locale.Tr "settings.ui"}}</label>
 						<div class="ui selection dropdown" id="ui">
@@ -50,7 +49,6 @@
 				<div class="tw-mb-4">
 					{{ctx.Locale.Tr "settings.language.description"}}
 				</div>
-				{{.CsrfTokenHtml}}
 				<div class="field">
 					<div class="ui language selection dropdown" id="language">
 						<input name="language" type="hidden" value="{{.SignedUser.Language}}">
@@ -78,7 +76,6 @@
 		</h4>
 		<div class="ui attached segment">
 			<form class="ui form" action="{{.Link}}/hints" method="post">
-				{{.CsrfTokenHtml}}
 				<div class="inline field">
 					<div class="ui checkbox" data-tooltip-content="{{ctx.Locale.Tr "settings.additional_repo_units_hint_description"}}">
 						<input name="enable_repo_unit_hints" type="checkbox" {{if $.SignedUser.EnableRepoUnitHints}}checked{{end}}>
@@ -100,7 +97,6 @@
 				{{ctx.Locale.Tr "settings.hidden_comment_types_description"}}
 			</p>
 			<form class="ui form" action="{{.Link}}/hidden_comments" method="post">
-				{{.CsrfTokenHtml}}
 				<div class="inline field">
 					<div class="ui checkbox" data-tooltip-content="{{ctx.Locale.Tr "settings.hidden_comment_types.ref_tooltip"}}">
 						<input name="reference" type="checkbox" {{if(call .IsCommentTypeGroupChecked "reference")}}checked{{end}}>

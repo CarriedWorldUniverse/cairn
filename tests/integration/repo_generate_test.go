@@ -74,7 +74,6 @@ func testRepoGenerateCommon(t *testing.T, session *TestSession, templateID, temp
 	htmlDoc = NewHTMLParser(t, resp.Body)
 	assertRepoCreateForm(t, htmlDoc, user, templateID)
 	req = NewRequestWithValues(t, "POST", link, map[string]string{
-		"_csrf":         htmlDoc.GetCSRF(),
 		"uid":           fmt.Sprintf("%d", generateOwner.ID),
 		"repo_name":     generateRepoName,
 		"repo_template": templateID,
@@ -135,9 +134,7 @@ func TestRepoCreateForm(t *testing.T) {
 	htmlDoc := NewHTMLParser(t, resp.Body)
 	assertRepoCreateForm(t, htmlDoc, user, "")
 
-	req = NewRequestWithValues(t, "POST", "/repo/create", map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
-	})
+	req = NewRequestWithValues(t, "POST", "/repo/create", map[string]string{})
 	resp = session.MakeRequest(t, req, http.StatusOK)
 	htmlDoc = NewHTMLParser(t, resp.Body)
 	assertRepoCreateForm(t, htmlDoc, user, "")
@@ -225,7 +222,6 @@ func TestRepoCreateFormTrimSpace(t *testing.T) {
 	session := loginUser(t, user.Name)
 
 	req := NewRequestWithValues(t, "POST", "/repo/create", map[string]string{
-		"_csrf":     GetCSRF(t, session, "/repo/create"),
 		"uid":       "2",
 		"repo_name": " spaced-name ",
 	})

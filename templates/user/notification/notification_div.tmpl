@@ -17,7 +17,6 @@
 				</a>
 				{{if and (eq .Status 1)}}
 					<form class="{{if not $notificationUnreadCount}}tw-hidden{{end}}" action="{{AppSubUrl}}/notifications/purge" method="post">
-						{{$.CsrfTokenHtml}}
 						<div>
 							<button class="primary button" title="{{ctx.Locale.Tr "notification.mark_all_as_read"}}">
 								{{svg "octicon-checklist"}}
@@ -75,7 +74,6 @@
 							<div class="notifications-buttons tw-items-center tw-justify-end tw-gap-1 tw-px-1">
 								{{if ne .Status 3}}
 									<form action="{{AppSubUrl}}/notifications/status" method="post">
-										{{$.CsrfTokenHtml}}
 										<input type="hidden" name="notification_id" value="{{.ID}}">
 										<input type="hidden" name="status" value="pinned">
 										<button class="btn interact-bg tw-p-2" title="{{ctx.Locale.Tr "notification.pin"}}"
@@ -90,7 +88,6 @@
 								{{end}}
 								{{if or (eq .Status 1) (eq .Status 3)}}
 									<form action="{{AppSubUrl}}/notifications/status" method="post">
-										{{$.CsrfTokenHtml}}
 										<input type="hidden" name="notification_id" value="{{.ID}}">
 										<input type="hidden" name="status" value="read">
 										<input type="hidden" name="page" value="{{$.Page.Paginater.Current}}">
@@ -105,7 +102,6 @@
 									</form>
 								{{else if eq .Status 2}}
 									<form action="{{AppSubUrl}}/notifications/status" method="post">
-										{{$.CsrfTokenHtml}}
 										<input type="hidden" name="notification_id" value="{{.ID}}">
 										<input type="hidden" name="status" value="unread">
 										<input type="hidden" name="page" value="{{$.Page.Paginater.Current}}">

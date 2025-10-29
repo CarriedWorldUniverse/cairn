@@ -5,7 +5,6 @@
 		</h4>
 		<div class="ui attached segment">
 			<form class="ui form" action="{{.Link}}" method="post">
-				{{.CsrfTokenHtml}}
 				<fieldset>
 					<legend>{{ctx.Locale.Tr "settings.profile_desc"}}</legend>
 					<label {{if .Err_Name}}class="field error"{{end}}>
@@ -114,7 +113,6 @@
 		</h4>
 		<div class="ui attached segment">
 			<form class="ui form" action="{{.Link}}/avatar" method="post" enctype="multipart/form-data">
-				{{.CsrfTokenHtml}}
 				{{if not .DisableGravatar}}
 				<div class="inline field">
 					<div class="ui radio checkbox">

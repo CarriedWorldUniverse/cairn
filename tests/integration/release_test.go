@@ -40,7 +40,6 @@ func createNewReleaseTarget(t *testing.T, session *TestSession, repoURL, tag, ti
 	assert.True(t, exists, "The template has changed")
 
 	postData := map[string]string{
-		"_csrf":      htmlDoc.GetCSRF(),
 		"tag_name":   tag,
 		"tag_target": target,
 		"title":      title,
@@ -115,27 +114,19 @@ func TestDeleteRelease(t *testing.T) {
 	session5 := loginUser(t, "user5")
 	otherRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "user5", LowerName: "repo4"})
 
-	req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
-		"_csrf": GetCSRF(t, session5, otherRepo.Link()),
-	})
+	req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{})
 	session5.MakeRequest(t, req, http.StatusNotFound)
 
 	session := loginUser(t, "user2")
-	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", repo.Link(), release.ID), map[string]string{
-		"_csrf": GetCSRF(t, session, repo.Link()),
-	})
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", repo.Link(), release.ID), map[string]string{})
 	session.MakeRequest(t, req, http.StatusOK)
 	release = unittest.AssertExistsAndLoadBean(t, &repo_model.Release{ID: release.ID})
 
 	if assert.True(t, release.IsTag) {
-		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
-			"_csrf": GetCSRF(t, session5, otherRepo.Link()),
-		})
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{})
 		session5.MakeRequest(t, req, http.StatusNotFound)
 
-		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", repo.Link(), release.ID), map[string]string{
-			"_csrf": GetCSRF(t, session, repo.Link()),
-		})
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", repo.Link(), release.ID), map[string]string{})
 		session.MakeRequest(t, req, http.StatusOK)
 
 		unittest.AssertNotExistsBean(t, &repo_model.Release{ID: release.ID})

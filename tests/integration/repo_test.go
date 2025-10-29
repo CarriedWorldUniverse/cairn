@@ -1086,7 +1086,6 @@ func TestViewRepoOpenWith(t *testing.T) {
 
 			req := NewRequestWithValues(t, "POST", "/admin/config?key=repository.open-with.editor-apps", map[string]string{
 				"value": apps,
-				"_csrf": GetCSRF(t, session, "/admin/config/settings"),
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 		}

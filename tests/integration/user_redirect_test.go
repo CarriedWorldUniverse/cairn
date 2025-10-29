@@ -31,8 +31,7 @@ func TestUserRedirect(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", "/user/settings", map[string]string{
-			"_csrf": GetCSRF(t, session, "/user/settings"),
-			"name":  "user2-new",
+			"name": "user2-new",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
@@ -47,7 +46,6 @@ func TestUserRedirect(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", "/user/sign_up", map[string]string{
-			"_csrf":     GetCSRF(t, emptyTestSession(t), "/user/sign_up"),
 			"user_name": "user2",
 			"email":     "doesnotexist@example.com",
 			"password":  "examplePassword!1",
@@ -65,8 +63,7 @@ func TestUserRedirect(t *testing.T) {
 
 		session := loginUser(t, "user4")
 		req := NewRequestWithValues(t, "POST", "/user/settings", map[string]string{
-			"_csrf": GetCSRF(t, session, "/user/settings"),
-			"name":  "user2",
+			"name": "user2",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
@@ -80,7 +77,6 @@ func TestUserRedirect(t *testing.T) {
 
 		session := loginUser(t, "user1")
 		req := NewRequestWithValues(t, "POST", "/admin/users/4/edit", map[string]string{
-			"_csrf":      GetCSRF(t, session, "/admin/users/4/edit"),
 			"user_name":  "user2",
 			"email":      "user4@example.com",
 			"login_type": "0-0",
@@ -98,8 +94,7 @@ func TestUserRedirect(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequestWithValues(t, "POST", "/user/settings", map[string]string{
-			"_csrf": GetCSRF(t, session, "/user/settings"),
-			"name":  "user2-new-2",
+			"name": "user2-new-2",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
@@ -110,8 +105,7 @@ func TestUserRedirect(t *testing.T) {
 		unittest.AssertExistsIf(t, true, &user_model.Redirect{LowerName: "user2-new", RedirectUserID: 2})
 
 		req = NewRequestWithValues(t, "POST", "/user/settings", map[string]string{
-			"_csrf": GetCSRF(t, session, "/user/settings"),
-			"name":  "user2-new",
+			"name": "user2-new",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 

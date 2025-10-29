@@ -5,7 +5,6 @@
 				</h4>
 				<div class="ui attached segment">
 					<form class="ui form" action="{{.Link}}" method="post">
-						{{.CsrfTokenHtml}}
 						<label {{if .Err_Name}}class="field error"{{end}}>
 							{{ctx.Locale.Tr "org.org_name_holder"}}
 							<input id="org_name" name="name" value="{{.Org.Name}}" data-org-name="{{.Org.Name}}" autofocus required maxlength="40">
@@ -90,7 +89,6 @@
 					<div class="divider"></div>
 
 					<form class="ui form" action="{{.Link}}/avatar" method="post" enctype="multipart/form-data">
-						{{.CsrfTokenHtml}}
 						<div class="inline field">
 							<label for="avatar">{{ctx.Locale.Tr "settings.choose_new_avatar"}}</label>
 							<input name="avatar" type="file" accept="image/png,image/jpeg,image/gif,image/webp">

@@ -12,7 +12,6 @@ import (
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
-	forgejo_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -196,24 +195,6 @@ func TestRedirectsWebhooks(t *testing.T) {
 			req := NewRequest(t, info.verb, info.from)
 			resp := MakeRequest(t, req, http.StatusSeeOther)
 			assert.Equal(t, path.Join(setting.AppSubURL, info.to), test.RedirectURL(resp), info.from)
-		}
-	}
-
-	for _, kind := range []string{"forgejo", "gitea"} {
-		csrf := []struct {
-			from string
-			verb string
-		}{
-			{from: "/user2/repo1/settings/hooks/" + kind + "/new", verb: "POST"},
-			{from: "/admin/hooks/1", verb: "POST"},
-			{from: "/admin/system-hooks/" + kind + "/new", verb: "POST"},
-			{from: "/admin/default-hooks/" + kind + "/new", verb: "POST"},
-			{from: "/user2/repo1/settings/hooks/1", verb: "POST"},
-		}
-		for _, info := range csrf {
-			req := NewRequest(t, info.verb, info.from)
-			resp := MakeRequest(t, req, http.StatusBadRequest)
-			assert.Contains(t, resp.Body.String(), forgejo_context.CsrfErrorString)
 		}
 	}
 }

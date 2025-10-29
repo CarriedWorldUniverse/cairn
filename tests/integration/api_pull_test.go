@@ -426,7 +426,6 @@ func TestAPIPullDeleteBranchPerms(t *testing.T) {
 		testEditFileToNewBranch(t, user2Session, "user2", "repo1", "master", "base-pr", "README.md", "Hello, World\n(Edited - base PR)\n")
 
 		req := NewRequestWithValues(t, "POST", "/user4/repo1/compare/master...user2/repo1:base-pr", map[string]string{
-			"_csrf": GetCSRF(t, user4Session, "/user4/repo1/compare/master...user2/repo1:base-pr"),
 			"title": "Testing PR",
 		})
 		resp := user4Session.MakeRequest(t, req, http.StatusOK)

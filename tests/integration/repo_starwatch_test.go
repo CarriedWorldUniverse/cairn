@@ -26,9 +26,7 @@ func testRepoStarringOrWatching(t *testing.T, action, listURI string, expectEmpt
 	session := loginUser(t, "user5")
 
 	// Star/Watch the repo as user5
-	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/user2/repo1/action/%s", action), map[string]string{
-		"_csrf": GetCSRF(t, session, "/user2/repo1"),
-	})
+	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/user2/repo1/action/%s", action), map[string]string{})
 	session.MakeRequest(t, req, http.StatusOK)
 
 	// Load the repo home as user5
@@ -65,9 +63,7 @@ func testRepoStarringOrWatching(t *testing.T, action, listURI string, expectEmpt
 	}
 
 	// Unstar/unwatch the repo as user5
-	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/user2/repo1/action/%s", oppositeAction), map[string]string{
-		"_csrf": GetCSRF(t, session, "/user2/repo1"),
-	})
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/user2/repo1/action/%s", oppositeAction), map[string]string{})
 	session.MakeRequest(t, req, http.StatusOK)
 
 	// Load the repo home as user5

@@ -32,10 +32,8 @@ func TestCreateFileOnProtectedBranch(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user2")
 
-		csrf := GetCSRF(t, session, "/user2/repo1/settings/branches")
 		// Change master branch to protected
 		req := NewRequestWithValues(t, "POST", "/user2/repo1/settings/branches/edit", map[string]string{
-			"_csrf":       csrf,
 			"rule_name":   "master",
 			"enable_push": "true",
 		})
@@ -55,7 +53,6 @@ func TestCreateFileOnProtectedBranch(t *testing.T) {
 
 		// Save new file to master branch
 		req = NewRequestWithValues(t, "POST", "/user2/repo1/_new/master/", map[string]string{
-			"_csrf":          doc.GetCSRF(),
 			"last_commit":    lastCommit,
 			"tree_path":      "test.txt",
 			"content":        "Content",
@@ -68,12 +65,9 @@ func TestCreateFileOnProtectedBranch(t *testing.T) {
 		assert.Contains(t, resp.Body.String(), "Cannot commit to protected branch &#34;master&#34;.")
 
 		// remove the protected branch
-		csrf = GetCSRF(t, session, "/user2/repo1/settings/branches")
 
 		// Change master branch to protected
-		req = NewRequestWithValues(t, "POST", "/user2/repo1/settings/branches/1/delete", map[string]string{
-			"_csrf": csrf,
-		})
+		req = NewRequestWithValues(t, "POST", "/user2/repo1/settings/branches/1/delete", map[string]string{})
 
 		resp = session.MakeRequest(t, req, http.StatusOK)
 
@@ -100,7 +94,6 @@ func testEditFile(t *testing.T, session *TestSession, user, repo, branch, filePa
 	// Submit the edits
 	req = NewRequestWithValues(t, "POST", path.Join(user, repo, "_edit", branch, filePath),
 		map[string]string{
-			"_csrf":          htmlDoc.GetCSRF(),
 			"last_commit":    lastCommit,
 			"tree_path":      filePath,
 			"content":        newContent,
@@ -130,7 +123,6 @@ func testEditFileToNewBranch(t *testing.T, session *TestSession, user, repo, bra
 	// Submit the edits
 	req = NewRequestWithValues(t, "POST", path.Join(user, repo, "_edit", branch, filePath),
 		map[string]string{
-			"_csrf":           htmlDoc.GetCSRF(),
 			"last_commit":     lastCommit,
 			"tree_path":       filePath,
 			"content":         newContent,
@@ -198,7 +190,7 @@ func TestCommitMail(t *testing.T) {
 
 		session := loginUser(t, user.Name)
 
-		lastCommitAndCSRF := func(t *testing.T, link string, skipLastCommit bool) (string, string) {
+		getLastCommit := func(t *testing.T, link string, skipLastCommit bool) string {
 			t.Helper()
 
 			req := NewRequest(t, "GET", link)
@@ -210,7 +202,7 @@ func TestCommitMail(t *testing.T) {
 				assert.NotEmpty(t, lastCommit)
 			}
 
-			return lastCommit, htmlDoc.GetCSRF()
+			return lastCommit
 		}
 
 		type caseOpts struct {
@@ -229,9 +221,8 @@ func TestCommitMail(t *testing.T) {
 			t.Run("Not activated", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
-				lastCommit, csrf := lastCommitAndCSRF(t, case1.link, case1.skipLastCommit)
+				lastCommit := getLastCommit(t, case1.link, case1.skipLastCommit)
 				baseCopy := case1.base
-				baseCopy["_csrf"] = csrf
 				baseCopy["last_commit"] = lastCommit
 				baseCopy["commit_mail_id"] = fmt.Sprintf("%d", inactivatedMail.ID)
 
@@ -248,9 +239,8 @@ func TestCommitMail(t *testing.T) {
 			t.Run("Not belong to user", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
-				lastCommit, csrf := lastCommitAndCSRF(t, case1.link, case1.skipLastCommit)
+				lastCommit := getLastCommit(t, case1.link, case1.skipLastCommit)
 				baseCopy := case1.base
-				baseCopy["_csrf"] = csrf
 				baseCopy["last_commit"] = lastCommit
 				baseCopy["commit_mail_id"] = fmt.Sprintf("%d", otherEmail.ID)
 
@@ -267,16 +257,15 @@ func TestCommitMail(t *testing.T) {
 			t.Run("Placeholder mail", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
-				lastCommit, csrf := lastCommitAndCSRF(t, case1.link, case1.skipLastCommit)
+				lastCommit := getLastCommit(t, case1.link, case1.skipLastCommit)
 				baseCopy := case1.base
-				baseCopy["_csrf"] = csrf
 				baseCopy["last_commit"] = lastCommit
 				baseCopy["commit_mail_id"] = "-1"
 
 				req := NewRequestWithValues(t, "POST", case1.link, baseCopy)
 				session.MakeRequest(t, req, http.StatusSeeOther)
 				if !case2.skipLastCommit {
-					newlastCommit, _ := lastCommitAndCSRF(t, case1.link, false)
+					newlastCommit := getLastCommit(t, case1.link, false)
 					assert.NotEqual(t, newlastCommit, lastCommit)
 				}
 
@@ -292,16 +281,15 @@ func TestCommitMail(t *testing.T) {
 			t.Run("Normal", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
-				lastCommit, csrf := lastCommitAndCSRF(t, case2.link, case2.skipLastCommit)
+				lastCommit := getLastCommit(t, case2.link, case2.skipLastCommit)
 				baseCopy := case2.base
-				baseCopy["_csrf"] = csrf
 				baseCopy["last_commit"] = lastCommit
 				baseCopy["commit_mail_id"] = fmt.Sprintf("%d", primaryEmail.ID)
 
 				req := NewRequestWithValues(t, "POST", case2.link, baseCopy)
 				session.MakeRequest(t, req, http.StatusSeeOther)
 				if !case2.skipLastCommit {
-					newlastCommit, _ := lastCommitAndCSRF(t, case2.link, false)
+					newlastCommit := getLastCommit(t, case2.link, false)
 					assert.NotEqual(t, newlastCommit, lastCommit)
 				}
 
@@ -387,8 +375,6 @@ func TestCommitMail(t *testing.T) {
 
 				body := &bytes.Buffer{}
 				mpForm := multipart.NewWriter(body)
-				err := mpForm.WriteField("_csrf", GetCSRF(t, session, "/user2/repo1/_upload/master"))
-				require.NoError(t, err)
 
 				file, err := mpForm.CreateFormFile("file", name)
 				require.NoError(t, err)

@@ -28,7 +28,6 @@ func TestOrgNavigationDashboard(t *testing.T) {
 	// Login as the future organization admin and create an organization
 	session1 := loginUser(t, "user2")
 	session1.MakeRequest(t, NewRequestWithValues(t, "POST", "/org/create", map[string]string{
-		"_csrf":                         GetCSRF(t, session1, "/org/create"),
 		"org_name":                      "org_navigation_test",
 		"visibility":                    "0",
 		"repo_admin_change_team_access": "on",

@@ -28,9 +28,7 @@ func TestIssueAddTimeManually(t *testing.T) {
 	t.Run("No time", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
-		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{
-			"_csrf": GetCSRF(t, session, issue2.Link()),
-		}), http.StatusSeeOther)
+		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{}), http.StatusSeeOther)
 
 		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
@@ -41,7 +39,6 @@ func TestIssueAddTimeManually(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{
-			"_csrf": GetCSRF(t, session, issue2.Link()),
 			"hours": "-1",
 		}), http.StatusSeeOther)
 
@@ -54,7 +51,6 @@ func TestIssueAddTimeManually(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{
-			"_csrf":   GetCSRF(t, session, issue2.Link()),
 			"minutes": "-1",
 		}), http.StatusSeeOther)
 
@@ -67,7 +63,6 @@ func TestIssueAddTimeManually(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{
-			"_csrf":   GetCSRF(t, session, issue2.Link()),
 			"hours":   "3",
 			"minutes": "14",
 		}), http.StatusSeeOther)

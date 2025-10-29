@@ -39,7 +39,6 @@ func TestUserAvatar(t *testing.T) {
 	}
 
 	session := loginUser(t, "user2")
-	csrf := GetCSRF(t, session, "/user/settings")
 
 	imgData := &bytes.Buffer{}
 
@@ -70,7 +69,6 @@ func TestUserAvatar(t *testing.T) {
 	}
 
 	req := NewRequestWithBody(t, "POST", "/user/settings/avatar", body)
-	req.Header.Add("X-Csrf-Token", csrf)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	session.MakeRequest(t, req, http.StatusSeeOther)

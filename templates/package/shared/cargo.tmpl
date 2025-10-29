@@ -8,7 +8,6 @@
 		</div>
 		{{if .CargoIndexExists}}
 		<form class="field" action="{{.Link}}/cargo/rebuild" method="post">
-			{{.CsrfTokenHtml}}
 			<button class="ui primary button">{{ctx.Locale.Tr "packages.owner.settings.cargo.rebuild"}}</button>
 		</form>
 		<div class="field">
@@ -16,7 +15,6 @@
 		</div>
 		{{else}}
 		<form class="field" action="{{.Link}}/cargo/initialize" method="post">
-			{{.CsrfTokenHtml}}
 			<button class="ui primary button">{{ctx.Locale.Tr "packages.owner.settings.cargo.initialize"}}</button>
 		</form>
 		<div class="field">

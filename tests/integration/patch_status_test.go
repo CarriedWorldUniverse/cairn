@@ -269,7 +269,6 @@ func TestPatchStatus(t *testing.T) {
 			// Add protected branch.
 			link := fmt.Sprintf("/%s/settings/branches/edit", repo.FullName())
 			session.MakeRequest(t, NewRequestWithValues(t, "POST", link, map[string]string{
-				"_csrf":                   GetCSRF(t, session, link),
 				"rule_name":               "main",
 				"protected_file_patterns": "LICENSE",
 			}), http.StatusSeeOther)

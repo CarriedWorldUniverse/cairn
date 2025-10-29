@@ -33,7 +33,6 @@ func TestForgotPassword(t *testing.T) {
 		})()
 
 		req := NewRequestWithValues(t, "POST", "/user/forgot_password", map[string]string{
-			"_csrf": GetCSRF(t, emptyTestSession(t), "/user/forgot_password"),
 			"email": email.Email,
 		})
 		MakeRequest(t, req, http.StatusOK)

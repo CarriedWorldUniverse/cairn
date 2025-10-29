@@ -4,7 +4,6 @@
 		<div class="column">
 			<form class="ui form" action="{{.Link}}" method="post">
 				{{template "base/disable_form_autofill"}}
-				{{.CsrfTokenHtml}}
 				<h3 class="ui top attached header">
 					{{ctx.Locale.Tr "repo.migrate.migrate" .service.Title}}
 					<input id="service_type" type="hidden" name="service" value="{{.service}}">

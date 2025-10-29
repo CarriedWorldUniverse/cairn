@@ -18,7 +18,6 @@
 			<p>{{ctx.Locale.Tr "packages.settings.link.description"}}</p>
 			<form class="ui form" action="{{.Link}}" method="post">
 				{{template "base/disable_form_autofill"}}
-				{{.CsrfTokenHtml}}
 				<input type="hidden" name="action" value="link">
 				<div class="field">
 					<div class="ui clearable selection dropdown">
@@ -63,7 +62,6 @@
 								{{ctx.Locale.Tr "packages.settings.delete.notice" .PackageDescriptor.Package.Name .PackageDescriptor.Version.Version}}
 							</div>
 							<form class="ui form" action="{{.Link}}" method="post">
-								{{.CsrfTokenHtml}}
 								<input type="hidden" name="action" value="delete">
 								{{template "base/modal_actions_confirm" .}}
 							</form>

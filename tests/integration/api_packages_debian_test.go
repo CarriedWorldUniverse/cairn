@@ -281,9 +281,7 @@ func TestPackageDebian(t *testing.T) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		session := loginUser(t, user.Name)
 		settingsURL := fmt.Sprintf("/user2/-/packages/debian/%s/%s/settings", packageName, packageVersion)
-		uiURL := fmt.Sprintf("/user2/-/packages/debian/%s/%s", packageName, packageVersion)
 		req = NewRequestWithValues(t, "POST", settingsURL, map[string]string{
-			"_csrf":  GetCSRF(t, session, uiURL),
 			"action": "delete",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)

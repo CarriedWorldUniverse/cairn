@@ -21,21 +21,13 @@ import (
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
 	repo_service "forgejo.org/services/repository"
-	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func testCreateBranch(t testing.TB, session *TestSession, user, repo, oldRefSubURL, newBranchName string, expectedStatus int) string {
-	var csrf string
-	if expectedStatus == http.StatusNotFound {
-		csrf = GetCSRF(t, session, path.Join(user, repo, "src/branch/master"))
-	} else {
-		csrf = GetCSRF(t, session, path.Join(user, repo, "src", oldRefSubURL))
-	}
 	req := NewRequestWithValues(t, "POST", path.Join(user, repo, "branches/_new", oldRefSubURL), map[string]string{
-		"_csrf":           csrf,
 		"new_branch_name": newBranchName,
 	})
 	resp := session.MakeRequest(t, req, expectedStatus)
@@ -147,17 +139,6 @@ func testCreateBranches(t *testing.T, giteaURL *url.URL) {
 			unittest.AssertExistsAndLoadBean(t, &git_model.Branch{RepoID: 1, Name: test.NewBranch})
 		}
 	}
-}
-
-func TestCreateBranchInvalidCSRF(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
-	session := loginUser(t, "user2")
-	req := NewRequestWithValues(t, "POST", "user2/repo1/branches/_new/branch/master", map[string]string{
-		"_csrf":           "fake_csrf",
-		"new_branch_name": "test",
-	})
-	resp := session.MakeRequest(t, req, http.StatusBadRequest)
-	assert.Contains(t, resp.Body.String(), "Invalid CSRF token")
 }
 
 func TestDatabaseMissingABranch(t *testing.T) {

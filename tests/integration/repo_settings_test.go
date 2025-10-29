@@ -278,7 +278,6 @@ func TestProtectedBranch(t *testing.T) {
 		link := fmt.Sprintf("/%s/settings/branches/edit", repo.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":       GetCSRF(t, session, link),
 			"rule_name":   "master",
 			"enable_push": "true",
 		})
@@ -293,7 +292,6 @@ func TestProtectedBranch(t *testing.T) {
 		link := fmt.Sprintf("/%s/settings/branches/edit", repo.FullName())
 
 		req := NewRequestWithValues(t, "POST", link, map[string]string{
-			"_csrf":           GetCSRF(t, session, link),
 			"rule_name":       "master",
 			"require_signed_": "true",
 		})

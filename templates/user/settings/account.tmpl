@@ -7,7 +7,6 @@
 			{{if or (.SignedUser.IsLocal) (.SignedUser.IsOAuth2)}}
 			<form class="ui form ignore-dirty" action="{{AppSubUrl}}/user/settings/account" method="post">
 				{{template "base/disable_form_autofill"}}
-				{{.CsrfTokenHtml}}
 				{{if .SignedUser.IsPasswordSet}}
 				<div class="required field {{if .Err_OldPassword}}error{{end}}">
 					<label for="old_password">{{ctx.Locale.Tr "settings.old_password"}}</label>
@@ -44,7 +43,6 @@
 				{{if $.EnableNotifyMail}}
 				<div class="item">
 					<form action="{{AppSubUrl}}/user/settings/account/email" class="ui form" method="post">
-						{{$.CsrfTokenHtml}}
 						<input name="_method" type="hidden" value="NOTIFICATION">
 						<div class="tw-flex tw-flex-wrap tw-gap-2">
 							<div class="ui selection dropdown">
@@ -74,7 +72,6 @@
 							{{if .CanBePrimary}}
 								<div class="right floated content">
 									<form action="{{AppSubUrl}}/user/settings/account/email" method="post">
-										{{$.CsrfTokenHtml}}
 										<input name="_method" type="hidden" value="PRIMARY">
 										<input name="id" type="hidden" value="{{.ID}}">
 										<button class="ui primary tiny button">{{ctx.Locale.Tr "settings.primary_email"}}</button>
@@ -85,7 +82,6 @@
 						{{if not .IsActivated}}
 							<div class="right floated content">
 								<form action="{{AppSubUrl}}/user/settings/account/email" method="post">
-									{{$.CsrfTokenHtml}}
 									<input name="_method" type="hidden" value="SENDACTIVATION">
 									<input name="id" type="hidden" value="{{.ID}}">
 									{{if $.ActivationsPending}}
@@ -113,7 +109,6 @@
 		</div>
 		<div class="ui attached bottom segment">
 			<form class="ui form" action="{{AppSubUrl}}/user/settings/account/email" method="post">
-				{{.CsrfTokenHtml}}
 				<div class="required field {{if .Err_Email}}error{{end}}">
 					<label for="email">{{ctx.Locale.Tr "settings.add_new_email"}}</label>
 					<input id="email" name="email" type="email" required {{if not .CanAddEmails}}disabled{{end}}>
@@ -141,7 +136,6 @@
 			</div>
 			<form class="ui form ignore-dirty" id="delete-form" action="{{AppSubUrl}}/user/settings/account/delete" method="post">
 				{{template "base/disable_form_autofill"}}
-				{{.CsrfTokenHtml}}
 				<div class="required field {{if .Err_Password}}error{{end}}">
 					<label for="password-confirmation">{{ctx.Locale.Tr "password"}}</label>
 					<input id="password-confirmation" name="password" type="password" autocomplete="off" required>

@@ -67,7 +67,6 @@ func testPullCreate(t *testing.T, session *TestSession, user, repo string, toSel
 	link, exists = htmlDoc.doc.Find("form.ui.form").Attr("action")
 	assert.True(t, exists, "The template has changed")
 	req = NewRequestWithValues(t, "POST", link, map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
 		"title": title,
 	})
 	resp = session.MakeRequest(t, req, http.StatusOK)
@@ -91,7 +90,6 @@ func testPullCreateDirectly(t *testing.T, session *TestSession, baseRepoOwner, b
 	link, exists := htmlDoc.doc.Find("form.ui.form").Attr("action")
 	assert.True(t, exists, "The template has changed")
 	req = NewRequestWithValues(t, "POST", link, map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
 		"title": title,
 	})
 	resp = session.MakeRequest(t, req, http.StatusOK)
@@ -252,7 +250,6 @@ func TestPullCreate_TitleEscape(t *testing.T) {
 		assert.True(t, exists, "The template has changed")
 
 		req = NewRequestWithValues(t, "POST", editTestTitleURL, map[string]string{
-			"_csrf": htmlDoc.GetCSRF(),
 			"title": "<u>XSS PR</u>",
 		})
 		session.MakeRequest(t, req, http.StatusOK)
@@ -271,25 +268,17 @@ func TestPullCreate_TitleEscape(t *testing.T) {
 
 func testUIDeleteBranch(t *testing.T, session *TestSession, ownerName, repoName, branchName string) {
 	relURL := "/" + path.Join(ownerName, repoName, "branches")
-	req := NewRequest(t, "GET", relURL)
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	htmlDoc := NewHTMLParser(t, resp.Body)
 
-	req = NewRequestWithValues(t, "POST", relURL+"/delete", map[string]string{
-		"_csrf": htmlDoc.GetCSRF(),
-		"name":  branchName,
+	req := NewRequestWithValues(t, "POST", relURL+"/delete", map[string]string{
+		"name": branchName,
 	})
 	session.MakeRequest(t, req, http.StatusOK)
 }
 
 func testDeleteRepository(t *testing.T, session *TestSession, ownerName, repoName string) {
 	relURL := "/" + path.Join(ownerName, repoName, "settings")
-	req := NewRequest(t, "GET", relURL)
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	htmlDoc := NewHTMLParser(t, resp.Body)
 
-	req = NewRequestWithValues(t, "POST", relURL+"?action=delete", map[string]string{
-		"_csrf":     htmlDoc.GetCSRF(),
+	req := NewRequestWithValues(t, "POST", relURL+"?action=delete", map[string]string{
 		"repo_name": fmt.Sprintf("%s/%s", ownerName, repoName),
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)

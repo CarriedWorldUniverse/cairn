@@ -22,17 +22,13 @@ func TestChangeDefaultBranch(t *testing.T) {
 	session := loginUser(t, owner.Name)
 	branchesURL := fmt.Sprintf("/%s/%s/settings/branches", owner.Name, repo.Name)
 
-	csrf := GetCSRF(t, session, branchesURL)
 	req := NewRequestWithValues(t, "POST", branchesURL, map[string]string{
-		"_csrf":  csrf,
 		"action": "default_branch",
 		"branch": "DefaultBranch",
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
-	csrf = GetCSRF(t, session, branchesURL)
 	req = NewRequestWithValues(t, "POST", branchesURL, map[string]string{
-		"_csrf":  csrf,
 		"action": "default_branch",
 		"branch": "does_not_exist",
 	})

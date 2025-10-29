@@ -17,7 +17,6 @@ import (
 
 func getOrgSettingsFormData(t *testing.T, session *TestSession, orgName string) map[string]string {
 	return map[string]string{
-		"_csrf":                         GetCSRF(t, session, fmt.Sprintf("/org/%s/settings", orgName)),
 		"name":                          orgName,
 		"full_name":                     "",
 		"email":                         "",

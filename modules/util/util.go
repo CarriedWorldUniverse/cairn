@@ -220,15 +220,6 @@ func Iif[T any](condition bool, trueVal, falseVal T) T {
 	return falseVal
 }
 
-// IfZero returns "def" if "v" is a zero value, otherwise "v"
-func IfZero[T comparable](v, def T) T {
-	var zero T
-	if v == zero {
-		return def
-	}
-	return v
-}
-
 // OptionalArg helps the "optional argument" in Golang:
 //
 //	func foo(optArg ...int) { return OptionalArg(optArg) }
