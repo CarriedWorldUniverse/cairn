@@ -606,7 +606,7 @@
 							{{$oldProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .OldProject.Title}}
 						{{else}}
 							{{$tooltip := ctx.Locale.Tr (printf "projects.type-%d.display_name" .OldProject.Type)}}
-							{{$oldProjectDisplayHtml = HTMLFormat `<a href="%s/projects/%d" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` $.RepoLink .OldProjectID $tooltip .OldProject.Title}}
+							{{$oldProjectDisplayHtml = HTMLFormat `<a href="%s" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` (.OldProject.Link ctx) $tooltip .OldProject.Title}}
 						{{end}}
 					{{end}}
 					{{$newProjectDisplayHtml := ""}}
@@ -616,7 +616,7 @@
 							{{$newProjectDisplayHtml = HTMLFormat `<span data-tooltip-content="%s">%s</span>` $tooltip .Project.Title}}
 						{{else}}
 							{{$tooltip := ctx.Locale.Tr (printf "projects.type-%d.display_name" .Project.Type)}}
-							{{$newProjectDisplayHtml = HTMLFormat `<a href="%s/projects/%d" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` $.RepoLink .ProjectID $tooltip .Project.Title}}
+							{{$newProjectDisplayHtml = HTMLFormat `<a href="%s" rel="nofollow"><span data-tooltip-content="%s">%s</span></a>` (.Project.Link ctx) $tooltip .Project.Title}}
 						{{end}}
 					{{end}}
 					{{if .OldProject}}
