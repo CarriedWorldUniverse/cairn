@@ -21,10 +21,10 @@ test('New label', async ({page}) => {
   await screenshot(page, page.locator('#new-label-modal'));
 
   const labelName = dynamic_id();
-  await page.keyboard.type(labelName);
+  await page.getByRole('textbox', {name: 'Label name'}).fill(labelName);
   await page.getByRole('button', {name: 'Create label'}).click();
 
-  await page.locator('.label-title').filter({hasText: labelName}).isVisible();
+  await expect(page.locator('.label-title').filter({hasText: labelName})).toBeVisible();
 });
 
 test('Edit label', async ({page}) => {
@@ -36,8 +36,8 @@ test('Edit label', async ({page}) => {
   await screenshot(page, page.locator('#edit-label-modal'));
 
   const labelName = dynamic_id();
-  await page.keyboard.type(labelName);
+  await page.getByRole('textbox', {name: 'Label name'}).fill(labelName);
   await page.getByRole('button', {name: 'Save'}).click();
 
-  await page.locator('.label-title').filter({hasText: labelName}).isVisible();
+  await expect(page.locator('.label-title').filter({hasText: labelName})).toBeVisible();
 });
