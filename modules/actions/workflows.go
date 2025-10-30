@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
@@ -25,6 +26,7 @@ type DetectedWorkflow struct {
 	TriggerEvent        *jobparser.Event
 	Content             []byte
 	EventDetectionError error
+	NeedApproval        actions_model.ApprovalType
 }
 
 func init() {

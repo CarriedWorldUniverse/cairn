@@ -268,6 +268,19 @@ func detectWorkflows(ctx context.Context, input *notifyInput, gitRepo *git.Repos
 				}
 			}
 		}
+
+		useHeadOrBaseCommit, pullRequestNeedApproval, err := getPullRequestCommitAndApproval(ctx, input.PullRequest, input.Doer, input.Event)
+		if err != nil {
+			return nil, nil, fmt.Errorf("getPullRequestTrust: %w", err)
+		}
+
+		if useHeadOrBaseCommit == useBaseCommit {
+			workflows = baseWorkflows
+		} else if pullRequestNeedApproval {
+			for _, wf := range workflows {
+				wf.NeedApproval = pullRequestNeedApproval
+			}
+		}
 	}
 
 	for _, wf := range workflows {
@@ -342,35 +355,25 @@ func handleWorkflows(
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
 
-	isForkPullRequest := false
-	if pr := input.PullRequest; pr != nil && !actions_module.IsDefaultBranchWorkflow(input.Event) {
-		switch pr.Flow {
-		case issues_model.PullRequestFlowGithub:
-			isForkPullRequest = pr.IsFromFork()
-		case issues_model.PullRequestFlowAGit:
-			// There is no fork concept in agit flow, anyone with read permission can push refs/for/<target-branch>/<topic-branch> to the repo.
-			// So we can treat it as a fork pull request because it may be from an untrusted user
-			isForkPullRequest = true
-		default:
-			// unknown flow, assume it's a fork pull request to be safe
-			isForkPullRequest = true
-		}
-	}
-
 	for _, dwf := range detectedWorkflows {
 		run := &actions_model.ActionRun{
-			Title:             strings.SplitN(commit.CommitMessage, "\n", 2)[0],
-			RepoID:            input.Repo.ID,
-			OwnerID:           input.Repo.OwnerID,
-			WorkflowID:        dwf.EntryName,
-			TriggerUserID:     input.Doer.ID,
-			Ref:               ref,
-			CommitSHA:         commit.ID.String(),
-			IsForkPullRequest: isForkPullRequest,
-			Event:             input.Event,
-			EventPayload:      string(p),
-			TriggerEvent:      dwf.TriggerEvent.Name,
-			Status:            actions_model.StatusWaiting,
+			Title:         strings.SplitN(commit.CommitMessage, "\n", 2)[0],
+			RepoID:        input.Repo.ID,
+			OwnerID:       input.Repo.OwnerID,
+			WorkflowID:    dwf.EntryName,
+			TriggerUserID: input.Doer.ID,
+			Ref:           ref,
+			CommitSHA:     commit.ID.String(),
+			Event:         input.Event,
+			EventPayload:  string(p),
+			TriggerEvent:  dwf.TriggerEvent.Name,
+			Status:        actions_model.StatusWaiting,
+		}
+
+		if !actions_module.IsDefaultBranchWorkflow(input.Event) {
+			if err := setRunTrustForPullRequest(ctx, run, input.PullRequest, dwf.NeedApproval); err != nil {
+				return fmt.Errorf("setTrustForPullRequest: %w", err)
+			}
 		}
 
 		workflow, err := model.ReadWorkflow(bytes.NewReader(dwf.Content), false)
@@ -383,14 +386,6 @@ func handleWorkflows(
 			log.Error("Notifications: %w", err)
 		}
 		run.NotifyEmail = notifications
-
-		need, err := ifNeedApproval(ctx, run, input.Repo, input.Doer)
-		if err != nil {
-			log.Error("check if need approval for repo %d with user %d: %v", input.Repo.ID, input.Doer.ID, err)
-			continue
-		}
-
-		run.NeedApproval = need
 
 		if err := run.LoadAttributes(ctx); err != nil {
 			log.Error("LoadAttributes: %v", err)
@@ -498,45 +493,6 @@ func notifyPackage(ctx context.Context, sender *user_model.User, pd *packages_mo
 			Sender:  convert.ToUser(ctx, sender, nil),
 		}).
 		Notify(ctx)
-}
-
-func ifNeedApproval(ctx context.Context, run *actions_model.ActionRun, repo *repo_model.Repository, user *user_model.User) (bool, error) {
-	// 1. don't need approval if it's not a fork PR
-	// 2. don't need approval if the event is `pull_request_target` since the workflow will run in the context of base branch
-	// 		see https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks#about-workflow-runs-from-public-forks
-	if !run.IsForkPullRequest || run.TriggerEvent == actions_module.GithubEventPullRequestTarget {
-		return false, nil
-	}
-
-	// always need approval if the user is restricted
-	if user.IsRestricted {
-		log.Trace("need approval because user %d is restricted", user.ID)
-		return true, nil
-	}
-
-	// don't need approval if the user can write
-	if perm, err := access_model.GetUserRepoPermission(ctx, repo, user); err != nil {
-		return false, fmt.Errorf("GetUserRepoPermission: %w", err)
-	} else if perm.CanWrite(unit_model.TypeActions) {
-		log.Trace("do not need approval because user %d can write", user.ID)
-		return false, nil
-	}
-
-	// don't need approval if the user has been approved before
-	if count, err := db.Count[actions_model.ActionRun](ctx, actions_model.FindRunOptions{
-		RepoID:        repo.ID,
-		TriggerUserID: user.ID,
-		Approved:      true,
-	}); err != nil {
-		return false, fmt.Errorf("CountRuns: %w", err)
-	} else if count > 0 {
-		log.Trace("do not need approval because user %d has been approved before", user.ID)
-		return false, nil
-	}
-
-	// otherwise, need approval
-	log.Trace("need approval because it's the first time user %d triggered actions", user.ID)
-	return true, nil
 }
 
 func handleSchedules(
