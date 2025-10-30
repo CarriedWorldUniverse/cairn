@@ -180,5 +180,7 @@
     "migrate.pagure.token.placeholder": "Alleen voor het aanmaken van een privé-archief met issues",
     "actions.workflow.job_parsing_error": "Taken in workflow kunnen niet worden geparseerd: %v",
     "actions.workflow.event_detection_error": "Ondersteunde gebeurtenissen in workflow kunnen niet worden geparseerd: %v",
-    "actions.workflow.pre_execution_error": "Workflow is niet uitgevoerd vanwege een fout die de uitvoeringspoging blokkeerde."
+    "actions.workflow.pre_execution_error": "Workflow is niet uitgevoerd vanwege een fout die de uitvoeringspoging blokkeerde.",
+    "teams.add_all_repos.modal.header": "Alle repositories toevoegen",
+    "teams.remove_all_repos.modal.header": "Alle repositories verwijderen"
 }
