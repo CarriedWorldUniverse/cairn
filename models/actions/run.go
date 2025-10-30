@@ -41,27 +41,24 @@ const (
 
 // ActionRun represents a run of a workflow file
 type ActionRun struct {
-	ID                int64
-	Title             string
-	RepoID            int64                  `xorm:"index unique(repo_index) index(concurrency)"`
-	Repo              *repo_model.Repository `xorm:"-"`
-	OwnerID           int64                  `xorm:"index"`
-	WorkflowID        string                 `xorm:"index"`                    // the name of workflow file
-	Index             int64                  `xorm:"index unique(repo_index)"` // a unique number for each run of a repository
-	TriggerUserID     int64                  `xorm:"index"`
-	TriggerUser       *user_model.User       `xorm:"-"`
-	ScheduleID        int64
-	Ref               string `xorm:"index"` // the commit/tag/… that caused the run
-	IsRefDeleted      bool   `xorm:"-"`
-	CommitSHA         string
-	IsForkPullRequest bool                         // If this is triggered by a PR from a forked repository or an untrusted user, we need to check if it is approved and limit permissions when running the workflow.
-	NeedApproval      bool                         // may need approval if it's a fork pull request
-	ApprovedBy        int64                        `xorm:"index"` // who approved
-	Event             webhook_module.HookEventType // the webhook event that causes the workflow to run
-	EventPayload      string                       `xorm:"LONGTEXT"`
-	TriggerEvent      string                       // the trigger event defined in the `on` configuration of the triggered workflow
-	Status            Status                       `xorm:"index"`
-	Version           int                          `xorm:"version default 0"` // Status could be updated concomitantly, so an optimistic lock is needed
+	ID            int64
+	Title         string
+	RepoID        int64                  `xorm:"index unique(repo_index) index(concurrency)"`
+	Repo          *repo_model.Repository `xorm:"-"`
+	OwnerID       int64                  `xorm:"index"`
+	WorkflowID    string                 `xorm:"index"`                    // the name of workflow file
+	Index         int64                  `xorm:"index unique(repo_index)"` // a unique number for each run of a repository
+	TriggerUserID int64                  `xorm:"index"`
+	TriggerUser   *user_model.User       `xorm:"-"`
+	ScheduleID    int64
+	Ref           string `xorm:"index"` // the commit/tag/… that caused the run
+	IsRefDeleted  bool   `xorm:"-"`
+	CommitSHA     string
+	Event         webhook_module.HookEventType // the webhook event that causes the workflow to run
+	EventPayload  string                       `xorm:"LONGTEXT"`
+	TriggerEvent  string                       // the trigger event defined in the `on` configuration of the triggered workflow
+	Status        Status                       `xorm:"index"`
+	Version       int                          `xorm:"version default 0"` // Status could be updated concomitantly, so an optimistic lock is needed
 	// Started and Stopped is used for recording last run time, if rerun happened, they will be reset to 0
 	Started timeutil.TimeStamp
 	Stopped timeutil.TimeStamp
@@ -70,6 +67,13 @@ type ActionRun struct {
 	Created          timeutil.TimeStamp `xorm:"created"`
 	Updated          timeutil.TimeStamp `xorm:"updated"`
 	NotifyEmail      bool
+
+	// pull request trust
+	IsForkPullRequest   bool
+	PullRequestPosterID int64
+	PullRequestID       int64 `xorm:"index"`
+	NeedApproval        bool
+	ApprovedBy          int64 `xorm:"index"`
 
 	ConcurrencyGroup string `xorm:"'concurrency_group' index(concurrency)"`
 	ConcurrencyType  ConcurrencyMode
@@ -226,6 +230,54 @@ func RepoNumOpenActions(ctx context.Context, repoID int64) int {
 
 func clearRepoRunCountCache(repo *repo_model.Repository) {
 	cache.Remove(actionsCountOpenCacheKey(repo.ID))
+}
+
+func condRunsThatNeedApproval(repoID, pullRequestID int64) builder.Cond {
+	// performance relies indexes on repo_id and pull_request_id
+	return builder.Eq{"repo_id": repoID, "pull_request_id": pullRequestID, "need_approval": true}
+}
+
+func GetRunsThatNeedApprovalByRepoIDAndPullRequestID(ctx context.Context, repoID, pullRequestID int64) ([]*ActionRun, error) {
+	var runs []*ActionRun
+	if err := db.GetEngine(ctx).Where(condRunsThatNeedApproval(repoID, pullRequestID)).Find(&runs); err != nil {
+		return nil, err
+	}
+	return runs, nil
+}
+
+func HasRunThatNeedApproval(ctx context.Context, repoID, pullRequestID int64) (bool, error) {
+	return db.GetEngine(ctx).Where(condRunsThatNeedApproval(repoID, pullRequestID)).Exist(&ActionRun{})
+}
+
+type ApprovalType bool
+
+const (
+	NeedApproval        = ApprovalType(true)
+	DoesNotNeedApproval = ApprovalType(false)
+	UndefinedApproval   = ApprovalType(false)
+)
+
+func UpdateRunApprovalByID(ctx context.Context, id int64, approval ApprovalType, approvedBy int64) error {
+	_, err := db.GetEngine(ctx).Exec("UPDATE action_run SET need_approval=?, approved_by=? WHERE id=?", bool(approval), approvedBy, id)
+	return err
+}
+
+func GetRunsNotDoneByRepoIDAndPullRequestPosterID(ctx context.Context, repoID, pullRequestPosterID int64) ([]*ActionRun, error) {
+	var runs []*ActionRun
+	// performance relies on indexes on repo_id and status
+	if err := db.GetEngine(ctx).Where("repo_id=? AND pull_request_poster_id=?", repoID, pullRequestPosterID).And(builder.In("status", []Status{StatusUnknown, StatusWaiting, StatusRunning, StatusBlocked})).Find(&runs); err != nil {
+		return nil, err
+	}
+	return runs, nil
+}
+
+func GetRunsNotDoneByRepoIDAndPullRequestID(ctx context.Context, repoID, pullRequestID int64) ([]*ActionRun, error) {
+	var runs []*ActionRun
+	// performance relies on indexes on repo_id and status
+	if err := db.GetEngine(ctx).Where("repo_id=? AND pull_request_id=?", repoID, pullRequestID).And(builder.In("status", []Status{StatusUnknown, StatusWaiting, StatusRunning, StatusBlocked})).Find(&runs); err != nil {
+		return nil, err
+	}
+	return runs, nil
 }
 
 // InsertRun inserts a run
