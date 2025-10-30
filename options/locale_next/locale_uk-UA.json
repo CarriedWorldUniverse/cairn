@@ -194,5 +194,7 @@
         "one": "%s спостерігач",
         "few": "%s спостерігачі",
         "many": "%s спостерігачів"
-    }
+    },
+    "teams.add_all_repos.modal.header": "Додати всі репозиторії",
+    "teams.remove_all_repos.modal.header": "Видалити всі репозиторії"
 }
