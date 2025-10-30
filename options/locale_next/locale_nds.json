@@ -180,5 +180,7 @@
     "watch.n_watchers": {
         "one": "%s Belurer",
         "other": "%s Belurers"
-    }
+    },
+    "teams.add_all_repos.modal.header": "All Repositoriums hentofögen",
+    "teams.remove_all_repos.modal.header": "All Repositoriums wegdoon"
 }
