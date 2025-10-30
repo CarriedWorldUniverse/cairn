@@ -66,5 +66,20 @@
     "keys.ssh.link": "SSH ŝlosiloj",
     "keys.gpg.link": "GPG ŝlosiloj",
     "admin.moderation.reports": "Raportoj",
-    "admin.moderation.no_open_reports": "Ne estas malfermataj raportoj."
+    "admin.moderation.no_open_reports": "Ne estas malfermataj raportoj.",
+    "watch.list.none": "Neniu sekvas ĉi tiun deponejon.",
+    "followers.incoming.list.self.none": "Neniu sekvas vian profilon.",
+    "followers.incoming.list.none": "Neniu sekvas ĉi tiun uzanton.",
+    "followers.outgoing.list.self.none": "Vi sekvas neniun.",
+    "followers.outgoing.list.none": "%s ne plu sekvas vin.",
+    "relativetime.future": "estonte",
+    "repo.pulls.already_merged": "La kunfandaĵo malsukcesis: Ĉi tiu tirpeto jam estas kunfandita.",
+    "repo.pulls.merged_title_desc": {
+        "one": "kunfandis %[1]d enmeton el <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
+        "other": "kunfandis %[1]d enmetojn el <code>%[2]s</code> en <code>%[3]s</code> %[4]s"
+    },
+    "repo.pulls.title_desc": {
+        "one": "volas kunfandi %[1]d enmeton el <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
+        "other": "volas kunfandi %[1]d enmetojn el <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>"
+    }
 }

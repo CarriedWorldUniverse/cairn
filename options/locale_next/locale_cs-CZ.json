@@ -194,5 +194,7 @@
         "one": "%s sledující",
         "few": "%s sledující",
         "other": "%s sledujících"
-    }
+    },
+    "teams.add_all_repos.modal.header": "Přidat všechny repozitáře",
+    "teams.remove_all_repos.modal.header": "Odstranit všechny repozitáře"
 }
