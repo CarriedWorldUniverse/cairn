@@ -37,20 +37,10 @@
 						<div class="menu">
 							<div class="ui header">{{ctx.Locale.Tr "repo.commit.operations"}}</div>
 							<div class="divider"></div>
-							<div class="item show-create-branch-modal"
-								data-content="{{ctx.Locale.Tr "repo.branch.new_branch_from" (.CommitID)}}" {{/* used by the form */}}
-								data-branch-from="{{ShortSha .CommitID}}"
-								data-branch-from-urlcomponent="{{.CommitID}}"
-								data-modal="#create-branch-modal">
+							<div class="item show-modal" data-modal="#create-branch-modal">
 								{{ctx.Locale.Tr "repo.branch.create_branch_operation"}}
 							</div>
-							<div class="item show-create-branch-modal"
-								data-content="{{ctx.Locale.Tr "repo.branch.new_branch_from" (.CommitID)}}" {{/* used by the form */}}
-								data-branch-from="{{ShortSha .CommitID}}"
-								data-branch-from-urlcomponent="{{.CommitID}}"
-								data-modal="#create-tag-modal"
-								data-modal-from-span="#modal-create-tag-from-span"
-								data-modal-form="#create-tag-form">
+							<div class="item show-modal" data-modal="#create-tag-modal">
 								{{ctx.Locale.Tr "repo.tag.create_tag_operation"}}
 							</div>
 							<div class="item show-modal revert-button"
@@ -84,53 +74,47 @@
 									</form>
 								</div>
 							</div>
-							<div class="ui small modal" id="create-branch-modal">
-								<div class="header">
-									{{ctx.Locale.Tr "repo.branch.new_branch"}}
-								</div>
-								<div class="content">
-									<form class="ui form" id="create-branch-form" action="" data-base-action="{{.RepoLink}}/branches/_new/commit/" method="post">
-										<div class="field">
-											<label>
-												{{ctx.Locale.Tr "repo.branch.new_branch_from" (`<span class="text" id="modal-create-branch-from-span"></span>`|SafeHTML)}}
-											</label>
+							<dialog id="create-branch-modal">
+								<article>
+									<header>{{ctx.Locale.Tr "repo.branch.new_branch"}}</header>
+									<form class="ui form" action="{{.RepoLink}}/branches/_new/commit/{{.CommitID}}" method="post">
+										<div class="content">
+											<div class="field">
+												<label><span class="text">{{ctx.Locale.Tr "repo.branch.new_branch_from" (ShortSha .CommitID)}}</span></label>
+											</div>
+											<div class="required field">
+												<label for="new_branch_name">{{ctx.Locale.Tr "repo.branch.name"}}</label>
+												<input id="new_branch_name" name="new_branch_name" required>
+											</div>
 										</div>
-										<div class="required field">
-											<label for="new_branch_name">{{ctx.Locale.Tr "repo.branch.name"}}</label>
-											<input id="new_branch_name" name="new_branch_name" required>
-										</div>
-
-										<div class="text right actions">
-											<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+										<div class="actions">
+											<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 											<button class="ui primary button">{{ctx.Locale.Tr "repo.branch.confirm_create_branch"}}</button>
 										</div>
 									</form>
-								</div>
-							</div>
-							<div class="ui small modal" id="create-tag-modal">
-								<div class="header">
-									{{ctx.Locale.Tr "repo.tag.create_tag_operation"}}
-								</div>
-								<div class="content">
-									<form class="ui form" id="create-tag-form" action="" data-base-action="{{.RepoLink}}/branches/_new/commit/" method="post">
-										<input type="hidden" name="create_tag" value="true">
-										<div class="field">
-											<label>
-												{{ctx.Locale.Tr "repo.tag.create_tag_from" (`<span class="text" id="modal-create-tag-from-span"></span>`|SafeHTML)}}
-											</label>
+								</article>
+							</dialog>
+							<dialog id="create-tag-modal">
+								<article>
+									<header>{{ctx.Locale.Tr "repo.tag.create_tag_operation"}}</header>
+									<form class="ui form" action="{{.RepoLink}}/branches/_new/commit/{{.CommitID}}" method="post">
+										<div class="content">
+											<input type="hidden" name="create_tag" value="true">
+											<div class="field">
+												<label><span class="text">{{ctx.Locale.Tr "repo.tag.create_tag_from" (ShortSha .CommitID)}}</span></label>
+											</div>
+											<div class="required field">
+												<label for="new_branch_name">{{ctx.Locale.Tr "repo.release.tag_name"}}</label>
+												<input id="new_branch_name" name="new_branch_name" required>
+											</div>
 										</div>
-										<div class="required field">
-											<label for="new_branch_name">{{ctx.Locale.Tr "repo.release.tag_name"}}</label>
-											<input id="new_branch_name" name="new_branch_name" required>
-										</div>
-
-										<div class="text right actions">
-											<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+										<div class="actions">
+											<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 											<button class="ui primary button">{{ctx.Locale.Tr "repo.tag.confirm_create_tag"}}</button>
 										</div>
 									</form>
-								</div>
-							</div>
+								</article>
+							</dialog>
 							{{if not .NoteRendered}}
 								<div id="commit-notes-add-button" class="item">
 									{{ctx.Locale.Tr "repo.diff.git-notes.add"}}
