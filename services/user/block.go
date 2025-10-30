@@ -9,6 +9,7 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
+	actions_service "forgejo.org/services/actions"
 
 	"xorm.io/builder"
 )
@@ -87,6 +88,13 @@ func BlockUser(ctx context.Context, userID, blockID int64) error {
 	}
 
 	_, err = db.GetEngine(ctx).In("id", pendingTransfersIDs).Delete(&model.RepoTransfer{})
+	if err != nil {
+		return err
+	}
+
+	err = db.Iterate(ctx, builder.Eq{"owner_id": userID}, func(ctx context.Context, repo *repo_model.Repository) error {
+		return actions_service.RevokeTrust(ctx, repo.ID, blockID)
+	})
 	if err != nil {
 		return err
 	}
