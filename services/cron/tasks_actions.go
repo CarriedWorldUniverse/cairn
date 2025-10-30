@@ -22,6 +22,7 @@ func initActionsTasks() {
 	registerScheduleTasks()
 	registerActionsCleanup()
 	registerOfflineRunnersCleanup()
+	registerCleanupActionUser()
 }
 
 func registerStopZombieTasks() {
@@ -93,5 +94,15 @@ func registerOfflineRunnersCleanup() {
 			c.OlderThan,
 			c.GlobalScopeOnly,
 		)
+	})
+}
+
+func registerCleanupActionUser() {
+	RegisterTaskFatal("actions_action_user", &BaseConfig{
+		Enabled:    true,
+		RunAtStart: true,
+		Schedule:   "@weekly",
+	}, func(ctx context.Context, _ *user_model.User, _ Config) error {
+		return actions_service.CleanupActionUser(ctx)
 	})
 }
