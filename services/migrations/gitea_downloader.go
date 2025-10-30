@@ -56,7 +56,19 @@ func (f *GiteaDownloaderFactory) New(ctx context.Context, opts base.MigrateOptio
 
 	log.Trace("Create gitea downloader. BaseURL: %s RepoName: %s", baseURL, repoNameSpace)
 
-	return NewGiteaDownloader(ctx, baseURL, repoPath, opts.AuthUsername, opts.AuthPassword, opts.AuthToken)
+	giteaClient, err := gitea_sdk.NewClient(
+		baseURL,
+		gitea_sdk.SetToken(opts.AuthToken),
+		gitea_sdk.SetBasicAuth(opts.AuthUsername, opts.AuthPassword),
+		gitea_sdk.SetContext(ctx),
+		gitea_sdk.SetHTTPClient(NewMigrationHTTPClient()),
+	)
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to create NewGiteaDownloader for: %s. Error: %v", baseURL, err))
+		return nil, err
+	}
+
+	return NewGiteaDownloader(ctx, giteaClient, baseURL, repoPath)
 }
 
 // GitServiceType returns the type of git service
@@ -80,23 +92,11 @@ type GiteaDownloader struct {
 //
 //	Use either a username/password or personal token. token is preferred
 //	Note: Public access only allows very basic access
-func NewGiteaDownloader(ctx context.Context, baseURL, repoPath, username, password, token string) (*GiteaDownloader, error) {
-	giteaClient, err := gitea_sdk.NewClient(
-		baseURL,
-		gitea_sdk.SetToken(token),
-		gitea_sdk.SetBasicAuth(username, password),
-		gitea_sdk.SetContext(ctx),
-		gitea_sdk.SetHTTPClient(NewMigrationHTTPClient()),
-	)
-	if err != nil {
-		log.Error(fmt.Sprintf("Failed to create NewGiteaDownloader for: %s. Error: %v", baseURL, err))
-		return nil, err
-	}
-
+func NewGiteaDownloader(ctx context.Context, giteaClient *gitea_sdk.Client, baseURL, repoPath string) (*GiteaDownloader, error) {
 	path := strings.Split(repoPath, "/")
 
 	paginationSupport := true
-	if err = giteaClient.CheckServerVersionConstraint(">=1.12"); err != nil {
+	if err := giteaClient.CheckServerVersionConstraint(">=1.12"); err != nil {
 		paginationSupport = false
 	}
 
@@ -458,50 +458,109 @@ func (g *GiteaDownloader) GetIssues(page, perPage int) ([]*base.Issue, bool, err
 	return allIssues, isEnd, nil
 }
 
+func (g *GiteaDownloader) makeCommentsList(comments []*gitea_sdk.Comment, issueIndex, foreignIndex int64) []*base.Comment {
+	allComments := make([]*base.Comment, 0, g.maxPerPage)
+	for _, comment := range comments {
+		reactions, err := g.getCommentReactions(comment.ID)
+		if err != nil {
+			WarnAndNotice("Unable to load comment reactions during migrating issue #%d for comment %d in %s. Error: %v", foreignIndex, comment.ID, g, err)
+		}
+
+		allComments = append(allComments, &base.Comment{
+			IssueIndex:  issueIndex, // commentable.GetLocalIndex()
+			Index:       comment.ID,
+			PosterID:    comment.Poster.ID,
+			PosterName:  comment.Poster.UserName,
+			PosterEmail: comment.Poster.Email,
+			Content:     comment.Body,
+			Created:     comment.Created,
+			Updated:     comment.Updated,
+			Reactions:   reactions,
+		})
+	}
+	return allComments
+}
+
+func (g *GiteaDownloader) identicalComment(ourComment *base.Comment, foreignComment *gitea_sdk.Comment) bool {
+	createdIdentical := time.Time.Equal(ourComment.Created, foreignComment.Created)
+	personIdentical := ourComment.PosterName == foreignComment.Poster.UserName
+	contentIdentical := ourComment.Content == foreignComment.Body
+	if createdIdentical && personIdentical && contentIdentical {
+		return true
+	}
+	return false
+}
+
+func (g *GiteaDownloader) getIssueComments(foreignIndex int64, page int) ([]*gitea_sdk.Comment, error) {
+	comments, _, err := g.client.ListIssueComments(
+		g.repoOwner,
+		g.repoName,
+		foreignIndex,
+		gitea_sdk.ListIssueCommentOptions{
+			ListOptions: gitea_sdk.ListOptions{
+				PageSize: g.maxPerPage,
+				Page:     page,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("error while listing comments for issue #%d. Error: %w", foreignIndex, err)
+	}
+	return comments, nil
+}
+
 // GetComments returns comments according issueNumber
 func (g *GiteaDownloader) GetComments(commentable base.Commentable) ([]*base.Comment, bool, error) {
-	allComments := make([]*base.Comment, 0, g.maxPerPage)
+	forgejoComments := make([]*base.Comment, 0, g.maxPerPage)
 
-	for i := 1; ; i++ {
-		// make sure gitea can shutdown gracefully
+	// Initially get and append giteaComments of page 1
+	giteaComments, err := g.getIssueComments(commentable.GetForeignIndex(), 1)
+	if err != nil {
+		return nil, false, err
+	}
+	forgejoComments = append(forgejoComments, g.makeCommentsList(giteaComments, commentable.GetLocalIndex(), commentable.GetForeignIndex())...)
+
+	// We either get all comments at once (gitea pagination bug) or all comments fit in one page or pagination is off
+	shouldReturn := g.isSinglePage(forgejoComments)
+	if shouldReturn {
+		return forgejoComments, true, nil
+	}
+	// Only if the amount of comments == g.maxPerPage we assume there might be a next page
+	for i := 2; ; i++ {
+		// make sure forgejo can shutdown gracefully
 		select {
 		case <-g.ctx.Done():
 			return nil, false, nil
 		default:
 		}
 
-		comments, _, err := g.client.ListIssueComments(g.repoOwner, g.repoName, commentable.GetForeignIndex(), gitea_sdk.ListIssueCommentOptions{ListOptions: gitea_sdk.ListOptions{
-			PageSize: g.maxPerPage,
-			Page:     i,
-		}})
+		giteaComments, err = g.getIssueComments(commentable.GetForeignIndex(), i)
 		if err != nil {
-			return nil, false, fmt.Errorf("error while listing comments for issue #%d. Error: %w", commentable.GetForeignIndex(), err)
+			return nil, false, err
 		}
+		forgejoComments = append(forgejoComments, g.makeCommentsList(giteaComments, commentable.GetLocalIndex(), commentable.GetForeignIndex())...)
 
-		for _, comment := range comments {
-			reactions, err := g.getCommentReactions(comment.ID)
-			if err != nil {
-				WarnAndNotice("Unable to load comment reactions during migrating issue #%d for comment %d in %s. Error: %v", commentable.GetForeignIndex(), comment.ID, g, err)
-			}
-
-			allComments = append(allComments, &base.Comment{
-				IssueIndex:  commentable.GetLocalIndex(),
-				Index:       comment.ID,
-				PosterID:    comment.Poster.ID,
-				PosterName:  comment.Poster.UserName,
-				PosterEmail: comment.Poster.Email,
-				Content:     comment.Body,
-				Created:     comment.Created,
-				Updated:     comment.Updated,
-				Reactions:   reactions,
-			})
-		}
-
-		if !g.pagination || len(comments) < g.maxPerPage {
+		shouldBreak := g.isLastPage(forgejoComments, giteaComments)
+		if shouldBreak {
 			break
 		}
 	}
-	return allComments, true, nil
+	return forgejoComments, true, nil
+}
+
+func (g *GiteaDownloader) isSinglePage(forgejoComments []*base.Comment) bool {
+	if len(forgejoComments) > g.maxPerPage || len(forgejoComments) < g.maxPerPage || !g.pagination {
+		return true
+	}
+	return false
+}
+
+func (g *GiteaDownloader) isLastPage(forgejoComments []*base.Comment, giteaComments []*gitea_sdk.Comment) bool {
+	if len(giteaComments) < g.maxPerPage {
+		return true
+	} else if g.identicalComment((forgejoComments)[0], (giteaComments)[0]) && g.identicalComment((forgejoComments)[len(forgejoComments)-1], (giteaComments)[len(giteaComments)-1]) {
+		return true
+	}
+	return false
 }
 
 type ForgejoPullRequest struct {

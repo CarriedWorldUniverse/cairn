@@ -6,12 +6,14 @@ package migrations
 import (
 	"os"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
 	"forgejo.org/models/unittest"
 	base "forgejo.org/modules/migration"
 
+	gitea_sdk "code.gitea.io/sdk/gitea"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +25,15 @@ func TestGiteaDownloadRepo(t *testing.T) {
 	server := unittest.NewMockWebServer(t, "https://gitea.com", fixturePath, giteaToken != "")
 	defer server.Close()
 
-	downloader, err := NewGiteaDownloader(t.Context(), server.URL, "gitea/test_repo", "", "", giteaToken)
+	giteaClient, err := gitea_sdk.NewClient(
+		server.URL,
+		gitea_sdk.SetToken(giteaToken),
+		gitea_sdk.SetBasicAuth("", ""),
+		gitea_sdk.SetContext(t.Context()),
+		gitea_sdk.SetHTTPClient(NewMigrationHTTPClient()),
+	)
+	require.NoError(t, err, "Clould not create Client")
+	downloader, err := NewGiteaDownloader(t.Context(), giteaClient, server.URL, "gitea/test_repo")
 	if downloader == nil {
 		t.Fatal("NewGitlabDownloader is nil")
 	}
@@ -315,7 +325,15 @@ func TestForgejoDownloadRepo(t *testing.T) {
 	server := unittest.NewMockWebServer(t, "https://code.forgejo.org", fixturePath, token != "")
 	defer server.Close()
 
-	downloader, err := NewGiteaDownloader(t.Context(), server.URL, "Gusted/agit-test", "", "", token)
+	giteaClient, err := gitea_sdk.NewClient(
+		server.URL,
+		gitea_sdk.SetToken(token),
+		gitea_sdk.SetBasicAuth("", ""),
+		gitea_sdk.SetContext(t.Context()),
+		gitea_sdk.SetHTTPClient(NewMigrationHTTPClient()),
+	)
+	require.NoError(t, err, "Clould not create Client")
+	downloader, err := NewGiteaDownloader(t.Context(), giteaClient, server.URL, "Gusted/agit-test")
 	require.NoError(t, err)
 	require.NotNil(t, downloader)
 
@@ -349,4 +367,84 @@ func TestForgejoDownloadRepo(t *testing.T) {
 		PatchURL: server.URL + "/Gusted/agit-test/pulls/1.patch",
 		Flow:     1,
 	}, prs[0])
+}
+
+func createGiteaIssueComments(number int) []*gitea_sdk.Comment {
+	giteaComments := make([]*gitea_sdk.Comment, 0, number)
+	giteaUser := &gitea_sdk.User{
+		ID:       1,
+		UserName: "rando",
+	}
+	for i := 1; i <= number; i++ {
+		giteaComment := gitea_sdk.Comment{
+			ID:      1,
+			Poster:  giteaUser,
+			Created: time.Date(2025, time.August, 7, 13, i, 25, 0, time.UTC),
+			Updated: time.Date(2025, time.August, 7, 13, i+2, 25, 0, time.UTC),
+			Body:    strconv.Itoa(i),
+		}
+		giteaComments = append(giteaComments, &giteaComment)
+	}
+	return giteaComments
+}
+
+func createForgejoIssueComments(comments []*gitea_sdk.Comment) []*base.Comment {
+	forgejoComments := make([]*base.Comment, 0, len(comments))
+	for _, comment := range comments {
+		forgejoComments = append(forgejoComments, &base.Comment{
+			IssueIndex:  1, // commentable.GetLocalIndex()
+			Index:       comment.ID,
+			PosterID:    comment.Poster.ID,
+			PosterName:  comment.Poster.UserName,
+			PosterEmail: comment.Poster.Email,
+			Content:     comment.Body,
+			Created:     comment.Created,
+			Updated:     comment.Updated,
+			Reactions:   []*base.Reaction{},
+		})
+	}
+	return forgejoComments
+}
+
+func TestBreakConditions(t *testing.T) {
+	// Client
+	giteaClient, err := gitea_sdk.NewClient(
+		"https://gitea.com",
+		gitea_sdk.SetToken(""),
+		gitea_sdk.SetBasicAuth("", ""),
+		gitea_sdk.SetContext(t.Context()),
+		gitea_sdk.SetHTTPClient(NewMigrationHTTPClient()),
+	)
+	require.NoError(t, err, "Clould not create Client")
+
+	// Downloader
+	downloader, err := NewGiteaDownloader(t.Context(), giteaClient, "https://gitea.com", "gitea/test_repo")
+	if downloader == nil {
+		t.Fatal("NewGiteaDownloader is nil")
+	}
+	require.NoError(t, err, "Could not create Gitea Downloader")
+
+	pageSize := 20
+	buggyPageSize := 25
+	smallerPageSize := 15
+	downloader.maxPerPage = pageSize
+
+	bugResponse := createGiteaIssueComments(buggyPageSize)
+	commentsWithBug := createForgejoIssueComments(bugResponse)
+
+	shorterListResponse := createGiteaIssueComments(smallerPageSize)
+	commentsShortList := createForgejoIssueComments(shorterListResponse)
+
+	fullListResponse := createGiteaIssueComments(pageSize)
+	differentFullListResponse := createGiteaIssueComments(pageSize)
+	differentFullListResponse[0].Body = "Different String"
+	differentFullListResponse[len(differentFullListResponse)-1].Body = "Different String"
+	commentsFullList := createForgejoIssueComments(fullListResponse)
+
+	assert.True(t, downloader.isSinglePage(commentsWithBug))
+	assert.True(t, downloader.isSinglePage(commentsShortList))
+	assert.True(t, downloader.isLastPage(commentsShortList, shorterListResponse))
+	assert.True(t, downloader.isLastPage(commentsWithBug, bugResponse))
+	assert.False(t, downloader.isSinglePage(commentsFullList))
+	assert.False(t, downloader.isLastPage(commentsFullList, differentFullListResponse))
 }
