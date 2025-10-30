@@ -350,8 +350,10 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 			Status:            status,
 		})
 	}
-	if err := db.Insert(ctx, runJobs); err != nil {
-		return err
+	if len(runJobs) > 0 {
+		if err := db.Insert(ctx, runJobs); err != nil {
+			return err
+		}
 	}
 
 	// if there is a job in the waiting status, increase tasks version.
