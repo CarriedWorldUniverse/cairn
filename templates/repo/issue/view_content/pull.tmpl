@@ -94,6 +94,7 @@
 						</button>
 					{{end}}
 				</div>
+				{{template "repo/pulls/trust" .}}
 				{{template "repo/issue/view_content/update_branch_by_merge" $}}
 			{{else if .Issue.PullRequest.IsChecking}}
 				<div class="item">
@@ -187,6 +188,7 @@
 						</div>
 					{{end}}
 				{{end}}
+				{{template "repo/pulls/trust" .}}
 				{{template "repo/issue/view_content/update_branch_by_merge" $}}
 				{{if .Issue.PullRequest.IsEmpty}}
 					<div class="divider"></div>
