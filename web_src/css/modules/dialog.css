@@ -69,6 +69,10 @@ dialog .content {
   color: var(--color-text);
 }
 
+dialog .content:not(.tw-hidden) + form > .content {
+  padding-top: 0;
+}
+
 dialog .actions {
   background: var(--color-secondary-bg);
   border-color: var(--color-secondary);
