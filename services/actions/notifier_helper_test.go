@@ -241,3 +241,27 @@ func TestActionsNotifier_PreExecutionEventDetectionError(t *testing.T) {
 	assert.Equal(t, actions_model.StatusFailure, createdRun.Status)
 	assert.Equal(t, "actions.workflow.event_detection_error%!(EXTRA *errors.errorString=nothing is not a valid event)", createdRun.PreExecutionError)
 }
+
+func TestActionsNotifier_handleWorkflows_setRunTrustForPullRequest(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
+	// poster is not trusted implicitly
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 3})
+
+	testActionsNotifierPullRequest(t, repo, pr, &actions_module.DetectedWorkflow{
+		NeedApproval: true,
+	}, webhook_module.HookEventPullRequest)
+
+	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 1)
+
+	run := runs[0]
+	assert.True(t, run.IsForkPullRequest)
+	assert.Equal(t, pr.Issue.PosterID, run.PullRequestPosterID)
+	assert.Equal(t, pr.ID, run.PullRequestID)
+	assert.True(t, run.NeedApproval)
+}
