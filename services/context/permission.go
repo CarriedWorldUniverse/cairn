@@ -111,6 +111,19 @@ func RequireRepoReaderOr(unitTypes ...unit.Type) func(ctx *Context) {
 	}
 }
 
+func RequireRepoDelegateActionTrust() func(ctx *Context) {
+	return func(ctx *Context) {
+		if CheckRepoDelegateActionTrust(ctx) {
+			return
+		}
+		ctx.NotFound(ctx.Req.URL.RequestURI(), nil)
+	}
+}
+
+func CheckRepoDelegateActionTrust(ctx *Context) bool {
+	return ctx.Repo.IsAdmin() || (ctx.IsSigned && ctx.Doer.IsAdmin) || ctx.Repo.CanWrite(unit.TypeActions)
+}
+
 // CheckRepoScopedToken check whether personal access token has repo scope
 func CheckRepoScopedToken(ctx *Context, repo *repo_model.Repository, level auth_model.AccessTokenScopeLevel) {
 	if !ctx.IsBasicAuth || ctx.Data["IsApiToken"] != true {
