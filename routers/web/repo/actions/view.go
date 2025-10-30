@@ -680,42 +680,6 @@ func Cancel(ctx *context_module.Context) {
 	ctx.JSON(http.StatusOK, struct{}{})
 }
 
-func Approve(ctx *context_module.Context) {
-	runIndex := ctx.ParamsInt64("run")
-
-	current, jobs := getRunJobs(ctx, runIndex, -1)
-	if ctx.Written() {
-		return
-	}
-	run := current.Run
-	doer := ctx.Doer
-
-	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		run.NeedApproval = false
-		run.ApprovedBy = doer.ID
-		if err := actions_service.UpdateRun(ctx, run, "need_approval", "approved_by"); err != nil {
-			return err
-		}
-		for _, job := range jobs {
-			if len(job.Needs) == 0 && job.Status.IsBlocked() {
-				job.Status = actions_model.StatusWaiting
-				_, err := actions_service.UpdateRunJob(ctx, job, nil, "status")
-				if err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}); err != nil {
-		ctx.Error(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	actions_service.CreateCommitStatus(ctx, jobs...)
-
-	ctx.JSON(http.StatusOK, struct{}{})
-}
-
 // getRunJobs gets the jobs of runIndex, and returns jobs[jobIndex], jobs.
 // Any error will be written to the ctx.
 // It never returns a nil job of an empty jobs, if the jobIndex is out of range, it will be treated as 0.
