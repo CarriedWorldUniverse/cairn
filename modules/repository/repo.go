@@ -164,6 +164,7 @@ func PushUpdateAddTag(ctx context.Context, repo *repo_model.Repository, gitRepo 
 		NumCommits:   commitsCount,
 		CreatedUnix:  timeutil.TimeStamp(createdAt.Unix()),
 		IsTag:        true,
+		Note:         tag.Message,
 	}
 	if author != nil {
 		rel.PublisherID = author.ID
