@@ -623,3 +623,73 @@ test('view with pre-execution error', async () => {
   expect(block.exists()).toBe(true);
   expect(block.text()).toBe('pre-execution error Oops, I dropped it.');
 });
+
+test('Offset index', async () => {
+  Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
+  vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {
+    const stepsLog_value = [
+      {
+        step: 0,
+        cursor: 0,
+        lines: [
+          {index: 1, message: '\u001b]9;4;3\u0007\r\u001bM\u001b[?2026l\u001b[?2026h\u001b[J', timestamp: 0},
+          {index: 2, message: 'second line', timestamp: 0},
+          {index: 3, message: '\u001b]9;4;3\u0007\r\u001bM\u001b[?2026l\u001b[J\u001b]9;4;0\u0007\u001b[?2026h\u001b[J\u001b]9;4;1;0\u0007\u001b[?2026l\u001b[J\u001b]9;4;0\u0007', timestamp: 0},
+          {index: 4, message: 'fourth line', timestamp: 0},
+        ],
+      },
+    ];
+    const jobs_value = {
+      state: {
+        run: {
+          status: 'success',
+          commit: {
+            pusher: {},
+          },
+        },
+        currentJob: {
+          steps: [
+            {
+              summary: 'Test Job',
+              duration: '1s',
+              status: 'success',
+            },
+          ],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
+        },
+      },
+      logs: {
+        stepsLog: opts.body?.includes('"cursor":null') ? stepsLog_value : [],
+      },
+    };
+
+    return Promise.resolve({
+      ok: true,
+      json: vi.fn().mockResolvedValue(
+        url.endsWith('/artifacts') ? [] : jobs_value,
+      ),
+    });
+  });
+
+  const wrapper = mount(RepoActionView, {
+    props: defaultTestProps,
+  });
+  await flushPromises();
+  await wrapper.get('.job-step-summary').trigger('click');
+  await flushPromises();
+
+  // Check if two lines where rendered
+  expect(wrapper.findAll('.job-log-line').length).toEqual(2);
+
+  // Check line one.
+  expect(wrapper.get('.job-log-line:nth-of-type(1)').attributes('id')).toEqual('jobstep-0-1');
+  expect(wrapper.get('.job-log-line:nth-of-type(1) .line-num').text()).toEqual('1');
+  expect(wrapper.get('.job-log-line:nth-of-type(1) .line-num').attributes('href')).toEqual('#jobstep-0-1');
+  expect(wrapper.get('.job-log-line:nth-of-type(1) .log-msg').text()).toEqual('second line');
+
+  // Check line two.
+  expect(wrapper.get('.job-log-line:nth-of-type(2)').attributes('id')).toEqual('jobstep-0-2');
+  expect(wrapper.get('.job-log-line:nth-of-type(2) .line-num').text()).toEqual('2');
+  expect(wrapper.get('.job-log-line:nth-of-type(2) .line-num').attributes('href')).toEqual('#jobstep-0-2');
+  expect(wrapper.get('.job-log-line:nth-of-type(2) .log-msg').text()).toEqual('fourth line');
+});
