@@ -99,8 +99,8 @@
 				{{if .Permission.CanRead $.UnitTypeIssues}}
 					<a class="{{if .PageIsIssueList}}active {{end}}item" href="{{.RepoLink}}/issues">
 						{{svg "octicon-issue-opened"}} {{ctx.Locale.Tr "repo.issues"}}
-						{{if .Repository.NumOpenIssues}}
-							<span class="ui small label">{{CountFmt .Repository.NumOpenIssues}}</span>
+						{{if (.Repository.NumOpenIssues ctx)}}
+							<span class="ui small label">{{CountFmt (.Repository.NumOpenIssues ctx)}}</span>
 						{{end}}
 					</a>
 				{{end}}
@@ -114,8 +114,8 @@
 				{{if and .Repository.CanEnablePulls (.Permission.CanRead $.UnitTypePullRequests)}}
 					<a class="{{if .PageIsPullList}}active {{end}}item" href="{{.RepoLink}}/pulls">
 						{{svg "octicon-git-pull-request"}} {{ctx.Locale.Tr "repo.pulls"}}
-						{{if .Repository.NumOpenPulls}}
-							<span class="ui small label">{{CountFmt .Repository.NumOpenPulls}}</span>
+						{{if (.Repository.NumOpenPulls ctx)}}
+							<span class="ui small label">{{CountFmt (.Repository.NumOpenPulls ctx)}}</span>
 						{{end}}
 					</a>
 				{{end}}

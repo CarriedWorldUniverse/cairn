@@ -37,7 +37,7 @@ func TestArchivedIssues(t *testing.T) {
 	NumIssues := make(map[int64]int)
 	for _, repo := range repos {
 		IsArchived[repo.ID] = repo.IsArchived
-		NumIssues[repo.ID] = repo.NumIssues
+		NumIssues[repo.ID] = repo.NumIssues(t.Context())
 	}
 	assert.False(t, IsArchived[50])
 	assert.Equal(t, 1, NumIssues[50])

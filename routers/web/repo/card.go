@@ -200,16 +200,16 @@ func drawRepoSummaryCard(ctx *context.Context, repo *repo_model.Repository) (*ca
 	}
 
 	issuesText := ctx.Locale.TrN(
-		repo.NumOpenIssues,
+		repo.NumOpenIssues(ctx),
 		"repo.activity.title.issues_1",
 		"repo.activity.title.issues_n",
-		repo.NumOpenIssues,
+		repo.NumOpenIssues(ctx),
 	)
 	pullRequestsText := ctx.Locale.TrN(
-		repo.NumOpenPulls,
+		repo.NumOpenPulls(ctx),
 		"repo.activity.title.prs_1",
 		"repo.activity.title.prs_n",
-		repo.NumOpenPulls,
+		repo.NumOpenPulls(ctx),
 	)
 
 	bottomCountText := fmt.Sprintf("%s • %s", issuesText, pullRequestsText)

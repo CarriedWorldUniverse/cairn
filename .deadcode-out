@@ -80,7 +80,6 @@ forgejo.org/modules/base
 	SetupGiteaRoot
 
 forgejo.org/modules/cache
-	GetInt
 	WithNoCacheContext
 	RemoveContextData
 
