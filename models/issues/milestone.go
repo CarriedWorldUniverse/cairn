@@ -15,6 +15,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
+	"forgejo.org/services/stats"
 
 	"xorm.io/builder"
 )
@@ -193,42 +194,7 @@ func updateMilestone(ctx context.Context, m *Milestone) error {
 	if err != nil {
 		return err
 	}
-	return UpdateMilestoneCounters(ctx, m.ID)
-}
-
-func updateMilestoneCounters(ctx context.Context, id int64, noAutoTime bool, updatedUnix timeutil.TimeStamp) error {
-	e := db.GetEngine(ctx)
-	sess := e.ID(id).
-		SetExpr("num_issues", builder.Select("count(*)").From("issue").Where(
-			builder.Eq{"milestone_id": id},
-		)).
-		SetExpr("num_closed_issues", builder.Select("count(*)").From("issue").Where(
-			builder.Eq{
-				"milestone_id": id,
-				"is_closed":    true,
-			},
-		))
-	if noAutoTime {
-		sess.SetExpr("updated_unix", updatedUnix).NoAutoTime()
-	}
-	_, err := sess.Update(&Milestone{})
-	if err != nil {
-		return err
-	}
-	_, err = e.Exec("UPDATE `milestone` SET completeness=100*num_closed_issues/(CASE WHEN num_issues > 0 THEN num_issues ELSE 1 END) WHERE id=?",
-		id,
-	)
-	return err
-}
-
-// UpdateMilestoneCounters calculates NumIssues, NumClosesIssues and Completeness
-func UpdateMilestoneCounters(ctx context.Context, id int64) error {
-	return updateMilestoneCounters(ctx, id, false, 0)
-}
-
-// UpdateMilestoneCountersWithDate calculates NumIssues, NumClosesIssues and Completeness and set the UpdatedUnix date
-func UpdateMilestoneCountersWithDate(ctx context.Context, id int64, updatedUnix timeutil.TimeStamp) error {
-	return updateMilestoneCounters(ctx, id, true, updatedUnix)
+	return stats.QueueRecalcMilestoneByID(m.ID)
 }
 
 // ChangeMilestoneStatusByRepoIDAndID changes a milestone open/closed status if the milestone ID is in the repo.
@@ -383,4 +349,47 @@ func InsertMilestones(ctx context.Context, ms ...*Milestone) (err error) {
 		return err
 	}
 	return committer.Commit()
+}
+
+func init() {
+	stats.RegisterRecalc(stats.MilestoneByMilestoneID, doRecalcMilestoneByID)
+}
+
+func doRecalcMilestoneByID(ctx context.Context, milestoneID int64, updateTimestamp optional.Option[timeutil.TimeStamp]) error {
+	return doRecalcMilestone(ctx, builder.Eq{"id": milestoneID}, updateTimestamp)
+}
+
+func doRecalcMilestone(ctx context.Context, cond builder.Cond, updateTimestamp optional.Option[timeutil.TimeStamp]) error {
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		e := db.GetEngine(ctx)
+
+		sess := e.
+			SetExpr("num_issues",
+				builder.Select("count(*)").From("issue").
+					Where(builder.Eq{"milestone_id": builder.Expr("milestone.id")}),
+			).
+			SetExpr("num_closed_issues",
+				builder.Select("count(*)").
+					From("issue").
+					Where(builder.Eq{
+						"issue.milestone_id": builder.Expr("milestone.id"),
+						"issue.is_closed":    true,
+					}),
+			).
+			Where(cond)
+		if updateTimestamp.Has() {
+			sess.SetExpr("updated_unix", updateTimestamp.Value()).NoAutoTime()
+		}
+		_, err := sess.Update(&Milestone{})
+		if err != nil {
+			return err
+		}
+
+		_, err = e.
+			SetExpr("completeness", "100*num_closed_issues/(CASE WHEN num_issues > 0 THEN num_issues ELSE 1 END)").
+			Where(cond).
+			NoAutoTime(). // don't change time from earlier UPDATE
+			Update(&Milestone{})
+		return err
+	})
 }

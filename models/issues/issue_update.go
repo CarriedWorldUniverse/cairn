@@ -111,11 +111,11 @@ func doChangeIssueStatus(ctx context.Context, issue *Issue, doer *user_model.Use
 	// Update issue count of milestone
 	if issue.MilestoneID > 0 {
 		if issue.NoAutoTime {
-			if err := UpdateMilestoneCountersWithDate(ctx, issue.MilestoneID, issue.UpdatedUnix); err != nil {
+			if err := stats.QueueRecalcMilestoneByIDWithDate(issue.MilestoneID, issue.UpdatedUnix); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := UpdateMilestoneCounters(ctx, issue.MilestoneID); err != nil {
+			if err := stats.QueueRecalcMilestoneByID(issue.MilestoneID); err != nil {
 				return nil, err
 			}
 		}
@@ -353,7 +353,7 @@ func NewIssueWithIndex(ctx context.Context, doer *user_model.User, opts NewIssue
 	}
 
 	if opts.Issue.MilestoneID > 0 {
-		if err := UpdateMilestoneCounters(ctx, opts.Issue.MilestoneID); err != nil {
+		if err := stats.QueueRecalcMilestoneByID(opts.Issue.MilestoneID); err != nil {
 			return err
 		}
 

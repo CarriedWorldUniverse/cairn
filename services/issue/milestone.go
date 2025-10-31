@@ -12,6 +12,7 @@ import (
 	issues_model "forgejo.org/models/issues"
 	user_model "forgejo.org/models/user"
 	notify_service "forgejo.org/services/notify"
+	"forgejo.org/services/stats"
 )
 
 func updateMilestoneCounters(ctx context.Context, issue *issues_model.Issue, id int64) error {
@@ -29,11 +30,11 @@ func updateMilestoneCounters(ctx context.Context, issue *issues_model.Issue, id 
 		if issue.UpdatedUnix > updatedUnix {
 			updatedUnix = issue.UpdatedUnix
 		}
-		if err := issues_model.UpdateMilestoneCountersWithDate(ctx, id, updatedUnix); err != nil {
+		if err := stats.QueueRecalcMilestoneByIDWithDate(id, updatedUnix); err != nil {
 			return err
 		}
 	} else {
-		if err := issues_model.UpdateMilestoneCounters(ctx, id); err != nil {
+		if err := stats.QueueRecalcMilestoneByID(id); err != nil {
 			return err
 		}
 	}

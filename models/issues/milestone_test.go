@@ -15,6 +15,7 @@ import (
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/services/stats"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -340,14 +341,16 @@ func TestUpdateMilestoneCounters(t *testing.T) {
 	issue.ClosedUnix = timeutil.TimeStampNow()
 	_, err := db.GetEngine(db.DefaultContext).ID(issue.ID).Cols("is_closed", "closed_unix").Update(issue)
 	require.NoError(t, err)
-	require.NoError(t, issues_model.UpdateMilestoneCounters(db.DefaultContext, issue.MilestoneID))
+	err = stats.QueueRecalcMilestoneByID(issue.MilestoneID)
+	require.NoError(t, err)
 	unittest.CheckConsistencyFor(t, &issues_model.Milestone{})
 
 	issue.IsClosed = false
 	issue.ClosedUnix = 0
 	_, err = db.GetEngine(db.DefaultContext).ID(issue.ID).Cols("is_closed", "closed_unix").Update(issue)
 	require.NoError(t, err)
-	require.NoError(t, issues_model.UpdateMilestoneCounters(db.DefaultContext, issue.MilestoneID))
+	err = stats.QueueRecalcMilestoneByID(issue.MilestoneID)
+	require.NoError(t, err)
 	unittest.CheckConsistencyFor(t, &issues_model.Milestone{})
 }
 

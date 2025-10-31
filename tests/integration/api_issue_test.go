@@ -412,6 +412,7 @@ func TestAPIEditIssueMilestoneAutoDate(t *testing.T) {
 			Milestone: &milestone,
 		}).AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
+		unittest.FlushAsyncCalcs(t)
 
 		// the execution of the API call supposedly lasted less than one minute
 		milestoneAfter := unittest.AssertExistsAndLoadBean(t, &issues_model.Milestone{ID: milestone})
@@ -431,6 +432,7 @@ func TestAPIEditIssueMilestoneAutoDate(t *testing.T) {
 			Updated:   &updatedAt,
 		}).AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
+		unittest.FlushAsyncCalcs(t)
 
 		// the milestone date should be set to 'updatedAt'
 		// dates are converted into the same tz, in order to compare them
@@ -452,6 +454,7 @@ func TestAPIEditIssueMilestoneAutoDate(t *testing.T) {
 			Updated:   &updatedAt,
 		}).AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
+		unittest.FlushAsyncCalcs(t)
 
 		// the milestone date should not change
 		// dates are converted into the same tz, in order to compare them

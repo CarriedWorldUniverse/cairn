@@ -23,6 +23,7 @@ import (
 	"forgejo.org/modules/storage"
 	"forgejo.org/modules/timeutil"
 	notify_service "forgejo.org/services/notify"
+	"forgejo.org/services/stats"
 )
 
 // NewIssue creates new issue with labels for repository.
@@ -303,7 +304,7 @@ func deleteIssue(ctx context.Context, issue *issues_model.Issue) error {
 		}
 	}
 
-	if err := issues_model.UpdateMilestoneCounters(ctx, issue.MilestoneID); err != nil {
+	if err := stats.QueueRecalcMilestoneByID(issue.MilestoneID); err != nil {
 		return fmt.Errorf("error updating counters for milestone id %d: %w",
 			issue.MilestoneID, err)
 	}

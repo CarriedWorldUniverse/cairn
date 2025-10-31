@@ -521,11 +521,11 @@ func init() {
 	stats.RegisterRecalc(stats.LabelByRepoID, doRecalcLabelByRepoID)
 }
 
-func doRecalcLabelByID(ctx context.Context, labelID int64) error {
+func doRecalcLabelByID(ctx context.Context, labelID int64, _ optional.Option[timeutil.TimeStamp]) error {
 	return doRecalcLabel(ctx, builder.Eq{"id": labelID})
 }
 
-func doRecalcLabelByRepoID(ctx context.Context, repoID int64) error {
+func doRecalcLabelByRepoID(ctx context.Context, repoID int64, _ optional.Option[timeutil.TimeStamp]) error {
 	return doRecalcLabel(ctx, builder.Eq{"repo_id": repoID})
 }
 
