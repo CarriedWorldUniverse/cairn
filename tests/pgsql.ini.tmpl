@@ -150,3 +150,7 @@ FILE_EXTENSIONS = .iframehtml
 RENDER_COMMAND = cat
 RENDER_CONTENT_MODE = iframe
 NEED_POSTPROCESS = false
+
+[cache]
+# Disable caching so that data isn't kept in-memory between test cases
+ITEM_TTL = -1

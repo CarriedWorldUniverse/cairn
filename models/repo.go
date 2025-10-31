@@ -155,30 +155,6 @@ func CheckRepoStats(ctx context.Context) error {
 			repoStatsCorrectNumStars,
 			"repository count 'num_stars'",
 		},
-		// Repository.NumIssues
-		{
-			statsQuery("SELECT repo.id FROM `repository` repo WHERE repo.num_issues!=(SELECT COUNT(*) FROM `issue` WHERE repo_id=repo.id AND is_pull=?)", false),
-			repoStatsCorrectNumIssues,
-			"repository count 'num_issues'",
-		},
-		// Repository.NumClosedIssues
-		{
-			statsQuery("SELECT repo.id FROM `repository` repo WHERE repo.num_closed_issues!=(SELECT COUNT(*) FROM `issue` WHERE repo_id=repo.id AND is_closed=? AND is_pull=?)", true, false),
-			repoStatsCorrectNumClosedIssues,
-			"repository count 'num_closed_issues'",
-		},
-		// Repository.NumPulls
-		{
-			statsQuery("SELECT repo.id FROM `repository` repo WHERE repo.num_pulls!=(SELECT COUNT(*) FROM `issue` WHERE repo_id=repo.id AND is_pull=?)", true),
-			repoStatsCorrectNumPulls,
-			"repository count 'num_pulls'",
-		},
-		// Repository.NumClosedPulls
-		{
-			statsQuery("SELECT repo.id FROM `repository` repo WHERE repo.num_closed_pulls!=(SELECT COUNT(*) FROM `issue` WHERE repo_id=repo.id AND is_closed=? AND is_pull=?)", true, true),
-			repoStatsCorrectNumClosedPulls,
-			"repository count 'num_closed_pulls'",
-		},
 		// Label.NumIssues
 		{
 			statsQuery("SELECT label.id FROM `label` WHERE label.num_issues!=(SELECT COUNT(*) FROM `issue_label` WHERE label_id=label.id)"),

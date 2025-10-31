@@ -9,10 +9,6 @@
   num_watches: 4
   num_stars: 0
   num_forks: 0
-  num_issues: 2
-  num_closed_issues: 1
-  num_pulls: 3
-  num_closed_pulls: 0
   num_milestones: 3
   num_closed_milestones: 1
   num_projects: 1
@@ -43,10 +39,6 @@
   num_watches: 1
   num_stars: 1
   num_forks: 0
-  num_issues: 2
-  num_closed_issues: 1
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -74,10 +66,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 1
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 1
@@ -108,10 +96,6 @@
   num_watches: 0
   num_stars: 1
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -140,10 +124,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 1
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -173,10 +153,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -206,10 +182,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -239,10 +211,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -272,10 +240,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -304,10 +268,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 1
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 1
   num_closed_milestones: 0
   num_projects: 0
@@ -336,10 +296,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -367,10 +323,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -398,10 +350,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -430,10 +378,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -462,10 +406,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -494,10 +434,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -525,10 +461,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -556,10 +488,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -587,10 +515,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -618,10 +542,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -649,10 +569,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -680,10 +596,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -711,10 +623,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -742,10 +650,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -773,10 +677,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -804,10 +704,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -835,10 +731,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 1
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -866,10 +758,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 1
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -897,10 +785,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -928,10 +812,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -960,10 +840,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -991,10 +867,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 2
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1025,10 +897,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1056,10 +924,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1087,10 +951,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1119,10 +979,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1151,10 +1007,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1183,10 +1035,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1215,10 +1063,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1247,10 +1091,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1279,10 +1119,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1311,10 +1147,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 1
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 1
   num_closed_milestones: 0
   num_projects: 0
@@ -1342,10 +1174,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1374,10 +1202,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1405,10 +1229,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1437,10 +1257,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1469,10 +1285,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1501,10 +1313,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1534,10 +1342,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1566,10 +1370,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 1
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1598,10 +1398,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 1
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1630,10 +1426,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1662,10 +1454,6 @@
   is_archived: false
   is_empty: false
   is_private: false
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_watches: 0
@@ -1703,7 +1491,6 @@
   is_empty: false
   is_archived: false
   is_private: true
-  num_issues: 1
   status: 0
   topics: '[]'
 
@@ -1718,7 +1505,6 @@
   is_archived: false
   is_private: true
   status: 0
-  num_issues: 0
   topics: '[]'
 
 -
@@ -1732,7 +1518,6 @@
   is_archived: false
   is_private: false
   status: 0
-  num_issues: 0
   topics: '[]'
 
 -
@@ -1745,10 +1530,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1778,7 +1559,6 @@
   is_archived: false
   is_private: false
   status: 0
-  num_issues: 0
   topics: '[]'
 
 -
@@ -1792,7 +1572,6 @@
   is_archived: false
   is_private: true
   status: 0
-  num_issues: 0
   topics: '[]'
 
 -
@@ -1805,10 +1584,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1837,10 +1612,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 1
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1868,10 +1639,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0
@@ -1900,10 +1667,6 @@
   num_watches: 0
   num_stars: 0
   num_forks: 0
-  num_issues: 0
-  num_closed_issues: 0
-  num_pulls: 0
-  num_closed_pulls: 0
   num_milestones: 0
   num_closed_milestones: 0
   num_projects: 0

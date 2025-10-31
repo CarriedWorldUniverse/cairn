@@ -140,7 +140,7 @@ func TestMigrateWithIssueComments(t *testing.T) {
 		}
 
 		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerID: repoOwner.ID, Name: repoName})
-		assert.Equal(t, 1, repo.NumIssues)
+		assert.Equal(t, 1, repo.NumIssues(t.Context()))
 
 		issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{RepoID: repo.ID, Index: 1})
 		assert.Equal(t, numComments, issue.NumComments)

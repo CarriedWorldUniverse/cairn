@@ -118,27 +118,27 @@ func getPullBadge(ctx *context_module.Context, variant string, num int) {
 }
 
 func GetOpenIssuesBadge(ctx *context_module.Context) {
-	getIssueBadge(ctx, "open", ctx.Repo.Repository.NumOpenIssues)
+	getIssueBadge(ctx, "open", ctx.Repo.Repository.NumOpenIssues(ctx))
 }
 
 func GetClosedIssuesBadge(ctx *context_module.Context) {
-	getIssueBadge(ctx, "closed", ctx.Repo.Repository.NumClosedIssues)
+	getIssueBadge(ctx, "closed", ctx.Repo.Repository.NumClosedIssues(ctx))
 }
 
 func GetTotalIssuesBadge(ctx *context_module.Context) {
-	getIssueBadge(ctx, "", ctx.Repo.Repository.NumIssues)
+	getIssueBadge(ctx, "", ctx.Repo.Repository.NumIssues(ctx))
 }
 
 func GetOpenPullsBadge(ctx *context_module.Context) {
-	getPullBadge(ctx, "open", ctx.Repo.Repository.NumOpenPulls)
+	getPullBadge(ctx, "open", ctx.Repo.Repository.NumOpenPulls(ctx))
 }
 
 func GetClosedPullsBadge(ctx *context_module.Context) {
-	getPullBadge(ctx, "closed", ctx.Repo.Repository.NumClosedPulls)
+	getPullBadge(ctx, "closed", ctx.Repo.Repository.NumClosedPulls(ctx))
 }
 
 func GetTotalPullsBadge(ctx *context_module.Context) {
-	getPullBadge(ctx, "", ctx.Repo.Repository.NumPulls)
+	getPullBadge(ctx, "", ctx.Repo.Repository.NumPulls(ctx))
 }
 
 func GetStarsBadge(ctx *context_module.Context) {

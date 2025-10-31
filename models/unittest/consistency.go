@@ -94,22 +94,6 @@ func init() {
 		assert.EqualValues(t, repo.int("NumWatches"), actual,
 			"Unexpected number of watches for repo id: %d", repo.int("ID"))
 
-		actual = GetCountByCond(t, "issue", builder.Eq{"is_pull": false, "repo_id": repo.int("ID")})
-		assert.EqualValues(t, repo.int("NumIssues"), actual,
-			"Unexpected number of issues for repo id: %d", repo.int("ID"))
-
-		actual = GetCountByCond(t, "issue", builder.Eq{"is_pull": false, "is_closed": true, "repo_id": repo.int("ID")})
-		assert.EqualValues(t, repo.int("NumClosedIssues"), actual,
-			"Unexpected number of closed issues for repo id: %d", repo.int("ID"))
-
-		actual = GetCountByCond(t, "issue", builder.Eq{"is_pull": true, "repo_id": repo.int("ID")})
-		assert.EqualValues(t, repo.int("NumPulls"), actual,
-			"Unexpected number of pulls for repo id: %d", repo.int("ID"))
-
-		actual = GetCountByCond(t, "issue", builder.Eq{"is_pull": true, "is_closed": true, "repo_id": repo.int("ID")})
-		assert.EqualValues(t, repo.int("NumClosedPulls"), actual,
-			"Unexpected number of closed pulls for repo id: %d", repo.int("ID"))
-
 		actual = GetCountByCond(t, "milestone", builder.Eq{"is_closed": true, "repo_id": repo.int("ID")})
 		assert.EqualValues(t, repo.int("NumClosedMilestones"), actual,
 			"Unexpected number of closed milestones for repo id: %d", repo.int("ID"))

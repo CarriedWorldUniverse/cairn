@@ -80,7 +80,7 @@ func GetCache() mc.Cache {
 
 // GetString returns the key value from cache with callback when no key exists in cache
 func GetString(key string, getFunc func() (string, error)) (string, error) {
-	if conn == nil || setting.CacheService.TTL == 0 {
+	if conn == nil || setting.CacheService.TTL <= 0 {
 		return getFunc()
 	}
 
@@ -107,7 +107,7 @@ func GetString(key string, getFunc func() (string, error)) (string, error) {
 
 // GetInt returns key value from cache with callback when no key exists in cache
 func GetInt(key string, getFunc func() (int, error)) (int, error) {
-	if conn == nil || setting.CacheService.TTL == 0 {
+	if conn == nil || setting.CacheService.TTL <= 0 {
 		return getFunc()
 	}
 
@@ -142,7 +142,7 @@ func GetInt(key string, getFunc func() (int, error)) (int, error) {
 
 // GetInt64 returns key value from cache with callback when no key exists in cache
 func GetInt64(key string, getFunc func() (int64, error)) (int64, error) {
-	if conn == nil || setting.CacheService.TTL == 0 {
+	if conn == nil || setting.CacheService.TTL <= 0 {
 		return getFunc()
 	}
 
