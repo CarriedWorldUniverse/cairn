@@ -9,6 +9,9 @@ import (
 	"sync"
 	"testing"
 
+	"forgejo.org/modules/optional"
+	"forgejo.org/modules/timeutil"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +19,7 @@ import (
 func TestQueueAndFlush(t *testing.T) {
 	var mu sync.Mutex
 	callValues := []int64{}
-	RegisterRecalc(-99, func(ctx context.Context, i int64) error {
+	RegisterRecalc(-99, func(ctx context.Context, i int64, _ optional.Option[timeutil.TimeStamp]) error {
 		mu.Lock()
 		defer mu.Unlock()
 		callValues = append(callValues, i)
@@ -41,7 +44,7 @@ func TestQueueAndFlush(t *testing.T) {
 func TestQueueUnique(t *testing.T) {
 	var mu sync.Mutex
 	callValues := []int64{}
-	RegisterRecalc(-100, func(ctx context.Context, i int64) error {
+	RegisterRecalc(-100, func(ctx context.Context, i int64, _ optional.Option[timeutil.TimeStamp]) error {
 		mu.Lock()
 		defer mu.Unlock()
 		callValues = append(callValues, i)
@@ -72,7 +75,7 @@ func TestQueueUnique(t *testing.T) {
 func TestQueueAndError(t *testing.T) {
 	var mu sync.Mutex
 	callValues := []int64{}
-	RegisterRecalc(-101, func(ctx context.Context, i int64) error {
+	RegisterRecalc(-101, func(ctx context.Context, i int64, _ optional.Option[timeutil.TimeStamp]) error {
 		mu.Lock()
 		defer mu.Unlock()
 		callValues = append(callValues, i)

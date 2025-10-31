@@ -43,7 +43,9 @@ import (
 
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/queue"
+	"forgejo.org/modules/timeutil"
 )
 
 type RecalcType int
@@ -51,9 +53,10 @@ type RecalcType int
 const (
 	LabelByLabelID RecalcType = iota
 	LabelByRepoID
+	MilestoneByMilestoneID
 )
 
-type RecalcHandler func(context.Context, int64) error
+type RecalcHandler func(context.Context, int64, optional.Option[timeutil.TimeStamp]) error
 
 var (
 	// string queue is used for consistent unique behaviour independent of json serialization
@@ -99,7 +102,7 @@ func handler(items ...string) []string {
 			log.Error("Unrecognized RecalcType %d, ignoring", req.RecalcType)
 			continue
 		}
-		if err := handler(ctx, req.ObjectID); err != nil {
+		if err := handler(ctx, req.ObjectID, req.UpdateTimestamp); err != nil {
 			log.Error("Error in stats recalc %v on object %d: %v", req.RecalcType, req.ObjectID, err)
 		}
 	}
