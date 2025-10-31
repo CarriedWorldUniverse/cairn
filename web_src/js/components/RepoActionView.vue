@@ -62,6 +62,7 @@ export default {
       initialLoadComplete: false,
       needLoadingWithLogCursors: null,
       intervalID: null,
+      lineNumberOffset: [],
       currentJobStepsStates: [],
       artifacts: [],
       menuVisible: undefined,
@@ -232,15 +233,16 @@ export default {
     },
 
     createLogLine(line, startTime, stepIndex, group) {
+      const lineNo = line.index - this.lineNumberOffset[stepIndex];
       const div = document.createElement('div');
       div.classList.add('job-log-line');
-      div.setAttribute('id', `jobstep-${stepIndex}-${line.index}`);
+      div.setAttribute('id', `jobstep-${stepIndex}-${lineNo}`);
       div._jobLogTime = line.timestamp;
 
       const lineNumber = document.createElement('a');
       lineNumber.classList.add('line-num', 'muted');
-      lineNumber.textContent = line.index;
-      lineNumber.setAttribute('href', `#jobstep-${stepIndex}-${line.index}`);
+      lineNumber.textContent = lineNo;
+      lineNumber.setAttribute('href', `#jobstep-${stepIndex}-${lineNo}`);
       div.append(lineNumber);
 
       // for "Show timestamps"
@@ -259,6 +261,13 @@ export default {
 
       let logMessage = document.createElement('span');
       logMessage.innerHTML = renderAnsi(line.message);
+      // If the input to renderAnsi is not empty and the output is empty we can
+      // assume the input was only ANSI escape codes that have been removed. In
+      // that case we should not display this message
+      if (line.message !== '' && logMessage.innerHTML === '') {
+        this.lineNumberOffset[stepIndex]++;
+        return [];
+      }
       if (group.isHeader) {
         const details = document.createElement('details');
         details.addEventListener('toggle', this.toggleGroupLogs);
@@ -407,6 +416,7 @@ export default {
         // append logs to the UI
         for (const logs of job.logs.stepsLog) {
           // save the cursor, it will be passed to backend next time
+          this.lineNumberOffset[logs.step] = 0;
           this.currentJobStepsStates[logs.step].cursor = logs.cursor;
           this.appendLogs(logs.step, logs.lines, logs.started);
         }

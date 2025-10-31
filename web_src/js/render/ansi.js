@@ -2,7 +2,9 @@ import {AnsiUp} from 'ansi_up';
 
 const replacements = [
   [/\x1b\[\d+[A-H]/g, ''], // Move cursor, treat them as no-op
+  [/\x1bM/g, ''], // Move cursor one line up, threat them as no-op.
   [/\x1b\[\d?[JK]/g, '\r'], // Erase display/line, treat them as a Carriage Return
+  [/\x1b\]9;\d+.*?(\x07|\x1b\\)/g, ''], // ConEmu, treat them as no-op.
 ];
 
 // render ANSI to HTML
