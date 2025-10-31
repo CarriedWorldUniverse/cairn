@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -17,7 +19,7 @@ var (
 )
 
 // LineBlame returns the latest commit at the given line
-func (repo *Repository) LineBlame(revision, file string, line uint64) (*Commit, error) {
+func (repo *Repository) LineBlame(revision, file string, line uint64) (*Commit, uint64, error) {
 	res, _, gitErr := NewCommand(repo.Ctx, "blame").
 		AddOptionFormat("-L %d,%d", line, line).
 		AddOptionValues("-p", revision).
@@ -26,24 +28,40 @@ func (repo *Repository) LineBlame(revision, file string, line uint64) (*Commit, 
 		stdErr := gitErr.Stderr()
 
 		if stdErr == fmt.Sprintf("fatal: no such path %s in %s\n", file, revision) {
-			return nil, ErrBlameFileDoesNotExist
+			return nil, 0, ErrBlameFileDoesNotExist
 		}
 		if notEnoughLinesRe.MatchString(stdErr) {
-			return nil, ErrBlameFileNotEnoughLines
+			return nil, 0, ErrBlameFileNotEnoughLines
 		}
 
-		return nil, gitErr
+		return nil, 0, gitErr
 	}
 
 	objectFormat, err := repo.GetObjectFormat()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	objectIDLen := objectFormat.FullLength()
-	if len(res) < objectIDLen {
-		return nil, fmt.Errorf("output of blame is invalid, cannot contain commit ID: %s", res)
+
+	if len(res) < objectIDLen+1 {
+		return nil, 0, fmt.Errorf("output of blame is invalid, cannot contain commit ID: %s", res)
 	}
 
-	return repo.GetCommit(res[:objectIDLen])
+	commit, err := repo.GetCommit(res[:objectIDLen])
+	if err != nil {
+		return nil, 0, fmt.Errorf("GetCommit: %w", err)
+	}
+
+	endIdxOriginalLineNo := strings.IndexRune(res[objectIDLen+1:], ' ')
+	if endIdxOriginalLineNo == -1 {
+		return nil, 0, fmt.Errorf("output of blame is invalid, cannot contain original line number: %s", res)
+	}
+
+	originalLineNo, err := strconv.ParseUint(res[objectIDLen+1:objectIDLen+1+endIdxOriginalLineNo], 10, 64)
+	if err != nil {
+		return nil, 0, fmt.Errorf("strconv.ParseUint: %w", err)
+	}
+
+	return commit, originalLineNo, nil
 }

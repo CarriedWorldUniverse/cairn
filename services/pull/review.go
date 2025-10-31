@@ -44,7 +44,7 @@ func (err ErrDismissRequestOnClosedPR) Unwrap() error {
 // If the line got changed the comment is going to be invalidated.
 func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.Repository, branch string) error {
 	// FIXME differentiate between previous and proposed line
-	commit, err := repo.LineBlame(branch, c.TreePath, c.UnsignedLine())
+	commit, _, err := repo.LineBlame(branch, c.TreePath, c.UnsignedLine())
 	if err != nil && (errors.Is(err, git.ErrBlameFileDoesNotExist) || errors.Is(err, git.ErrBlameFileNotEnoughLines)) {
 		c.Invalidated = true
 		return issues_model.UpdateCommentInvalidate(ctx, c)
@@ -178,7 +178,8 @@ func CreateCodeComment(ctx context.Context, doer *user_model.User, gitRepo *git.
 
 // CreateCodeCommentKnownReviewID creates a plain code comment at the specified line / path
 func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, repo *repo_model.Repository, issue *issues_model.Issue, content, treePath string, line, reviewID int64, attachments []string) (*issues_model.Comment, error) {
-	var commitID, patch string
+	var commitID, blamedCommitID, patch string
+	blamedLine := line
 	if err := issue.LoadPullRequest(ctx); err != nil {
 		return nil, fmt.Errorf("LoadPullRequest: %w", err)
 	}
@@ -226,12 +227,15 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			// FIXME validate treePath
 			// Get latest commit referencing the commented line
 			// No need for get commit for base branch changes
-			commit, err := gitRepo.LineBlame(head, treePath, uint64(line))
+			commit, lineres, err := gitRepo.LineBlame(head, treePath, uint64(line))
 			if err == nil {
-				commitID = commit.ID.String()
+				blamedCommitID = commit.ID.String()
+				blamedLine = int64(lineres)
 			} else if !errors.Is(err, git.ErrBlameFileDoesNotExist) && !errors.Is(err, git.ErrBlameFileNotEnoughLines) {
 				return nil, fmt.Errorf("LineBlame[%s, %s, %s, %d]: %w", pr.GetGitRefName(), gitRepo.Path, treePath, line, err)
 			}
+		} else {
+			blamedCommitID = commitID
 		}
 	}
 
@@ -242,6 +246,9 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			if err != nil {
 				return nil, fmt.Errorf("GetRefCommitID[%s]: %w", head, err)
 			}
+		}
+		if len(blamedCommitID) == 0 {
+			blamedCommitID = commitID
 		}
 		reader, writer := io.Pipe()
 		defer func() {
@@ -268,9 +275,9 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 		Repo:        repo,
 		Issue:       issue,
 		Content:     content,
-		LineNum:     line,
+		LineNum:     blamedLine,
 		TreePath:    treePath,
-		CommitSHA:   commitID,
+		CommitSHA:   blamedCommitID,
 		ReviewID:    reviewID,
 		Patch:       patch,
 		Invalidated: invalidated,
