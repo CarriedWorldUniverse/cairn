@@ -50,6 +50,7 @@ import (
 	release_service "forgejo.org/services/release"
 	repo_service "forgejo.org/services/repository"
 	"forgejo.org/services/repository/archiver"
+	"forgejo.org/services/stats"
 	"forgejo.org/services/task"
 	"forgejo.org/services/uinotification"
 	"forgejo.org/services/webhook"
@@ -168,6 +169,7 @@ func InitWebInstalled(ctx context.Context) {
 	mustInit(svg.Init)
 
 	actions_service.Init()
+	mustInit(stats.Init)
 
 	// Finally start up the cron
 	cron.NewContext(ctx)

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"forgejo.org/models/db"
+	"forgejo.org/services/stats"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -161,4 +162,8 @@ func GetCountByCond(t testing.TB, tableName string, cond builder.Cond) int64 {
 func AssertCountByCond(t testing.TB, tableName string, cond builder.Cond, expected int) bool {
 	return assert.EqualValues(t, expected, GetCountByCond(t, tableName, cond),
 		"Failed consistency test, the counted bean (of table %s) was %+v", tableName, cond)
+}
+
+func FlushAsyncCalcs(t testing.TB) {
+	require.NoError(t, stats.Flush(t.Context()))
 }

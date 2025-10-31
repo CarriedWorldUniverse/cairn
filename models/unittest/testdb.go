@@ -20,7 +20,9 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/setting/config"
 	"forgejo.org/modules/storage"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/util"
+	"forgejo.org/services/stats"
 
 	"github.com/stretchr/testify/require"
 	"xorm.io/xorm"
@@ -158,6 +160,7 @@ func MainTest(m *testing.M, testOpts ...*TestOptions) {
 	if err = storage.Init(); err != nil {
 		fatalTestError("storage.Init: %v\n", err)
 	}
+	initStats()
 	if err = util.RemoveAll(repoRootPath); err != nil {
 		fatalTestError("util.RemoveAll: %v\n", err)
 	}
@@ -209,6 +212,22 @@ func MainTest(m *testing.M, testOpts ...*TestOptions) {
 		fatalTestError("util.RemoveAll: %v\n", err)
 	}
 	os.Exit(exitStatus)
+}
+
+func initStats() {
+	// Use an in-memory queue for the `stats` module during testing.  This queue will collect requests for recalc during
+	// tests which can be performed by invoking `unittest.FlushAsyncCalcs(t)`.
+	cfg, err := setting.NewConfigProviderFromData(`
+[queue.stats_recalc]
+TYPE = channel
+`)
+	if err != nil {
+		fatalTestError("NewConfigProviderFromData: %v\n", err)
+	}
+	defer test.MockVariableValue(&setting.CfgProvider, cfg)()
+	if err := stats.Init(); err != nil {
+		fatalTestError("stats.Init: %v\n", err)
+	}
 }
 
 // FixturesOptions fixtures needs to be loaded options

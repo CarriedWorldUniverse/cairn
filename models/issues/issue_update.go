@@ -24,6 +24,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
+	"forgejo.org/services/stats"
 
 	"xorm.io/builder"
 )
@@ -101,8 +102,8 @@ func doChangeIssueStatus(ctx context.Context, issue *Issue, doer *user_model.Use
 	if err := issue.LoadLabels(ctx); err != nil {
 		return nil, err
 	}
-	for idx := range issue.Labels {
-		if err := updateLabelCols(ctx, issue.Labels[idx], "num_issues", "num_closed_issue"); err != nil {
+	for _, label := range issue.Labels {
+		if err := stats.QueueRecalcLabelByID(label.ID); err != nil {
 			return nil, err
 		}
 	}

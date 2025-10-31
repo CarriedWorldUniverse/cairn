@@ -314,6 +314,7 @@ func TestNewIssueLabel(t *testing.T) {
 		LabelID:  label.ID,
 		Content:  "1",
 	})
+	unittest.FlushAsyncCalcs(t)
 	label = unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 2})
 	assert.Equal(t, prevNumIssues+1, label.NumIssues)
 
@@ -366,6 +367,7 @@ func TestNewIssueLabels(t *testing.T) {
 		LabelID:  label1.ID,
 		Content:  "1",
 	})
+	unittest.FlushAsyncCalcs(t)
 	unittest.AssertExistsAndLoadBean(t, &issues_model.IssueLabel{IssueID: issue.ID, LabelID: label1.ID})
 	label1 = unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 1})
 	assert.Equal(t, 3, label1.NumIssues)
@@ -409,6 +411,7 @@ func TestDeleteIssueLabel(t *testing.T) {
 			IssueID:  issueID,
 			LabelID:  labelID,
 		}, `content=""`)
+		unittest.FlushAsyncCalcs(t)
 		label = unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: labelID})
 		assert.Equal(t, expectedNumIssues, label.NumIssues)
 		assert.Equal(t, expectedNumClosedIssues, label.NumClosedIssues)

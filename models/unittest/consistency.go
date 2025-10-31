@@ -27,6 +27,7 @@ var consistencyCheckMap = make(map[string]func(t *testing.T, bean any))
 
 // CheckConsistencyFor test that all matching database entries are consistent
 func CheckConsistencyFor(t *testing.T, beansToCheck ...any) {
+	FlushAsyncCalcs(t)
 	for _, bean := range beansToCheck {
 		sliceType := reflect.SliceOf(reflect.TypeOf(bean))
 		sliceValue := reflect.MakeSlice(sliceType, 0, 10)
