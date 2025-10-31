@@ -17,4 +17,13 @@ test('renderAnsi', () => {
   // treat "\033[0K" and "\033[0J" (Erase display/line) as "\r", then it will be covered to "\n" finally.
   expect(renderAnsi('a\x1b[Kb\x1b[2Jc')).toEqual('a\nb\nc');
   expect(renderAnsi('\x1b[48;5;88ma\x1b[38;208;48;5;159mb\x1b[m')).toEqual(`<span style="background-color:rgb(135,0,0)">a</span><span style="background-color:rgb(175,255,255)">b</span>`);
+
+  expect(renderAnsi('\x1b]9;4;0\x07')).toEqual('');
+  expect(renderAnsi('\x1b]9;4;1;25\x07compiling main.zig')).toEqual('compiling main.zig');
+  expect(renderAnsi('\x1b]9;4;1;25\x1b\\compiling main.zig')).toEqual('compiling main.zig');
+  expect(renderAnsi('\x1b]9;4;3\x07waiting...')).toEqual('waiting...');
+  expect(renderAnsi('\x1b]9;1;500\x07sleeping...')).toEqual('sleeping...');
+  expect(renderAnsi('\x1b]9;4;3\x07waiting...\x1b]9;4;3\x07')).toEqual('waiting...');
+  expect(renderAnsi('\x1b]9;12\x07')).toEqual('');
+  expect(renderAnsi('\x1b]9;4;1;25\x07\x1bMcompiling main.zig')).toEqual('compiling main.zig');
 });
