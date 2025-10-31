@@ -11,6 +11,7 @@ import (
 	"forgejo.org/models/db"
 	access_model "forgejo.org/models/perm/access"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/services/stats"
 
 	"xorm.io/builder"
 )
@@ -56,7 +57,7 @@ func newIssueLabel(ctx context.Context, issue *Issue, label *Label, doer *user_m
 
 	issue.Labels = append(issue.Labels, label)
 
-	return updateLabelCols(ctx, label, "num_issues", "num_closed_issue")
+	return stats.QueueRecalcLabelByID(label.ID)
 }
 
 // Remove all issue labels in the given exclusive scope
@@ -191,7 +192,7 @@ func deleteIssueLabel(ctx context.Context, issue *Issue, label *Label, doer *use
 		return err
 	}
 
-	return updateLabelCols(ctx, label, "num_issues", "num_closed_issue")
+	return stats.QueueRecalcLabelByID(label.ID)
 }
 
 // DeleteIssueLabel deletes issue-label relation.

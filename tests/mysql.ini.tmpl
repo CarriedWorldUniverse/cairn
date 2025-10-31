@@ -18,6 +18,9 @@ REPO_INDEXER_PATH = tests/{{TEST_TYPE}}/gitea-{{TEST_TYPE}}-mysql/indexers/repos
 TYPE = level
 DATADIR = tests/{{TEST_TYPE}}/gitea-{{TEST_TYPE}}-mysql/indexers/issues.queue
 
+[queue.stats_recalc] # override below default of `immediate` to avoid locking issues
+TYPE = channel
+
 [queue]
 TYPE = immediate
 

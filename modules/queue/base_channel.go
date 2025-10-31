@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"forgejo.org/modules/container"
+	"forgejo.org/modules/log"
 )
 
 var errChannelClosed = errors.New("channel is closed")
@@ -47,8 +48,9 @@ func (q *baseChannel) PushItem(ctx context.Context, data []byte) error {
 
 	if q.isUnique {
 		q.mu.Lock()
+		defer q.mu.Unlock()
+
 		has := q.set.Contains(string(data))
-		q.mu.Unlock()
 		if has {
 			return ErrAlreadyInQueue
 		}
@@ -57,9 +59,10 @@ func (q *baseChannel) PushItem(ctx context.Context, data []byte) error {
 	select {
 	case q.c <- data:
 		if q.isUnique {
-			q.mu.Lock()
-			q.set.Add(string(data))
-			q.mu.Unlock()
+			added := q.set.Add(string(data))
+			if !added {
+				log.Error("synchronization failure; data could not be added to tracking set in unique queue")
+			}
 		}
 		return nil
 	case <-time.After(pushBlockTime):
@@ -76,7 +79,10 @@ func (q *baseChannel) PopItem(ctx context.Context) ([]byte, error) {
 			return nil, errChannelClosed
 		}
 		q.mu.Lock()
-		q.set.Remove(string(data))
+		removed := q.set.Remove(string(data))
+		if !removed {
+			log.Error("synchronization failure; data could not be removed from tracking set in unique queue")
+		}
 		q.mu.Unlock()
 		return data, nil
 	case <-ctx.Done():
@@ -85,18 +91,15 @@ func (q *baseChannel) PopItem(ctx context.Context) ([]byte, error) {
 }
 
 func (q *baseChannel) HasItem(ctx context.Context, data []byte) (bool, error) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
 	if !q.isUnique {
 		return false, nil
 	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	return q.set.Contains(string(data)), nil
 }
 
 func (q *baseChannel) Len(ctx context.Context) (int, error) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
 	if q.c == nil {
 		return 0, errChannelClosed
 	}

@@ -244,6 +244,9 @@ forgejo.org/services/repository/files
 forgejo.org/services/repository/gitgraph
 	Parser.Reset
 
+forgejo.org/services/stats
+	Flush
+
 forgejo.org/services/webhook
 	NewNotifier
 
