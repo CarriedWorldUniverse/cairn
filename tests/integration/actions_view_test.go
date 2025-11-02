@@ -19,6 +19,7 @@ import (
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -187,4 +188,29 @@ func TestActionViewsViewAttemptOutOfRange(t *testing.T) {
 		return assert.JSONEq(t, "{\"state\":{\"run\":{\"preExecutionError\":\"\",\"link\":\"/user5/repo4/actions/runs/190\",\"title\":\"job output\",\"titleHTML\":\"job output\",\"status\":\"success\",\"canCancel\":false,\"canApprove\":false,\"canRerun\":false,\"canDeleteArtifact\":false,\"done\":false,\"jobs\":[{\"id\":396,\"name\":\"job_2\",\"status\":\"waiting\",\"canRerun\":false,\"duration\":\"_duration_\"}],\"commit\":{\"localeCommit\":\"Commit\",\"localePushedBy\":\"pushed by\",\"localeWorkflow\":\"Workflow\",\"shortSHA\":\"c2d72f5484\",\"link\":\"/user5/repo4/commit/c2d72f548424103f01ee1dc02889c1e2bff816b0\",\"pusher\":{\"displayName\":\"user1\",\"link\":\"/user1\"},\"branch\":{\"name\":\"test\",\"link\":\"/user5/repo4/src/branch/test\",\"isDeleted\":true}}},\"currentJob\":{\"title\":\"job_2\",\"detail\":\"Waiting\",\"steps\":[],\"allAttempts\":null}},\"logs\":{\"stepsLog\":[]}}\n", actualClean)
 	})
 	htmlDoc.AssertAttrEqual(t, selector, "data-initial-artifacts-response", "{\"artifacts\":[]}\n")
+}
+
+func TestActionTabAccessibleFromRepo(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequest(t, "GET", "/user2/repo1")
+	resp := MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertElementPredicate(t, "a[href='/user2/repo1/actions']", func(selection *goquery.Selection) bool {
+		text := strings.TrimSpace(selection.Text())
+		assert.Contains(t, text, "Actions")
+		return true
+	})
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, user2.Name)
+	req = NewRequest(t, "GET", "/user2/test_action_run_search/actions")
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc = NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertElementPredicate(t, "a[href='/user2/test_action_run_search/actions']", func(selection *goquery.Selection) bool {
+		text := strings.TrimSpace(selection.Text())
+		assert.Contains(t, text, "Actions")
+		assert.Contains(t, text, "1") // This repo has one running action run
+		return true
+	})
 }

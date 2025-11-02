@@ -270,7 +270,7 @@ func getConcurrencyCondition() builder.Cond {
 			// Blocking runs have a running status...
 			builder.Eq{"inner_run.status": StatusRunning}.Or(
 				// Blocking runs don't have a IsDone status & are younger than the outer_run
-				builder.NotIn("inner_run.status", []Status{StatusSuccess, StatusFailure, StatusCancelled, StatusSkipped}).
+				builder.NotIn("inner_run.status", DoneStatuses()).
 					And(builder.Lt{"inner_run.`index`": builder.Expr("outer_run.`index`")})))
 
 	// OK to pick if there are no blocking runs

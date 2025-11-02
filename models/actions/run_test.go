@@ -6,8 +6,10 @@ package actions
 import (
 	"testing"
 
+	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/cache"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,48 +43,41 @@ func TestSetDefaultConcurrencyGroup(t *testing.T) {
 	assert.Equal(t, "refs/heads/main_testing_pull_request__auto", run.ConcurrencyGroup)
 }
 
-func TestUpdateRepoRunsNumbers(t *testing.T) {
+func TestRepoNumOpenActions(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
+	err := cache.Init()
+	require.NoError(t, err)
 
-	t.Run("Normal", func(t *testing.T) {
-		t.Run("Repo 1", func(t *testing.T) {
-			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
-
-			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
-
-			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
-			assert.Equal(t, 1, repo.NumActionRuns)
-			assert.Equal(t, 1, repo.NumClosedActionRuns)
-		})
-
-		t.Run("Repo 4", func(t *testing.T) {
-			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
-
-			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
-
-			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
-			assert.Equal(t, 4, repo.NumActionRuns)
-			assert.Equal(t, 4, repo.NumClosedActionRuns)
-		})
-
-		t.Run("Repo 63", func(t *testing.T) {
-			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
-
-			require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
-
-			repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
-			assert.Equal(t, 3, repo.NumActionRuns)
-			assert.Equal(t, 2, repo.NumClosedActionRuns)
-		})
+	t.Run("Repo 1", func(t *testing.T) {
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+		clearRepoRunCountCache(repo)
+		assert.Equal(t, 0, RepoNumOpenActions(t.Context(), repo.ID))
 	})
 
-	t.Run("Columns specifc", func(t *testing.T) {
-		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
-		repo.Name = "ishouldnotbeupdated"
+	t.Run("Repo 4", func(t *testing.T) {
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
+		clearRepoRunCountCache(repo)
+		assert.Equal(t, 0, RepoNumOpenActions(t.Context(), repo.ID))
+	})
 
-		require.NoError(t, updateRepoRunsNumbers(t.Context(), repo))
+	t.Run("Repo 63", func(t *testing.T) {
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
+		clearRepoRunCountCache(repo)
+		assert.Equal(t, 1, RepoNumOpenActions(t.Context(), repo.ID))
+	})
 
-		repo = unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
-		assert.Equal(t, "repo1", repo.Name)
+	t.Run("Cache Invalidation", func(t *testing.T) {
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 63})
+		assert.Equal(t, 1, RepoNumOpenActions(t.Context(), repo.ID))
+
+		err = db.DeleteBeans(t.Context(), &ActionRun{RepoID: repo.ID})
+		require.NoError(t, err)
+
+		// Even though we've deleted ActionRun, expecting that the number of open runs is still 1 (cached)
+		assert.Equal(t, 1, RepoNumOpenActions(t.Context(), repo.ID))
+
+		// Now that we clear the cache, computation should be performed
+		clearRepoRunCountCache(repo)
+		assert.Equal(t, 0, RepoNumOpenActions(t.Context(), repo.ID))
 	})
 }
