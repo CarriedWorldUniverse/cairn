@@ -53,9 +53,6 @@ func TestActionConcurrencyRunnerFiltering(t *testing.T) {
 		},
 	} {
 		t.Run(tc.runnerName, func(t *testing.T) {
-			// defer unittest.OverrideFixtures("tests/integration/fixtures/TestActionConcurrencyRunnerFiltering")()
-			// require.NoError(t, unittest.PrepareTestDatabase())
-
 			doTest := func() {
 				e := db.GetEngine(t.Context())
 
