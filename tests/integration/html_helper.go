@@ -26,6 +26,13 @@ func NewHTMLParser(t testing.TB, body *bytes.Buffer) *HTMLDoc {
 	return &HTMLDoc{doc: doc}
 }
 
+func (doc *HTMLDoc) AssertElementPredicate(t testing.TB, selector string, predicate func(element *goquery.Selection) bool) bool {
+	t.Helper()
+	selection := doc.doc.Find(selector)
+	require.NotEmpty(t, selection, selector)
+	return predicate(selection)
+}
+
 func (doc *HTMLDoc) AssertAttrPredicate(t testing.TB, selector, attr string, predicate func(attrValue string) bool) bool {
 	t.Helper()
 	selection := doc.doc.Find(selector)

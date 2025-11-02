@@ -14,8 +14,10 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/cache"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
@@ -198,29 +200,32 @@ func (run *ActionRun) SetDefaultConcurrencyGroup() {
 	))
 }
 
-func updateRepoRunsNumbers(ctx context.Context, repo *repo_model.Repository) error {
-	_, err := db.GetEngine(ctx).ID(repo.ID).
-		SetExpr("num_action_runs",
-			builder.Select("count(*)").From("action_run").
-				Where(builder.Eq{"repo_id": repo.ID}),
-		).
-		SetExpr("num_closed_action_runs",
-			builder.Select("count(*)").From("action_run").
-				Where(builder.Eq{
-					"repo_id": repo.ID,
-				}.And(
-					builder.In("status",
-						StatusSuccess,
-						StatusFailure,
-						StatusCancelled,
-						StatusSkipped,
-					),
-				),
-				),
-		).
-		Cols("num_action_runs", "num_closed_action_runs").
-		Update(repo)
-	return err
+func actionsCountOpenCacheKey(repoID int64) string {
+	return fmt.Sprintf("Actions:CountOpenActionRuns:%d", repoID)
+}
+
+func RepoNumOpenActions(ctx context.Context, repoID int64) int {
+	num, err := cache.GetInt(actionsCountOpenCacheKey(repoID), func() (int, error) {
+		count, err := db.GetEngine(ctx).
+			Table("action_run").
+			Where(
+				builder.Eq{"repo_id": repoID}.And(
+					builder.In("status", PendingStatuses()))).
+			Count()
+		if err != nil {
+			return 0, fmt.Errorf("query error: %v", err)
+		}
+		return int(count), nil
+	})
+	if err != nil {
+		log.Error("failed to retrieve NumIssues: %v", err)
+		return 0
+	}
+	return num
+}
+
+func clearRepoRunCountCache(repo *repo_model.Repository) {
+	cache.Remove(actionsCountOpenCacheKey(repo.ID))
 }
 
 // InsertRun inserts a run
@@ -252,9 +257,7 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 		run.Repo = repo
 	}
 
-	if err := updateRepoRunsNumbers(ctx, run.Repo); err != nil {
-		return err
-	}
+	clearRepoRunCountCache(run.Repo)
 
 	runJobs := make([]*ActionRunJob, 0, len(jobs))
 	var hasWaiting bool
@@ -416,9 +419,7 @@ func UpdateRunWithoutNotification(ctx context.Context, run *ActionRun, cols ...s
 			}
 			run.Repo = repo
 		}
-		if err := updateRepoRunsNumbers(ctx, run.Repo); err != nil {
-			return err
-		}
+		clearRepoRunCountCache(run.Repo)
 	}
 
 	return nil
