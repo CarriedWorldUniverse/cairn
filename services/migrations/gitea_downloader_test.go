@@ -407,9 +407,15 @@ func createForgejoIssueComments(comments []*gitea_sdk.Comment) []*base.Comment {
 }
 
 func TestBreakConditions(t *testing.T) {
+	giteaToken := os.Getenv("GITEA_TOKEN")
+
+	fixturePath := "./testdata/gitea/breaking_conditions"
+	server := unittest.NewMockWebServer(t, "https://gitea.com", fixturePath, giteaToken != "")
+	defer server.Close()
+
 	// Client
 	giteaClient, err := gitea_sdk.NewClient(
-		"https://gitea.com",
+		server.URL,
 		gitea_sdk.SetToken(""),
 		gitea_sdk.SetBasicAuth("", ""),
 		gitea_sdk.SetContext(t.Context()),
@@ -418,7 +424,7 @@ func TestBreakConditions(t *testing.T) {
 	require.NoError(t, err, "Clould not create Client")
 
 	// Downloader
-	downloader, err := NewGiteaDownloader(t.Context(), giteaClient, "https://gitea.com", "gitea/test_repo")
+	downloader, err := NewGiteaDownloader(t.Context(), giteaClient, server.URL, "gitea/test_repo")
 	if downloader == nil {
 		t.Fatal("NewGiteaDownloader is nil")
 	}
