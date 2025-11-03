@@ -35,7 +35,7 @@ fieldset .help {
 
 .form fieldset .help { /* overrides other .form .help rules in this file, remove when obsolete */
   display: block !important;
-  padding-bottom: 0;
+  padding-block: 0.125rem 0;
 }
 
 fieldset label > input,
