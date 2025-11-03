@@ -60,6 +60,8 @@ var (
 	ContextTOTP Context = "totp"
 	// Used for the `secret` table.
 	ContextActionSecret Context = "action_secret"
+	// Used for the `task` table where type == TaskTypeMigrateRepo.
+	ContextMigrateTask Context = "migrate_repo_task"
 )
 
 // Derive *the* key for a given context, this is a deterministic function.
@@ -130,4 +132,17 @@ func (k *Key) Decrypt(ciphertext, additionalData []byte) ([]byte, error) {
 // derived for, in which case it binds through that.
 func ColumnAndID(column string, id int64) []byte {
 	return binary.BigEndian.AppendUint64(append([]byte(column), ':'), uint64(id))
+}
+
+// ColumnAndJSONSelectorAndID generates a context that can be used as additional context
+// for encrypting and decrypting data. It requires the column name, JSON
+// selector and the row ID (this requires to be known beforehand). Be careful
+// when using this, as the table name isn't part of this context. This means
+// it's not bound to a particular table. The table should be part of the context
+// that the key was derived for, in which case it binds through that. Use this
+// over `ColumnAndID` if you're encrypting data that's stored inside JSON.
+// jsonSelector must be a unambigous selector to the JSON field that stores the
+// encrypted data.
+func ColumnAndJSONSelectorAndID(column, jsonSelector string, id int64) []byte {
+	return binary.BigEndian.AppendUint64(append(append([]byte(column), ':'), append([]byte(jsonSelector), ':')...), uint64(id))
 }
