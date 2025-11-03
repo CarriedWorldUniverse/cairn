@@ -5,6 +5,7 @@ package task
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -14,10 +15,10 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/keying"
 	"forgejo.org/modules/log"
 	base "forgejo.org/modules/migration"
 	"forgejo.org/modules/queue"
-	"forgejo.org/modules/secret"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
@@ -70,36 +71,38 @@ func MigrateRepository(ctx context.Context, doer, u *user_model.User, opts base.
 // CreateMigrateTask creates a migrate task
 func CreateMigrateTask(ctx context.Context, doer, u *user_model.User, opts base.MigrateOptions) (*admin_model.Task, error) {
 	// encrypt credentials for persistence
-	var err error
-	opts.CloneAddrEncrypted, err = secret.EncryptSecret(setting.SecretKey, opts.CloneAddr)
-	if err != nil {
-		return nil, err
-	}
-	opts.CloneAddr = util.SanitizeCredentialURLs(opts.CloneAddr)
-	opts.AuthPasswordEncrypted, err = secret.EncryptSecret(setting.SecretKey, opts.AuthPassword)
-	if err != nil {
-		return nil, err
-	}
-	opts.AuthPassword = ""
-	opts.AuthTokenEncrypted, err = secret.EncryptSecret(setting.SecretKey, opts.AuthToken)
-	if err != nil {
-		return nil, err
-	}
-	opts.AuthToken = ""
-	bs, err := json.Marshal(&opts)
-	if err != nil {
-		return nil, err
-	}
 
 	task := &admin_model.Task{
-		DoerID:         doer.ID,
-		OwnerID:        u.ID,
-		Type:           structs.TaskTypeMigrateRepo,
-		Status:         structs.TaskStatusQueued,
-		PayloadContent: string(bs),
+		DoerID:  doer.ID,
+		OwnerID: u.ID,
+		Type:    structs.TaskTypeMigrateRepo,
+		Status:  structs.TaskStatusQueued,
 	}
 
-	if err := admin_model.CreateTask(ctx, task); err != nil {
+	if err := db.WithTx(ctx, func(ctx context.Context) error {
+		if err := admin_model.CreateTask(ctx, task); err != nil {
+			return err
+		}
+
+		key := keying.DeriveKey(keying.ContextMigrateTask)
+
+		opts.CloneAddrEncrypted = base64.RawStdEncoding.EncodeToString(key.Encrypt([]byte(opts.CloneAddr), keying.ColumnAndJSONSelectorAndID("payload_content", "clone_addr_encrypted", task.ID)))
+		opts.CloneAddr = util.SanitizeCredentialURLs(opts.CloneAddr)
+
+		opts.AuthPasswordEncrypted = base64.RawStdEncoding.EncodeToString(key.Encrypt([]byte(opts.AuthPassword), keying.ColumnAndJSONSelectorAndID("payload_content", "auth_password_encrypted", task.ID)))
+		opts.AuthPassword = ""
+
+		opts.AuthTokenEncrypted = base64.RawStdEncoding.EncodeToString(key.Encrypt([]byte(opts.AuthToken), keying.ColumnAndJSONSelectorAndID("payload_content", "auth_token_encrypted", task.ID)))
+		opts.AuthToken = ""
+
+		bs, err := json.Marshal(&opts)
+		if err != nil {
+			return err
+		}
+		task.PayloadContent = string(bs)
+
+		return task.UpdateCols(ctx, "payload_content")
+	}); err != nil {
 		return nil, err
 	}
 
