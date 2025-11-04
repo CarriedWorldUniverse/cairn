@@ -157,11 +157,42 @@ func notify(ctx context.Context, input *notifyInput) error {
 		return nil
 	}
 
-	gitRepo, err := gitrepo.OpenRepository(context.Background(), input.Repo)
+	gitRepo, commit, ref, err := getGitRepoAndCommit(ctx, input)
 	if err != nil {
-		return fmt.Errorf("git.OpenRepository: %w", err)
+		return err
+	} else if gitRepo == nil && commit == nil {
+		return nil
 	}
 	defer gitRepo.Close()
+
+	if skipWorkflows(input, commit) {
+		return nil
+	}
+
+	if SkipPullRequestEvent(ctx, input.Event, input.Repo.ID, commit.ID.String()) {
+		log.Trace("repo %s with commit %s skip event %v", input.Repo.RepoPath(), commit.ID, input.Event)
+		return nil
+	}
+
+	detectedWorkflows, schedules, err := detectWorkflows(ctx, input, gitRepo, commit, shouldDetectSchedules)
+	if err != nil {
+		return err
+	}
+
+	if shouldDetectSchedules {
+		if err := handleSchedules(ctx, schedules, commit, input, ref.String()); err != nil {
+			return err
+		}
+	}
+
+	return handleWorkflows(ctx, detectedWorkflows, commit, input, ref.String())
+}
+
+func getGitRepoAndCommit(_ context.Context, input *notifyInput) (*git.Repository, *git.Commit, git.RefName, error) {
+	gitRepo, err := gitrepo.OpenRepository(context.Background(), input.Repo)
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("git.OpenRepository: %w", err)
+	}
 
 	ref := input.Ref
 	if ref.BranchName() != input.Repo.DefaultBranch && actions_module.IsDefaultBranchWorkflow(input.Event) {
@@ -178,24 +209,20 @@ func notify(ctx context.Context, input *notifyInput) error {
 
 	commitID, err := gitRepo.GetRefCommitID(ref.String())
 	if err != nil {
-		return fmt.Errorf("gitRepo.GetRefCommitID: %w", err)
+		gitRepo.Close()
+		return nil, nil, "", fmt.Errorf("gitRepo.GetRefCommitID: %w", err)
 	}
 
 	// Get the commit object for the ref
 	commit, err := gitRepo.GetCommit(commitID)
 	if err != nil {
-		return fmt.Errorf("gitRepo.GetCommit: %w", err)
+		gitRepo.Close()
+		return nil, nil, "", fmt.Errorf("gitRepo.GetCommit: %w", err)
 	}
+	return gitRepo, commit, ref, nil
+}
 
-	if skipWorkflows(input, commit) {
-		return nil
-	}
-
-	if SkipPullRequestEvent(ctx, input.Event, input.Repo.ID, commit.ID.String()) {
-		log.Trace("repo %s with commit %s skip event %v", input.Repo.RepoPath(), commit.ID, input.Event)
-		return nil
-	}
-
+func detectWorkflows(ctx context.Context, input *notifyInput, gitRepo *git.Repository, commit *git.Commit, shouldDetectSchedules bool) ([]*actions_module.DetectedWorkflow, []*actions_module.DetectedWorkflow, error) {
 	var detectedWorkflows []*actions_module.DetectedWorkflow
 	actionsConfig := input.Repo.MustGetUnit(ctx, unit_model.TypeActions).ActionsConfig()
 	workflows, schedules, err := actions_module.DetectWorkflows(gitRepo, commit,
@@ -204,7 +231,7 @@ func notify(ctx context.Context, input *notifyInput) error {
 		shouldDetectSchedules,
 	)
 	if err != nil {
-		return fmt.Errorf("DetectWorkflows: %w", err)
+		return nil, nil, fmt.Errorf("DetectWorkflows: %w", err)
 	}
 
 	log.Trace("repo %s with commit %s event %s find %d workflows and %d schedules",
@@ -234,14 +261,14 @@ func notify(ctx context.Context, input *notifyInput) error {
 			if prp, ok := input.Payload.(*api.PullRequestPayload); ok && errors.Is(err, util.ErrNotExist) {
 				// the baseBranch was deleted and the PR closed: the action can be skipped
 				if prp.Action == api.HookIssueClosed {
-					return nil
+					return nil, nil, nil
 				}
 			}
-			return fmt.Errorf("gitRepo.GetCommit: %w", err)
+			return nil, nil, fmt.Errorf("gitRepo.GetCommit: %w", err)
 		}
 		baseWorkflows, _, err := actions_module.DetectWorkflows(gitRepo, baseCommit, input.Event, input.Payload, false)
 		if err != nil {
-			return fmt.Errorf("DetectWorkflows: %w", err)
+			return nil, nil, fmt.Errorf("DetectWorkflows: %w", err)
 		}
 		if len(baseWorkflows) == 0 {
 			log.Trace("repo %s with commit %s couldn't find pull_request_target workflows", input.Repo.RepoPath(), baseCommit.ID)
@@ -253,14 +280,7 @@ func notify(ctx context.Context, input *notifyInput) error {
 			}
 		}
 	}
-
-	if shouldDetectSchedules {
-		if err := handleSchedules(ctx, schedules, commit, input, ref.String()); err != nil {
-			return err
-		}
-	}
-
-	return handleWorkflows(ctx, detectedWorkflows, commit, input, ref.String())
+	return detectedWorkflows, schedules, nil
 }
 
 func SkipPullRequestEvent(ctx context.Context, event webhook_module.HookEventType, repoID int64, commitSHA string) bool {
