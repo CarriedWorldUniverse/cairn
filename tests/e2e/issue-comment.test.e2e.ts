@@ -74,6 +74,49 @@ test('Menu accessibility', async ({page}) => {
   await expect(page.getByLabel('user1, user2 reacted laugh. Remove laugh')).toBeVisible();
 });
 
+test.describe('Button text replaced by JS', () => {
+  async function testPage(page, path, closeLabel) {
+    await page.goto(path);
+
+    const statusButton = page.locator('#status-button');
+    const statusButtonIcon = page.locator('#status-button svg');
+    const commentField = page.locator('#comment-form').getByPlaceholder('Leave a comment');
+
+    // Reset issue status before running the test
+    if (await statusButton.getByText('Reopen').isVisible()) await statusButton.click();
+
+    // Assert that normal Close button text is present
+    await expect(statusButton.getByText(closeLabel)).toBeVisible();
+    await expect(statusButtonIcon).toBeVisible();
+
+    // Type in some text to make button text change
+    await commentField.fill('Blah blah');
+    await expect(statusButton.getByText('Close with comment')).toBeVisible();
+    await expect(statusButtonIcon).toBeVisible();
+
+    // Close issue/PR and assert that normal Reopen button text is present
+    await statusButton.click();
+    await expect(statusButton.getByText('Reopen')).toBeVisible();
+    await expect(statusButtonIcon).toBeVisible();
+
+    // Type in some text to make button text change
+    await commentField.fill('Blah blah');
+    await expect(statusButton.getByText('Reopen with comment')).toBeVisible();
+    await expect(statusButtonIcon).toBeVisible();
+
+    return true;
+  }
+
+  test('Issue', async ({page}) => {
+    // All actual expect() are happening in the helper
+    expect(await testPage(page, '/user2/repo1/issues/1', 'Close issue')).toBeTruthy();
+  });
+
+  test('PR', async ({page}) => {
+    expect(await testPage(page, '/user2/repo1/pulls/3', 'Close pull request')).toBeTruthy();
+  });
+});
+
 test('Hyperlink paste behaviour', async ({page}, workerInfo) => {
   test.skip(['Mobile Safari', 'Mobile Chrome', 'webkit'].includes(workerInfo.project.name), 'Mobile clients seem to have very weird behaviour with this test, which I cannot confirm with real usage');
   await page.goto('/user2/repo1/issues/new');
