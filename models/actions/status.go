@@ -6,7 +6,7 @@ package actions
 import (
 	"forgejo.org/modules/translation"
 
-	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
+	runnerv1 "code.forgejo.org/forgejo/actions-proto/runner/v1"
 )
 
 // Status represents the status of ActionRun, ActionRunJob, ActionTask, or ActionTaskStep

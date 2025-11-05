@@ -18,8 +18,8 @@ import (
 	"forgejo.org/modules/util"
 	actions_service "forgejo.org/services/actions"
 
-	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
-	"code.gitea.io/actions-proto-go/runner/v1/runnerv1connect"
+	runnerv1 "code.forgejo.org/forgejo/actions-proto/runner/v1"
+	"code.forgejo.org/forgejo/actions-proto/runner/v1/runnerv1connect"
 	"connectrpc.com/connect"
 	gouuid "github.com/google/uuid"
 )
