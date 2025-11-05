@@ -29,6 +29,13 @@ func TestAPIForgejoVersion(t *testing.T) {
 		assert.Equal(t, "1.0.0", *version.Version)
 	})
 
+	t.Run("Version with Content-Type is json", func(t *testing.T) {
+		req := NewRequest(t, "GET", "/api/forgejo/v1/version")
+		resp := MakeRequest(t, req, http.StatusOK)
+
+		assert.Equal(t, "application/json; charset=utf-8", resp.Header().Get("Content-Type"))
+	})
+
 	t.Run("Versions with REQUIRE_SIGNIN_VIEW enabled", func(t *testing.T) {
 		defer test.MockVariableValue(&setting.Service.RequireSignInView, true)()
 		defer test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())()
