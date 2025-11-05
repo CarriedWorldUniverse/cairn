@@ -536,6 +536,65 @@ jobs:
 	})
 }
 
+func TestActionsRunsOnVars(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		t.Skip()
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		session := loginUser(t, user2.Name)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+
+		testRepository := createActionsTestRepo(t, token, "actions-runs-on-vars", false)
+
+		ubuntuRunner := newMockRunner()
+		ubuntuRunner.registerAsRepoRunner(t, user2.Name, testRepository.Name, "ubuntu-runner", []string{"ubuntu"})
+
+		windowsRunner := newMockRunner()
+		windowsRunner.registerAsRepoRunner(t, user2.Name, testRepository.Name, "windows-runner", []string{"windows"})
+
+		workflowPath := ".gitea/workflows/pull.yaml"
+		workflow := `name: Test runs-on with vars
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ vars.runner }}
+    steps:
+      - run: echo "Running on ${{ vars.runner }}"
+`
+
+		options := getWorkflowCreateFileOptions(user2, testRepository.DefaultBranch, fmt.Sprintf("create %s", workflowPath), workflow)
+		createWorkflowFile(t, token, user2.Name, testRepository.Name, workflowPath, options)
+
+		varCreationURL := fmt.Sprintf("/%s/%s/settings/actions/variables/new", user2.Name, testRepository.Name)
+		varCreationRequest := NewRequestWithValues(t, "POST", varCreationURL, map[string]string{
+			"name": "runner",
+			"data": "ubuntu",
+		})
+		session.MakeRequest(t, varCreationRequest, http.StatusOK)
+
+		dispatchURL := fmt.Sprintf("/%s/%s/actions/manual", user2.Name, testRepository.Name)
+		dispatchRequest := NewRequestWithValues(t, "POST", dispatchURL, map[string]string{
+			"ref":      testRepository.DefaultBranch,
+			"workflow": "pull.yaml",
+			"actor":    strconv.FormatInt(user2.ID, 10),
+		})
+		session.MakeRequest(t, dispatchRequest, http.StatusSeeOther)
+
+		assert.Nil(t, windowsRunner.maybeFetchTask(t))
+
+		task := ubuntuRunner.fetchTask(t)
+		actionTask := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: task.Id})
+		actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: actionTask.JobID})
+		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
+
+		assert.Equal(t, "Test runs-on with vars", run.Title)
+	})
+}
+
 func createActionsTestRepo(t *testing.T, authToken, repoName string, isPrivate bool) *api.Repository {
 	req := NewRequestWithJSON(t, "POST", "/api/v1/user/repos", &api.CreateRepoOption{
 		Name:          repoName,
