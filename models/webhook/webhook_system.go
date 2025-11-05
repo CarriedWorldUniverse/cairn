@@ -11,8 +11,8 @@ import (
 )
 
 // GetDefaultWebhooks returns all admin-default webhooks.
-func GetDefaultWebhooks(ctx context.Context) ([]*Webhook, error) {
-	return getAdminWebhooks(ctx, false)
+func GetDefaultWebhooks(ctx context.Context) ([]*Webhook, int64, error) {
+	return getAdminWebhooks(ctx, false, db.ListOptions{ListAll: true})
 }
 
 // GetSystemOrDefaultWebhook returns admin system or default webhook by given ID.
@@ -30,22 +30,24 @@ func GetSystemOrDefaultWebhook(ctx context.Context, id int64) (*Webhook, error) 
 }
 
 // GetSystemWebhooks returns all admin system webhooks.
-func GetSystemWebhooks(ctx context.Context, onlyActive bool) ([]*Webhook, error) {
-	return getAdminWebhooks(ctx, true, onlyActive)
+func GetSystemWebhooks(ctx context.Context, listOptions db.ListOptions, onlyActive bool) ([]*Webhook, int64, error) {
+	return getAdminWebhooks(ctx, true, listOptions, onlyActive)
 }
 
-func getAdminWebhooks(ctx context.Context, systemWebhooks bool, onlyActive ...bool) ([]*Webhook, error) {
+func getAdminWebhooks(ctx context.Context, systemWebhooks bool, listOptions db.ListOptions, onlyActive ...bool) ([]*Webhook, int64, error) {
 	webhooks := make([]*Webhook, 0, 5)
+	sess := db.GetEngine(ctx).
+		Where("repo_id=?", 0).
+		And("owner_id=?", 0).
+		And("is_system_webhook=?", systemWebhooks)
 	if len(onlyActive) > 0 && onlyActive[0] {
-		return webhooks, db.GetEngine(ctx).
-			Where("repo_id=? AND owner_id=? AND is_system_webhook=? AND is_active = ?", 0, 0, systemWebhooks, true).
-			OrderBy("id").
-			Find(&webhooks)
+		sess = sess.And("is_active=?", true)
 	}
-	return webhooks, db.GetEngine(ctx).
-		Where("repo_id=? AND owner_id=? AND is_system_webhook=?", 0, 0, systemWebhooks).
-		OrderBy("id").
-		Find(&webhooks)
+	if listOptions.Page > 0 {
+		sess = db.SetSessionPagination(sess, &listOptions)
+	}
+	total, err := sess.OrderBy("id").FindAndCount(&webhooks)
+	return webhooks, total, err
 }
 
 // DeleteDefaultSystemWebhook deletes an admin-configured default or system webhook (where Org and Repo ID both 0)
@@ -67,7 +69,7 @@ func DeleteDefaultSystemWebhook(ctx context.Context, id int64) error {
 
 // CopyDefaultWebhooksToRepo creates copies of the default webhooks in a new repo
 func CopyDefaultWebhooksToRepo(ctx context.Context, repoID int64) error {
-	ws, err := GetDefaultWebhooks(ctx)
+	ws, _, err := GetDefaultWebhooks(ctx)
 	if err != nil {
 		return fmt.Errorf("GetDefaultWebhooks: %v", err)
 	}

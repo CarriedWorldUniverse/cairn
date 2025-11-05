@@ -541,3 +541,29 @@ func TestAPIAdminDeleteUserEmailsMultiple(t *testing.T) {
 	assert.Equal(t, "user1@example.com", remainingEmails[0].Email, "Only primary email should remain")
 	assert.True(t, remainingEmails[0].Primary, "Remaining email should be primary")
 }
+
+func TestAPIAdminListHooksPagination(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	token := getUserToken(t, "user1", auth_model.AccessTokenScopeWriteAdmin)
+
+	for i := range 20 {
+		req := NewRequestWithJSON(t, "POST", "/api/v1/admin/hooks", api.CreateHookOption{
+			Config: api.CreateHookOptionConfig{
+				"url":               fmt.Sprintf("http://localhost/hook-%d", i),
+				"content_type":      "json",
+				"is_system_webhook": "true",
+			},
+			Type: "forgejo",
+		}).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+	}
+
+	req := NewRequest(t, "GET", "/api/v1/admin/hooks?page=1&limit=10").AddTokenAuth(token)
+	resp := MakeRequest(t, req, http.StatusOK)
+	var hooksList []api.Hook
+	t.Logf("got response %s", resp.Body)
+	DecodeJSON(t, resp, &hooksList)
+	assert.Len(t, hooksList, 10, "page length should equal `limit` param")
+	assert.Equal(t, "20", resp.Header().Get("X-Total-Count"))
+}
