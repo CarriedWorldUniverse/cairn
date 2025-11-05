@@ -79,7 +79,7 @@
 							<td>{{.NumWatches}}</td>
 							<td>{{.NumStars}}</td>
 							<td>{{.NumForks}}</td>
-							<td>{{.NumIssues}}</td>
+							<td>{{.NumIssues ctx}}</td>
 							<td>{{ctx.Locale.TrSize .GitSize}}</td>
 							<td>{{ctx.Locale.TrSize .LFSSize}}</td>
 							<td>{{DateUtils.AbsoluteShort .UpdatedUnix}}</td>
