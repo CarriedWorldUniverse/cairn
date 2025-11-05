@@ -155,7 +155,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		}
 	}
 
-	jobs, err := jobParser(content, jobparser.WithVars(vars))
+	jobs, err := jobParser(content, jobparser.WithVars(vars), jobparser.WithInputs(inputsAny))
 	if err != nil {
 		return nil, nil, err
 	}
