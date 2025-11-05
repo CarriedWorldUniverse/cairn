@@ -745,8 +745,8 @@ export function initSingleCommentEditor($commentForm) {
   const statusButton = document.getElementById('status-button');
   if (statusButton) {
     opts.onContentChanged = (editor) => {
-      const statusText = statusButton.getAttribute(editor.value().trim() ? 'data-status-and-comment' : 'data-status');
-      statusButton.textContent = statusText;
+      const newText = statusButton.getAttribute(editor.value().trim() ? 'data-status-and-comment' : 'data-status');
+      statusButton.querySelector('span').textContent = newText;
     };
   }
   initComboMarkdownEditor($commentForm.find('.combo-markdown-editor'), opts);
