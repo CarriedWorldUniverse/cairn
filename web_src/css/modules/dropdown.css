@@ -7,6 +7,9 @@
  * NoJS mode could be improved by forcing the same [name] onto all dropdowns, so
  * that the browser will automatically close all but the one that was just opened
  * using keyboard. But the code doing that will not be as clean.
+ *
+ * Note: when implementing this dropdown, please use `dropdown` as the 1st class,
+ * so it is possible to search for all dropdowns with `details class="dropdown`
 */
 
 :root details.dropdown {
@@ -26,6 +29,7 @@ details.dropdown {
   position: relative;
 }
 
+/* Opener */
 details.dropdown > summary {
   /* Optional flex+gap in case summary contains multiple elements */
   display: flex;
@@ -39,25 +43,17 @@ details.dropdown > summary {
   user-select: none;
   list-style-type: none;
 
+  /* Display a border around opener */
   &.border {
     border: 1px solid var(--color-light-border);
   }
+  /* Increase inline padding - for openers with text, like filter menus */
   &.options {
     padding-inline: 0.75rem;
   }
 }
 
-details.dropdown > summary:hover,
-details.dropdown > summary + ul > li:hover {
-  background: var(--color-hover);
-}
-
-details.dropdown[open] > summary,
-details.dropdown > summary + ul > li:focus-within {
-  background: var(--color-active);
-}
-
-/* NoJS mode. Creates a virtual fullscreen area. Clicking it closes the dropdown. */
+/* NoJS mode: create a virtual fullscreen area which closes the dropdown when clicked on */
 .no-js details.dropdown[open] > summary::before {
   z-index: 1;
   position: fixed;
@@ -69,23 +65,52 @@ details.dropdown > summary + ul > li:focus-within {
   cursor: default;
 }
 
-details.dropdown > summary + ul {
+details.dropdown > summary:hover,
+details.dropdown > .content > ul > li:hover {
+  background: var(--color-hover);
+}
+
+details.dropdown[open] > summary,
+details.dropdown > .content > ul > li:focus-within {
+  background: var(--color-active);
+}
+
+details.dropdown > .content {
   z-index: 99;
   position: absolute;
   min-width: max-content;
-  margin: 0;
-  margin-top: 0.5rem;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  list-style-type: none;
   border-radius: var(--border-radius);
   background: var(--color-body);
   box-shadow: var(--dropdown-box-shadow);
   border: 1px solid var(--color-secondary);
+  margin-top: 0.5rem;
+
+  /* ToDo: upstream to base.css, remove from normalize.css */
+  > hr {
+    height: 1px;
+    margin-block: 0.25rem;
+    background-color: var(--color-secondary);
+  }
 }
 
-details.dropdown > summary + ul > li {
+details.dropdown > .content > ul {
+  /* Suppress default styling of <ul> */
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+
+  /* Round first item of first list and last item of last list. Each of these
+   * selectors should only resolve to one element in any .content */
+  &:first-of-type > li:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
+  &:last-of-type > li:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
+}
+
+/* General styling of list items */
+details.dropdown > .content > ul > li {
   width: 100%;
   background: none;
 
@@ -101,42 +126,43 @@ details.dropdown > summary + ul > li {
     /* Suppress underline - hover is indicated by background color */
     text-decoration: none;
 
+    /* Items that are pre-selected in template or by JS */
     &.active {
       background: var(--color-active);
       font-weight: var(--font-weight-medium);
     }
   }
-  /* Cancel default styling of button elements */
+
+  /* Suppress default styling of <button> */
   > button {
     background: none;
   }
-
-  &:first-child {
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-  }
-  &:last-child {
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-  }
 }
 
-/* dir-auto option - switch the direction at a width point where most of layout changes occur. */
-/* There's no way to check with CSS if LTR dropdown will fit on screen without JS. */
+/* dir-auto option - switch the direction at a width point where most of layout changes occur */
 @media (max-width: 767.98px) {
-  details.dropdown.dir-auto > summary + ul {
+  details.dropdown.dir-auto > .content {
     inset-inline: 0 auto;
     direction: rtl;
-    > li {
+    > ul > li {
       direction: ltr;
     }
   }
 }
-/* Note: https://css-tricks.com/css-anchor-positioning-guide/
-*  looks like a great thing but FF still doesn't support it. */
 
-details.dropdown.dir-rtl > summary + ul {
+/* dir-rtl option - force right-to-left box direction */
+details.dropdown.dir-rtl > .content {
   inset-inline: 0 auto;
   direction: rtl;
-  > li {
+  > ul > li {
     direction: ltr;
   }
 }
+
+/* Note: CSS anchor positioning will be a huge help in content positioning w/o JS
+ * - https://css-tricks.com/css-anchor-positioning-guide/
+ * - https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning/
+ * - https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning/Using
+ * It can already be implemented if the implementation won't interfere with the
+ * normal behavior on unsupported browsers. Or it can wait until Firefox gets
+ * starts supporting it. FF145 got this feature behind a feature flag. */
