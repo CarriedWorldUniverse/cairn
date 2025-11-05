@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -475,6 +476,63 @@ jobs:
 		assert.Equal(t, actionTask.TokenLastEight, token[len(token)-8:])
 
 		doAPIDeleteRepository(user2APICtx)(t)
+	})
+}
+
+func TestActionsRunsOnInputsWorkflowDispatch(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		t.Skip()
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		session := loginUser(t, user2.Name)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+
+		testRepository := createActionsTestRepo(t, token, "actions-runs-on-inputs-workflow-dispatch", false)
+
+		ubuntuRunner := newMockRunner()
+		ubuntuRunner.registerAsRepoRunner(t, user2.Name, testRepository.Name, "ubuntu-runner", []string{"ubuntu"})
+
+		windowsRunner := newMockRunner()
+		windowsRunner.registerAsRepoRunner(t, user2.Name, testRepository.Name, "windows-runner", []string{"windows"})
+
+		workflowPath := ".gitea/workflows/pull.yaml"
+		workflow := `name: Test runs-on with inputs
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ${{ inputs.image }}
+    steps:
+      - run: echo "Running on ${{ inputs.image }}"
+`
+
+		options := getWorkflowCreateFileOptions(user2, testRepository.DefaultBranch, fmt.Sprintf("create %s", workflowPath), workflow)
+		createWorkflowFile(t, token, user2.Name, testRepository.Name, workflowPath, options)
+
+		url := fmt.Sprintf("/%s/%s/actions/manual", user2.Name, testRepository.Name)
+		request := NewRequestWithValues(t, "POST", url, map[string]string{
+			"inputs[image]": "windows",
+			"ref":           testRepository.DefaultBranch,
+			"workflow":      "pull.yaml",
+			"actor":         strconv.FormatInt(user2.ID, 10),
+		})
+		session.MakeRequest(t, request, http.StatusSeeOther)
+
+		assert.Nil(t, ubuntuRunner.maybeFetchTask(t))
+
+		task := windowsRunner.fetchTask(t)
+		actionTask := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: task.Id})
+		actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: actionTask.JobID})
+		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
+
+		assert.Equal(t, "Test runs-on with inputs", run.Title)
 	})
 }
 
