@@ -22,21 +22,23 @@
 						<summary class="border" data-tooltip-content="{{ctx.Locale.Tr "profile.actions.tooltip"}}">
 							{{svg "octicon-kebab-horizontal" 20}}
 						</summary>
-						<ul>
-							{{if .EnableFeed}}
-								<li>
-									<a href="{{.Org.HomeLink}}.rss">{{svg "octicon-rss"}}{{ctx.Locale.Tr "rss_feed"}}</a>
-								</li>
-								<li>
-									<a href="{{.Org.HomeLink}}.atom">{{svg "octicon-rss"}}{{ctx.Locale.Tr "feed.atom.link"}}</a>
-								</li>
-							{{end}}
-							{{if $moderationEntryNeeded}}
-								<li>
-									<a class="orange text" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{svg "octicon-stop"}}{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
-								</li>
-							{{end}}
-						</ul>
+						<div class="content">
+							<ul>
+								{{if .EnableFeed}}
+									<li>
+										<a href="{{.Org.HomeLink}}.rss">{{svg "octicon-rss"}}{{ctx.Locale.Tr "rss_feed"}}</a>
+									</li>
+									<li>
+										<a href="{{.Org.HomeLink}}.atom">{{svg "octicon-rss"}}{{ctx.Locale.Tr "feed.atom.link"}}</a>
+									</li>
+								{{end}}
+								{{if $moderationEntryNeeded}}
+									<li>
+										<a class="orange text" href="{{AppSubUrl}}/report_abuse?type=org&id={{$.Org.ID}}">{{svg "octicon-stop"}}{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
+									</li>
+								{{end}}
+							</ul>
+						</div>
 					</details>
 				{{end}}
 			</span>

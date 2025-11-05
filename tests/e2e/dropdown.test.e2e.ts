@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // @watch start
-// templates/shared/user/**
+// templates/shared/user/actions_menu.tmpl
+// templates/org/header.tmpl
+// templates/explore/search.tmpl
 // web_src/js/modules/dropdown.ts
 // @watch end
 
@@ -17,8 +19,8 @@ test('JS enhanced interaction', async ({page}) => {
   await expect(nojsNotice).toBeHidden();
 
   // Open and close by clicking summary
-  const dropdownSummary = page.locator('details.dropdown summary');
-  const dropdownContent = page.locator('details.dropdown ul');
+  const dropdownSummary = page.locator('details.dropdown > summary');
+  const dropdownContent = page.locator('details.dropdown > .content');
   await expect(dropdownContent).toBeHidden();
   await dropdownSummary.click();
   await expect(dropdownContent).toBeVisible();
@@ -50,7 +52,7 @@ test('JS enhanced interaction', async ({page}) => {
   await dropdownSummary.press(`Escape`);
   await expect(dropdownContent).toBeHidden();
 
-  // Open and close by opening a different dropdown
+  // Open and then close by opening a different dropdown
   const languageMenu = page.locator('.language-menu');
   await dropdownSummary.click();
   await expect(dropdownContent).toBeVisible();
@@ -70,8 +72,8 @@ test('No JS interaction', async ({browser}) => {
   await expect(nojsPage.locator('body')).toContainClass('no-js');
 
   // Open and close by clicking summary
-  const dropdownSummary = nojsPage.locator('details.dropdown summary');
-  const dropdownContent = nojsPage.locator('details.dropdown ul');
+  const dropdownSummary = nojsPage.locator('details.dropdown > summary');
+  const dropdownContent = nojsPage.locator('details.dropdown > .content');
   await expect(dropdownContent).toBeHidden();
   await dropdownSummary.click();
   await expect(dropdownContent).toBeVisible();
@@ -113,7 +115,7 @@ test('Visual properties', async ({browser, isMobile}) => {
   await page.goto('/user1');
 
   // Has `.border` and pretty small default `inline-padding:`
-  const summary = page.locator('details.dropdown summary');
+  const summary = page.locator('details.dropdown > summary');
   expect(await summary.evaluate((el) => getComputedStyle(el).border)).toBe('1px solid rgba(0, 0, 0, 0.114)');
   expect(await summary.evaluate((el) => getComputedStyle(el).paddingInline)).toBe('7px');
 
@@ -139,8 +141,8 @@ test('Visual properties', async ({browser, isMobile}) => {
   }
 
   // Direction and item height
-  const content = page.locator('details.dropdown > ul');
-  const itemsSel = 'details.dropdown > ul > li';
+  const content = page.locator('details.dropdown > .content');
+  const itemsSel = 'details.dropdown > .content > ul > li';
   if (isMobile) {
     // `<ul>`'s direction is reversed
     expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
@@ -166,8 +168,8 @@ test('Visual properties', async ({browser, isMobile}) => {
   await evaluateDropdownItems(page, itemsSel, 'ltr', isMobile ? '40px' : '34px');
 
   // Background of inactive and `.active` items
-  const activeItem = page.locator('details.dropdown > ul > li:first-child > a');
-  const inactiveItem = page.locator('details.dropdown > ul > li:last-child > a');
+  const activeItem = page.locator('details.dropdown > .content > ul > li:first-child > a');
+  const inactiveItem = page.locator('details.dropdown > .content > ul > li:last-child > a');
   expect(await activeItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
   expect(await inactiveItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
 });
