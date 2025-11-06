@@ -242,17 +242,6 @@ func detectWorkflows(ctx context.Context, input *notifyInput, gitRepo *git.Repos
 		len(schedules),
 	)
 
-	for _, wf := range workflows {
-		if actionsConfig.IsWorkflowDisabled(wf.EntryName) {
-			log.Trace("repo %s has disable workflows %s", input.Repo.RepoPath(), wf.EntryName)
-			continue
-		}
-
-		if wf.TriggerEvent.Name != actions_module.GithubEventPullRequestTarget {
-			detectedWorkflows = append(detectedWorkflows, wf)
-		}
-	}
-
 	if input.PullRequest != nil && !actions_module.IsDefaultBranchWorkflow(input.Event) {
 		// detect pull_request_target workflows
 		baseRef := git.BranchPrefix + input.PullRequest.BaseBranch
@@ -280,6 +269,18 @@ func detectWorkflows(ctx context.Context, input *notifyInput, gitRepo *git.Repos
 			}
 		}
 	}
+
+	for _, wf := range workflows {
+		if actionsConfig.IsWorkflowDisabled(wf.EntryName) {
+			log.Trace("repo %s has disable workflows %s", input.Repo.RepoPath(), wf.EntryName)
+			continue
+		}
+
+		if wf.TriggerEvent.Name != actions_module.GithubEventPullRequestTarget {
+			detectedWorkflows = append(detectedWorkflows, wf)
+		}
+	}
+
 	return detectedWorkflows, schedules, nil
 }
 
