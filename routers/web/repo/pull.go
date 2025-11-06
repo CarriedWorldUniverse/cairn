@@ -997,8 +997,7 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 			return
 		}
 
-		note := &git.Note{}
-		err = git.GetNote(ctx, ctx.Repo.GitRepo, specifiedEndCommit, note)
+		note, err := git.GetNote(ctx, ctx.Repo.GitRepo, specifiedEndCommit)
 		if err == nil {
 			ctx.Data["NoteCommit"] = note.Commit
 			ctx.Data["NoteAuthor"] = user_model.ValidateCommitWithEmail(ctx, note.Commit)

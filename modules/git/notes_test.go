@@ -29,11 +29,11 @@ func TestGetNotes(t *testing.T) {
 	require.NoError(t, err)
 	defer bareRepo1.Close()
 
-	note := git.Note{}
-	err = git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653", &note)
+	note, err := git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653")
 	require.NoError(t, err)
 	assert.Equal(t, []byte("Note contents\n"), note.Message)
 	assert.Equal(t, "Vladimir Panteleev", note.Commit.Author.Name)
+	assert.Equal(t, "ca6b5ddf303169a72d2a2971acde4f6eea194e5c", note.Commit.ID.String())
 }
 
 func TestGetNestedNotes(t *testing.T) {
@@ -42,13 +42,14 @@ func TestGetNestedNotes(t *testing.T) {
 	require.NoError(t, err)
 	defer repo.Close()
 
-	note := git.Note{}
-	err = git.GetNote(t.Context(), repo, "3e668dbfac39cbc80a9ff9c61eb565d944453ba4", &note)
+	note, err := git.GetNote(t.Context(), repo, "3e668dbfac39cbc80a9ff9c61eb565d944453ba4")
 	require.NoError(t, err)
 	assert.Equal(t, []byte("Note 2"), note.Message)
-	err = git.GetNote(t.Context(), repo, "ba0a96fa63532d6c5087ecef070b0250ed72fa47", &note)
+	assert.Equal(t, "654c8b6b63c08bf37f638d3f521626b7fbbd4d37", note.Commit.ID.String())
+	note, err = git.GetNote(t.Context(), repo, "ba0a96fa63532d6c5087ecef070b0250ed72fa47")
 	require.NoError(t, err)
 	assert.Equal(t, []byte("Note 1"), note.Message)
+	assert.Equal(t, "654c8b6b63c08bf37f638d3f521626b7fbbd4d37", note.Commit.ID.String())
 }
 
 func TestGetNonExistentNotes(t *testing.T) {
@@ -57,10 +58,10 @@ func TestGetNonExistentNotes(t *testing.T) {
 	require.NoError(t, err)
 	defer bareRepo1.Close()
 
-	note := git.Note{}
-	err = git.GetNote(t.Context(), bareRepo1, "non_existent_sha", &note)
+	note, err := git.GetNote(t.Context(), bareRepo1, "non_existent_sha")
 	require.Error(t, err)
-	assert.IsType(t, git.ErrNotExist{}, err)
+	assert.True(t, git.IsErrNotExist(err))
+	assert.Nil(t, note)
 }
 
 func TestSetNote(t *testing.T) {
@@ -75,8 +76,7 @@ func TestSetNote(t *testing.T) {
 
 	require.NoError(t, git.SetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653", "This is a new note", "Test", "test@test.com"))
 
-	note := git.Note{}
-	err = git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653", &note)
+	note, err := git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653")
 	require.NoError(t, err)
 	assert.Equal(t, []byte("This is a new note\n"), note.Message)
 	assert.Equal(t, "Test", note.Commit.Author.Name)
@@ -95,8 +95,8 @@ func TestRemoveNote(t *testing.T) {
 
 	require.NoError(t, git.RemoveNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653"))
 
-	note := git.Note{}
-	err = git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653", &note)
+	note, err := git.GetNote(t.Context(), bareRepo1, "95bb4d39648ee7e325106df01a621c530863a653")
 	require.Error(t, err)
-	assert.IsType(t, git.ErrNotExist{}, err)
+	assert.True(t, git.IsErrNotExist(err))
+	assert.Nil(t, note)
 }
