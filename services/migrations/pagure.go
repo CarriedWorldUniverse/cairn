@@ -16,6 +16,7 @@ import (
 	"forgejo.org/modules/log"
 	base "forgejo.org/modules/migration"
 	"forgejo.org/modules/proxy"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
 )
@@ -279,6 +280,11 @@ func (d *PagureDownloader) callAPI(endpoint string, parameter map[string]string,
 	if err != nil {
 		return err
 	}
+
+	// pagure.io is protected by Anubis and requires proper headers
+	req.Header.Add("Accept", "*/*")
+	req.Header.Add("User-Agent", "Forgejo/"+setting.AppVer)
+
 	if d.privateIssuesOnlyRepo {
 		req.Header.Set("Authorization", "token "+d.token)
 	}
@@ -344,7 +350,7 @@ func (d *PagureDownloader) GetMilestones() ([]*base.Milestone, error) {
 func (d *PagureDownloader) GetLabels() ([]*base.Label, error) {
 	rawLabels := PagureLabelsList{}
 
-	err := d.callAPI("/api/0/"+d.repoName+"/tags", nil, &rawLabels)
+	err := d.callAPI("/api/0/"+d.repoName+"/tags/", nil, &rawLabels)
 	if err != nil {
 		return nil, err
 	}
