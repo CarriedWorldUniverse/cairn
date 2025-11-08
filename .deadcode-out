@@ -49,6 +49,7 @@ forgejo.org/models/repo
 	WatchRepoMode
 
 forgejo.org/models/user
+	IsErrUserWrongType
 	IsErrExternalLoginUserAlreadyExist
 	IsErrExternalLoginUserNotExist
 	NewFederatedUser
