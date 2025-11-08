@@ -31,6 +31,19 @@ test('Language stats bar', async ({browser}) => {
   await screenshot(page);
 });
 
+test('Repo title', async ({browser}) => {
+  const context = await browser.newContext({javaScriptEnabled: false});
+  const page = await context.newPage();
+
+  const response = await page.goto('/user2/repo1');
+  expect(response?.status()).toBe(200);
+
+  const repoHeader = page.locator('.repo-header');
+  expect(await repoHeader.locator('.flex-item-title').evaluate((el) => getComputedStyle(el).fontWeight)).toBe('400');
+  expect(await repoHeader.locator('.flex-item-title a[href="/user2"]').evaluate((el) => getComputedStyle(el).fontWeight)).toBe('400');
+  expect(await repoHeader.locator('.flex-item-title a[href="/user2/repo1"]').evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
+});
+
 test('Branch selector commit icon', async ({page}) => {
   const response = await page.goto('/user2/repo1');
   expect(response?.status()).toBe(200);

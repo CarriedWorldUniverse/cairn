@@ -637,7 +637,7 @@ export default {
           </div>
           <div class="job-info-header-right">
             <div class="ui top right pointing dropdown dark-dropdown custom jump item job-gear-dropdown" @click.stop="toggleGearDropdown()">
-              <button class="btn gt-interact-bg tw-p-2">
+              <button class="btn interact-bg tw-p-2">
                 <SvgIcon name="octicon-gear" :size="18"/>
               </button>
               <div class="menu transition action-job-menu" :class="{visible: displayGearDropdown}" v-if="displayGearDropdown" v-cloak>
