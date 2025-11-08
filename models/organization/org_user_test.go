@@ -142,6 +142,15 @@ func TestAddOrgUser(t *testing.T) {
 		org = unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: orgID})
 		assert.Equal(t, expectedNumMembers, org.NumMembers)
 	}
+	testFailure := func(orgID, userID int64, isPublic bool) {
+		org := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: orgID})
+		expectedNumMembers := org.NumMembers
+		require.ErrorIs(t, organization.AddOrgUser(db.DefaultContext, orgID, userID), user_model.ErrUserWrongType{UID: userID})
+		ou := &organization.OrgUser{OrgID: orgID, UID: userID}
+		unittest.AssertNotExistsBean(t, ou)
+		org = unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: orgID})
+		assert.Equal(t, expectedNumMembers, org.NumMembers)
+	}
 
 	setting.Service.DefaultOrgMemberVisible = false
 	testSuccess(3, 5, false)
@@ -149,7 +158,7 @@ func TestAddOrgUser(t *testing.T) {
 	testSuccess(6, 2, false)
 
 	setting.Service.DefaultOrgMemberVisible = true
-	testSuccess(6, 3, true)
+	testFailure(6, 3, true)
 
 	unittest.CheckConsistencyFor(t, &user_model.User{}, &organization.Team{})
 }
