@@ -1215,11 +1215,9 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 			return err
 		}
 	}
+
 	if _, err := e.Table("action").
-		Where("comment_id = ?", comment.ID).
-		Update(map[string]any{
-			"is_deleted": true,
-		}); err != nil {
+		Where("comment_id = ?", comment.ID).Delete(); err != nil {
 		return err
 	}
 

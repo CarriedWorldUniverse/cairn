@@ -195,7 +195,6 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 			Actor:           ctx.Doer,
 			IncludePrivate:  showPrivate,
 			OnlyPerformedBy: true,
-			IncludeDeleted:  false,
 			Date:            date,
 			ListOptions: db.ListOptions{
 				PageSize: pagingNum,

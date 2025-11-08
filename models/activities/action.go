@@ -154,7 +154,6 @@ type Action struct {
 	CommentID   int64                  `xorm:"INDEX"`
 	Comment     *issues_model.Comment  `xorm:"-"`
 	Issue       *issues_model.Issue    `xorm:"-"` // get the issue id from content
-	IsDeleted   bool                   `xorm:"NOT NULL DEFAULT false"`
 	RefName     string
 	IsPrivate   bool               `xorm:"NOT NULL DEFAULT false"`
 	Content     string             `xorm:"TEXT"`
@@ -167,14 +166,14 @@ func init() {
 
 // TableIndices implements xorm's TableIndices interface
 func (a *Action) TableIndices() []*schemas.Index {
-	repoIndex := schemas.NewIndex("r_u_d", schemas.IndexType)
-	repoIndex.AddColumn("repo_id", "user_id", "is_deleted")
+	repoIndex := schemas.NewIndex("r_u", schemas.IndexType)
+	repoIndex.AddColumn("repo_id", "user_id")
 
-	actUserIndex := schemas.NewIndex("au_r_c_u_d", schemas.IndexType)
-	actUserIndex.AddColumn("act_user_id", "repo_id", "created_unix", "user_id", "is_deleted")
+	actUserIndex := schemas.NewIndex("au_r_c_u", schemas.IndexType)
+	actUserIndex.AddColumn("act_user_id", "repo_id", "created_unix", "user_id")
 
-	cudIndex := schemas.NewIndex("c_u_d", schemas.IndexType)
-	cudIndex.AddColumn("created_unix", "user_id", "is_deleted")
+	cudIndex := schemas.NewIndex("c_u", schemas.IndexType)
+	cudIndex.AddColumn("created_unix", "user_id")
 
 	indices := []*schemas.Index{actUserIndex, repoIndex, cudIndex}
 
@@ -472,7 +471,6 @@ type GetFeedsOptions struct {
 	IncludePrivate       bool                   // include private actions
 	OnlyPerformedBy      bool                   // only actions performed by requested user
 	OnlyPerformedByActor bool                   // only actions performed by the original actor
-	IncludeDeleted       bool                   // include deleted actions
 	Date                 string                 // the day we want activity for: YYYY-MM-DD
 }
 
@@ -587,9 +585,6 @@ func activityQueryCondition(ctx context.Context, opts GetFeedsOptions) (builder.
 
 	if !opts.IncludePrivate {
 		cond = cond.And(builder.Eq{"`action`.is_private": false})
-	}
-	if !opts.IncludeDeleted {
-		cond = cond.And(builder.Eq{"is_deleted": false})
 	}
 
 	if opts.Date != "" {

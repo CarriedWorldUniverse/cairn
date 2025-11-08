@@ -33,7 +33,6 @@ func showUserFeed(ctx *context.Context, formatType string) {
 		Actor:           ctx.Doer,
 		IncludePrivate:  includePrivate,
 		OnlyPerformedBy: !ctx.ContextUser.IsOrganization(),
-		IncludeDeleted:  false,
 		Date:            ctx.FormString("date"),
 	})
 	if err != nil {

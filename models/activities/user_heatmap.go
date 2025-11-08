@@ -54,7 +54,6 @@ func getUserHeatmapData(ctx context.Context, user *user_model.User, team *organi
 		RequestedTeam:  team,
 		Actor:          doer,
 		IncludePrivate: true, // don't filter by private, as we already filter by repo access
-		IncludeDeleted: true,
 		// * Heatmaps for individual users only include actions that the user themself did.
 		// * For organizations actions by all users that were made in owned
 		//   repositories are counted.
