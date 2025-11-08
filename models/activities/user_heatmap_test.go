@@ -82,7 +82,6 @@ func TestGetUserHeatmapDataByUser(t *testing.T) {
 			Actor:           doer,
 			IncludePrivate:  true,
 			OnlyPerformedBy: true,
-			IncludeDeleted:  true,
 		})
 		require.NoError(t, err)
 

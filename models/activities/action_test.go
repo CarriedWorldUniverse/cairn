@@ -51,7 +51,6 @@ func TestGetFeeds(t *testing.T) {
 		Actor:           user,
 		IncludePrivate:  true,
 		OnlyPerformedBy: false,
-		IncludeDeleted:  true,
 	})
 	require.NoError(t, err)
 	if assert.Len(t, actions, 1) {
@@ -127,7 +126,6 @@ func TestGetFeeds2(t *testing.T) {
 		Actor:           user,
 		IncludePrivate:  true,
 		OnlyPerformedBy: false,
-		IncludeDeleted:  true,
 	})
 	require.NoError(t, err)
 	assert.Len(t, actions, 1)
@@ -142,7 +140,6 @@ func TestGetFeeds2(t *testing.T) {
 		Actor:           user,
 		IncludePrivate:  false,
 		OnlyPerformedBy: false,
-		IncludeDeleted:  true,
 	})
 	require.NoError(t, err)
 	assert.Empty(t, actions)

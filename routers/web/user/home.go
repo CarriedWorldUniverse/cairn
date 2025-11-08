@@ -119,7 +119,6 @@ func Dashboard(ctx *context.Context) {
 		Actor:           ctx.Doer,
 		IncludePrivate:  true,
 		OnlyPerformedBy: false,
-		IncludeDeleted:  false,
 		Date:            ctx.FormString("date"),
 		ListOptions: db.ListOptions{
 			Page:     page,
