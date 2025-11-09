@@ -41,6 +41,7 @@ var SSH = struct {
 	MinimumKeySizeCheck                   bool               `ini:"-"`
 	MinimumKeySizes                       map[string]int     `ini:"-"`
 	CreateAuthorizedKeysFile              bool               `ini:"SSH_CREATE_AUTHORIZED_KEYS_FILE"`
+	AllowUnexpectedAuthorizedKeys         bool               `ini:"SSH_ALLOW_UNEXPECTED_AUTHORIZED_KEYS"`
 	CreateAuthorizedPrincipalsFile        bool               `ini:"SSH_CREATE_AUTHORIZED_PRINCIPALS_FILE"`
 	ExposeAnonymous                       bool               `ini:"SSH_EXPOSE_ANONYMOUS"`
 	AuthorizedPrincipalsAllow             []string           `ini:"SSH_AUTHORIZED_PRINCIPALS_ALLOW"`

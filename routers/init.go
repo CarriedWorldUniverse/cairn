@@ -163,7 +163,7 @@ func InitWebInstalled(ctx context.Context) {
 
 	mustInitCtx(ctx, syncAppConfForGit)
 
-	mustInit(ssh.Init)
+	mustInitCtx(ctx, ssh.Init)
 
 	auth.Init()
 	mustInit(svg.Init)
