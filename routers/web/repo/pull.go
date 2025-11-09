@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"forgejo.org/models"
+	actions_model "forgejo.org/models/actions"
 	activities_model "forgejo.org/models/activities"
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/db"
@@ -44,6 +45,7 @@ import (
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/routers/utils"
+	actions_service "forgejo.org/services/actions"
 	asymkey_service "forgejo.org/services/asymkey"
 	"forgejo.org/services/automerge"
 	"forgejo.org/services/context"
@@ -762,6 +764,11 @@ func PrepareViewPullInfo(ctx *context.Context, issue *issues_model.Issue) *git.C
 
 	if compareInfo.HeadCommitID == compareInfo.MergeBase {
 		ctx.Data["IsNothingToCompare"] = true
+	}
+
+	PrepareViewPullInfoActions(ctx, pull)
+	if ctx.Written() {
+		return nil
 	}
 
 	if pull.IsWorkInProgress(ctx) {
@@ -1941,4 +1948,68 @@ func SetAllowEdits(ctx *context.Context) {
 	ctx.JSON(http.StatusOK, map[string]any{
 		"allow_maintainer_edit": pr.AllowMaintainerEdit,
 	})
+}
+
+func PrepareViewPullInfoActions(ctx *context.Context, pull *issues_model.PullRequest) {
+	canReadUnitActions := ctx.Repo.CanRead(unit.TypeActions)
+	ctx.Data["CanReadUnitActions"] = canReadUnitActions
+
+	if !canReadUnitActions {
+		return
+	}
+
+	PrepareViewPullInfoActionsTrust(ctx, pull)
+	if ctx.Written() {
+		return
+	}
+}
+
+func PrepareViewPullInfoActionsTrust(ctx *context.Context, pull *issues_model.PullRequest) {
+	trusted, err := actions_service.GetPullRequestPosterIsTrustedWithActions(ctx, pull)
+	if err != nil {
+		ctx.ServerError("GetPullRequestUserIsTrustedWithActions", err)
+		return
+	}
+	ctx.Data["PullRequestPosterIsNotTrustedWithActions"] = trusted == actions_service.UserIsNotTrustedWithActions
+	ctx.Data["PullRequestPosterIsExplicitlyTrustedWithActions"] = trusted == actions_service.UserIsExplicitlyTrustedWithActions
+	ctx.Data["PullRequestPosterIsImplicitlyTrustedWithActions"] = trusted == actions_service.UserIsImplicitlyTrustedWithActions
+
+	someRunsNeedApproval, err := actions_model.HasRunThatNeedApproval(ctx, pull.Issue.RepoID, pull.ID)
+	if err != nil {
+		ctx.ServerError("HasRunThatNeedApproval", err)
+	}
+	ctx.Data["SomePullRequestRunsNeedApproval"] = someRunsNeedApproval
+
+	ctx.Data["UserCanDelegateTrustWithPullRequest"] = context.CheckRepoDelegateActionTrust(ctx)
+}
+
+func UpdateTrustWithPullRequestActions(ctx *context.Context) {
+	pr, err := issues_model.GetPullRequestByIndex(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":index"))
+	if err != nil {
+		if issues_model.IsErrPullRequestNotExist(err) {
+			ctx.NotFound("GetPullRequestByIndex", err)
+		} else {
+			ctx.ServerError("GetPullRequestByIndex", err)
+		}
+		return
+	}
+
+	trust := ctx.FormString("trust")
+
+	if err := actions_service.UpdateTrustedWithPullRequest(ctx, ctx.Doer.ID, pr, actions_service.TrustUpdate(trust)); err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := pr.LoadIssue(ctx); err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := pr.Issue.LoadRepo(ctx); err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.Redirect(fmt.Sprintf("%s#pull-request-trust-panel", pr.Issue.Link()))
 }

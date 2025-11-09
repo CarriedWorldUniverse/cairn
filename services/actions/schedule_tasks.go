@@ -14,6 +14,7 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
+	actions_module "forgejo.org/modules/actions"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"
 	webhook_module "forgejo.org/modules/webhook"
@@ -168,7 +169,7 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 	}
 
 	// Parse the workflow specification from the cron schedule
-	workflows, err := jobParser(cron.Content, jobparser.WithVars(vars))
+	workflows, err := actions_module.JobParser(cron.Content, jobparser.WithVars(vars))
 	if err != nil {
 		return err
 	}

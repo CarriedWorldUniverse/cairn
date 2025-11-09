@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	model "forgejo.org/models"
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	actions_module "forgejo.org/modules/actions"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,5 +111,38 @@ func TestBlockUser(t *testing.T) {
 
 		_, err = issues_model.ChangeIssueStatus(db.DefaultContext, issue, blockedUser, false)
 		require.Error(t, err)
+	})
+
+	t.Run("Pull requests actions are cancelled", func(t *testing.T) {
+		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2, OwnerID: doer.ID})
+		blockedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+		defer user_model.UnblockUser(db.DefaultContext, doer.ID, blockedUser.ID)
+
+		pullRequestPosterID := blockedUser.ID
+		singleWorkflows, err := actions_module.JobParser([]byte(`
+jobs:
+  job:
+    runs-on: docker
+    steps:
+      - run: echo OK
+`))
+		require.NoError(t, err)
+		require.Len(t, singleWorkflows, 1)
+		runWaiting := &actions_model.ActionRun{
+			TriggerUserID:       2,
+			RepoID:              repo.ID,
+			Status:              actions_model.StatusWaiting,
+			PullRequestPosterID: pullRequestPosterID,
+		}
+		require.NoError(t, actions_model.InsertRun(t.Context(), runWaiting, singleWorkflows))
+
+		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: runWaiting.ID})
+		require.Equal(t, actions_model.StatusWaiting.String(), run.Status.String())
+
+		require.NoError(t, BlockUser(db.DefaultContext, doer.ID, blockedUser.ID))
+
+		run = unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: runWaiting.ID})
+		require.Equal(t, actions_model.StatusCancelled.String(), run.Status.String())
 	})
 }
