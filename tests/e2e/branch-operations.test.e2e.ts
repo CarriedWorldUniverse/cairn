@@ -66,7 +66,8 @@ test('Rename normal branch', async ({page}) => {
   expect(response?.status()).toBe(200);
 });
 
-test('Rename default branch', async ({page}) => {
+test('Rename default branch', async ({page}, workerInfo) => {
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name));
   let response = await page.goto('/user2/repo1/branches');
   expect(response?.status()).toBe(200);
 

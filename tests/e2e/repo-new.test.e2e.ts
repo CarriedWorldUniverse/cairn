@@ -70,7 +70,7 @@ test('New repo: initialize later', async ({page}) => {
   await page.getByPlaceholder('master').fill('devbranch');
   await validate_form({page}, 'fieldset');
   await page.getByRole('button', {name: 'Create repository'}).click();
-  expect(page.url()).toBe(`http://localhost:3003/user2/${reponame}`);
+  await page.waitForURL(new RegExp(`.*/user2/${reponame}$`));
   await expect(page.getByRole('link', {name: 'New file'})).toBeVisible();
   await expect(page.getByRole('heading', {name: 'Creating a new repository on'})).toBeVisible();
   await screenshot(page);
