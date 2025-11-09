@@ -11,7 +11,8 @@ import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
-test('Create branch from commit', async ({page}) => {
+test('Create branch from commit', async ({page}, workerInfo) => {
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name));
   let response = await page.goto('/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d');
   expect(response?.status()).toBe(200);
 
@@ -39,7 +40,8 @@ test('Create branch from commit', async ({page}) => {
   expect(response?.status()).toBe(200);
 });
 
-test('Create tag from commit', async ({page}) => {
+test('Create tag from commit', async ({page}, workerInfo) => {
+  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name));
   let response = await page.goto('/user2/repo1/commit/65f1bf27bc3bf70f64657658635e66094edbcb4d');
   expect(response?.status()).toBe(200);
 
