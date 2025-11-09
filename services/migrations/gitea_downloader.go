@@ -356,7 +356,7 @@ func (g *GiteaDownloader) GetReleases() ([]*base.Release, error) {
 func (g *GiteaDownloader) getIssueReactions(index int64) ([]*base.Reaction, error) {
 	var reactions []*base.Reaction
 	if err := g.client.CheckServerVersionConstraint(">=1.11"); err != nil {
-		log.Info("GiteaDownloader: instance to old, skip getIssueReactions")
+		log.Info("GiteaDownloader: instance too old, skip getIssueReactions")
 		return reactions, nil
 	}
 	rl, _, err := g.client.GetIssueReactions(g.repoOwner, g.repoName, index)
@@ -377,7 +377,7 @@ func (g *GiteaDownloader) getIssueReactions(index int64) ([]*base.Reaction, erro
 func (g *GiteaDownloader) getCommentReactions(commentID int64) ([]*base.Reaction, error) {
 	var reactions []*base.Reaction
 	if err := g.client.CheckServerVersionConstraint(">=1.11"); err != nil {
-		log.Info("GiteaDownloader: instance to old, skip getCommentReactions")
+		log.Info("GiteaDownloader: instance too old, skip getCommentReactions")
 		return reactions, nil
 	}
 	rl, _, err := g.client.GetIssueCommentReactions(g.repoOwner, g.repoName, commentID)
@@ -723,7 +723,7 @@ func (g *GiteaDownloader) GetPullRequests(page, perPage int) ([]*base.PullReques
 // GetReviews returns pull requests review
 func (g *GiteaDownloader) GetReviews(reviewable base.Reviewable) ([]*base.Review, error) {
 	if err := g.client.CheckServerVersionConstraint(">=1.12"); err != nil {
-		log.Info("GiteaDownloader: instance to old, skip GetReviews")
+		log.Info("GiteaDownloader: instance too old, skip GetReviews")
 		return nil, nil
 	}
 
