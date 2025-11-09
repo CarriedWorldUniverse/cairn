@@ -223,7 +223,8 @@ export default {
     },
     // approve a run
     approveRun() {
-      POST(`${this.run.link}/approve`);
+      const url = `${this.run.commit.branch.link}#pull-request-trust-panel`;
+      window.location.href = url;
     },
     // show/hide the step logs for a group
     toggleGroupLogs(event) {

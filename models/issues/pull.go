@@ -470,6 +470,23 @@ func (pr *PullRequest) GetReviewCommentsCount(ctx context.Context) int {
 	return int(count)
 }
 
+func (pr *PullRequest) IsForkPullRequest() bool {
+	var isForkPullRequest bool
+
+	switch pr.Flow {
+	case PullRequestFlowGithub:
+		isForkPullRequest = pr.IsFromFork()
+	case PullRequestFlowAGit:
+		// there is no fork concept in AGit flow, anyone with read permission can push refs/for/<target-branch>/<topic-branch> to the repo.
+		// So we must treat it as a fork pull request because it may be from an untrusted user
+		isForkPullRequest = true
+	default:
+		// unknown flow, treat it as it's a fork pull request
+		isForkPullRequest = true
+	}
+	return isForkPullRequest
+}
+
 // IsChecking returns true if this pull request is still checking conflict.
 func (pr *PullRequest) IsChecking() bool {
 	return pr.Status == PullRequestStatusChecking

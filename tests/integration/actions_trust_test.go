@@ -1,0 +1,355 @@
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+package integration
+
+import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+
+	actions_model "forgejo.org/models/actions"
+	issues_model "forgejo.org/models/issues"
+	repo_model "forgejo.org/models/repo"
+	unit_model "forgejo.org/models/unit"
+	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
+	actions_module "forgejo.org/modules/actions"
+	"forgejo.org/modules/git"
+	"forgejo.org/modules/structs"
+	actions_service "forgejo.org/services/actions"
+	pull_service "forgejo.org/services/pull"
+	repo_service "forgejo.org/services/repository"
+	files_service "forgejo.org/services/repository/files"
+	"forgejo.org/tests"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func actionsTrustTestClickTrustPanel(t *testing.T, session *TestSession, url, trust string) {
+	// an admin approves the run once
+	req := NewRequest(t, "GET", url)
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	htmlDoc.AssertElement(t, "#pull-request-trust-panel", true)
+	link, exists := htmlDoc.doc.Find("#pull-request-trust-panel-" + trust).Attr("action")
+	require.True(t, exists)
+	actualTrust, exists := htmlDoc.doc.Find(fmt.Sprintf("#pull-request-trust-panel-%s input[name='trust']", trust)).Attr("value")
+	require.True(t, exists)
+	require.Equal(t, trust, actualTrust)
+	req = NewRequestWithValues(t, "POST", link, map[string]string{
+		"trust": trust,
+	})
+	session.MakeRequest(t, req, http.StatusSeeOther)
+}
+
+func actionsTrustTestAssertTrustPanelPresence(t *testing.T, session *TestSession, url string, present bool) {
+	t.Helper()
+	req := NewRequest(t, "GET", url)
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	htmlDoc.AssertElement(t, ".error-code", false)
+	htmlDoc.AssertElement(t, "#pull-request-trust-panel", present)
+}
+
+func actionsTrustTestAssertTrustPanel(t *testing.T, session *TestSession, url string) {
+	t.Helper()
+	actionsTrustTestAssertTrustPanelPresence(t, session, url, true)
+}
+
+func actionsTrustTestAssertNoTrustPanel(t *testing.T, session *TestSession, url string) {
+	t.Helper()
+	actionsTrustTestAssertTrustPanelPresence(t, session, url, false)
+}
+
+func actionsTrustTestCreateBaseRepo(t *testing.T, owner *user_model.User) (*repo_model.Repository, func()) {
+	t.Helper()
+
+	// create the base repo
+	baseRepo, _, f := tests.CreateDeclarativeRepo(t, owner, "repo-pull-request",
+		[]unit_model.Type{unit_model.TypeActions}, nil, nil,
+	)
+
+	// add workflow file to the base repo
+	addWorkflowToBaseResp, err := files_service.ChangeRepoFiles(git.DefaultContext, baseRepo, owner, &files_service.ChangeRepoFilesOptions{
+		Files: []*files_service.ChangeRepoFile{
+			{
+				Operation: "create",
+				TreePath:  ".forgejo/workflows/pr.yml",
+				ContentReader: strings.NewReader(`
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: docker
+    steps:
+      - run: echo helloworld
+`),
+			},
+		},
+		Message:   "add workflow",
+		OldBranch: "main",
+		NewBranch: "main",
+		Author: &files_service.IdentityOptions{
+			Name:  owner.Name,
+			Email: owner.Email,
+		},
+		Committer: &files_service.IdentityOptions{
+			Name:  owner.Name,
+			Email: owner.Email,
+		},
+		Dates: &files_service.CommitDateOptions{
+			Author:    time.Now(),
+			Committer: time.Now(),
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, addWorkflowToBaseResp)
+	return baseRepo, f
+}
+
+func actionsTrustTestRequireRun(t *testing.T, repo *repo_model.Repository, modifiedFiles *structs.FilesResponse) {
+	t.Helper()
+
+	actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: repo.ID, CommitSHA: modifiedFiles.Commit.SHA})
+	require.Equal(t, actions_module.GithubEventPullRequest, actionRun.TriggerEvent)
+	require.Equal(t, actions_model.StatusWaiting.String(), actionRun.Status.String())
+	unittest.BeanExists(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: repo.ID})
+}
+
+func actionsTrustTestRepoCreateBranch(t *testing.T, doer *user_model.User, repo *repo_model.Repository) *structs.FilesResponse {
+	t.Helper()
+
+	return actionsTrustTestModifyRepo(t, doer, repo, "file_in_fork.txt", "main", "fork-branch-1")
+}
+
+func actionsTrustTestRepoModify(t *testing.T, doer *user_model.User, baseRepo, headRepo *repo_model.Repository, filename string) *structs.FilesResponse {
+	t.Helper()
+
+	modified := actionsTrustTestModifyRepo(t, doer, headRepo, filename, "fork-branch-1", "fork-branch-1")
+	// the creation of the run is not synchronous
+	require.Eventually(t, func() bool {
+		return unittest.BeanExists(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modified.Commit.SHA})
+	}, 60*time.Second, time.Millisecond*100)
+	return modified
+}
+
+func actionsTrustTestModifyRepo(t *testing.T, doer *user_model.User, repo *repo_model.Repository, filename, oldBranch, newBranch string) *structs.FilesResponse {
+	t.Helper()
+
+	// add a new file to the forked repo
+	addFile, err := files_service.ChangeRepoFiles(git.DefaultContext, repo, doer, &files_service.ChangeRepoFilesOptions{
+		Files: []*files_service.ChangeRepoFile{
+			{
+				Operation:     "create",
+				TreePath:      filename,
+				ContentReader: strings.NewReader("content"),
+			},
+		},
+		Message:   "add " + filename,
+		OldBranch: oldBranch,
+		NewBranch: newBranch,
+		Author: &files_service.IdentityOptions{
+			Name:  doer.Name,
+			Email: doer.Email,
+		},
+		Committer: &files_service.IdentityOptions{
+			Name:  doer.Name,
+			Email: doer.Email,
+		},
+		Dates: &files_service.CommitDateOptions{
+			Author:    time.Now(),
+			Committer: time.Now(),
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, addFile)
+	return addFile
+}
+
+func actionsTrustTestCreatePullRequestFromForkedRepo(t *testing.T, baseUser *user_model.User, baseRepo *repo_model.Repository, headUser *user_model.User) (*repo_model.Repository, *issues_model.PullRequest, *structs.FilesResponse) {
+	t.Helper()
+
+	forkRepo := func(t *testing.T, baseUser *user_model.User, baseRepo *repo_model.Repository, headUser *user_model.User) *repo_model.Repository {
+		t.Helper()
+
+		// create the forked repo
+		forkedRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, baseUser, headUser, repo_service.ForkRepoOptions{
+			BaseRepo:    baseRepo,
+			Name:        "forked-repo-pull-request",
+			Description: "test pull-request event",
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, forkedRepo)
+		return forkedRepo
+	}
+
+	forkedRepo := forkRepo(t, baseUser, baseRepo, headUser)
+	addFileToForkedResp := actionsTrustTestRepoCreateBranch(t, headUser, forkedRepo)
+
+	// create Pull
+	pullIssue := &issues_model.Issue{
+		RepoID:   baseRepo.ID,
+		Title:    "Test pull-request",
+		PosterID: headUser.ID,
+		Poster:   headUser,
+		IsPull:   true,
+	}
+	pullRequest := &issues_model.PullRequest{
+		HeadRepoID: forkedRepo.ID,
+		BaseRepoID: baseRepo.ID,
+		HeadBranch: "fork-branch-1",
+		BaseBranch: "main",
+		HeadRepo:   forkedRepo,
+		BaseRepo:   baseRepo,
+		Type:       issues_model.PullRequestGitea,
+	}
+	// create the pull request
+	err := pull_service.NewPullRequest(git.DefaultContext, baseRepo, pullIssue, nil, nil, pullRequest, nil)
+	require.NoError(t, err)
+
+	actionsTrustTestRequireRun(t, baseRepo, addFileToForkedResp)
+
+	return forkedRepo, pullRequest, addFileToForkedResp
+}
+
+func TestActionsPullRequestTrustPanel(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		ownerUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the repo
+
+		regularUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5}) // a regular user with no specific permission
+		regularSession := loginUser(t, regularUser.Name)
+
+		userAdmin := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1}) // the instance admin
+		adminSession := loginUser(t, userAdmin.Name)
+
+		baseRepo, f := actionsTrustTestCreateBaseRepo(t, ownerUser)
+		defer f()
+
+		forkedRepo, pullRequest, addFileToForkedResp := actionsTrustTestCreatePullRequestFromForkedRepo(t, ownerUser, baseRepo, regularUser)
+		pullRequestLink := pullRequest.Issue.Link()
+
+		t.Run("Regular user sees a pending approval on a newly created pull request from a fork", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
+		})
+
+		t.Run("Admin approves runs once", func(t *testing.T) {
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: addFileToForkedResp.Commit.SHA})
+
+			{
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: addFileToForkedResp.Commit.SHA})
+				assert.True(t, actionRun.NeedApproval)
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusBlocked.String(), actionRunJob.Status.String())
+			}
+
+			actionsTrustTestAssertTrustPanel(t, adminSession, pullRequestLink)
+			actionsTrustTestClickTrustPanel(t, adminSession, pullRequestLink, string(actions_service.UserTrustedOnce))
+
+			{
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusWaiting.String(), actionRunJob.Status.String())
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID})
+				assert.False(t, actionRun.NeedApproval)
+			}
+		})
+
+		t.Run("All users sees no pending approval because it was approved once", func(t *testing.T) {
+			actionsTrustTestAssertNoTrustPanel(t, regularSession, pullRequestLink)
+			actionsTrustTestAssertNoTrustPanel(t, adminSession, pullRequestLink)
+		})
+
+		modifiedForkedResp := actionsTrustTestRepoModify(t, regularUser, baseRepo, forkedRepo, "add_file_one.txt")
+
+		t.Run("Regular user sees a pending approval on a modified pull request from a fork (2)", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
+		})
+
+		t.Run("Admin denies runs", func(t *testing.T) {
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+
+			{
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+				assert.True(t, actionRun.NeedApproval)
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusBlocked.String(), actionRunJob.Status.String())
+			}
+
+			actionsTrustTestAssertTrustPanel(t, adminSession, pullRequestLink)
+			actionsTrustTestClickTrustPanel(t, adminSession, pullRequestLink, string(actions_service.UserTrustDenied))
+
+			{
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusCancelled.String(), actionRunJob.Status.String())
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID})
+				assert.False(t, actionRun.NeedApproval)
+			}
+		})
+
+		t.Run("All users sees no pending approval because it was denied", func(t *testing.T) {
+			actionsTrustTestAssertNoTrustPanel(t, regularSession, pullRequestLink)
+			actionsTrustTestAssertNoTrustPanel(t, adminSession, pullRequestLink)
+		})
+
+		modifiedForkedResp = actionsTrustTestRepoModify(t, regularUser, baseRepo, forkedRepo, "add_file_two.txt")
+
+		t.Run("Regular user sees a pending approval on a modified pull request from a fork (2)", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
+		})
+
+		t.Run("Admin always trusts the poster", func(t *testing.T) {
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+
+			{
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+				assert.True(t, actionRun.NeedApproval)
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusBlocked.String(), actionRunJob.Status.String())
+			}
+
+			actionsTrustTestAssertTrustPanel(t, adminSession, pullRequestLink)
+			actionsTrustTestClickTrustPanel(t, adminSession, pullRequestLink, string(actions_service.UserAlwaysTrusted))
+
+			{
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+				assert.Equal(t, actions_model.StatusWaiting.String(), actionRunJob.Status.String())
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID})
+				assert.False(t, actionRun.NeedApproval)
+			}
+		})
+
+		t.Run("Regular users sees no pending approval because it was approved", func(t *testing.T) {
+			actionsTrustTestAssertNoTrustPanel(t, regularSession, pullRequestLink)
+		})
+
+		modifiedForkedResp = actionsTrustTestRepoModify(t, regularUser, baseRepo, forkedRepo, "add_file_three.txt")
+
+		t.Run("No need for approval because the poster is always trusted", func(t *testing.T) {
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+			assert.False(t, actionRun.NeedApproval)
+			actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+			assert.Equal(t, actions_model.StatusWaiting.String(), actionRunJob.Status.String())
+		})
+
+		t.Run("Admin revokes the trusted poster", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, adminSession, pullRequestLink)
+			actionsTrustTestClickTrustPanel(t, adminSession, pullRequestLink, string(actions_service.UserTrustRevoked))
+		})
+
+		modifiedForkedResp = actionsTrustTestRepoModify(t, regularUser, baseRepo, forkedRepo, "add_file_four.txt")
+
+		t.Run("There needs to be an approval again because the user is no longer trusted", func(t *testing.T) {
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modifiedForkedResp.Commit.SHA})
+			assert.True(t, actionRun.NeedApproval)
+			actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+			assert.Equal(t, actions_model.StatusBlocked.String(), actionRunJob.Status.String())
+		})
+	})
+}

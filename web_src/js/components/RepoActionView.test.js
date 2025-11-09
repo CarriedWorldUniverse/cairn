@@ -397,6 +397,44 @@ test('historical attempt dropdown interactions', async () => {
   expect(window.location.href).toEqual(toAbsoluteUrl('/user1/repo2/actions/runs/123/jobs/1/attempt/2'));
 });
 
+test('run approval interaction', async () => {
+  const pullRequestLink = '/example-org/example-repo/pulls/456';
+  const wrapper = mount(RepoActionView, {
+    props: {
+      ...defaultTestProps,
+      initialJobData: {
+        state: {
+          run: {
+            canApprove: true,
+            status: 'waiting',
+            commit: {
+              pusher: {},
+              branch: {
+                link: toAbsoluteUrl(pullRequestLink),
+              },
+            },
+          },
+          currentJob: {
+            steps: [
+              {
+                summary: 'Test Job',
+              },
+            ],
+          },
+        },
+        logs: {
+          stepsLog: [],
+        },
+      },
+    },
+  });
+  await flushPromises();
+  const approve = wrapper.findAll('button').filter((button) => button.text() === 'Locale Approve');
+  expect(approve.length).toEqual(1);
+  approve[0].trigger('click');
+  expect(window.location.href).toEqual(toAbsoluteUrl(`${pullRequestLink}#pull-request-trust-panel`));
+});
+
 test('artifacts download links', async () => {
   Object.defineProperty(document.documentElement, 'lang', {value: 'en'});
   vi.spyOn(global, 'fetch').mockImplementation((url, opts) => {

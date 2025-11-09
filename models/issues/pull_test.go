@@ -466,6 +466,43 @@ func TestGetPullRequestByMergedCommit(t *testing.T) {
 	require.ErrorAs(t, err, &issues_model.ErrPullRequestNotExist{})
 }
 
+func TestPullRequest_IsForkPullRequest(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	t.Run("FlowGithub from a fork", func(t *testing.T) {
+		pr := &issues_model.PullRequest{
+			Flow:       issues_model.PullRequestFlowGithub,
+			HeadRepoID: 111,
+			BaseRepoID: 222,
+		}
+		assert.True(t, pr.IsForkPullRequest())
+	})
+
+	t.Run("FlowGithub from the same repository", func(t *testing.T) {
+		pr := &issues_model.PullRequest{
+			Flow:       issues_model.PullRequestFlowGithub,
+			HeadRepoID: 111,
+			BaseRepoID: 111,
+		}
+		assert.False(t, pr.IsForkPullRequest())
+	})
+
+	t.Run("PullRequestFlowAGit", func(t *testing.T) {
+		pr := &issues_model.PullRequest{
+			Flow: issues_model.PullRequestFlowAGit,
+		}
+		assert.True(t, pr.IsForkPullRequest())
+	})
+
+	t.Run("Other", func(t *testing.T) {
+		unknown := issues_model.PullRequestFlow(4854)
+		pr := &issues_model.PullRequest{
+			Flow: unknown,
+		}
+		assert.True(t, pr.IsForkPullRequest())
+	})
+}
+
 func TestMigrate_InsertPullRequests(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	reponame := "repo1"

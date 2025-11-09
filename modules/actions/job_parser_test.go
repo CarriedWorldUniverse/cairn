@@ -200,7 +200,7 @@ jobs:
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			sw, err := jobParser([]byte(testCase.workflow))
+			sw, err := JobParser([]byte(testCase.workflow))
 			require.NoError(t, err)
 			for i, sw := range sw {
 				actual, err := sw.Marshal()

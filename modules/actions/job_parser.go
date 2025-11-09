@@ -9,7 +9,7 @@ import (
 	"code.forgejo.org/forgejo/runner/v11/act/jobparser"
 )
 
-func jobParser(workflow []byte, options ...jobparser.ParseOption) ([]*jobparser.SingleWorkflow, error) {
+func JobParser(workflow []byte, options ...jobparser.ParseOption) ([]*jobparser.SingleWorkflow, error) {
 	singleWorkflows, err := jobparser.Parse(workflow, false, options...)
 	if err != nil {
 		return nil, err
