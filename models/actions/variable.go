@@ -81,6 +81,14 @@ func (opts FindVariablesOpts) ToConds() builder.Cond {
 	return cond
 }
 
+var _ db.FindOptionsOrder = FindVariablesOpts{}
+
+// ToOrders implements db.FindOptionsOrder to have a stable sort order
+func (opts FindVariablesOpts) ToOrders() string {
+	// Sort by name. ID serves as a tie-breaker.
+	return "name, id"
+}
+
 func FindVariables(ctx context.Context, opts FindVariablesOpts) ([]*ActionVariable, error) {
 	return db.Find[ActionVariable](ctx, opts)
 }

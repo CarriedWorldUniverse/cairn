@@ -472,6 +472,7 @@ func (Action) ListVariables(ctx *context.APIContext) {
 			OwnerID: v.OwnerID,
 			RepoID:  v.RepoID,
 			Name:    v.Name,
+			Data:    v.Data,
 		}
 	}
 
