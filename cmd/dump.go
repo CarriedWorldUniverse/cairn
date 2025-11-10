@@ -6,11 +6,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"forgejo.org/models/db"
@@ -21,36 +22,43 @@ import (
 	"forgejo.org/modules/util"
 
 	"code.forgejo.org/go-chi/session"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 	"github.com/urfave/cli/v2"
 )
 
-func addReader(w archiver.Writer, r io.ReadCloser, info os.FileInfo, customName string, verbose bool) error {
+func addObject(archiveJobs chan archives.ArchiveAsyncJob, object fs.File, customName string, verbose bool) error {
 	if verbose {
 		log.Info("Adding file %s", customName)
 	}
 
-	return w.Write(archiver.File{
-		FileInfo: archiver.FileInfo{
-			FileInfo:   info,
-			CustomName: customName,
+	info, err := object.Stat()
+	if err != nil {
+		return err
+	}
+
+	ch := make(chan error)
+
+	archiveJobs <- archives.ArchiveAsyncJob{
+		File: archives.FileInfo{
+			FileInfo:      info,
+			NameInArchive: customName,
+			Open: func() (fs.File, error) {
+				return object, nil
+			},
 		},
-		ReadCloser: r,
-	})
+		Result: ch,
+	}
+
+	return <-ch
 }
 
-func addFile(w archiver.Writer, filePath, absPath string, verbose bool) error {
-	file, err := os.Open(absPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	fileInfo, err := file.Stat()
+func addFile(archiveJobs chan archives.ArchiveAsyncJob, filePath, absPath string, verbose bool) error {
+	file, err := os.Open(absPath) // Closed by archiver
 	if err != nil {
 		return err
 	}
 
-	return addReader(w, file, fileInfo, filePath, verbose)
+	return addObject(archiveJobs, file, filePath, verbose)
 }
 
 func isSubdir(upper, lower string) (bool, error) {
@@ -93,6 +101,54 @@ func (o outputType) String() string {
 var outputTypeEnum = &outputType{
 	Enum:    []string{"zip", "tar", "tar.sz", "tar.gz", "tar.xz", "tar.bz2", "tar.br", "tar.lz4", "tar.zst"},
 	Default: "zip",
+}
+
+func getArchiverByType(outType string) (archives.ArchiverAsync, error) {
+	var archiver archives.ArchiverAsync
+	switch outType {
+	case "zip":
+		archiver = archives.Zip{}
+	case "tar":
+		archiver = archives.Tar{}
+	case "tar.sz":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Sz{},
+		}
+	case "tar.gz":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Gz{},
+		}
+	case "tar.xz":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Xz{},
+		}
+	case "tar.bz2":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Bz2{},
+		}
+	case "tar.br":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Brotli{},
+		}
+	case "tar.lz4":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Lz4{},
+		}
+	case "tar.zst":
+		archiver = archives.CompressedArchive{
+			Archival:    archives.Tar{},
+			Compression: archives.Zstd{},
+		}
+	default:
+		return nil, fmt.Errorf("unsupported output type: %s", outType)
+	}
+	return archiver, nil
 }
 
 // CmdDump represents the available dump sub-command.
@@ -247,59 +303,211 @@ func runDump(ctx *cli.Context) error {
 		return err
 	}
 
-	var iface any
-	if fileName == "-" {
-		iface, err = archiver.ByExtension(fmt.Sprintf(".%s", outType))
-	} else {
-		iface, err = archiver.ByExtension(fileName)
-	}
+	archiveJobs := make(chan archives.ArchiveAsyncJob)
+	wg := sync.WaitGroup{}
+	archiver, err := getArchiverByType(outType)
 	if err != nil {
 		fatal("Failed to get archiver for extension: %v", err)
 	}
-
-	w, _ := iface.(archiver.Writer)
-	if err := w.Create(file); err != nil {
-		fatal("Creating archiver.Writer failed: %v", err)
-	}
-	defer w.Close()
 
 	if ctx.IsSet("skip-repository") && ctx.Bool("skip-repository") {
 		log.Info("Skipping local repositories")
 	} else {
 		log.Info("Dumping local repositories... %s", setting.RepoRootPath)
-		if err := addRecursiveExclude(w, "repos", setting.RepoRootPath, []string{absFileName}, verbose); err != nil {
-			fatal("Failed to include repositories: %v", err)
-		}
+		wg.Add(1)
+		go dumpRepos(ctx, archiveJobs, &wg, absFileName, verbose)
+	}
 
-		if ctx.IsSet("skip-lfs-data") && ctx.Bool("skip-lfs-data") {
-			log.Info("Skipping LFS data")
-		} else if !setting.LFS.StartServer {
-			log.Info("LFS not enabled - skipping")
-		} else if err := storage.LFS.IterateObjects("", func(objPath string, object storage.Object) error {
-			info, err := object.Stat()
-			if err != nil {
-				return err
+	wg.Add(1)
+	go dumpDatabase(ctx, archiveJobs, &wg, verbose)
+
+	if len(setting.CustomConf) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			log.Info("Adding custom configuration file from %s", setting.CustomConf)
+			if err := addFile(archiveJobs, "app.ini", setting.CustomConf, verbose); err != nil {
+				fatal("Failed to include specified app.ini: %v", err)
 			}
+		}()
+	}
 
-			return addReader(w, object, info, path.Join("data", "lfs", objPath), verbose)
-		}); err != nil {
-			fatal("Failed to dump LFS objects: %v", err)
+	if ctx.IsSet("skip-custom-dir") && ctx.Bool("skip-custom-dir") {
+		log.Info("Skipping custom directory")
+	} else {
+		wg.Add(1)
+		go dumpCustom(archiveJobs, &wg, absFileName, verbose)
+	}
+
+	isExist, err := util.IsExist(setting.AppDataPath)
+	if err != nil {
+		log.Error("Failed to check if %s exists: %v", setting.AppDataPath, err)
+	}
+	if isExist {
+		log.Info("Packing data directory...%s", setting.AppDataPath)
+
+		wg.Add(1)
+		go dumpData(ctx, archiveJobs, &wg, absFileName, verbose)
+	}
+
+	if ctx.IsSet("skip-attachment-data") && ctx.Bool("skip-attachment-data") {
+		log.Info("Skipping attachment data")
+	} else {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := storage.Attachments.IterateObjects("", func(objPath string, object storage.Object) error {
+				return addObject(archiveJobs, object, path.Join("data", "attachments", objPath), verbose)
+			}); err != nil {
+				fatal("Failed to dump attachments: %v", err)
+			}
+		}()
+	}
+
+	if ctx.IsSet("skip-package-data") && ctx.Bool("skip-package-data") {
+		log.Info("Skipping package data")
+	} else if !setting.Packages.Enabled {
+		log.Info("Package registry not enabled - skipping")
+	} else {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := storage.Packages.IterateObjects("", func(objPath string, object storage.Object) error {
+				return addObject(archiveJobs, object, path.Join("data", "packages", objPath), verbose)
+			}); err != nil {
+				fatal("Failed to dump packages: %v", err)
+			}
+		}()
+	}
+
+	// Doesn't check if LogRootPath exists before processing --skip-log intentionally,
+	// ensuring that it's clear the dump is skipped whether the directory's initialized
+	// yet or not.
+	if ctx.IsSet("skip-log") && ctx.Bool("skip-log") {
+		log.Info("Skipping log files")
+	} else {
+		isExist, err := util.IsExist(setting.Log.RootPath)
+		if err != nil {
+			log.Error("Failed to check if %s exists: %v", setting.Log.RootPath, err)
+		}
+		if isExist {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := addRecursiveExclude(archiveJobs, "log", setting.Log.RootPath, []string{absFileName}, verbose); err != nil {
+					fatal("Failed to include log: %v", err)
+				}
+			}()
 		}
 	}
 
+	// Wait for all jobs to finish before closing the channel
+	// ArchiveAsync will only return after the channel is closed
+	go func() {
+		wg.Wait()
+		close(archiveJobs)
+	}()
+
+	if err := archiver.ArchiveAsync(stdCtx, file, archiveJobs); err != nil {
+		_ = util.Remove(fileName)
+
+		fatal("Archiving failed: %v", err)
+	}
+
+	if fileName != "-" {
+		if err := os.Chmod(fileName, 0o600); err != nil {
+			log.Info("Can't change file access permissions mask to 0600: %v", err)
+		}
+
+		log.Info("Finished dumping in file %s", fileName)
+	} else {
+		log.Info("Finished dumping to stdout")
+	}
+
+	return nil
+}
+
+func dumpData(ctx *cli.Context, archiveJobs chan archives.ArchiveAsyncJob, wg *sync.WaitGroup, absFileName string, verbose bool) {
+	defer wg.Done()
+
+	var excludes []string
+	if setting.SessionConfig.OriginalProvider == "file" {
+		var opts session.Options
+		if err := json.Unmarshal([]byte(setting.SessionConfig.ProviderConfig), &opts); err != nil {
+			fatal("Failed to parse session config: %v", err)
+		}
+		excludes = append(excludes, opts.ProviderConfig)
+	}
+
+	if ctx.IsSet("skip-index") && ctx.Bool("skip-index") {
+		log.Info("Skipping bleve index data")
+		excludes = append(excludes, setting.Indexer.RepoPath)
+		excludes = append(excludes, setting.Indexer.IssuePath)
+	}
+
+	if ctx.IsSet("skip-repo-archives") && ctx.Bool("skip-repo-archives") {
+		log.Info("Skipping repository archives data")
+		excludes = append(excludes, setting.RepoArchive.Storage.Path)
+	}
+
+	excludes = append(excludes, setting.RepoRootPath)
+	excludes = append(excludes, setting.LFS.Storage.Path)
+	excludes = append(excludes, setting.Attachment.Storage.Path)
+	excludes = append(excludes, setting.Packages.Storage.Path)
+	excludes = append(excludes, setting.Log.RootPath)
+	excludes = append(excludes, absFileName)
+	if err := addRecursiveExclude(archiveJobs, "data", setting.AppDataPath, excludes, verbose); err != nil {
+		fatal("Failed to include data directory: %v", err)
+	}
+}
+
+func dumpCustom(archiveJobs chan archives.ArchiveAsyncJob, wg *sync.WaitGroup, absFileName string, verbose bool) {
+	defer wg.Done()
+
+	customDir, err := os.Stat(setting.CustomPath)
+	if err == nil && customDir.IsDir() {
+		if is, _ := isSubdir(setting.AppDataPath, setting.CustomPath); !is {
+			if err := addRecursiveExclude(archiveJobs, "custom", setting.CustomPath, []string{absFileName}, verbose); err != nil {
+				fatal("Failed to include custom: %v", err)
+			}
+		} else {
+			log.Info("Custom dir %s is inside data dir %s, skipping", setting.CustomPath, setting.AppDataPath)
+		}
+	} else {
+		log.Info("Custom dir %s does not exist, skipping", setting.CustomPath)
+	}
+}
+
+func dumpDatabase(ctx *cli.Context, archiveJobs chan archives.ArchiveAsyncJob, wg *sync.WaitGroup, verbose bool) {
+	defer wg.Done()
+
+	var err error
 	tmpDir := ctx.String("tempdir")
+	if tmpDir == "" {
+		tmpDir, err = os.MkdirTemp("", "forgejo-dump-*")
+		if err != nil {
+			fatal("Failed to create temporary directory: %v", err)
+		}
+
+		defer func() {
+			if err := util.Remove(tmpDir); err != nil {
+				log.Warn("Failed to remove temporary directory: %s: Error: %v", tmpDir, err)
+			}
+		}()
+	}
+
 	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
 		fatal("Path does not exist: %s", tmpDir)
 	}
 
 	dbDump, err := os.CreateTemp(tmpDir, "forgejo-db.sql")
 	if err != nil {
-		fatal("Failed to create tmp file: %v", err)
+		fatal("Failed to create temporary file: %v", err)
 	}
 	defer func() {
 		_ = dbDump.Close()
 		if err := util.Remove(dbDump.Name()); err != nil {
-			log.Warn("Failed to remove temporary file: %s: Error: %v", dbDump.Name(), err)
+			log.Warn("Failed to remove temporary database file: %s: Error: %v", dbDump.Name(), err)
 		}
 	}()
 
@@ -314,139 +522,32 @@ func runDump(ctx *cli.Context) error {
 		fatal("Failed to dump database: %v", err)
 	}
 
-	if err := addFile(w, "forgejo-db.sql", dbDump.Name(), verbose); err != nil {
+	if err := addFile(archiveJobs, "forgejo-db.sql", dbDump.Name(), verbose); err != nil {
 		fatal("Failed to include forgejo-db.sql: %v", err)
 	}
+}
 
-	if len(setting.CustomConf) > 0 {
-		log.Info("Adding custom configuration file from %s", setting.CustomConf)
-		if err := addFile(w, "app.ini", setting.CustomConf, verbose); err != nil {
-			fatal("Failed to include specified app.ini: %v", err)
-		}
+func dumpRepos(ctx *cli.Context, archiveJobs chan archives.ArchiveAsyncJob, wg *sync.WaitGroup, absFileName string, verbose bool) {
+	defer wg.Done()
+
+	if err := addRecursiveExclude(archiveJobs, "repos", setting.RepoRootPath, []string{absFileName}, verbose); err != nil {
+		fatal("Failed to include repositories: %v", err)
 	}
 
-	if ctx.IsSet("skip-custom-dir") && ctx.Bool("skip-custom-dir") {
-		log.Info("Skipping custom directory")
-	} else {
-		customDir, err := os.Stat(setting.CustomPath)
-		if err == nil && customDir.IsDir() {
-			if is, _ := isSubdir(setting.AppDataPath, setting.CustomPath); !is {
-				if err := addRecursiveExclude(w, "custom", setting.CustomPath, []string{absFileName}, verbose); err != nil {
-					fatal("Failed to include custom: %v", err)
-				}
-			} else {
-				log.Info("Custom dir %s is inside data dir %s, skipping", setting.CustomPath, setting.AppDataPath)
-			}
-		} else {
-			log.Info("Custom dir %s does not exist, skipping", setting.CustomPath)
-		}
-	}
-
-	isExist, err := util.IsExist(setting.AppDataPath)
-	if err != nil {
-		log.Error("Failed to check if %s exists: %v", setting.AppDataPath, err)
-	}
-	if isExist {
-		log.Info("Packing data directory...%s", setting.AppDataPath)
-
-		var excludes []string
-		if setting.SessionConfig.OriginalProvider == "file" {
-			var opts session.Options
-			if err = json.Unmarshal([]byte(setting.SessionConfig.ProviderConfig), &opts); err != nil {
-				return err
-			}
-			excludes = append(excludes, opts.ProviderConfig)
-		}
-
-		if ctx.IsSet("skip-index") && ctx.Bool("skip-index") {
-			log.Info("Skipping bleve index data")
-			excludes = append(excludes, setting.Indexer.RepoPath)
-			excludes = append(excludes, setting.Indexer.IssuePath)
-		}
-
-		if ctx.IsSet("skip-repo-archives") && ctx.Bool("skip-repo-archives") {
-			log.Info("Skipping repository archives data")
-			excludes = append(excludes, setting.RepoArchive.Storage.Path)
-		}
-
-		excludes = append(excludes, setting.RepoRootPath)
-		excludes = append(excludes, setting.LFS.Storage.Path)
-		excludes = append(excludes, setting.Attachment.Storage.Path)
-		excludes = append(excludes, setting.Packages.Storage.Path)
-		excludes = append(excludes, setting.Log.RootPath)
-		excludes = append(excludes, absFileName)
-		if err := addRecursiveExclude(w, "data", setting.AppDataPath, excludes, verbose); err != nil {
-			fatal("Failed to include data directory: %v", err)
-		}
-	}
-
-	if ctx.IsSet("skip-attachment-data") && ctx.Bool("skip-attachment-data") {
-		log.Info("Skipping attachment data")
-	} else if err := storage.Attachments.IterateObjects("", func(objPath string, object storage.Object) error {
-		info, err := object.Stat()
-		if err != nil {
-			return err
-		}
-
-		return addReader(w, object, info, path.Join("data", "attachments", objPath), verbose)
+	if ctx.IsSet("skip-lfs-data") && ctx.Bool("skip-lfs-data") {
+		log.Info("Skipping LFS data")
+	} else if !setting.LFS.StartServer {
+		log.Info("LFS not enabled - skipping")
+	} else if err := storage.LFS.IterateObjects("", func(objPath string, object storage.Object) error {
+		return addObject(archiveJobs, object, path.Join("data", "lfs", objPath), verbose)
 	}); err != nil {
-		fatal("Failed to dump attachments: %v", err)
+		fatal("Failed to dump LFS objects: %v", err)
 	}
-
-	if ctx.IsSet("skip-package-data") && ctx.Bool("skip-package-data") {
-		log.Info("Skipping package data")
-	} else if !setting.Packages.Enabled {
-		log.Info("Package registry not enabled - skipping")
-	} else if err := storage.Packages.IterateObjects("", func(objPath string, object storage.Object) error {
-		info, err := object.Stat()
-		if err != nil {
-			return err
-		}
-
-		return addReader(w, object, info, path.Join("data", "packages", objPath), verbose)
-	}); err != nil {
-		fatal("Failed to dump packages: %v", err)
-	}
-
-	// Doesn't check if LogRootPath exists before processing --skip-log intentionally,
-	// ensuring that it's clear the dump is skipped whether the directory's initialized
-	// yet or not.
-	if ctx.IsSet("skip-log") && ctx.Bool("skip-log") {
-		log.Info("Skipping log files")
-	} else {
-		isExist, err := util.IsExist(setting.Log.RootPath)
-		if err != nil {
-			log.Error("Failed to check if %s exists: %v", setting.Log.RootPath, err)
-		}
-		if isExist {
-			if err := addRecursiveExclude(w, "log", setting.Log.RootPath, []string{absFileName}, verbose); err != nil {
-				fatal("Failed to include log: %v", err)
-			}
-		}
-	}
-
-	if fileName != "-" {
-		if err = w.Close(); err != nil {
-			_ = util.Remove(fileName)
-			fatal("Failed to save %s: %v", fileName, err)
-		}
-
-		if err := os.Chmod(fileName, 0o600); err != nil {
-			log.Info("Can't change file access permissions mask to 0600: %v", err)
-		}
-	}
-
-	if fileName != "-" {
-		log.Info("Finish dumping in file %s", fileName)
-	} else {
-		log.Info("Finish dumping to stdout")
-	}
-
-	return nil
 }
 
 // addRecursiveExclude zips absPath to specified insidePath inside writer excluding excludeAbsPath
-func addRecursiveExclude(w archiver.Writer, insidePath, absPath string, excludeAbsPath []string, verbose bool) error {
+// archives.FilesFromDisk doesn't support excluding files, so we have to do it manually
+func addRecursiveExclude(archiveJobs chan archives.ArchiveAsyncJob, insidePath, absPath string, excludeAbsPath []string, verbose bool) error {
 	absPath, err := filepath.Abs(absPath)
 	if err != nil {
 		return err
@@ -471,10 +572,11 @@ func addRecursiveExclude(w archiver.Writer, insidePath, absPath string, excludeA
 		}
 
 		if file.IsDir() {
-			if err := addFile(w, currentInsidePath, currentAbsPath, false); err != nil {
+			if err := addFile(archiveJobs, currentInsidePath, currentAbsPath, false); err != nil {
 				return err
 			}
-			if err = addRecursiveExclude(w, currentInsidePath, currentAbsPath, excludeAbsPath, verbose); err != nil {
+
+			if err := addRecursiveExclude(archiveJobs, currentInsidePath, currentAbsPath, excludeAbsPath, verbose); err != nil {
 				return err
 			}
 		} else {
@@ -492,7 +594,7 @@ func addRecursiveExclude(w archiver.Writer, insidePath, absPath string, excludeA
 				shouldAdd = targetStat.Mode().IsRegular()
 			}
 			if shouldAdd {
-				if err = addFile(w, currentInsidePath, currentAbsPath, verbose); err != nil {
+				if err := addFile(archiveJobs, currentInsidePath, currentAbsPath, verbose); err != nil {
 					return err
 				}
 			}
