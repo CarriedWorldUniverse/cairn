@@ -108,6 +108,7 @@ forgejo.org/modules/git
 	AddChangesWithArgs
 	CommitChanges
 	CommitChangesWithArgs
+	IsErrMoreThanOne
 	SetUpdateHook
 	openRepositoryWithDefaultContext
 	ToEntryMode

@@ -79,6 +79,10 @@ func CreatePushPullComment(ctx context.Context, pusher *user_model.User, pr *iss
 		return nil, err
 	}
 
+	if err := pr.LoadIssue(ctx); err != nil {
+		return nil, err
+	}
+
 	ops.Issue = pr.Issue
 
 	dataJSON, err := json.Marshal(data)

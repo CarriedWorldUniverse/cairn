@@ -41,7 +41,6 @@ import (
 	"forgejo.org/modules/markup"
 	"forgejo.org/modules/markup/markdown"
 	"forgejo.org/modules/optional"
-	repo_module "forgejo.org/modules/repository"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/templates"
@@ -3167,13 +3166,7 @@ func NewComment(ctx *context.Context) {
 
 					if prHeadCommitID != headBranchCommitID {
 						// force push to base repo
-						err := git.Push(ctx, pull.HeadRepo.RepoPath(), git.PushOptions{
-							Remote: pull.BaseRepo.RepoPath(),
-							Branch: pull.HeadBranch + ":" + prHeadRef,
-							Force:  true,
-							Env:    repo_module.InternalPushingEnvironment(pull.Issue.Poster, pull.BaseRepo),
-						})
-						if err != nil {
+						if err := pull_service.PushToBaseRepo(ctx, pull); err != nil {
 							ctx.ServerError("force push error", err)
 							return
 						}
