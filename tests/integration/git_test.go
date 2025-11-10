@@ -778,13 +778,11 @@ func doInternalReferences(ctx *APITestContext, dstPath string) func(t *testing.T
 
 		_, stdErr, gitErr := git.NewCommand(git.DefaultContext, "push", "origin").AddDynamicArguments(fmt.Sprintf(":refs/pull/%d/head", pr1.Index)).RunStdString(&git.RunOpts{Dir: dstPath})
 		require.Error(t, gitErr)
-		assert.Contains(t, stdErr, fmt.Sprintf("remote: Forgejo: The deletion of refs/pull/%d/head is skipped as it's an internal reference.", pr1.Index))
-		assert.Contains(t, stdErr, fmt.Sprintf("[remote rejected] refs/pull/%d/head (hook declined)", pr1.Index))
+		assert.Contains(t, stdErr, fmt.Sprintf("[remote rejected] refs/pull/%d/head (deny deleting a hidden ref)", pr1.Index))
 
 		_, stdErr, gitErr = git.NewCommand(git.DefaultContext, "push", "origin", "--force").AddDynamicArguments(fmt.Sprintf("HEAD~1:refs/pull/%d/head", pr1.Index)).RunStdString(&git.RunOpts{Dir: dstPath})
 		require.Error(t, gitErr)
-		assert.Contains(t, stdErr, fmt.Sprintf("remote: Forgejo: The modification of refs/pull/%d/head is skipped as it's an internal reference.", pr1.Index))
-		assert.Contains(t, stdErr, fmt.Sprintf("[remote rejected] HEAD~1 -> refs/pull/%d/head (hook declined)", pr1.Index))
+		assert.Contains(t, stdErr, fmt.Sprintf("[remote rejected] HEAD~1 -> refs/pull/%d/head (deny updating a hidden ref)", pr1.Index))
 	}
 }
 

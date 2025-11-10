@@ -303,6 +303,10 @@ func syncGitConfig() (err error) {
 		}
 	}
 
+	if err = configSet("receive.hideRefs", "refs/pull/"); err != nil {
+		return err
+	}
+
 	if !setting.Git.DisablePartialClone {
 		if err = configSet("uploadpack.allowfilter", "true"); err != nil {
 			return err
