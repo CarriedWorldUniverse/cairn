@@ -19,7 +19,7 @@ import (
 func cmdGenerate() *cli.Command {
 	return &cli.Command{
 		Name:  "generate",
-		Usage: "Generate Gitea's secrets/keys/tokens",
+		Usage: "Generate Forgejo's secrets/keys/tokens",
 		Commands: []*cli.Command{
 			subcmdSecret(),
 		},
