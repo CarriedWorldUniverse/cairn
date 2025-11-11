@@ -233,8 +233,8 @@ func CreateTeam(ctx *context.APIContext) {
 	if team.AccessMode < perm.AccessModeAdmin {
 		if len(form.UnitsMap) > 0 {
 			attachTeamUnitsMap(team, form.UnitsMap)
-		} else if len(form.Units) > 0 {
-			attachTeamUnits(team, form.Units)
+		} else if len(form.Units) > 0 { //nolint:staticcheck
+			attachTeamUnits(team, form.Units) //nolint:staticcheck
 		} else {
 			ctx.Error(http.StatusInternalServerError, "getTeamUnits", errors.New("units permission should not be empty"))
 			return
@@ -328,8 +328,8 @@ func EditTeam(ctx *context.APIContext) {
 	if team.AccessMode < perm.AccessModeAdmin {
 		if len(form.UnitsMap) > 0 {
 			attachTeamUnitsMap(team, form.UnitsMap)
-		} else if len(form.Units) > 0 {
-			attachTeamUnits(team, form.Units)
+		} else if len(form.Units) > 0 { //nolint:staticcheck
+			attachTeamUnits(team, form.Units) //nolint:staticcheck
 		}
 	} else {
 		attachAdminTeamUnits(team)

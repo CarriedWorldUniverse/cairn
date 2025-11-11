@@ -10,7 +10,6 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 )
@@ -25,12 +24,12 @@ func getAuthorSignatureSquash(ctx *mergeContext) (*git.Signature, error) {
 	// Try to get an signature from the same user in one of the commits, as the
 	// poster email might be private or commits might have a different signature
 	// than the primary email address of the poster.
-	gitRepo, closer, err := gitrepo.RepositoryFromContextOrOpenPath(ctx, ctx.tmpBasePath)
+	gitRepo, err := git.OpenRepository(ctx, ctx.tmpBasePath)
 	if err != nil {
 		log.Error("%-v Unable to open base repository: %v", ctx.pr, err)
 		return nil, err
 	}
-	defer closer.Close()
+	defer gitRepo.Close()
 
 	commits, err := gitRepo.CommitsBetweenIDs(trackingBranch, "HEAD")
 	if err != nil {
