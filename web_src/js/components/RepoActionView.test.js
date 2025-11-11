@@ -614,7 +614,7 @@ test('view non-picked action run job', async () => {
           },
           currentJob: {
             title: 'check-1',
-            detail: 'waiting (locale)', // locale-specific, not exact match to backend test
+            details: ['waiting (locale)'], // locale-specific, not exact match to backend test
             steps: [],
             allAttempts: null,
           },
@@ -624,7 +624,7 @@ test('view non-picked action run job', async () => {
   });
   await flushPromises();
 
-  expect(wrapper.get('.job-info-header-detail').text()).toEqual('waiting (locale)');
+  expect(wrapper.get('.job-info-header-detail li:first-child').text()).toEqual('waiting (locale)');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(1) .job-brief-name').text()).toEqual('check-1');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(2) .job-brief-name').text()).toEqual('check-2');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(3) .job-brief-name').text()).toEqual('check-3');

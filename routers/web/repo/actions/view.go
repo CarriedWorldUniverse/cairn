@@ -182,10 +182,10 @@ type ViewRunInfo struct {
 }
 
 type ViewCurrentJob struct {
-	Title       string         `json:"title"`
-	Detail      string         `json:"detail"`
-	Steps       []*ViewJobStep `json:"steps"`
-	AllAttempts []*TaskAttempt `json:"allAttempts"`
+	Title       string          `json:"title"`
+	Details     []template.HTML `json:"details"`
+	Steps       []*ViewJobStep  `json:"steps"`
+	AllAttempts []*TaskAttempt  `json:"allAttempts"`
 }
 
 type ViewLogs struct {
@@ -358,10 +358,8 @@ func getViewResponse(ctx *context_module.Context, req *ViewRequest, runIndex, jo
 	}
 
 	resp.State.CurrentJob.Title = current.Name
-	resp.State.CurrentJob.Detail = current.Status.LocaleString(ctx.Locale)
-	if run.NeedApproval {
-		resp.State.CurrentJob.Detail = ctx.Locale.TrString("actions.need_approval_desc")
-	}
+	resp.State.CurrentJob.Details = current.StatusDiagnostics(ctx.Locale)
+
 	resp.State.CurrentJob.Steps = make([]*ViewJobStep, 0) // marshal to '[]' instead of 'null' in json
 	resp.Logs.StepsLog = make([]*ViewStepLog, 0)          // marshal to '[]' instead of 'null' in json
 	// As noted above with TaskID; task will be nil when the job hasn't be picked yet...

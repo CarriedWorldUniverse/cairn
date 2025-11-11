@@ -181,8 +181,8 @@ func baseExpectedViewResponse() *ViewResponse {
 				},
 			},
 			CurrentJob: ViewCurrentJob{
-				Title:  "job_2",
-				Detail: "actions.status.success",
+				Title:   "job_2",
+				Details: []template.HTML{"actions.status.success"},
 				Steps: []*ViewJobStep{
 					{
 						Summary: "Set up job",
@@ -333,7 +333,7 @@ func TestActionsViewViewPost(t *testing.T) {
 
 				// Expected blank data in the response because this job isn't picked by a runner yet.  Keep details here
 				// in-sync with the RepoActionView 'view non-picked action run job' test.
-				resp.State.CurrentJob.Detail = "actions.status.waiting"
+				resp.State.CurrentJob.Details = []template.HTML{"actions.status.diagnostics.waiting"}
 				resp.State.CurrentJob.Steps = []*ViewJobStep{}
 				resp.State.CurrentJob.AllAttempts = nil
 			},

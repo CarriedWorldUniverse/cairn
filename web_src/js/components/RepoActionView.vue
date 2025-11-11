@@ -110,7 +110,7 @@ export default {
       },
       currentJob: {
         title: '',
-        detail: '',
+        details: [],
         steps: [
           // {
           //   summary: '',
@@ -615,9 +615,11 @@ export default {
             <h3 class="job-info-header-title gt-ellipsis">
               {{ currentJob.title }}
             </h3>
-            <p class="job-info-header-detail">
-              {{ currentJob.detail }}
-            </p>
+            <ul class="job-info-header-detail">
+              <li v-for="detail in currentJob.details" :key="detail">
+                {{ detail }}
+              </li>
+            </ul>
           </div>
           <div class="job-info-header-right job-attempt-dropdown tw-mr-8" v-if="shouldShowAttemptDropdown" v-cloak>
             <div class="ui dropdown selection" @click.stop="toggleAttemptDropdown()">
@@ -932,6 +934,9 @@ export default {
 .job-info-header .job-info-header-detail {
   color: var(--color-console-fg-subtle);
   font-size: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .job-info-header-left {
