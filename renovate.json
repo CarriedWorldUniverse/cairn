@@ -16,9 +16,6 @@
   "osvVulnerabilityAlerts": true,
   "automergeStrategy": "squash",
   "labels": ["dependency-upgrade", "test/not-needed"],
-  "constraints": {
-    "npm": "10"
-  },
   "packageRules": [
     {
       "description": "Require approval for python minor version",
