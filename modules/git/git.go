@@ -35,6 +35,7 @@ var (
 
 	SupportHashSha256      bool // >= 2.42, SHA-256 repositories no longer an ‘experimental curiosity’
 	InvertedGitFlushEnv    bool // 2.43.1
+	SupportFetchPorcelain  bool // >= 2.41
 	SupportCheckAttrOnBare bool // >= 2.40
 	SupportGitMergeTree    bool // >= 2.38
 	SupportGrepMaxCount    bool // >= 2.38
@@ -179,6 +180,7 @@ func InitFull(ctx context.Context) (err error) {
 	globalCommandArgs = append(globalCommandArgs, "-c", "credential.helper=")
 
 	SupportHashSha256 = CheckGitVersionAtLeast("2.42") == nil
+	SupportFetchPorcelain = CheckGitVersionAtLeast("2.41") == nil
 	SupportCheckAttrOnBare = CheckGitVersionAtLeast("2.40") == nil
 	if SupportHashSha256 {
 		SupportedObjectFormats = append(SupportedObjectFormats, Sha256ObjectFormat)
