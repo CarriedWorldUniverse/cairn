@@ -26,9 +26,7 @@ test('Migration type seleciton screen', async ({page}) => {
   await screenshot(page);
 });
 
-test('Migration Repo Name detection', async ({page}, workerInfo) => {
-  test.skip(workerInfo.project.name === 'Mobile Safari', 'Flaky actionability checks on Mobile Safari');
-
+test('Migration Repo Name detection', async ({page}) => {
   await page.goto('/repo/migrate?service_type=2');
 
   const form = page.locator('form');
@@ -54,9 +52,7 @@ test('Migration Repo Name detection', async ({page}, workerInfo) => {
   await screenshot(page);
 });
 
-test('Migration Progress Page', async ({page, browser}, workerInfo) => {
-  test.skip(workerInfo.project.name === 'Mobile Safari', 'Flaky actionability checks on Mobile Safari');
-
+test('Migration Progress Page', async ({page, browser}) => {
   const repoName = dynamic_id();
   expect((await page.goto(`/user2/${repoName}`))?.status(), 'repo should not exist yet').toBe(404);
 

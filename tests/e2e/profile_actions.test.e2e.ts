@@ -11,9 +11,7 @@ import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
-test('Follow and block actions', async ({page}, workerInfo) => {
-  test.skip(workerInfo.project.name === 'Mobile Safari', 'Mobile Safari is unreliable in this test');
-
+test('Follow and block actions', async ({page}) => {
   await page.goto('/user1');
 
   // Check if following and then unfollowing works.

@@ -18,7 +18,7 @@ for (const run of [
   test.describe(`Create issue & comment`, () => {
     // playwright/valid-title says: [error] Title must be a string
     test(`${run.title}`, async ({browser}, workerInfo) => {
-      test.skip(['Mobile Chrome', 'Mobile Safari'].includes(workerInfo.project.name), 'Mobile Chrome has trouble clicking Comment button with JS enabled, Mobile Safari is flaky and only passes on retry');
+      test.skip(['Mobile Chrome'].includes(workerInfo.project.name), 'Mobile Chrome has trouble clicking Comment button with JS enabled');
 
       const issueTitle = dynamic_id();
       const issueContent = dynamic_id();
@@ -117,8 +117,8 @@ test.describe('Button text replaced by JS', () => {
   });
 });
 
-test('Hyperlink paste behaviour', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'Mobile Chrome', 'webkit'].includes(workerInfo.project.name), 'Mobile clients seem to have very weird behaviour with this test, which I cannot confirm with real usage');
+test('Hyperlink paste behaviour', async ({page, isMobile}) => {
+  test.skip(isMobile, 'Mobile clients seem to have very weird behaviour with this test, which I cannot confirm with real usage');
   await page.goto('/user2/repo1/issues/new');
   await page.locator('textarea').click();
   // same URL

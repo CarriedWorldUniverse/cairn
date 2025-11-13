@@ -37,9 +37,7 @@ async function assertSelectedLines(page: Page, nums: string[]) {
   return pageAssertions();
 }
 
-test('Line Range Selection', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Unreliable in this test');
-
+test('Line Range Selection', async ({page}) => {
   const filePath = '/user2/repo1/src/branch/master/README.md?display=source';
 
   const response = await page.goto(filePath);
@@ -145,9 +143,7 @@ test('File folding', async ({page}) => {
   await expect(diffFileBody).toBeVisible();
 });
 
-test('Copy line permalink', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Apple clipboard API addon - starting at just $499!');
-
+test('Copy line permalink', async ({page}) => {
   const response = await page.goto('/user2/repo1/src/branch/master/README.md?display=source#L1');
   expect(response?.status()).toBe(200);
 

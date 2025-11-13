@@ -9,14 +9,13 @@
 // routers/web/repo/actions/**
 // @watch end
 
-import {expect, type Page, type TestInfo} from '@playwright/test';
+import {expect, type Page} from '@playwright/test';
 import {test} from './utils_e2e.ts';
 import {screenshot} from './shared/screenshots.ts';
 
 const workflow_trigger_notification_text = 'This workflow has a workflow_dispatch event trigger.';
 
-async function dispatchSuccess(page: Page, testInfo: TestInfo) {
-  test.skip(testInfo.project.name === 'Mobile Safari', 'Flaky behaviour on mobile safari; see https://codeberg.org/forgejo/forgejo/pulls/3334#issuecomment-2033383');
+async function dispatchSuccess(page: Page) {
   await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
   await page.locator('#workflow_dispatch_dropdown>button').click();
@@ -49,9 +48,7 @@ test.describe('Workflow Authenticated user2', () => {
     await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
-  test('dispatch error: missing inputs', async ({page}, testInfo) => {
-    test.skip(testInfo.project.name === 'Mobile Safari', 'Flaky behaviour on mobile safari; see https://codeberg.org/forgejo/forgejo/pulls/3334#issuecomment-2033383');
-
+  test('dispatch error: missing inputs', async ({page}) => {
     await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
     await page.locator('#workflow_dispatch_dropdown>button').click();
@@ -70,8 +67,8 @@ test.describe('Workflow Authenticated user2', () => {
 
   // no assertions as the login in this test case is extracted for reuse
   // eslint-disable-next-line playwright/expect-expect
-  test('dispatch success', async ({page}, testInfo) => {
-    await dispatchSuccess(page, testInfo);
+  test('dispatch success', async ({page}) => {
+    await dispatchSuccess(page);
   });
 });
 
@@ -100,7 +97,7 @@ async function simulatePollingInterval(page: Page) {
 test.describe('workflow list dynamic refresh', () => {
   test.use({user: 'user2'});
 
-  test('refreshes on visibility change', async ({page}, testInfo) => {
+  test('refreshes on visibility change', async ({page}) => {
     // Test operates by creating two pages; one which is sitting idle on the workflows list (backgroundPage), and one
     // which triggers a workflow dispatch.  Then a document visibilitychange event is fired on the background page to
     // mimic a user returning to the tab on their browser, which should trigger the workflow list to refresh and display
@@ -110,7 +107,7 @@ test.describe('workflow list dynamic refresh', () => {
     await backgroundPage.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
     // Mirror the `Workflow Authenticated user2 > dispatch success` test:
-    await dispatchSuccess(page, testInfo);
+    await dispatchSuccess(page);
     const latestDispatchedRun = await page.locator('.run-list>:first-child .flex-item-body>b').textContent();
     expect(latestDispatchedRun).toMatch(/^#/); // workflow ID, eg. "#53"
 
@@ -123,7 +120,7 @@ test.describe('workflow list dynamic refresh', () => {
     await screenshot(backgroundPage, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
-  test('refreshes on interval', async ({page}, testInfo) => {
+  test('refreshes on interval', async ({page}) => {
     // Test operates by creating two pages; one which is sitting idle on the workflows list (backgroundPage), and one
     // which triggers a workflow dispatch.  After the polling, the page should refresh and show the newly dispatched
     // workflow from the other page.
@@ -132,7 +129,7 @@ test.describe('workflow list dynamic refresh', () => {
     await backgroundPage.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
     // Mirror the `Workflow Authenticated user2 > dispatch success` test:
-    await dispatchSuccess(page, testInfo);
+    await dispatchSuccess(page);
     const latestDispatchedRun = await page.locator('.run-list>:first-child .flex-item-body>b').textContent();
     expect(latestDispatchedRun).toMatch(/^#/); // workflow ID, eg. "#53"
 
@@ -141,13 +138,13 @@ test.describe('workflow list dynamic refresh', () => {
     await screenshot(backgroundPage, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
   });
 
-  test('post-refresh the dropdowns continue to operate', async ({page}, testInfo) => {
+  test('post-refresh the dropdowns continue to operate', async ({page}) => {
     // Verify that after the page is dynamically refreshed, the 'Actor', 'Status', and 'Run workflow' dropdowns work
     // correctly -- that the htmx morph hasn't messed up any JS event handlers.
     await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
     // Mirror the `Workflow Authenticated user2 > dispatch success` test -- this creates data for the 'Actor' dropdown
-    await dispatchSuccess(page, testInfo);
+    await dispatchSuccess(page);
 
     // Perform a dynamic refresh before checking the functionality of each dropdown.
     await simulatePollingInterval(page);
@@ -171,14 +168,14 @@ test.describe('workflow list dynamic refresh', () => {
     await expect(page.getByText('All Actors')).toBeVisible();
   });
 
-  test('refresh does not break interacting with open drop-downs', async ({page}, testInfo) => {
+  test('refresh does not break interacting with open drop-downs', async ({page}) => {
     // Verify that if the polling refresh occurs while interacting with any multi-step dropdown on the page, the
     // multi-step interaction continues to be visible and functional.  This is implemented by preventing the refresh,
     // but that isn't the subject of the test here -- as long as the dropdown isn't broken by the refresh, that's fine.
     await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml&actor=0&status=0');
 
     // Mirror the `Workflow Authenticated user2 > dispatch success` test -- this creates data for the 'Actor' dropdown
-    await dispatchSuccess(page, testInfo);
+    await dispatchSuccess(page);
 
     // Workflow run dialog
     await expect(page.locator('input[name="inputs[string2]"]')).toBeHidden();
