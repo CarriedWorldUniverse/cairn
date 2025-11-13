@@ -14,7 +14,7 @@ jobs:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - name: event info
@@ -31,7 +31,7 @@ jobs:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v5
@@ -60,7 +60,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     services:
       elasticsearch:
@@ -150,7 +150,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks, test-unit]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     name: ${{ format('test-remote-cacher ({0})', matrix.cacher.name) }}
     strategy:
@@ -192,7 +192,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     services:
       mysql:
@@ -223,7 +223,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     services:
       minio:
@@ -263,7 +263,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v5
@@ -291,7 +291,7 @@ jobs:
       - test-remote-cacher
       - test-unit
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v5
