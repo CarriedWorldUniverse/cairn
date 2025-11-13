@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"forgejo.org/modules/log"
+	"forgejo.org/modules/util"
 )
 
 var ErrRemoteRefNotFound = errors.New("unable to find remote ref")
@@ -25,7 +28,20 @@ func (repo *Repository) Fetch(remoteURL, refspec string) (string, error) {
 		return "", err
 	}
 
-	stdout, stderr, err := NewCommand(repo.Ctx, "fetch", "--porcelain", "--end-of-options").AddDynamicArguments(remoteURL, refspec).RunStdString(&RunOpts{Dir: repo.Path})
+	cmd := NewCommand(repo.Ctx, "fetch")
+	if SupportFetchPorcelain {
+		cmd.AddArguments("--porcelain")
+	} else if !strings.Contains(refspec, ":") {
+		randomString, err := util.CryptoRandomString(8)
+		if err != nil {
+			return "", err
+		}
+		refspec += ":refs/tmp/" + randomString
+	}
+
+	cmd.AddArguments("--end-of-options").AddDynamicArguments(remoteURL, refspec)
+
+	stdout, stderr, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
 	if err != nil {
 		if strings.HasPrefix(stderr, "fatal: couldn't find remote ref ") {
 			return "", ErrRemoteRefNotFound
@@ -33,19 +49,35 @@ func (repo *Repository) Fetch(remoteURL, refspec string) (string, error) {
 		return "", err
 	}
 
-	localReference, _, ok := strings.Cut(refspec, ":")
+	_, localReference, ok := strings.Cut(refspec, ":")
 	if !ok {
 		localReference = "FETCH_HEAD"
 	}
 
-	// The porcelain format, per section OUTPUT of git-fetch(1), is expected to be:
-	// <flag><space><old-object-id><space><new-object-id><space><local-reference>\n
-	// flag is one character.
-	if expectedLen := 1 + 1 + objectFormat.FullLength() + 1 + objectFormat.FullLength() + 1 + len(localReference) + 1; len(stdout) != expectedLen {
-		return "", fmt.Errorf("output of git-fetch(1) is unexpected, we expected it to be %d bytes but it is %d bytes. stdout: %s", expectedLen, len(stdout), stdout)
+	// Happy path
+	if SupportFetchPorcelain {
+		// The porcelain format, per section OUTPUT of git-fetch(1), is expected to be:
+		// <flag><space><old-object-id><space><new-object-id><space><local-reference>\n
+		// flag is one character.
+		if expectedLen := 1 + 1 + objectFormat.FullLength() + 1 + objectFormat.FullLength() + 1 + len(localReference) + 1; len(stdout) != expectedLen {
+			return "", fmt.Errorf("output of git-fetch(1) is unexpected, we expected it to be %d bytes but it is %d bytes. stdout: %s", expectedLen, len(stdout), stdout)
+		}
+
+		// Extract the new objectID.
+		newObjectID := stdout[1+1+objectFormat.FullLength()+1 : 1+1+objectFormat.FullLength()+1+objectFormat.FullLength()]
+		return newObjectID, nil
 	}
 
-	// Extract the new objectID.
-	newObjectID := stdout[1+1+objectFormat.FullLength()+1 : 1+1+objectFormat.FullLength()+1+objectFormat.FullLength()]
+	defer func() {
+		if err := repo.RemoveReference(localReference); err != nil {
+			log.Error("Could not remove reference %q from repository %q: %v", localReference, repo.Path, err)
+		}
+	}()
+
+	newObjectID, err := repo.ResolveReference(localReference)
+	if err != nil {
+		return "", err
+	}
+
 	return newObjectID, nil
 }
