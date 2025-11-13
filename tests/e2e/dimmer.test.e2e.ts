@@ -41,8 +41,7 @@ test('Dimmed modal', async ({page}) => {
   await screenshot(page, page.locator('.ui.g-modal-confirm.delete.modal'), 50);
 });
 
-test('Dimmed overflow', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari'].includes(workerInfo.project.name), 'Mouse wheel is not supported in mobile WebKit');
+test('Dimmed overflow', async ({page}) => {
   await page.goto('/user2/repo1/_new/master/');
 
   // Type in a file name.

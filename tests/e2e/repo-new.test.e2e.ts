@@ -93,8 +93,7 @@ test('New repo: initialize later', async ({page}) => {
   await screenshot(page);
 });
 
-test('New repo: from template', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'WebKit browsers seem to have CORS issues with localhost here.');
+test('New repo: from template', async ({page}) => {
   const response = await page.goto('/repo/create');
   expect(response?.status()).toBe(200);
 

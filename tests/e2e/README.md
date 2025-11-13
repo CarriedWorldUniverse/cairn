@@ -269,17 +269,6 @@ If you want to iterate fast,
 save your time and only run very selected tests.
 Use only one browser.
 
-### Skip Safari if it doesn't work
-
-Many contributors have issues getting Safari (webkit)
-and especially Safari Mobile to work.
-
-At the top of your test function, you can use:
-
-~~~javascript
-test.skip(workerInfo.project.name === 'Mobile Safari', 'Unable to get tests working on Safari Mobile.');
-~~~
-
 ### Don't forget the formatting.
 
 When writing tests without modifying other frontend code,

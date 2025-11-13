@@ -11,9 +11,7 @@ import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
 
-test('org team settings', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Unreliable in this test');
-
+test('org team settings', async ({page}) => {
   const response = await page.goto('/org/org3/teams/team1/edit');
   expect(response?.status()).toBe(200);
 

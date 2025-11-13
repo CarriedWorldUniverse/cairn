@@ -12,8 +12,7 @@ import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
-test('Dialog modal', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'keyboard shortcuts do not work');
+test('Dialog modal', async ({page}) => {
   let response = await page.goto('/user2/repo1/_new/master', {waitUntil: 'domcontentloaded'});
   expect(response?.status()).toBe(200);
 

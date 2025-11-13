@@ -13,9 +13,7 @@ import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
-test('Markdown image preview behaviour', async ({page}, workerInfo) => {
-  test.skip(workerInfo.project.name === 'Mobile Safari', 'Flaky behaviour on mobile safari;');
-
+test('Markdown image preview behaviour', async ({page}) => {
   // Editing the root README.md file for image preview
   const editPath = '/user2/repo1/src/branch/master/README.md';
 
@@ -374,9 +372,7 @@ test('Markdown insert table', async ({page}) => {
   await screenshot(page);
 });
 
-test('Markdown insert link', async ({page}, workerInfo) => {
-  test.skip(['Mobile Safari', 'webkit'].includes(workerInfo.project.name), 'Unreliable in this test');
-
+test('Markdown insert link', async ({page}) => {
   const response = await page.goto('/user2/repo1/issues/new');
   expect(response?.status()).toBe(200);
 

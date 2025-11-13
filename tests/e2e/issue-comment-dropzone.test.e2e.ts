@@ -8,7 +8,7 @@
 // web_src/js/features/repo-legacy.js
 // @watch end
 
-import {expect, type Locator, type Page, type TestInfo} from '@playwright/test';
+import {expect, type Locator, type Page} from '@playwright/test';
 import {test, dynamic_id} from './utils_e2e.ts';
 import {screenshot} from './shared/screenshots.ts';
 
@@ -42,10 +42,7 @@ async function pasteImage(el: Locator) {
   });
 }
 
-async function assertCopy(page: Page, workerInfo: TestInfo, startWith: string) {
-  const project = workerInfo.project.name;
-  if (project === 'webkit' || project === 'Mobile Safari') return;
-
+async function assertCopy(page: Page, startWith: string) {
   const dropzone = page.locator('.dropzone');
   const preview = dropzone.locator('.dz-preview');
   const copyLink = preview.locator('.octicon-copy').locator('..');
@@ -55,7 +52,7 @@ async function assertCopy(page: Page, workerInfo: TestInfo, startWith: string) {
   expect(clipboardContent).toContain(startWith);
 }
 
-test('Paste image in new comment', async ({page}, workerInfo) => {
+test('Paste image in new comment', async ({page}) => {
   await page.goto('/user2/repo1/issues/new');
 
   const waitForAttachmentUpload = page.waitForResponse((response) => {
@@ -70,12 +67,12 @@ test('Paste image in new comment', async ({page}, workerInfo) => {
   await expect(preview).toHaveCount(1);
   await expect(preview.locator('.dz-filename')).toHaveText('foo.png');
   await expect(preview.locator('.octicon-copy')).toBeVisible();
-  await assertCopy(page, workerInfo, '![foo](');
+  await assertCopy(page, '![foo](');
 
   await screenshot(page, page.locator('.issue-content-left'));
 });
 
-test('Re-add images to dropzone on edit', async ({page}, workerInfo) => {
+test('Re-add images to dropzone on edit', async ({page}) => {
   await page.goto('/user2/repo1/issues/new');
 
   const issueTitle = dynamic_id();
@@ -101,7 +98,7 @@ test('Re-add images to dropzone on edit', async ({page}, workerInfo) => {
   await expect(preview).toHaveCount(1);
   await expect(preview.locator('.dz-filename')).toHaveText('foo.png');
   await expect(preview.locator('.octicon-copy')).toBeVisible();
-  await assertCopy(page, workerInfo, '![foo](');
+  await assertCopy(page, '![foo](');
 
   await screenshot(page, page.locator('.issue-content-left'));
 });

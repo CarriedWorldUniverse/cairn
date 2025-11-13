@@ -83,9 +83,7 @@ func createSessions(t testing.TB) {
 	browsers := []string{
 		"chromium",
 		"firefox",
-		"webkit",
 		"Mobile Chrome",
-		"Mobile Safari",
 	}
 	scopes := []string{
 		"shared",

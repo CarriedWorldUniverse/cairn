@@ -6,8 +6,7 @@ import {expect} from '@playwright/test';
 import {test} from './utils_e2e.ts';
 import {screenshot} from './shared/screenshots.ts';
 
-test('markup with #xyz-mode-only', async ({page}, workerInfo) => {
-  test.skip(['webkit', 'Mobile Safari'].includes(workerInfo.project.name), 'Newest version contains a regression');
+test('markup with #xyz-mode-only', async ({page}) => {
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 

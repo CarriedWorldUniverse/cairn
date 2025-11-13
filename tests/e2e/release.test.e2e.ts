@@ -16,8 +16,8 @@ import {validate_form} from './shared/forms.ts';
 test.use({user: 'user2'});
 
 test.describe('Releases', () => {
-  test('External Release Attachments', async ({page, isMobile}, workerInfo) => {
-    test.skip(isMobile || workerInfo.project.name === 'webkit');
+  test('External Release Attachments', async ({page, isMobile}) => {
+    test.skip(isMobile);
 
     // Click "New Release"
     await page.goto('/user2/repo2/releases');
