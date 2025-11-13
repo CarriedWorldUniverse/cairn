@@ -121,3 +121,135 @@ func TestConfigureActionRunConcurrency(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveDispatchInputAcceptsValidInput(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		key      string
+		value    string
+		input    act_model.WorkflowDispatchInput
+		expected string
+	}{
+		{
+			name:     "on_converted_to_true",
+			key:      "my_boolean",
+			value:    "on",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Type: "boolean", Options: []string{}},
+			expected: "true",
+		},
+		// It might make sense to validate booleans in the future and then turn it into an error.
+		{
+			name:     "ON_stays_ON",
+			key:      "my_boolean",
+			value:    "ON",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Type: "boolean", Options: []string{}},
+			expected: "ON",
+		},
+		{
+			name:     "true_stays_true",
+			key:      "my_boolean",
+			value:    "true",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Type: "boolean", Options: []string{}},
+			expected: "true",
+		},
+		{
+			name:     "false_stays_false",
+			key:      "my_boolean",
+			value:    "false",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Type: "boolean", Options: []string{}},
+			expected: "false",
+		},
+		{
+			name:     "empty_results_in_default_value_true",
+			key:      "my_boolean",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Default: "true", Type: "boolean", Options: []string{}},
+			expected: "true",
+		},
+		{
+			name:     "empty_results_in_default_value_false",
+			key:      "my_boolean",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: false, Default: "false", Type: "boolean", Options: []string{}},
+			expected: "false",
+		},
+		{
+			name:     "string_results_in_input",
+			key:      "my_string",
+			value:    "hello",
+			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "string", Options: []string{}},
+			expected: "hello",
+		},
+		{
+			name:     "string_option_results_in_input",
+			value:    "a",
+			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "string", Options: []string{"a", "b"}},
+			expected: "a",
+		},
+		// Test ensures that the old behaviour (ignoring option mismatch) is retained. It might
+		// make sense to turn it into an error in the future.
+		{
+			name:     "invalid_string_option_results_in_input",
+			key:      "option",
+			value:    "c",
+			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "string", Options: []string{"a", "b"}},
+			expected: "c",
+		},
+		{
+			name:     "number_results_in_input",
+			key:      "my_number",
+			value:    "123",
+			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "number", Options: []string{}},
+			expected: "123",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, _ := resolveDispatchInput(tc.key, tc.value, tc.input)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+func TestResolveDispatchInputRejectsInvalidInput(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		key      string
+		value    string
+		input    act_model.WorkflowDispatchInput
+		expected error
+	}{
+		{
+			name:     "missing_required_boolean",
+			key:      "missing_boolean",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Description: "a boolean", Required: true, Type: "boolean", Options: []string{}},
+			expected: InputRequiredErr{Name: "a boolean"},
+		},
+		{
+			name:     "missing_required_boolean_without_description",
+			key:      "missing_boolean",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Required: true, Type: "boolean", Options: []string{}},
+			expected: InputRequiredErr{Name: "missing_boolean"},
+		},
+		{
+			name:     "missing_required_string",
+			key:      "missing_string",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: true, Type: "string", Options: []string{}},
+			expected: InputRequiredErr{Name: "a string"},
+		},
+		{
+			name:     "missing_required_string_without_description",
+			key:      "missing_string",
+			value:    "",
+			input:    act_model.WorkflowDispatchInput{Required: true, Type: "string", Options: []string{}},
+			expected: InputRequiredErr{Name: "missing_string"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := resolveDispatchInput(tc.key, tc.value, tc.input)
+			assert.Equal(t, tc.expected, err)
+		})
+	}
+}
