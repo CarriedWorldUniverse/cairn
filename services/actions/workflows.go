@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/perm"
@@ -50,6 +49,28 @@ type Workflow struct {
 
 type InputValueGetter func(key string) string
 
+func resolveDispatchInput(key, value string, input act_model.WorkflowDispatchInput) (string, error) {
+	if len(value) == 0 {
+		value = input.Default
+		if len(value) == 0 {
+			if input.Required {
+				name := input.Description
+				if len(name) == 0 {
+					name = key
+				}
+				return "", InputRequiredErr{Name: name}
+			}
+		}
+	} else if input.Type == "boolean" {
+		// Temporary compatibility shim for people that upgrade to Forgejo 14. Can be removed with Forgejo 15.
+		if value == "on" {
+			value = "true"
+		}
+	}
+
+	return value, nil
+}
+
 func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGetter, repo *repo_model.Repository, doer *user.User) (r *actions_model.ActionRun, j []string, err error) {
 	content, err := actions.GetContentFromEntry(entry.GitEntry)
 	if err != nil {
@@ -72,25 +93,12 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 	inputsAny := make(map[string]any)
 	if workflowDispatch := wf.WorkflowDispatchConfig(); workflowDispatch != nil {
 		for key, input := range workflowDispatch.Inputs {
-			val := inputGetter(key)
-			if len(val) == 0 {
-				val = input.Default
-				if len(val) == 0 {
-					if input.Required {
-						name := input.Description
-						if len(name) == 0 {
-							name = key
-						}
-						return nil, nil, InputRequiredErr{Name: name}
-					}
-					continue
-				}
-			} else if input.Type == "boolean" {
-				// Since "boolean" inputs are rendered as a checkbox in html, the value inside the form is "on"
-				val = strconv.FormatBool(val == "on")
+			value, err := resolveDispatchInput(key, inputGetter(key), input)
+			if err != nil {
+				return nil, nil, err
 			}
-			inputs[key] = val
-			inputsAny[key] = val
+			inputs[key] = value
+			inputsAny[key] = value
 		}
 	}
 
