@@ -31,49 +31,58 @@ func TestCitation(t *testing.T) {
 			repo, _, f := tests.CreateDeclarativeRepo(t, user, "citation-no-citation", []unit_model.Type{unit_model.TypeCode}, nil, nil)
 			defer f()
 
-			testCitationButtonExists(t, session, repo, "", false)
+			testCitationButtonExists(t, session, repo, "")
 		})
 
 		t.Run("cff citation", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			repo, f := createRepoWithEmptyFile(t, user, "citation-cff", "CITATION.cff")
+			repo, f := createRepoWithDummyFile(t, user, "citation-cff", "CITATION.cff")
 			defer f()
 
-			testCitationButtonExists(t, session, repo, "CITATION.cff", true)
+			testCitationButtonExists(t, session, repo, "CITATION.cff")
 		})
 
 		t.Run("bib citation", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			repo, f := createRepoWithEmptyFile(t, user, "citation-bib", "CITATION.bib")
+			repo, f := createRepoWithDummyFile(t, user, "citation-bib", "CITATION.bib")
 			defer f()
 
-			testCitationButtonExists(t, session, repo, "CITATION.bib", true)
+			testCitationButtonExists(t, session, repo, "CITATION.bib")
 		})
 	})
 }
 
-func testCitationButtonExists(t *testing.T, session *TestSession, repo *repo_model.Repository, file string, exists bool) {
+func testCitationButtonExists(t *testing.T, session *TestSession, repo *repo_model.Repository, file string) {
 	req := NewRequest(t, "GET", repo.HTMLURL())
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	doc := NewHTMLParser(t, resp.Body)
 
-	doc.AssertElement(t, "#cite-repo-button", exists)
-
-	if exists {
-		href, exists := doc.doc.Find("#goto-citation-btn").Attr("href")
-		assert.True(t, exists)
-
-		assert.True(t, strings.HasSuffix(href, file))
+	links := doc.Find("a.citation-link")
+	if file == "" {
+		assert.Equal(t, 0, links.Length())
+		return
 	}
+
+	assert.Equal(t, 1, links.Length())
+	href, exists := links.Attr("href")
+	assert.True(t, exists)
+	assert.True(t, strings.HasSuffix(href, file))
+
+	// request the citation file to check for webcomponent presence
+	req = NewRequest(t, "GET", href)
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	doc = NewHTMLParser(t, resp.Body)
+	doc.AssertElement(t, `lazy-webc[tag="citation-information"]`, true)
 }
 
-func createRepoWithEmptyFile(t *testing.T, user *user_model.User, repoName, fileName string) (*repo_model.Repository, func()) {
+func createRepoWithDummyFile(t *testing.T, user *user_model.User, repoName, fileName string) (*repo_model.Repository, func()) {
 	repo, _, f := tests.CreateDeclarativeRepo(t, user, repoName, []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
 		{
-			Operation: "create",
-			TreePath:  fileName,
+			Operation:     "create",
+			TreePath:      fileName,
+			ContentReader: strings.NewReader("citation-content"), // viewer requires some content
 		},
 	})
 

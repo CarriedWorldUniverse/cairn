@@ -1,3 +1,6 @@
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: MIT
+
 import {onDomReady} from '../utils/dom.js';
 
 /**
@@ -21,6 +24,9 @@ const loadableComponents = {
   }),
   'pdf-object': lazyPromise(() => {
     return import(/* webpackChunkName: "pdf-object" */ './pdf-object.js');
+  }),
+  'citation-information': lazyPromise(() => {
+    return import(/* webpackChunkName: "citation-information" */ './citation-information.js');
   }),
 };
 

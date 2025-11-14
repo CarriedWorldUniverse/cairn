@@ -89,10 +89,13 @@ func testPackageCargo(t *testing.T, _ *neturl.URL) {
 		blob, err := commit.GetBlobByPath(path)
 		require.NoError(t, err)
 
-		content, err := blob.GetBlobContent(1024)
+		rc, _, err := blob.NewTruncatedReader(1024)
 		require.NoError(t, err)
 
-		return content
+		content, err := io.ReadAll(rc)
+		require.NoError(t, err)
+
+		return string(content)
 	}
 
 	root := fmt.Sprintf("%sapi/packages/%s/cargo", setting.AppURL, user.Name)
