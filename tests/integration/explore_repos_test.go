@@ -43,7 +43,7 @@ func TestExploreRepos(t *testing.T) {
 
 		// Star the repo
 		session := loginUser(t, "user5")
-		session.MakeRequest(t, NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/action/star", repo), map[string]string{}), http.StatusOK)
+		session.MakeRequest(t, NewRequest(t, "POST", fmt.Sprintf("/%s/action/star", repo)), http.StatusOK)
 
 		// Stars counter should have incremented
 		testExploreStarForkCounters(t, repo, "1 star", "0 forks")

@@ -67,7 +67,7 @@ func TestActionsVariablesModification(t *testing.T) {
 			assert.Equal(t, "success%3DThe%2Bvariable%2Bhas%2Bbeen%2Bedited.", flashCookie.Value)
 		}
 
-		req = NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id), map[string]string{})
+		req = NewRequest(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id))
 		if fail {
 			resp := sess.MakeRequest(t, req, http.StatusBadRequest)
 			var error errorJSON

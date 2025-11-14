@@ -322,7 +322,7 @@ func TestTeamWithoutPermissionToShowTable(t *testing.T) {
 	})
 	session.MakeRequest(t, req, http.StatusSeeOther)
 
-	req = NewRequestWithValues(t, "GET", fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name), map[string]string{})
+	req = NewRequest(t, "GET", fmt.Sprintf("/org/%s/teams/%s/edit", org.Name, team.Name))
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	htmlDoc := NewHTMLParser(t, resp.Body)
 

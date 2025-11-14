@@ -361,7 +361,7 @@ func TestRepositoryFlagsUI(t *testing.T) {
 			flagged := flaggedRepo.IsFlagged(db.DefaultContext)
 			assert.True(t, flagged)
 
-			req := NewRequestWithValues(t, "POST", flaggedRepoManageURL, map[string]string{})
+			req := NewRequest(t, "POST", flaggedRepoManageURL)
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
 			flagged = flaggedRepo.IsFlagged(db.DefaultContext)

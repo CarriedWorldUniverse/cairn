@@ -146,7 +146,7 @@ func TestPullrequestReopen(t *testing.T) {
 			t.Helper()
 
 			link := fmt.Sprintf("/%s/branches", repoName)
-			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/restore?branch_id=%d&name=%s", link, branchID, branchName), map[string]string{})
+			req := NewRequest(t, "POST", fmt.Sprintf("%s/restore?branch_id=%d&name=%s", link, branchID, branchName))
 			session.MakeRequest(t, req, http.StatusOK)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)
@@ -158,7 +158,7 @@ func TestPullrequestReopen(t *testing.T) {
 			t.Helper()
 
 			link := fmt.Sprintf("/%s/branches", repoName)
-			req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/delete?name=%s", link, branchName), map[string]string{})
+			req := NewRequest(t, "POST", fmt.Sprintf("%s/delete?name=%s", link, branchName))
 			session.MakeRequest(t, req, http.StatusOK)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)

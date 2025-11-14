@@ -591,7 +591,7 @@ func TestPullReviewInArchivedRepo(t *testing.T) {
 	})
 }
 
-func testNofiticationCount(t *testing.T, session *TestSession, expectedSubmitStatus int) *httptest.ResponseRecorder {
+func testNotificationCount(t *testing.T, session *TestSession, expectedSubmitStatus int) *httptest.ResponseRecorder {
 	options := map[string]string{}
 
 	req := NewRequestWithValues(t, "GET", "/", options)
@@ -631,7 +631,7 @@ func testIssueClose(t *testing.T, session *TestSession, owner, repo, issueNumber
 }
 
 func getUserNotificationCount(t *testing.T, session *TestSession) string {
-	resp := testNofiticationCount(t, session, http.StatusOK)
+	resp := testNotificationCount(t, session, http.StatusOK)
 	doc := NewHTMLParser(t, resp.Body)
 	return doc.Find(`.notification_count`).Text()
 }

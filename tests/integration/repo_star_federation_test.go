@@ -54,7 +54,7 @@ func TestActivityPubRepoFollowing(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 		repoLink := fmt.Sprintf("/%s", repo.FullName())
 		link := fmt.Sprintf("%s/action/star", repoLink)
-		req := NewRequestWithValues(t, "POST", link, map[string]string{})
+		req := NewRequest(t, "POST", link)
 
 		session.MakeRequest(t, req, http.StatusOK)
 

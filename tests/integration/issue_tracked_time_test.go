@@ -28,7 +28,7 @@ func TestIssueAddTimeManually(t *testing.T) {
 	t.Run("No time", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
-		session.MakeRequest(t, NewRequestWithValues(t, "POST", issue2.Link()+"/times/add", map[string]string{}), http.StatusSeeOther)
+		session.MakeRequest(t, NewRequest(t, "POST", issue2.Link()+"/times/add"), http.StatusSeeOther)
 
 		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)

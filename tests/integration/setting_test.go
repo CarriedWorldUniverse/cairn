@@ -175,7 +175,7 @@ func TestSettingSecurityTwoFactorRequirement(t *testing.T) {
 		htmlDoc.AssertElement(t, "#disable-form", showUnroll)
 		htmlDoc.AssertSelection(t, htmlDoc.FindByText("p", locale.TrString("settings.twofa_unroll_unavailable")), showReroll && !showUnroll)
 
-		req := NewRequestWithValues(t, "POST", "user/settings/security/two_factor/disable", map[string]string{})
+		req := NewRequest(t, "POST", "user/settings/security/two_factor/disable")
 		if user.MustHaveTwoFactor() {
 			session.MakeRequest(t, req, http.StatusNotFound)
 		} else {
