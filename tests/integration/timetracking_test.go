@@ -43,7 +43,7 @@ func testViewTimetrackingControls(t *testing.T, session *TestSession, user, repo
 	htmlDoc.AssertElement(t, ".timetrack .issue-start-time", canTrackTime)
 	htmlDoc.AssertElement(t, ".timetrack .issue-add-time", canTrackTime)
 
-	req = NewRequestWithValues(t, "POST", path.Join(user, repo, "issues", issue, "times", "stopwatch", "toggle"), map[string]string{})
+	req = NewRequest(t, "POST", path.Join(user, repo, "issues", issue, "times", "stopwatch", "toggle"))
 	if canTrackTime {
 		resp = session.MakeRequest(t, req, http.StatusSeeOther)
 
@@ -57,7 +57,7 @@ func testViewTimetrackingControls(t *testing.T, session *TestSession, user, repo
 		htmlDoc.AssertElement(t, ".timetrack .issue-stop-time", true)
 		htmlDoc.AssertElement(t, ".timetrack .issue-cancel-time", true)
 
-		req = NewRequestWithValues(t, "POST", path.Join(user, repo, "issues", issue, "times", "stopwatch", "toggle"), map[string]string{})
+		req = NewRequest(t, "POST", path.Join(user, repo, "issues", issue, "times", "stopwatch", "toggle"))
 		resp = session.MakeRequest(t, req, http.StatusSeeOther)
 
 		req = NewRequest(t, "GET", test.RedirectURL(resp))

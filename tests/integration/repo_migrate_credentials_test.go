@@ -65,7 +65,7 @@ func TestRepoMigrateWithCredentials(t *testing.T) {
 		})
 
 		t.Run("Dangerous credential", func(t *testing.T) {
-			// Temporaily change the password
+			// Temporarily change the password
 			dangerousPassword := "some`echo foo`thing"
 			require.NoError(t, user2.SetPassword(dangerousPassword))
 			require.NoError(t, user_model.UpdateUserCols(t.Context(), user2, "passwd", "passwd_hash_algo", "salt"))

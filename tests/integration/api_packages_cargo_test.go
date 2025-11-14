@@ -399,7 +399,7 @@ func TestRebuildCargo(t *testing.T) {
 		t.Run("No index", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			req := NewRequestWithValues(t, "POST", "/user/settings/packages/cargo/rebuild", map[string]string{})
+			req := NewRequest(t, "POST", "/user/settings/packages/cargo/rebuild")
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)
@@ -418,7 +418,7 @@ func TestRebuildCargo(t *testing.T) {
 			htmlDoc.AssertElement(t, `form[action="/user/settings/packages/cargo/rebuild"]`, false)
 			htmlDoc.AssertElement(t, `form[action="/user/settings/packages/cargo/initialize"]`, true)
 
-			req = NewRequestWithValues(t, "POST", "/user/settings/packages/cargo/initialize", map[string]string{})
+			req = NewRequest(t, "POST", "/user/settings/packages/cargo/initialize")
 			session.MakeRequest(t, req, http.StatusSeeOther)
 			unittest.AssertExistsIf(t, true, &repo_model.Repository{OwnerID: user.ID, Name: cargo_service.IndexRepositoryName})
 
@@ -433,7 +433,7 @@ func TestRebuildCargo(t *testing.T) {
 		t.Run("With index", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			req := NewRequestWithValues(t, "POST", "/user/settings/packages/cargo/rebuild", map[string]string{})
+			req := NewRequest(t, "POST", "/user/settings/packages/cargo/rebuild")
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
 			flashCookie := session.GetCookie(app_context.CookieNameFlash)

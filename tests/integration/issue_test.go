@@ -578,9 +578,9 @@ func TestIssueCommentDelete(t *testing.T) {
 	assert.Equal(t, comment1, comment.Content)
 
 	// Using the ID of a comment that does not belong to the repository must fail
-	req := NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/comments/%d/delete", "user5", "repo4", commentID), map[string]string{})
+	req := NewRequest(t, "POST", fmt.Sprintf("/%s/%s/comments/%d/delete", "user5", "repo4", commentID))
 	session.MakeRequest(t, req, http.StatusNotFound)
-	req = NewRequestWithValues(t, "POST", fmt.Sprintf("/%s/%s/comments/%d/delete", "user2", "repo1", commentID), map[string]string{})
+	req = NewRequest(t, "POST", fmt.Sprintf("/%s/%s/comments/%d/delete", "user2", "repo1", commentID))
 	session.MakeRequest(t, req, http.StatusOK)
 	unittest.AssertNotExistsBean(t, &issues_model.Comment{ID: commentID})
 }
@@ -1028,7 +1028,7 @@ func TestIssuePinMove(t *testing.T) {
 	issueURL, issue := testIssueWithBean(t, "user2", 1, "Title", "Content")
 	assert.Equal(t, 0, issue.PinOrder)
 
-	req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/pin", issueURL), map[string]string{})
+	req := NewRequest(t, "POST", fmt.Sprintf("%s/pin", issueURL))
 	session.MakeRequest(t, req, http.StatusOK)
 	issue = unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: issue.ID})
 

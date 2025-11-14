@@ -59,7 +59,7 @@ func TestOrgTeamEmailInvite(t *testing.T) {
 
 	// join the team
 	inviteURL := fmt.Sprintf("/org/invite/%s", invites[0].Token)
-	req = NewRequestWithValues(t, "POST", inviteURL, map[string]string{})
+	req = NewRequest(t, "POST", inviteURL)
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -130,7 +130,7 @@ func TestOrgTeamEmailInviteRedirectsExistingUser(t *testing.T) {
 	session.jar.SetCookies(baseURL, cr.Cookies())
 
 	// make the request
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{})
+	req = NewRequest(t, "POST", test.RedirectURL(resp))
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)
@@ -198,7 +198,7 @@ func TestOrgTeamEmailInviteRedirectsNewUser(t *testing.T) {
 	session.jar.SetCookies(baseURL, cr.Cookies())
 
 	// make the redirected request
-	req = NewRequestWithValues(t, "POST", test.RedirectURL(resp), map[string]string{})
+	req = NewRequest(t, "POST", test.RedirectURL(resp))
 	resp = session.MakeRequest(t, req, http.StatusSeeOther)
 	req = NewRequest(t, "GET", test.RedirectURL(resp))
 	session.MakeRequest(t, req, http.StatusOK)

@@ -741,7 +741,7 @@ func TestUserTOTPMail(t *testing.T) {
 
 		unittest.AssertSuccessfulInsert(t, &auth_model.TwoFactor{UID: user.ID})
 		unittest.AssertSuccessfulInsert(t, &auth_model.WebAuthnCredential{UserID: user.ID})
-		req := NewRequestWithValues(t, "POST", "/user/settings/security/two_factor/disable", map[string]string{})
+		req := NewRequest(t, "POST", "/user/settings/security/two_factor/disable")
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
 		assert.True(t, called)
@@ -918,7 +918,7 @@ func TestUserTOTPDisable(t *testing.T) {
 		htmlDoc := NewHTMLParser(t, resp.Body)
 		htmlDoc.AssertElement(t, "#disable-form", disableAllowed)
 
-		req := NewRequestWithValues(t, "POST", "user/settings/security/two_factor/disable", map[string]string{})
+		req := NewRequest(t, "POST", "user/settings/security/two_factor/disable")
 		if status == http.StatusSeeOther {
 			resp := session.MakeRequest(t, req, http.StatusSeeOther)
 			assert.Equal(t, "/user/settings/security", resp.Header().Get("Location"))
