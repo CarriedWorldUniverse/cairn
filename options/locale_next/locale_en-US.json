@@ -109,6 +109,7 @@
     "feed.atom.link": "Atom feed",
     "keys.ssh.link": "SSH keys",
     "keys.gpg.link": "GPG keys",
+    "keys.verify.token.hint": "The token is only valid for 1 minute. <a href=\"%[1]s\">Get a new one if it expired</a>.",
     "admin.config.moderation_config": "Moderation configuration",
     "admin.moderation.moderation_reports": "Moderation reports",
     "admin.moderation.reports": "Reports",
