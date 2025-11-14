@@ -13,7 +13,6 @@ import {initRepoBranchTagSelector} from './repo-branch-tag-selector.js';
 import {
   initRepoCloneLink, initRepoCommonBranchOrTagDropdown, initRepoCommonFilterSearchDropdown,
 } from './repo-common.js';
-import {initCitationFileCopyContent} from './citation.js';
 import {initCompLabelEdit} from './comp/LabelEdit.js';
 import {initRepoDiffConversationNav} from './repo-diff.js';
 import {showErrorToast} from '../modules/toast.js';
@@ -457,7 +456,6 @@ export function initRepository() {
   }
 
   initRepoCloneLink();
-  initCitationFileCopyContent();
   initRepoSettingBranches();
 
   // Issues

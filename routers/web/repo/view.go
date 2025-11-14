@@ -601,6 +601,7 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 			ctx.Data["EscapeStatus"] = status
 			ctx.Data["FileContent"] = fileContent
 			ctx.Data["LineEscapeStatus"] = statuses
+			ctx.Data["IsCitationFile"] = isCitationFile(entry)
 		}
 		if !fInfo.isLFSFile {
 			if ctx.Repo.CanEnableEditor(ctx, ctx.Doer) {
@@ -778,6 +779,10 @@ func checkHomeCodeViewable(ctx *context.Context) {
 	ctx.NotFound("Home", errors.New(ctx.Locale.TrString("units.error.no_unit_allowed_repo")))
 }
 
+func isCitationFile(entry *git.TreeEntry) bool {
+	return entry.Name() == "CITATION.cff" || entry.Name() == "CITATION.bib"
+}
+
 func checkCitationFile(ctx *context.Context, entry *git.TreeEntry) {
 	if entry.Name() != "" {
 		return
@@ -793,16 +798,9 @@ func checkCitationFile(ctx *context.Context, entry *git.TreeEntry) {
 		return
 	}
 	for _, entry := range allEntries {
-		if entry.Name() == "CITATION.cff" || entry.Name() == "CITATION.bib" {
-			// Read Citation file contents
-			if content, err := entry.Blob().GetBlobContent(setting.UI.MaxDisplayFileSize); err != nil {
-				log.Error("checkCitationFile: GetBlobContent: %v", err)
-			} else {
-				ctx.Data["CitationExist"] = true
-				ctx.Data["CitationFile"] = entry.Name()
-				ctx.PageData["citationFileContent"] = content
-				break
-			}
+		if isCitationFile(entry) {
+			ctx.Data["CitationFile"] = entry.Name()
+			break
 		}
 	}
 }

@@ -438,6 +438,10 @@ pdf-object {
   justify-content: center;
 }
 
+citation-information .tab:not(.active) {
+  display: none;
+}
+
 .repository.file.list .non-diff-file-content .plain-text {
   padding: 1em 2em;
 }
@@ -1897,48 +1901,6 @@ details.repo-search-result summary::marker {
   font-weight: var(--font-weight-medium);
 }
 
-#cite-repo-modal #citation-panel {
-  display: flex;
-  width: 100%;
-}
-
-#cite-repo-modal #citation-panel input {
-  border-radius: 0;
-  padding: 5px 10px;
-  width: 50%;
-  line-height: 1.4;
-}
-
-#cite-repo-modal #citation-panel #citation-copy-content {
-  border-radius: 0;
-  padding: 5px 10px;
-  font-size: 1.2em;
-  line-height: 1.4;
-  flex: 1;
-}
-
-#cite-repo-modal #citation-panel #citation-copy-bibtex {
-  font-size: 13px;
-  padding: 7.5px 5px;
-  border-right: none;
-}
-
-#cite-repo-modal #citation-panel #goto-citation-btn {
-  border-left: none;
-}
-
-#cite-repo-modal #citation-panel > :first-child {
-  border-radius: var(--border-radius) 0 0 var(--border-radius) !important;
-}
-
-#cite-repo-modal #citation-panel > :last-child {
-  border-radius: 0 var(--border-radius) var(--border-radius) 0 !important;
-}
-
-#cite-repo-modal #citation-panel .icon.button {
-  padding: 0 10px;
-}
-
 #search-user-box .results .result .image {
   order: 0;
   margin-right: 12px;
@@ -2381,6 +2343,7 @@ tbody.commit-list {
   overflow-x: auto;
   padding: 6px 12px !important;
   font-size: 13px !important;
+  min-height: 46px;
 }
 
 .file-info {

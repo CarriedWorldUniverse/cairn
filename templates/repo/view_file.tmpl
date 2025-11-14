@@ -26,9 +26,9 @@
 	{{end}}
 
 	<h4 class="file-header ui top attached header tw-flex tw-items-center tw-justify-between tw-flex-wrap">
-		<div class="file-header-left tw-flex tw-items-center tw-py-2 tw-pr-4">
+		<div class="file-header-left tw-flex tw-items-center tw-pr-4 tw-flex-wrap {{if .IsCitationFile}}tw-gap-4{{else}}tw-gap-2{{end}}">
 			{{if .ReadmeInList}}
-				{{svg "octicon-book" 16 "tw-mr-2"}}
+				{{svg "octicon-book"}}
 				<strong><a class="default-link muted" href="#readme">{{.FileName}}</a></strong>
 			{{else}}
 				{{template "repo/file_info" .}}
@@ -150,6 +150,9 @@
 					</tbody>
 				</table>
 				{{else}}
+				{{if .IsCitationFile}}
+				<lazy-webc tag="citation-information">
+				{{end}}
 				<table>
 					<tbody>
 						{{range $idx, $code := .FileContent}}
@@ -164,6 +167,9 @@
 						{{end}}
 					</tbody>
 				</table>
+				{{if .IsCitationFile}}
+				</lazy-webc>
+				{{end}}
 				<div class="code-line-menu tippy-target">
 					{{if $.Permission.CanRead $.UnitTypeIssues}}
 						<a class="item ref-in-new-issue" role="menuitem" data-url-issue-new="{{.RepoLink}}/issues/new" data-url-param-body-link="{{.Repository.Link}}/src/commit/{{PathEscape .CommitID}}/{{PathEscapeSegments .TreePath}}{{if $.HasSourceRenderedToggle}}?display=source{{end}}" rel="nofollow noindex">{{ctx.Locale.Tr "repo.issues.context.reference_issue"}}</a>

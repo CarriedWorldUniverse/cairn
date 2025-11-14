@@ -157,22 +157,6 @@ func (b *Blob) NewTruncatedReader(limit int64) (rc io.ReadCloser, fullSize int64
 	}, fullSize, nil
 }
 
-// GetBlobContent Gets the truncated content of the blob as raw text
-func (b *Blob) GetBlobContent(limit int64) (string, error) {
-	if limit <= 0 {
-		return "", nil
-	}
-	rc, fullSize, err := b.NewTruncatedReader(limit)
-	if err != nil {
-		return "", err
-	}
-	defer rc.Close()
-
-	buf := make([]byte, min(fullSize, limit))
-	_, err = io.ReadFull(rc, buf)
-	return string(buf), err
-}
-
 type BlobTooLargeError struct {
 	Size, Limit int64
 }

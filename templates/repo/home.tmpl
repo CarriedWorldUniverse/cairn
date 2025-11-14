@@ -130,8 +130,8 @@
 									<a class="item archive-link" href="{{$.RepoLink}}/archive/{{PathEscapeSegments $.RefName}}.tar.gz" rel="nofollow">{{svg "octicon-file-zip" 16 "tw-mr-2"}}{{ctx.Locale.Tr "repo.download_tar"}}</a>
 									<a class="item archive-link" href="{{$.RepoLink}}/archive/{{PathEscapeSegments $.RefName}}.bundle" rel="nofollow">{{svg "octicon-package" 16 "tw-mr-2"}}{{ctx.Locale.Tr "repo.download_bundle"}}</a>
 								{{end}}
-								{{if .CitationExist}}
-									<a class="item" id="cite-repo-button">{{svg "octicon-cross-reference" 16 "tw-mr-2"}}{{ctx.Locale.Tr "repo.cite_this_repo"}}</a>
+								{{if .CitationFile}}
+									<a class="item citation-link" href="{{$.RepoLink}}/src/branch/{{$.BranchName}}/{{$.CitationFile}}">{{svg "octicon-cross-reference" 16 "tw-mr-2"}}{{ctx.Locale.Tr "repo.cite_this_repo"}}</a>
 								{{end}}
 								{{range .OpenWithEditorApps}}
 									<a class="item js-clone-url-editor" data-href-template="{{.OpenURL}}">{{.IconHTML}}{{ctx.Locale.Tr "repo.open_with_editor" .DisplayName}}</a>
@@ -140,7 +140,6 @@
 						</button>
 						{{template "repo/clone_script" .}}{{/* the script will update `.js-clone-url` and related elements */}}
 					</div>
-					{{template "repo/cite/cite_modal" .}}
 				{{end}}
 				{{if and (not $isHomepage) (not .IsViewFile) (not .IsBlame)}}{{/* IsViewDirectory (not home), TODO: split the templates, avoid using "if" tricks */}}
 					<div class="button-sequence folder-actions">
