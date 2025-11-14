@@ -19,6 +19,7 @@
 				<div class="field">
 					<label for="token">{{ctx.Locale.Tr "settings.gpg_token"}}</label>
 					<input readonly="" value="{{.TokenToSign}}">
+					<span class="help">{{ctx.Locale.Tr "keys.verify.token.hint" (printf "?verify_gpg=%s" .KeyID)}}</span>
 					<div class="help">
 						<p>{{ctx.Locale.Tr "settings.gpg_token_help"}}</p>
 						<p><code>{{printf `echo "%s" | gpg -a --default-key %s --detach-sig` .TokenToSign .PaddedKeyID}}</code></p>
@@ -88,6 +89,7 @@
 						<div class="field">
 							<label for="token">{{ctx.Locale.Tr "settings.gpg_token"}}</label>
 							<input readonly="" value="{{$.TokenToSign}}">
+							<span class="help">{{ctx.Locale.Tr "keys.verify.token.hint" (printf "?verify_gpg=%s" .KeyID)}}</span>
 							<div class="help">
 								<p>{{ctx.Locale.Tr "settings.gpg_token_help"}}</p>
 								<p><code>{{printf `echo "%s" | gpg -a --default-key %s --detach-sig` $.TokenToSign .PaddedKeyID}}</code></p>
