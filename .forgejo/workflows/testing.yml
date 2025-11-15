@@ -186,7 +186,7 @@ jobs:
         env:
           RACE_ENABLED: 'true'
           TAGS: bindata
-          TEST_REDIS_SERVER: cacher:${{ matrix.cacher.port }}
+          TEST_REDIS_SERVER: cacher:6379
   test-mysql:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
