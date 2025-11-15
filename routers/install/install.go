@@ -485,11 +485,7 @@ func SubmitInstall(ctx *context.Context) {
 
 	// if there is already a SECRET_KEY, we should not overwrite it, otherwise the encrypted data will not be able to be decrypted
 	if setting.SecretKey == "" {
-		var secretKey string
-		if secretKey, err = generate.NewSecretKey(); err != nil {
-			ctx.RenderWithErr(ctx.Tr("install.secret_key_failed", err), tplInstall, &form)
-			return
-		}
+		secretKey := generate.NewSecretKey()
 		cfg.Section("security").Key("SECRET_KEY").SetValue(secretKey)
 	}
 

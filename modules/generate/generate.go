@@ -51,11 +51,6 @@ func NewJwtSecret() ([]byte, string) {
 }
 
 // NewSecretKey generate a new value intended to be used by SECRET_KEY.
-func NewSecretKey() (string, error) {
-	secretKey, err := util.CryptoRandomString(64)
-	if err != nil {
-		return "", err
-	}
-
-	return secretKey, nil
+func NewSecretKey() string {
+	return util.CryptoRandomString(util.RandomStringHigh)
 }

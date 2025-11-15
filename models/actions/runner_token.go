@@ -77,10 +77,7 @@ func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerTo
 		ownerID = 0
 	}
 
-	token, err := util.CryptoRandomString(40)
-	if err != nil {
-		return nil, err
-	}
+	token := util.CryptoRandomString(util.RandomStringHigh)
 	runnerToken := &ActionRunnerToken{
 		OwnerID:  ownerID,
 		RepoID:   repoID,
@@ -95,7 +92,7 @@ func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerTo
 			return err
 		}
 
-		_, err = db.GetEngine(ctx).Insert(runnerToken)
+		_, err := db.GetEngine(ctx).Insert(runnerToken)
 		return err
 	})
 }

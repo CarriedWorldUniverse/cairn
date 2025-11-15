@@ -688,11 +688,7 @@ func SettingsPost(ctx *context.Context) {
 			return
 		}
 
-		remoteSuffix, err := util.CryptoRandomString(10)
-		if err != nil {
-			ctx.ServerError("RandomString", err)
-			return
-		}
+		remoteSuffix := util.CryptoRandomString(util.RandomStringLow)
 
 		remoteAddress, err := util.SanitizeURL(address)
 		if err != nil {
