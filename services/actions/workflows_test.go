@@ -4,6 +4,7 @@
 package actions
 
 import (
+	"errors"
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
@@ -124,11 +125,12 @@ func TestConfigureActionRunConcurrency(t *testing.T) {
 
 func TestResolveDispatchInputAcceptsValidInput(t *testing.T) {
 	for _, tc := range []struct {
-		name     string
-		key      string
-		value    string
-		input    act_model.WorkflowDispatchInput
-		expected string
+		name          string
+		key           string
+		value         string
+		input         act_model.WorkflowDispatchInput
+		expected      string
+		expectedError func(err error) bool
 	}{
 		{
 			name:     "on_converted_to_true",
@@ -202,10 +204,28 @@ func TestResolveDispatchInputAcceptsValidInput(t *testing.T) {
 			input:    act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "number", Options: []string{}},
 			expected: "123",
 		},
+		{
+			name:          "empty_value_skipped",
+			key:           "my_number",
+			value:         "",
+			input:         act_model.WorkflowDispatchInput{Description: "a string", Required: false, Type: "number", Options: []string{}},
+			expectedError: func(err error) bool { return errors.Is(err, ErrSkipDispatchInput) },
+		},
+		{
+			name:          "required_missing",
+			key:           "my_number",
+			value:         "",
+			input:         act_model.WorkflowDispatchInput{Required: true, Type: "number", Options: []string{}},
+			expectedError: IsInputRequiredErr,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			actual, _ := resolveDispatchInput(tc.key, tc.value, tc.input)
-			assert.Equal(t, tc.expected, actual)
+			actual, err := resolveDispatchInput(tc.key, tc.value, tc.input)
+			if tc.expectedError != nil {
+				assert.True(t, tc.expectedError(err))
+			} else {
+				assert.Equal(t, tc.expected, actual)
+			}
 		})
 	}
 }

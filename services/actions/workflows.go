@@ -49,6 +49,8 @@ type Workflow struct {
 
 type InputValueGetter func(key string) string
 
+var ErrSkipDispatchInput = errors.New("skip dispatching of input")
+
 func resolveDispatchInput(key, value string, input act_model.WorkflowDispatchInput) (string, error) {
 	if len(value) == 0 {
 		value = input.Default
@@ -60,6 +62,7 @@ func resolveDispatchInput(key, value string, input act_model.WorkflowDispatchInp
 				}
 				return "", InputRequiredErr{Name: name}
 			}
+			return "", ErrSkipDispatchInput
 		}
 	} else if input.Type == "boolean" {
 		// Temporary compatibility shim for people that upgrade to Forgejo 14. Can be removed with Forgejo 15.
@@ -94,7 +97,9 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 	if workflowDispatch := wf.WorkflowDispatchConfig(); workflowDispatch != nil {
 		for key, input := range workflowDispatch.Inputs {
 			value, err := resolveDispatchInput(key, inputGetter(key), input)
-			if err != nil {
+			if err == ErrSkipDispatchInput {
+				continue
+			} else if err != nil {
 				return nil, nil, err
 			}
 			inputs[key] = value
