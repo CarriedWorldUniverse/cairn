@@ -326,17 +326,6 @@ func Push(ctx context.Context, repoPath string, opts PushOptions) error {
 	return nil
 }
 
-// GetLatestCommitTime returns time for latest commit in repository (across all branches)
-func GetLatestCommitTime(ctx context.Context, repoPath string) (time.Time, error) {
-	cmd := NewCommand(ctx, "for-each-ref", "--sort=-committerdate", BranchPrefix, "--count", "1", "--format=%(committerdate)")
-	stdout, _, err := cmd.RunStdString(&RunOpts{Dir: repoPath})
-	if err != nil {
-		return time.Time{}, err
-	}
-	commitTime := strings.TrimSpace(stdout)
-	return time.Parse("Mon Jan _2 15:04:05 2006 -0700", commitTime)
-}
-
 // DivergeObject represents commit count diverging commits
 type DivergeObject struct {
 	Ahead  int

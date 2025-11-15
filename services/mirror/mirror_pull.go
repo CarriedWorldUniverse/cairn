@@ -587,7 +587,7 @@ func SyncPullMirror(ctx context.Context, repoID int64) bool {
 	}
 	if !isEmpty {
 		// Get latest commit date and update to current repository updated time
-		commitDate, err := git.GetLatestCommitTime(ctx, m.Repo.RepoPath())
+		commitDate, err := gitRepo.GetLatestCommitTime()
 		if err != nil {
 			log.Error("SyncMirrors [repo: %-v]: unable to GetLatestCommitDate: %v", m.Repo, err)
 			return false

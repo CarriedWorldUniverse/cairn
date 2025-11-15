@@ -236,3 +236,41 @@ func TestGetCommitsFromIDs(t *testing.T) {
 		}
 	})
 }
+
+func TestGetLatestCommitTime(t *testing.T) {
+	t.Run("repo1", func(t *testing.T) {
+		repo, err := openRepositoryWithDefaultContext(filepath.Join(testReposDir, "repo1_bare"))
+		require.NoError(t, err)
+		defer repo.Close()
+
+		lct, err := repo.GetLatestCommitTime()
+		require.NoError(t, err)
+		// Time is Sun Nov 13 16:40:14 2022 +0100
+		// which is the time of commit
+		// ce064814f4a0d337b333e646ece456cd39fab612 (refs/heads/master)
+		assert.EqualValues(t, 1668354014, lct.Unix())
+	})
+
+	t.Run("repo1_sha256", func(t *testing.T) {
+		skipIfSHA256NotSupported(t)
+
+		repo, err := openRepositoryWithDefaultContext(filepath.Join(testReposDir, "repo1_bare_sha256"))
+		require.NoError(t, err)
+		defer repo.Close()
+
+		lct, err := repo.GetLatestCommitTime()
+		require.NoError(t, err)
+		assert.EqualValues(t, 1698676906, lct.Unix())
+	})
+
+	t.Run("repo3_notes", func(t *testing.T) {
+		repo, err := openRepositoryWithDefaultContext(filepath.Join(testReposDir, "repo3_notes"))
+		require.NoError(t, err)
+		defer repo.Close()
+
+		lct, err := repo.GetLatestCommitTime()
+		require.NoError(t, err)
+		// Time is of refs/heads/master and not of refs/notes/commits
+		assert.EqualValues(t, 1567767909, lct.Unix())
+	})
+}

@@ -1,4 +1,5 @@
 // Copyright 2015 The Gogs Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package git
@@ -7,7 +8,6 @@ import (
 	"bytes"
 	"strings"
 
-	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
 )
 
@@ -20,14 +20,13 @@ const (
 
 // Tag represents a Git tag.
 type Tag struct {
-	Name                 string
-	ID                   ObjectID
-	Object               ObjectID // The id of this commit object
-	Type                 string
-	Tagger               *Signature
-	Message              string
-	Signature            *ObjectSignature
-	ArchiveDownloadCount *api.TagArchiveDownloadCount
+	Name      string
+	ID        ObjectID
+	Object    ObjectID // The id of this commit object
+	Type      string
+	Tagger    *Signature
+	Message   string
+	Signature *ObjectSignature
 }
 
 // Commit return the commit of the tag reference
