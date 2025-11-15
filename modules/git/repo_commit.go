@@ -11,6 +11,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"forgejo.org/modules/cache"
 	"forgejo.org/modules/log"
@@ -669,4 +670,15 @@ func (repo *Repository) ConvertToGitID(commitID string) (ObjectID, error) {
 	}
 
 	return MustIDFromString(string(sha)), nil
+}
+
+// GetLatestCommitTime returns time for latest commit in repository (across all branches)
+func (repo *Repository) GetLatestCommitTime() (time.Time, error) {
+	cmd := NewCommand(repo.Ctx, "for-each-ref", "--sort=-committerdate", "--count=1", "--format=%(committerdate)", BranchPrefix)
+	stdout, _, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
+	if err != nil {
+		return time.Time{}, err
+	}
+	commitTime := strings.TrimSpace(stdout)
+	return time.Parse("Mon Jan _2 15:04:05 2006 -0700", commitTime)
 }

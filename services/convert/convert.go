@@ -1,5 +1,6 @@
 // Copyright 2015 The Gogs Authors. All rights reserved.
-// Copyright 2018 The Gitea Authors. All rights reserved.
+// Copyright 2018 The Gitea Authors. All rights
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package convert
@@ -187,7 +188,12 @@ func ToBranchProtection(ctx context.Context, bp *git_model.ProtectedBranch, repo
 }
 
 // ToTag convert a git.Tag to an api.Tag
-func ToTag(repo *repo_model.Repository, t *git.Tag) *api.Tag {
+func ToTag(ctx context.Context, repo *repo_model.Repository, t *git.Tag) (*api.Tag, error) {
+	archiveDownloadCount, err := repo_model.GetArchiveDownloadCountForTagName(ctx, repo.ID, t.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.Tag{
 		Name:                 t.Name,
 		Message:              strings.TrimSpace(t.Message),
@@ -195,8 +201,8 @@ func ToTag(repo *repo_model.Repository, t *git.Tag) *api.Tag {
 		Commit:               ToCommitMeta(repo, t),
 		ZipballURL:           util.URLJoin(repo.HTMLURL(), "archive", t.Name+".zip"),
 		TarballURL:           util.URLJoin(repo.HTMLURL(), "archive", t.Name+".tar.gz"),
-		ArchiveDownloadCount: t.ArchiveDownloadCount,
-	}
+		ArchiveDownloadCount: archiveDownloadCount,
+	}, nil
 }
 
 // ToActionTask convert a actions_model.ActionTask to an api.ActionTask
@@ -391,7 +397,12 @@ func ToTeams(ctx context.Context, teams []*organization.Team, loadOrgs bool) ([]
 }
 
 // ToAnnotatedTag convert git.Tag to api.AnnotatedTag
-func ToAnnotatedTag(ctx context.Context, repo *repo_model.Repository, t *git.Tag, c *git.Commit) *api.AnnotatedTag {
+func ToAnnotatedTag(ctx context.Context, repo *repo_model.Repository, t *git.Tag, c *git.Commit) (*api.AnnotatedTag, error) {
+	archiveDownloadCount, err := repo_model.GetArchiveDownloadCountForTagName(ctx, repo.ID, t.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.AnnotatedTag{
 		Tag:                  t.Name,
 		SHA:                  t.ID.String(),
@@ -400,8 +411,8 @@ func ToAnnotatedTag(ctx context.Context, repo *repo_model.Repository, t *git.Tag
 		URL:                  util.URLJoin(repo.APIURL(), "git/tags", t.ID.String()),
 		Tagger:               ToCommitUser(t.Tagger),
 		Verification:         ToVerification(ctx, c),
-		ArchiveDownloadCount: t.ArchiveDownloadCount,
-	}
+		ArchiveDownloadCount: archiveDownloadCount,
+	}, nil
 }
 
 // ToAnnotatedTagObject convert a git.Commit to an api.AnnotatedTagObject

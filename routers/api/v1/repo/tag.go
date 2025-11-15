@@ -65,13 +65,12 @@ func ListTags(ctx *context.APIContext) {
 
 	apiTags := make([]*api.Tag, len(tags))
 	for i := range tags {
-		tags[i].ArchiveDownloadCount, err = repo_model.GetArchiveDownloadCountForTagName(ctx, ctx.Repo.Repository.ID, tags[i].Name)
+		convertedTag, err := convert.ToTag(ctx, ctx.Repo.Repository, tags[i])
 		if err != nil {
-			ctx.Error(http.StatusInternalServerError, "GetTagArchiveDownloadCountForName", err)
+			ctx.Error(http.StatusInternalServerError, "ToTag", err)
 			return
 		}
-
-		apiTags[i] = convert.ToTag(ctx.Repo.Repository, tags[i])
+		apiTags[i] = convertedTag
 	}
 	ctx.SetLinkHeader(total, listOpts.PageSize)
 	ctx.SetTotalCountHeader(int64(total))
@@ -123,13 +122,13 @@ func GetAnnotatedTag(ctx *context.APIContext) {
 			ctx.Error(http.StatusBadRequest, "GetAnnotatedTag", err)
 		}
 
-		tag.ArchiveDownloadCount, err = repo_model.GetArchiveDownloadCountForTagName(ctx, ctx.Repo.Repository.ID, tag.Name)
+		convertedAnnotatedTag, err := convert.ToAnnotatedTag(ctx, ctx.Repo.Repository, tag, commit)
 		if err != nil {
-			ctx.Error(http.StatusInternalServerError, "GetTagArchiveDownloadCountForName", err)
+			ctx.Error(http.StatusInternalServerError, "ToAnnotatedTag", err)
 			return
 		}
 
-		ctx.JSON(http.StatusOK, convert.ToAnnotatedTag(ctx, ctx.Repo.Repository, tag, commit))
+		ctx.JSON(http.StatusOK, convertedAnnotatedTag)
 	}
 }
 
@@ -169,13 +168,13 @@ func GetTag(ctx *context.APIContext) {
 		return
 	}
 
-	tag.ArchiveDownloadCount, err = repo_model.GetArchiveDownloadCountForTagName(ctx, ctx.Repo.Repository.ID, tag.Name)
+	convertedTag, err := convert.ToTag(ctx, ctx.Repo.Repository, tag)
 	if err != nil {
-		ctx.Error(http.StatusInternalServerError, "GetTagArchiveDownloadCountForName", err)
+		ctx.Error(http.StatusInternalServerError, "ToTag", err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, convert.ToTag(ctx.Repo.Repository, tag))
+	ctx.JSON(http.StatusOK, convertedTag)
 }
 
 // CreateTag create a new git tag in a repository
@@ -248,13 +247,13 @@ func CreateTag(ctx *context.APIContext) {
 		return
 	}
 
-	tag.ArchiveDownloadCount, err = repo_model.GetArchiveDownloadCountForTagName(ctx, ctx.Repo.Repository.ID, tag.Name)
+	convertedTag, err := convert.ToTag(ctx, ctx.Repo.Repository, tag)
 	if err != nil {
-		ctx.Error(http.StatusInternalServerError, "GetTagArchiveDownloadCountForName", err)
+		ctx.Error(http.StatusInternalServerError, "ToTag", err)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, convert.ToTag(ctx.Repo.Repository, tag))
+	ctx.JSON(http.StatusCreated, convertedTag)
 }
 
 // DeleteTag delete a specific tag of in a repository by name
