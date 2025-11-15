@@ -80,9 +80,7 @@ func (s *Service) Register(
 		Version:     req.Msg.Version,
 		AgentLabels: labels,
 	}
-	if err := runner.GenerateToken(); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, errors.New("can't generate token"))
-	}
+	runner.GenerateToken()
 
 	// create new runner
 	if err := actions_model.CreateRunner(ctx, runner); err != nil {

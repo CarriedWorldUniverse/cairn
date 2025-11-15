@@ -161,9 +161,8 @@ func (r *ActionRunner) LoadAttributes(ctx context.Context) error {
 	return nil
 }
 
-func (r *ActionRunner) GenerateToken() (err error) {
-	r.Token, r.TokenSalt, r.TokenHash, _, err = generateSaltedToken()
-	return err
+func (r *ActionRunner) GenerateToken() {
+	r.Token, r.TokenSalt, r.TokenHash, _ = generateSaltedToken()
 }
 
 // UpdateSecret updates the hash based on the specified token. It does not

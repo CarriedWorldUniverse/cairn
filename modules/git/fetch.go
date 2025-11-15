@@ -32,11 +32,7 @@ func (repo *Repository) Fetch(remoteURL, refspec string) (string, error) {
 	if SupportFetchPorcelain {
 		cmd.AddArguments("--porcelain")
 	} else if !strings.Contains(refspec, ":") {
-		randomString, err := util.CryptoRandomString(8)
-		if err != nil {
-			return "", err
-		}
-		refspec += ":refs/tmp/" + randomString
+		refspec += ":refs/tmp/" + util.CryptoRandomString(util.RandomStringLow)
 	}
 
 	cmd.AddArguments("--end-of-options").AddDynamicArguments(remoteURL, refspec)

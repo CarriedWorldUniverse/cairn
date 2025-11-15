@@ -98,24 +98,17 @@ func init() {
 
 // NewAccessToken creates new access token.
 func NewAccessToken(ctx context.Context, t *AccessToken) error {
-	err := generateAccessToken(t)
-	if err != nil {
-		return err
-	}
-	_, err = db.GetEngine(ctx).Insert(t)
+	generateAccessToken(t)
+	_, err := db.GetEngine(ctx).Insert(t)
 	return err
 }
 
-func generateAccessToken(t *AccessToken) error {
-	salt, err := util.CryptoRandomString(10)
-	if err != nil {
-		return err
-	}
+func generateAccessToken(t *AccessToken) {
+	salt := util.CryptoRandomString(util.RandomStringMedium)
 	t.TokenSalt = salt
 	t.Token = hex.EncodeToString(util.CryptoRandomBytes(20))
 	t.TokenHash = HashToken(t.Token, t.TokenSalt)
 	t.TokenLastEight = t.Token[len(t.Token)-8:]
-	return nil
 }
 
 // DisplayPublicOnly whether to display this as a public-only token.
@@ -251,10 +244,7 @@ func RegenerateAccessTokenByID(ctx context.Context, id, userID int64) (*AccessTo
 		return nil, ErrAccessTokenNotExist{}
 	}
 
-	err = generateAccessToken(t)
-	if err != nil {
-		return nil, err
-	}
+	generateAccessToken(t)
 
 	// Reset the creation time, token is unused
 	t.UpdatedUnix = timeutil.TimeStampNow()

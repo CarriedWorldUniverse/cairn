@@ -212,9 +212,7 @@ func RunRegister(ctx context.Context, cli *cli.Command) error {
 
 func RunGenerateSecret(ctx context.Context, cli *cli.Command) error {
 	runner := actions_model.ActionRunner{}
-	if err := runner.GenerateToken(); err != nil {
-		return err
-	}
+	runner.GenerateToken()
 	if _, err := fmt.Fprintf(ContextGetStdout(ctx), "%s", runner.Token); err != nil {
 		panic(err)
 	}

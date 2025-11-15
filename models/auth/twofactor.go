@@ -65,7 +65,7 @@ func (t *TwoFactor) GenerateScratchToken() string {
 	// these chars are specially chosen, avoid ambiguous chars like `0`, `O`, `1`, `I`.
 	const base32Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	token := base32.NewEncoding(base32Chars).WithPadding(base32.NoPadding).EncodeToString(util.CryptoRandomBytes(6))
-	t.ScratchSalt, _ = util.CryptoRandomString(10)
+	t.ScratchSalt = util.CryptoRandomString(util.RandomStringMedium)
 	t.ScratchHash = HashToken(token, t.ScratchSalt)
 	return token
 }

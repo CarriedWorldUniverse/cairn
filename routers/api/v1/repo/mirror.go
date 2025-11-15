@@ -370,11 +370,7 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 		return
 	}
 
-	remoteSuffix, err := util.CryptoRandomString(10)
-	if err != nil {
-		ctx.ServerError("CryptoRandomString", err)
-		return
-	}
+	remoteSuffix := util.CryptoRandomString(util.RandomStringLow)
 
 	remoteAddress, err := util.SanitizeURL(address)
 	if err != nil {

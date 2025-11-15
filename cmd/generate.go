@@ -94,10 +94,7 @@ func runGenerateLfsJwtSecret(ctx context.Context, c *cli.Command) error {
 }
 
 func runGenerateSecretKey(ctx context.Context, c *cli.Command) error {
-	secretKey, err := generate.NewSecretKey()
-	if err != nil {
-		return err
-	}
+	secretKey := generate.NewSecretKey()
 
 	fmt.Printf("%s", secretKey)
 

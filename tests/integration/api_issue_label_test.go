@@ -161,7 +161,7 @@ func TestAPIRemoveIssueLabel(t *testing.T) {
 	task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
 	task.RepoID = repo.ID
 	task.OwnerID = repo.OwnerID
-	require.NoError(t, task.GenerateToken())
+	task.GenerateToken()
 	actions_model.UpdateTask(t.Context(), task)
 
 	deleteURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%d", owner.Name, repo.Name, issue.Index, issueLabel.LabelID)
@@ -190,7 +190,7 @@ func TestAPIRemoveIssueLabelByName(t *testing.T) {
 	task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
 	task.RepoID = repo.ID
 	task.OwnerID = repo.OwnerID
-	require.NoError(t, task.GenerateToken())
+	task.GenerateToken()
 	actions_model.UpdateTask(t.Context(), task)
 
 	deleteURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%s", owner.Name, repo.Name, issue.Index, repoLabel.Name)
@@ -384,7 +384,7 @@ func TestAPIReplaceIssueLabelsActionsToken(t *testing.T) {
 	task.RepoID = repo.ID
 	task.OwnerID = owner.ID
 	task.IsForkPullRequest = true // Read permission.
-	require.NoError(t, task.GenerateToken())
+	task.GenerateToken()
 
 	// Explicitly need "is_fork_pull_request".
 	require.NoError(t, actions_model.UpdateTask(t.Context(), task, "repo_id", "owner_id", "is_fork_pull_request", "token", "token_salt", "token_hash", "token_last_eight"))
