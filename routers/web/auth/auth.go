@@ -514,7 +514,7 @@ func createUserInContext(ctx *context.Context, tpl base.TplName, form any, u *us
 			switch setting.OAuth2Client.AccountLinking {
 			case setting.OAuth2AccountLinkingAuto:
 				var user *user_model.User
-				user = &user_model.User{Name: u.Name}
+				user = &user_model.User{LowerName: strings.ToLower(u.Name)}
 				hasUser, err := user_model.GetUser(ctx, user)
 				if !hasUser || err != nil {
 					user = &user_model.User{Email: u.Email}
