@@ -172,6 +172,8 @@ jobs:
       cacher:
         image: ${{ matrix.cacher.image }}
         options: ${{ matrix.cacher.options }}
+        env:
+          ALLOW_EMPTY_PASSWORD: "yes" # redis & valkey will immediately shutdown with no defined password unless overridden
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v5
       - uses: ./.forgejo/workflows-composite/setup-env
@@ -186,7 +188,7 @@ jobs:
         env:
           RACE_ENABLED: 'true'
           TAGS: bindata
-          TEST_REDIS_SERVER: cacher:${{ matrix.cacher.port }}
+          TEST_REDIS_SERVER: cacher:6379
   test-mysql:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
