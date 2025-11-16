@@ -34,5 +34,12 @@
     "keys.ssh.link": "SSH ŝlosiloj",
     "keys.gpg.link": "GPG ŝlosiloj",
     "admin.moderation.reports": "Raportoj",
-    "admin.moderation.no_open_reports": "Ne estas malfermataj raportoj."
+    "admin.moderation.no_open_reports": "Ne estas malfermataj raportoj.",
+    "watch.list.none": "Neniu sekvas ĉi tiun deponejon.",
+    "followers.incoming.list.self.none": "Neniu sekvas vian profilon.",
+    "followers.incoming.list.none": "Neniu sekvas ĉi tiun uzanton.",
+    "followers.outgoing.list.self.none": "Vi sekvas neniun.",
+    "followers.outgoing.list.none": "%s ne plu sekvas vin.",
+    "relativetime.future": "estonte",
+    "repo.pulls.already_merged": "La kunfandaĵo malsukcesis: Ĉi tiu tirpeto jam estas kunfandita."
 }

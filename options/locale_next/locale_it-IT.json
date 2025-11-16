@@ -143,7 +143,7 @@
     "actions.runs.view_most_recent_run": "Visualizza l'esecuzione più recente",
     "settings.visibility.description": "La visibilità del profilo influisce sulla capacità degli altri di accedere ai tuoi repository non privati. <a href=\"%s\" target=\"_blank\">Scopri di più</a>.",
     "error.must_enable_2fa": "Questa istanza Forgejo richiede che gli utenti attivino la verifica in due passaggi prima di poter accedere ai propri account. Attivala su: %s",
-    "migrate.pagure.token_label": "Token",
+    "migrate.pagure.token_label": "Token API Pagure",
     "migrate.pagure.token_body_b": "Assicurati di impostare sopra l'attributo del repositorio privato se desideri che questo repositorio sia privato",
     "admin.config.security": "Configurazione della sicurezza",
     "admin.config.global_2fa_requirement.title": "Requisito globale di autenticazione a due fattori",
@@ -157,5 +157,11 @@
     "migrate.pagure.project_example": "L'URL del progetto Pagure, ad esempio https://pagure.io/pagure",
     "mail.actions.not_successful_run": "Flusso di lavoro %[1]s non riuscito nel repositorio %[2]s",
     "settings.twofa_reenroll.description": "Reinserisci la verifica in due passaggi",
-    "migrate.pagure.private_issues.summary": "Segnalazioni Private (opzionale)"
+    "migrate.pagure.private_issues.summary": "Segnalazioni Private (opzionale)",
+    "migrate.pagure.private_issues.description": "Questa funzionalità è progettata per creare un secondo repositorio contenente solo le segnalazioni private del tuo progetto Pagure a scopo di archiviazione. Innanzitutto, esegui una migrazione normale (senza token) per importare tutti i contenuti pubblici. Quindi, se hai segnalazioni private da conservare, crea un repositorio separato utilizzando questa opzione con token per archiviare tali segnalazioni private.",
+    "migrate.pagure.private_issues.warning": "Assicurasi di impostare la visibilità del repositorio su Privato se utilizzi una chiave API per importare segnalazioni private. Questo impedisce l'esposizione accidentalmente di contenuti privati in un repositorio pubblico.",
+    "migrate.pagure.token.placeholder": "Solo per creare un archivio di segnalazioni private",
+    "actions.workflow.job_parsing_error": "Impossibile analizzare i processi nel flusso di lavoro: %v",
+    "actions.workflow.event_detection_error": "Impossibile analizzare gli eventi previsti nel flusso di lavoro: %v",
+    "actions.workflow.pre_execution_error": "Il flusso di lavoro non è stato completato a causa di un errore che ha bloccato il tentativo di esecuzione."
 }
