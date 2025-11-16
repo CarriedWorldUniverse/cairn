@@ -90,7 +90,7 @@
 								<br>
 								<details>
 									<summary>Windows CMD</summary>
-									<div class="markup"><pre class="code-block"><code>set /p={{$.TokenToSign}}| ssh-keygen -Y sign -n gitea -f /path_to_PrivateKey_or_RelatedPublicKey</code></pre></div>
+									<div class="markup"><pre class="code-block"><code>&lt;NUL set /p="{{$.TokenToSign}}"| ssh-keygen -Y sign -n gitea -f /path_to_PrivateKey_or_RelatedPublicKey</code></pre></div>
 								</details>
 							</div>
 							<br>
