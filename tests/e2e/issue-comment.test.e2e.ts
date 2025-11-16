@@ -81,25 +81,30 @@ test.describe('Button text replaced by JS', () => {
     const statusButton = page.locator('#status-button');
     const statusButtonIcon = page.locator('#status-button svg');
     const commentField = page.locator('#comment-form').getByPlaceholder('Leave a comment');
+    const readyEditor = page.locator('#comment-form .tab[data-tab="markdown-writer-0"]');
 
     // Reset issue status before running the test
     if (await statusButton.getByText('Reopen').isVisible()) await statusButton.click();
 
     // Assert that normal Close button text is present
+    await readyEditor.waitFor();
     await expect(statusButton.getByText(closeLabel)).toBeVisible();
     await expect(statusButtonIcon).toBeVisible();
 
     // Type in some text to make button text change
+    await readyEditor.waitFor();
     await commentField.fill('Blah blah');
     await expect(statusButton.getByText('Close with comment')).toBeVisible();
     await expect(statusButtonIcon).toBeVisible();
 
     // Close issue/PR and assert that normal Reopen button text is present
     await statusButton.click();
+    await readyEditor.waitFor();
     await expect(statusButton.getByText('Reopen')).toBeVisible();
     await expect(statusButtonIcon).toBeVisible();
 
     // Type in some text to make button text change
+    await readyEditor.waitFor();
     await commentField.fill('Blah blah');
     await expect(statusButton.getByText('Reopen with comment')).toBeVisible();
     await expect(statusButtonIcon).toBeVisible();
@@ -109,11 +114,11 @@ test.describe('Button text replaced by JS', () => {
 
   test('Issue', async ({page}) => {
     // All actual expect() are happening in the helper
-    expect(await testPage(page, '/user2/repo1/issues/1', 'Close issue')).toBeTruthy();
+    expect(await testPage(page, '/user2/repo2/issues/2', 'Close issue')).toBeTruthy();
   });
 
   test('PR', async ({page}) => {
-    expect(await testPage(page, '/user2/repo1/pulls/3', 'Close pull request')).toBeTruthy();
+    expect(await testPage(page, '/user2/repo1/pulls/5', 'Close pull request')).toBeTruthy();
   });
 });
 
