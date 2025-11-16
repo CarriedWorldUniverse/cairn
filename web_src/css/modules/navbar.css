@@ -42,6 +42,7 @@
 }
 
 #navbar a.item:hover, #navbar a.item:focus,
+#navbar div.ui.dropdown:hover,
 #navbar button.item:hover, #navbar button.item:focus {
   background: var(--color-nav-hover-bg);
 }
