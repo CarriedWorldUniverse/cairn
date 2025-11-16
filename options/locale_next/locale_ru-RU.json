@@ -194,5 +194,26 @@
         "one": "%s наблюдатель",
         "few": "%s наблюдателя",
         "many": "%s наблюдателей"
-    }
+    },
+    "teams.add_all_repos.modal.header": "Добавить все репозитории",
+    "teams.remove_all_repos.modal.header": "Убрать все репозитории",
+    "repo.pulls.poster_requires_approval": "Раб. потоки, <a href=\"%[1]s\">ожидающие рецензии</a>.",
+    "repo.pulls.poster_requires_approval.tooltip": "Нет доверия к автору запроса на слияние. Раб. потоки, сработавшие по событию `pull_request`, не будут выполнятся на коде, предложенном из ответвления репозитория или через AGit, пока они не будут одобрены.",
+    "repo.pulls.poster_is_trusted": "Автор запроса на слияние <a href=\"%[1]s\">доверяется к запуску раб. потоков</a>.",
+    "repo.pulls.poster_is_trusted.tooltip": "Автор запроса на слияние доверяется для запуска раб. потоков, срабатывающих для событий `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Отклонить",
+    "repo.pulls.poster_trust_deny.tooltip": "Раб. потоки, ожидающие одобрения, будут отменены.",
+    "repo.pulls.poster_trust_once": "Одобрить один раз",
+    "repo.pulls.poster_trust_once.tooltip": "Раб. потоки, сработавшие по событию `pull_request`, будут выполнены для последнего коммита, но все последующие коммиты будут снова потребуют одобрения.",
+    "repo.pulls.poster_trust_always": "Одобрить и начать доверять",
+    "repo.pulls.poster_trust_revoke": "Отозвать",
+    "keys.verify.token.hint": "Токен действителен в течение 1 минуты. <a href=\"%[1]s\">Получите новый, если этот истёк</a>.",
+    "admin.dashboard.actions_action_user": "Отозвать доверие Forgejo Действий у неактивных пользователей",
+    "actions.status.diagnostics.waiting": {
+        "one": "Ожидается исполнитель, имеющий метку: %s",
+        "few": "Ожидается исполнитель, имеющий одну из меток: %s",
+        "many": "Ожидается исполнитель, имеющий одну из меток: %s"
+    },
+    "repo.pulls.poster_manage_approval": "Управление одобрением",
+    "repo.pulls.poster_trust_revoke.tooltip": "Автор запроса на слияние больше не будет доверятся для запуска раб. потоков, срабатывающих для событий `pull_request`. Каждый запуск потребует одобрения."
 }
