@@ -42,7 +42,8 @@
 }
 
 #navbar a.item:hover, #navbar a.item:focus,
-#navbar div.ui.dropdown:hover,
+#navbar details.dropdown > summary:is(:hover, :focus),
+#navbar details.dropdown[open] > summary,
 #navbar button.item:hover, #navbar button.item:focus {
   background: var(--color-nav-hover-bg);
 }
@@ -95,6 +96,21 @@
     width: 100%;
     margin: 0;
   }
+  #navbar details.dropdown {
+    display: none;
+  }
+  #navbar.navbar-menu-open details.dropdown {
+    display: block;
+    width: 100%;
+    > summary {
+      width: 100%;
+      justify-content: start;
+    }
+    > .content {
+      width: 100%;
+    }
+  }
+
   #navbar.navbar-menu-open .navbar-left #navbar-logo {
     justify-content: flex-start;
     width: auto;
@@ -107,6 +123,12 @@
   #navbar #mobile-notifications-icon {
     margin-right: 6px !important;
   }
+}
+
+#navbar details.dropdown summary {
+  padding-inline-start: 0.75rem;
+  /* The min height is dictated by the largest dropdown, which is the one that has an avatar in the opener */
+  min-height: 38px;
 }
 
 #navbar a.item .notification_count {
