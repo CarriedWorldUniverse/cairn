@@ -196,5 +196,25 @@
         "many": "%s спостерігачів"
     },
     "teams.add_all_repos.modal.header": "Додати всі репозиторії",
-    "teams.remove_all_repos.modal.header": "Видалити всі репозиторії"
+    "teams.remove_all_repos.modal.header": "Вилучити всі репозиторії",
+    "repo.pulls.poster_requires_approval": "Деякі робочі потоки <a href=\"%[1]s\">очікують на перевірку.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "Авторові цього запиту на злиття не довірено запуск робочих потоків, ініційованих запитом на злиття з форкнутого репозиторію або з AGit. Робочі потоки, ініційовані подією `pull_request`, не будуть виконані до їх схвалення.",
+    "repo.pulls.poster_manage_approval": "Керування схваленням",
+    "repo.pulls.poster_is_trusted.tooltip": "Авторові цього запиту на злиття явно довірено запуск робочих потоків, ініційованих подіями `pull_request`.",
+    "repo.pulls.poster_is_trusted": "Авторові цього запиту на злиття <a href=\"%[1]s\">завжди довірено запуск робочих потоків.</a>",
+    "repo.pulls.poster_trust_deny.tooltip": "Робочі потоки, що очікують на схвалення, будуть скасовані.",
+    "repo.pulls.poster_trust_once": "Схвалити один раз",
+    "repo.pulls.poster_trust_deny": "Відхилити",
+    "repo.pulls.poster_trust_revoke": "Відкликати",
+    "repo.pulls.poster_trust_always": "Схвалювати завжди",
+    "repo.pulls.poster_trust_once.tooltip": "Робочі потоки, ініційовані подією `pull_request`, будуть виконані для цього коміту, але їх потрібно буде схвалювати для всіх наступних комітів, надісланих до цього запиту на злиття.",
+    "repo.pulls.poster_trust_always.tooltip": "Робочі потоки, ініційовані подією `pull_request`, будуть виконані для цього коміту, і не буде необхідності схвалювати запуски з цього запиту на злиття або наступних запитів, створених тим самим користувачем.",
+    "repo.pulls.poster_trust_revoke.tooltip": "Автор цього запиту на злиття більше не зможе запускати робочі потоки, ініційовані подією `pull_request`, кожен запуск потрібно буде схвалювати вручну.",
+    "admin.dashboard.actions_action_user": "Відкликати довіру Дій Forgejo для неактивних користувачів",
+    "actions.status.diagnostics.waiting": {
+        "one": "Очікування ранера з міткою: %s",
+        "few": "Очікування ранера з мітками: %s",
+        "many": "Очікування ранера з мітками: %s"
+    },
+    "keys.verify.token.hint": "Токен дійсний лише протягом 1 хвилини. <a href=\"%[1]s\">Отримайте новий, якщо термін дії закінчився</a>."
 }

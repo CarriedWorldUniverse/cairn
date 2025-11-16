@@ -1,15 +1,18 @@
 {
     "fork.n_forks": {
         "one": "%s bifurcation",
-        "other": "%s bifurcations"
+        "many": "%s bifurcations",
+        "other": ""
     },
     "stars.n_stars": {
         "one": "%s étoiles",
-        "other": "%s étoiles"
+        "many": "%s étoiles",
+        "other": ""
     },
     "release.n_downloads": {
         "one": "%s téléchargement",
-        "other": "%s téléchargements"
+        "many": "%s téléchargements",
+        "other": ""
     },
     "repo.pulls.merged_title_desc": {
         "one": "a fusionné %[1]d commit depuis <code>%[2]s</code> vers <code>%[3]s</code> %[4]s",
@@ -166,7 +169,7 @@
     "migrate.pagure.incorrect_url": "L'URL du dépôt source fournie est incorrecte",
     "migrate.pagure.project_url": "URL du projet Pagure",
     "migrate.pagure.project_example": "L'URL du projet Pagure, ex. https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Jeton",
+    "migrate.pagure.token_label": "Jeton API Pagure",
     "pulse.n_active_issues": {
         "one": "%s ticket actif",
         "many": "%s tickets actifs",
@@ -184,5 +187,25 @@
     "migrate.pagure.private_issues.description": "Cette fonctionnalité est conçue pour créer un deuxième dépôt contenant uniquement des tickets privés de votre projet Pagure à des fins d'archive. Premièrement, effectuer une migration normale (sans jeton) pour importer tout le contenu public. Ensuite, si vous avez des tickets privés à préserver, créez un dépôt séparé en utilisant cette option de jeton pour archiver ces tickets privés.",
     "migrate.pagure.private_issues.warning": "Assurez-vous de définir la visibilité du dépôt ci-dessus à Privé si vous utilisez la clé API pour importer des tickets privés. Cela empêche d'exposer accidentellement du contenu privé dans un dépôt public.",
     "migrate.pagure.token.placeholder": "Seulement pour créer des archives de tickets privés",
-    "actions.workflow.pre_execution_error": "Workflow n'a pas été exécuté en raison d'une erreur qui a bloqué la tentative d'exécution."
+    "actions.workflow.pre_execution_error": "Le workflow n'a pas été exécuté en raison d'une erreur qui a bloqué la tentative d'exécution.",
+    "watch.n_watchers": {
+        "one": "%s observateur",
+        "many": "%s observateurs",
+        "other": "%s observateurs"
+    },
+    "actions.workflow.event_detection_error": "Impossible d'analyser les évènements supportés dans le workflow : %v",
+    "teams.add_all_repos.modal.header": "Ajouter tous les dépôts",
+    "teams.remove_all_repos.modal.header": "Supprimer tous dépôts",
+    "repo.pulls.poster_manage_approval": "Gérer les approbations",
+    "repo.pulls.poster_is_trusted": "L'auteur de la pull request est <a href=\"%[1]s\">toujours approuvé à lancer le flux de travail.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "L'auteur de la pull request est explicitement autorisé à lancer le flux de travail déclenché par les événements `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Refuser",
+    "repo.pulls.poster_trust_deny.tooltip": "Les flux de travail en attente d'approbation seront annulés.",
+    "repo.pulls.poster_trust_once": "Approuver une fois",
+    "repo.pulls.poster_trust_once.tooltip": "Les flux de travail déclenchés par un événement `pull_request` s'exécuteront sur ce commit mais devront être approuvés pour tous les futurs commits poussés vers cette pull request.",
+    "repo.pulls.poster_trust_always": "Toujours approuver",
+    "repo.pulls.poster_trust_always.tooltip": "Les flux de travail déclenchés par un événement `pull_request` s'exécuteront sur ce commit et il n'y aura pas besoin d'approuver les exécutions à partir de cette pull request ou de futures pull request créées par le même utilisateur.",
+    "repo.pulls.poster_trust_revoke": "Révoquer",
+    "repo.pulls.poster_trust_revoke.tooltip": "L'auteur de cette pull request ne sera plus autorisé pour exécuter les flux de travail déclenchés par un événement `pull_request`, chaque exécution devra être approuvée manuellement.",
+    "actions.workflow.job_parsing_error": "Impossible d'analyser le processus dans le flux de travail : %v"
 }

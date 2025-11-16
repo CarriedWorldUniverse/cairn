@@ -1,6 +1,6 @@
 {
-    "fork.n_forks": "%s 派生",
-    "stars.n_stars": "%s 点赞",
+    "fork.n_forks": "%s 个派生",
+    "stars.n_stars": "%s 次点赞",
     "release.n_downloads": "%s 次下载",
     "repo.pulls.merged_title_desc": "于 %[4]s 将 %[1]d 次代码提交从 <code>%[2]s</code> 合并至 <code>%[3]s</code>",
     "repo.pulls.title_desc": "请求将 %[1]d 次代码提交从 <code>%[2]s</code> 合并至 <code id=\"%[4]s\">%[3]s</code>",
@@ -138,7 +138,15 @@
     "actions.workflow.job_parsing_error": "无法解析工作流中的任务：%v",
     "actions.workflow.event_detection_error": "无法解析工作流中受支持的事件：%v",
     "actions.workflow.pre_execution_error": "因有错误阻止了执行尝试，工作流未被执行。",
-    "watch.n_watchers": "%s 关注者",
+    "watch.n_watchers": "%s 位关注者",
     "teams.add_all_repos.modal.header": "添加所有仓库",
-    "teams.remove_all_repos.modal.header": "移除所有仓库"
+    "teams.remove_all_repos.modal.header": "移除所有仓库",
+    "repo.pulls.poster_manage_approval": "管理批准",
+    "repo.pulls.poster_requires_approval": "一些工作流正<a href=\"%[1]s\">等待审阅</a>。",
+    "repo.pulls.poster_requires_approval.tooltip": "此合并请求的作者未被信任以运行由派生仓库或AGit创建的PR触发的工作流。由 `pull_request` 事件触发的工作流在被批准前不会运行。",
+    "repo.pulls.poster_is_trusted": "此合并请求的作者<a href=\"%[1]s\">总是被信任以运行工作流</a>。",
+    "repo.pulls.poster_is_trusted.tooltip": "此合并请求的作者被明确信任以运行由 `pull_request` 事件触发的工作流。",
+    "repo.pulls.poster_trust_deny": "拒绝",
+    "repo.pulls.poster_trust_deny.tooltip": "等待批准的工作流将被取消。",
+    "repo.pulls.poster_trust_once": "批准一次"
 }

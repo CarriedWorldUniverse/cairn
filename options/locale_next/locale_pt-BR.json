@@ -196,5 +196,24 @@
         "other": "%s observadores"
     },
     "teams.add_all_repos.modal.header": "Adicionar todos os repositórios",
-    "teams.remove_all_repos.modal.header": "Remover todos os repositórios"
+    "teams.remove_all_repos.modal.header": "Remover todos os repositórios",
+    "repo.pulls.poster_manage_approval": "Gerenciar aprovação",
+    "repo.pulls.poster_requires_approval": "Alguns workflows estão <a href=\"%[1]s\">aguardando revisão.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "O autor deste pull request não foi marcado como confiável para executar workflows acionados por um pull request criado de um repositório como fork ou com o AGit. Os workflows acionados por eventos `pull_request` não serão executados até que tenham sido aprovados.",
+    "repo.pulls.poster_is_trusted": "O autor desse pull request foi <a href=\"%[1]s\">marcado como sempre confiável para executar workflows.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "O autor deste pull request está marcado explicitamente como confiável para executar workflows acionados por eventos `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Negar",
+    "repo.pulls.poster_trust_deny.tooltip": "Os workflows aguardando aprovação serão cancelados.",
+    "repo.pulls.poster_trust_once": "Aprovar desta vez",
+    "repo.pulls.poster_trust_once.tooltip": "Os workflows acionados por um evento `pull_request` irão ser executados neste commit mas precisão ser aprovados para todos os commits futuros enviados para este pull request.",
+    "repo.pulls.poster_trust_always": "Aprovar sempre",
+    "repo.pulls.poster_trust_always.tooltip": "Os workflows acionados por um evento `pull_request` irão ser executados neste commit e não será necessário aprovar execuções deste pull request ou de pull requests futuros de autoria do mesmo usuário.",
+    "repo.pulls.poster_trust_revoke": "Revogar",
+    "repo.pulls.poster_trust_revoke.tooltip": "O autor deste pull request não será mais considerado confiável para executar workflows acionados por um evento `pull_request`. Cada execução precisará ser manualmente aprovada.",
+    "admin.dashboard.actions_action_user": "Revogar confiança em Actions do Forgejo para usuários inativos",
+    "actions.status.diagnostics.waiting": {
+        "one": "Esperando por um runner com o seguinte rótulo: %s",
+        "many": "Esperando por um runner com os seguintes rótulos: %s",
+        "other": "Esperando por um runner com os seguintes rótulos: %s"
+    }
 }
