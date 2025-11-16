@@ -19,9 +19,10 @@ test('JS enhanced interaction', async ({page}) => {
   await expect(nojsNotice).toBeHidden();
 
   // Open and close by clicking summary
-  const dropdown = page.locator('details.dropdown');
-  const dropdownSummary = page.locator('details.dropdown > summary');
-  const dropdownContent = page.locator('details.dropdown > .content');
+  const selectorPrefix = '#profile-avatar-card details.dropdown';
+  const dropdown = page.locator(selectorPrefix);
+  const dropdownSummary = page.locator(`${selectorPrefix} > summary`);
+  const dropdownContent = page.locator(`${selectorPrefix} > .content`);
   await expect(dropdownContent).toBeHidden();
   await dropdownSummary.click();
   await expect(dropdownContent).toBeVisible();
@@ -116,8 +117,9 @@ test('No JS interaction', async ({browser}) => {
   await expect(nojsPage.locator('body')).toContainClass('no-js');
 
   // Open and close by clicking summary
-  const dropdownSummary = nojsPage.locator('details.dropdown > summary');
-  const dropdownContent = nojsPage.locator('details.dropdown > .content');
+  const selectorPrefix = '#profile-avatar-card details.dropdown';
+  const dropdownSummary = nojsPage.locator(`${selectorPrefix} > summary`);
+  const dropdownContent = nojsPage.locator(`${selectorPrefix} > .content`);
   await expect(dropdownContent).toBeHidden();
   await dropdownSummary.click();
   await expect(dropdownContent).toBeVisible();
@@ -151,23 +153,7 @@ test('No JS interaction', async ({browser}) => {
   await expect(dropdownContent).toBeVisible();
 });
 
-test('Visual properties', async ({browser, isMobile}) => {
-  const context = await browser.newContext({javaScriptEnabled: false});
-  const page = await context.newPage();
-
-  // User profile has dropdown used as an ellipsis menu
-  await page.goto('/user1');
-
-  // Has `.border` and pretty small default `inline-padding:`
-  const summary = page.locator('details.dropdown > summary');
-  expect(await summary.evaluate((el) => getComputedStyle(el).border)).toBe('1px solid rgba(0, 0, 0, 0.114)');
-  expect(await summary.evaluate((el) => getComputedStyle(el).paddingInline)).toBe('7px');
-
-  // Background
-  expect(await summary.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
-  await summary.click();
-  expect(await summary.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
-
+test.describe(`Visual properties`, () => {
   async function evaluateDropdownItems(page, selector, direction, height) {
     const computedStyles = await page.locator(selector).evaluateAll((items) =>
       items.map((item) => {
@@ -184,36 +170,60 @@ test('Visual properties', async ({browser, isMobile}) => {
     }
   }
 
-  // Direction and item height
-  const content = page.locator('details.dropdown > .content');
-  const itemsSel = 'details.dropdown > .content > ul > li';
-  if (isMobile) {
+  test('User profile', async ({browser, isMobile}) => {
+    const context = await browser.newContext({javaScriptEnabled: false});
+    const page = await context.newPage();
+
+    // User profile has dropdown used as an ellipsis menu
+    await page.goto('/user1');
+    const selectorPrefix = '#profile-avatar-card details.dropdown';
+    const summary = page.locator(`${selectorPrefix} > summary`);
+
+    // Has `.border` and pretty small default `inline-padding:`
+    expect(await summary.evaluate((el) => getComputedStyle(el).border)).toBe('1px solid rgba(0, 0, 0, 0.114)');
+    expect(await summary.evaluate((el) => getComputedStyle(el).paddingInline)).toBe('7px');
+
+    // Background
+    expect(await summary.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    await summary.click();
+    expect(await summary.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
+
+    // Direction and item height
+    if (isMobile) {
+      // `<ul>`'s direction is reversed
+      expect(await page.locator(`${selectorPrefix} > .content`).evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
+      // `@media (pointer: coarse)` makes items taller
+      await evaluateDropdownItems(page, `${selectorPrefix} > .content > ul > li`, 'ltr', '40px');
+    } else {
+      // Both use default direction
+      expect(await page.locator(`${selectorPrefix} > .content`).evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
+      // Regular item height
+      await evaluateDropdownItems(page, `${selectorPrefix} > .content > ul > li`, 'ltr', '34px');
+    }
+  });
+
+  test('Explore sort', async ({browser, isMobile}) => {
+    const context = await browser.newContext({javaScriptEnabled: false});
+    const page = await context.newPage();
+
+    // `/explore/users` has dropdown used as a sort options menu with text in the opener
+    await page.goto('/explore/users');
+    const selectorPrefix = '.list-header details.dropdown';
+    const summary = page.locator(`${selectorPrefix} > summary`);
+    await summary.click();
+
+    // No `.border` and increased `inline-padding:` from `.options`
+    expect(await summary.evaluate((el) => getComputedStyle(el).borderWidth)).toBe('0px');
+    expect(await summary.evaluate((el) => getComputedStyle(el).paddingInline)).toBe('10.5px');
+
     // `<ul>`'s direction is reversed
-    expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
-    // `@media (pointer: coarse)` makes items taller
-    await evaluateDropdownItems(page, itemsSel, 'ltr', '40px');
-  } else {
-    // Both use default direction
-    expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('ltr');
-    // Regular item height
-    await evaluateDropdownItems(page, itemsSel, 'ltr', '34px');
-  }
+    expect(await page.locator(`${selectorPrefix} > .content`).evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
+    await evaluateDropdownItems(page, `${selectorPrefix} > .content > ul > li`, 'ltr', isMobile ? '40px' : '34px');
 
-  // `/explore/users` has dropdown used as a sort options menu with text in the opener
-  await page.goto('/explore/users');
-  await summary.click();
-
-  // No `.border` and increased `inline-padding:` from `.options`
-  expect(await summary.evaluate((el) => getComputedStyle(el).borderWidth)).toBe('0px');
-  expect(await summary.evaluate((el) => getComputedStyle(el).paddingInline)).toBe('10.5px');
-
-  // `<ul>`'s direction is reversed
-  expect(await content.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
-  await evaluateDropdownItems(page, itemsSel, 'ltr', isMobile ? '40px' : '34px');
-
-  // Background of inactive and `.active` items
-  const activeItem = page.locator('details.dropdown > .content > ul > li:first-child > a');
-  const inactiveItem = page.locator('details.dropdown > .content > ul > li:last-child > a');
-  expect(await activeItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
-  expect(await inactiveItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    // Background of inactive and `.active` items
+    const activeItem = page.locator(`${selectorPrefix}> .content > ul > li:first-child > a`);
+    const inactiveItem = page.locator(`${selectorPrefix}> .content > ul > li:last-child > a`);
+    expect(await activeItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
+    expect(await inactiveItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  });
 });

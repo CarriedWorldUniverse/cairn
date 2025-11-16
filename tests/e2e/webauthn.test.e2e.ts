@@ -40,7 +40,7 @@ test('WebAuthn register & login flow', async ({browser, request}, workerInfo) =>
   await expect(page.getByRole('button', {name: 'Remove'})).toBeVisible(); // "Remove" button is visible, indicating that the security key was added
 
   // Logout.
-  await page.locator('div[aria-label="Profile and settings…"]').click();
+  await page.locator('summary[aria-label="Profile and settings…"]').click();
   await page.getByText('Sign out').click();
   await expect(async () => {
     await page.waitForURL(`${workerInfo.project.use.baseURL}/`);

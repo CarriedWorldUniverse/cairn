@@ -15,13 +15,13 @@
 :root details.dropdown {
   --dropdown-box-shadow: 0 6px 18px var(--color-shadow);
   --dropdown-item-min-height: 34px;
-  --switch-padding-inline: 0.75rem;
+  --dropdown-padding-inline: 0.75rem;
 }
 
 @media (pointer: coarse) {
   :root details.dropdown {
     --dropdown-item-min-height: 40px;
-    --switch-padding-inline: 1rem;
+    --dropdown-padding-inline: 1rem;
   }
 }
 
@@ -66,12 +66,12 @@ details.dropdown > summary {
 }
 
 details.dropdown > summary:hover,
-details.dropdown > .content > ul > li:hover {
+details.dropdown > .content > ul > li > :is(a, button):hover {
   background: var(--color-hover);
 }
 
 details.dropdown[open] > summary,
-details.dropdown > .content > ul > li:focus-within {
+details.dropdown > .content > ul > li:focus-within > :is(a, button) {
   background: var(--color-active);
 }
 
@@ -86,7 +86,7 @@ details.dropdown > .content {
   margin-top: 0.5rem;
 
   /* ToDo: upstream to base.css, remove from normalize.css */
-  > hr {
+  hr {
     height: 1px;
     margin-block: 0.25rem;
     background-color: var(--color-secondary);
@@ -112,17 +112,24 @@ details.dropdown > .content > ul {
 /* General styling of list items */
 details.dropdown > .content > ul > li {
   width: 100%;
-  background: none;
 
   > :is(a, button) {
-    padding-block: 0;
-    padding-inline: var(--switch-padding-inline);
     min-height: var(--dropdown-item-min-height);
+    padding-block: 0;
+
     width: 100%;
+    padding-inline: var(--dropdown-padding-inline);
     display: flex;
     gap: 0.75rem;
     align-items: center;
     color: var(--color-text);
+
+    /* Interactable items should be transparent by default. <button> can also have a default background set by the browser */
+    background: none;
+
+    /* Same rounding should apply to both <li> and it's items with paintable backgrounds */
+    border-radius: inherit;
+
     /* Suppress underline - hover is indicated by background color */
     text-decoration: none;
 
@@ -132,11 +139,22 @@ details.dropdown > .content > ul > li {
       font-weight: var(--font-weight-medium);
     }
   }
+}
 
-  /* Suppress default styling of <button> */
-  > button {
-    background: none;
-  }
+/* Special styling for "headers" */
+/* A few dropdowns contain such headers, however, they are not semantically considered as headers */
+details.dropdown > .content > .header {
+  display: flex;
+  padding-block: 0.5rem;
+  padding-inline: var(--dropdown-padding-inline);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+/* Decrease bottom padding if an <hr> follows, which adds it's own vertical padding */
+details.dropdown > .content > .header:has(+ hr) {
+  padding-bottom: 0.25rem;
 }
 
 /* dir-auto option - switch the direction at a width point where most of layout changes occur */
@@ -144,7 +162,7 @@ details.dropdown > .content > ul > li {
   details.dropdown.dir-auto > .content {
     inset-inline: 0 auto;
     direction: rtl;
-    > ul > li {
+    > :is(span, ul) {
       direction: ltr;
     }
   }
@@ -154,7 +172,7 @@ details.dropdown > .content > ul > li {
 details.dropdown.dir-rtl > .content {
   inset-inline: 0 auto;
   direction: rtl;
-  > ul > li {
+  > :is(span, ul) {
     direction: ltr;
   }
 }

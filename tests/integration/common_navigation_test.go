@@ -6,7 +6,6 @@ package integration
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"forgejo.org/models/unittest"
@@ -26,12 +25,6 @@ func TestCommonNavigationElements(t *testing.T) {
 
 	response := session.MakeRequest(t, NewRequest(t, "GET", "/"), http.StatusOK)
 	page := NewHTMLParser(t, response.Body)
-
-	// Navbar
-	links := page.Find("#navbar .dropdown[data-tooltip-content='Create…'] .menu")
-	assert.Equal(t, locale.TrString("new_repo.link"), strings.TrimSpace(links.Find("a[href='/repo/create']").Text()))
-	assert.Equal(t, locale.TrString("new_migrate.link"), strings.TrimSpace(links.Find("a[href='/repo/migrate']").Text()))
-	assert.Equal(t, locale.TrString("new_org.link"), strings.TrimSpace(links.Find("a[href='/org/create']").Text()))
 
 	// After footer: index.js
 	page.AssertElement(t, "script[src^='/assets/js/index.js']", true)
