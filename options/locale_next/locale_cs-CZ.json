@@ -196,5 +196,24 @@
         "other": "%s sledujících"
     },
     "teams.add_all_repos.modal.header": "Přidat všechny repozitáře",
-    "teams.remove_all_repos.modal.header": "Odstranit všechny repozitáře"
+    "teams.remove_all_repos.modal.header": "Odstranit všechny repozitáře",
+    "repo.pulls.poster_manage_approval": "Spravovat schválení",
+    "repo.pulls.poster_requires_approval": "Některé běhy workflow <a href=\"%[1]s\">čekají na kontrolu</a>.",
+    "repo.pulls.poster_requires_approval.tooltip": "Autor této žádosti o sloučení není oprávněn spouštět běhy workflow iniciovaných žádostí o sloučení vytvořenou z forku repozitáře nebo pomocí AGit. Běhy workflow spuštěné událostí `pull_request` se nespustí, dokud nebudou schváleny.",
+    "repo.pulls.poster_is_trusted": "Autor této žádosti o sloučení je <a href=\"%[1]s\">oprávněný spouštět běhy workflow</a>.",
+    "repo.pulls.poster_is_trusted.tooltip": "Autor této žádosti o sloučení je explicitně oprávněný spouštět běhy workflow iniciované událostmi `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Zamítnout",
+    "repo.pulls.poster_trust_deny.tooltip": "Běhy workflow čekající na schválení budou zrušeny.",
+    "repo.pulls.poster_trust_once": "Schválit jednou",
+    "repo.pulls.poster_trust_once.tooltip": "Běhy workflow iniciované událostí `pull_request` budou spuštěny u této revize, ale stále budou muset být schváleny pro všechny budoucí revize odeslané do této žádosti o sloučení.",
+    "repo.pulls.poster_trust_always": "Vždy schválit",
+    "repo.pulls.poster_trust_always.tooltip": "Běhy workflow iniciované událostí `pull_request` budou spuštěny u této revize a již nebude potřeba schvalovat další běhy z této žádosti o sloučení nebo budoucích žádostí o sloučení vytvořených stejným uživatelem.",
+    "repo.pulls.poster_trust_revoke": "Odvolat",
+    "repo.pulls.poster_trust_revoke.tooltip": "Autor této žádosti o sloučení již nebude moci spouštět běhy workflow iniciované událostí `pull_request`, každé spuštění bude muset být ručně schváleno.",
+    "admin.dashboard.actions_action_user": "Odvolat důvěřování ve Forgejo Actions neaktivním uživatelům",
+    "actions.status.diagnostics.waiting": {
+        "one": "Čekání na runner s následujícím štítkem: %s",
+        "few": "Čekání na runner s následujícími štítky: %s",
+        "other": "Čekání na runner s následujícími štítky: %s"
+    }
 }

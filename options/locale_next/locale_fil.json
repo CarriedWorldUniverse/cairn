@@ -180,5 +180,9 @@
     "watch.n_watchers": {
         "one": "%s nanonood",
         "other": "%s (mga) nanonood"
-    }
+    },
+    "repo.pulls.poster_manage_approval": "Ipamahala ang pagapruba",
+    "repo.pulls.poster_requires_approval": "Ang ilang mga workflow ay <a href=\"%[1]s\">naghihintay para suriin.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "Ang may-akda ng hiling sa paghilang ito ay hindi pinagkatiwalaan na tumakbo ng mga workflow na na-trigger ng isang hiling sa paghila na ginawa mula sa naka-fork na repositoryo o gamit ang AGit. Hindi tatakbo ang mga workflow na na-trigger ng `pull_request` event hanggang sa sila ay aprubahan.",
+    "repo.pulls.poster_is_trusted": "Ang may-akda ng hiling sa paghilang ito ay <a href=\"%[1]s\">palaging pinagkakatiwalaan na tumakbo ng mga workflow.</a>"
 }

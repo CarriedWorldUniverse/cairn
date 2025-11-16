@@ -172,5 +172,6 @@
     "migrate.pagure.private_issues.warning": "Se till att ställa in synligheten för arkivet ovan till Privat om du använder API-nyckeln för att importera privata ärenden. Detta förhindrar att privat innehåll av misstag exponeras i ett publikt arkiv.",
     "migrate.pagure.token.placeholder": "Endast för att skapa privata ärendearkiv",
     "actions.runs.viewing_out_of_date_run": "Du tittar på en föråldrad körning av detta jobb som utfördes %[1]s.",
-    "actions.workflow.event_detection_error": "Det går inte att tolka stödda händelser i arbetsflödet: %v"
+    "actions.workflow.event_detection_error": "Det går inte att tolka stödda händelser i arbetsflödet: %v",
+    "repo.pulls.poster_manage_approval": "Hantera godkännande"
 }

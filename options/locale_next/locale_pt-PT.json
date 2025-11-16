@@ -194,5 +194,21 @@
         "one": "%s vigilante",
         "many": "%s vigilantes",
         "other": "%s vigilantes"
-    }
+    },
+    "teams.add_all_repos.modal.header": "Adicionar todos os repositórios",
+    "teams.remove_all_repos.modal.header": "Remover todos os repositórios",
+    "repo.pulls.poster_manage_approval": "Gerir aprovação",
+    "repo.pulls.poster_requires_approval": "Algumas sequências de trabalho estão <a href=\"%[1]s\">à espera de serem avaliadas.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "O autor deste pedido de integração não é confiável para executar sequências de trabalho acionados por um pedido de integração criada a partir de um repositório derivado ou com AGit. As sequências de trabalho acionadas por um evento `pull_request` não serão executadas até que sejam aprovadas.",
+    "repo.pulls.poster_is_trusted": "O autor deste pedido de integração é <a href=\"%[1]s\">sempre confiável para executar sequências de trabalho.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "O autor deste pedido de integração é explicitamente confiável para executar fluxos de trabalho acionados por eventos `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Recusar",
+    "repo.pulls.poster_trust_deny.tooltip": "As sequências de trabalho que aguardam aprovação serão canceladas.",
+    "repo.pulls.poster_trust_once": "Aprovar uma vez",
+    "repo.pulls.poster_trust_once.tooltip": "As sequências de trabalho acionadas por um evento `pull_request` serão executadas neste commit, mas precisarão de ser aprovadas para todos os commits futuros enviados para este pedido de integração.",
+    "repo.pulls.poster_trust_always": "Aprovar sempre",
+    "repo.pulls.poster_trust_always.tooltip": "As sequências de trabalho acionadas por um evento `pull_request` serão executadas neste commit e não será necessário aprovar execuções deste pedido de integração ou de futuros pedidos de integração criados pelo mesmo utilizador.",
+    "repo.pulls.poster_trust_revoke": "Revogar",
+    "repo.pulls.poster_trust_revoke.tooltip": "O autor deste pedido de integração deixará de ser considerado confiável para executar sequências de trabalho acionadas por um evento `pull_request`, cada execução terá que ser aprovada manualmente.",
+    "admin.dashboard.actions_action_user": "Revogar a confiança em Forgejo Actions para utilizadores inativos"
 }

@@ -182,5 +182,24 @@
         "other": "%s Belurers"
     },
     "teams.add_all_repos.modal.header": "All Repositoriums hentofögen",
-    "teams.remove_all_repos.modal.header": "All Repositoriums wegdoon"
+    "teams.remove_all_repos.modal.header": "All Repositoriums wegdoon",
+    "repo.pulls.poster_manage_approval": "Tostimmen verwalten",
+    "repo.pulls.poster_requires_approval": "Eenige Warkwiesen <a href=\"%[1]s\">wachten up een Nakieken.</a>",
+    "repo.pulls.poster_is_trusted": "De Schriever vun deesem Haalvörslag word <a href=\"%[1]s\">alltied vertroot, Warkwiesen uttoföhren.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "De Schriever vun deesem Haalvörslag word nich vertroot, Warkwiesen uttoföhren, wat vun eenem Haalvörslag ut eener Gavel of mit AGit utlööst worden. De Warkwiesen, wat vun eenem `pull_request`-Vörfall utlööst worden, lopen eerst dann, wenn se tostimmt worden.",
+    "repo.pulls.poster_is_trusted.tooltip": "De Schriever vun deesem Haalvörslag word utdrückelk vertroot, Warkwiesen uttoföhren, wat vun `pull_request`-Vörfallen utlööst worden.",
+    "repo.pulls.poster_trust_deny": "Verseggen",
+    "repo.pulls.poster_trust_deny.tooltip": "De Warkwiesen, wat up Tostimmen wachten, worden ofbroken.",
+    "repo.pulls.poster_trust_once": "Een Maal tostimmen",
+    "repo.pulls.poster_trust_once.tooltip": "De Warkwiesen, wat vun eenem `pull_request`-Vörfall utlööst worden, worden för deeses Kommitteren lopen, mutten aver för all tokünftig Kommitterens, wat to deesem Haalvörslag schuven worden, weer neei tostimmt worden.",
+    "repo.pulls.poster_trust_always": "Alltieden verlöven",
+    "repo.pulls.poster_trust_always.tooltip": "De Warkwiesen, wat vun eenem `pull_request`-Vörfall utlööst worden, worden för deeses Kommitteren lopen, un wiedere Utföhrens vun deesem Haalvörslag of vun tokünftig Haalvörslagen vun de sülven Schriever mutten nich mehr tostimmt worden.",
+    "repo.pulls.poster_trust_revoke": "Torüggnehmen",
+    "repo.pulls.poster_trust_revoke.tooltip": "De Schriever vun deesem Haalvörslag word nich mehr vertroot, Warkwiesen, wat vun eenem `pull_request`-Vörfall utlööst worden, uttoföhren. Elkeen Utföhren mutt neei tostimmt worden.",
+    "admin.dashboard.actions_action_user": "Forgejo-Aktioonen-Vertroen för inaktiiv Brukers torüggnehmen",
+    "actions.status.diagnostics.waiting": {
+        "one": "Wacht up eenen Loper mit deesem Vermark: %s",
+        "other": "Wacht up eenen Loper mit deesen Vermarkens: %s"
+    },
+    "keys.verify.token.hint": "Deeses Teken gellt blots 1 Menüüt. <a href=\"%[1]s\">Haal een nejes, wenn ’t avlopen is</a>."
 }

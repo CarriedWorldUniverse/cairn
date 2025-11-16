@@ -194,5 +194,26 @@
         "zero": "%s vērotāju",
         "one": "%s vērotājs",
         "other": "%s vērotāji"
+    },
+    "teams.add_all_repos.modal.header": "Pievienot visas glabātavas",
+    "teams.remove_all_repos.modal.header": "Noņemt visas glabātavas",
+    "repo.pulls.poster_manage_approval": "Pārvaldīt apstiprinājumu",
+    "repo.pulls.poster_requires_approval": "Dažām darbplūsmām ir <a href=\"%[1]s\">nepieciešama izskatīšana</a>.",
+    "repo.pulls.poster_requires_approval.tooltip": "Šī izmaiņu pieprasījumu iesniedzējs nav uzticēta darbplūsmu, kuras izraisītas ar no atzarotas glabātavas izveidotu izmaiņu pieprasījumu vai ar AGit, izpildīšana. Darbplūsmas, kas ir izraisītas ar `pull_request` notikumu netiks izpildītas, kamēr tās nebūs apstiprinātas.",
+    "repo.pulls.poster_is_trusted": "Šī izmaiņu pieprasījumam <a href=\"%[1]s\">vienmēr ir uzticēts izpildīt darbplūsmas</a>.",
+    "repo.pulls.poster_is_trusted.tooltip": "Šī izmaiņu pieprasījuma izveidotājam ir noteikti uzticēts izpildīt darbplūsmas, kas izraisītas ar notikumu `pull_request`.",
+    "repo.pulls.poster_trust_deny": "Noraidīt",
+    "repo.pulls.poster_trust_deny.tooltip": "Darbplūsmas, kurām nepieciešama apstiprināšana, tiks atceltas.",
+    "repo.pulls.poster_trust_once": "Apstiprināt vienreiz",
+    "repo.pulls.poster_trust_once.tooltip": "Darbplūsmas, kas izraisītas ar notikumu `pull_request` tiks izpildītas šim iesūtījumam, bet būs nepieciešams apstiprinājums visiem pēc tam šajā izmaiņu pieprasījumā aizgādātajiem iesūtījumiem.",
+    "repo.pulls.poster_trust_always": "Vienmēr apstiprināt",
+    "repo.pulls.poster_trust_always.tooltip": "Notikuma `pull_request` izraisītas darbplūsmas tiks izpildītas šim iesūtījumam, un nebūs nepieciešamības apstiprināt izpildīšanu šajā izmaiņu pieprasījumā vai tā paša lietotāja pēc tam izveidotajiem izmaiņu pieprasījumiem.",
+    "repo.pulls.poster_trust_revoke": "Atsaukt",
+    "repo.pulls.poster_trust_revoke.tooltip": "Šī izmaiņu pieprasījuma izveidotājam vairs netiks uzticēts izpildīt notikuma `pull_request` notikuma izraisītas darbplūsmas, katra izpilde būs pašrocīgi jāapstiprina.",
+    "admin.dashboard.actions_action_user": "Atsaukt Forgejo darbību uzticamību neaktīviem lietotājiem",
+    "actions.status.diagnostics.waiting": {
+        "zero": "Gaida uz izpildītāju ar šādām iezīmēm: %s",
+        "one": "Gaida uz izpildītāju ar šādām iezīmēm: %s",
+        "other": "Gaida uz izpildītāju ar šādām iezīmēm: %s"
     }
 }
