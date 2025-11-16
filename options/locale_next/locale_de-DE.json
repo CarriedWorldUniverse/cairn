@@ -68,7 +68,7 @@
     "moderation.report_abuse": "Missbrauch melden",
     "moderation.report_content": "Inhalt melden",
     "moderation.report_abuse_form.header": "Dem Administrator Missbrauch melden",
-    "moderation.report_abuse_form.details": "Dieses Formular soll genutzt werden um Benutzer zu melden die Spam-Profile, -Repositorys, -Issues, und -Kommentare erstellen, oder sich unangemessen verhalten.",
+    "moderation.report_abuse_form.details": "Dieses Formular soll genutzt werden, um Benutzer zu melden, die Spam-Profile, -Repositorys, -Issues, und -Kommentare erstellen, oder sich unangemessen verhalten.",
     "moderation.report_abuse_form.invalid": "Ungültige Argumente",
     "moderation.report_abuse_form.already_reported": "Du hast diesen Inhalt bereits gemeldet",
     "moderation.abuse_category": "Kategorie",
