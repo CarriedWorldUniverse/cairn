@@ -33,7 +33,7 @@ func migrateTaskSecrets(x *xorm.Engine) error {
 	return db.WithTx(db.DefaultContext, func(ctx context.Context) error {
 		sess := db.GetEngine(ctx)
 
-		key := keying.DeriveKey(keying.ContextMigrateTask)
+		key := keying.MigrateTask
 
 		oldEncryptionKey := setting.SecretKey
 		messages := make([]string, 0, 100)

@@ -25,7 +25,7 @@ func TestInsertEncryptedSecret(t *testing.T) {
 		assert.Nil(t, secret)
 	})
 
-	key := keying.DeriveKey(keying.ContextActionSecret)
+	key := keying.ActionSecret
 
 	t.Run("Insert repository secret", func(t *testing.T) {
 		secret, err := InsertEncryptedSecret(t.Context(), 0, 1, "REPO_SECRET", "some repository secret")

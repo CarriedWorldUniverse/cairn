@@ -444,7 +444,7 @@ func loginUserWithTOTP(t testing.TB, user *user_model.User) *TestSession {
 	twoFactor, err := auth.GetTwoFactorByUID(db.DefaultContext, user.ID)
 	require.NoError(t, err)
 
-	key := keying.DeriveKey(keying.ContextTOTP)
+	key := keying.TOTP
 	code, err := key.Decrypt(twoFactor.Secret, keying.ColumnAndID("secret", twoFactor.ID))
 	require.NoError(t, err)
 

@@ -120,7 +120,7 @@ func (task *Task) MigrateConfig() (*migration.MigrateOptions, error) {
 			return nil, err
 		}
 
-		key := keying.DeriveKey(keying.ContextMigrateTask)
+		key := keying.MigrateTask
 
 		// decrypt credentials
 		if opts.CloneAddrEncrypted != "" {

@@ -48,7 +48,7 @@ func Test_MigrateTwoFactorToKeying(t *testing.T) {
 	_, err = x.Table("two_factor").ID(1).Get(&twofactor)
 	require.NoError(t, err)
 
-	secretBytes, err := keying.DeriveKey(keying.ContextTOTP).Decrypt(twofactor.Secret, keying.ColumnAndID("secret", twofactor.ID))
+	secretBytes, err := keying.TOTP.Decrypt(twofactor.Secret, keying.ColumnAndID("secret", twofactor.ID))
 	require.NoError(t, err)
 	assert.Equal(t, []byte("AVDYS32OPIAYSNBG2NKYV4AHBVEMKKKIGBQ46OXTLMJO664G4TIECOGEANMSNBLS"), secretBytes)
 }

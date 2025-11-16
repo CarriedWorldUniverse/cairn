@@ -87,14 +87,12 @@ func (t *TwoFactor) VerifyScratchToken(token string) bool {
 
 // SetSecret sets the 2FA secret.
 func (t *TwoFactor) SetSecret(secretString string) {
-	key := keying.DeriveKey(keying.ContextTOTP)
-	t.Secret = key.Encrypt([]byte(secretString), keying.ColumnAndID("secret", t.ID))
+	t.Secret = keying.TOTP.Encrypt([]byte(secretString), keying.ColumnAndID("secret", t.ID))
 }
 
 // ValidateTOTP validates the provided passcode.
 func (t *TwoFactor) ValidateTOTP(passcode string) (bool, error) {
-	key := keying.DeriveKey(keying.ContextTOTP)
-	secret, err := key.Decrypt(t.Secret, keying.ColumnAndID("secret", t.ID))
+	secret, err := keying.TOTP.Decrypt(t.Secret, keying.ColumnAndID("secret", t.ID))
 	if err != nil {
 		return false, err
 	}
