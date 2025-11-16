@@ -80,7 +80,7 @@
     "moderation.report_abuse": "Missbrauch melden",
     "moderation.report_content": "Inhalt melden",
     "moderation.report_abuse_form.header": "Dem Administrator Missbrauch melden",
-    "moderation.report_abuse_form.details": "Dieses Formular soll genutzt werden um Benutzer zu melden die Spam-Profile, -Repositorys, -Issues, und -Kommentare erstellen, oder sich unangemessen verhalten.",
+    "moderation.report_abuse_form.details": "Dieses Formular soll genutzt werden, um Benutzer zu melden, die Spam-Profile, -Repositorys, -Issues, und -Kommentare erstellen, oder sich unangemessen verhalten.",
     "moderation.report_abuse_form.invalid": "Ungültige Argumente",
     "moderation.report_abuse_form.already_reported": "Du hast diesen Inhalt bereits gemeldet",
     "moderation.abuse_category": "Kategorie",
@@ -180,5 +180,26 @@
     "watch.n_watchers": {
         "one": "%s Beobachter",
         "other": "%s Beobachter"
-    }
+    },
+    "teams.add_all_repos.modal.header": "Alle Repositorys hinzufügen",
+    "teams.remove_all_repos.modal.header": "Alle Repositorys entfernen",
+    "repo.pulls.poster_manage_approval": "Genehmigung verwalten",
+    "repo.pulls.poster_requires_approval": "Einige Workflows <a href=\"%[1]s\">warten auf die Sichtung.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "Dem Autor dieses Pull-Requests wird nicht vertraut, Workflows auszuführen, die von einem Pull-Request von einem geforkten Repository oder von AGit ausgelöst wurden. Die Workflows, die von einem `pull_request`-Ereignis ausgelöst wurden, werden nicht ausgeführt, bis sie genehmigt werden.",
+    "repo.pulls.poster_is_trusted": "Dem Autor dieses Pull-Requests wird <a href=\"%[1]s\">immer vertraut, Workflows auszuführen.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "Dem Autor dieses Pull-Requests wird explizit vertraut, Workflows, die von `pull_request`-Ereignissen ausgelöst wurden, auszuführen.",
+    "repo.pulls.poster_trust_deny": "Ablehnen",
+    "repo.pulls.poster_trust_deny.tooltip": "Die Workflows, die auf eine Genehmigung warten, werden abgebrochen.",
+    "repo.pulls.poster_trust_once": "Einmalig genehmigen",
+    "repo.pulls.poster_trust_once.tooltip": "Die Workflows, die von einem `pull_request`-Ereignis ausgelöst wurden, werden auf diesem Commit ausgeführt, aber sie müssen für alle zukünftigen Commits, die zu diesem Pull-Request gepusht werden, genehmigt werden.",
+    "repo.pulls.poster_trust_always": "Immer genehmigen",
+    "repo.pulls.poster_trust_always.tooltip": "Die Workflows, die von einem `pull_request`-Ereignis ausgelöst werden, werden auf diesem Commit ausgeführt und es wird nicht nötig sein, Ausführungen von diesem Pull-Request oder zukünftige Pull-Requests des selben Benutzers zu genehmigen.",
+    "repo.pulls.poster_trust_revoke": "Entziehen",
+    "repo.pulls.poster_trust_revoke.tooltip": "Dem Autor dieses Pull-Requests wird nicht länger vertraut, um Workflows, die von einem `pull_request`-Ereignis ausgelöst wurden, auszuführen; jede Ausführung muss manuell genehmigt werden.",
+    "admin.dashboard.actions_action_user": "Forgejo-Actions-Vertrauen für inaktive Benutzer entziehen",
+    "actions.status.diagnostics.waiting": {
+        "one": "Warte auf einen Runner mit dem folgenden Label: %s",
+        "other": "Warte auf einen Runner mit den folgenden Labels: %s"
+    },
+    "keys.verify.token.hint": "Der Token ist nur für 1 Minute gültig. <a href=\"%[1]s\">Hol dir einen neuen, falls er abgelaufen ist</a>."
 }

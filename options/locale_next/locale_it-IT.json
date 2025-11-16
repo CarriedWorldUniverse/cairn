@@ -194,5 +194,7 @@
     "migrate.pagure.token.placeholder": "Solo per creare un archivio di segnalazioni private",
     "actions.workflow.job_parsing_error": "Impossibile analizzare i processi nel flusso di lavoro: %v",
     "actions.workflow.event_detection_error": "Impossibile analizzare gli eventi previsti nel flusso di lavoro: %v",
-    "actions.workflow.pre_execution_error": "Il flusso di lavoro non è stato completato a causa di un errore che ha bloccato il tentativo di esecuzione."
+    "actions.workflow.pre_execution_error": "Il flusso di lavoro non è stato completato a causa di un errore che ha bloccato il tentativo di esecuzione.",
+    "teams.add_all_repos.modal.header": "Aggiungi tutti i repositori",
+    "teams.remove_all_repos.modal.header": "Rimuovi tutti i repositori"
 }

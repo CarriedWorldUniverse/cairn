@@ -1,11 +1,13 @@
 {
     "fork.n_forks": {
         "one": "מזלוג אחד",
-        "other": "%s מזלוגים"
+        "two": "%s מזלוגים",
+        "other": ""
     },
     "stars.n_stars": {
         "one": "כוכב אחד",
-        "other": "%s כוכבים"
+        "two": "%s כוכבים",
+        "other": ""
     },
     "migrate.github.description": "ייבוא מידע מ־github.com או שרת GitHub Enteprise.",
     "migrate.git.description": "ייבוא קרפיף מכל שירות גיט שהוא.",
@@ -15,5 +17,6 @@
     "migrate.onedev.description": "ייבוא מידע מ־code.onedev.io או שרת OneDev אחר.",
     "migrate.gitbucket.description": "יבוא מידע משרת GitBucket.",
     "migrate.codebase.description": "ייבוא מידע מ־codebasehq.com.",
-    "migrate.forgejo.description": "ייבוא מידע מקודברג או שרת פורג'ו אחר."
+    "migrate.forgejo.description": "ייבוא מידע מקודברג או שרת פורג'ו אחר.",
+    "home.welcome.no_activity": "אין פעילות"
 }

@@ -182,5 +182,23 @@
     "actions.workflow.event_detection_error": "Ondersteunde gebeurtenissen in workflow kunnen niet worden geparseerd: %v",
     "actions.workflow.pre_execution_error": "Workflow is niet uitgevoerd vanwege een fout die de uitvoeringspoging blokkeerde.",
     "teams.add_all_repos.modal.header": "Alle repositories toevoegen",
-    "teams.remove_all_repos.modal.header": "Alle repositories verwijderen"
+    "teams.remove_all_repos.modal.header": "Alle repositories verwijderen",
+    "repo.pulls.poster_manage_approval": "Goedkeuring beheren",
+    "repo.pulls.poster_requires_approval": "Sommige werkstromen zijn <a href=\"%[1]s\">wachtend om beoordeeld te worden.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "De auteur van dit pull request wordt niet vertrouwd om workflows uit te voeren die worden getriggerd door een pull request dat is aangemaakt vanuit een forked repository of met AGit. De werkstromen die worden geactiveerd door een `pull_request` evenement zullen niet worden uitgevoerd totdat ze zijn goedgekeurd.",
+    "repo.pulls.poster_is_trusted": "De auteur van dit pull request is <a href=\"%[1]s\">altijd vertrouwd om werkstromen uit te voeren.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "De auteur van dit pull request is expliciet vertrouwd om workflows uit te voeren die worden geactiveerd door een `pull_request` evenement.",
+    "repo.pulls.poster_trust_deny": "Weigeren",
+    "repo.pulls.poster_trust_deny.tooltip": "De workflows die op goedkeuring wachten, worden geannuleerd.",
+    "repo.pulls.poster_trust_once": "Eenmaal goedkeuren",
+    "repo.pulls.poster_trust_once.tooltip": "De workflows die getriggerd worden door een `pull_request` evenement zullen op deze commit draaien, maar zullen goedgekeurd moeten worden voor alle toekomstige commits die naar dit pull request gepushed worden.",
+    "repo.pulls.poster_trust_always": "Altijd goedkeuren",
+    "repo.pulls.poster_trust_always.tooltip": "De werkstromen die getriggerd worden door een `pull_request` evenement zullen op deze commit draaien en er zal geen noodzaak zijn om runs van dit pull request of toekomstige pull requests, gemaakt door dezelfde gebruiker, goed te keuren.",
+    "repo.pulls.poster_trust_revoke": "Intrekken",
+    "repo.pulls.poster_trust_revoke.tooltip": "De auteur van dit pull request zal niet langer worden vertrouwd om werkstromen uit te voeren die worden geactiveerd door een `pull_request` evenement, elke run zal handmatig moeten worden goedgekeurd.",
+    "admin.dashboard.actions_action_user": "Vertrouwen in acties van Forgejo intrekken voor inactieve gebruikers",
+    "actions.status.diagnostics.waiting": {
+        "one": "Wachten op een runner met het volgende label: %s",
+        "other": "Wachten op een runner met de volgende labels: %s"
+    }
 }

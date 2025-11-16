@@ -194,5 +194,7 @@
         "one": "%s observador",
         "many": "%s observadors",
         "other": "%s observadors"
-    }
+    },
+    "teams.remove_all_repos.modal.header": "Suprimeix tots els repositoris",
+    "teams.add_all_repos.modal.header": "Afegir tots els repositoris"
 }
