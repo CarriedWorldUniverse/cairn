@@ -56,7 +56,7 @@ func Test_MigrateTaskSecretsToKeying(t *testing.T) {
 
 	var opts migration.MigrateOptions
 	require.NoError(t, json.Unmarshal([]byte(task.PayloadContent), &opts))
-	key := keying.DeriveKey(keying.ContextMigrateTask)
+	key := keying.MigrateTask
 
 	encryptedCloneAddr, err := base64.RawStdEncoding.DecodeString(opts.CloneAddrEncrypted)
 	require.NoError(t, err)

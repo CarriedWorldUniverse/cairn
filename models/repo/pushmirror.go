@@ -98,8 +98,7 @@ func (m *PushMirror) GetPublicKey() string {
 // The ID of the push mirror must be known, so this should be done after the
 // push mirror is inserted.
 func (m *PushMirror) SetPrivatekey(ctx context.Context, privateKey []byte) error {
-	key := keying.DeriveKey(keying.ContextPushMirror)
-	m.PrivateKey = key.Encrypt(privateKey, keying.ColumnAndID("private_key", m.ID))
+	m.PrivateKey = keying.PushMirror.Encrypt(privateKey, keying.ColumnAndID("private_key", m.ID))
 
 	_, err := db.GetEngine(ctx).ID(m.ID).Cols("private_key").Update(m)
 	return err
@@ -107,8 +106,7 @@ func (m *PushMirror) SetPrivatekey(ctx context.Context, privateKey []byte) error
 
 // Privatekey retrieves the encrypted private key and decrypts it.
 func (m *PushMirror) Privatekey() ([]byte, error) {
-	key := keying.DeriveKey(keying.ContextPushMirror)
-	return key.Decrypt(m.PrivateKey, keying.ColumnAndID("private_key", m.ID))
+	return keying.PushMirror.Decrypt(m.PrivateKey, keying.ColumnAndID("private_key", m.ID))
 }
 
 // UpdatePushMirror updates the push-mirror

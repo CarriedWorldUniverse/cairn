@@ -46,7 +46,7 @@ func Test_MigrateActionSecretToKeying(t *testing.T) {
 	_, err = x.Table("secret").ID(1).Get(&secret)
 	require.NoError(t, err)
 
-	secretBytes, err := keying.DeriveKey(keying.ContextActionSecret).Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
+	secretBytes, err := keying.ActionSecret.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
 	require.NoError(t, err)
 	assert.Equal(t, []byte("A deep dark secret"), secretBytes)
 }

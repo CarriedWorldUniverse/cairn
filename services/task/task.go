@@ -84,7 +84,7 @@ func CreateMigrateTask(ctx context.Context, doer, u *user_model.User, opts base.
 			return err
 		}
 
-		key := keying.DeriveKey(keying.ContextMigrateTask)
+		key := keying.MigrateTask
 
 		opts.CloneAddrEncrypted = base64.RawStdEncoding.EncodeToString(key.Encrypt([]byte(opts.CloneAddr), keying.ColumnAndJSONSelectorAndID("payload_content", "clone_addr_encrypted", task.ID)))
 		opts.CloneAddr = util.SanitizeCredentialURLs(opts.CloneAddr)

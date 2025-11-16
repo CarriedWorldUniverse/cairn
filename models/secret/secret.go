@@ -117,8 +117,7 @@ func (opts FindSecretsOptions) ToConds() builder.Cond {
 }
 
 func (s *Secret) SetSecret(data string) {
-	key := keying.DeriveKey(keying.ContextActionSecret)
-	s.Data = key.Encrypt([]byte(data), keying.ColumnAndID("data", s.ID))
+	s.Data = keying.ActionSecret.Encrypt([]byte(data), keying.ColumnAndID("data", s.ID))
 }
 
 func GetSecretsOfTask(ctx context.Context, task *actions_model.ActionTask) (map[string]string, error) {
@@ -146,7 +145,7 @@ func GetSecretsOfTask(ctx context.Context, task *actions_model.ActionTask) (map[
 		return nil, err
 	}
 
-	key := keying.DeriveKey(keying.ContextActionSecret)
+	key := keying.ActionSecret
 	for _, secret := range append(ownerSecrets, repoSecrets...) {
 		v, err := key.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
 		if err != nil {
