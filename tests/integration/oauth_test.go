@@ -1454,29 +1454,44 @@ func TestSignUpViaOAuthLinking2FA(t *testing.T) {
 	defer test.MockVariableValue(&setting.OAuth2Client.EnableAutoRegistration, true)()
 	defer test.MockVariableValue(&setting.OAuth2Client.AccountLinking, setting.OAuth2AccountLinkingAuto)()
 
-	// Fake that user 2 is enrolled into WebAuthn.
-	t.Cleanup(func() {
-		unittest.AssertSuccessfulDelete(t, &auth_model.WebAuthnCredential{UserID: 2})
-	})
-	unittest.AssertSuccessfulInsert(t, &auth_model.WebAuthnCredential{UserID: 2})
-
 	gitlabName := "gitlab"
 	addAuthSource(t, authSourcePayloadGitLabCustom(gitlabName))
-	userGitLabUserID := "BB(4)=107"
 
-	defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
-		return goth.User{
-			Provider: gitlabName,
-			UserID:   userGitLabUserID,
-			NickName: "user2",
-			Email:    "user2@example.com",
-		}, nil
-	})()
-	req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
-	resp := MakeRequest(t, req, http.StatusSeeOther)
+	t.Run("WebAuthn", func(t *testing.T) {
+		// Fake that user 2 is enrolled into WebAuthn.
+		t.Cleanup(func() {
+			unittest.AssertSuccessfulDelete(t, &auth_model.WebAuthnCredential{UserID: 2})
+		})
+		unittest.AssertSuccessfulInsert(t, &auth_model.WebAuthnCredential{UserID: 2})
 
-	// Make sure the user has to go through 2FA after linking.
-	assert.Equal(t, "/user/webauthn", test.RedirectURL(resp))
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider: gitlabName,
+				UserID:   "BB(4)=107",
+				NickName: "user2",
+				Email:    "user2@example.com",
+			}, nil
+		})()
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+
+		// Make sure the user has to go through 2FA after linking.
+		assert.Equal(t, "/user/webauthn", test.RedirectURL(resp))
+	})
+
+	t.Run("Case-insenstive username", func(t *testing.T) {
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider: gitlabName,
+				UserID:   "BB(3)=21",
+				NickName: "UsEr4",
+				Email:    "user4@example.org",
+			}, nil
+		})()
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+		assert.Equal(t, "/", test.RedirectURL(resp))
+	})
 }
 
 func TestSignUpViaOAuth2FA(t *testing.T) {
