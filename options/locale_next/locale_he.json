@@ -7,5 +7,6 @@
     "migrate.onedev.description": "ייבוא מידע מ־code.onedev.io או שרת OneDev אחר.",
     "migrate.gitbucket.description": "יבוא מידע משרת GitBucket.",
     "migrate.codebase.description": "ייבוא מידע מ־codebasehq.com.",
-    "migrate.forgejo.description": "ייבוא מידע מקודברג או שרת פורג'ו אחר."
+    "migrate.forgejo.description": "ייבוא מידע מקודברג או שרת פורג'ו אחר.",
+    "home.welcome.no_activity": "אין פעילות"
 }

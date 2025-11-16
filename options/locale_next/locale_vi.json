@@ -115,5 +115,6 @@
     "actions.runs.run_attempt_label": "Lần chạy #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Bạn đang xem một lần chạy lỗi thời của công việc này mà đã chạy %[1]s.",
     "actions.runs.view_most_recent_run": "Xem lần chạy gần đây nhất",
-    "meta.last_line": "\"xóa thần tượng\""
+    "meta.last_line": "\"xóa thần tượng\"",
+    "home.welcome.activity_hint": "Hiện chưa có gì trên bảng tin của bạn cả. Những hành động của bạn và hoạt động từ kho mã mà bạn theo dõi sẽ xuất hiện ở đây."
 }
