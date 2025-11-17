@@ -76,13 +76,6 @@ func IssueChangeStatus(ctx context.Context, doer *user_model.User, commitID stri
 	}
 }
 
-// DeleteIssue notify when some issue deleted
-func DeleteIssue(ctx context.Context, doer *user_model.User, issue *issues_model.Issue) {
-	for _, notifier := range notifiers {
-		notifier.DeleteIssue(ctx, doer, issue)
-	}
-}
-
 // MergePullRequest notifies merge pull request to notifiers
 func MergePullRequest(ctx context.Context, doer *user_model.User, pr *issues_model.PullRequest) {
 	for _, notifier := range notifiers {

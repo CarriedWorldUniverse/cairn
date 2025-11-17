@@ -198,8 +198,6 @@ func DeleteIssue(ctx context.Context, doer *user_model.User, gitRepo *git.Reposi
 		}
 	}
 
-	notify_service.DeleteIssue(ctx, doer, issue)
-
 	return nil
 }
 
