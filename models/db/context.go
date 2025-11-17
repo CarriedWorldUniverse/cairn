@@ -75,7 +75,7 @@ func GetEngine(ctx context.Context) Engine {
 	if e := getEngine(ctx); e != nil {
 		return e
 	}
-	return x.Context(ctx)
+	return DefaultContext.(Engined).Engine().Context(ctx)
 }
 
 // getEngine will get a db Engine from this context or return nil

@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
-
 	"xorm.io/xorm"
 )
 
@@ -156,15 +154,6 @@ func DBSlaveConnStrs() ([]string, error) {
 			}
 			dsns = append(dsns, dsn)
 		}
-	}
-	// Fall back to master if no slave DSN was provided.
-	if len(dsns) == 0 {
-		master, err := DBMasterConnStr()
-		if err != nil {
-			return nil, err
-		}
-		log.Debug("Database: No dedicated replica host defined; falling back to primary DSN for replica connections")
-		dsns = append(dsns, master)
 	}
 	return dsns, nil
 }
