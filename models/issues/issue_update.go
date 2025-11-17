@@ -103,21 +103,15 @@ func doChangeIssueStatus(ctx context.Context, issue *Issue, doer *user_model.Use
 		return nil, err
 	}
 	for _, label := range issue.Labels {
-		if err := stats.QueueRecalcLabelByID(label.ID); err != nil {
-			return nil, err
-		}
+		stats.QueueRecalcLabelByID(ctx, label.ID)
 	}
 
 	// Update issue count of milestone
 	if issue.MilestoneID > 0 {
 		if issue.NoAutoTime {
-			if err := stats.QueueRecalcMilestoneByIDWithDate(issue.MilestoneID, issue.UpdatedUnix); err != nil {
-				return nil, err
-			}
+			stats.QueueRecalcMilestoneByIDWithDate(ctx, issue.MilestoneID, issue.UpdatedUnix)
 		} else {
-			if err := stats.QueueRecalcMilestoneByID(issue.MilestoneID); err != nil {
-				return nil, err
-			}
+			stats.QueueRecalcMilestoneByID(ctx, issue.MilestoneID)
 		}
 	}
 
@@ -353,9 +347,7 @@ func NewIssueWithIndex(ctx context.Context, doer *user_model.User, opts NewIssue
 	}
 
 	if opts.Issue.MilestoneID > 0 {
-		if err := stats.QueueRecalcMilestoneByID(opts.Issue.MilestoneID); err != nil {
-			return err
-		}
+		stats.QueueRecalcMilestoneByID(ctx, opts.Issue.MilestoneID)
 
 		opts := &CreateCommentOptions{
 			Type:           CommentTypeMilestone,

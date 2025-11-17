@@ -228,8 +228,10 @@ func RepoNumOpenActions(ctx context.Context, repoID int64) int {
 	return num
 }
 
-func clearRepoRunCountCache(repo *repo_model.Repository) {
-	cache.Remove(actionsCountOpenCacheKey(repo.ID))
+func clearRepoRunCountCache(ctx context.Context, repo *repo_model.Repository) {
+	db.AfterTx(ctx, func() {
+		cache.Remove(actionsCountOpenCacheKey(repo.ID))
+	})
 }
 
 func condRunsThatNeedApproval(repoID, pullRequestID int64) builder.Cond {
@@ -309,7 +311,7 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 		run.Repo = repo
 	}
 
-	clearRepoRunCountCache(run.Repo)
+	clearRepoRunCountCache(ctx, run.Repo)
 
 	runJobs := make([]*ActionRunJob, 0, len(jobs))
 	var hasWaiting bool
@@ -473,7 +475,7 @@ func UpdateRunWithoutNotification(ctx context.Context, run *ActionRun, cols ...s
 			}
 			run.Repo = repo
 		}
-		clearRepoRunCountCache(run.Repo)
+		clearRepoRunCountCache(ctx, run.Repo)
 	}
 
 	return nil

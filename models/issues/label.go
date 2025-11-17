@@ -246,7 +246,9 @@ func UpdateLabel(ctx context.Context, l *Label) error {
 		return err
 	}
 
-	return stats.QueueRecalcLabelByID(l.ID)
+	stats.QueueRecalcLabelByID(ctx, l.ID)
+
+	return nil
 }
 
 // DeleteLabel delete a label

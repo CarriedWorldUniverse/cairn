@@ -30,13 +30,9 @@ func updateMilestoneCounters(ctx context.Context, issue *issues_model.Issue, id 
 		if issue.UpdatedUnix > updatedUnix {
 			updatedUnix = issue.UpdatedUnix
 		}
-		if err := stats.QueueRecalcMilestoneByIDWithDate(id, updatedUnix); err != nil {
-			return err
-		}
+		stats.QueueRecalcMilestoneByIDWithDate(ctx, id, updatedUnix)
 	} else {
-		if err := stats.QueueRecalcMilestoneByID(id); err != nil {
-			return err
-		}
+		stats.QueueRecalcMilestoneByID(ctx, id)
 	}
 	return nil
 }

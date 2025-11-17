@@ -4,20 +4,22 @@
 package stats
 
 import (
+	"context"
+
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 )
 
 // Queue a recalculation of the stats on a `Milestone` for a given milestone by its ID
-func QueueRecalcMilestoneByID(labelID int64) error {
-	return safePush(recalcRequest{
+func QueueRecalcMilestoneByID(ctx context.Context, labelID int64) {
+	safePush(ctx, recalcRequest{
 		RecalcType: MilestoneByMilestoneID,
 		ObjectID:   labelID,
 	})
 }
 
-func QueueRecalcMilestoneByIDWithDate(labelID int64, updateTimestamp timeutil.TimeStamp) error {
-	return safePush(recalcRequest{
+func QueueRecalcMilestoneByIDWithDate(ctx context.Context, labelID int64, updateTimestamp timeutil.TimeStamp) {
+	safePush(ctx, recalcRequest{
 		RecalcType:      MilestoneByMilestoneID,
 		ObjectID:        labelID,
 		UpdateTimestamp: optional.Some(updateTimestamp),

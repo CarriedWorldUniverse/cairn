@@ -9,11 +9,13 @@ import (
 	"sync"
 	"testing"
 
+	"forgejo.org/models/db"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"xorm.io/xorm"
 )
 
 func TestQueueAndFlush(t *testing.T) {
@@ -26,11 +28,10 @@ func TestQueueAndFlush(t *testing.T) {
 		return nil
 	})
 
-	err := safePush(recalcRequest{
+	safePush(t.Context(), recalcRequest{
 		RecalcType: -99,
 		ObjectID:   1,
 	})
-	require.NoError(t, err)
 
 	require.NoError(t, Flush(t.Context()))
 	func() {
@@ -56,11 +57,10 @@ func TestQueueUnique(t *testing.T) {
 	// happen.  So we'll test this by queuing a large number and ensuring that recalcs occured less -- usually much
 	// less, like once or twice.
 	for range 300 {
-		err := safePush(recalcRequest{
+		safePush(t.Context(), recalcRequest{
 			RecalcType: -100,
 			ObjectID:   1,
 		})
-		require.NoError(t, err)
 	}
 
 	require.NoError(t, Flush(t.Context()))
@@ -82,11 +82,10 @@ func TestQueueAndError(t *testing.T) {
 		return errors.New("don't like that value")
 	})
 
-	err := safePush(recalcRequest{
+	safePush(t.Context(), recalcRequest{
 		RecalcType: -101,
 		ObjectID:   1,
 	})
-	require.NoError(t, err)
 
 	for range 3 { // ensure object isn't requeued by flushing multiple times
 		require.NoError(t, Flush(t.Context()))
@@ -97,4 +96,39 @@ func TestQueueAndError(t *testing.T) {
 		assert.Len(t, callValues, 1)
 		assert.EqualValues(t, 1, callValues[0])
 	}()
+}
+
+func TestQueueAfterTx(t *testing.T) {
+	// This is a really micro version of unittest.PrepareTestDatabase -- as the unittest package references the stats
+	// package (for access to `Flush`), we can't use it without causing a circular dependency.  But we need a DB in
+	// order to create a Tx.
+	x, err := xorm.NewEngine("sqlite3", "file::memory:?cache=shared&_txlock=immediate")
+	require.NoError(t, err)
+	db.SetDefaultEngine(context.Background(), x)
+
+	var mu sync.Mutex
+	callValues := []int64{}
+	RegisterRecalc(-102, func(ctx context.Context, i int64, _ optional.Option[timeutil.TimeStamp]) error {
+		mu.Lock()
+		defer mu.Unlock()
+		callValues = append(callValues, i)
+		return nil
+	})
+
+	err = db.WithTx(t.Context(), func(ctx context.Context) error {
+		safePush(ctx, recalcRequest{
+			RecalcType: -102,
+			ObjectID:   1,
+		})
+
+		require.NoError(t, Flush(t.Context()))
+		// Value from safePush() won't be sent yet because it was from within a DB transaction.
+		assert.Empty(t, callValues)
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, Flush(t.Context()))
+	assert.Len(t, callValues, 1)
 }

@@ -57,7 +57,7 @@ func Test_halfCommitter(t *testing.T) {
 	*/
 
 	testWithCommitter := func(committer Committer, f func(committer Committer) error) {
-		if err := f(&halfCommitter{committer: committer}); err == nil {
+		if err := f(&halfCommitter{committer: committer, txCtx: &Context{}}); err == nil {
 			committer.Commit()
 		}
 		committer.Close()
