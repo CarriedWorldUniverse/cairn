@@ -81,11 +81,13 @@ func labelStatsCorrectNumIssuesRepo(ctx context.Context, id int64) error {
 }
 
 func labelStatsCorrectNumClosedIssues(ctx context.Context, id int64) error {
-	return stats.QueueRecalcLabelByID(id)
+	stats.QueueRecalcLabelByID(ctx, id)
+	return nil
 }
 
 func labelStatsCorrectNumClosedIssuesRepo(ctx context.Context, id int64) error {
-	return stats.QueueRecalcLabelByRepoID(id)
+	stats.QueueRecalcLabelByRepoID(ctx, id)
+	return nil
 }
 
 var milestoneStatsQueryNumIssues = "SELECT `milestone`.id FROM `milestone` WHERE `milestone`.num_closed_issues!=(SELECT COUNT(*) FROM `issue` WHERE `issue`.milestone_id=`milestone`.id AND `issue`.is_closed=?) OR `milestone`.num_issues!=(SELECT COUNT(*) FROM `issue` WHERE `issue`.milestone_id=`milestone`.id)"
@@ -98,9 +100,7 @@ func milestoneStatsCorrectNumIssuesRepo(ctx context.Context, id int64) error {
 	}
 	for _, result := range results {
 		id, _ := strconv.ParseInt(string(result["id"]), 10, 64)
-		if err := stats.QueueRecalcMilestoneByID(id); err != nil {
-			return err
-		}
+		stats.QueueRecalcMilestoneByID(ctx, id)
 	}
 	return nil
 }
@@ -171,7 +171,8 @@ func CheckRepoStats(ctx context.Context) error {
 		{
 			statsQuery(milestoneStatsQueryNumIssues, true),
 			func(ctx context.Context, milestoneID int64) error {
-				return stats.QueueRecalcMilestoneByID(milestoneID)
+				stats.QueueRecalcMilestoneByID(ctx, milestoneID)
+				return nil
 			},
 			"milestone count 'num_closed_issues' and 'num_issues'",
 		},

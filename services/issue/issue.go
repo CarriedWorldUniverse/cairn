@@ -304,10 +304,7 @@ func deleteIssue(ctx context.Context, issue *issues_model.Issue) error {
 		}
 	}
 
-	if err := stats.QueueRecalcMilestoneByID(issue.MilestoneID); err != nil {
-		return fmt.Errorf("error updating counters for milestone id %d: %w",
-			issue.MilestoneID, err)
-	}
+	stats.QueueRecalcMilestoneByID(ctx, issue.MilestoneID)
 
 	if err := activities_model.DeleteIssueActions(ctx, issue.RepoID, issue.ID, issue.Index); err != nil {
 		return err

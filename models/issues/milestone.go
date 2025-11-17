@@ -194,7 +194,8 @@ func updateMilestone(ctx context.Context, m *Milestone) error {
 	if err != nil {
 		return err
 	}
-	return stats.QueueRecalcMilestoneByID(m.ID)
+	stats.QueueRecalcMilestoneByID(ctx, m.ID)
+	return nil
 }
 
 // ChangeMilestoneStatusByRepoIDAndID changes a milestone open/closed status if the milestone ID is in the repo.

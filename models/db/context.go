@@ -29,8 +29,9 @@ var (
 // Context represents a db context
 type Context struct {
 	context.Context
-	e           Engine
-	transaction bool
+	e                Engine
+	transaction      bool
+	afterCommitHooks []func()
 }
 
 func newContext(ctx context.Context, e Engine, transaction bool) *Context {
@@ -99,11 +100,19 @@ type Committer interface {
 // It can be closed early, but can't be committed early, it is useful for reusing a transaction.
 type halfCommitter struct {
 	committer Committer
+	parentCtx context.Context
+	txCtx     *Context
 	committed bool
 }
 
 func (c *halfCommitter) Commit() error {
 	c.committed = true
+
+	// Pass hooks installed into txCtx up to parentCtx
+	for _, hook := range c.txCtx.afterCommitHooks {
+		AfterTx(c.parentCtx, hook)
+	}
+
 	// should do nothing, and the parent committer will commit later
 	return nil
 }
@@ -116,6 +125,27 @@ func (c *halfCommitter) Close() error {
 
 	// it's "rollback and close", let the parent committer rollback right now
 	return c.committer.Close()
+}
+
+// Wraps an xorm.Session with execution of AfterTx hooks
+type hookCommitter struct {
+	sess  *xorm.Session
+	txCtx *Context
+}
+
+func (c *hookCommitter) Commit() error {
+	err := c.sess.Commit()
+	if err != nil {
+		return err
+	}
+	for _, hook := range c.txCtx.afterCommitHooks {
+		hook()
+	}
+	return nil
+}
+
+func (c *hookCommitter) Close() error {
+	return c.sess.Close()
 }
 
 // TxContext represents a transaction Context,
@@ -132,7 +162,8 @@ func (c *halfCommitter) Close() error {
 //	  d. It doesn't mean rollback is forbidden, but always do it only when there is an error, and you do want to rollback.
 func TxContext(parentCtx context.Context) (*Context, Committer, error) {
 	if sess, ok := inTransaction(parentCtx); ok {
-		return newContext(parentCtx, sess, true), &halfCommitter{committer: sess}, nil
+		txCtx := newContext(parentCtx, sess, true)
+		return txCtx, &halfCommitter{committer: sess, parentCtx: parentCtx, txCtx: txCtx}, nil
 	}
 
 	sess := x.NewSession()
@@ -141,17 +172,23 @@ func TxContext(parentCtx context.Context) (*Context, Committer, error) {
 		return nil, nil, err
 	}
 
-	return newContext(parentCtx, sess, true), sess, nil
+	txCtx := newContext(parentCtx, sess, true)
+	return txCtx, &hookCommitter{sess, txCtx}, nil
 }
 
 // WithTx represents executing database operations on a transaction, if the transaction exist,
 // this function will reuse it otherwise will create a new one and close it when finished.
 func WithTx(parentCtx context.Context, f func(ctx context.Context) error) error {
 	if sess, ok := inTransaction(parentCtx); ok {
-		err := f(newContext(parentCtx, sess, true))
+		txCtx := newContext(parentCtx, sess, true)
+		err := f(txCtx)
 		if err != nil {
 			// rollback immediately, in case the caller ignores returned error and tries to commit the transaction.
 			_ = sess.Close()
+		}
+		// Pass hooks installed into txCtx up to parentCtx
+		for _, hook := range txCtx.afterCommitHooks {
+			AfterTx(parentCtx, hook)
 		}
 		return err
 	}
@@ -165,11 +202,33 @@ func txWithNoCheck(parentCtx context.Context, f func(ctx context.Context) error)
 		return err
 	}
 
-	if err := f(newContext(parentCtx, sess, true)); err != nil {
+	txCtx := newContext(parentCtx, sess, true)
+	if err := f(txCtx); err != nil {
 		return err
 	}
 
-	return sess.Commit()
+	if err := sess.Commit(); err != nil {
+		return err
+	}
+
+	for _, hook := range txCtx.afterCommitHooks {
+		hook()
+	}
+
+	return nil
+}
+
+// AfterTx registers a function to be called after the current transaction commits. If not in a transaction, the
+// function is called immediately. The hook will only be called if the transaction commits successfully; if the
+// transaction rolls back, the hook is discarded.
+func AfterTx(ctx context.Context, hook func()) {
+	dbCtx, ok := ctx.(*Context)
+	if !ok || !dbCtx.transaction {
+		// Not in a db transaction context, run immediately
+		hook()
+		return
+	}
+	dbCtx.afterCommitHooks = append(dbCtx.afterCommitHooks, hook)
 }
 
 // Insert inserts records into database

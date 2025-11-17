@@ -41,6 +41,7 @@ import (
 	"errors"
 	"time"
 
+	"forgejo.org/models/db"
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
@@ -109,12 +110,13 @@ func handler(items ...string) []string {
 	return nil
 }
 
-func safePush(recalc recalcRequest) error {
-	err := statsQueue.Push(recalc.string())
-	if err != nil && !errors.Is(err, queue.ErrAlreadyInQueue) {
-		return err
-	}
-	return nil
+func safePush(ctx context.Context, recalc recalcRequest) {
+	db.AfterTx(ctx, func() {
+		err := statsQueue.Push(recalc.string())
+		if err != nil && !errors.Is(err, queue.ErrAlreadyInQueue) {
+			log.Error("error during stat queue push: %v", err)
+		}
+	})
 }
 
 // Only use for testing; do not use in production code

@@ -57,7 +57,9 @@ func newIssueLabel(ctx context.Context, issue *Issue, label *Label, doer *user_m
 
 	issue.Labels = append(issue.Labels, label)
 
-	return stats.QueueRecalcLabelByID(label.ID)
+	stats.QueueRecalcLabelByID(ctx, label.ID)
+
+	return nil
 }
 
 // Remove all issue labels in the given exclusive scope
@@ -192,7 +194,9 @@ func deleteIssueLabel(ctx context.Context, issue *Issue, label *Label, doer *use
 		return err
 	}
 
-	return stats.QueueRecalcLabelByID(label.ID)
+	stats.QueueRecalcLabelByID(ctx, label.ID)
+
+	return nil
 }
 
 // DeleteIssueLabel deletes issue-label relation.

@@ -996,6 +996,8 @@ func UpdateRepoIssueNumbers(ctx context.Context, repoID int64, isPull, isClosed 
 			cacheKeyBase = countIssues
 		}
 	}
-	cache.Remove(repoCacheKey(cacheKeyBase, repoID))
+	db.AfterTx(ctx, func() {
+		cache.Remove(repoCacheKey(cacheKeyBase, repoID))
+	})
 	return nil
 }
