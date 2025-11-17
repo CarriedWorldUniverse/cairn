@@ -37,10 +37,6 @@ func (*NullNotifier) NewIssue(ctx context.Context, issue *issues_model.Issue, me
 func (*NullNotifier) IssueChangeStatus(ctx context.Context, doer *user_model.User, commitID string, issue *issues_model.Issue, actionComment *issues_model.Comment, isClosed bool) {
 }
 
-// DeleteIssue notify when some issue deleted
-func (*NullNotifier) DeleteIssue(ctx context.Context, doer *user_model.User, issue *issues_model.Issue) {
-}
-
 // NewPullRequest places a place holder function
 func (*NullNotifier) NewPullRequest(ctx context.Context, pr *issues_model.PullRequest, mentions []*user_model.User) {
 }
