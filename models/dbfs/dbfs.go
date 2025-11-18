@@ -42,7 +42,7 @@ The DBFS solution:
   The seeking and finding is not the fastest way, but it's still acceptable and won't affect the performance too much.
 */
 
-type dbfsMeta struct {
+type DbfsMeta struct { //revive:disable-line:exported
 	ID              int64  `xorm:"pk autoincr"`
 	FullPath        string `xorm:"VARCHAR(500) UNIQUE NOT NULL"`
 	BlockSize       int64  `xorm:"BIGINT NOT NULL"`
@@ -51,7 +51,7 @@ type dbfsMeta struct {
 	ModifyTimestamp int64  `xorm:"BIGINT NOT NULL"`
 }
 
-type dbfsData struct {
+type DbfsData struct { //revive:disable-line:exported
 	ID         int64  `xorm:"pk autoincr"`
 	Revision   int64  `xorm:"BIGINT NOT NULL"`
 	MetaID     int64  `xorm:"BIGINT index(meta_offset) NOT NULL"`
@@ -61,8 +61,8 @@ type dbfsData struct {
 }
 
 func init() {
-	db.RegisterModel(new(dbfsMeta))
-	db.RegisterModel(new(dbfsData))
+	db.RegisterModel(new(DbfsMeta))
+	db.RegisterModel(new(DbfsData))
 }
 
 func OpenFile(ctx context.Context, name string, flag int) (File, error) {
@@ -104,28 +104,28 @@ func Remove(ctx context.Context, name string) error {
 	return f.delete()
 }
 
-var _ fs.FileInfo = (*dbfsMeta)(nil)
+var _ fs.FileInfo = (*DbfsMeta)(nil)
 
-func (m *dbfsMeta) Name() string {
+func (m *DbfsMeta) Name() string {
 	return path.Base(m.FullPath)
 }
 
-func (m *dbfsMeta) Size() int64 {
+func (m *DbfsMeta) Size() int64 {
 	return m.FileSize
 }
 
-func (m *dbfsMeta) Mode() fs.FileMode {
+func (m *DbfsMeta) Mode() fs.FileMode {
 	return os.ModePerm
 }
 
-func (m *dbfsMeta) ModTime() time.Time {
+func (m *DbfsMeta) ModTime() time.Time {
 	return fileTimestampToTime(m.ModifyTimestamp)
 }
 
-func (m *dbfsMeta) IsDir() bool {
+func (m *DbfsMeta) IsDir() bool {
 	return false
 }
 
-func (m *dbfsMeta) Sys() any {
+func (m *DbfsMeta) Sys() any {
 	return nil
 }
