@@ -145,37 +145,49 @@ func (at ActionType) InActions(actions ...string) bool {
 // used in template render.
 type Action struct {
 	ID          int64 `xorm:"pk autoincr"`
-	UserID      int64 `xorm:"INDEX"` // Receiver user id.
+	UserID      int64 // Receiver user id.
 	OpType      ActionType
 	ActUserID   int64            // Action user id.
 	ActUser     *user_model.User `xorm:"-"`
 	RepoID      int64
 	Repo        *repo_model.Repository `xorm:"-"`
-	CommentID   int64                  `xorm:"INDEX"`
+	CommentID   int64                  `xorm:"INDEX"` // indexed to support `DeleteIssueActions`
 	Comment     *issues_model.Comment  `xorm:"-"`
 	Issue       *issues_model.Issue    `xorm:"-"` // get the issue id from content
 	RefName     string
 	IsPrivate   bool               `xorm:"NOT NULL DEFAULT false"`
 	Content     string             `xorm:"TEXT"`
-	CreatedUnix timeutil.TimeStamp `xorm:"created"`
+	CreatedUnix timeutil.TimeStamp `xorm:"created INDEX"` // indexed to support `DeleteOldActions`
 }
 
 func init() {
 	db.RegisterModel(new(Action))
 }
 
-// TableIndices implements xorm's TableIndices interface
+// TableIndices implements xorm's TableIndices interface.  It is used here to ensure indexes with specified column order
+// are created, which can't be created through xorm tags on the struct.
 func (a *Action) TableIndices() []*schemas.Index {
-	repoIndex := schemas.NewIndex("r_u", schemas.IndexType)
-	repoIndex.AddColumn("repo_id", "user_id")
-
+	// Index to support getUserHeatmapData, which searches for data that is visible-to (user_id) and performed-by
+	// (act_user_id) a user, but only includes visible repos (repo_id).
 	actUserIndex := schemas.NewIndex("au_r_c_u", schemas.IndexType)
 	actUserIndex.AddColumn("act_user_id", "repo_id", "created_unix", "user_id")
 
-	cudIndex := schemas.NewIndex("c_u", schemas.IndexType)
-	cudIndex.AddColumn("created_unix", "user_id")
+	// GetFeeds is a common access point to Action and requires that all action feeds be queried based upon one of
+	// user_id (opts.RequestedUser), repo_id (opts.RequestedTeam... kinda), and/or repo_id (opts.RequestedRepo), and
+	// then the results are ordered by created_unix and paginated.  The most efficient indexes to support those queries
+	// are:
+	requestedUser := schemas.NewIndex("user_id_created_unix", schemas.IndexType)
+	requestedUser.AddColumn("user_id", "created_unix")
+	requestedRepo := schemas.NewIndex("repo_id_created_unix", schemas.IndexType)
+	requestedRepo.AddColumn("repo_id", "created_unix")
 
-	indices := []*schemas.Index{actUserIndex, repoIndex, cudIndex}
+	// To support `DeleteIssueActions` search for createissue / createpullrequest actions; this isn't a great search
+	// because `DeleteIssueActions` searches by `content` as well, but it should be sufficient performance-wise for
+	// infrequent deleting of issues.
+	repoOpType := schemas.NewIndex("repo_id_op_type", schemas.IndexType)
+	repoOpType.AddColumn("repo_id", "op_type")
+
+	indices := []*schemas.Index{actUserIndex, requestedUser, requestedRepo, repoOpType}
 
 	return indices
 }
