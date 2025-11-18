@@ -45,3 +45,9 @@ services/migrations/lint-locale-usage/.* @fogti
 
 # Personal interest
 .*/webhook.* @oliverpool
+
+# Often work with, and on, the API
+modules/structs/.* @Cyborus
+routers/api/v1/.* @Cyborus
+routers/api/forgejo/.* @Cyborus
+tests/integration/api_.* @Cyborus
