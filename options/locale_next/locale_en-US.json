@@ -152,6 +152,7 @@
     "admin.dashboard.cleanup_offline_runners": "Cleanup offline runners",
     "admin.dashboard.remove_resolved_reports": "Remove resolved reports",
     "admin.dashboard.actions_action_user": "Revoke Forgejo Actions trust for inactive users",
+    "admin.dashboard.transfer_lingering_logs": "Transfer actions logs of finished actions jobs from the database to storage",
     "admin.config.security": "Security configuration",
     "admin.config.global_2fa_requirement.title": "Global two-factor requirement",
     "admin.config.global_2fa_requirement.none": "No",

@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/container"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 
 	"xorm.io/builder"
@@ -54,6 +55,8 @@ type FindTaskOptions struct {
 	UpdatedBefore timeutil.TimeStamp
 	StartedBefore timeutil.TimeStamp
 	RunnerID      int64
+	LogExpired    optional.Option[bool]
+	LogInStorage  optional.Option[bool]
 }
 
 func (opts FindTaskOptions) ToConds() builder.Cond {
@@ -78,6 +81,12 @@ func (opts FindTaskOptions) ToConds() builder.Cond {
 	}
 	if opts.RunnerID > 0 {
 		cond = cond.And(builder.Eq{"runner_id": opts.RunnerID})
+	}
+	if opts.LogExpired.Has() {
+		cond = cond.And(builder.Eq{"log_expired": opts.LogExpired.Value()})
+	}
+	if opts.LogInStorage.Has() {
+		cond = cond.And(builder.Eq{"log_in_storage": opts.LogInStorage.Value()})
 	}
 	return cond
 }
