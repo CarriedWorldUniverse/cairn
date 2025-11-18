@@ -96,9 +96,15 @@ func init() {
 	}
 }
 
+type xormEngineInterface interface {
+	xorm.EngineInterface
+	SetDefaultContext(context.Context)
+	SetConnMaxIdleTime(time.Duration)
+}
+
 // newXORMEngineGroup creates an xorm.EngineGroup (with one master and one or more slaves).
 // It assumes you have separate master and slave DSNs defined via the settings package.
-func newXORMEngineGroup() (Engine, error) {
+func newXORMEngineGroup() (xormEngineInterface, error) {
 	// Retrieve master DSN from settings.
 	masterConnStr, err := setting.DBMasterConnStr()
 	if err != nil {
@@ -125,6 +131,9 @@ func newXORMEngineGroup() (Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load slave DSNs: %w", err)
 	}
+	if len(slaveConnStrs) == 0 {
+		return masterEngine, nil
+	}
 
 	var slaveEngines []*xorm.Engine
 	// Iterate over all slave DSNs and create engines
@@ -147,16 +156,7 @@ func newXORMEngineGroup() (Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create engine group: %w", err)
 	}
-	return engineGroupWrapper{group}, nil
-}
-
-type engineGroupWrapper struct {
-	*xorm.EngineGroup
-}
-
-func (w engineGroupWrapper) AddHook(hook contexts.Hook) bool {
-	w.EngineGroup.AddHook(hook)
-	return true
+	return group, nil
 }
 
 // SyncAllTables sync the schemas of all tables
@@ -169,46 +169,40 @@ func SyncAllTables() error {
 
 // InitEngine initializes the xorm EngineGroup and sets it as db.DefaultContext
 func InitEngine(ctx context.Context) error {
-	xormEngine, err := newXORMEngineGroup()
+	eng, err := newXORMEngineGroup()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
-	// Try to cast to the concrete type to access diagnostic methods
-	if eng, ok := xormEngine.(engineGroupWrapper); ok {
-		eng.SetMapper(names.GonicMapper{})
-		// WARNING: for serv command, MUST remove the output to os.Stdout,
-		// so use a log file instead of printing to stdout.
-		eng.SetLogger(NewXORMLogger(setting.Database.LogSQL))
-		eng.ShowSQL(setting.Database.LogSQL)
-		eng.SetMaxOpenConns(setting.Database.MaxOpenConns)
-		eng.SetMaxIdleConns(setting.Database.MaxIdleConns)
-		eng.SetConnMaxLifetime(setting.Database.ConnMaxLifetime)
-		eng.SetConnMaxIdleTime(setting.Database.ConnMaxIdleTime)
-		eng.SetDefaultContext(ctx)
+	eng.SetMapper(names.GonicMapper{})
+	// WARNING: for serv command, MUST remove the output to os.Stdout,
+	// so use a log file instead of printing to stdout.
+	eng.SetLogger(NewXORMLogger(setting.Database.LogSQL))
+	eng.ShowSQL(setting.Database.LogSQL)
+	eng.SetMaxOpenConns(setting.Database.MaxOpenConns)
+	eng.SetMaxIdleConns(setting.Database.MaxIdleConns)
+	eng.SetConnMaxLifetime(setting.Database.ConnMaxLifetime)
+	eng.SetConnMaxIdleTime(setting.Database.ConnMaxIdleTime)
+	eng.SetDefaultContext(ctx)
 
-		if setting.Database.SlowQueryThreshold > 0 {
-			eng.AddHook(&SlowQueryHook{
-				Threshold: setting.Database.SlowQueryThreshold,
-				Logger:    log.GetLogger("xorm"),
-			})
-		}
-
-		errorLogger := log.GetLogger("xorm")
-		if setting.IsInTesting {
-			errorLogger = log.GetLogger(log.DEFAULT)
-		}
-
-		eng.AddHook(&ErrorQueryHook{
-			Logger: errorLogger,
+	if setting.Database.SlowQueryThreshold > 0 {
+		eng.AddHook(&SlowQueryHook{
+			Threshold: setting.Database.SlowQueryThreshold,
+			Logger:    log.GetLogger("xorm"),
 		})
-
-		eng.AddHook(&TracingHook{})
-
-		SetDefaultEngine(ctx, eng)
-	} else {
-		// Fallback: if type assertion fails, set default engine without extended diagnostics
-		SetDefaultEngine(ctx, xormEngine)
 	}
+
+	errorLogger := log.GetLogger("xorm")
+	if setting.IsInTesting {
+		errorLogger = log.GetLogger(log.DEFAULT)
+	}
+
+	eng.AddHook(&ErrorQueryHook{
+		Logger: errorLogger,
+	})
+
+	eng.AddHook(&TracingHook{})
+
+	SetDefaultEngine(ctx, eng)
 	return nil
 }
 
@@ -363,8 +357,7 @@ func SetLogSQL(ctx context.Context, on bool) {
 
 	if sess, ok := ctxEngine.(*xorm.Session); ok {
 		sess.Engine().ShowSQL(on)
-	} else if wrapper, ok := ctxEngine.(engineGroupWrapper); ok {
-		// Handle engineGroupWrapper directly
+	} else if wrapper, ok := ctxEngine.(xormEngineInterface); ok {
 		wrapper.ShowSQL(on)
 	} else if masterEngine, err := GetMasterEngine(ctxEngine); err == nil {
 		masterEngine.ShowSQL(on)
