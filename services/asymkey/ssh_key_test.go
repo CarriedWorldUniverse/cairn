@@ -11,6 +11,8 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,6 +20,7 @@ import (
 
 func TestAddLdapSSHPublicKeys(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
+	defer test.MockVariableValue(&setting.SSH.RootPath, t.TempDir())()
 
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	s := &auth.Source{ID: 1}
