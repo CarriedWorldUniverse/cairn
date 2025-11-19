@@ -452,10 +452,17 @@ func hookPrintResults(results []private.HookPostReceiveBranchResult) {
 		fmt.Fprintln(os.Stderr, "")
 		if res.Create {
 			fmt.Fprintf(os.Stderr, "Create a new pull request for '%s':\n", res.Branch)
-			fmt.Fprintf(os.Stderr, "  %s\n", res.URL)
-		} else {
-			fmt.Fprint(os.Stderr, "Visit the existing pull request:\n")
-			fmt.Fprintf(os.Stderr, "  %s\n", res.URL)
+			fmt.Fprintf(os.Stderr, "  %s\n", res.CreateURL)
+		}
+		if len(res.PullURLS) != 0 {
+			if len(res.PullURLS) >= 2 {
+				fmt.Fprint(os.Stderr, "Visit the existing pull requests:\n")
+			} else {
+				fmt.Fprint(os.Stderr, "Visit the existing pull request:\n")
+			}
+			for _, url := range res.PullURLS {
+				fmt.Fprintf(os.Stderr, "  %s\n", url)
+			}
 		}
 		fmt.Fprintln(os.Stderr, "")
 		_ = os.Stderr.Sync()

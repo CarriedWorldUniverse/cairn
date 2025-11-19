@@ -172,6 +172,11 @@ func TestGetUnmergedPullRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), pr.ID)
 
+	prList, err := issues_model.GetUnmergedPullRequestsAnyTarget(db.DefaultContext, 1, 1, "branch2", issues_model.PullRequestFlowGithub)
+	require.NoError(t, err)
+	assert.Len(t, prList, 1)
+	assert.Equal(t, int64(2), prList[0].ID)
+
 	_, err = issues_model.GetUnmergedPullRequest(db.DefaultContext, 1, 9223372036854775807, "branch1", "master", issues_model.PullRequestFlowGithub)
 	require.Error(t, err)
 	assert.True(t, issues_model.IsErrPullRequestNotExist(err))
