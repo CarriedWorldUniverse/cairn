@@ -60,10 +60,11 @@ type HookPostReceiveResult struct {
 
 // HookPostReceiveBranchResult represents an individual branch result from PostReceive
 type HookPostReceiveBranchResult struct {
-	Message bool
-	Create  bool
-	Branch  string
-	URL     string
+	Message   bool
+	Create    bool
+	Branch    string
+	CreateURL string
+	PullURLS  []string
 }
 
 // HookProcReceiveResult represents an individual result from ProcReceive

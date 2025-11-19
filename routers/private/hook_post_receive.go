@@ -231,10 +231,11 @@ func HookPostReceive(ctx *app_context.PrivateContext) {
 			}
 
 			results = append(results, private.HookPostReceiveBranchResult{
-				Message: setting.Git.PullRequestPushMessage && repo.AllowsPulls(ctx),
-				Create:  false,
-				Branch:  "",
-				URL:     fmt.Sprintf("%s/pulls/%d", repo.HTMLURL(), pr.Index),
+				Message:   setting.Git.PullRequestPushMessage && repo.AllowsPulls(ctx),
+				Create:    false,
+				Branch:    "",
+				CreateURL: "",
+				PullURLS:  []string{fmt.Sprintf("%s/pulls/%d", repo.HTMLURL(), pr.Index)},
 			})
 			continue
 		}
@@ -281,35 +282,57 @@ func HookPostReceive(ctx *app_context.PrivateContext) {
 				continue
 			}
 
-			pr, err := issues_model.GetUnmergedPullRequest(ctx, repo.ID, baseRepo.ID, branch, baseRepo.DefaultBranch, issues_model.PullRequestFlowGithub)
-			if err != nil && !issues_model.IsErrPullRequestNotExist(err) {
-				log.Error("Failed to get active PR in: %-v Branch: %s to: %-v Branch: %s Error: %v", repo, branch, baseRepo, baseRepo.DefaultBranch, err)
+			// Check if there is an existing pull request for this branch.
+			prList, err := issues_model.GetUnmergedPullRequestsAnyTarget(ctx, repo.ID, baseRepo.ID, branch, issues_model.PullRequestFlowGithub)
+			if err != nil {
+				log.Error("Failed to get active PR in: %-v Branch: %s to: %-v Error: %v", repo, branch, baseRepo, err)
 				ctx.JSON(http.StatusInternalServerError, private.HookPostReceiveResult{
 					Err: fmt.Sprintf(
-						"Failed to get active PR in: %-v Branch: %s to: %-v Branch: %s Error: %v", repo, branch, baseRepo, baseRepo.DefaultBranch, err),
+						"Failed to get active PR in: %-v Branch: %s to: %-v Error: %v", repo, branch, baseRepo, err),
+					RepoWasEmpty: wasEmpty,
+				})
+				return
+			}
+			err = prList.LoadRepositories(ctx)
+			if err != nil {
+				log.Error("Failed to load repositories for PullRequestList: %s", err)
+				ctx.JSON(http.StatusInternalServerError, private.HookPostReceiveResult{
+					Err:          fmt.Sprintf("Failed to load repositories for PullRequestList: %s", err),
 					RepoWasEmpty: wasEmpty,
 				})
 				return
 			}
 
-			if pr == nil {
-				if repo.IsFork {
-					branch = fmt.Sprintf("%s:%s", repo.OwnerName, branch)
-				}
-				results = append(results, private.HookPostReceiveBranchResult{
-					Message: setting.Git.PullRequestPushMessage && baseRepo.AllowsPulls(ctx),
-					Create:  true,
-					Branch:  branch,
-					URL:     fmt.Sprintf("%s/compare/%s...%s", baseRepo.HTMLURL(), util.PathEscapeSegments(baseRepo.DefaultBranch), util.PathEscapeSegments(branch)),
-				})
-			} else {
-				results = append(results, private.HookPostReceiveBranchResult{
-					Message: setting.Git.PullRequestPushMessage && baseRepo.AllowsPulls(ctx),
-					Create:  false,
-					Branch:  branch,
-					URL:     fmt.Sprintf("%s/pulls/%d", baseRepo.HTMLURL(), pr.Index),
-				})
+			if repo.IsFork {
+				branch = fmt.Sprintf("%s:%s", repo.OwnerName, branch)
 			}
+			createURL := fmt.Sprintf("%s/compare/%s...%s", baseRepo.HTMLURL(), util.PathEscapeSegments(baseRepo.DefaultBranch), util.PathEscapeSegments(branch))
+			var urls []string
+			foundDefaultBranch := false
+			for _, pr := range prList {
+				var baseBranchDisplay string
+				if pr.HeadRepoID == pr.BaseRepoID {
+					// Inside the same repository: just show base branch name
+					baseBranchDisplay = pr.BaseBranch
+				} else {
+					// We are merging this into another repo: display user/repo:branch
+					baseBranchDisplay = fmt.Sprintf("%s:%s", pr.BaseRepo.FullName(), pr.BaseBranch)
+				}
+				urls = append(urls, fmt.Sprintf("%s/pulls/%d merges into %s", baseRepo.HTMLURL(), pr.Index, baseBranchDisplay))
+				if pr.BaseBranch == baseRepo.DefaultBranch {
+					foundDefaultBranch = true
+				}
+			}
+			if foundDefaultBranch {
+				createURL = ""
+			}
+			results = append(results, private.HookPostReceiveBranchResult{
+				Message:   setting.Git.PullRequestPushMessage && baseRepo.AllowsPulls(ctx),
+				Create:    !foundDefaultBranch,
+				Branch:    branch,
+				CreateURL: createURL,
+				PullURLS:  urls,
+			})
 		}
 	}
 	ctx.JSON(http.StatusOK, private.HookPostReceiveResult{

@@ -116,6 +116,8 @@ func testGit(t *testing.T, u *url.URL) {
 			rawTest(t, &httpContext, little, big, littleLFS, bigLFS)
 			mediaTest(t, &httpContext, little, big, littleLFS, bigLFS)
 
+			t.Run("PushRemoteMessages", doTestPushMessages(httpContext, u, objectFormat))
+			t.Run("PushForkRemoteMessages", doTestForkPushMessages(httpContext, dstPath))
 			t.Run("CreateAgitFlowPull", doCreateAgitFlowPull(dstPath, &httpContext, "test/head"))
 			t.Run("InternalReferences", doInternalReferences(&httpContext, dstPath))
 			t.Run("BranchProtect", doBranchProtect(&httpContext, dstPath))
@@ -163,6 +165,8 @@ func testGit(t *testing.T, u *url.URL) {
 				rawTest(t, &sshContext, little, big, littleLFS, bigLFS)
 				mediaTest(t, &sshContext, little, big, littleLFS, bigLFS)
 
+				t.Run("PushRemoteMessages", doTestPushMessages(sshContext, u, objectFormat))
+				t.Run("PushForkRemoteMessages", doTestForkPushMessages(sshContext, dstPath))
 				t.Run("CreateAgitFlowPull", doCreateAgitFlowPull(dstPath, &sshContext, "test/head2"))
 				t.Run("InternalReferences", doInternalReferences(&sshContext, dstPath))
 				t.Run("BranchProtect", doBranchProtect(&sshContext, dstPath))
@@ -1154,5 +1158,110 @@ func doLFSNoAccess(ctx APITestContext, publicKeyID int64, objectFormat git.Objec
 		} else {
 			assert.Contains(t, stderr.String(), fmt.Sprintf("Forgejo: User: 2:user2 with Key: %d:test-key-sha256 is not authorized to write to user40/repo60.", publicKeyID))
 		}
+	}
+}
+
+func extractRemoteMessages(stderr string) string {
+	var remoteMsg string
+	for line := range strings.SplitSeq(stderr, "\n") {
+		msg, found := strings.CutPrefix(line, "remote: ")
+		if found {
+			remoteMsg += msg
+			remoteMsg += "\n"
+		}
+	}
+	return remoteMsg
+}
+
+func doTestForkPushMessages(apictx APITestContext, dstPath string) func(*testing.T) {
+	return func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		doGitCheckoutBranch(dstPath, "-b", "test_msg")(t)
+
+		// Commit/Push on test_msg branch
+		generateCommitWithNewData(t, littleSize, dstPath, "user2@example.com", "User Two", "testmsg-file")
+		_, stderr, err := git.NewCommand(git.DefaultContext, "push", "-u", "origin", "test_msg").RunStdString(&git.RunOpts{Dir: dstPath}) // Push
+		require.NoError(t, err)
+
+		messages := extractRemoteMessages(stderr)
+		// Remote server should suggest the creation of a pull request to the default branch "master"
+		require.Contains(t, messages, "Create a new pull request for 'user2:test_msg':")
+		// But shouldn't show "Visit existing pull requests..."
+		require.NotContains(t, messages, "Visit")
+		// Shouldn't contain links to pull requests
+		require.NotContains(t, messages, "/pulls")
+		require.NotContains(t, messages, "merges into")
+
+		// Create PR to default branch and push new commit
+		pr, giterr := doAPICreatePullRequest(apictx, "user2", apictx.Reponame, "master", "test_msg")(t)
+		require.NoError(t, giterr)
+		generateCommitWithNewData(t, littleSize, dstPath, "user2@example.com", "User Two", "testmsg-file")
+		_, stderr, err = git.NewCommand(git.DefaultContext, "push").RunStdString(&git.RunOpts{Dir: dstPath})
+		require.NoError(t, err)
+		messages = extractRemoteMessages(stderr)
+		// However, a pull request to the base repo doesn't exist
+		// Because we are a fork, only PRs to the base repo are displayed
+		require.Contains(t, messages, "Create a new pull request for 'user2:test_msg':")
+		require.Contains(t, messages, apictx.Reponame+"/compare/master...user2")
+		require.NotContains(t, messages, "merges into")
+		require.NotContains(t, messages, pr.HTMLURL)
+
+		// Finally merge the pull request and pull back changes to avoid polluting next tests
+		baseRepo := pr.Base.Repository
+		doAPIMergePullRequest(apictx, baseRepo.Owner.UserName, baseRepo.Name, pr.Index)(t)
+		doGitCheckoutBranch(dstPath, "master")(t)
+		doGitPull(dstPath)(t)
+	}
+}
+
+func doTestPushMessages(ctx APITestContext, u *url.URL, objectFormat git.ObjectFormat) func(*testing.T) {
+	return func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		ctx.Reponame = fmt.Sprintf("repo-test-pushmsg-%s", objectFormat.Name())
+		dstPath := t.TempDir()
+
+		// Create/Clone new repo
+		doAPICreateRepository(ctx, nil, objectFormat)(t)
+		u.Path = ctx.GitPath()
+		doGitClone(dstPath, u)(t)
+
+		// Push to master
+		generateCommitWithNewData(t, littleSize, dstPath, "user2@example.com", "User Two", "testmsg-file")
+		_, stderr, err := git.NewCommand(git.DefaultContext, "push", "-u", "origin", "master").RunStdString(&git.RunOpts{Dir: dstPath}) // Push
+		require.NoError(t, err)
+		messages := extractRemoteMessages(stderr)
+		// Remote server shouldn't suggest the creation of a pull request: we pushed to the default branch
+		require.NotContains(t, messages, "Create a new pull request for 'user2:testmsg':")
+		// ...and shouldn't give links to pull request: there is no PR yet
+		require.NotContains(t, messages, "Visit the existing")
+		// Shouldn't contain links to pull requests
+		require.NotContains(t, messages, "/pulls")
+		require.NotContains(t, messages, "merges into")
+
+		// Create a branch and push to it
+		doGitCheckoutBranch(dstPath, "-b", "test_msg")(t)
+		generateCommitWithNewData(t, littleSize, dstPath, "user2@example.com", "User Two", "testmsg-file")
+		_, stderr, err = git.NewCommand(git.DefaultContext, "push", "-u", "origin", "test_msg").RunStdString(&git.RunOpts{Dir: dstPath})
+		require.NoError(t, err)
+		messages = extractRemoteMessages(stderr)
+		// We pushed to a new branch and there is no PR yet: a link to create one should be given
+		require.Contains(t, messages, ctx.Reponame+"/compare/master...test_msg")
+		require.NotContains(t, messages, "/pulls")
+		require.NotContains(t, messages, "merges into")
+
+		// Create PR to default branch and push new commit
+		pr, giterr := doAPICreatePullRequest(ctx, "user2", ctx.Reponame, "master", "test_msg")(t)
+		require.NoError(t, giterr)
+		generateCommitWithNewData(t, littleSize, dstPath, "user2@example.com", "User Two", "testmsg-file")
+		_, stderr, err = git.NewCommand(git.DefaultContext, "push", "origin", "test_msg").RunStdString(&git.RunOpts{Dir: dstPath})
+		require.NoError(t, err)
+		messages = extractRemoteMessages(stderr)
+		// A pull request to the base branch already exist
+		require.NotContains(t, messages, "Create a new pull request")
+		require.Contains(t, messages, "Visit the existing pull request:")
+		require.Contains(t, messages, pr.HTMLURL+" merges into master")
+
+		// Delete this test repository
+		doAPIDeleteRepository(ctx)(t)
 	}
 }
