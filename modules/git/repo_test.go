@@ -65,7 +65,6 @@ func TestRepoGetDivergingCommits(t *testing.T) {
 
 func TestCloneCredentials(t *testing.T) {
 	calledWithoutPassword := false
-	askpassFile := ""
 	credentialsFile := ""
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -87,8 +86,7 @@ func TestCloneCredentials(t *testing.T) {
 		user, password, ok := bytes.Cut(rawAuth, []byte{':'})
 		assert.True(t, ok)
 
-		// First time around Git tries without password (that's specified in the clone URL).
-		// It demonstrates it doesn't immediately uses askpass.
+		// First time around Git must try without password (password was removed from the clone URL to not appear as argument).
 		if len(password) == 0 {
 			assert.EqualValues(t, "oauth2", user)
 			calledWithoutPassword = true
@@ -103,22 +101,15 @@ func TestCloneCredentials(t *testing.T) {
 
 		tmpDir := os.TempDir()
 
-		// Verify that the askpass implementation was used.
-		files, err := fs.Glob(os.DirFS(tmpDir), "forgejo-askpass*")
+		// Verify that the credential store was used.
+		files, err := fs.Glob(os.DirFS(tmpDir), "forgejo-clone-credentials-*")
 		require.NoError(t, err)
 		for _, fileName := range files {
-			fileContent, err := os.ReadFile(filepath.Join(tmpDir, fileName))
+			credentialsFile = filepath.Join(tmpDir, fileName)
+			fileContent, err := os.ReadFile(credentialsFile)
 			require.NoError(t, err)
 
-			credentialsPath, ok := bytes.CutPrefix(fileContent, []byte(`exec cat `))
-			assert.True(t, ok)
-
-			fileContent, err = os.ReadFile(string(credentialsPath))
-			require.NoError(t, err)
-			assert.EqualValues(t, "some_token", fileContent)
-
-			askpassFile = filepath.Join(tmpDir, fileName)
-			credentialsFile = string(credentialsPath)
+			assert.True(t, bytes.Contains(fileContent, []byte(`http`)), string(fileContent))
 		}
 	}))
 
@@ -130,12 +121,9 @@ func TestCloneCredentials(t *testing.T) {
 	require.NoError(t, Clone(t.Context(), serverURL.String(), t.TempDir(), CloneRepoOptions{}))
 
 	assert.True(t, calledWithoutPassword)
-	assert.NotEmpty(t, askpassFile)
 	assert.NotEmpty(t, credentialsFile)
 
-	// Check that the helper files are gone.
-	_, err = os.Stat(askpassFile)
-	require.ErrorIs(t, err, fs.ErrNotExist)
+	// Check that the credential file is gone.
 	_, err = os.Stat(credentialsFile)
 	require.ErrorIs(t, err, fs.ErrNotExist)
 }
