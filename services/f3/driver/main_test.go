@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 	driver_options "forgejo.org/services/f3/driver/options"
 
 	_ "forgejo.org/models"
@@ -22,6 +24,7 @@ import (
 
 func TestF3(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
+	defer test.MockVariableValue(&setting.SSH.RootPath, t.TempDir())()
 	tests_f3.ForgeCompliance(t, driver_options.Name)
 }
 
