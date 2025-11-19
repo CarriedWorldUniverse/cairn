@@ -4,6 +4,9 @@
 package integration
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -40,7 +43,9 @@ func TestAPIDownloadArchive(t *testing.T) {
 	resp = MakeRequest(t, NewRequest(t, "GET", link.String()).AddTokenAuth(token), http.StatusOK)
 	bs, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	assert.Len(t, bs, 266)
+	fileNames, err := fileNamesFromTarGzip(bs)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, fileNames, []string{"repo1/", "repo1/README.md"})
 	assert.Equal(t, "application/gzip", resp.Header().Get("Content-Type"))
 
 	// Must return a link to a commit ID as the "immutable" archive link
@@ -82,7 +87,9 @@ func TestAPIDownloadArchive2(t *testing.T) {
 	resp = MakeRequest(t, NewRequest(t, "GET", link.String()).AddTokenAuth(token), http.StatusOK)
 	bs, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	assert.Len(t, bs, 266)
+	fileNames, err := fileNamesFromTarGzip(bs)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, fileNames, []string{"repo1/", "repo1/README.md"})
 
 	// Must return a link to a commit ID as the "immutable" archive link
 	linkHeaderRe := regexp.MustCompile(`^<(https?://.*/api/v1/repos/user2/repo1/archive/[a-f0-9]+\.tar\.gz.*)>; rel="immutable"$`)
@@ -102,4 +109,28 @@ func TestAPIDownloadArchive2(t *testing.T) {
 
 	link, _ = url.Parse(fmt.Sprintf("/api/v1/repos/%s/%s/archive/master", user2.Name, repo.Name))
 	MakeRequest(t, NewRequest(t, "GET", link.String()).AddTokenAuth(token), http.StatusBadRequest)
+}
+
+func fileNamesFromTarGzip(gzippedTar []byte) ([]string, error) {
+	archive, err := gzip.NewReader(bytes.NewReader(gzippedTar))
+	if err != nil {
+		return []string{}, err
+	}
+
+	files := []string{}
+	reader := tar.NewReader(archive)
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			return files, nil
+		}
+		if err != nil {
+			return []string{}, err
+		}
+
+		// list of type flags can be found at https://www.gnu.org/software/tar/manual/html_node/Standard.html
+		if byte('0') <= header.Typeflag && header.Typeflag <= byte('7') {
+			files = append(files, header.Name)
+		}
+	}
 }
