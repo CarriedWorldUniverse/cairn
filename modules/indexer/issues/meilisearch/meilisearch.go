@@ -233,12 +233,8 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 	}
 
 	var keywords []string
-	if options.Keyword != "" {
-		tokens, err := options.Tokens()
-		if err != nil {
-			return nil, err
-		}
-		for _, token := range tokens {
+	if len(options.Tokens) != 0 {
+		for _, token := range options.Tokens {
 			if !token.Fuzzy {
 				// to make it a phrase search, we have to quote the keyword(s)
 				// https://www.meilisearch.com/docs/reference/api/search#phrase-search

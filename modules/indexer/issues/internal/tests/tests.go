@@ -63,6 +63,7 @@ func TestIndexer(t *testing.T, indexer internal.Indexer) {
 				}()
 			}
 
+			require.NoError(t, c.SearchOptions.WithKeyword(t.Context(), c.Keyword))
 			result, err := indexer.Search(t.Context(), c.SearchOptions)
 			require.NoError(t, err)
 
@@ -99,38 +100,34 @@ var cases = []*testIndexerCase{
 		Expected:      allResults,
 	},
 	{
-		Name: "empty keyword",
-		SearchOptions: &internal.SearchOptions{
-			Keyword: "",
-		},
-		Expected: allResults,
+		Name:          "empty keyword",
+		Keyword:       "",
+		SearchOptions: &internal.SearchOptions{},
+		Expected:      allResults,
 	},
 	{
-		Name: "whitespace keyword",
-		SearchOptions: &internal.SearchOptions{
-			Keyword: "    ",
-		},
-		Expected: allResults,
+		Name:          "whitespace keyword",
+		Keyword:       "    ",
+		SearchOptions: &internal.SearchOptions{},
+		Expected:      allResults,
 	},
 	{
-		Name: "dangling slash in keyword",
-		SearchOptions: &internal.SearchOptions{
-			Keyword: "\\",
-		},
-		Expected: allResults,
+		Name:          "dangling slash in keyword",
+		Keyword:       "\\",
+		SearchOptions: &internal.SearchOptions{},
+		Expected:      allResults,
 	},
 	{
-		Name: "dangling quote in keyword",
-		SearchOptions: &internal.SearchOptions{
-			Keyword: "\"",
-		},
-		Expected: allResults,
+		Name:    "dangling quote in keyword",
+		Keyword: "\"",
+
+		SearchOptions: &internal.SearchOptions{},
+		Expected:      allResults,
 	},
 	{
-		Name: "empty",
-		SearchOptions: &internal.SearchOptions{
-			Keyword: "f1dfac73-fda6-4a6b-b8a4-2408fcb8ef69",
-		},
+		Name:          "empty",
+		Keyword:       "f1dfac73-fda6-4a6b-b8a4-2408fcb8ef69",
+		SearchOptions: &internal.SearchOptions{},
 		ExpectedIDs:   []int64{},
 		ExpectedTotal: 0,
 	},
@@ -153,9 +150,9 @@ var cases = []*testIndexerCase{
 			{ID: 1001, Content: "hi hello world"},
 			{ID: 1002, Comments: []string{"hi", "hello world"}},
 		},
+		Keyword: "hello",
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "hello",
-			SortBy:  internal.SortByCreatedDesc,
+			SortBy: internal.SortByCreatedDesc,
 		},
 		ExpectedIDs:   []int64{1002, 1001, 1000},
 		ExpectedTotal: 3,
@@ -167,9 +164,9 @@ var cases = []*testIndexerCase{
 			{ID: 1001, Content: "hi hello world"},
 			{ID: 1002, Comments: []string{"hello", "hello world"}},
 		},
+		Keyword: "hello world -hi",
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "hello world -hi",
-			SortBy:  internal.SortByCreatedDesc,
+			SortBy: internal.SortByCreatedDesc,
 		},
 		ExpectedIDs:   []int64{1002},
 		ExpectedTotal: 1,
@@ -181,9 +178,9 @@ var cases = []*testIndexerCase{
 			{ID: 1001, Content: "hi hello world"},
 			{ID: 1002, Comments: []string{"hi", "hello world"}},
 		},
+		Keyword: "hello world",
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "hello world",
-			SortBy:  internal.SortByCreatedDesc,
+			SortBy: internal.SortByCreatedDesc,
 		},
 		ExpectedIDs:   []int64{1002, 1001, 1000},
 		ExpectedTotal: 3,
@@ -199,8 +196,8 @@ var cases = []*testIndexerCase{
 			{ID: 1006, Title: "hello world", RepoID: 4, IsPublic: false},
 			{ID: 1007, Title: "hello world", RepoID: 5, IsPublic: false},
 		},
+		Keyword: "hello",
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "hello",
 			SortBy:  internal.SortByCreatedDesc,
 			RepoIDs: []int64{1, 4},
 		},
@@ -218,8 +215,8 @@ var cases = []*testIndexerCase{
 			{ID: 1006, Title: "hello world", RepoID: 4, IsPublic: false},
 			{ID: 1007, Title: "hello world", RepoID: 5, IsPublic: false},
 		},
+		Keyword: "hello",
 		SearchOptions: &internal.SearchOptions{
-			Keyword:   "hello",
 			SortBy:    internal.SortByCreatedDesc,
 			RepoIDs:   []int64{1, 4},
 			AllPublic: true,
@@ -300,8 +297,9 @@ var cases = []*testIndexerCase{
 			{ID: 1003, Title: "hello d", LabelIDs: []int64{2000}},
 			{ID: 1004, Title: "hello e", LabelIDs: []int64{}},
 		},
+		Keyword: "hello",
+
 		SearchOptions: &internal.SearchOptions{
-			Keyword:          "hello",
 			IncludedLabelIDs: []int64{2000, 2001},
 			ExcludedLabelIDs: []int64{2003},
 		},
@@ -317,8 +315,9 @@ var cases = []*testIndexerCase{
 			{ID: 1003, Title: "hello d", LabelIDs: []int64{2002}},
 			{ID: 1004, Title: "hello e", LabelIDs: []int64{}},
 		},
+		Keyword: "hello",
+
 		SearchOptions: &internal.SearchOptions{
-			Keyword:             "hello",
 			IncludedAnyLabelIDs: []int64{2001, 2002},
 			ExcludedLabelIDs:    []int64{2003},
 		},
@@ -580,9 +579,9 @@ var cases = []*testIndexerCase{
 		},
 	},
 	{
-		Name: "Index",
+		Name:    "Index",
+		Keyword: "13",
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "13",
 			SortBy:  internal.SortByScore,
 			RepoIDs: []int64{5},
 		},
@@ -590,9 +589,10 @@ var cases = []*testIndexerCase{
 		ExpectedTotal: 1,
 	},
 	{
-		Name: "Index with prefix",
+		Name:    "Index with prefix",
+		Keyword: "#13",
+
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "#13",
 			SortBy:  internal.SortByScore,
 			RepoIDs: []int64{5},
 		},
@@ -605,8 +605,9 @@ var cases = []*testIndexerCase{
 			{ID: 1001, Title: "re #13", RepoID: 5},
 			{ID: 1002, Title: "re #1001", Content: "leave 13 alone. - 13", RepoID: 5},
 		},
+		Keyword: "!13",
+
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "!13",
 			SortBy:  internal.SortByScore,
 			RepoIDs: []int64{5},
 		},
@@ -621,9 +622,10 @@ var cases = []*testIndexerCase{
 			{ID: 1003, Index: 103, Title: "Brrr", RepoID: 5},
 			{ID: 1004, Index: 104, Title: "Brrr", RepoID: 5},
 		},
+		Keyword: "Brrr -101 -103",
+
 		SearchOptions: &internal.SearchOptions{
-			Keyword: "Brrr -101 -103",
-			SortBy:  internal.SortByScore,
+			SortBy: internal.SortByScore,
 		},
 		ExpectedIDs:   []int64{1002, 1004},
 		ExpectedTotal: 2,
@@ -797,6 +799,7 @@ type testIndexerCase struct {
 	Name      string
 	ExtraData []*internal.IndexerData
 
+	Keyword       string
 	SearchOptions *internal.SearchOptions
 
 	Expected      func(t *testing.T, data map[int64]*internal.IndexerData, result *internal.SearchResult) // if nil, use ExpectedIDs, ExpectedTotal

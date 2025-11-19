@@ -47,44 +47,48 @@ func TestDBSearchIssues(t *testing.T) {
 
 func searchIssueWithKeyword(t *testing.T) {
 	tests := []struct {
-		opts        SearchOptions
+		keyword     string
+		opts        *SearchOptions
 		expectedIDs []int64
 	}{
 		{
-			SearchOptions{
-				Keyword: "issue2",
+			"issue2",
+			&SearchOptions{
 				RepoIDs: []int64{1},
 			},
 			[]int64{2},
 		},
 		{
-			SearchOptions{
-				Keyword: "first",
+			"first",
+			&SearchOptions{
 				RepoIDs: []int64{1},
 			},
 			[]int64{1},
 		},
 		{
-			SearchOptions{
-				Keyword: "for",
+			"for",
+
+			&SearchOptions{
 				RepoIDs: []int64{1},
 			},
 			[]int64{11, 5, 3, 2, 1},
 		},
 		{
-			SearchOptions{
-				Keyword: "good",
+			"good",
+			&SearchOptions{
 				RepoIDs: []int64{1},
 			},
 			[]int64{1},
 		},
 	}
 
+	ctx := t.Context()
 	for _, test := range tests {
-		issueIDs, _, err := SearchIssues(t.Context(), &test.opts)
+		require.NoError(t, test.opts.WithKeyword(ctx, test.keyword))
+		issueIDs, _, err := SearchIssues(ctx, test.opts)
 		require.NoError(t, err)
 
-		assert.Equal(t, test.expectedIDs, issueIDs, test.opts.Keyword)
+		assert.Equal(t, test.expectedIDs, issueIDs, test.keyword)
 	}
 }
 
@@ -152,7 +156,7 @@ func searchIssueByID(t *testing.T) {
 		},
 		{
 			// NOTE: This tests no assignees filtering and also ToSearchOptions() to ensure it will set AssigneeID to 0 when it is passed as -1.
-			opts:        *ToSearchOptions("", &issues.IssuesOptions{AssigneeID: -1}),
+			opts:        *ToSearchOptions(t.Context(), "", &issues.IssuesOptions{AssigneeID: -1}),
 			expectedIDs: []int64{22, 21, 16, 15, 14, 13, 12, 11, 20, 5, 19, 18, 10, 7, 4, 9, 8, 3, 2},
 		},
 		{

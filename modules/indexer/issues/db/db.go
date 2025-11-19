@@ -5,7 +5,6 @@ package db
 
 import (
 	"context"
-	"strconv"
 
 	"forgejo.org/models/db"
 	issue_model "forgejo.org/models/issues"
@@ -54,36 +53,34 @@ func (i *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 	cond := builder.NewCond()
 
 	var priorityIssueIndex int64
-	if options.Keyword != "" {
+	if len(options.Tokens) != 0 {
 		repoCond := builder.In("repo_id", options.RepoIDs)
 		if len(options.RepoIDs) == 1 {
 			repoCond = builder.Eq{"repo_id": options.RepoIDs[0]}
 		}
 		subQuery := builder.Select("id").From("issue").Where(repoCond)
 
-		cond = builder.Or(
-			db.BuildCaseInsensitiveLike("issue.name", options.Keyword),
-			db.BuildCaseInsensitiveLike("issue.content", options.Keyword),
-			builder.In("issue.id", builder.Select("issue_id").
-				From("comment").
-				Where(builder.And(
-					builder.Eq{"type": issue_model.CommentTypeComment},
-					builder.In("issue_id", subQuery),
-					db.BuildCaseInsensitiveLike("content", options.Keyword),
-				)),
-			),
-		)
-
-		term := options.Keyword
-		if term[0] == '#' || term[0] == '!' {
-			term = term[1:]
-		}
-		if issueID, err := strconv.ParseInt(term, 10, 64); err == nil {
+		for _, token := range options.Tokens {
 			cond = builder.Or(
-				builder.Eq{"`index`": issueID},
-				cond,
+				db.BuildCaseInsensitiveLike("issue.name", token.Term),
+				db.BuildCaseInsensitiveLike("issue.content", token.Term),
+				builder.In("issue.id", builder.Select("issue_id").
+					From("comment").
+					Where(builder.And(
+						builder.Eq{"type": issue_model.CommentTypeComment},
+						builder.In("issue_id", subQuery),
+						db.BuildCaseInsensitiveLike("content", token.Term),
+					)),
+				),
 			)
-			priorityIssueIndex = issueID
+
+			if ref, err := token.ParseIssueReference(); err != nil {
+				cond = builder.Or(
+					builder.Eq{"`index`": ref},
+					cond,
+				)
+				priorityIssueIndex = ref
+			}
 		}
 	}
 

@@ -592,7 +592,7 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	// USING FINAL STATE OF opts FOR A QUERY.
 	var issues issues_model.IssueList
 	{
-		issueIDs, _, err := issue_indexer.SearchIssues(ctx, issue_indexer.ToSearchOptions(keyword, opts))
+		issueIDs, _, err := issue_indexer.SearchIssues(ctx, issue_indexer.ToSearchOptions(ctx, keyword, opts))
 		if err != nil {
 			ctx.ServerError("issueIDsFromSearch", err)
 			return
@@ -613,11 +613,14 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	// -------------------------------
 	// Fill stats to post to ctx.Data.
 	// -------------------------------
-	issueStats, err := getUserIssueStats(ctx, ctxUser, filterMode, issue_indexer.ToSearchOptions(keyword, opts))
+	searchOpts := issue_indexer.ToSearchOptions(ctx, keyword, opts)
+	issueStats, err := getUserIssueStats(ctx, ctxUser, filterMode, searchOpts)
 	if err != nil {
 		ctx.ServerError("getUserIssueStats", err)
 		return
 	}
+	isShowClosed = searchOpts.IsClosed.ValueOrDefault(isShowClosed)
+	sortType = searchOpts.SortBy.ToIssueSort()
 
 	// Will be posted to ctx.Data.
 	var shownIssues int
@@ -670,10 +673,16 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	ctx.Data["SelectLabels"] = selectedLabels
 	ctx.Data["PageIsOrgIssues"] = org != nil
 
+	state := "open"
 	if isShowClosed {
-		ctx.Data["State"] = "closed"
-	} else {
-		ctx.Data["State"] = "open"
+		state = "closed"
+	}
+	ctx.Data["State"] = state
+
+	ctx.SetFormString("state", state)
+	if searchOpts.AssigneeID.Has() {
+		id := strconv.FormatInt(searchOpts.AssigneeID.Value(), 10)
+		ctx.SetFormString("assignee", id)
 	}
 
 	pager := context.NewPagination(shownIssues, setting.UI.IssuePagingNum, page, 5)

@@ -1,0 +1,31 @@
+<a class="ui icon tw-px-4 tw-py-2 show-modal" data-modal="#search-syntax-modal">{{svg "octicon-question"}}</a>
+<dialog id="search-syntax-modal">
+	<article>
+		<header>{{ctx.Locale.Tr "search.syntax"}}</header>
+		<div class="content">
+			<table class="tw-table-auto">
+				<tbody>
+					{{range $filter, $tr :=
+						ctx.Locale.IterWithTr
+							"is:open" "repo.issues.open_title"
+							"is:closed" "repo.issues.closed_title"
+							"is:all" "repo.issues.all_title"
+							"author:<username>" "repo.issues.filter_poster.hint"
+							"assignee:<username>" "repo.issues.filter_assignee.hint"
+							"review:<username>" "repo.issues.filter_reviewers.hint"
+							"mentions:<username>" "repo.issues.filter_mention.hint"
+							"sort:<by>:[asc|desc]" "repo.issues.filter_sort.hint"
+							"modified:[>|<]<date>" "repo.issues.filter_modified.hint"}}
+						<tr>
+							<th class="tw-p-2"><code>{{$filter}}</code></th>
+							<td class="tw-p-2">{{$tr | SafeHTML}}</td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+		</div>
+		<footer class="actions">
+				<button class="ui button icon cancel">{{ctx.Locale.Tr "settings.cancel"}}</button>
+		</footer>
+	</article>
+</dialog>

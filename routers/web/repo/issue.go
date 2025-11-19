@@ -217,7 +217,7 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 		IssueIDs:          nil,
 	}
 	if keyword != "" {
-		allIssueIDs, err := issueIDsFromSearch(ctx, keyword, statsOpts)
+		allIssueIDs, _, err := issueIDsFromSearch(ctx, keyword, statsOpts)
 		if err != nil {
 			if issue_indexer.IsAvailable(ctx) {
 				ctx.ServerError("issueIDsFromSearch", err)
@@ -285,7 +285,7 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 
 	var issues issues_model.IssueList
 	{
-		ids, err := issueIDsFromSearch(ctx, keyword, &issues_model.IssuesOptions{
+		ids, opts, err := issueIDsFromSearch(ctx, keyword, &issues_model.IssuesOptions{
 			Paginator: &db.ListOptions{
 				Page:     pager.Paginater.Current(),
 				PageSize: setting.UI.IssuePagingNum,
@@ -316,6 +316,13 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 			ctx.ServerError("GetIssuesByIDs", err)
 			return
 		}
+
+		// The values of these parameters may have been changed
+		// depending on the query syntax
+		isShowClosed = opts.IsClosed
+		sortType = opts.SortBy.ToIssueSort()
+		posterID = opts.PosterID.Value()
+		assigneeID = opts.AssigneeID.Value()
 	}
 
 	approvalCounts, err := issues.GetApprovalCounts(ctx)
@@ -439,6 +446,8 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 		return
 	}
 
+	cleanedKeyword := util.RemoveAllStr(keyword, false, "is:open", "-is:open", "is:closed", "-is:closed", "is:all")
+
 	ctx.Data["PinnedIssues"] = pinned
 	ctx.Data["IsRepoAdmin"] = ctx.IsSigned && (ctx.Repo.IsAdmin() || ctx.Doer.IsAdmin)
 	ctx.Data["IssueStats"] = issueStats
@@ -447,13 +456,13 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 	ctx.Data["AllCount"] = issueStats.AllCount
 	linkStr := "?q=%s&type=%s&sort=%s&state=%s&labels=%s&milestone=%d&project=%d&assignee=%d&poster=%d&archived=%t"
 	ctx.Data["AllStatesLink"] = fmt.Sprintf(linkStr,
-		url.QueryEscape(keyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "all", url.QueryEscape(selectLabels),
+		url.QueryEscape(cleanedKeyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "all", url.QueryEscape(selectLabels),
 		milestoneID, projectID, assigneeID, posterID, archived)
 	ctx.Data["OpenLink"] = fmt.Sprintf(linkStr,
-		url.QueryEscape(keyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "open", url.QueryEscape(selectLabels),
+		url.QueryEscape(cleanedKeyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "open", url.QueryEscape(selectLabels),
 		milestoneID, projectID, assigneeID, posterID, archived)
 	ctx.Data["ClosedLink"] = fmt.Sprintf(linkStr,
-		url.QueryEscape(keyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "closed", url.QueryEscape(selectLabels),
+		url.QueryEscape(cleanedKeyword), url.QueryEscape(viewType), url.QueryEscape(sortType), "closed", url.QueryEscape(selectLabels),
 		milestoneID, projectID, assigneeID, posterID, archived)
 	ctx.Data["SelLabelIDs"] = labelIDs
 	ctx.Data["SelectLabels"] = selectLabels
@@ -489,12 +498,17 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 	ctx.Data["Page"] = pager
 }
 
-func issueIDsFromSearch(ctx *context.Context, keyword string, opts *issues_model.IssuesOptions) ([]int64, error) {
-	ids, _, err := issue_indexer.SearchIssues(ctx, issue_indexer.ToSearchOptions(keyword, opts))
+func issueIDsFromSearch(
+	ctx *context.Context,
+	keyword string,
+	opts *issues_model.IssuesOptions,
+) ([]int64, *issue_indexer.SearchOptions, error) {
+	searchOpts := issue_indexer.ToSearchOptions(ctx, keyword, opts)
+	ids, _, err := issue_indexer.SearchIssues(ctx, searchOpts)
 	if err != nil {
-		return nil, fmt.Errorf("SearchIssues: %w", err)
+		return nil, searchOpts, fmt.Errorf("SearchIssues: %w", err)
 	}
-	return ids, nil
+	return ids, searchOpts, nil
 }
 
 // Issues render issues page
@@ -2759,7 +2773,6 @@ func SearchIssues(ctx *context.Context) {
 			Page:     ctx.FormInt("page"),
 			PageSize: limit,
 		},
-		Keyword:             keyword,
 		RepoIDs:             repoIDs,
 		AllPublic:           allPublic,
 		IsPull:              isPull,
@@ -2768,6 +2781,11 @@ func SearchIssues(ctx *context.Context) {
 		MilestoneIDs:        includedMilestones,
 		ProjectID:           projectID,
 		SortBy:              issue_indexer.ParseSortBy(ctx.FormString("sort"), issue_indexer.SortByCreatedDesc),
+	}
+	if err := searchOpt.WithKeyword(ctx, keyword); err != nil {
+		log.Error("WithKeyword: %v", err)
+		ctx.Error(http.StatusInternalServerError)
+		return
 	}
 
 	if since != 0 {
@@ -2932,13 +2950,18 @@ func ListIssues(ctx *context.Context) {
 			Page:     ctx.FormInt("page"),
 			PageSize: convert.ToCorrectPageSize(ctx.FormInt("limit")),
 		},
-		Keyword:   keyword,
 		RepoIDs:   []int64{ctx.Repo.Repository.ID},
 		IsPull:    isPull,
 		IsClosed:  isClosed,
 		ProjectID: projectID,
 		SortBy:    issue_indexer.ParseSortBy(ctx.FormString("sort"), issue_indexer.SortByCreatedDesc),
 	}
+	if err := searchOpt.WithKeyword(ctx, keyword); err != nil {
+		log.Error("WithKeyword: %v", err)
+		ctx.Error(http.StatusInternalServerError)
+		return
+	}
+
 	if since != 0 {
 		searchOpt.UpdatedAfterUnix = optional.Some(since)
 	}

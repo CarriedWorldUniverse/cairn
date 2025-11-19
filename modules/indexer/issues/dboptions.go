@@ -4,14 +4,15 @@
 package issues
 
 import (
+	"context"
+
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/modules/optional"
 )
 
-func ToSearchOptions(keyword string, opts *issues_model.IssuesOptions) *SearchOptions {
+func ToSearchOptions(ctx context.Context, keyword string, opts *issues_model.IssuesOptions) *SearchOptions {
 	searchOpt := &SearchOptions{
-		Keyword:   keyword,
 		RepoIDs:   opts.RepoIDs,
 		AllPublic: opts.AllPublic,
 		IsPull:    opts.IsPull,
@@ -102,6 +103,8 @@ func ToSearchOptions(keyword string, opts *issues_model.IssuesOptions) *SearchOp
 	default:
 		searchOpt.SortBy = SortByUpdatedDesc
 	}
+
+	_ = searchOpt.WithKeyword(ctx, keyword)
 
 	return searchOpt
 }

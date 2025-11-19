@@ -73,6 +73,12 @@ func (handler Handler) handleTemplateNode(fset *token.FileSet, node tmplParser.N
 			funcname = nodeVar.Ident[2]
 		}
 
+		if funcname == "IterWithTr" {
+			for i := 2; i < len(nodeCommand.Args); i += 2 {
+				handler.handleTemplateMsgid(fset, nodeCommand.Args[i])
+			}
+		}
+
 		var gotUnexpectedInvoke *int
 		ltf, ok := handler.LocaleTrFunctions[funcname]
 		if !ok {
