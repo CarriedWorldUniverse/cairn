@@ -149,14 +149,9 @@ func (b *Indexer) Delete(ctx context.Context, ids ...int64) error {
 func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (*internal.SearchResult, error) {
 	query := elastic.NewBoolQuery()
 
-	tokens, err := options.Tokens()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(tokens) > 0 {
+	if len(options.Tokens) != 0 {
 		q := elastic.NewBoolQuery()
-		for _, token := range tokens {
+		for _, token := range options.Tokens {
 			innerQ := elastic.NewMultiMatchQuery(token.Term, "content", "comments").FieldWithBoost("title", 2.0).TieBreaker(0.5)
 			if token.Fuzzy {
 				// If the term is not a phrase use fuzziness set to AUTO

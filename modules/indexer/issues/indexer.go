@@ -312,7 +312,7 @@ func ParseSortBy(sortBy string, defaultSortBy internal.SortBy) internal.SortBy {
 func SearchIssues(ctx context.Context, opts *SearchOptions) ([]int64, int64, error) {
 	indexer := *globalIndexer.Load()
 
-	if opts.Keyword == "" {
+	if len(opts.Tokens) == 0 {
 		// This is a conservative shortcut.
 		// If the keyword is empty, db has better (at least not worse) performance to filter issues.
 		// When the keyword is empty, it tends to listing rather than searching issues.

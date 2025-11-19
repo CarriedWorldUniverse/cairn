@@ -108,25 +108,27 @@ func TestViewIssuesSortByType(t *testing.T) {
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 
 	session := loginUser(t, user.Name)
-	req := NewRequest(t, "GET", repo.Link()+"/issues?type=created_by")
-	resp := session.MakeRequest(t, req, http.StatusOK)
+	for _, path := range []string{"/issues?type=created_by", "/issues?q=sort:created:asc"} {
+		req := NewRequest(t, "GET", repo.Link()+path)
+		resp := session.MakeRequest(t, req, http.StatusOK)
 
-	htmlDoc := NewHTMLParser(t, resp.Body)
-	issuesSelection := getIssuesSelection(t, htmlDoc)
-	expectedNumIssues := unittest.GetCount(t,
-		&issues_model.Issue{RepoID: repo.ID, PosterID: user.ID},
-		unittest.Cond("is_closed=?", false),
-		unittest.Cond("is_pull=?", false),
-	)
-	if expectedNumIssues > setting.UI.IssuePagingNum {
-		expectedNumIssues = setting.UI.IssuePagingNum
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		issuesSelection := getIssuesSelection(t, htmlDoc)
+		expectedNumIssues := unittest.GetCount(t,
+			&issues_model.Issue{RepoID: repo.ID, PosterID: user.ID},
+			unittest.Cond("is_closed=?", false),
+			unittest.Cond("is_pull=?", false),
+		)
+		if expectedNumIssues > setting.UI.IssuePagingNum {
+			expectedNumIssues = setting.UI.IssuePagingNum
+		}
+		assert.Equal(t, expectedNumIssues, issuesSelection.Length())
+
+		issuesSelection.Each(func(_ int, selection *goquery.Selection) {
+			issue := getIssue(t, repo.ID, selection)
+			assert.Equal(t, user.ID, issue.PosterID)
+		})
 	}
-	assert.Equal(t, expectedNumIssues, issuesSelection.Length())
-
-	issuesSelection.Each(func(_ int, selection *goquery.Selection) {
-		issue := getIssue(t, repo.ID, selection)
-		assert.Equal(t, user.ID, issue.PosterID)
-	})
 }
 
 func TestViewIssuesKeyword(t *testing.T) {
@@ -186,6 +188,15 @@ func TestViewIssuesSearchOptions(t *testing.T) {
 
 	t.Run("All issues", func(t *testing.T) {
 		req := NewRequestf(t, "GET", "%s/issues?state=all", repo.Link())
+		resp := MakeRequest(t, req, http.StatusOK)
+		htmlDoc := NewHTMLParser(t, resp.Body)
+		issuesSelection := getIssuesSelection(t, htmlDoc)
+		assert.Equal(t, 3, issuesSelection.Length())
+	})
+
+	t.Run("All issues keyword override", func(t *testing.T) {
+		// Keyword should override the state parameter
+		req := NewRequestf(t, "GET", "%s/issues?q=is:all&state=open", repo.Link())
 		resp := MakeRequest(t, req, http.StatusOK)
 		htmlDoc := NewHTMLParser(t, resp.Body)
 		issuesSelection := getIssuesSelection(t, htmlDoc)
@@ -855,90 +866,122 @@ func TestSearchIssues(t *testing.T) {
 		expectedIssueCount = setting.UI.IssuePagingNum
 	}
 
-	link, _ := url.Parse("/issues/search")
-	req := NewRequest(t, "GET", link.String())
+	req := NewRequest(t, "GET", "/issues/search")
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	var apiIssues []*api.Issue
 	DecodeJSON(t, resp, &apiIssues)
 	assert.Len(t, apiIssues, expectedIssueCount)
 
-	since := "2000-01-01T00:50:01+00:00" // 946687801
-	before := time.Unix(999307200, 0).Format(time.RFC3339)
-	query := url.Values{}
-	query.Add("since", since)
-	query.Add("before", before)
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 11)
-	query.Del("since")
-	query.Del("before")
+	t.Run("By Query Params", func(t *testing.T) {
+		link, _ := url.Parse("/issues/search")
+		since := "2000-01-01T00:50:01+00:00" // 946687801
+		before := time.Unix(999307200, 0).Format(time.RFC3339)
+		query := url.Values{}
+		query.Add("since", since)
+		query.Add("before", before)
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 11)
+		query.Del("since")
+		query.Del("before")
 
-	query.Add("state", "closed")
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 2)
+		query.Add("state", "closed")
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 2)
 
-	query.Set("state", "all")
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
-	assert.Len(t, apiIssues, 20)
+		query.Set("state", "all")
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
+		assert.Len(t, apiIssues, 20)
 
-	query.Add("limit", "5")
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
-	assert.Len(t, apiIssues, 5)
+		query.Add("limit", "5")
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
+		assert.Len(t, apiIssues, 5)
 
-	query = url.Values{"assigned": {"true"}, "state": {"all"}}
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 2)
+		query = url.Values{"assigned": {"true"}, "state": {"all"}}
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 2)
 
-	query = url.Values{"milestones": {"milestone1"}, "state": {"all"}}
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 1)
+		query = url.Values{"milestones": {"milestone1"}, "state": {"all"}}
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 1)
 
-	query = url.Values{"milestones": {"milestone1,milestone3"}, "state": {"all"}}
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 2)
+		query = url.Values{"milestones": {"milestone1,milestone3"}, "state": {"all"}}
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 2)
 
-	query = url.Values{"owner": {"user2"}} // user
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 8)
+		query = url.Values{"owner": {"user2"}} // user
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 8)
 
-	query = url.Values{"owner": {"org3"}} // organization
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 5)
+		query = url.Values{"owner": {"org3"}} // organization
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 5)
 
-	query = url.Values{"owner": {"org3"}, "team": {"team1"}} // organization + team
-	link.RawQuery = query.Encode()
-	req = NewRequest(t, "GET", link.String())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 2)
+		query = url.Values{"owner": {"org3"}, "team": {"team1"}} // organization + team
+		link.RawQuery = query.Encode()
+		req = NewRequest(t, "GET", link.String())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &apiIssues)
+		assert.Len(t, apiIssues, 2)
+	})
+
+	t.Run("By Keyword", func(t *testing.T) {
+		link, _ := url.Parse("/issues/search")
+		for keyword, len := range map[string]int{
+			"modified:>2000-01-01 modified:<2001-09-02": 11,
+			"is:closed":             2,
+			"is:all":                20,
+			"is:all assignee:user2": 2,
+		} {
+			q := url.Values{"q": {keyword}}
+			link.RawQuery = q.Encode()
+			req = NewRequest(t, "GET", link.String())
+			resp = session.MakeRequest(t, req, http.StatusOK)
+			DecodeJSON(t, resp, &apiIssues)
+			assert.Len(t, apiIssues, len, "keyword: %v", keyword)
+		}
+	})
+
+	t.Run("Filter + Keyword", func(t *testing.T) {
+		link, _ := url.Parse("/issues/search")
+		exec := func(q url.Values, len int) {
+			link.RawQuery = q.Encode()
+			req = NewRequest(t, "GET", link.String())
+			resp = session.MakeRequest(t, req, http.StatusOK)
+			DecodeJSON(t, resp, &apiIssues)
+			assert.Len(t, apiIssues, len, "query: %v", q.Encode())
+		}
+		exec(url.Values{"milestones": {"milestone1"}, "keyword": {"is:all"}}, 1)
+		exec(url.Values{"assigned": {"true"}, "keyword": {"is:all"}}, 2)
+	})
 }
 
 func TestSearchIssuesWithLabels(t *testing.T) {
@@ -985,6 +1028,14 @@ func TestSearchIssuesWithLabels(t *testing.T) {
 
 	// org and repo label
 	query.Set("labels", "label2,orglabel4")
+	query.Add("q", "is:all")
+	link.RawQuery = query.Encode()
+	req = NewRequest(t, "GET", link.String())
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	DecodeJSON(t, resp, &apiIssues)
+	assert.Len(t, apiIssues, 2)
+	query.Del("q")
+
 	query.Add("state", "all")
 	link.RawQuery = query.Encode()
 	req = NewRequest(t, "GET", link.String())

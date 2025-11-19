@@ -18,6 +18,7 @@
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
+  gap: .5rem;
   min-width: 200px; /* to enable flexbox wrapping on mobile */
 }
 

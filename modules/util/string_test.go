@@ -71,3 +71,46 @@ func TestASCIIEqualFold(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveAllStr(t *testing.T) {
+	for name, c := range map[string]struct {
+		str, res string
+		prefix   bool
+		all      []string
+	}{
+		"Empty": {
+			str:    "",
+			res:    "",
+			all:    []string{"hello"},
+			prefix: false,
+		},
+		"Exact": {
+			str:    "hello",
+			res:    "",
+			all:    []string{"hello"},
+			prefix: false,
+		},
+		"One of Two": {
+			str:    "hello world",
+			res:    "world",
+			all:    []string{"hello"},
+			prefix: false,
+		},
+		"Prefix": {
+			str:    "is:open is:closed hello",
+			res:    "hello",
+			all:    []string{"is:"},
+			prefix: true,
+		},
+		"Prefix Multiple": {
+			str:    "is:open is:closed hello has:fun",
+			res:    "hello",
+			all:    []string{"is:", "has:"},
+			prefix: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.res, RemoveAllStr(c.str, c.prefix, c.all...))
+		})
+	}
+}
