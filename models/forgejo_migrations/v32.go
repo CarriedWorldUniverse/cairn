@@ -4,6 +4,7 @@
 package forgejo_migrations
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"regexp"
@@ -19,7 +20,6 @@ import (
 	"forgejo.org/modules/packages/maven"
 	packages_service "forgejo.org/services/packages"
 
-	"golang.org/x/net/context"
 	"xorm.io/xorm"
 )
 
