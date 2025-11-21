@@ -364,7 +364,7 @@ func (issue *Issue) ResetAttributesLoaded() {
 	issue.isAssigneeLoaded = false
 }
 
-// GetIsRead load the `IsRead` field of the issue
+// GetIsRead loads the `IsRead` field of the issue
 func (issue *Issue) GetIsRead(ctx context.Context, userID int64) error {
 	issueUser := &IssueUser{IssueID: issue.ID, UID: userID}
 	if has, err := db.GetEngine(ctx).Get(issueUser); err != nil {
