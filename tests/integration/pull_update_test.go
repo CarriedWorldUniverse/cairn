@@ -87,6 +87,49 @@ func TestAPIPullUpdateByRebase(t *testing.T) {
 	})
 }
 
+func TestAPIPullUpdateBranchProtection(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
+		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		baseRepoOwner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+		org26 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 26})
+		pr := createOutdatedPR(t, user, org26, baseRepoOwner)
+
+		// Allow edits from maintainers on the PR
+		pr.AllowMaintainerEdit = true
+		err := issues_model.UpdateAllowEdits(t.Context(), pr)
+		require.NoError(t, err)
+
+		session := loginUser(t, user.LoginName)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+		// Set up a branch protection rule on the *head* branch such that it cannot be pushed to, which should block
+		// updating the PR.
+		pr.LoadBaseRepo(t.Context())
+		pr.LoadHeadRepo(t.Context())
+		req := NewRequestWithJSON(t, "POST",
+			fmt.Sprintf("/api/v1/repos/%s/%s/branch_protections", pr.HeadRepo.OwnerName, pr.HeadRepo.Name),
+			&api.BranchProtection{
+				BranchName: "*",
+				RuleName:   "*",
+				EnablePush: true,
+			}).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+
+		// `session/token` is from the owner of the head branch, and should be allowed to do the update:
+		req = NewRequestf(t, "POST", "/api/v1/repos/%s/%s/pulls/%d/update", pr.BaseRepo.OwnerName, pr.BaseRepo.Name, pr.Issue.Index).
+			AddTokenAuth(token)
+		session.MakeRequest(t, req, http.StatusOK)
+
+		// Switch over to the base repo owner.  Even though this PR is set to allow edits by maintainers, they shouldn't
+		// be allowed to update the PR because the head branch is protected by a branch protection rule.
+		session = loginUser(t, baseRepoOwner.LoginName)
+		token = getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+		req = NewRequestf(t, "POST", "/api/v1/repos/%s/%s/pulls/%d/update", pr.BaseRepo.OwnerName, pr.BaseRepo.Name, pr.Issue.Index).
+			AddTokenAuth(token)
+		session.MakeRequest(t, req, http.StatusForbidden)
+	})
+}
+
 func TestAPIViewUpdateSettings(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, giteaURL *url.URL) {
 		// Create PR to test
@@ -181,8 +224,13 @@ func assertViewPullUpdate(t *testing.T, pr *issues_model.PullRequest, session *T
 	}
 }
 
-func createOutdatedPR(t *testing.T, actor, forkOrg *user_model.User) *issues_model.PullRequest {
-	baseRepo, _, _ := tests.CreateDeclarativeRepo(t, actor, "repo-pr-update", nil, nil, nil)
+func createOutdatedPR(t *testing.T, actor, forkOrg *user_model.User, baseRepoOwnerOption ...*user_model.User) *issues_model.PullRequest {
+	baseRepoOwner := actor
+	if len(baseRepoOwnerOption) == 1 {
+		baseRepoOwner = baseRepoOwnerOption[0]
+	}
+
+	baseRepo, _, _ := tests.CreateDeclarativeRepo(t, baseRepoOwner, "repo-pr-update", nil, nil, nil)
 
 	headRepo, err := repo_service.ForkRepositoryAndUpdates(git.DefaultContext, actor, forkOrg, repo_service.ForkRepoOptions{
 		BaseRepo:    baseRepo,
@@ -193,7 +241,7 @@ func createOutdatedPR(t *testing.T, actor, forkOrg *user_model.User) *issues_mod
 	assert.NotEmpty(t, headRepo)
 
 	// create a commit on base Repo
-	_, err = files_service.ChangeRepoFiles(git.DefaultContext, baseRepo, actor, &files_service.ChangeRepoFilesOptions{
+	_, err = files_service.ChangeRepoFiles(git.DefaultContext, baseRepo, baseRepoOwner, &files_service.ChangeRepoFilesOptions{
 		Files: []*files_service.ChangeRepoFile{
 			{
 				Operation:     "create",

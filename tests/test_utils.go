@@ -370,6 +370,7 @@ type DeclarativeRepoOptions struct {
 	AutoInit      optional.Option[bool]
 	IsTemplate    optional.Option[bool]
 	ObjectFormat  optional.Option[string]
+	IsPrivate     optional.Option[bool]
 }
 
 func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts DeclarativeRepoOptions) (*repo_model.Repository, string, func()) {
@@ -402,6 +403,7 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 		DefaultBranch:    "main",
 		IsTemplate:       opts.IsTemplate.Value(),
 		ObjectFormatName: opts.ObjectFormat.Value(),
+		IsPrivate:        opts.IsPrivate.Value(),
 	})
 	require.NoError(t, err)
 	assert.NotEmpty(t, repo)

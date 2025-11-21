@@ -206,7 +206,7 @@ func CreateIssueDependency(ctx *context.APIContext) {
 		return
 	}
 
-	dependencyPerm := getPermissionForRepo(ctx, target.Repo)
+	dependencyPerm := getPermissionForRepo(ctx, dependency.Repo)
 	if ctx.Written() {
 		return
 	}
@@ -268,7 +268,7 @@ func RemoveIssueDependency(ctx *context.APIContext) {
 		return
 	}
 
-	dependencyPerm := getPermissionForRepo(ctx, target.Repo)
+	dependencyPerm := getPermissionForRepo(ctx, dependency.Repo)
 	if ctx.Written() {
 		return
 	}
