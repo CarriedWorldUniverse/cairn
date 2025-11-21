@@ -5,6 +5,7 @@
 // templates/shared/user/actions_menu.tmpl
 // templates/org/header.tmpl
 // templates/explore/search.tmpl
+// templates/devtest/dropdown.tmpl
 // web_src/js/modules/dropdown.ts
 // @watch end
 
@@ -225,5 +226,34 @@ test.describe(`Visual properties`, () => {
     const inactiveItem = page.locator(`${selectorPrefix}> .content > ul > li:last-child > a`);
     expect(await activeItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(226, 226, 229)');
     expect(await inactiveItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('Devtest', async ({browser}) => {
+    const context = await browser.newContext({javaScriptEnabled: false});
+    const page = await context.newPage();
+
+    // `/devtest` has dropdowns with various combinations of items
+    await page.goto('/devtest/dropdown');
+
+    // Dropdown with just 3 items and nothing special
+    await page.locator(`#dropdown-1 > summary`).click();
+    expect(await page.locator(`#dd1_g1_i1`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('4px 4px 0px 0px');
+    expect(await page.locator(`#dd1_g1_i2`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px');
+    expect(await page.locator(`#dd1_g1_i3`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px 0px 4px 4px');
+    await page.keyboard.press('Enter'); // Exit dropdown - page is in noJS mode
+
+    // Dropdown with two groups of items separated with an <hr>
+    await page.locator(`#dropdown-2 > summary`).click();
+    expect(await page.locator(`#dd2_g1_i1`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('4px 4px 0px 0px');
+    expect(await page.locator(`#dd2_g1_i2`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px');
+    expect(await page.locator(`#dd2_g1_i3`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px');
+    expect(await page.locator(`#dd2_g2_i1`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px');
+    expect(await page.locator(`#dd2_g2_i2`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px');
+    expect(await page.locator(`#dd2_g2_i3`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('0px 0px 4px 4px');
+    await page.keyboard.press('Enter'); // Exit dropdown - page is in noJS mode
+
+    // Dropdown with only one item, which should be completely round
+    await page.locator(`#dropdown-3 > summary`).click();
+    expect(await page.locator(`#dd3_g1_i1`).evaluate((el) => getComputedStyle(el).borderRadius)).toBe('4px');
   });
 });
