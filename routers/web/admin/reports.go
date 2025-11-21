@@ -139,7 +139,7 @@ func setReportedContentDetails(ctx *context.Context, report *moderation.AbuseRep
 		if err = comment.Issue.LoadRepo(ctx); err != nil {
 			return err
 		}
-		if err = comment.LoadPoster(ctx); err != nil {
+		if err = comment.LoadPoster(ctx); err != nil && !user.IsErrUserNotExist(err) {
 			return err
 		}
 		if comment.Poster != nil {

@@ -19,3 +19,11 @@
   ref_comment_id: 1001
   ref_action: 0
   ref_is_pull: false
+
+-
+  id: 1003
+  type: 0 # Standard comment
+  poster_id: 9999 # Ghost user
+  issue_id: 1001 # contributor/first#1
+  content: Check my [website](https://test.net) for the best deals.
+  created_unix: 1752697810 # 2025-07-16 20:30:10
