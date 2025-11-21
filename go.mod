@@ -181,15 +181,15 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-git/go-git/v5 v5.16.3 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-openapi/jsonpointer v0.22.1 // indirect
+	github.com/go-openapi/jsonpointer v0.22.3 // indirect
 	github.com/go-openapi/jsonreference v0.21.3 // indirect
-	github.com/go-openapi/swag/conv v0.25.1 // indirect
-	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
-	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
-	github.com/go-openapi/swag/loading v0.25.1 // indirect
-	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
-	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
-	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
+	github.com/go-openapi/swag/conv v0.25.3 // indirect
+	github.com/go-openapi/swag/jsonname v0.25.3 // indirect
+	github.com/go-openapi/swag/jsonutils v0.25.3 // indirect
+	github.com/go-openapi/swag/loading v0.25.3 // indirect
+	github.com/go-openapi/swag/stringutils v0.25.3 // indirect
+	github.com/go-openapi/swag/typeutils v0.25.3 // indirect
+	github.com/go-openapi/swag/yamlutils v0.25.3 // indirect
 	github.com/go-webauthn/x v0.1.25 // indirect
 	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
