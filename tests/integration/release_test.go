@@ -113,16 +113,34 @@ func TestDeleteRelease(t *testing.T) {
 	release := unittest.AssertExistsAndLoadBean(t, &repo_model.Release{TagName: "v2.0"})
 	assert.False(t, release.IsTag)
 
-	// Using the ID of a comment that does not belong to the repository must fail
-	session5 := loginUser(t, "user5")
+	session := loginUser(t, "user2")   // owner user session
+	session5 := loginUser(t, "user5")  // different user session; using the ID of a release that does not belong to the repository must fail
+	anonSession := emptyTestSession(t) // anonymous session
 	otherRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerName: "user5", LowerName: "repo4"})
 
+	// can't delete a release by ID from the wrong repository context (otherRepo)
 	req := NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
 		"_csrf": GetCSRF(t, session5, otherRepo.Link()),
 	})
 	session5.MakeRequest(t, req, http.StatusNotFound)
 
-	session := loginUser(t, "user2")
+	// can't delete a release that the current user isn't a writer for
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", repo.Link(), release.ID), map[string]string{
+		"_csrf": GetCSRF(t, session5, repo.Link()),
+	})
+	session5.MakeRequest(t, req, http.StatusNotFound)
+
+	// can't delete a release while anonymous
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", repo.Link(), release.ID), map[string]string{})
+	anonSession.MakeRequest(t, req, http.StatusBadRequest) // no CSRF token
+
+	// can't delete a release by ID from the wrong repository context (otherRepo) as the correct user
+	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
+		"_csrf": GetCSRF(t, session, repo.Link()),
+	})
+	session.MakeRequest(t, req, http.StatusNotFound)
+
+	// but when everything aligns, we can delete the release
 	req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/releases/delete?id=%d", repo.Link(), release.ID), map[string]string{
 		"_csrf": GetCSRF(t, session, repo.Link()),
 	})
@@ -130,13 +148,31 @@ func TestDeleteRelease(t *testing.T) {
 	release = unittest.AssertExistsAndLoadBean(t, &repo_model.Release{ID: release.ID})
 
 	if assert.True(t, release.IsTag) {
+		// can't delete a release by ID from the wrong repository context (otherRepo)
 		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
 			"_csrf": GetCSRF(t, session5, otherRepo.Link()),
 		})
 		session5.MakeRequest(t, req, http.StatusNotFound)
 
+		// can't delete a release that the current user isn't a writer for
 		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", repo.Link(), release.ID), map[string]string{
-			"_csrf": GetCSRF(t, session, repo.Link()),
+			"_csrf": GetCSRF(t, session5, otherRepo.Link()),
+		})
+		session5.MakeRequest(t, req, http.StatusNotFound)
+
+		// can't delete a release while anonymous
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", repo.Link(), release.ID), map[string]string{})
+		anonSession.MakeRequest(t, req, http.StatusBadRequest) // no CSRF token
+
+		// can't delete a release by ID from the wrong repository context (otherRepo) as the correct user
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", otherRepo.Link(), release.ID), map[string]string{
+			"_csrf": GetCSRF(t, session, otherRepo.Link()),
+		})
+		session.MakeRequest(t, req, http.StatusNotFound)
+
+		// but when everything aligns, we can delete the tag
+		req = NewRequestWithValues(t, "POST", fmt.Sprintf("%s/tags/delete?id=%d", repo.Link(), release.ID), map[string]string{
+			"_csrf": GetCSRF(t, session, otherRepo.Link()),
 		})
 		session.MakeRequest(t, req, http.StatusOK)
 

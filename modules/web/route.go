@@ -88,7 +88,7 @@ func (r *Route) wrapMiddlewareAndHandler(h []any) ([]func(http.Handler) http.Han
 		}
 	}
 	for _, m := range h {
-		if h != nil {
+		if m != nil {
 			handlerProviders = append(handlerProviders, toHandlerProvider(m))
 		}
 	}

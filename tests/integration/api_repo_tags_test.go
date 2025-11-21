@@ -16,6 +16,7 @@ import (
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPIRepoTags(t *testing.T) {
@@ -120,4 +121,56 @@ func TestAPIGetTagArchiveDownloadCount(t *testing.T) {
 
 	assert.Equal(t, int64(1), tagInfo.ArchiveDownloadCount.TarGz)
 	assert.Equal(t, int64(0), tagInfo.ArchiveDownloadCount.Zip)
+}
+
+func TestAPIRepoTagDeleteProtection(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	// Login as User2.
+	session := loginUser(t, user.Name)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+	repoName := "repo1"
+
+	req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/tags", user.Name, repoName).
+		AddTokenAuth(token)
+	resp := MakeRequest(t, req, http.StatusOK)
+	var tags []*api.Tag
+	DecodeJSON(t, resp, &tags)
+	require.Len(t, tags, 1)
+	require.Equal(t, "v1.1", tags[0].Name)
+
+	// Create a tag protection rule for the repo so that `user2` cannot create/remove tags, even if they have write
+	// perms to the repo... which they do becase they own it.
+	req = NewRequestWithJSON(t, "POST",
+		fmt.Sprintf("/api/v1/repos/%s/%s/tag_protections", user.Name, repoName),
+		&api.CreateTagProtectionOption{
+			NamePattern:        "v*",
+			WhitelistUsernames: []string{"user1"},
+		}).
+		AddTokenAuth(token)
+	resp = MakeRequest(t, req, http.StatusCreated)
+	var tagProtection api.TagProtection
+	DecodeJSON(t, resp, &tagProtection)
+	require.Equal(t, "v*", tagProtection.NamePattern)
+
+	// Delete the release associated with v1.1, so that it's possible to delete the tag.
+	delReq := NewRequestf(t, "DELETE", "/api/v1/repos/%s/%s/releases/tags/%s", user.Name, repoName, tags[0].Name).
+		AddTokenAuth(token)
+	MakeRequest(t, delReq, http.StatusNoContent)
+
+	// Attempt to delete the tag, which should be denied by the tag protection rule.
+	delReq = NewRequestf(t, "DELETE", "/api/v1/repos/%s/%s/tags/%s", user.Name, repoName, tags[0].Name).
+		AddTokenAuth(token)
+	MakeRequest(t, delReq, http.StatusUnprocessableEntity)
+
+	// Remove the tag protection rule.
+	delReq = NewRequestf(t, "DELETE", "/api/v1/repos/%s/%s/tag_protections/%d", user.Name, repoName, tagProtection.ID).
+		AddTokenAuth(token)
+	MakeRequest(t, delReq, http.StatusNoContent)
+
+	// Attempt to delete the tag again, which should now be permitted.
+	delReq = NewRequestf(t, "DELETE", "/api/v1/repos/%s/%s/tags/%s", user.Name, repoName, tags[0].Name).
+		AddTokenAuth(token)
+	MakeRequest(t, delReq, http.StatusNoContent)
 }

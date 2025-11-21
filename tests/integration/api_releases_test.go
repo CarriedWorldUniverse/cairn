@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAPIListReleases(t *testing.T) {
+func TestAPIReleaseList(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -104,7 +104,7 @@ func createNewReleaseUsingAPI(t *testing.T, token string, owner *user_model.User
 	return &newRelease
 }
 
-func TestAPICreateAndUpdateRelease(t *testing.T) {
+func TestAPIReleaseCreateAndUpdate(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -161,7 +161,7 @@ func TestAPICreateAndUpdateRelease(t *testing.T) {
 	assert.True(t, newRelease.HideArchiveLinks)
 }
 
-func TestAPICreateProtectedTagRelease(t *testing.T) {
+func TestAPIReleaseCreateProtectedTag(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
@@ -186,7 +186,7 @@ func TestAPICreateProtectedTagRelease(t *testing.T) {
 	MakeRequest(t, req, http.StatusUnprocessableEntity)
 }
 
-func TestAPICreateReleaseToDefaultBranch(t *testing.T) {
+func TestAPIReleaseCreateToDefaultBranch(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -197,7 +197,7 @@ func TestAPICreateReleaseToDefaultBranch(t *testing.T) {
 	createNewReleaseUsingAPI(t, token, owner, repo, "v0.0.1", "", "v0.0.1", "test")
 }
 
-func TestAPICreateReleaseToDefaultBranchOnExistingTag(t *testing.T) {
+func TestAPIReleaseCreateToDefaultBranchOnExistingTag(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -215,7 +215,7 @@ func TestAPICreateReleaseToDefaultBranchOnExistingTag(t *testing.T) {
 	createNewReleaseUsingAPI(t, token, owner, repo, "v0.0.1", "", "v0.0.1", "test")
 }
 
-func TestAPICreateReleaseGivenInvalidTarget(t *testing.T) {
+func TestAPIReleaseCreateGivenInvalidTarget(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -233,7 +233,7 @@ func TestAPICreateReleaseGivenInvalidTarget(t *testing.T) {
 	MakeRequest(t, req, http.StatusNotFound)
 }
 
-func TestAPIGetLatestRelease(t *testing.T) {
+func TestAPIReleaseGetLatest(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -248,7 +248,7 @@ func TestAPIGetLatestRelease(t *testing.T) {
 	assert.Equal(t, "testing-release", release.Title)
 }
 
-func TestAPIGetReleaseByTag(t *testing.T) {
+func TestAPIReleaseGetByTag(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -268,13 +268,29 @@ func TestAPIGetReleaseByTag(t *testing.T) {
 
 	req = NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/%s/releases/tags/%s", owner.Name, repo.Name, nonexistingtag))
 	resp = MakeRequest(t, req, http.StatusNotFound)
-
 	var err *api.APIError
 	DecodeJSON(t, resp, &err)
 	assert.NotEmpty(t, err.Message)
 }
 
-func TestAPIDeleteReleaseByTagName(t *testing.T) {
+func TestAPIReleaseGetDraftByTag(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	rel := unittest.AssertExistsAndLoadBean(t, &repo_model.Release{
+		RepoID:  repo.ID,
+		TagName: "draft-release",
+	})
+	assert.True(t, rel.IsDraft)
+
+	req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/%s/releases/tags/%s", repo.OwnerName, repo.Name, rel.TagName))
+	resp := MakeRequest(t, req, http.StatusNotFound)
+	var err *api.APIError
+	DecodeJSON(t, resp, &err)
+	assert.NotEmpty(t, err.Message)
+}
+
+func TestAPIReleaseDeleteByTagName(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -300,7 +316,7 @@ func TestAPIDeleteReleaseByTagName(t *testing.T) {
 	_ = MakeRequest(t, req, http.StatusNoContent)
 }
 
-func TestAPIUploadAssetRelease(t *testing.T) {
+func TestAPIReleaseUploadAsset(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -371,7 +387,7 @@ func TestAPIUploadAssetRelease(t *testing.T) {
 	})
 }
 
-func TestAPIGetReleaseArchiveDownloadCount(t *testing.T) {
+func TestAPIReleaseGetArchiveDownloadCount(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -407,7 +423,7 @@ func TestAPIGetReleaseArchiveDownloadCount(t *testing.T) {
 	assert.Equal(t, int64(0), release.ArchiveDownloadCount.Zip)
 }
 
-func TestAPIExternalAssetRelease(t *testing.T) {
+func TestAPIReleaseExternalAsset(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -424,13 +440,13 @@ func TestAPIExternalAssetRelease(t *testing.T) {
 	var attachment *api.Attachment
 	DecodeJSON(t, resp, &attachment)
 
-	assert.EqualValues(t, "test-asset", attachment.Name)
+	assert.Equal(t, "test-asset", attachment.Name)
 	assert.EqualValues(t, 0, attachment.Size)
-	assert.EqualValues(t, "https://forgejo.org/", attachment.DownloadURL)
-	assert.EqualValues(t, "external", attachment.Type)
+	assert.Equal(t, "https://forgejo.org/", attachment.DownloadURL)
+	assert.Equal(t, "external", attachment.Type)
 }
 
-func TestAPIDuplicateAssetRelease(t *testing.T) {
+func TestAPIReleaseDuplicateAsset(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
@@ -458,7 +474,7 @@ func TestAPIDuplicateAssetRelease(t *testing.T) {
 	MakeRequest(t, req, http.StatusBadRequest)
 }
 
-func TestAPIMissingAssetRelease(t *testing.T) {
+func TestAPIReleaseMissingAsset(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})

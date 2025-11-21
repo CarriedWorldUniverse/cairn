@@ -345,6 +345,7 @@ type DeclarativeRepoOptions struct {
 	WikiBranch    optional.Option[string]
 	AutoInit      optional.Option[bool]
 	IsTemplate    optional.Option[bool]
+	IsPrivate     optional.Option[bool]
 }
 
 func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts DeclarativeRepoOptions) (*repo_model.Repository, string, func()) {
@@ -376,6 +377,7 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 		Readme:        "Default",
 		DefaultBranch: "main",
 		IsTemplate:    opts.IsTemplate.Value(),
+		IsPrivate:     opts.IsPrivate.Value(),
 	})
 	require.NoError(t, err)
 	assert.NotEmpty(t, repo)
