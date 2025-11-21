@@ -107,6 +107,9 @@ details.dropdown > .content > ul {
   &:last-of-type > li:last-child {
     border-radius: 0 0 var(--border-radius) var(--border-radius);
   }
+  &:only-of-type > li:only-child {
+    border-radius: var(--border-radius);
+  }
 }
 
 /* General styling of list items */

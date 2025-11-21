@@ -70,6 +70,53 @@ test.describe('Workflow Authenticated user2', () => {
   test('dispatch success', async ({page}) => {
     await dispatchSuccess(page);
   });
+
+  test('Disable/enable workflow', async ({page}) => {
+    await page.goto('/user2/test_workflows/actions?workflow=test-dispatch.yml');
+
+    const menuOpener = page.locator('.filter.menu details.dropdown > summary');
+    const disableButton = page.locator('a[data-url^="/user2/test_workflows/actions/disable"]');
+    const enableButton = page.locator('a[data-url^="/user2/test_workflows/actions/enable"]');
+    const disabledLabel = page.locator('.vertical.menu .item.active .ui.label').getByText('Disabled');
+    const flashBanner = page.locator('#flash-message');
+
+    // Overflow menu is hidden
+    await expect(disableButton).toBeHidden();
+    await expect(enableButton).toBeHidden();
+
+    await menuOpener.click();
+
+    // The current "Enabled" state is what previous tests left, but this test is built to not care
+    if (await disableButton.isVisible()) {
+      // Assert elemeents on page
+      await expect(enableButton).toBeHidden();
+      await expect(disabledLabel).toBeHidden();
+
+      // Flip the state
+      await disableButton.click();
+      await flashBanner.waitFor();
+      await menuOpener.click();
+
+      // Assert elemeents on page
+      await expect(enableButton).toBeVisible();
+      await expect(disableButton).toBeHidden();
+      await expect(disabledLabel).toBeVisible();
+    } else {
+      // Assert elemeents on page
+      await expect(enableButton).toBeVisible();
+      await expect(disabledLabel).toBeVisible();
+
+      // Flip the state
+      await enableButton.click();
+      await flashBanner.waitFor();
+      await menuOpener.click();
+
+      // Assert elemeents on page
+      await expect(enableButton).toBeHidden();
+      await expect(disableButton).toBeVisible();
+      await expect(disabledLabel).toBeHidden();
+    }
+  });
 });
 
 test('workflow dispatch box not available for unauthenticated users', async ({page}) => {
