@@ -87,9 +87,9 @@ func TestAdminModerationViewReports(t *testing.T) {
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			// Check how many reports are being displayed.
-			// Reports linked to the same content (type and id) should be grouped; therefore we should see only 6 instead of 9.
+			// Reports linked to the same content (type and id) should be grouped; therefore we should see only 8 instead of 11.
 			reports := htmlDoc.Find(".admin-setting-content .flex-list .flex-item.report")
-			assert.Equal(t, 7, reports.Length())
+			assert.Equal(t, 8, reports.Length())
 
 			// Check details for shown reports.
 			testReportDetails(t, htmlDoc, "1", "octicon-person", "@SPAM-services", "/SPAM-services", "Illegal content", "1")
@@ -102,6 +102,8 @@ func TestAdminModerationViewReports(t *testing.T) {
 			testReportDetails(t, htmlDoc, "8", "octicon-issue-opened", "contributor/first#1", "/contributor/first/issues/1", "Other violations of platform rules", "1")
 			// #10 is for a Ghost user
 			testReportDetails(t, htmlDoc, "10", "octicon-person", "Reported content with type 1 and id 9999 no longer exists", "", "Other violations of platform rules", "1")
+			// #11 if for a comment who's poster was deleted
+			testReportDetails(t, htmlDoc, "11", "octicon-comment", "contributor/first/issues/1#issuecomment-1003", "/contributor/first/issues/1#issuecomment-1003", "Spam", "1")
 
 			t.Run("reports details page", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
@@ -121,6 +123,19 @@ func TestAdminModerationViewReports(t *testing.T) {
 				// Check how many reports are being displayed for user 1002.
 				reports = htmlDoc.Find(".admin-setting-content .flex-list .flex-item")
 				assert.Equal(t, 3, reports.Length())
+
+				// Poster of comment 1003 was deleted; make sure the details page is still rendered correctly.
+				req = NewRequest(t, "GET", "/admin/moderation/reports/type/4/id/1003")
+				resp = session.MakeRequest(t, req, http.StatusOK)
+				htmlDoc = NewHTMLParser(t, resp.Body)
+
+				// Check the title (content reference) and corresponding URL.
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title a")
+				assert.Equal(t, 1, title.Length())
+				assert.Equal(t, "/contributor/first/issues/1#issuecomment-1003", title.Text())
+				href, exists = title.Attr("href")
+				assert.True(t, exists)
+				assert.Equal(t, "/contributor/first/issues/1#issuecomment-1003", href)
 			})
 		})
 	})

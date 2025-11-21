@@ -109,3 +109,14 @@
   remarks: Check this spammer as soon as possible, before they delete their account.
   shadow_copy_id: null
   created_unix: 1121424150 # 2005-07-15 10:42:30
+
+-
+  id: 11
+  status: 1
+  reporter_id: 1001 # @contributor
+  content_type: 4   # Comment
+  content_id: 1003  # contributor/first/issues/1#issuecomment-1003
+  category: 2       # Spam
+  remarks: This user just posted a spammy comment on my issue.
+  shadow_copy_id: null
+  created_unix: 1752697820 # 2025-07-16 20:30:20
