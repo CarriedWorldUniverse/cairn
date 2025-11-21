@@ -807,3 +807,48 @@ func TestAPIInternalAndExternalIssueTracker(t *testing.T) {
 	runTest(t, externalIssueRepo, false)
 	runTest(t, disabledIssueRepo, false)
 }
+
+func TestAPIIssueDependencyPermissions(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	actingUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 4})
+	token := getUserToken(t, actingUser.Name, auth_model.AccessTokenScopeAll)
+
+	actingUserRepo, _, reset := tests.CreateDeclarativeRepoWithOptions(t, actingUser, tests.DeclarativeRepoOptions{})
+	defer reset()
+	actingUserIssue := createIssue(t, actingUser, actingUserRepo, "source issue", "some content")
+
+	otherUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	otherUserRepo, _, reset := tests.CreateDeclarativeRepoWithOptions(t, otherUser, tests.DeclarativeRepoOptions{
+		IsPrivate: optional.Some(true),
+	})
+	defer reset()
+	otherUserIssue := createIssue(t, otherUser, otherUserRepo, "target issue", "some content")
+
+	apiEndpoint := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/dependencies", actingUserRepo.OwnerName, actingUserRepo.Name, actingUserIssue.Index)
+	req := NewRequest(t, "GET", apiEndpoint).AddTokenAuth(token)
+	resp := MakeRequest(t, req, http.StatusOK)
+	var blockingIssues []*api.Issue
+	DecodeJSON(t, resp, &blockingIssues)
+	require.Empty(t, blockingIssues)
+
+	req = NewRequestWithJSON(t, "POST", apiEndpoint, api.IssueMeta{
+		Owner: otherUserRepo.OwnerName,
+		Name:  otherUserRepo.Name,
+		Index: otherUserIssue.Index,
+	}).AddTokenAuth(token)
+	MakeRequest(t, req, http.StatusNotFound) // as otherUserRepo is a private repo we can't link a dependency to it
+
+	req = NewRequest(t, "GET", apiEndpoint).AddTokenAuth(token)
+	resp = MakeRequest(t, req, http.StatusOK)
+	blockingIssues = []*api.Issue{} // reset
+	DecodeJSON(t, resp, &blockingIssues)
+	require.Empty(t, blockingIssues)
+
+	req = NewRequestWithJSON(t, "DELETE", apiEndpoint, api.IssueMeta{
+		Owner: otherUserRepo.OwnerName,
+		Name:  otherUserRepo.Name,
+		Index: otherUserIssue.Index,
+	}).AddTokenAuth(token)
+	MakeRequest(t, req, http.StatusNotFound) // as otherUserRepo is a private repo we can't link a dependency to it
+}

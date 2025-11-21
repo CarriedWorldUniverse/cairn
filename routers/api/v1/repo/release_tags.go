@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models"
 	repo_model "forgejo.org/models/repo"
+	unit_model "forgejo.org/models/unit"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
 	releaseservice "forgejo.org/services/release"
@@ -57,6 +58,13 @@ func GetReleaseByTag(ctx *context.APIContext) {
 	if release.IsTag {
 		ctx.NotFound()
 		return
+	}
+
+	if release.IsDraft {
+		if !ctx.IsSigned || !ctx.Repo.CanWrite(unit_model.TypeReleases) {
+			ctx.NotFound()
+			return
+		}
 	}
 
 	if err = release.LoadAttributes(ctx); err != nil {
