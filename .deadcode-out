@@ -230,9 +230,6 @@ forgejo.org/services/context
 forgejo.org/services/federation
 	FollowRemoteActor
 
-forgejo.org/services/mailer
-	ActionCloseIssueByCommit.isActionAdditionalData
-
 forgejo.org/services/notify
 	UnregisterNotifier
 
