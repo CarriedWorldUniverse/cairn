@@ -188,7 +188,7 @@ func EditQuotaRule(ctx *context.APIContext) {
 
 // DeleteQuotaRule deletes a quota rule
 func DeleteQuotaRule(ctx *context.APIContext) {
-	// swagger:operation DELETE /admin/quota/rules/{quotarule} admin adminDEleteQuotaRule
+	// swagger:operation DELETE /admin/quota/rules/{quotarule} admin adminDeleteQuotaRule
 	// ---
 	// summary: Deletes a quota rule
 	// produces:
