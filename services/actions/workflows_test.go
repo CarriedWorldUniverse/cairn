@@ -11,7 +11,7 @@ import (
 	"forgejo.org/models/repo"
 	"forgejo.org/modules/webhook"
 
-	act_model "code.forgejo.org/forgejo/runner/v11/act/model"
+	act_model "code.forgejo.org/forgejo/runner/v12/act/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
