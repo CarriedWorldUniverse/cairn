@@ -5,6 +5,7 @@ package actions
 
 import (
 	"errors"
+	"slices"
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
@@ -229,4 +230,63 @@ func TestActionsPreExecutionEventDetectionError(t *testing.T) {
 
 	assert.Equal(t, actions_model.StatusFailure, createdRun.Status)
 	assert.Equal(t, "actions.workflow.event_detection_error%!(EXTRA *errors.errorString=nothing is not a valid event)", createdRun.PreExecutionError)
+}
+
+func TestActionsNotifierConcurrencyGroup(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 3})
+
+	commit := &git.Commit{
+		ID:            git.MustIDFromString("0000000000000000000000000000000000000000"),
+		CommitMessage: "test",
+	}
+	detectedWorkflows := []*actions_module.DetectedWorkflow{
+		{
+			EntryName: "test.yml",
+			TriggerEvent: &jobparser.Event{
+				Name: "pull_request",
+			},
+			Content: []byte("{ on: pull_request, jobs: { j1: {} }}"),
+		},
+	}
+	input := &notifyInput{
+		Repo:        repo,
+		Doer:        doer,
+		Event:       webhook_module.HookEventPullRequestSync,
+		PullRequest: pr,
+		Payload:     &api.PullRequestPayload{},
+	}
+
+	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "refs/head/main")
+	require.NoError(t, err)
+
+	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 1)
+	firstRun := runs[0]
+
+	assert.Equal(t, actions_model.StatusWaiting, firstRun.Status)
+
+	// Also... check if CancelPreviousWithConcurrencyGroup is invoked from handleWorkflows by firing off a second
+	// workflow and checking that the first one gets cancelled:
+
+	err = handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "refs/head/main")
+	require.NoError(t, err)
+
+	runs, err = db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 2)
+
+	firstRunIndex := slices.IndexFunc(runs, func(run *actions_model.ActionRun) bool { return run.ID == firstRun.ID })
+	require.NotEqual(t, -1, firstRunIndex)
+	firstRun = runs[firstRunIndex]
+
+	assert.Equal(t, actions_model.StatusCancelled, firstRun.Status)
 }

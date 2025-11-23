@@ -25,6 +25,18 @@ import (
 	"xorm.io/builder"
 )
 
+type ConcurrencyMode int
+
+const (
+	// Don't enforce concurrency control.  Note that you won't find `UnlimitedConcurrency` implemented directly in the
+	// code; setting it on an `ActionRun` prevents the other limiting behaviors.
+	UnlimitedConcurrency ConcurrencyMode = iota
+	// Queue behind other jobs with the same concurrency group -- to be supported in Forgejo v14
+	QueueBehind
+	// Cancel other jobs with the same concurrency group
+	CancelInProgress
+)
+
 // ActionRun represents a run of a workflow file
 type ActionRun struct {
 	ID                int64
@@ -56,6 +68,8 @@ type ActionRun struct {
 	Created          timeutil.TimeStamp `xorm:"created"`
 	Updated          timeutil.TimeStamp `xorm:"updated"`
 	NotifyEmail      bool
+
+	ConcurrencyType ConcurrencyMode `xorm:"-"` // Forgejo v13 note: this is a persisted field in v14+
 
 	PreExecutionError string `xorm:"LONGTEXT"` // used to report errors that blocked execution of a workflow
 }

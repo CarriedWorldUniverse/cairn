@@ -180,3 +180,29 @@ func GetWorkflowFromCommit(gitRepo *git.Repository, ref, workflowID string) (*Wo
 		GitEntry:   workflowEntry,
 	}, nil
 }
+
+// Sets the ConcurrencyGroup & ConcurrencyType on the provided ActionRun based upon the Workflow's `concurrency` data,
+// or appropriate defaults if not present.
+func ConfigureActionRunConcurrency(workflow *act_model.Workflow, run *actions_model.ActionRun, vars map[string]string, inputs map[string]any) error {
+	_, cancelInProgress, err := jobparser.EvaluateWorkflowConcurrency(
+		workflow.RawConcurrency, generateGiteaContextForRun(run), vars, inputs)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate workflow `concurrency` block: %w", err)
+	}
+	if cancelInProgress == nil {
+		// Maintain compatible behavior from before concurrency groups were implemented -- if `cancel-in-progress`
+		// isn't defined in the workflow, cancel on push & PR sync events.
+		if run.Event == webhook.HookEventPush || run.Event == webhook.HookEventPullRequestSync {
+			run.ConcurrencyType = actions_model.CancelInProgress
+		} else {
+			run.ConcurrencyType = actions_model.UnlimitedConcurrency
+		}
+	} else if *cancelInProgress {
+		run.ConcurrencyType = actions_model.CancelInProgress
+	} else {
+		// A workflow has explicitly listed `cancel-in-progress: false`, and we don't support concurrency groups
+		// (queue-behind style behaviour, to be added in Forgejo v14).
+		run.ConcurrencyType = actions_model.UnlimitedConcurrency
+	}
+	return nil
+}
