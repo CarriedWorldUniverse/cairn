@@ -593,6 +593,7 @@ func rerunJob(ctx *context_module.Context, job *actions_model.ActionRunJob, shou
 func Logs(ctx *context_module.Context) {
 	runIndex := ctx.ParamsInt64("run")
 	jobIndex := ctx.ParamsInt64("job")
+	attemptNumber := ctx.ParamsInt64("attempt")
 
 	job, _ := getRunJobs(ctx, runIndex, jobIndex)
 	if ctx.Written() {
@@ -609,7 +610,7 @@ func Logs(ctx *context_module.Context) {
 		return
 	}
 
-	task, err := actions_model.GetTaskByID(ctx, job.TaskID)
+	task, err := actions_model.GetTaskByJobAttempt(ctx, job.ID, attemptNumber)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return

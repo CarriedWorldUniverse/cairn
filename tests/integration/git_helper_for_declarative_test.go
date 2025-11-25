@@ -62,6 +62,11 @@ func createSSHUrl(gitPath string, u *url.URL) *url.URL {
 
 var rootPathRe = regexp.MustCompile("\\[repository\\]\nROOT\\s=\\s.*")
 
+func onApplicationRun[T testing.TB](t T, callback func(T, *url.URL)) {
+	t.Helper()
+	onGiteaRun(t, callback)
+}
+
 func onGiteaRun[T testing.TB](t T, callback func(T, *url.URL)) {
 	defer tests.PrepareTestEnv(t, 1)()
 	s := http.Server{

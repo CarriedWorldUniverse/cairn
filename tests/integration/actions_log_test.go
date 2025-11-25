@@ -140,8 +140,10 @@ jobs:
 
 				// download task logs and check content
 				runIndex := task.Context.GetFields()["run_number"].GetStringValue()
-				req := NewRequest(t, "GET", fmt.Sprintf("/%s/%s/actions/runs/%s/jobs/0/logs", user2.Name, repo.Name, runIndex)).
-					AddTokenAuth(token)
+				attempt := task.Context.GetFields()["run_attempt"].GetStringValue()
+				logURL := fmt.Sprintf("/%s/%s/actions/runs/%s/jobs/0/attempt/%s/logs", user2.Name, repo.Name, runIndex, attempt)
+				req := NewRequest(t, "GET", logURL)
+				req.AddTokenAuth(token)
 				resp := MakeRequest(t, req, http.StatusOK)
 				logTextLines := strings.Split(strings.TrimSpace(resp.Body.String()), "\n")
 				assert.Len(t, logTextLines, len(tc.outcome.logRows))
@@ -155,6 +157,125 @@ jobs:
 
 				resetFunc()
 			})
+		}
+
+		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteRepository)
+		doAPIDeleteRepository(httpContext)(t)
+	})
+}
+
+func TestActionsDownloadTaskRerunLogs(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		t.Skip()
+	}
+	now := time.Now()
+	treePath := ".gitea/workflows/download-task-logs.yml"
+	fileContent := `name: download-task-logs
+on:
+  push:
+    paths:
+      - '.gitea/workflows/download-task-logs.yml'
+jobs:
+    job1:
+      runs-on: ubuntu-latest
+      steps:
+        - run: |
+            echo "Run attempt: ${{ github.run_attempt }}"
+`
+	firstOutcome := &mockTaskOutcome{
+		result: runnerv1.Result_RESULT_SUCCESS,
+		logRows: []*runnerv1.LogRow{
+			{
+				Time:    timestamppb.New(now.Add(1 * time.Second)),
+				Content: "  \U0001F433  docker create image",
+			},
+			{
+				Time:    timestamppb.New(now.Add(2 * time.Second)),
+				Content: "Run attempt: 1",
+			},
+			{
+				Time:    timestamppb.New(now.Add(3 * time.Second)),
+				Content: "\U0001F3C1  Job succeeded",
+			},
+		},
+	}
+	secondOutcome := &mockTaskOutcome{
+		result: runnerv1.Result_RESULT_SUCCESS,
+		logRows: []*runnerv1.LogRow{
+			{
+				Time:    timestamppb.New(now.Add(1 * time.Second)),
+				Content: "  \U0001F433  docker create image",
+			},
+			{
+				Time:    timestamppb.New(now.Add(2 * time.Second)),
+				Content: "Run attempt: 2",
+			},
+			{
+				Time:    timestamppb.New(now.Add(3 * time.Second)),
+				Content: "\U0001F3C1  Job succeeded",
+			},
+		},
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		session := loginUser(t, user2.Name)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+
+		repo := createActionsTestRepo(t, token, "actions-download-task-logs", false)
+
+		runner := newMockRunner()
+		runner.registerAsRepoRunner(t, user2.Name, repo.Name, "mock-runner", []string{"ubuntu-latest"})
+
+		opts := getWorkflowCreateFileOptions(user2, repo.DefaultBranch, fmt.Sprintf("Create %s", treePath), fileContent)
+		createWorkflowFile(t, token, user2.Name, repo.Name, treePath, opts)
+
+		// Execute first run
+		task := runner.fetchTask(t)
+		runner.execTask(t, task, firstOutcome)
+
+		// Download task logs and check content
+		runIndex := task.Context.GetFields()["run_number"].GetStringValue()
+		attempt := task.Context.GetFields()["run_attempt"].GetStringValue()
+		logURL := fmt.Sprintf("/%s/%s/actions/runs/%s/jobs/0/attempt/%s/logs", user2.Name, repo.Name, runIndex, attempt)
+		logRequest := NewRequest(t, "GET", logURL)
+		logResponse := session.MakeRequest(t, logRequest, http.StatusOK)
+		logTextLines := strings.Split(strings.TrimSpace(logResponse.Body.String()), "\n")
+		assert.Len(t, logTextLines, len(firstOutcome.logRows))
+		for idx, lr := range firstOutcome.logRows {
+			assert.Equal(
+				t,
+				fmt.Sprintf("%s %s", lr.Time.AsTime().Format("2006-01-02T15:04:05.0000000Z07:00"), lr.Content),
+				logTextLines[idx],
+			)
+		}
+
+		// Trigger rerun
+		rerunURL := fmt.Sprintf("/%s/%s/actions/runs/%s/rerun", user2.Name, repo.Name, runIndex)
+		csrf := GetCSRF(t, session, "/")
+		rerunRequest := NewRequestWithValues(t, "POST", rerunURL, map[string]string{
+			"_csrf": csrf,
+		})
+		session.MakeRequest(t, rerunRequest, http.StatusOK)
+
+		// Execute rerun task
+		rerunTask := runner.fetchTask(t)
+		runner.execTask(t, rerunTask, secondOutcome)
+
+		// Download rerun task logs and check content
+		rerunIndex := rerunTask.Context.GetFields()["run_number"].GetStringValue()
+		rerunAttempt := rerunTask.Context.GetFields()["run_attempt"].GetStringValue()
+		rerunLogURL := fmt.Sprintf("/%s/%s/actions/runs/%s/jobs/0/attempt/%s/logs", user2.Name, repo.Name, rerunIndex, rerunAttempt)
+		rerunLogRequest := NewRequest(t, "GET", rerunLogURL)
+		rerunLogResponse := session.MakeRequest(t, rerunLogRequest, http.StatusOK)
+		rerunLogTextLines := strings.Split(strings.TrimSpace(rerunLogResponse.Body.String()), "\n")
+		assert.Len(t, rerunLogTextLines, len(secondOutcome.logRows))
+		for idx, lr := range secondOutcome.logRows {
+			assert.Equal(
+				t,
+				fmt.Sprintf("%s %s", lr.Time.AsTime().Format("2006-01-02T15:04:05.0000000Z07:00"), lr.Content),
+				rerunLogTextLines[idx],
+			)
 		}
 
 		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteRepository)
