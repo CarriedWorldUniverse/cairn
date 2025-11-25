@@ -126,7 +126,7 @@ func (wc wechatworkConvertor) Push(p *api.PushPayload) (WechatworkPayload, error
 
 // Issue implements PayloadConvertor Issue method
 func (wc wechatworkConvertor) Issue(p *api.IssuePayload) (WechatworkPayload, error) {
-	text, issueTitle, attachmentText, _ := getIssuesPayloadInfo(p, noneLinkFormatter, true)
+	text, issueTitle, attachmentText, _ := getIssuesPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 	var content string
 	content += fmt.Sprintf(" ><font color=\"info\">%s</font>\n >%s \n ><font color=\"warning\"> %s</font> \n [%s](%s)", text, attachmentText, issueTitle, p.Issue.HTMLURL, p.Issue.HTMLURL)
 
@@ -135,7 +135,7 @@ func (wc wechatworkConvertor) Issue(p *api.IssuePayload) (WechatworkPayload, err
 
 // IssueComment implements PayloadConvertor IssueComment method
 func (wc wechatworkConvertor) IssueComment(p *api.IssueCommentPayload) (WechatworkPayload, error) {
-	text, issueTitle, _ := getIssueCommentPayloadInfo(p, noneLinkFormatter, true)
+	text, issueTitle, _ := getIssueCommentPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 	var content string
 	content += fmt.Sprintf(" ><font color=\"info\">%s</font>\n >%s \n ><font color=\"warning\">%s</font> \n [%s](%s)", text, p.Comment.Body, issueTitle, p.Comment.HTMLURL, p.Comment.HTMLURL)
 
@@ -144,7 +144,7 @@ func (wc wechatworkConvertor) IssueComment(p *api.IssueCommentPayload) (Wechatwo
 
 // PullRequest implements PayloadConvertor PullRequest method
 func (wc wechatworkConvertor) PullRequest(p *api.PullRequestPayload) (WechatworkPayload, error) {
-	text, issueTitle, attachmentText, _ := getPullRequestPayloadInfo(p, noneLinkFormatter, true)
+	text, issueTitle, attachmentText, _ := getPullRequestPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 	pr := fmt.Sprintf("> <font color=\"info\"> %s </font> \r\n > <font color=\"comment\">%s </font> \r\n > <font color=\"comment\">%s </font> \r\n",
 		text, issueTitle, attachmentText)
 
@@ -183,20 +183,20 @@ func (wc wechatworkConvertor) Repository(p *api.RepositoryPayload) (WechatworkPa
 
 // Wiki implements PayloadConvertor Wiki method
 func (wc wechatworkConvertor) Wiki(p *api.WikiPayload) (WechatworkPayload, error) {
-	text, _, _ := getWikiPayloadInfo(p, noneLinkFormatter, true)
+	text, _, _ := getWikiPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newWechatworkMarkdownPayload(text), nil
 }
 
 // Release implements PayloadConvertor Release method
 func (wc wechatworkConvertor) Release(p *api.ReleasePayload) (WechatworkPayload, error) {
-	text, _ := getReleasePayloadInfo(p, noneLinkFormatter, true)
+	text, _ := getReleasePayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newWechatworkMarkdownPayload(text), nil
 }
 
 func (wc wechatworkConvertor) Package(p *api.PackagePayload) (WechatworkPayload, error) {
-	text, _ := getPackagePayloadInfo(p, noneLinkFormatter, true)
+	text, _ := getPackagePayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newWechatworkMarkdownPayload(text), nil
 }

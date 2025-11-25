@@ -178,7 +178,7 @@ func (m msteamsConvertor) Push(p *api.PushPayload) (MSTeamsPayload, error) {
 
 // Issue implements PayloadConvertor Issue method
 func (m msteamsConvertor) Issue(p *api.IssuePayload) (MSTeamsPayload, error) {
-	title, _, attachmentText, color := getIssuesPayloadInfo(p, noneLinkFormatter, false)
+	title, _, attachmentText, color := getIssuesPayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,
@@ -193,7 +193,7 @@ func (m msteamsConvertor) Issue(p *api.IssuePayload) (MSTeamsPayload, error) {
 
 // IssueComment implements PayloadConvertor IssueComment method
 func (m msteamsConvertor) IssueComment(p *api.IssueCommentPayload) (MSTeamsPayload, error) {
-	title, _, color := getIssueCommentPayloadInfo(p, noneLinkFormatter, false)
+	title, _, color := getIssueCommentPayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,
@@ -208,7 +208,7 @@ func (m msteamsConvertor) IssueComment(p *api.IssueCommentPayload) (MSTeamsPaylo
 
 // PullRequest implements PayloadConvertor PullRequest method
 func (m msteamsConvertor) PullRequest(p *api.PullRequestPayload) (MSTeamsPayload, error) {
-	title, _, attachmentText, color := getPullRequestPayloadInfo(p, noneLinkFormatter, false)
+	title, _, attachmentText, color := getPullRequestPayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,
@@ -284,7 +284,7 @@ func (m msteamsConvertor) Repository(p *api.RepositoryPayload) (MSTeamsPayload, 
 
 // Wiki implements PayloadConvertor Wiki method
 func (m msteamsConvertor) Wiki(p *api.WikiPayload) (MSTeamsPayload, error) {
-	title, color, _ := getWikiPayloadInfo(p, noneLinkFormatter, false)
+	title, color, _ := getWikiPayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,
@@ -299,7 +299,7 @@ func (m msteamsConvertor) Wiki(p *api.WikiPayload) (MSTeamsPayload, error) {
 
 // Release implements PayloadConvertor Release method
 func (m msteamsConvertor) Release(p *api.ReleasePayload) (MSTeamsPayload, error) {
-	title, color := getReleasePayloadInfo(p, noneLinkFormatter, false)
+	title, color := getReleasePayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,
@@ -313,7 +313,7 @@ func (m msteamsConvertor) Release(p *api.ReleasePayload) (MSTeamsPayload, error)
 }
 
 func (m msteamsConvertor) Package(p *api.PackagePayload) (MSTeamsPayload, error) {
-	title, color := getPackagePayloadInfo(p, noneLinkFormatter, false)
+	title, color := getPackagePayloadInfo(p, noneLinkFormatter, noneNameFormatter, false)
 
 	return createMSTeamsPayload(
 		p.Repository,

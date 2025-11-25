@@ -169,28 +169,28 @@ func (m matrixConvertor) Fork(p *api.ForkPayload) (MatrixPayload, error) {
 
 // Issue implements payloadConvertor Issue method
 func (m matrixConvertor) Issue(p *api.IssuePayload) (MatrixPayload, error) {
-	text, _, _, _ := getIssuesPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _, _ := getIssuesPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return m.newPayload(text)
 }
 
 // IssueComment implements payloadConvertor IssueComment method
 func (m matrixConvertor) IssueComment(p *api.IssueCommentPayload) (MatrixPayload, error) {
-	text, _, _ := getIssueCommentPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _ := getIssueCommentPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return m.newPayload(text)
 }
 
 // Wiki implements payloadConvertor Wiki method
 func (m matrixConvertor) Wiki(p *api.WikiPayload) (MatrixPayload, error) {
-	text, _, _ := getWikiPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _ := getWikiPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return m.newPayload(text)
 }
 
 // Release implements payloadConvertor Release method
 func (m matrixConvertor) Release(p *api.ReleasePayload) (MatrixPayload, error) {
-	text, _ := getReleasePayloadInfo(p, htmlLinkFormatter, true)
+	text, _ := getReleasePayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return m.newPayload(text)
 }
@@ -222,7 +222,7 @@ func (m matrixConvertor) Push(p *api.PushPayload) (MatrixPayload, error) {
 
 // PullRequest implements payloadConvertor PullRequest method
 func (m matrixConvertor) PullRequest(p *api.PullRequestPayload) (MatrixPayload, error) {
-	text, _, _, _ := getPullRequestPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _, _ := getPullRequestPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return m.newPayload(text)
 }
