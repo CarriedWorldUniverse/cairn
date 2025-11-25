@@ -136,21 +136,21 @@ func (t telegramConvertor) Push(p *api.PushPayload) (TelegramPayload, error) {
 
 // Issue implements PayloadConvertor Issue method
 func (t telegramConvertor) Issue(p *api.IssuePayload) (TelegramPayload, error) {
-	text, _, attachmentText, _ := getIssuesPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, attachmentText, _ := getIssuesPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text + "\n\n" + attachmentText), nil
 }
 
 // IssueComment implements PayloadConvertor IssueComment method
 func (t telegramConvertor) IssueComment(p *api.IssueCommentPayload) (TelegramPayload, error) {
-	text, _, _ := getIssueCommentPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _ := getIssueCommentPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text + "\n" + p.Comment.Body), nil
 }
 
 // PullRequest implements PayloadConvertor PullRequest method
 func (t telegramConvertor) PullRequest(p *api.PullRequestPayload) (TelegramPayload, error) {
-	text, _, attachmentText, _ := getPullRequestPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, attachmentText, _ := getPullRequestPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text + "\n" + attachmentText), nil
 }
@@ -187,20 +187,20 @@ func (t telegramConvertor) Repository(p *api.RepositoryPayload) (TelegramPayload
 
 // Wiki implements PayloadConvertor Wiki method
 func (t telegramConvertor) Wiki(p *api.WikiPayload) (TelegramPayload, error) {
-	text, _, _ := getWikiPayloadInfo(p, htmlLinkFormatter, true)
+	text, _, _ := getWikiPayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text), nil
 }
 
 // Release implements PayloadConvertor Release method
 func (t telegramConvertor) Release(p *api.ReleasePayload) (TelegramPayload, error) {
-	text, _ := getReleasePayloadInfo(p, htmlLinkFormatter, true)
+	text, _ := getReleasePayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text), nil
 }
 
 func (t telegramConvertor) Package(p *api.PackagePayload) (TelegramPayload, error) {
-	text, _ := getPackagePayloadInfo(p, htmlLinkFormatter, true)
+	text, _ := getPackagePayloadInfo(p, htmlLinkFormatter, noneNameFormatter, true)
 
 	return createTelegramPayload(text), nil
 }

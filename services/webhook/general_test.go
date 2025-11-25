@@ -476,7 +476,7 @@ func TestGetIssuesPayloadInfo(t *testing.T) {
 
 	for i, c := range cases {
 		p.Action = c.action
-		text, issueTitle, attachmentText, color := getIssuesPayloadInfo(p, noneLinkFormatter, true)
+		text, issueTitle, attachmentText, color := getIssuesPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 		assert.Equal(t, c.text, text, "case %d", i)
 		assert.Equal(t, c.issueTitle, issueTitle, "case %d", i)
 		assert.Equal(t, c.attachmentText, attachmentText, "case %d", i)
@@ -575,7 +575,7 @@ func TestGetPullRequestPayloadInfo(t *testing.T) {
 
 	for i, c := range cases {
 		p.Action = c.action
-		text, issueTitle, attachmentText, color := getPullRequestPayloadInfo(p, noneLinkFormatter, true)
+		text, issueTitle, attachmentText, color := getPullRequestPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 		assert.Equal(t, c.text, text, "case %d", i)
 		assert.Equal(t, c.issueTitle, issueTitle, "case %d", i)
 		assert.Equal(t, c.attachmentText, attachmentText, "case %d", i)
@@ -614,7 +614,7 @@ func TestGetWikiPayloadInfo(t *testing.T) {
 
 	for i, c := range cases {
 		p.Action = c.action
-		text, color, link := getWikiPayloadInfo(p, noneLinkFormatter, true)
+		text, color, link := getWikiPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 		assert.Equal(t, c.text, text, "case %d", i)
 		assert.Equal(t, c.color, color, "case %d", i)
 		assert.Equal(t, c.link, link, "case %d", i)
@@ -648,7 +648,7 @@ func TestGetReleasePayloadInfo(t *testing.T) {
 
 	for i, c := range cases {
 		p.Action = c.action
-		text, color := getReleasePayloadInfo(p, noneLinkFormatter, true)
+		text, color := getReleasePayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 		assert.Equal(t, c.text, text, "case %d", i)
 		assert.Equal(t, c.color, color, "case %d", i)
 	}
@@ -685,7 +685,7 @@ func TestGetIssueCommentPayloadInfo(t *testing.T) {
 
 	for i, c := range cases {
 		p.Action = c.action
-		text, issueTitle, color := getIssueCommentPayloadInfo(p, noneLinkFormatter, true)
+		text, issueTitle, color := getIssueCommentPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 		assert.Equal(t, c.text, text, "case %d", i)
 		assert.Equal(t, c.issueTitle, issueTitle, "case %d", i)
 		assert.Equal(t, c.color, color, "case %d", i)

@@ -115,7 +115,7 @@ func (fc feishuConvertor) Push(p *api.PushPayload) (FeishuPayload, error) {
 
 // Issue implements PayloadConvertor Issue method
 func (fc feishuConvertor) Issue(p *api.IssuePayload) (FeishuPayload, error) {
-	title, link, by, operator, result, assignees := getIssuesInfo(p)
+	title, link, by, operator, result, assignees := getIssuesInfo(p, noneNameFormatter)
 	if assignees != "" {
 		if p.Action == api.HookIssueAssigned || p.Action == api.HookIssueUnassigned || p.Action == api.HookIssueMilestoned {
 			return newFeishuTextPayload(fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n\n%s", title, link, by, operator, result, assignees, p.Issue.Body)), nil
@@ -127,13 +127,13 @@ func (fc feishuConvertor) Issue(p *api.IssuePayload) (FeishuPayload, error) {
 
 // IssueComment implements PayloadConvertor IssueComment method
 func (fc feishuConvertor) IssueComment(p *api.IssueCommentPayload) (FeishuPayload, error) {
-	title, link, by, operator := getIssuesCommentInfo(p)
+	title, link, by, operator := getIssuesCommentInfo(p, noneNameFormatter)
 	return newFeishuTextPayload(fmt.Sprintf("%s\n%s\n%s\n%s\n\n%s", title, link, by, operator, p.Comment.Body)), nil
 }
 
 // PullRequest implements PayloadConvertor PullRequest method
 func (fc feishuConvertor) PullRequest(p *api.PullRequestPayload) (FeishuPayload, error) {
-	title, link, by, operator, result, assignees := getPullRequestInfo(p)
+	title, link, by, operator, result, assignees := getPullRequestInfo(p, noneNameFormatter)
 	if assignees != "" {
 		if p.Action == api.HookIssueAssigned || p.Action == api.HookIssueUnassigned || p.Action == api.HookIssueMilestoned {
 			return newFeishuTextPayload(fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n\n%s", title, link, by, operator, result, assignees, p.PullRequest.Body)), nil
@@ -173,20 +173,20 @@ func (fc feishuConvertor) Repository(p *api.RepositoryPayload) (FeishuPayload, e
 
 // Wiki implements PayloadConvertor Wiki method
 func (fc feishuConvertor) Wiki(p *api.WikiPayload) (FeishuPayload, error) {
-	text, _, _ := getWikiPayloadInfo(p, noneLinkFormatter, true)
+	text, _, _ := getWikiPayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newFeishuTextPayload(text), nil
 }
 
 // Release implements PayloadConvertor Release method
 func (fc feishuConvertor) Release(p *api.ReleasePayload) (FeishuPayload, error) {
-	text, _ := getReleasePayloadInfo(p, noneLinkFormatter, true)
+	text, _ := getReleasePayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newFeishuTextPayload(text), nil
 }
 
 func (fc feishuConvertor) Package(p *api.PackagePayload) (FeishuPayload, error) {
-	text, _ := getPackagePayloadInfo(p, noneLinkFormatter, true)
+	text, _ := getPackagePayloadInfo(p, noneLinkFormatter, noneNameFormatter, true)
 
 	return newFeishuTextPayload(text), nil
 }
