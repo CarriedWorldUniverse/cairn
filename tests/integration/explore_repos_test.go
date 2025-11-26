@@ -24,6 +24,10 @@ func testExploreStarForkCounters(t *testing.T, repoQuery, expectedStars, expecte
 
 	assert.Equal(t, expectedStars, starsAriaLabel)
 	assert.Equal(t, expectedForks, forksAriaLabel)
+
+	// Verify that correct icons are used
+	assert.True(t, repoListEntry.Find("a[href$='/stars'] > svg").HasClass("octicon-star"))
+	assert.True(t, repoListEntry.Find("a[href$='/forks'] > svg").HasClass("octicon-repo-forked"))
 }
 
 func TestExploreRepos(t *testing.T) {
