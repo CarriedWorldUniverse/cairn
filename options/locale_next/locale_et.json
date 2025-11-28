@@ -58,5 +58,13 @@
     "keys.gpg.link": "GPG võtmed",
     "profile.edit.link": "Muuda profiili",
     "feed.atom.link": "Atom-uudisvoog",
-    "home.welcome.activity_hint": "Sinu uudisvoos ei leidu veel mitte midagi. Kui toimetad midagi sinu jälgitavates lähtekoodihoidlates, siis sinu tegevused ja aktiivsus on siin näha."
+    "home.welcome.activity_hint": "Sinu uudisvoos ei leidu veel mitte midagi. Kui toimetad midagi sinu jälgitavates lähtekoodihoidlates, siis sinu tegevused ja aktiivsus on siin näha.",
+    "watch.n_watchers": {
+        "one": "%s jälgija",
+        "other": "%s jälgijat"
+    },
+    "release.n_downloads": {
+        "one": "%s allalaadimine",
+        "other": "%s allalaadimist"
+    }
 }

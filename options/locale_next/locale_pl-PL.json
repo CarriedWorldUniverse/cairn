@@ -1,15 +1,18 @@
 {
     "fork.n_forks": {
         "one": "%s fork",
-        "many": "%s forki"
+        "few": "%s forki",
+        "many": ""
     },
     "stars.n_stars": {
         "one": "%s gwiazdka",
-        "many": "%s gwiazdek"
+        "few": "%s gwiazdek",
+        "many": ""
     },
     "release.n_downloads": {
         "one": "%s pobranie",
-        "many": "%s pobrania"
+        "few": "%s pobrania",
+        "many": ""
     },
     "repo.pulls.merged_title_desc": {
         "one": "scala %[1]d commit z <code>%[2]s</code> do <code>%[3]s</code> %[4]s",
@@ -132,5 +135,12 @@
         "many": ""
     },
     "repo.pulls.maintainers_can_edit": "Opiekunowie mogą edytować ten pull request.",
-    "repo.pulls.maintainers_cannot_edit": "Opiekunowie nie mogą edytować tego pull requestu."
+    "repo.pulls.maintainers_cannot_edit": "Opiekunowie nie mogą edytować tego pull requestu.",
+    "watch.n_watchers": {
+        "one": "%s obserwator",
+        "few": "%s obserwatora",
+        "many": "%s obserwujących"
+    },
+    "repo.issues.filter_poster.hint": "Filtruj według autora",
+    "repo.issues.filter_assignee.hint": "Filtruj według przypisanego użytkownika"
 }

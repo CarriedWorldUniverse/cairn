@@ -184,5 +184,30 @@
     "repo.pulls.poster_manage_approval": "Ipamahala ang pagapruba",
     "repo.pulls.poster_requires_approval": "Ang ilang mga workflow ay <a href=\"%[1]s\">naghihintay para suriin.</a>",
     "repo.pulls.poster_requires_approval.tooltip": "Ang may-akda ng hiling sa paghilang ito ay hindi pinagkatiwalaan na tumakbo ng mga workflow na na-trigger ng isang hiling sa paghila na ginawa mula sa naka-fork na repositoryo o gamit ang AGit. Hindi tatakbo ang mga workflow na na-trigger ng `pull_request` event hanggang sa sila ay aprubahan.",
-    "repo.pulls.poster_is_trusted": "Ang may-akda ng hiling sa paghilang ito ay <a href=\"%[1]s\">palaging pinagkakatiwalaan na tumakbo ng mga workflow.</a>"
+    "repo.pulls.poster_is_trusted": "Ang may-akda ng hiling sa paghilang ito ay <a href=\"%[1]s\">palaging pinagkakatiwalaan na tumakbo ng mga workflow.</a>",
+    "repo.issues.filter_poster.hint": "I-filter ayon sa may-akda",
+    "repo.issues.filter_assignee.hint": "I-filter ayon sa itinalagang user",
+    "repo.issues.filter_reviewers.hint": "I-filter ayon sa user na sinuri",
+    "repo.issues.filter_mention.hint": "I-filter ayon sa nabanggit na user",
+    "repo.issues.filter_modified.hint": "I-filter ayon sa petsa ng huling binago",
+    "repo.issues.filter_sort.hint": "Isaayos ayon sa: ginawa/komento/binago/takdang petsa",
+    "repo.pulls.poster_is_trusted.tooltip": "Tahasang pinagkakatiwalaan ang may-akda ng hiling sa paghila na ito na patakbuhin ang mga workflow na na-trigger ng mga `pull_request` na event.",
+    "repo.pulls.poster_trust_deny": "Tanggihan",
+    "repo.pulls.poster_trust_deny.tooltip": "Ikakansela ang mga workflow na naghihintay para sa pag apruba.",
+    "repo.pulls.poster_trust_once": "Aprubahan nang isang beses",
+    "repo.pulls.poster_trust_once.tooltip": "Tatakbo ang mga workflow na na-trigger ng `pull_request` na event sa commit na ito ngunit kailangang aprubahan para sa lahat ng mga hinaharap na commit na tinulak sa hiling sa paghila na ito.",
+    "repo.pulls.poster_trust_always": "Palaging aprubahan",
+    "repo.pulls.poster_trust_always.tooltip": "Tatakbo ang mga workflow na na-trigger ng `pull_request` na event sa commit na ito at hindi na kailangang aprubahan ang mga pagtakbo mula sa hiling sa paghila na ito o sa mga hinaharap na hiling sa paghila na ginawa ng user na ito.",
+    "repo.pulls.poster_trust_revoke": "Tanggihan",
+    "repo.pulls.poster_trust_revoke.tooltip": "Hindi na mapagkakatiwalaan ang may-akda ng hiling sa paghila na ito na tumakbo ng mga workflow na na-trigger ng `pull_request` na event, kailangang manu-manong aprubahan ang bawat pagtakbo.",
+    "search.syntax": "Syntax ng paghahanap",
+    "keys.verify.token.hint": "Valid lang ang token sa loob ng 1 minuto. <a href=\"%[1]s\">Kumuha ng bago kung nag-expire na ito</a>.",
+    "admin.dashboard.actions_action_user": "Bawiin ang tiwala ng Forgejo Actions para sa mga hindi aktibong user",
+    "admin.dashboard.transfer_lingering_logs": "Ilipat ang mga actions log ng mga natapos na actions na trabaho mula sa database sa storage",
+    "actions.status.diagnostics.waiting": {
+        "one": "Naghihintay ng runner na may sumusunod na label: %s",
+        "other": "Naghihintay ng runner na may sumusunod na mga label: %s"
+    },
+    "teams.add_all_repos.modal.header": "Idagdag ang lahat ng mga repositoryo",
+    "teams.remove_all_repos.modal.header": "Tanggalin ang lahat ng mga repositoryo"
 }
