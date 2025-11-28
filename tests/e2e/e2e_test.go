@@ -107,7 +107,7 @@ func TestE2e(t *testing.T) {
 				defer test.MockVariableValue(&setting.Quota.Enabled, true)()
 				defer test.MockVariableValue(&testE2eWebRoutes, routers.NormalRoutes())()
 			}
-			if testname == "buttons.test.e2e" || testname == "dropdown.test.e2e" {
+			if testname == "buttons.test.e2e" || testname == "dropdown.test.e2e" || testname == "modal.test.e2e" {
 				defer test.MockVariableValue(&setting.IsProd, false)()
 				defer test.MockVariableValue(&testE2eWebRoutes, routers.NormalRoutes())()
 			}

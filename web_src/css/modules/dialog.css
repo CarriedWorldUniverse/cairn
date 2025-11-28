@@ -14,13 +14,19 @@ dialog {
     1px 3px 15px 2px var(--color-shadow);
   border-radius: 0.28571429rem;
   outline: none;
-  padding: 0;
-  max-width: min(800px, 90vw);
-  width: fit-content;
   z-index: 1001;
 
   pointer-events: auto;
   touch-action: auto;
+
+  /* Modals shouldn't be wider than 800px ever. On narrow screens they shouldn't
+   * be wider than the screen, with a small margin */
+  max-width: min(800px, calc(100vw - var(--page-margin-x) * 2));
+  /* Modals also should't be tiny compared to the screen width */
+  min-width: min(400px, calc(100vw - var(--page-margin-x) * 2));
+
+  /* Suppress default <dialog> padding */
+  padding: 0;
 }
 
 dialog[open],
