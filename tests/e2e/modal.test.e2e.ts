@@ -1,4 +1,8 @@
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // @watch start
+// templates/devtest/modal.tmpl
 // templates/repo/editor/edit.tmpl
 // templates/repo/editor/patch.tmpl
 // web_src/js/features/repo-editor.js
@@ -42,4 +46,60 @@ test('Dialog modal', async ({page}) => {
   await page.locator('#commit-button').click();
   await page.locator('#edit-empty-content-modal .ok').click();
   await expect(page).toHaveURL(`/user2/repo1/src/branch/master/${filename}`);
+});
+
+test('Dialog modal: width', async ({page, isMobile}) => {
+  // This test doesn't need JS and runs a little faster without it
+  await page.goto('/devtest/modal');
+
+  // Open modal with short content
+  const shortModal = page.locator('#short-modal');
+  await expect(shortModal).toBeHidden();
+  await page.locator('button[data-modal="#short-modal"]').click();
+  await expect(shortModal).toBeVisible();
+
+  // Check it's width
+  let width = Math.round((await shortModal.boundingBox()).width);
+  if (isMobile) {
+    // Bound by viewport width
+    expect(width).toBeLessThan(400);
+  } else {
+    // Bound by min-width
+    expect(width).toBe(400);
+  }
+
+  // Open modal with medium sized content
+  await shortModal.locator('button.cancel').click();
+  const mediumModal = page.locator('#medium-modal');
+  await expect(mediumModal).toBeHidden();
+  await page.locator('button[data-modal="#medium-modal"]').click();
+  await expect(mediumModal).toBeVisible();
+
+  // Check it's width
+  width = Math.round((await mediumModal.boundingBox()).width);
+  if (isMobile) {
+    // Bound by viewport width
+    expect(width).toBeLessThan(400);
+  } else {
+    // Not bound by min-width or max-width
+    expect(width).toBeLessThan(800);
+    expect(width).toBeGreaterThan(400);
+  }
+
+  // Open modal with long content
+  await mediumModal.locator('button.cancel').click();
+  const longModal = page.locator('#long-modal');
+  await expect(longModal).toBeHidden();
+  await page.locator('button[data-modal="#long-modal"]').click();
+  await expect(longModal).toBeVisible();
+
+  // Check it's width
+  width = Math.round((await longModal.boundingBox()).width);
+  if (isMobile) {
+    // Bound by viewport width
+    expect(width).toBeLessThan(400);
+  } else {
+    // Bound by max-width
+    expect(width).toBe(800);
+  }
 });
