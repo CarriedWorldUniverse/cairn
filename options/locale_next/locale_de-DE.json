@@ -201,5 +201,13 @@
         "one": "Warte auf einen Runner mit dem folgenden Label: %s",
         "other": "Warte auf einen Runner mit den folgenden Labels: %s"
     },
-    "keys.verify.token.hint": "Der Token ist nur für 1 Minute gültig. <a href=\"%[1]s\">Hol dir einen neuen, falls er abgelaufen ist</a>."
+    "keys.verify.token.hint": "Der Token ist nur für 1 Minute gültig. <a href=\"%[1]s\">Hol dir einen neuen, falls er abgelaufen ist</a>.",
+    "repo.issues.filter_poster.hint": "Nach Autor filtern",
+    "repo.issues.filter_assignee.hint": "Nach zugewiesenem Benutzer filtern",
+    "repo.issues.filter_reviewers.hint": "Nach Benutzer, der gesichtet hat, filtern",
+    "repo.issues.filter_mention.hint": "Nach erwähntem Benutzer filtern",
+    "repo.issues.filter_modified.hint": "Nach letzten modifiziertem Datum filtern",
+    "repo.issues.filter_sort.hint": "Sortieren nach: erstellt/Kommentare/aktualisiert/Ablaufdatum",
+    "search.syntax": "Suchsyntax",
+    "admin.dashboard.transfer_lingering_logs": "Aktionslogs von fertigen Aktions-Jobs aus der Datenbank in den Speicher übertragen"
 }

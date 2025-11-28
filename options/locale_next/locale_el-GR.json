@@ -166,5 +166,14 @@
     "pulse.n_active_prs": {
         "one": "%s ενεργό pull request",
         "other": "%s ενεργά pull request"
-    }
+    },
+    "watch.n_watchers": {
+        "one": "%s παρατηρητής",
+        "other": "%s παρατηρητές"
+    },
+    "repo.issues.filter_poster.hint": "Φίλτρο με βάση τον συγγραφέα",
+    "repo.issues.filter_assignee.hint": "Φίλτρο κατά τον εκχωρημένο χρήστη",
+    "repo.issues.filter_mention.hint": "Φίλτρο με βάση τον αναφερόμενο χρήστη",
+    "repo.issues.filter_modified.hint": "Φίλτρο με βάση την τελευταία τροποποίηση",
+    "repo.pulls.poster_manage_approval": "Διαχείριση έγκρισης"
 }

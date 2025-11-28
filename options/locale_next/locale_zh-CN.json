@@ -148,5 +148,21 @@
     "repo.pulls.poster_is_trusted.tooltip": "此合并请求的作者被明确信任以运行由 `pull_request` 事件触发的工作流。",
     "repo.pulls.poster_trust_deny": "拒绝",
     "repo.pulls.poster_trust_deny.tooltip": "等待批准的工作流将被取消。",
-    "repo.pulls.poster_trust_once": "批准一次"
+    "repo.pulls.poster_trust_once": "批准一次",
+    "repo.issues.filter_poster.hint": "按作者过滤",
+    "repo.issues.filter_assignee.hint": "按指派用户过滤",
+    "repo.issues.filter_reviewers.hint": "按审阅用户过滤",
+    "repo.issues.filter_mention.hint": "按提及用户过滤",
+    "repo.issues.filter_modified.hint": "按最后修改时间过滤",
+    "repo.issues.filter_sort.hint": "按创建时间/评论数/更新时间/截止时间排序",
+    "search.syntax": "搜索语法",
+    "keys.verify.token.hint": "此令牌仅在一分钟内有效。过期后请<a href=\"%[1]s\">重新获取</a>。",
+    "admin.dashboard.actions_action_user": "撤销不活跃用户的Forgejo Actions信任",
+    "admin.dashboard.transfer_lingering_logs": "将已完成的actions任务的日志从数据库转移到硬盘",
+    "actions.status.diagnostics.waiting": "等待带有以下标签的运行器：%s",
+    "repo.pulls.poster_trust_once.tooltip": "由`pull_request`事件触发的工作流会基于此提交运行，但仍需批准。",
+    "repo.pulls.poster_trust_always": "始终批准",
+    "repo.pulls.poster_trust_always.tooltip": "由`pull_request`事件触发的工作流会基于此提交运行，且来自此合并请求或同一用户的其他合并请求的运行不需要批准。",
+    "repo.pulls.poster_trust_revoke": "撤销",
+    "repo.pulls.poster_trust_revoke.tooltip": "此合并请求的作者将不再被信任以运行`pull_request`事件触发的工作流，所有运行均需被手动批准。"
 }

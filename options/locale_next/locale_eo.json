@@ -81,5 +81,16 @@
     "repo.pulls.title_desc": {
         "one": "volas kunfandi %[1]d enmeton el <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
         "other": "volas kunfandi %[1]d enmetojn el <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>"
-    }
+    },
+    "home.welcome.activity_hint": "Nenio estas en via fluo ankoraŭ. Viaj agoj kaj aktiveco el deponejoj, kiujn vi rigardas, aperos ĉi tie.",
+    "repo.pulls.poster_manage_approval": "Administri aprobon",
+    "watch.n_watchers": {
+        "one": "%s observanto",
+        "other": "%s observantoj"
+    },
+    "repo.issues.filter_poster.hint": "Filtri laŭ la aŭtoro",
+    "repo.issues.filter_assignee.hint": "Filtri laŭ asignita uzanto",
+    "repo.issues.filter_reviewers.hint": "Filtri laŭ uzanto kiu recenzis",
+    "repo.issues.filter_mention.hint": "Filtri laŭ menciita uzanto",
+    "repo.issues.filter_modified.hint": "Filtri laŭ lasta modifdato"
 }
