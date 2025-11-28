@@ -386,6 +386,7 @@ func (source *Source) SearchEntry(name, passwd string, directBind bool) *SearchR
 		usersLdapGroups = source.listLdapGroupMemberships(l, userAttributeListedInGroup, true)
 
 		if source.GroupFilter != "" && len(usersLdapGroups) == 0 {
+			log.Info("Rejecting LDAP login: group filter set but user is not in any group")
 			return nil
 		}
 	}
