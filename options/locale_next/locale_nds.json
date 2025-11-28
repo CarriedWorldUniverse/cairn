@@ -201,5 +201,13 @@
         "one": "Wacht up eenen Loper mit deesem Vermark: %s",
         "other": "Wacht up eenen Loper mit deesen Vermarkens: %s"
     },
-    "keys.verify.token.hint": "Deeses Teken gellt blots 1 Menüüt. <a href=\"%[1]s\">Haal een nejes, wenn ’t avlopen is</a>."
+    "keys.verify.token.hint": "Deeses Teken gellt blots 1 Menüüt. <a href=\"%[1]s\">Haal een nejes, wenn ’t avlopen is</a>.",
+    "admin.dashboard.transfer_lingering_logs": "Aktioons-Utgaven vun ofsloten Aktioons-Upgaven vun de Datenbank in de Spieker överdragen",
+    "repo.issues.filter_poster.hint": "Na Autor filtern",
+    "repo.issues.filter_assignee.hint": "Na towiesen Bruker filtern",
+    "repo.issues.filter_reviewers.hint": "Na Nakieker filtern",
+    "repo.issues.filter_mention.hint": "Na benöömt Bruker filtern",
+    "repo.issues.filter_modified.hint": "Na lestem Ännern filtern",
+    "repo.issues.filter_sort.hint": "Sorteren na: maakt/Kommentaren/verneeit/Anstahn",
+    "search.syntax": "Söök-Syntax"
 }

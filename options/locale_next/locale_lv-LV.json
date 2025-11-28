@@ -155,7 +155,7 @@
     "migrate.codebase.description": "Pārcelt datus no codebasehq.com.",
     "migrate.forgejo.description": "Pārcelt datus no codeberg.org vai citiem Fogejo serveriem.",
     "repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts.",
-    "admin.config.security": "Drošības kondigurācija",
+    "admin.config.security": "Drošības konfigurācija",
     "settings.twofa_reenroll.description": "Atkārtoti ieslēgt savu divpakāpju autentificēšanos",
     "error.must_enable_2fa": "Šis Forgejo serveris pieprasa lietotājiem iespējot divpakāpju autentificēšanos, pirms viņi var piekļūt savam kontam. Iespējo to: %s",
     "admin.config.global_2fa_requirement.title": "Visaptveroša divpakāpju prasība",
@@ -215,5 +215,14 @@
         "zero": "Gaida uz izpildītāju ar šādām iezīmēm: %s",
         "one": "Gaida uz izpildītāju ar šādām iezīmēm: %s",
         "other": "Gaida uz izpildītāju ar šādām iezīmēm: %s"
-    }
+    },
+    "keys.verify.token.hint": "Pilnvara ir derīga tikai 1 minūti. <a href=\"%[1]s\">Iegūt jaunu</a>, ja pašreizējā ir beigusies.",
+    "admin.dashboard.transfer_lingering_logs": "Pārcelt pabeigto darbību uzdevumu darbību žurnālus no datubāzes uz krātuvi",
+    "repo.issues.filter_poster.hint": "Atlasīt pēc izveidotāja",
+    "repo.issues.filter_assignee.hint": "Atlasīt pēc lietotāja, kuram piešķirti",
+    "repo.issues.filter_reviewers.hint": "Atlasīt pēc lietotāja, kurš izskatīja",
+    "repo.issues.filter_mention.hint": "Atlasīt pēc lietotāja, kurš ir pieminēts",
+    "repo.issues.filter_modified.hint": "Atlasīt pēc pēdējā izmainīšanas datuma",
+    "repo.issues.filter_sort.hint": "Kārtot pēc: izveidots/piebildes/atjaunināts/beigu datums",
+    "search.syntax": "Meklēšanas pieraksts"
 }

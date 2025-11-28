@@ -200,5 +200,6 @@
     "actions.status.diagnostics.waiting": {
         "one": "Wachten op een runner met het volgende label: %s",
         "other": "Wachten op een runner met de volgende labels: %s"
-    }
+    },
+    "keys.verify.token.hint": "De token is slechts 1 minuut geldig. <a href=\"%[1]s\">Krijg een nieuwe als deze verlopen is</a>."
 }

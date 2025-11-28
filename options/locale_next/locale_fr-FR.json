@@ -207,5 +207,6 @@
     "repo.pulls.poster_trust_always.tooltip": "Les flux de travail déclenchés par un événement `pull_request` s'exécuteront sur ce commit et il n'y aura pas besoin d'approuver les exécutions à partir de cette pull request ou de futures pull request créées par le même utilisateur.",
     "repo.pulls.poster_trust_revoke": "Révoquer",
     "repo.pulls.poster_trust_revoke.tooltip": "L'auteur de cette pull request ne sera plus autorisé pour exécuter les flux de travail déclenchés par un événement `pull_request`, chaque exécution devra être approuvée manuellement.",
-    "actions.workflow.job_parsing_error": "Impossible d'analyser le processus dans le flux de travail : %v"
+    "actions.workflow.job_parsing_error": "Impossible d'analyser le processus dans le flux de travail : %v",
+    "keys.verify.token.hint": "Le jeton est uniquement valide pour 1 minute. <a href=\"%[1]s\">Obtenez en un nouveau s'il a expiré</a>."
 }

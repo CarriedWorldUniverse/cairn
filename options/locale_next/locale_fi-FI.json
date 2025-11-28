@@ -163,5 +163,19 @@
     "user.ghost.tooltip": "Tämä käyttäjä on poistettu tai häntä ei voida yhdistää.",
     "og.repo.summary_card.alt_description": "Yhteenvetokortti tietovarastosta %[1]s, kuvattu seuraavasti: %[2]s",
     "migrate.pagure.incorrect_url": "Virheellinen lähdetietovaraston URL-osoite on syötetty",
-    "actions.runs.viewing_out_of_date_run": "Katselet tämän työn vanhentunutta suorituskertaa, joka suoritettiin %[1]s."
+    "actions.runs.viewing_out_of_date_run": "Katselet tämän työn vanhentunutta suorituskertaa, joka suoritettiin %[1]s.",
+    "watch.n_watchers": {
+        "one": "%s seuraaja",
+        "other": "%s seuraajaa"
+    },
+    "repo.issues.filter_poster.hint": "Suodata tekijän perusteella",
+    "repo.issues.filter_reviewers.hint": "Suodata katselmoijan perusteella",
+    "repo.issues.filter_mention.hint": "Suodata mainitun käyttäjän perusteella",
+    "repo.issues.filter_modified.hint": "Suodata viimeisimmän muokkauspäivän perusteella",
+    "search.syntax": "Hakusyntaksi",
+    "keys.verify.token.hint": "Poletti on voimassa vain 1 minuutin. <a href=\"%[1]s\">Hanki uusi jos se vanheni</a>.",
+    "admin.moderation.moderation_reports": "Moderaatioraportit",
+    "migrate.pagure.private_issues.summary": "Yksityiset ongelmat (valinnainen)",
+    "teams.add_all_repos.modal.header": "Lisää kaikki tietovarastot",
+    "teams.remove_all_repos.modal.header": "Poista kaikki tietovarastot"
 }

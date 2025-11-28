@@ -2,12 +2,12 @@
     "fork.n_forks": {
         "one": "%s derivação",
         "many": "%s derivações",
-        "other": ""
+        "other": "%s derivações"
     },
     "stars.n_stars": {
         "one": "%s estrela",
         "many": "%s estrelas",
-        "other": ""
+        "other": "%s estrelas"
     },
     "release.n_downloads": {
         "one": "%s descarga",
@@ -17,12 +17,12 @@
     "repo.pulls.merged_title_desc": {
         "one": "integrou %[1]d cometimento do ramo <code>%[2]s</code> no ramo <code>%[3]s</code> %[4]s",
         "many": "integrou %[1]d cometimentos do ramo <code>%[2]s</code> no ramo <code>%[3]s</code> %[4]s",
-        "other": ""
+        "other": "integrou %[1]d cometimentos do ramo <code>%[2]s</code> no ramo <code>%[3]s</code> %[4]s"
     },
     "repo.pulls.title_desc": {
         "one": "quer integrar %[1]d cometimento do ramo <code>%[2]s</code> no ramo <code id=\"%[4]s\">%[3]s</code>",
         "many": "quer integrar %[1]d cometimentos do ramo <code>%[2]s</code> no ramo <code id=\"%[4]s\">%[3]s</code>",
-        "other": ""
+        "other": "quer integrar %[1]d cometimentos do ramo <code>%[2]s</code> no ramo <code id=\"%[4]s\">%[3]s</code>"
     },
     "search.milestone_kind": "Procurar etapas…",
     "home.welcome.no_activity": "Sem atividade",
@@ -210,5 +210,19 @@
     "repo.pulls.poster_trust_always.tooltip": "As sequências de trabalho acionadas por um evento `pull_request` serão executadas neste commit e não será necessário aprovar execuções deste pedido de integração ou de futuros pedidos de integração criados pelo mesmo utilizador.",
     "repo.pulls.poster_trust_revoke": "Revogar",
     "repo.pulls.poster_trust_revoke.tooltip": "O autor deste pedido de integração deixará de ser considerado confiável para executar sequências de trabalho acionadas por um evento `pull_request`, cada execução terá que ser aprovada manualmente.",
-    "admin.dashboard.actions_action_user": "Revogar a confiança em Forgejo Actions para utilizadores inativos"
+    "admin.dashboard.actions_action_user": "Revogar a confiança em Forgejo Actions para utilizadores inativos",
+    "keys.verify.token.hint": "O código é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>.",
+    "actions.status.diagnostics.waiting": {
+        "one": "Aguardando por um executor com o seguinte rótulo: %s",
+        "many": "Aguardando por um executor com os seguintes rótulos: %s",
+        "other": "Aguardando por um executor com os seguintes rótulos: %s"
+    },
+    "repo.issues.filter_poster.hint": "Filtrar pelo autor",
+    "repo.issues.filter_assignee.hint": "Filtrar por utilizador atribuído",
+    "repo.issues.filter_reviewers.hint": "Filtrar por utilizador que reviu",
+    "repo.issues.filter_mention.hint": "Filtrar por utilizador mencionado",
+    "repo.issues.filter_modified.hint": "Filtrar por data da última modificação",
+    "repo.issues.filter_sort.hint": "Ordenar por: criado/comentários/atualizado/prazo",
+    "search.syntax": "Sintaxe de pesquisa",
+    "admin.dashboard.transfer_lingering_logs": "Transferir registos de operações concluídas da base de dados para o armazenamento"
 }
