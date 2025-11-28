@@ -215,5 +215,14 @@
         "one": "Čekání na runner s následujícím štítkem: %s",
         "few": "Čekání na runner s následujícími štítky: %s",
         "other": "Čekání na runner s následujícími štítky: %s"
-    }
+    },
+    "keys.verify.token.hint": "Token je platný pouze 1 minutu. <a href=\"%[1]s\">Pokud vypršel, požádejte si o nový</a>.",
+    "admin.dashboard.transfer_lingering_logs": "Převést protokoly dokončených úloh akcí z databáze do úložiště",
+    "repo.issues.filter_poster.hint": "Filtrovat podle autora",
+    "repo.issues.filter_assignee.hint": "Filtrovat podle přiřazeného uživatele",
+    "repo.issues.filter_reviewers.hint": "Filtrovat podle uživatele, který prováděl kontrolu",
+    "repo.issues.filter_mention.hint": "Filtrovat podle zmíněného uživatele",
+    "repo.issues.filter_modified.hint": "Filtrovat podle data poslední úpravy",
+    "repo.issues.filter_sort.hint": "Seřadit podle: vytvořeno/komentáře/aktualizováno/termín",
+    "search.syntax": "Syntaxe vyhledávání"
 }

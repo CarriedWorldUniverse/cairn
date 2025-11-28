@@ -215,5 +215,6 @@
         "one": "Esperando por um runner com o seguinte rótulo: %s",
         "many": "Esperando por um runner com os seguintes rótulos: %s",
         "other": "Esperando por um runner com os seguintes rótulos: %s"
-    }
+    },
+    "keys.verify.token.hint": "Esse token é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>."
 }

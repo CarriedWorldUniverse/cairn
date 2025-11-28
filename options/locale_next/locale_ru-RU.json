@@ -215,5 +215,14 @@
         "many": "Ожидается исполнитель, имеющий одну из меток: %s"
     },
     "repo.pulls.poster_manage_approval": "Управление одобрением",
-    "repo.pulls.poster_trust_revoke.tooltip": "Автор запроса на слияние больше не будет доверятся для запуска раб. потоков, срабатывающих для событий `pull_request`. Каждый запуск потребует одобрения."
+    "repo.pulls.poster_trust_revoke.tooltip": "Автор запроса на слияние больше не будет доверятся для запуска раб. потоков, срабатывающих для событий `pull_request`. Каждый запуск потребует одобрения.",
+    "repo.pulls.poster_trust_always.tooltip": "Этот раб. поток будет выполнен. Последующие раб. потоки, срабатывающие по событию `pull_request` в запросах на слияние от этого пользователя, будут запускаться без одобрения.",
+    "repo.issues.filter_poster.hint": "Отфильтровать по автору",
+    "repo.issues.filter_assignee.hint": "Отфильтровать по назначенному пользователю",
+    "repo.issues.filter_reviewers.hint": "Отфильтровать по оставившему рецензию",
+    "repo.issues.filter_mention.hint": "Отфильтровать по упомянутому пользователю",
+    "repo.issues.filter_modified.hint": "Отфильтровать по дате изменения",
+    "repo.issues.filter_sort.hint": "Отсортировать по: created/comments/updated/deadline",
+    "search.syntax": "Синтаксис поиска",
+    "admin.dashboard.transfer_lingering_logs": "Перенести журналы завершённых Действий из БД в хранилище"
 }
