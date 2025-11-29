@@ -148,3 +148,40 @@ func TestActionRunJob_StatusDiagnostics(t *testing.T) {
 		})
 	}
 }
+
+func TestActionRunJob_IsIncompleteMatrix(t *testing.T) {
+	tests := []struct {
+		name         string
+		job          ActionRunJob
+		isIncomplete bool
+		errContains  string
+	}{
+		{
+			name:         "normal workflow",
+			job:          ActionRunJob{WorkflowPayload: []byte("name: workflow")},
+			isIncomplete: false,
+		},
+		{
+			name:         "incomplete_matrix workflow",
+			job:          ActionRunJob{WorkflowPayload: []byte("name: workflow\nincomplete_matrix: true")},
+			isIncomplete: true,
+		},
+		{
+			name:        "unparseable workflow",
+			job:         ActionRunJob{WorkflowPayload: []byte("name: []\nincomplete_matrix: true")},
+			errContains: "failure unmarshaling WorkflowPayload to SingleWorkflow: yaml: unmarshal errors",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isIncomplete, err := tt.job.IsIncompleteMatrix()
+			if tt.errContains != "" {
+				assert.ErrorContains(t, err, tt.errContains)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.isIncomplete, isIncomplete)
+			}
+		})
+	}
+}

@@ -313,6 +313,15 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 
 	clearRepoRunCountCache(ctx, run.Repo)
 
+	if err := InsertRunJobs(ctx, run, jobs); err != nil {
+		return err
+	}
+
+	return commiter.Commit()
+}
+
+// Adds `ActionRunJob` instances from `SingleWorkflows` to an existing ActionRun.
+func InsertRunJobs(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWorkflow) error {
 	runJobs := make([]*ActionRunJob, 0, len(jobs))
 	var hasWaiting bool
 	for _, v := range jobs {
@@ -329,7 +338,7 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 			}
 			payload, _ = v.Marshal()
 
-			if len(needs) > 0 || run.NeedApproval {
+			if len(needs) > 0 || run.NeedApproval || v.IncompleteMatrix {
 				status = StatusBlocked
 			} else {
 				status = StatusWaiting
@@ -352,6 +361,7 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 			Status:            status,
 		})
 	}
+
 	if len(runJobs) > 0 {
 		if err := db.Insert(ctx, runJobs); err != nil {
 			return err
@@ -365,7 +375,7 @@ func InsertRun(ctx context.Context, run *ActionRun, jobs []*jobparser.SingleWork
 		}
 	}
 
-	return commiter.Commit()
+	return nil
 }
 
 func GetLatestRun(ctx context.Context, repoID int64) (*ActionRun, error) {
