@@ -6,7 +6,6 @@ package activities
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 
 	"forgejo.org/models/db"
@@ -51,24 +50,21 @@ const (
 // Notification represents a notification
 type Notification struct {
 	ID     int64 `xorm:"pk autoincr"`
-	UserID int64 `xorm:"INDEX NOT NULL"`
+	UserID int64 `xorm:"NOT NULL INDEX(s)"`
 	RepoID int64 `xorm:"INDEX NOT NULL"`
 
-	Status NotificationStatus `xorm:"SMALLINT INDEX NOT NULL"`
+	Status NotificationStatus `xorm:"SMALLINT NOT NULL INDEX(s)"`
 	Source NotificationSource `xorm:"SMALLINT INDEX NOT NULL"`
 
-	IssueID   int64  `xorm:"INDEX NOT NULL"`
-	CommitID  string `xorm:"INDEX"`
+	IssueID   int64 `xorm:"INDEX NOT NULL"`
 	CommentID int64
-
-	UpdatedBy int64 `xorm:"INDEX NOT NULL"`
 
 	Issue      *issues_model.Issue    `xorm:"-"`
 	Repository *repo_model.Repository `xorm:"-"`
 	Comment    *issues_model.Comment  `xorm:"-"`
 	User       *user_model.User       `xorm:"-"`
 
-	CreatedUnix timeutil.TimeStamp `xorm:"created INDEX NOT NULL"`
+	CreatedUnix timeutil.TimeStamp `xorm:"created NOT NULL"`
 	UpdatedUnix timeutil.TimeStamp `xorm:"updated INDEX NOT NULL"`
 }
 
@@ -88,20 +84,18 @@ func CreateRepoTransferNotification(ctx context.Context, doer, newOwner *user_mo
 			}
 			for i := range users {
 				notify = append(notify, &Notification{
-					UserID:    i,
-					RepoID:    repo.ID,
-					Status:    NotificationStatusUnread,
-					UpdatedBy: doer.ID,
-					Source:    NotificationSourceRepository,
+					UserID: i,
+					RepoID: repo.ID,
+					Status: NotificationStatusUnread,
+					Source: NotificationSourceRepository,
 				})
 			}
 		} else {
 			notify = []*Notification{{
-				UserID:    newOwner.ID,
-				RepoID:    repo.ID,
-				Status:    NotificationStatusUnread,
-				UpdatedBy: doer.ID,
-				Source:    NotificationSourceRepository,
+				UserID: newOwner.ID,
+				RepoID: repo.ID,
+				Status: NotificationStatusUnread,
+				Source: NotificationSourceRepository,
 			}}
 		}
 
@@ -109,14 +103,13 @@ func CreateRepoTransferNotification(ctx context.Context, doer, newOwner *user_mo
 	})
 }
 
-func createIssueNotification(ctx context.Context, userID int64, issue *issues_model.Issue, commentID, updatedByID int64) error {
+func createIssueNotification(ctx context.Context, userID int64, issue *issues_model.Issue, commentID int64) error {
 	notification := &Notification{
 		UserID:    userID,
 		RepoID:    issue.RepoID,
 		Status:    NotificationStatusUnread,
 		IssueID:   issue.ID,
 		CommentID: commentID,
-		UpdatedBy: updatedByID,
 	}
 
 	if issue.IsPull {
@@ -128,25 +121,23 @@ func createIssueNotification(ctx context.Context, userID int64, issue *issues_mo
 	return db.Insert(ctx, notification)
 }
 
-func updateIssueNotification(ctx context.Context, userID, issueID, commentID, updatedByID int64) error {
+func updateIssueNotification(ctx context.Context, userID, issueID, commentID int64) error {
 	notification, err := GetIssueNotification(ctx, userID, issueID)
 	if err != nil {
 		return err
 	}
 
-	// NOTICE: Only update comment id when the before notification on this issue is read, otherwise you may miss some old comments.
-	// But we need update update_by so that the notification will be reorder
-	var cols []string
-	if notification.Status == NotificationStatusRead {
-		notification.Status = NotificationStatusUnread
-		notification.CommentID = commentID
-		cols = []string{"status", "update_by", "comment_id"}
-	} else {
-		notification.UpdatedBy = updatedByID
-		cols = []string{"update_by"}
+	// If the notification is not yet read, then only update the update_unix column,
+	// so that the notification does not point to a newer comment.
+	if notification.Status != NotificationStatusRead {
+		notification.UpdatedUnix = timeutil.TimeStampNow()
+		_, err = db.GetEngine(ctx).ID(notification.ID).Cols("updated_unix").NoAutoTime().Update(notification)
+		return err
 	}
 
-	_, err = db.GetEngine(ctx).ID(notification.ID).Cols(cols...).Update(notification)
+	notification.Status = NotificationStatusUnread
+	notification.CommentID = commentID
+	_, err = db.GetEngine(ctx).ID(notification.ID).Cols("status", "comment_id").Update(notification)
 	return err
 }
 
@@ -242,8 +233,6 @@ func (n *Notification) HTMLURL(ctx context.Context) string {
 			return n.Comment.HTMLURL(ctx)
 		}
 		return n.Issue.HTMLURL()
-	case NotificationSourceCommit:
-		return n.Repository.HTMLURL() + "/commit/" + url.PathEscape(n.CommitID)
 	case NotificationSourceRepository:
 		return n.Repository.HTMLURL()
 	}
@@ -258,8 +247,6 @@ func (n *Notification) Link(ctx context.Context) string {
 			return n.Comment.Link(ctx)
 		}
 		return n.Issue.Link()
-	case NotificationSourceCommit:
-		return n.Repository.Link() + "/commit/" + url.PathEscape(n.CommitID)
 	case NotificationSourceRepository:
 		return n.Repository.Link()
 	}
@@ -370,10 +357,10 @@ func GetNotificationByID(ctx context.Context, notificationID int64) (*Notificati
 
 // UpdateNotificationStatuses updates the statuses of all of a user's notifications that are of the currentStatus type to the desiredStatus
 func UpdateNotificationStatuses(ctx context.Context, user *user_model.User, currentStatus, desiredStatus NotificationStatus) error {
-	n := &Notification{Status: desiredStatus, UpdatedBy: user.ID}
+	n := &Notification{Status: desiredStatus}
 	_, err := db.GetEngine(ctx).
 		Where("user_id = ? AND status = ?", user.ID, currentStatus).
-		Cols("status", "updated_by", "updated_unix").
+		Cols("status", "updated_unix").
 		Update(n)
 	return err
 }
