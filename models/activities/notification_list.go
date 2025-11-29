@@ -164,12 +164,12 @@ func createOrUpdateIssueNotifications(ctx context.Context, issueID, commentID, n
 		}
 
 		if notificationExists(notifications, issue.ID, userID) {
-			if err = updateIssueNotification(ctx, userID, issue.ID, commentID, notificationAuthorID); err != nil {
+			if err = updateIssueNotification(ctx, userID, issue.ID, commentID); err != nil {
 				return err
 			}
 			continue
 		}
-		if err = createIssueNotification(ctx, userID, issue, commentID, notificationAuthorID); err != nil {
+		if err = createIssueNotification(ctx, userID, issue, commentID); err != nil {
 			return err
 		}
 	}

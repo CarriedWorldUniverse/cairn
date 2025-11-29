@@ -21,7 +21,6 @@ func TestDropIndexIfExists(t *testing.T) {
 	}
 
 	x, deferable := migration_tests.PrepareTestEnv(t, 0, new(Table))
-	x.ShowSQL(true)
 	defer deferable()
 	if x == nil || t.Failed() {
 		return
