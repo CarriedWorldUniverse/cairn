@@ -1,0 +1,320 @@
+-
+  id: 600
+  run_id: 900
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  started: 1683636528
+  needs: '["job1", "job2"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: red
+
+-
+  id: 601
+  run_id: 901
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: ${{ fromJSON(needs.define-matrix.outputs.colors) }}
+    incomplete_matrix: true
+-
+  id: 602
+  run_id: 901
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 100
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 603
+  run_id: 902
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: ${{ fromJSON(needs.define-matrix.outputs.colors) }}
+    incomplete_matrix: true
+-
+  id: 604
+  run_id: 902
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 100
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+
+-
+  id: 605
+  run_id: 903
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix-1"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: ${{ fromJSON(needs.define-matrix-1.outputs.colors) }}
+            brightness:  ${{ fromJSON(needs.define-matrix-2.outputs.colors) }}
+    incomplete_matrix: true
+-
+  id: 606
+  run_id: 903
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix-1
+  attempt: 0
+  job_id: define-matrix-1
+  task_id: 100
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 607
+  run_id: 904
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: ${{ fromJSON(needs.define-matrix.outputs.colors) }}
+    incomplete_matrix: true
+-
+  id: 608
+  run_id: 904
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 101
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 609
+  run_id: 905
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      run-tests:
+        name: run-tests (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            datacenter: ${{ fromJSON(needs.define-matrix.outputs.datacenters) }}
+            node: ${{ fromJSON(needs.define-matrix.outputs.node-versions) }}
+            pg: ${{ fromJSON(needs.define-matrix.outputs.pg_version) }}
+    incomplete_matrix: true
+-
+  id: 610
+  run_id: 905
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 102
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 611
+  run_id: 906
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      run-tests:
+        name: run-tests (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix: ${{ fromJSON(needs.define-matrix.outputs.entire-matrix) }}
+    incomplete_matrix: true
+-
+  id: 612
+  run_id: 906
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 103
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 613
+  run_id: 907
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix"]'
+  workflow_payload: |
+    "on": [push]
+    jobs:
+      scalar-job:
+        name: scalar-job (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: |
+              set -x
+              [ "${{ matrix.scalar }}" = "scalar value" ] || [ "${{ matrix.scalar }}" = "hard-coded value" ] || exit 1
+        strategy:
+          matrix:
+            scalar:
+              - "${{ needs.define-matrix.outputs.scalar-value }}"
+              - hard-coded value
+    incomplete_matrix: true
+
+-
+  id: 614
+  run_id: 907
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix
+  attempt: 0
+  job_id: define-matrix
+  task_id: 104
+  status: 1 # success
+  runs_on: '["fedora"]'

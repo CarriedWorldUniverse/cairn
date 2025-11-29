@@ -17,6 +17,8 @@ import (
 	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 
+	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
+	"go.yaml.in/yaml/v3"
 	"xorm.io/builder"
 )
 
@@ -252,4 +254,15 @@ func (job *ActionRunJob) StatusDiagnostics(lang translation.Locale) []template.H
 	}
 
 	return diagnostics
+}
+
+// Checks whether the target job is an `(incomplete matrix)` job that will be blocked until the matrix is complete, and
+// then regenerated and deleted.
+func (job *ActionRunJob) IsIncompleteMatrix() (bool, error) {
+	var jobWorkflow jobparser.SingleWorkflow
+	err := yaml.Unmarshal(job.WorkflowPayload, &jobWorkflow)
+	if err != nil {
+		return false, fmt.Errorf("failure unmarshaling WorkflowPayload to SingleWorkflow: %w", err)
+	}
+	return jobWorkflow.IncompleteMatrix, nil
 }

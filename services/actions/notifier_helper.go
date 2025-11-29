@@ -412,7 +412,12 @@ func handleWorkflows(
 				Name: dwf.EntryName,
 			}}
 		} else {
-			jobs, err = actions_module.JobParser(dwf.Content, jobparser.WithVars(vars))
+			jobs, err = actions_module.JobParser(dwf.Content,
+				jobparser.WithVars(vars),
+				// We don't have any job outputs yet, but `WithJobOutputs(...)` triggers JobParser to supporting its
+				// `IncompleteMatrix` tagging for any jobs that require the inputs of other jobs.
+				jobparser.WithJobOutputs(map[string]map[string]string{}),
+			)
 			if err != nil {
 				log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
 				tr := translation.NewLocale(input.Doer.Language)

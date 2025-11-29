@@ -265,3 +265,31 @@ func TestActionsNotifier_handleWorkflows_setRunTrustForPullRequest(t *testing.T)
 	assert.Equal(t, pr.ID, run.PullRequestID)
 	assert.True(t, run.NeedApproval)
 }
+
+func TestActionsNotifier_DynamicMatrix(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 3})
+
+	dw := &actions_module.DetectedWorkflow{
+		Content: []byte("{ on: pull_request, jobs: { j1: { strategy: { matrix: { dim1: \"${{ fromJSON(needs.other-job.outputs.some-output) }}\" } } } } }"),
+	}
+	testActionsNotifierPullRequest(t, repo, pr, dw, webhook_module.HookEventPullRequestSync)
+
+	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 1)
+	run := runs[0]
+
+	jobs, err := db.Find[actions_model.ActionRunJob](t.Context(), actions_model.FindRunJobOptions{RunID: run.ID})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	job := jobs[0]
+
+	// With a matrix that contains ${{ needs ... }} references, the only requirement to work is that when the job is
+	// first inserted it is tagged w/ incomplete_matrix
+	assert.Contains(t, string(job.WorkflowPayload), "incomplete_matrix: true")
+}

@@ -849,6 +849,55 @@ func TestActionsWorkflowDispatchEvent(t *testing.T) {
 	})
 }
 
+func TestActionsWorkflowDispatchDynamicMatrix(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		// create the repo
+		repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
+			[]unit_model.Type{unit_model.TypeActions}, nil,
+			[]*files_service.ChangeRepoFile{
+				{
+					Operation: "create",
+					TreePath:  ".gitea/workflows/dispatch.yml",
+					ContentReader: strings.NewReader(
+						"name: test\n" +
+							"on: [workflow_dispatch]\n" +
+							"jobs:\n" +
+							"  test:\n" +
+							"    runs-on: ubuntu-latest\n" +
+							"    strategy:\n" +
+							"      matrix: \n" +
+							"        dim1: \"${{ fromJSON(needs.other-job.outputs.some-output) }}\"\n" +
+							"    steps:\n" +
+							"      - run: echo helloworld\n",
+					),
+				},
+			},
+		)
+		defer f()
+
+		gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+		require.NoError(t, err)
+		defer gitRepo.Close()
+
+		workflow, err := actions_service.GetWorkflowFromCommit(gitRepo, "main", "dispatch.yml")
+		require.NoError(t, err)
+		assert.Equal(t, "refs/heads/main", workflow.Ref)
+		assert.Equal(t, sha, workflow.Commit.ID.String())
+
+		inputGetter := func(key string) string {
+			return ""
+		}
+
+		run, _, err := workflow.Dispatch(db.DefaultContext, inputGetter, repo, user2)
+		require.NoError(t, err)
+
+		job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: run.ID})
+		assert.Contains(t, string(job.WorkflowPayload), "incomplete_matrix: true")
+	})
+}
+
 func TestActionsWorkflowDispatchConcurrencyGroup(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
