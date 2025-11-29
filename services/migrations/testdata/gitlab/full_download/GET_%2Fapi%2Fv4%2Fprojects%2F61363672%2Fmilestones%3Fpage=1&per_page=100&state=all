@@ -1,24 +1,30 @@
-X-Total: 2
-Set-Cookie: _cfuvid=uwwcVHMnVqsf5dOVdmePMl8w9SEvmr1muvo7QttWeKI-1725394794295-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
-Content-Security-Policy: default-src 'none'
+Gitlab-Sv: api-gke-us-east1-c
+X-Page: 1
+X-Per-Page: 100
+Cf-Cache-Status: MISS
+Cache-Control: max-age=0, private, must-revalidate
+X-Frame-Options: SAMEORIGIN
+X-Next-Page: 
+X-Prev-Page: 
+Set-Cookie: __cf_bm=_41Rh9aSyGsrVkscA.pV8yzJ4_ETNn9QF0Ag5uOwFqM-1764067238-1.0.1.1-bznJbf8viMS6FKcHE5lHz3uctOWh26FtF1avZuq328MUfmiD9DR0UYeWy900ArfK2i6mhadZCuvjqSl5V4hfYb3ndX30EH36gtJnzrDm11I; path=/; expires=Tue, 25-Nov-25 11:10:38 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=rCL0Wxxs.PKqgYyWaT19PeP_2uBvc11akIdy0Wt8f7A-1764067238959-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Type: application/json
+Gitlab-Lb: haproxy-main-08-lb-gprd
+Ratelimit-Observed: 5
+Referrer-Policy: strict-origin-when-cross-origin
 Etag: W/"a42f286b703ec341ad7f117b273a51ad"
+Strict-Transport-Security: max-age=31536000
+Ratelimit-Limit: 2000
+X-Total: 2
+Ratelimit-Remaining: 1995
+Ratelimit-Reset: 1764067260
+X-Gitlab-Meta: {"correlation_id":"9a40876f5056e0d9-ATL","version":"1"}
+X-Content-Type-Options: nosniff
+X-Runtime: 0.490074
+X-Total-Pages: 1
 Link: <https://gitlab.com/api/v4/projects/61363672/milestones?id=61363672&include_ancestors=false&page=1&per_page=100&state=all>; rel="first", <https://gitlab.com/api/v4/projects/61363672/milestones?id=61363672&include_ancestors=false&page=1&per_page=100&state=all>; rel="last"
 Vary: Origin, Accept-Encoding
-X-Content-Type-Options: nosniff
-X-Gitlab-Meta: {"correlation_id":"ed978cae0ea2bf9ac4b1f46fddfdf982","version":"1"}
-X-Per-Page: 100
-Cache-Control: max-age=0, private, must-revalidate
-Cf-Cache-Status: MISS
-Content-Type: application/json
-X-Next-Page: 
-X-Page: 1
-Strict-Transport-Security: max-age=31536000
-Gitlab-Sv: api-gke-us-east1-c
-X-Frame-Options: SAMEORIGIN
-X-Prev-Page: 
-Referrer-Policy: strict-origin-when-cross-origin
-Gitlab-Lb: haproxy-main-34-lb-gprd
-X-Runtime: 0.069266
-X-Total-Pages: 1
+Ratelimit-Name: throttle_authenticated_api
+Content-Security-Policy: default-src 'none'
 
 [{"id":4711993,"iid":2,"project_id":61363672,"title":"1.0.0","description":"","state":"closed","created_at":"2024-09-03T13:53:08.516Z","updated_at":"2024-09-03T20:03:57.786Z","due_date":null,"start_date":null,"expired":false,"web_url":"https://gitlab.com/forgejo/test_repo/-/milestones/2"},{"id":4711991,"iid":1,"project_id":61363672,"title":"1.1.0","description":"","state":"active","created_at":"2024-09-03T13:52:48.414Z","updated_at":"2024-09-03T14:52:14.093Z","due_date":null,"start_date":null,"expired":false,"web_url":"https://gitlab.com/forgejo/test_repo/-/milestones/1"}]

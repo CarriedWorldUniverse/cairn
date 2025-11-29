@@ -135,7 +135,7 @@ func TestGitlabDownloadRepo(t *testing.T) {
 		},
 	}, releases)
 
-	issues, isEnd, err := downloader.GetIssues(1, 2)
+	issues, isEnd, err := downloader.GetIssues(1, 3)
 	require.NoError(t, err)
 	assert.False(t, isEnd)
 	assertIssuesEqual(t, []*base.Issue{
@@ -220,6 +220,19 @@ func TestGitlabDownloadRepo(t *testing.T) {
 			},
 			Closed: timePtr(time.Date(2024, 9, 3, 14, 43, 10, 906000000, time.UTC)),
 		},
+		{
+			Number:     3,
+			Title:      "Fix plz",
+			Content:    "Can we do something about it? !5 is maybe related to that.",
+			Milestone:  "",
+			PosterID:   10529876,
+			PosterName: "patdyn",
+			State:      "opened",
+			Created:    time.Date(2025, time.November, 25, 9, 49, 31, 991000000, time.UTC),
+			Updated:    time.Date(2025, time.November, 25, 9, 49, 31, 991000000, time.UTC),
+			Labels:     []*base.Label{},
+			Reactions:  []*base.Reaction{},
+		},
 	}, issues)
 
 	comments, _, err := downloader.GetComments(&base.Issue{
@@ -256,11 +269,85 @@ func TestGitlabDownloadRepo(t *testing.T) {
 		},
 	}, comments)
 
-	prs, _, err := downloader.GetPullRequests(1, 1)
+	comments, _, err = downloader.GetComments(&base.Issue{
+		Number:       3,
+		ForeignIndex: 3,
+		Context:      gitlabIssueContext{IsMergeRequest: false},
+	})
+	require.NoError(t, err)
+	assertCommentsEqual(t, []*base.Comment{
+		{
+			IssueIndex: 3,
+			PosterID:   10529876,
+			PosterName: "patdyn",
+			Created:    time.Date(2025, time.November, 25, 9, 49, 50, 899000000, time.UTC),
+			Content:    "No actually its !4",
+			Reactions:  nil,
+		},
+	}, comments)
+
+	comments, _, err = downloader.GetComments(&base.Issue{
+		Number:       5,
+		ForeignIndex: 2,
+		Context:      gitlabIssueContext{IsMergeRequest: true},
+	})
+	require.NoError(t, err)
+	assertCommentsEqual(t, []*base.Comment{
+		{
+			IssueIndex: 5,
+			PosterID:   10529876,
+			PosterName: "patdyn",
+			Created:    time.Date(2025, time.November, 25, 9, 49, 0, 750000000, time.UTC),
+			Content:    "Although we had some trouble with !4",
+			Reactions:  nil,
+		},
+		{
+			IssueIndex: 5,
+			PosterID:   10529876,
+			PosterName: "patdyn",
+			Created:    time.Date(2025, time.November, 25, 9, 49, 32, 263000000, time.UTC),
+			Content:    "mentioned in issue #3",
+			Reactions:  nil,
+		},
+	}, comments)
+
+	prs, _, err := downloader.GetPullRequests(1, 2)
 	require.NoError(t, err)
 	assertPullRequestsEqual(t, []*base.PullRequest{
 		{
-			Number:     3,
+			Number:     5,
+			Title:      "Test/parsing",
+			Content:    "Simillar to !4 this solves an issue.",
+			Milestone:  "",
+			PosterID:   10529876,
+			PosterName: "patdyn",
+			State:      "opened",
+			Created:    time.Date(2025, time.November, 25, 9, 48, 20, 259000000, time.UTC),
+			Labels:     []*base.Label{},
+			Reactions:  []*base.Reaction{},
+			PatchURL:   server.URL + "/forgejo/test_repo/-/merge_requests/2.patch",
+			Head: base.PullRequestBranch{
+				Ref:       "test/parsing",
+				CloneURL:  server.URL + "/forgejo/test_repo/-/merge_requests/2",
+				SHA:       "c59c9b451acca9d106cc19d61d87afe3fbbb8b83",
+				RepoName:  "test_repo",
+				OwnerName: "patdyn",
+			},
+			Base: base.PullRequestBranch{
+				Ref:       "master",
+				SHA:       "c59c9b451acca9d106cc19d61d87afe3fbbb8b83",
+				OwnerName: "patdyn",
+				RepoName:  "test_repo",
+			},
+			Closed:         nil,
+			Merged:         false,
+			MergedTime:     nil,
+			MergeCommitSHA: "",
+			ForeignIndex:   2,
+			Context:        gitlabIssueContext{IsMergeRequest: true},
+		},
+		{
+			Number:     4,
 			Title:      "Test branch",
 			Content:    "do not merge this PR",
 			Milestone:  "1.1.0",
@@ -303,7 +390,7 @@ func TestGitlabDownloadRepo(t *testing.T) {
 			Merged:         false,
 			MergedTime:     nil,
 			MergeCommitSHA: "",
-			ForeignIndex:   2,
+			ForeignIndex:   1,
 			Context:        gitlabIssueContext{IsMergeRequest: true},
 		},
 	}, prs)
@@ -545,36 +632,37 @@ func TestAwardsToReactions(t *testing.T) {
 	}, reactions)
 }
 
+func makeTestNote(id int, body string, system bool, t time.Time) gitlab.Note {
+	return gitlab.Note{
+		ID: id,
+		Author: struct {
+			ID        int    `json:"id"`
+			Username  string `json:"username"`
+			Email     string `json:"email"`
+			Name      string `json:"name"`
+			State     string `json:"state"`
+			AvatarURL string `json:"avatar_url"`
+			WebURL    string `json:"web_url"`
+		}{
+			ID:       72,
+			Email:    "test@example.com",
+			Username: "test",
+		},
+		Body:      body,
+		CreatedAt: &t,
+		System:    system,
+	}
+}
+
 func TestNoteToComment(t *testing.T) {
 	downloader := &GitlabDownloader{}
 
 	now := time.Now()
-	makeTestNote := func(id int, body string, system bool) gitlab.Note {
-		return gitlab.Note{
-			ID: id,
-			Author: struct {
-				ID        int    `json:"id"`
-				Username  string `json:"username"`
-				Email     string `json:"email"`
-				Name      string `json:"name"`
-				State     string `json:"state"`
-				AvatarURL string `json:"avatar_url"`
-				WebURL    string `json:"web_url"`
-			}{
-				ID:       72,
-				Email:    "test@example.com",
-				Username: "test",
-			},
-			Body:      body,
-			CreatedAt: &now,
-			System:    system,
-		}
-	}
 	notes := []gitlab.Note{
-		makeTestNote(1, "This is a regular comment", false),
-		makeTestNote(2, "enabled an automatic merge for abcd1234", true),
-		makeTestNote(3, "changed target branch from `master` to `main`", true),
-		makeTestNote(4, "canceled the automatic merge", true),
+		makeTestNote(1, "This is a regular comment", false, now),
+		makeTestNote(2, "enabled an automatic merge for abcd1234", true, now),
+		makeTestNote(3, "changed target branch from `master` to `main`", true, now),
+		makeTestNote(4, "canceled the automatic merge", true, now),
 	}
 	comments := []base.Comment{{
 		IssueIndex:  17,
@@ -642,4 +730,33 @@ func TestGitlabIIDResolver(t *testing.T) {
 		assert.EqualValues(t, 2, r.generatePullRequestNumber(1))
 		r.recordIssueIID(3) // the generation procedure has been started, it shouldn't accept any new issue IID, so it panics
 	})
+}
+
+func TestCommentBodyParser(t *testing.T) {
+	downloader := GitlabDownloader{}
+	downloader.iidResolver.maxIssueIID = int64(10)
+	now := time.Now()
+
+	// Gitlab note references issue with #N and PR with !M, with N and M being arbitrary integers, so N == M is possible
+	testNote1 := makeTestNote(1, "Simillar to #9, may be solved in !4", false, now)
+	testNote2 := makeTestNote(2, "Simillar to #21, may be solved in !144", false, now)
+	testNote3 := makeTestNote(3, "Should actually be discussed in !5 or !6 and not in #2 (here)", false, now)
+	testNote4 := makeTestNote(4, "Closed by !1 and !14", false, now)
+	testNote5 := makeTestNote(5, "Actually !1 and !1 are the same but !100 and !214 are not", false, now)
+	testNote6 := makeTestNote(6, "!11 and !1 are simillar but !201 and !100 are not!", false, now)
+
+	parsedBody1 := downloader.convertMRReference(testNote1.Body)
+	parsedBody2 := downloader.convertMRReference(testNote2.Body)
+	parsedBody3 := downloader.convertMRReference(testNote3.Body)
+	parsedBody4 := downloader.convertMRReference(testNote4.Body)
+	parsedBody5 := downloader.convertMRReference(testNote5.Body)
+	parsedBody6 := downloader.convertMRReference(testNote6.Body)
+
+	// Assuming a total of 20 comments + PRs
+	assert.Equal(t, "Simillar to #9, may be solved in !14", parsedBody1)
+	assert.Equal(t, "Simillar to #21, may be solved in !154", parsedBody2)
+	assert.Equal(t, "Should actually be discussed in !15 or !16 and not in #2 (here)", parsedBody3)
+	assert.Equal(t, "Closed by !11 and !24", parsedBody4)
+	assert.Equal(t, "Actually !11 and !11 are the same but !110 and !224 are not", parsedBody5)
+	assert.Equal(t, "!21 and !11 are simillar but !211 and !110 are not!", parsedBody6)
 }

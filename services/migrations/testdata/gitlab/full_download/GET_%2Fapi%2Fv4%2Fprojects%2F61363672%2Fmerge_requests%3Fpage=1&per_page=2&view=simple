@@ -1,0 +1,30 @@
+Referrer-Policy: strict-origin-when-cross-origin
+Gitlab-Sv: api-gke-us-east1-c
+X-Content-Type-Options: nosniff
+X-Next-Page: 
+X-Page: 1
+X-Per-Page: 2
+Link: <https://gitlab.com/api/v4/projects/61363672/merge_requests?id=61363672&order_by=created_at&page=1&per_page=2&sort=desc&state=all&view=simple&with_labels_details=false&with_merge_status_recheck=false>; rel="first", <https://gitlab.com/api/v4/projects/61363672/merge_requests?id=61363672&order_by=created_at&page=1&per_page=2&sort=desc&state=all&view=simple&with_labels_details=false&with_merge_status_recheck=false>; rel="last"
+Ratelimit-Remaining: 1980
+X-Runtime: 0.087096
+X-Total-Pages: 1
+Cache-Control: max-age=0, private, must-revalidate
+Strict-Transport-Security: max-age=31536000
+Ratelimit-Observed: 20
+Set-Cookie: __cf_bm=oXDIvscgtcgX.J4BQH6gVUnRcpqDCIxXtIW88H5GkeE-1764067244-1.0.1.1-MRMb6HL_mAeWU7TOSknLwTRt2Vci4So1emQBn4uV6PvsIL4KAA7mEHa7wQYT0M6iXAH7ZrZz9R2cQT9cOsKuj_dxehLZHXdKGWA2H9sXINM; path=/; expires=Tue, 25-Nov-25 11:10:44 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=sto9ErHOck8xfsNxjLefx9wVTcqi24bVZV4T.w0DQSw-1764067244372-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Type: application/json
+Vary: Origin, Accept-Encoding
+Ratelimit-Limit: 2000
+Ratelimit-Name: throttle_authenticated_api
+Ratelimit-Reset: 1764067260
+Cf-Cache-Status: MISS
+Content-Security-Policy: default-src 'none'
+Gitlab-Lb: haproxy-main-32-lb-gprd
+X-Gitlab-Meta: {"correlation_id":"9a408793e7bfe0d9-ATL","version":"1"}
+X-Total: 2
+Etag: W/"890cf8ae2716f07ebfd15e1c459084c7"
+X-Frame-Options: SAMEORIGIN
+X-Prev-Page: 
+
+[{"id":435564587,"iid":2,"project_id":61363672,"title":"Test/parsing","description":"Simillar to !1 this solves an issue.","state":"opened","created_at":"2025-11-25T09:48:20.259Z","updated_at":"2025-11-25T09:48:21.627Z","web_url":"https://gitlab.com/forgejo/test_repo/-/merge_requests/2"},{"id":324657888,"iid":1,"project_id":61363672,"title":"Test branch","description":"do not merge this PR","state":"opened","created_at":"2024-09-03T07:57:19.866Z","updated_at":"2024-09-03T18:50:21.065Z","web_url":"https://gitlab.com/forgejo/test_repo/-/merge_requests/1"}]

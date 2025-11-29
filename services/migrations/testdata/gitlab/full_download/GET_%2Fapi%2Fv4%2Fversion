@@ -1,17 +1,23 @@
-Content-Type: application/json
+Gitlab-Sv: api-gke-us-east1-c
+Ratelimit-Name: throttle_authenticated_api
+X-Content-Type-Options: nosniff
 Cache-Control: max-age=0, private, must-revalidate
-Etag: W/"a27b6b3c661f4ee7a68e5b905f5291fb"
+Etag: W/"07cf63ed6ca527a8440305b235c1dbe6"
 Vary: Origin, Accept-Encoding
-X-Gitlab-Meta: {"correlation_id":"10488cc696aabdc48229039f2c9e4ebd","version":"1"}
-Gitlab-Sv: api-gke-us-east1-d
+Gitlab-Lb: haproxy-main-02-lb-gprd
+X-Gitlab-Meta: {"correlation_id":"9a40876657b0e0d9-ATL","version":"1"}
+Set-Cookie: __cf_bm=6UrvvT.eVACA2RNxuo3JgYQGOf87viAkfYl9Zk_E3A4-1764067237-1.0.1.1-Eq.xOoKXTaA91xlfvuNCFFzkpGifBiA41K8r8QGdw0f_sTr66SIHXtulqNIs7.A6aF8RcfB6owiKiV_rect7ubdVVRrKTWwxfHtaWvykTrI; path=/; expires=Tue, 25-Nov-25 11:10:37 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=NMsff2_I6aWniAT9LeJhCwEeMAfr8Wkjg5mYqJ06haU-1764067237046-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
 Cf-Cache-Status: MISS
 Strict-Transport-Security: max-age=31536000
-X-Frame-Options: SAMEORIGIN
-X-Runtime: 0.034189
+Ratelimit-Limit: 2000
+Ratelimit-Remaining: 1999
 Referrer-Policy: strict-origin-when-cross-origin
-Set-Cookie: _cfuvid=hbFjaLVJudhzz6Sqg5QnViD.eikToNruD.b1oEG5xrc-1725394792940-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
 Content-Security-Policy: default-src 'none'
-Gitlab-Lb: haproxy-main-56-lb-gprd
-X-Content-Type-Options: nosniff
+Ratelimit-Observed: 1
+Ratelimit-Reset: 1764067260
+X-Frame-Options: SAMEORIGIN
+X-Runtime: 0.051513
+Content-Type: application/json
 
-{"version":"17.4.0-pre","revision":"8c6dcc9e627","kas":{"enabled":true,"externalUrl":"wss://kas.gitlab.com","version":"17.4.0+a2ca345cd681ef39094623d8f4b6ed65996de57d"},"enterprise":true}
+{"version":"18.7.0-pre","revision":"6f8cf4c6c2b","kas":{"enabled":true,"externalUrl":"wss://kas.gitlab.com","externalK8sProxyUrl":"https://kas.gitlab.com/k8s-proxy","version":"18.7.0-rc1+5ca8be73a8685a5a9ab2baeb0d3ab7c455f9f819"},"enterprise":true}

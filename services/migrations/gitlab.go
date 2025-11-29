@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -453,12 +454,15 @@ func (g *GitlabDownloader) GetIssues(page, perPage int) ([]*base.Issue, bool, er
 			awardPage++
 		}
 
+		// record the issue IID, to be used in GetPullRequests()
+		g.iidResolver.recordIssueIID(issue.IID)
+
 		allIssues = append(allIssues, &base.Issue{
 			Title:        issue.Title,
 			Number:       int64(issue.IID),
 			PosterID:     int64(issue.Author.ID),
 			PosterName:   issue.Author.Username,
-			Content:      issue.Description,
+			Content:      g.convertMRReference(issue.Description),
 			Milestone:    milestone,
 			State:        issue.State,
 			Created:      *issue.CreatedAt,
@@ -470,9 +474,6 @@ func (g *GitlabDownloader) GetIssues(page, perPage int) ([]*base.Issue, bool, er
 			ForeignIndex: int64(issue.IID),
 			Context:      gitlabIssueContext{IsMergeRequest: false},
 		})
-
-		// record the issue IID, to be used in GetPullRequests()
-		g.iidResolver.recordIssueIID(issue.IID)
 	}
 
 	return allIssues, len(issues) < perPage, nil
@@ -593,7 +594,7 @@ func (g *GitlabDownloader) convertNoteToComment(localIndex int64, note *gitlab.N
 		PosterID:    int64(note.Author.ID),
 		PosterName:  note.Author.Username,
 		PosterEmail: note.Author.Email,
-		Content:     note.Body,
+		Content:     g.convertMRReference(note.Body),
 		Created:     *note.CreatedAt,
 		Meta:        map[string]any{},
 	}
@@ -706,7 +707,7 @@ func (g *GitlabDownloader) GetPullRequests(page, perPage int) ([]*base.PullReque
 			Number:         newPRNumber,
 			PosterName:     pr.Author.Username,
 			PosterID:       int64(pr.Author.ID),
-			Content:        pr.Description,
+			Content:        g.convertMRReference(pr.Description),
 			Milestone:      milestone,
 			State:          pr.State,
 			Created:        *pr.CreatedAt,
@@ -792,4 +793,41 @@ func (g *GitlabDownloader) awardsToReactions(awards []*gitlab.AwardEmoji) []*bas
 		}
 	}
 	return result
+}
+
+// Build on the assumption, that PR IDs will resolve after Issue IDs
+func (g *GitlabDownloader) convertMRReference(body string) string {
+	maxLength := len(body)
+	for i := 0; i < maxLength; i++ {
+		if body[i] == '!' {
+			var collected string
+			for k := i + 1; k < maxLength; k++ { // for each rune after ! check if next rune is integer
+				if body[k]-'0' <= 9 {
+					collected += string(body[k])
+					if k == maxLength-1 { // The last rune in the string was an integer
+						body = g.updateAndInsert(body, collected, i+1, k)
+					}
+				} else if len(collected) > 0 { // Integers have been collected, update value
+					body = g.updateAndInsert(body, collected, i+1, k)
+					maxLength = len(body)
+					i = k
+					break // We're done, continue after our replacement
+				}
+			}
+		}
+	}
+	return body
+}
+
+func (g *GitlabDownloader) updateAndInsert(description, oldReference string, endFirst, startSecond int) string {
+	oldVal, _ := strconv.Atoi(oldReference)
+	newVal := oldVal + int(g.iidResolver.maxIssueIID)
+	firstPart := description[0:endFirst]
+	firstPart += strconv.Itoa(newVal)
+	var secondPart string
+	if startSecond < len(description)-1 {
+		secondPart = description[startSecond:]
+	}
+	description = firstPart + secondPart
+	return description
 }

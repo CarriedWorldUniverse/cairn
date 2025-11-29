@@ -1,0 +1,30 @@
+Set-Cookie: __cf_bm=o0aS8o8ajcHs8a5C4vSUXQmZAQazi4dD0KCvTVlvSes-1764067243-1.0.1.1-94CxZwBfz9gJBykfV5Arn2iq8ORj_QBoMo9BmK9tJUwpEf0.WHNvPI5pVdUvZhdhCJGv3Bcxj0RbLwC..n2enJmsCgru1h.kjm0qBMVBCHA; path=/; expires=Tue, 25-Nov-25 11:10:43 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=HmW_.D2rp7JGXPOBvfl0WM76DobWOh6fFYs.z8WTWgw-1764067243834-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Cf-Cache-Status: MISS
+Link: <https://gitlab.com/api/v4/projects/61363672/merge_requests/2/discussions?id=61363672&noteable_id=2&page=1&per_page=100>; rel="first", <https://gitlab.com/api/v4/projects/61363672/merge_requests/2/discussions?id=61363672&noteable_id=2&page=1&per_page=100>; rel="last"
+Ratelimit-Observed: 18
+X-Total: 2
+Content-Security-Policy: default-src 'none'
+Ratelimit-Remaining: 1982
+X-Next-Page: 
+Content-Type: application/json
+Strict-Transport-Security: max-age=31536000
+Cache-Control: max-age=0, private, must-revalidate
+Gitlab-Lb: haproxy-main-03-lb-gprd
+X-Gitlab-Meta: {"correlation_id":"9a40879044cce0d9-ATL","version":"1"}
+Etag: W/"d87805cd93ac626c7e1fe459c808b459"
+X-Page: 1
+X-Runtime: 0.131844
+Vary: Origin, Accept-Encoding
+Gitlab-Sv: api-gke-us-east1-d
+Ratelimit-Name: throttle_authenticated_api
+Ratelimit-Reset: 1764067260
+X-Frame-Options: SAMEORIGIN
+X-Prev-Page: 
+Ratelimit-Limit: 2000
+Referrer-Policy: strict-origin-when-cross-origin
+X-Content-Type-Options: nosniff
+X-Per-Page: 100
+X-Total-Pages: 1
+
+[{"id":"b5ca983c1aa64f694c89a7c6df9a27a7b68b5414","individual_note":true,"notes":[{"id":2911818565,"type":null,"body":"Although we had some trouble with !1.","author":{"id":10529876,"username":"patdyn","public_email":"","name":"Pat Dyn","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/10529876/avatar.png","web_url":"https://gitlab.com/patdyn"},"created_at":"2025-11-25T09:49:00.750Z","updated_at":"2025-11-25T09:49:00.750Z","system":false,"noteable_id":435564587,"noteable_type":"MergeRequest","project_id":61363672,"resolvable":false,"confidential":false,"internal":false,"imported":false,"imported_from":"none","noteable_iid":2,"commands_changes":{}}]},{"id":"d6baff3ff75a892764e7b3cc164689687c875266","individual_note":true,"notes":[{"id":2911820075,"type":null,"body":"mentioned in issue #3","author":{"id":10529876,"username":"patdyn","public_email":"","name":"Pat Dyn","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/10529876/avatar.png","web_url":"https://gitlab.com/patdyn"},"created_at":"2025-11-25T09:49:32.263Z","updated_at":"2025-11-25T09:49:32.265Z","system":true,"noteable_id":435564587,"noteable_type":"MergeRequest","project_id":61363672,"resolvable":false,"confidential":false,"internal":false,"imported":false,"imported_from":"none","noteable_iid":2,"commands_changes":{}}]}]
