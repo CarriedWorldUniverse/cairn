@@ -20,10 +20,10 @@ test('Usercards width', async ({page}) => {
 
   for (let i = 1; i <= amount; i++) {
     const card = await page.locator(`.user-cards .card:nth-child(${i})`).boundingBox();
-    widths.push(Math.round(card.width));
+    widths.push(card.width);
   }
 
   for (const width of widths) {
-    expect(width).toBe(widths[0]);
+    expect(width).toBeCloseTo(widths[0], 0);
   }
 });
