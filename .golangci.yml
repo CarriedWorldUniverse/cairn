@@ -30,10 +30,6 @@ linters:
           deny:
             - pkg: encoding/json
               desc: use gitea's modules/json instead of encoding/json
-            - pkg: github.com/unknwon/com
-              desc: use gitea's util and replacements
-            - pkg: io/ioutil
-              desc: use os or io instead
             - pkg: golang.org/x/exp
               desc: it's experimental and unreliable
             - pkg: forgejo.org/modules/git/internal
