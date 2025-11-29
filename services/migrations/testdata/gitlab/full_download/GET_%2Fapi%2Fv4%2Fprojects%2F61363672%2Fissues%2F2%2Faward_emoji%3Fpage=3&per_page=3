@@ -1,0 +1,32 @@
+Content-Type: application/json
+Gitlab-Lb: haproxy-main-53-lb-gprd
+Ratelimit-Name: throttle_authenticated_api
+X-Prev-Page: 
+Ratelimit-Reset: 1764067260
+Cache-Control: max-age=0, private, must-revalidate
+Gitlab-Sv: api-gke-us-east1-c
+Ratelimit-Remaining: 1988
+X-Gitlab-Meta: {"correlation_id":"9a408781100ee0d9-ATL","version":"1"}
+Set-Cookie: __cf_bm=ERtdJNpQThaSjqUa1.mZTqn7n0q1_fbzhUfqnAuidrE-1764067241-1.0.1.1-SIVaHdxaT7VFCCtSClSPrkBAOkMKdqMo_6H.18diW8wVohWWzdQkGK1lgp7NSFWYB.9fUd08EGQM4crpdR0vk8L6Lx9vi5tSwI0F9El27Cs; path=/; expires=Tue, 25-Nov-25 11:10:41 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=TWm8WMj9YPkP1A9SyC.xy86EYVqWA5BmefQUd0h0Bh8-1764067241497-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Length: 2
+Accept-Ranges: bytes
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+Link: <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=1&per_page=3>; rel="first", <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=2&per_page=3>; rel="last"
+Ratelimit-Limit: 2000
+Vary: Origin, Accept-Encoding
+Content-Security-Policy: default-src 'none'
+X-Runtime: 0.199084
+Cf-Cache-Status: MISS
+X-Next-Page: 
+Strict-Transport-Security: max-age=31536000
+Ratelimit-Observed: 12
+X-Content-Type-Options: nosniff
+X-Per-Page: 3
+X-Total: 6
+X-Total-Pages: 2
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: SAMEORIGIN
+X-Page: 3
+
+[]

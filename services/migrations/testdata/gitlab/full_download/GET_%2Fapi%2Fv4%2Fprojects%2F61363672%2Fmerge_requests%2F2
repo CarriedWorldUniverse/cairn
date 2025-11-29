@@ -1,0 +1,23 @@
+X-Runtime: 0.178866
+Set-Cookie: __cf_bm=HovvnRHtwoTC7rEbSu8TkTRpkxnN64EyEWBOEpKDwU8-1764067244-1.0.1.1-0CLYMFRqlcI0z_A7KhZby1Aw17uQQga6KzLBpEDHWCnRtXpCZQJogK6a4bPwHMTwIX88ao8QGRhAkD.23OgXKxzXH4VrjXO0rYEok74gQd4; path=/; expires=Tue, 25-Nov-25 11:10:44 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=O46TDle0ljANZqt352yHmPEDBXtO70FiLe5dp9Z0Wnw-1764067244738-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Type: application/json
+Ratelimit-Name: throttle_authenticated_api
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=31536000
+Gitlab-Sv: api-gke-us-east1-b
+Ratelimit-Reset: 1764067260
+X-Gitlab-Meta: {"correlation_id":"9a408795917de0d9-ATL","version":"1"}
+Cf-Cache-Status: MISS
+Etag: W/"e5bb0f6d19fcb489771c0b23b44ef3c7"
+Vary: Origin, Accept-Encoding
+Gitlab-Lb: haproxy-main-25-lb-gprd
+Ratelimit-Limit: 2000
+Referrer-Policy: strict-origin-when-cross-origin
+Cache-Control: max-age=0, private, must-revalidate
+Content-Security-Policy: default-src 'none'
+Ratelimit-Observed: 21
+Ratelimit-Remaining: 1979
+X-Frame-Options: SAMEORIGIN
+
+{"id":435564587,"iid":2,"project_id":61363672,"title":"Test/parsing","description":"Simillar to !1 this solves an issue.","state":"opened","created_at":"2025-11-25T09:48:20.259Z","updated_at":"2025-11-25T09:48:21.627Z","merged_by":null,"merge_user":null,"merged_at":null,"closed_by":null,"closed_at":null,"target_branch":"master","source_branch":"test/parsing","user_notes_count":1,"upvotes":0,"downvotes":0,"author":{"id":10529876,"username":"patdyn","public_email":"","name":"Pat Dyn","state":"active","locked":false,"avatar_url":"https://gitlab.com/uploads/-/system/user/avatar/10529876/avatar.png","web_url":"https://gitlab.com/patdyn"},"assignees":[],"assignee":null,"reviewers":[],"source_project_id":61363672,"target_project_id":61363672,"labels":[],"draft":false,"imported":false,"imported_from":"none","work_in_progress":false,"milestone":null,"merge_when_pipeline_succeeds":false,"merge_status":"cannot_be_merged","detailed_merge_status":"commits_status","merge_after":null,"sha":"c59c9b451acca9d106cc19d61d87afe3fbbb8b83","merge_commit_sha":null,"squash_commit_sha":null,"discussion_locked":null,"should_remove_source_branch":null,"force_remove_source_branch":true,"prepared_at":"2025-11-25T09:48:21.605Z","reference":"!2","references":{"short":"!2","relative":"!2","full":"forgejo/test_repo!2"},"web_url":"https://gitlab.com/forgejo/test_repo/-/merge_requests/2","time_stats":{"time_estimate":0,"total_time_spent":0,"human_time_estimate":null,"human_total_time_spent":null},"squash":false,"squash_on_merge":false,"task_completion_status":{"count":0,"completed_count":0},"has_conflicts":true,"blocking_discussions_resolved":true,"approvals_before_merge":null,"subscribed":true,"changes_count":null,"latest_build_started_at":null,"latest_build_finished_at":null,"first_deployed_to_production_at":null,"pipeline":null,"head_pipeline":null,"diff_refs":{"base_sha":"c59c9b451acca9d106cc19d61d87afe3fbbb8b83","head_sha":"c59c9b451acca9d106cc19d61d87afe3fbbb8b83","start_sha":"c59c9b451acca9d106cc19d61d87afe3fbbb8b83"},"merge_error":null,"first_contribution":true,"user":{"can_merge":true}}

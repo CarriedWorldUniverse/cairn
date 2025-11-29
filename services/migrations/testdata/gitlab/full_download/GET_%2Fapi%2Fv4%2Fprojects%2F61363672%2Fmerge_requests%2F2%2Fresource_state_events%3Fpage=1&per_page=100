@@ -1,0 +1,32 @@
+Cf-Cache-Status: MISS
+Cache-Control: max-age=0, private, must-revalidate
+Content-Security-Policy: default-src 'none'
+X-Content-Type-Options: nosniff
+X-Per-Page: 100
+Content-Type: application/json
+Vary: Origin, Accept-Encoding
+Gitlab-Sv: api-gke-us-east1-b
+X-Frame-Options: SAMEORIGIN
+X-Page: 1
+X-Total: 0
+Accept-Ranges: bytes
+Link: <https://gitlab.com/api/v4/projects/61363672/merge_requests/2/resource_state_events?eventable_id=2&id=61363672&page=1&per_page=100>; rel="first", <https://gitlab.com/api/v4/projects/61363672/merge_requests/2/resource_state_events?eventable_id=2&id=61363672&page=1&per_page=100>; rel="last"
+X-Prev-Page: 
+X-Total-Pages: 1
+Strict-Transport-Security: max-age=31536000
+Gitlab-Lb: haproxy-main-37-lb-gprd
+X-Gitlab-Meta: {"correlation_id":"9a408792362de0d9-ATL","version":"1"}
+X-Runtime: 0.082961
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+Ratelimit-Limit: 2000
+Ratelimit-Reset: 1764067260
+Referrer-Policy: strict-origin-when-cross-origin
+X-Next-Page: 
+Set-Cookie: __cf_bm=AnbNdfNVmM4eBwZO07iC8Va19AxPZPp91NRwcAAlm_4-1764067244-1.0.1.1-qdSGqOhjrZDqx4w1MVLdWS9_hLohzXuyB6JjSNSvzdYbcKAB9eHFjLuKigE7JLZOzDMt7b4_O8Z_a9VJwO5qn4QmH1tG0wA3sxAzlkyFpog; path=/; expires=Tue, 25-Nov-25 11:10:44 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=l_1AA94UEp6etDe2M2tLuf3x3bwZqHT2Kexkl1I.K18-1764067244103-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Content-Length: 2
+Ratelimit-Name: throttle_authenticated_api
+Ratelimit-Observed: 19
+Ratelimit-Remaining: 1981
+
+[]

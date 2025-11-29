@@ -1,26 +1,32 @@
-X-Runtime: 0.059461
-X-Total: 6
-Gitlab-Lb: haproxy-main-16-lb-gprd
-Set-Cookie: _cfuvid=yVbakY3C4M4Kdnt7wIM2OYjNHbX8d6djf5tCk3NWtfw-1725394797782-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
-Content-Type: application/json
-Cache-Control: max-age=0, private, must-revalidate
-X-Page: 4
-X-Per-Page: 2
-Gitlab-Sv: api-gke-us-east1-c
-X-Next-Page: 
-Strict-Transport-Security: max-age=31536000
-Referrer-Policy: strict-origin-when-cross-origin
-Content-Length: 2
-Vary: Origin, Accept-Encoding
-X-Content-Type-Options: nosniff
-Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
-Cf-Cache-Status: MISS
-X-Prev-Page: 
-Accept-Ranges: bytes
-Content-Security-Policy: default-src 'none'
-X-Frame-Options: SAMEORIGIN
-X-Gitlab-Meta: {"correlation_id":"b494fe1273622e61d5b9171bcb8be8f8","version":"1"}
-Link: <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=1&per_page=2>; rel="first", <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=3&per_page=2>; rel="last"
 X-Total-Pages: 3
+Set-Cookie: __cf_bm=XEiSKl80KAa5zod94SawbVosALj1cNcQ_eq8bE3jYLU-1764065109-1.0.1.1-hnWNajuOroFE7mHA4HInOTO2nVGBGHu9yC6P4yIQZyPkA0jzn2v2QQW3QTNox6wumnUAuRkNfFUCG9tzx2wlteVA0JCboGsGmJY2FADr1LA; path=/; expires=Tue, 25-Nov-25 10:35:09 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=BVV2bFUiotodstANTLeIUoIFj5yU0lMB1WpZbkGzD9Q-1764065109254-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Vary: Origin, Accept-Encoding
+Gitlab-Sv: api-gke-us-east1-c
+Ratelimit-Observed: 14
+Ratelimit-Reset: 1764065160
+X-Page: 4
+Cf-Cache-Status: MISS
+Link: <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=1&per_page=2>; rel="first", <https://gitlab.com/api/v4/projects/61363672/issues/2/award_emoji?id=61363672&issue_iid=2&page=3&per_page=2>; rel="last"
+Ratelimit-Limit: 2000
+Ratelimit-Remaining: 1986
+X-Content-Type-Options: nosniff
+Accept-Ranges: bytes
+X-Frame-Options: SAMEORIGIN
+Strict-Transport-Security: max-age=31536000
+Content-Security-Policy: default-src 'none'
+X-Next-Page: 
+Content-Type: application/json
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+Gitlab-Lb: haproxy-main-53-lb-gprd
+X-Total: 6
+Ratelimit-Name: throttle_authenticated_api
+X-Per-Page: 2
+Content-Length: 2
+Referrer-Policy: strict-origin-when-cross-origin
+X-Gitlab-Meta: {"correlation_id":"9a405372b1ba4fc7-ATL","version":"1"}
+Cache-Control: max-age=0, private, must-revalidate
+X-Prev-Page: 
+X-Runtime: 0.198149
 
 []

@@ -1,0 +1,32 @@
+X-Total-Pages: 1
+Accept-Ranges: bytes
+Etag: W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+Link: <https://gitlab.com/api/v4/projects/61363672/issues/3/resource_state_events?eventable_id=3&id=61363672&page=1&per_page=100>; rel="first", <https://gitlab.com/api/v4/projects/61363672/issues/3/resource_state_events?eventable_id=3&id=61363672&page=1&per_page=100>; rel="last"
+Ratelimit-Observed: 17
+X-Content-Type-Options: nosniff
+X-Gitlab-Meta: {"correlation_id":"9a40878e7365e0d9-ATL","version":"1"}
+X-Per-Page: 100
+Set-Cookie: __cf_bm=K3TOUn2vDaz1qInIfA3ot2QfDGciipMeNz7mTLiUHew-1764067243-1.0.1.1-emtayPBYQbA_Hcjg3SJRaDfSnu1LMo0AwU3oLUo88E9kLsWYkTqQJbtaEa0vquShox_HRWnGFp9s6cIg_iVaPfwR4bzUnIHzO0GNMfRcdls; path=/; expires=Tue, 25-Nov-25 11:10:43 GMT; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Set-Cookie: _cfuvid=Jcc7jNquyhw_7ru6wi24nRmm1pryvsiBqi_0wTQQxNY-1764067243527-0.0.1.1-604800000; path=/; domain=.gitlab.com; HttpOnly; Secure; SameSite=None
+Gitlab-Lb: haproxy-main-49-lb-gprd
+X-Next-Page: 
+Ratelimit-Name: throttle_authenticated_api
+Ratelimit-Reset: 1764067260
+X-Total: 0
+Vary: Origin, Accept-Encoding
+Content-Security-Policy: default-src 'none'
+Ratelimit-Remaining: 1983
+X-Runtime: 0.113354
+Cache-Control: max-age=0, private, must-revalidate
+Strict-Transport-Security: max-age=31536000
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Type: application/json
+Content-Length: 2
+Cf-Cache-Status: MISS
+Gitlab-Sv: api-gke-us-east1-b
+Ratelimit-Limit: 2000
+X-Frame-Options: SAMEORIGIN
+X-Prev-Page: 
+X-Page: 1
+
+[]
