@@ -14,7 +14,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ func TestUserRedirect(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "success%3DYour%2Bprofile%2Bhas%2Bbeen%2Bupdated.", flashCookie.Value)
 
@@ -67,7 +67,7 @@ func TestUserRedirect(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "error%3DThe%2Busername%2Bcannot%2Bbe%2Bclaimed%252C%2Bbecause%2Bits%2Bcooldown%2Bperiod%2Bis%2Bnot%2Byet%2Bover.%2BIt%2Bcan%2Bbe%2Bclaimed%2Bon")
 	})
@@ -82,7 +82,7 @@ func TestUserRedirect(t *testing.T) {
 			"login_type": "0-0",
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "success%3DThe%2Buser%2Baccount%2Bhas%2Bbeen%2Bupdated.", flashCookie.Value)
 
@@ -98,7 +98,7 @@ func TestUserRedirect(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "success%3DYour%2Bprofile%2Bhas%2Bbeen%2Bupdated.", flashCookie.Value)
 
@@ -109,7 +109,7 @@ func TestUserRedirect(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 
-		flashCookie = session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie = session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "success%3DYour%2Bprofile%2Bhas%2Bbeen%2Bupdated.", flashCookie.Value)
 

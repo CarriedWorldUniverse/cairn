@@ -32,7 +32,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
-	forgejo_services "forgejo.org/services/forgejo"
+	forgejo_service "forgejo.org/services/forgejo"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/names"
@@ -502,7 +502,7 @@ Please try upgrading to a lower version first (suggested v1.6.4), then upgrade t
 		}
 	}
 
-	if err := forgejo_services.PreMigrationSanityChecks(x, previousVersion, setting.CfgProvider); err != nil {
+	if err := forgejo_service.PreMigrationSanityChecks(x, previousVersion, setting.CfgProvider); err != nil {
 		return err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"forgejo.org/modules/util"
-	gitea_ctx "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
 type ContainedLinks struct { // TODO: better name?
@@ -23,7 +23,7 @@ type namedLink struct { // TODO: better name?
 }
 
 // LoadBranchesAndTags creates a new repository branch
-func LoadBranchesAndTags(ctx context.Context, baseRepo *gitea_ctx.Repository, commitSHA string) (*ContainedLinks, error) {
+func LoadBranchesAndTags(ctx context.Context, baseRepo *app_context.Repository, commitSHA string) (*ContainedLinks, error) {
 	containedTags, err := baseRepo.GitRepo.ListOccurrences(ctx, "tag", commitSHA)
 	if err != nil {
 		return nil, fmt.Errorf("encountered a problem while querying %s: %w", "tags", err)

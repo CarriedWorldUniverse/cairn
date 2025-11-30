@@ -7,10 +7,10 @@ import (
 	"net/url"
 
 	actions_service "forgejo.org/services/actions"
-	context_module "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
-func ManualRunWorkflow(ctx *context_module.Context) {
+func ManualRunWorkflow(ctx *app_context.Context) {
 	workflowID := ctx.FormString("workflow")
 	if len(workflowID) == 0 {
 		ctx.ServerError("workflow", nil)

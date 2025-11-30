@@ -8,7 +8,7 @@ import (
 	"time"
 
 	actions_model "forgejo.org/models/actions"
-	dbfs_model "forgejo.org/models/dbfs"
+	dbf_model "forgejo.org/models/dbfs"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
@@ -50,19 +50,19 @@ func TestServicesActions_transferLingeringLogs(t *testing.T) {
 	}
 	lingeringLogIDs := []int64{1, 4, 5}
 
-	assert.True(t, unittest.BeanExists(t, &dbfs_model.DbfsMeta{}, builder.In("id", []any{lingeringLogIDs}...)))
+	assert.True(t, unittest.BeanExists(t, &dbf_model.DbfsMeta{}, builder.In("id", []any{lingeringLogIDs}...)))
 
 	// first pass transfer logs for transferLingeringLogsMax tasks
 	require.NoError(t, transferLingeringLogs(t.Context(), transferLingeringLogsOpts(now)))
-	assert.True(t, unittest.BeanExists(t, &dbfs_model.DbfsMeta{}, builder.In("id", []any{lingeringLogIDs[transferLingeringLogsMax:]}...)))
+	assert.True(t, unittest.BeanExists(t, &dbf_model.DbfsMeta{}, builder.In("id", []any{lingeringLogIDs[transferLingeringLogsMax:]}...)))
 	for _, lingeringLogID := range lingeringLogIDs[:transferLingeringLogsMax] {
-		unittest.AssertNotExistsBean(t, &dbfs_model.DbfsMeta{ID: lingeringLogID})
+		unittest.AssertNotExistsBean(t, &dbf_model.DbfsMeta{ID: lingeringLogID})
 	}
 
 	// second pass transfer logs for the remainder tasks and there are none left
 	require.NoError(t, transferLingeringLogs(t.Context(), transferLingeringLogsOpts(now)))
 	for _, lingeringLogID := range lingeringLogIDs {
-		unittest.AssertNotExistsBean(t, &dbfs_model.DbfsMeta{ID: lingeringLogID})
+		unittest.AssertNotExistsBean(t, &dbf_model.DbfsMeta{ID: lingeringLogID})
 	}
 
 	// third pass is happilly doing nothing

@@ -12,7 +12,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -62,7 +62,7 @@ func TestActionsVariablesModification(t *testing.T) {
 			assert.Equal(t, "Failed to find the variable.", error.Error)
 		} else {
 			sess.MakeRequest(t, req, http.StatusOK)
-			flashCookie := sess.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DThe%2Bvariable%2Bhas%2Bbeen%2Bedited.", flashCookie.Value)
 		}
@@ -75,7 +75,7 @@ func TestActionsVariablesModification(t *testing.T) {
 			assert.Equal(t, "Failed to find the variable.", error.Error)
 		} else {
 			sess.MakeRequest(t, req, http.StatusOK)
-			flashCookie := sess.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DThe%2Bvariable%2Bhas%2Bbeen%2Bremoved.", flashCookie.Value)
 		}

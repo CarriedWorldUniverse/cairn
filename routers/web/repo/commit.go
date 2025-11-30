@@ -30,7 +30,7 @@ import (
 	"forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	"forgejo.org/services/gitdiff"
-	git_service "forgejo.org/services/repository"
+	repo_service "forgejo.org/services/repository"
 	"forgejo.org/services/repository/gitgraph"
 )
 
@@ -293,7 +293,7 @@ func FileHistory(ctx *context.Context) {
 }
 
 func LoadBranchesAndTags(ctx *context.Context) {
-	response, err := git_service.LoadBranchesAndTags(ctx, ctx.Repo, ctx.Params("sha"))
+	response, err := repo_service.LoadBranchesAndTags(ctx, ctx.Repo, ctx.Params("sha"))
 	if err == nil {
 		ctx.JSON(http.StatusOK, response)
 		return

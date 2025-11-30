@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"forgejo.org/models/db"
-	organization_model "forgejo.org/models/organization"
+	org_model "forgejo.org/models/organization"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/optional"
@@ -47,9 +47,9 @@ func (reviews ReviewList) LoadReviewersTeams(ctx context.Context) error {
 		}
 	}
 
-	teamsMap := make(map[int64]*organization_model.Team, 0)
+	teamsMap := make(map[int64]*org_model.Team, 0)
 	for _, teamID := range reviewersTeamsIDs {
-		team, err := organization_model.GetTeamByID(ctx, teamID)
+		team, err := org_model.GetTeamByID(ctx, teamID)
 		if err != nil {
 			return err
 		}

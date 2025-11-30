@@ -11,7 +11,7 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	repo_model "forgejo.org/models/repo"
-	unittest "forgejo.org/models/unittest"
+	unittest_model "forgejo.org/models/unittest"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/contexttest"
@@ -21,9 +21,9 @@ import (
 )
 
 func Test_getRunByID(t *testing.T) {
-	unittest.PrepareTestEnv(t)
+	unittest_model.PrepareTestEnv(t)
 
-	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerID: 5, ID: 4})
+	repo := unittest_model.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerID: 5, ID: 4})
 
 	for _, testCase := range []struct {
 		name  string
@@ -62,7 +62,7 @@ func Test_getRunByID(t *testing.T) {
 }
 
 func Test_artifactsFind(t *testing.T) {
-	unittest.PrepareTestEnv(t)
+	unittest_model.PrepareTestEnv(t)
 
 	for _, testCase := range []struct {
 		name         string
@@ -94,7 +94,7 @@ func Test_artifactsFind(t *testing.T) {
 }
 
 func Test_artifactsFindByNameOrID(t *testing.T) {
-	unittest.PrepareTestEnv(t)
+	unittest_model.PrepareTestEnv(t)
 
 	for _, testCase := range []struct {
 		name     string
@@ -219,7 +219,7 @@ func baseExpectedViewResponse() *ViewResponse {
 }
 
 func TestActionsViewViewPost(t *testing.T) {
-	unittest.PrepareTestEnv(t)
+	unittest_model.PrepareTestEnv(t)
 
 	tests := []struct {
 		name           string
@@ -378,7 +378,7 @@ func TestActionsViewViewPost(t *testing.T) {
 }
 
 func TestActionsViewRedirectToLatestAttempt(t *testing.T) {
-	unittest.PrepareTestEnv(t)
+	unittest_model.PrepareTestEnv(t)
 
 	tests := []struct {
 		name         string

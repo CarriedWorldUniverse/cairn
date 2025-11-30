@@ -17,7 +17,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/storage"
 	"forgejo.org/modules/timeutil"
-	forgejo_attachment "forgejo.org/services/attachment"
+	attachment_service "forgejo.org/services/attachment"
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
@@ -162,7 +162,7 @@ func (o *attachment) Put(ctx context.Context) f3_id.NodeID {
 	download := o.downloadFunc()
 	defer download.Close()
 
-	_, err = forgejo_attachment.NewAttachment(ctx, o.forgejoAttachment, download, o.forgejoAttachment.Size)
+	_, err = attachment_service.NewAttachment(ctx, o.forgejoAttachment, download, o.forgejoAttachment.Size)
 	if err != nil {
 		panic(err)
 	}

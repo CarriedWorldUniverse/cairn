@@ -9,7 +9,7 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	organization_model "forgejo.org/models/organization"
+	org_model "forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/optional"
@@ -40,7 +40,7 @@ func getActionsNowDoneTestUser(t *testing.T, name, email, notifications string) 
 
 func getActionsNowDoneTestOrg(t *testing.T, name, email string, owner *user_model.User) *user_model.User {
 	t.Helper()
-	org := new(organization_model.Organization)
+	org := new(org_model.Organization)
 	org.Name = name
 	org.Language = "en_US"
 	org.IsAdmin = false
@@ -49,7 +49,7 @@ func getActionsNowDoneTestOrg(t *testing.T, name, email string, owner *user_mode
 	org.LastLoginUnix = 1693648327
 	org.CreatedUnix = 1693648027
 	org.Email = email
-	require.NoError(t, organization_model.CreateOrganization(db.DefaultContext, org, owner))
+	require.NoError(t, org_model.CreateOrganization(db.DefaultContext, org, owner))
 	return (*user_model.User)(org)
 }
 

@@ -13,12 +13,12 @@ import (
 
 	"forgejo.org/models/activities"
 	"forgejo.org/models/db"
-	issue_model "forgejo.org/models/issues"
+	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/translation"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -148,7 +148,7 @@ func TestBlockUserFromOrganization(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 		assert.False(t, unittest.BeanExists(t, &user_model.BlockedUser{BlockID: doer.ID, UserID: org.ID}))
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "error%3DYou%2Bcannot%2Bblock%2Byourself.", flashCookie.Value)
 	})
@@ -167,10 +167,10 @@ func TestBlockActions(t *testing.T) {
 	repo1 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1, OwnerID: doer.ID})
 	repo2 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2, OwnerID: doer.ID})
 	repo7 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 7, OwnerID: blockedUser2.ID})
-	issue4 := unittest.AssertExistsAndLoadBean(t, &issue_model.Issue{ID: 4, RepoID: repo2.ID})
+	issue4 := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 4, RepoID: repo2.ID})
 	issue4URL := fmt.Sprintf("/%s/issues/%d", repo2.FullName(), issue4.Index)
 	repo42 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 42, OwnerID: doer.ID})
-	issue10 := unittest.AssertExistsAndLoadBean(t, &issue_model.Issue{ID: 10, RepoID: repo42.ID}, unittest.Cond("poster_id != ?", doer.ID))
+	issue10 := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 10, RepoID: repo42.ID}, unittest.Cond("poster_id != ?", doer.ID))
 	issue10URL := fmt.Sprintf("/%s/issues/%d", repo42.FullName(), issue10.Index)
 	// NOTE: Sessions shouldn't be shared, because in some situations flash
 	// messages are persistent and that would interfere with accurate test
@@ -253,7 +253,7 @@ func TestBlockActions(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			repo5 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 5})
-			issue15 := unittest.AssertExistsAndLoadBean(t, &issue_model.Issue{ID: 15, RepoID: repo5.ID, PosterID: doer.ID})
+			issue15 := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 15, RepoID: repo5.ID, PosterID: doer.ID})
 
 			session := loginUser(t, blockedUser.Name)
 			issueURL := fmt.Sprintf("/%s/%s/issues/%d", url.PathEscape(repo5.OwnerName), url.PathEscape(repo5.Name), issue15.Index)
@@ -302,7 +302,7 @@ func TestBlockActions(t *testing.T) {
 		t.Run("On a comment", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			comment := unittest.AssertExistsAndLoadBean(t, &issue_model.Comment{ID: 1008, PosterID: doer.ID, IssueID: issue4.ID})
+			comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 1008, PosterID: doer.ID, IssueID: issue4.ID})
 
 			session := loginUser(t, blockedUser.Name)
 
@@ -373,7 +373,7 @@ func TestBlockActions(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "error%3DCannot%2Badd%2Bthe%2Bcollaborator%252C%2Bbecause%2Bthe%2Brepository%2Bowner%2Bhas%2Bblocked%2Bthem.", flashCookie.Value)
 		})
@@ -389,7 +389,7 @@ func TestBlockActions(t *testing.T) {
 			})
 			session.MakeRequest(t, req, http.StatusSeeOther)
 
-			flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := session.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "error%3DCannot%2Badd%2Bthe%2Bcollaborator%252C%2Bbecause%2Bthey%2Bhave%2Bblocked%2Bthe%2Brepository%2Bowner.", flashCookie.Value)
 		})
@@ -424,7 +424,7 @@ func TestBlockedNotification(t *testing.T) {
 	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	normalUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 	blockedUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 10})
-	issue := unittest.AssertExistsAndLoadBean(t, &issue_model.Issue{ID: 1000})
+	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 1000})
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
 	issueURL := fmt.Sprintf("%s/issues/%d", repo.FullName(), issue.Index)
 	notificationBean := &activities.Notification{UserID: doer.ID, RepoID: repo.ID, IssueID: issue.ID}

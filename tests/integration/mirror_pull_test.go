@@ -15,7 +15,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/migration"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	mirror_service "forgejo.org/services/mirror"
 	release_service "forgejo.org/services/release"
 	repo_service "forgejo.org/services/repository"
@@ -114,7 +114,7 @@ func TestPullMirrorRedactCredentials(t *testing.T) {
 		"action": "mirror-sync",
 	}), http.StatusSeeOther)
 
-	flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+	flashCookie := session.GetCookie(app_context.CookieNameFlash)
 	assert.NotNil(t, flashCookie)
 	assert.Equal(t, "info%3DPulling%2Bchanges%2Bfrom%2Bthe%2Bremote%2Bhttps%253A%252F%252Fexample.com%252Fexample%252Fexample.git%2Bat%2Bthe%2Bmoment.", flashCookie.Value)
 }

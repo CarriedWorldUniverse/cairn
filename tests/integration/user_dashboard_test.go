@@ -16,7 +16,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/gitrepo"
 	issue_service "forgejo.org/services/issue"
-	pr_service "forgejo.org/services/pull"
+	pull_service "forgejo.org/services/pull"
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
@@ -140,10 +140,10 @@ func TestDashboardReviewWorkflows(t *testing.T) {
 
 		pr := createPullRequest(t, user4, repo, "testing", "My very first PR!")
 
-		review, _, err := pr_service.SubmitReview(t.Context(), user4, gitRepo, pr.Issue, issues.ReviewTypeReject, "This isn't good enough!", "HEAD", []string{})
+		review, _, err := pull_service.SubmitReview(t.Context(), user4, gitRepo, pr.Issue, issues.ReviewTypeReject, "This isn't good enough!", "HEAD", []string{})
 		require.NoError(t, err)
 
-		_, err = pr_service.DismissReview(t.Context(), review.ID, repo.ID, "Come on, give the newbie a break!", user4, true, true)
+		_, err = pull_service.DismissReview(t.Context(), review.ID, repo.ID, "Come on, give the newbie a break!", user4, true, true)
 		require.NoError(t, err)
 
 		response := sess.MakeRequest(t, NewRequest(t, "GET", "/"), http.StatusOK)

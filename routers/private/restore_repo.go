@@ -9,12 +9,12 @@ import (
 
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/private"
-	myCtx "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/migrations"
 )
 
 // RestoreRepo restore a repository from data
-func RestoreRepo(ctx *myCtx.PrivateContext) {
+func RestoreRepo(ctx *app_context.PrivateContext) {
 	bs, err := io.ReadAll(ctx.Req.Body)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, private.Response{

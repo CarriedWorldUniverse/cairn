@@ -6,9 +6,9 @@ package quota
 import (
 	"context"
 
-	action_model "forgejo.org/models/actions"
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	package_model "forgejo.org/models/packages"
+	packages_model "forgejo.org/models/packages"
 	repo_model "forgejo.org/models/repo"
 
 	"xorm.io/builder"
@@ -132,7 +132,7 @@ func createQueryFor(ctx context.Context, userID int64, q string) db.Engine {
 		session = session.
 			Table("action_artifact").
 			Join("INNER", "`repository`", "`action_artifact`.repo_id = `repository`.id").
-			Where("`action_artifact`.status != ?", action_model.ArtifactStatusExpired)
+			Where("`action_artifact`.status != ?", actions_model.ArtifactStatusExpired)
 	case "packages":
 		session = session.
 			Table("package_version").
@@ -161,8 +161,8 @@ func GetQuotaAttachmentsForUser(ctx context.Context, userID int64, opts db.ListO
 	return count, &attachments, nil
 }
 
-func GetQuotaPackagesForUser(ctx context.Context, userID int64, opts db.ListOptions) (int64, *[]*package_model.PackageVersion, error) {
-	var pkgs []*package_model.PackageVersion
+func GetQuotaPackagesForUser(ctx context.Context, userID int64, opts db.ListOptions) (int64, *[]*packages_model.PackageVersion, error) {
+	var pkgs []*packages_model.PackageVersion
 
 	sess := createQueryFor(ctx, userID, "packages").
 		OrderBy("`package_blob`.size DESC")
@@ -177,8 +177,8 @@ func GetQuotaPackagesForUser(ctx context.Context, userID int64, opts db.ListOpti
 	return count, &pkgs, nil
 }
 
-func GetQuotaArtifactsForUser(ctx context.Context, userID int64, opts db.ListOptions) (int64, *[]*action_model.ActionArtifact, error) {
-	var artifacts []*action_model.ActionArtifact
+func GetQuotaArtifactsForUser(ctx context.Context, userID int64, opts db.ListOptions) (int64, *[]*actions_model.ActionArtifact, error) {
+	var artifacts []*actions_model.ActionArtifact
 
 	sess := createQueryFor(ctx, userID, "artifacts").
 		OrderBy("`action_artifact`.file_compressed_size DESC")

@@ -8,7 +8,7 @@ import (
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
-	organization_model "forgejo.org/models/organization"
+	org_model "forgejo.org/models/organization"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/setting"
@@ -97,7 +97,7 @@ func TestReplacePrimaryEmailAddress(t *testing.T) {
 	})
 
 	t.Run("Organization", func(t *testing.T) {
-		org := unittest.AssertExistsAndLoadBean(t, &organization_model.Organization{ID: 3})
+		org := unittest.AssertExistsAndLoadBean(t, &org_model.Organization{ID: 3})
 
 		assert.Equal(t, "org3@example.com", org.Email)
 

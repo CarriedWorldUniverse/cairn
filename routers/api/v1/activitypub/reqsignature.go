@@ -8,13 +8,13 @@ import (
 
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
-	services_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/federation"
 
 	"github.com/42wim/httpsig"
 )
 
-func verifyHTTPUserOrInstanceSignature(ctx services_context.APIContext) (authenticated bool, err error) {
+func verifyHTTPUserOrInstanceSignature(ctx app_context.APIContext) (authenticated bool, err error) {
 	if !setting.Federation.SignatureEnforced {
 		return true, nil
 	}
@@ -43,7 +43,7 @@ func verifyHTTPUserOrInstanceSignature(ctx services_context.APIContext) (authent
 	return true, nil
 }
 
-func verifyHTTPUserSignature(ctx services_context.APIContext) (authenticated bool, err error) {
+func verifyHTTPUserSignature(ctx app_context.APIContext) (authenticated bool, err error) {
 	if !setting.Federation.SignatureEnforced {
 		return true, nil
 	}
@@ -70,8 +70,8 @@ func verifyHTTPUserSignature(ctx services_context.APIContext) (authenticated boo
 }
 
 // ReqHTTPSignature function
-func ReqHTTPUserOrInstanceSignature() func(ctx *services_context.APIContext) {
-	return func(ctx *services_context.APIContext) {
+func ReqHTTPUserOrInstanceSignature() func(ctx *app_context.APIContext) {
+	return func(ctx *app_context.APIContext) {
 		if authenticated, err := verifyHTTPUserOrInstanceSignature(*ctx); err != nil {
 			log.Warn("verifyHttpSignatures failed: %v", err)
 			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")
@@ -82,8 +82,8 @@ func ReqHTTPUserOrInstanceSignature() func(ctx *services_context.APIContext) {
 }
 
 // ReqHTTPUserSignature function
-func ReqHTTPUserSignature() func(ctx *services_context.APIContext) {
-	return func(ctx *services_context.APIContext) {
+func ReqHTTPUserSignature() func(ctx *app_context.APIContext) {
+	return func(ctx *app_context.APIContext) {
 		if authenticated, err := verifyHTTPUserSignature(*ctx); err != nil {
 			log.Warn("verifyHttpSignatures failed: %v", err)
 			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")

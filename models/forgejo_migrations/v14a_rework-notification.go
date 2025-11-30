@@ -4,7 +4,7 @@
 package forgejo_migrations
 
 import (
-	activity_model "forgejo.org/models/activities"
+	activities_model "forgejo.org/models/activities"
 	"forgejo.org/modules/setting"
 
 	"xorm.io/xorm"
@@ -19,8 +19,8 @@ func init() {
 
 func reworkNotification(x *xorm.Engine) error {
 	type Notification struct {
-		UserID int64                             `xorm:"NOT NULL INDEX(s)"`
-		Status activity_model.NotificationStatus `xorm:"SMALLINT NOT NULL INDEX(s)"`
+		UserID int64                               `xorm:"NOT NULL INDEX(s)"`
+		Status activities_model.NotificationStatus `xorm:"SMALLINT NOT NULL INDEX(s)"`
 	}
 
 	if err := dropIndexIfExists(x, "notification", "IDX_notification_user_id"); err != nil {

@@ -41,7 +41,7 @@ import (
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
 	"forgejo.org/services/automerge"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	"forgejo.org/services/pull"
 	commitstatus_service "forgejo.org/services/repository/commitstatus"
@@ -1112,7 +1112,7 @@ func TestPullDeleteBranchPerms(t *testing.T) {
 		})
 		user4Session.MakeRequest(t, req, http.StatusOK)
 
-		flashCookie := user4Session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := user4Session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Equal(t, "error%3DYou%2Bdon%2527t%2Bhave%2Bpermission%2Bto%2Bdelete%2Bthe%2Bhead%2Bbranch.", flashCookie.Value)
 

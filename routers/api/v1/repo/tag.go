@@ -19,7 +19,7 @@ import (
 	"forgejo.org/routers/api/v1/utils"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
-	releaseservice "forgejo.org/services/release"
+	release_service "forgejo.org/services/release"
 )
 
 // ListTags list all the tags of a repository
@@ -227,7 +227,7 @@ func CreateTag(ctx *context.APIContext) {
 		return
 	}
 
-	if err := releaseservice.CreateNewTag(ctx, ctx.Doer, ctx.Repo.Repository, commit.ID.String(), form.TagName, form.Message); err != nil {
+	if err := release_service.CreateNewTag(ctx, ctx.Doer, ctx.Repo.Repository, commit.ID.String(), form.TagName, form.Message); err != nil {
 		if models.IsErrTagAlreadyExists(err) {
 			ctx.Error(http.StatusConflict, "tag exist", err)
 			return
@@ -309,7 +309,7 @@ func DeleteTag(ctx *context.APIContext) {
 		return
 	}
 
-	if err = releaseservice.DeleteReleaseByID(ctx, ctx.Repo.Repository, tag, ctx.Doer, true); err != nil {
+	if err = release_service.DeleteReleaseByID(ctx, ctx.Repo.Repository, tag, ctx.Doer, true); err != nil {
 		if models.IsErrProtectedTagName(err) {
 			ctx.Error(http.StatusUnprocessableEntity, "delTag", "user not allowed to delete protected tag")
 			return

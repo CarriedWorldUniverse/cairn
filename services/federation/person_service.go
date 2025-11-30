@@ -10,7 +10,7 @@ import (
 	"forgejo.org/models/user"
 	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/log"
-	context_service "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"
@@ -32,7 +32,7 @@ func ProcessPersonInbox(ctx context.Context, user *user.User, activity *ap.Activ
 	return ServiceResult{}, NewErrNotAcceptablef("unsupported activity: %v", activity.Type)
 }
 
-func FollowRemoteActor(ctx *context_service.APIContext, localUser *user.User, actorURI string) error {
+func FollowRemoteActor(ctx *app_context.APIContext, localUser *user.User, actorURI string) error {
 	_, federatedUser, federationHost, err := FindOrCreateFederatedUser(ctx.Base, actorURI)
 	if err != nil {
 		log.Error("Federated user not found (%s): %v", actorURI, err)
