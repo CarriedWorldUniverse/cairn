@@ -101,6 +101,51 @@ func Test_getPostgreSQLConnectionString(t *testing.T) {
 			Name:   "gitea?param=1",
 			Output: "postgres://user:pass@localhost:1234/gitea?param=1&sslmode=",
 		},
+		{
+			// Multi-host with same ports
+			Host:    "host1,host2,host3",
+			User:    "user",
+			Passwd:  "pass",
+			Name:    "forgejo",
+			SSLMode: "disable",
+			Output:  "postgres://user:pass@host1:5432,host2:5432,host3:5432/forgejo?sslmode=disable",
+		},
+		{
+			// Multi-host with different ports
+			Host:    "host1:5432,host2:5433",
+			User:    "user",
+			Passwd:  "pass",
+			Name:    "forgejo",
+			SSLMode: "require",
+			Output:  "postgres://user:pass@host1:5432,host2:5433/forgejo?sslmode=require",
+		},
+		{
+			// Multi-host IPv6
+			Host:    "[::1]:1234,[::2]:2345",
+			User:    "user",
+			Passwd:  "pass",
+			Name:    "forgejo",
+			SSLMode: "disable",
+			Output:  "postgres://user:pass@[::1]:1234,[::2]:2345/forgejo?sslmode=disable",
+		},
+		{
+			// Multi-host with spaces (should be trimmed)
+			Host:    "host1:5432 , host2:5433 , host3",
+			User:    "user",
+			Passwd:  "pass",
+			Name:    "forgejo",
+			SSLMode: "verify-full",
+			Output:  "postgres://user:pass@host1:5432,host2:5433,host3:5432/forgejo?sslmode=verify-full",
+		},
+		{
+			// Multi-host with database parameters
+			Host:    "host1,host2",
+			User:    "user",
+			Passwd:  "pass",
+			Name:    "forgejo?connect_timeout=10",
+			SSLMode: "disable",
+			Output:  "postgres://user:pass@host1:5432,host2:5432/forgejo?connect_timeout=10&sslmode=disable",
+		},
 	}
 
 	for _, test := range tests {
@@ -120,9 +165,8 @@ func getPostgreSQLEngineGroupConnectionStrings(primaryHost, replicaHosts, user, 
 	// Build the replica connection strings.
 	replicaConns := []string{}
 	if strings.TrimSpace(replicaHosts) != "" {
-		// Split comma-separated replica host values.
-		hosts := strings.Split(replicaHosts, ",")
-		for _, h := range hosts {
+		// Split comma-separated replica host values
+		for h := range strings.SplitSeq(replicaHosts, ",") {
 			trimmed := strings.TrimSpace(h)
 			if trimmed != "" {
 				replicaConns = append(replicaConns,

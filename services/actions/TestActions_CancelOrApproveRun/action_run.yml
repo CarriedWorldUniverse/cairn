@@ -9,12 +9,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "synchronized"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 6 # running
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
   concurrency_group: abc123
 -
@@ -28,11 +28,11 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "synchronized"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 5 # waiting
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 1
+  need_approval: true
   approved_by: 0
   concurrency_group: def435

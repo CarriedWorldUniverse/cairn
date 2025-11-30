@@ -4,7 +4,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_1
   attempt: 0
   job_id: job_1
@@ -18,7 +18,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_1
   attempt: 0
   job_id: job_1
@@ -32,7 +32,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_1
   attempt: 0
   job_id: job_1

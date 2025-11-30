@@ -268,7 +268,7 @@
   poster_id: 1
   issue_id: 1 # in repo_id 1
   label_id: 1
-  content: 1 # add label
+  content: "1" # add label
   created_unix: 946685520
 
 -
@@ -277,7 +277,7 @@
   poster_id: 1
   issue_id: 1
   label_id: 2
-  content: 1 # add label
+  content: "1" # add label
   created_unix: 946685620
 
 -
@@ -286,7 +286,7 @@
   poster_id: 2
   issue_id: 1 # in repo_id 1
   label_id: 1
-  content: 0 # remove label
+  content: "0" # remove label
   created_unix: 946685720
 
 -
@@ -295,7 +295,7 @@
   poster_id: 1
   issue_id: 1 # in repo_id 1
   label_id: 1
-  content: 1 # add label
+  content: "1" # add label
   created_unix: 946685720
 
 -
@@ -304,7 +304,7 @@
   poster_id: 1
   issue_id: 1 # in repo_id 1
   label_id: 2
-  content: 0 # remove label
+  content: "0" # remove label
   created_unix: 946685720
 
 -
@@ -313,7 +313,7 @@
   poster_id: 2
   issue_id: 1 # in repo_id 1
   label_id: 2
-  content: 1 # add label
+  content: "1" # add label
   created_unix: 946685820
 
 -
@@ -322,7 +322,7 @@
   poster_id: 1
   issue_id: 1 # in repo_id 1
   label_id: 1
-  content: 0 # remove label
+  content: "0" # remove label
   created_unix: 946685920
 
 -
@@ -331,7 +331,7 @@
   poster_id: 1
   issue_id: 1 # in repo_id 1
   label_id: 2
-  content: 0 # remove label
+  content: "0" # remove label
   created_unix: 946685920
 
 - id: 2040

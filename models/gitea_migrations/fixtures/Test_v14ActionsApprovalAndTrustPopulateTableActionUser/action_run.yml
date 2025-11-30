@@ -10,12 +10,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1001
@@ -29,12 +29,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1002
@@ -48,12 +48,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1003
@@ -67,12 +67,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1004
@@ -86,12 +86,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1005
@@ -105,12 +105,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1006
@@ -124,12 +124,12 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
 
 -
   id: 1007
@@ -143,9 +143,9 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false

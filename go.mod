@@ -67,12 +67,12 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/huandu/xstrings v1.5.0
 	github.com/inbucket/html2text v0.9.0
+	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jhillyerd/enmime/v2 v2.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.18.1
 	github.com/klauspost/cpuid/v2 v2.2.11
-	github.com/lib/pq v1.10.9
 	github.com/markbates/goth v1.80.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-sqlite3 v1.14.32
@@ -206,10 +206,14 @@ require (
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/libdns/libdns v1.0.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/markbates/going v1.0.3 // indirect

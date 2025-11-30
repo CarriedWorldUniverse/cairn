@@ -25,7 +25,6 @@ import (
 	"xorm.io/xorm/schemas"
 
 	_ "github.com/go-sql-driver/mysql" // Needed for the MySQL driver
-	_ "github.com/lib/pq"              // Needed for the Postgresql driver
 )
 
 var (
@@ -112,10 +111,14 @@ func newXORMEngineGroup() (xormEngineInterface, error) {
 	}
 
 	var masterEngine *xorm.Engine
-	// For PostgreSQL: if a schema is provided, we use the special "postgresschema" driver.
-	if setting.Database.Type.IsPostgreSQL() && len(setting.Database.Schema) > 0 {
-		registerPostgresSchemaDriver()
-		masterEngine, err = xorm.NewEngine("postgresschema", masterConnStr)
+	// For PostgreSQL: use pgx driver for better performance and multi-host support
+	// If a schema is provided, use "postgresschema" which wraps pgx with schema injection
+	if setting.Database.Type.IsPostgreSQL() {
+		if len(setting.Database.Schema) > 0 {
+			masterEngine, err = xorm.NewEngine("postgresschema", masterConnStr)
+		} else {
+			masterEngine, err = xorm.NewEngine("pgx", masterConnStr)
+		}
 	} else {
 		masterEngine, err = xorm.NewEngine(setting.Database.Type.String(), masterConnStr)
 	}
@@ -138,7 +141,17 @@ func newXORMEngineGroup() (xormEngineInterface, error) {
 	var slaveEngines []*xorm.Engine
 	// Iterate over all slave DSNs and create engines
 	for _, dsn := range slaveConnStrs {
-		slaveEngine, err := xorm.NewEngine(setting.Database.Type.String(), dsn)
+		var slaveEngine *xorm.Engine
+		// Use same driver selection logic as master
+		if setting.Database.Type.IsPostgreSQL() {
+			if len(setting.Database.Schema) > 0 {
+				slaveEngine, err = xorm.NewEngine("postgresschema", dsn)
+			} else {
+				slaveEngine, err = xorm.NewEngine("pgx", dsn)
+			}
+		} else {
+			slaveEngine, err = xorm.NewEngine(setting.Database.Type.String(), dsn)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to create slave engine for dsn %q: %w", dsn, err)
 		}

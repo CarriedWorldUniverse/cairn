@@ -1,70 +1,55 @@
 // Copyright 2020 The Gitea Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 package db
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
-	"sync"
+	"errors"
 
 	"forgejo.org/modules/setting"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/stdlib"
 	"xorm.io/xorm/dialects"
 )
 
-var registerOnce sync.Once
-
-func registerPostgresSchemaDriver() {
-	registerOnce.Do(func() {
-		sql.Register("postgresschema", &postgresSchemaDriver{})
-		dialects.RegisterDriver("postgresschema", dialects.QueryDriver("postgres"))
-	})
+func init() {
+	// Register pgx-based driver as "postgresschema" for PostgreSQL with schema support
+	// This wraps pgx/v5/stdlib and injects search_path configuration on connection
+	// For PostgreSQL without schema, engine.go uses "pgx" directly (registered by pgx/v5/stdlib)
+	drv := &postgresSchemaDriver{innerDriver: &stdlib.Driver{}}
+	sql.Register("postgresschema", drv)
+	dialects.RegisterDriver("postgresschema", dialects.QueryDriver("postgres"))
 }
 
 type postgresSchemaDriver struct {
-	pq.Driver
+	innerDriver *stdlib.Driver
 }
 
 // Open opens a new connection to the database. name is a connection string.
 // This function opens the postgres connection in the default manner but immediately
 // runs set_config to set the search_path appropriately
 func (d *postgresSchemaDriver) Open(name string) (driver.Conn, error) {
-	conn, err := d.Driver.Open(name)
+	conn, err := d.innerDriver.Open(name)
 	if err != nil {
 		return conn, err
 	}
-	schemaValue, _ := driver.String.ConvertValue(setting.Database.Schema)
 
-	// golangci lint is incorrect here - there is no benefit to using driver.ExecerContext here
-	// and in any case pq does not implement it
-	if execer, ok := conn.(driver.Execer); ok { //nolint
-		_, err := execer.Exec(`SELECT set_config(
-			'search_path',
-			$1 || ',' || current_setting('search_path'),
-			false)`, []driver.Value{schemaValue})
-		if err != nil {
-			_ = conn.Close()
-			return nil, err
-		}
-		return conn, nil
+	// pgx implements ExecerContext, not the deprecated Execer interface
+	execer, ok := conn.(driver.ExecerContext)
+	if !ok {
+		_ = conn.Close()
+		return nil, errors.New("pgx driver connection does not implement ExecerContext")
 	}
 
-	stmt, err := conn.Prepare(`SELECT set_config(
+	_, err = execer.ExecContext(context.Background(), `SELECT set_config(
 		'search_path',
 		$1 || ',' || current_setting('search_path'),
-		false)`)
-	if err != nil {
-		_ = conn.Close()
-		return nil, err
-	}
-	defer stmt.Close()
-
-	// driver.String.ConvertValue will never return err for string
-
-	// golangci lint is incorrect here - there is no benefit to using stmt.ExecWithContext here
-	_, err = stmt.Exec([]driver.Value{schemaValue}) //nolint
+		false)`, []driver.NamedValue{{Ordinal: 1, Value: setting.Database.Schema}})
 	if err != nil {
 		_ = conn.Close()
 		return nil, err

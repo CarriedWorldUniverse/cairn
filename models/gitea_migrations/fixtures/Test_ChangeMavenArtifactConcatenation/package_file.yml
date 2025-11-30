@@ -4,7 +4,7 @@
   name: parent-project-1.0-20250503.071237-1.pom
   lower_name: parent-project-1.0-20250503.071237-1.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256357
 - id: 3
   version_id: 2
@@ -12,7 +12,7 @@
   name: sub-module-1.0-20250503.071237-1.pom
   lower_name: sub-module-1.0-20250503.071237-1.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256358
 - id: 4
   version_id: 2
@@ -20,7 +20,7 @@
   name: sub-module-1.0-20250503.071237-1.jar
   lower_name: sub-module-1.0-20250503.071237-1.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256358
 - id: 6
   version_id: 3
@@ -28,7 +28,7 @@
   name: parent-project-7.0.0.pom
   lower_name: parent-project-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256360
 - id: 7
   version_id: 4
@@ -36,7 +36,7 @@
   name: sub-module-7.0.0.pom
   lower_name: sub-module-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256361
 - id: 8
   version_id: 4
@@ -44,7 +44,7 @@
   name: sub-module-7.0.0.jar
   lower_name: sub-module-7.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256361
 - id: 9
   version_id: 5
@@ -52,7 +52,7 @@
   name: parent-project-7.0.0.pom
   lower_name: parent-project-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256364
 - id: 10
   version_id: 6
@@ -60,7 +60,7 @@
   name: sub-module-7.0.0.pom
   lower_name: sub-module-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256365
 - id: 11
   version_id: 6
@@ -68,7 +68,7 @@
   name: sub-module-7.0.0.jar
   lower_name: sub-module-7.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256365
 - id: 12
   version_id: 7
@@ -76,7 +76,7 @@
   name: bar-1.0-20250503.071248-1.pom
   lower_name: bar-1.0-20250503.071248-1.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256367
 - id: 14
   version_id: 8
@@ -84,7 +84,7 @@
   name: bar-7.0.0.pom
   lower_name: bar-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256370
 - id: 15
   version_id: 7
@@ -92,7 +92,7 @@
   name: -bar-1.0-20250503.071253-2.pom
   lower_name: -bar-1.0-20250503.071253-2.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256373
 - id: 17
   version_id: 8
@@ -100,7 +100,7 @@
   name: -bar-7.0.0.pom
   lower_name: -bar-7.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256375
 - id: 18
   version_id: 1
@@ -108,7 +108,7 @@
   name: parent-project-1.0-20250503.071306-2.pom
   lower_name: parent-project-1.0-20250503.071306-2.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256385
 - id: 20
   version_id: 2
@@ -116,7 +116,7 @@
   name: sub-module-1.0-20250503.071306-2.pom
   lower_name: sub-module-1.0-20250503.071306-2.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256386
 - id: 21
   version_id: 2
@@ -124,7 +124,7 @@
   name: sub-module-1.0-20250503.071306-2.jar
   lower_name: sub-module-1.0-20250503.071306-2.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256386
 - id: 23
   version_id: 9
@@ -132,7 +132,7 @@
   name: parent-project-8.0.0.pom
   lower_name: parent-project-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256389
 - id: 24
   version_id: 10
@@ -140,7 +140,7 @@
   name: sub-module-8.0.0.pom
   lower_name: sub-module-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256390
 - id: 25
   version_id: 10
@@ -148,7 +148,7 @@
   name: sub-module-8.0.0.jar
   lower_name: sub-module-8.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256390
 - id: 26
   version_id: 11
@@ -156,7 +156,7 @@
   name: parent-project-8.0.0.pom
   lower_name: parent-project-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256393
 - id: 27
   version_id: 12
@@ -164,7 +164,7 @@
   name: sub-module-8.0.0.pom
   lower_name: sub-module-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256394
 - id: 28
   version_id: 12
@@ -172,7 +172,7 @@
   name: sub-module-8.0.0.jar
   lower_name: sub-module-8.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256394
 - id: 29
   version_id: 7
@@ -180,7 +180,7 @@
   name: bar-1.0-20250503.071317-3.pom
   lower_name: bar-1.0-20250503.071317-3.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256397
 - id: 31
   version_id: 13
@@ -188,7 +188,7 @@
   name: bar-8.0.0.pom
   lower_name: bar-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256399
 - id: 32
   version_id: 7
@@ -196,7 +196,7 @@
   name: -bar-1.0-20250503.071323-4.pom
   lower_name: -bar-1.0-20250503.071323-4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256402
 - id: 34
   version_id: 13
@@ -204,7 +204,7 @@
   name: -bar-8.0.0.pom
   lower_name: -bar-8.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256405
 - id: 35
   version_id: 1
@@ -212,7 +212,7 @@
   name: parent-project-1.0-20250503.071335-3.pom
   lower_name: parent-project-1.0-20250503.071335-3.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256415
 - id: 37
   version_id: 2
@@ -220,7 +220,7 @@
   name: sub-module-1.0-20250503.071335-3.pom
   lower_name: sub-module-1.0-20250503.071335-3.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256416
 - id: 38
   version_id: 2
@@ -228,7 +228,7 @@
   name: sub-module-1.0-20250503.071335-3.jar
   lower_name: sub-module-1.0-20250503.071335-3.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256416
 - id: 40
   version_id: 14
@@ -236,7 +236,7 @@
   name: parent-project-9.0.0.pom
   lower_name: parent-project-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256419
 - id: 41
   version_id: 15
@@ -244,7 +244,7 @@
   name: sub-module-9.0.0.pom
   lower_name: sub-module-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256420
 - id: 42
   version_id: 15
@@ -252,7 +252,7 @@
   name: sub-module-9.0.0.jar
   lower_name: sub-module-9.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256420
 - id: 43
   version_id: 16
@@ -260,7 +260,7 @@
   name: parent-project-9.0.0.pom
   lower_name: parent-project-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256423
 - id: 44
   version_id: 17
@@ -268,7 +268,7 @@
   name: sub-module-9.0.0.pom
   lower_name: sub-module-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256424
 - id: 45
   version_id: 17
@@ -276,7 +276,7 @@
   name: sub-module-9.0.0.jar
   lower_name: sub-module-9.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256424
 - id: 46
   version_id: 7
@@ -284,7 +284,7 @@
   name: bar-1.0-20250503.071347-5.pom
   lower_name: bar-1.0-20250503.071347-5.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256427
 - id: 48
   version_id: 18
@@ -292,7 +292,7 @@
   name: bar-9.0.0.pom
   lower_name: bar-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256429
 - id: 49
   version_id: 7
@@ -300,7 +300,7 @@
   name: -bar-1.0-20250503.071353-6.pom
   lower_name: -bar-1.0-20250503.071353-6.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256432
 - id: 51
   version_id: 18
@@ -308,7 +308,7 @@
   name: -bar-9.0.0.pom
   lower_name: -bar-9.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256435
 - id: 52
   version_id: 1
@@ -316,7 +316,7 @@
   name: parent-project-1.0-20250503.071405-4.pom
   lower_name: parent-project-1.0-20250503.071405-4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256445
 - id: 54
   version_id: 2
@@ -324,7 +324,7 @@
   name: sub-module-1.0-20250503.071405-4.pom
   lower_name: sub-module-1.0-20250503.071405-4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256446
 - id: 55
   version_id: 2
@@ -332,7 +332,7 @@
   name: sub-module-1.0-20250503.071405-4.jar
   lower_name: sub-module-1.0-20250503.071405-4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256446
 - id: 57
   version_id: 19
@@ -340,7 +340,7 @@
   name: parent-project-10.0.0.pom
   lower_name: parent-project-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256449
 - id: 58
   version_id: 20
@@ -348,7 +348,7 @@
   name: sub-module-10.0.0.pom
   lower_name: sub-module-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256450
 - id: 59
   version_id: 20
@@ -356,7 +356,7 @@
   name: sub-module-10.0.0.jar
   lower_name: sub-module-10.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256450
 - id: 60
   version_id: 21
@@ -364,7 +364,7 @@
   name: parent-project-10.0.0.pom
   lower_name: parent-project-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256452
 - id: 61
   version_id: 22
@@ -372,7 +372,7 @@
   name: sub-module-10.0.0.pom
   lower_name: sub-module-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256453
 - id: 62
   version_id: 22
@@ -380,7 +380,7 @@
   name: sub-module-10.0.0.jar
   lower_name: sub-module-10.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256453
 - id: 63
   version_id: 7
@@ -388,7 +388,7 @@
   name: bar-1.0-20250503.071416-7.pom
   lower_name: bar-1.0-20250503.071416-7.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256456
 - id: 65
   version_id: 23
@@ -396,7 +396,7 @@
   name: bar-10.0.0.pom
   lower_name: bar-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256459
 - id: 66
   version_id: 7
@@ -404,7 +404,7 @@
   name: -bar-1.0-20250503.071422-8.pom
   lower_name: -bar-1.0-20250503.071422-8.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256461
 - id: 68
   version_id: 23
@@ -412,7 +412,7 @@
   name: -bar-10.0.0.pom
   lower_name: -bar-10.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256464
 - id: 69
   version_id: 1
@@ -420,7 +420,7 @@
   name: parent-project-1.0-20250503.071435-5.pom
   lower_name: parent-project-1.0-20250503.071435-5.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256474
 - id: 70
   version_id: 1
@@ -428,7 +428,7 @@
   name: maven-metadata.xml
   lower_name: maven-metadata.xml
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256474
 - id: 71
   version_id: 2
@@ -436,7 +436,7 @@
   name: sub-module-1.0-20250503.071435-5.pom
   lower_name: sub-module-1.0-20250503.071435-5.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256475
 - id: 72
   version_id: 2
@@ -444,7 +444,7 @@
   name: sub-module-1.0-20250503.071435-5.jar
   lower_name: sub-module-1.0-20250503.071435-5.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256475
 - id: 73
   version_id: 2
@@ -452,7 +452,7 @@
   name: maven-metadata.xml
   lower_name: maven-metadata.xml
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256476
 - id: 74
   version_id: 24
@@ -460,7 +460,7 @@
   name: parent-project-11.0.0.pom
   lower_name: parent-project-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256478
 - id: 75
   version_id: 25
@@ -468,7 +468,7 @@
   name: sub-module-11.0.0.pom
   lower_name: sub-module-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256479
 - id: 76
   version_id: 25
@@ -476,7 +476,7 @@
   name: sub-module-11.0.0.jar
   lower_name: sub-module-11.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256479
 - id: 77
   version_id: 26
@@ -484,7 +484,7 @@
   name: parent-project-11.0.0.pom
   lower_name: parent-project-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256482
 - id: 78
   version_id: 27
@@ -492,7 +492,7 @@
   name: sub-module-11.0.0.pom
   lower_name: sub-module-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256483
 - id: 79
   version_id: 27
@@ -500,7 +500,7 @@
   name: sub-module-11.0.0.jar
   lower_name: sub-module-11.0.0.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256483
 - id: 80
   version_id: 7
@@ -508,7 +508,7 @@
   name: bar-1.0-20250503.071446-9.pom
   lower_name: bar-1.0-20250503.071446-9.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256486
 - id: 82
   version_id: 28
@@ -516,7 +516,7 @@
   name: bar-11.0.0.pom
   lower_name: bar-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256488
 - id: 83
   version_id: 7
@@ -524,7 +524,7 @@
   name: -bar-1.0-20250503.071451-10.pom
   lower_name: -bar-1.0-20250503.071451-10.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256491
 - id: 84
   version_id: 7
@@ -532,7 +532,7 @@
   name: maven-metadata.xml
   lower_name: maven-metadata.xml
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 1746256491
 - id: 85
   version_id: 28
@@ -540,7 +540,7 @@
   name: -bar-11.0.0.pom
   lower_name: -bar-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746256494
 # broken uploads
 - id: 86
@@ -549,7 +549,7 @@
   name: br-repo-jooq-1.2.4-sources.jar
   lower_name: br-repo-jooq-1.2.4-sources.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444986
 - id: 87
   version_id: 29
@@ -557,7 +557,7 @@
   name: br-rest-webmvc-1.2.4.jar
   lower_name: br-rest-webmvc-1.2.4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649446161
 - id: 88
   version_id: 29
@@ -565,7 +565,7 @@
   name: br-openapi-base-1.2.4.pom
   lower_name: br-openapi-base-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649444734
 - id: 89
   version_id: 29
@@ -573,7 +573,7 @@
   name: br-openapi-base-1.2.4.jar
   lower_name: br-openapi-base-1.2.4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444746
 - id: 90
   version_id: 29
@@ -581,7 +581,7 @@
   name: br-openapi-base-1.2.4-sources.jar
   lower_name: br-openapi-base-1.2.4-sources.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444775
 - id: 91
   version_id: 29
@@ -589,7 +589,7 @@
   name: br-parent-1.2.4.pom
   lower_name: br-parent-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649444852
 - id: 92
   version_id: 29
@@ -597,7 +597,7 @@
   name: br-repo-in-memory-1.2.4.pom
   lower_name: br-repo-in-memory-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649444900
 - id: 93
   version_id: 29
@@ -605,7 +605,7 @@
   name: br-repo-in-memory-1.2.4.jar
   lower_name: br-repo-in-memory-1.2.4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444911
 - id: 94
   version_id: 29
@@ -613,7 +613,7 @@
   name: br-repo-in-memory-1.2.4-sources.jar
   lower_name: br-repo-in-memory-1.2.4-sources.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444922
 - id: 95
   version_id: 29
@@ -621,7 +621,7 @@
   name: br-repo-jooq-1.2.4.pom
   lower_name: br-repo-jooq-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649444953
 - id: 96
   version_id: 29
@@ -629,7 +629,7 @@
   name: br-repo-jooq-1.2.4.jar
   lower_name: br-repo-jooq-1.2.4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649444969
 - id: 97
   version_id: 29
@@ -637,7 +637,7 @@
   name: br-rest-webmvc-1.2.4-sources.jar
   lower_name: br-rest-webmvc-1.2.4-sources.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649446161
 - id: 98
   version_id: 29
@@ -645,7 +645,7 @@
   name: br-rest-webmvc-1.2.4.pom
   lower_name: br-rest-webmvc-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649446195
 - id: 99
   version_id: 29
@@ -653,7 +653,7 @@
   name: br-root-1.2.4.pom
   lower_name: br-root-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649446217
 - id: 100
   version_id: 30
@@ -661,7 +661,7 @@
   name: br-rest-webmvc-1.2.4.pom
   lower_name: br-rest-webmvc-1.2.4.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 174625649446311
 - id: 101
   version_id: 30
@@ -669,7 +669,7 @@
   name: br-rest-webmvc-1.2.4.jar
   lower_name: br-rest-webmvc-1.2.4.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649446312
 - id: 102
   version_id: 30
@@ -677,7 +677,7 @@
   name: br-rest-webmvc-1.2.4-sources.jar
   lower_name: br-rest-webmvc-1.2.4-sources.jar
   composite_key: ""
-  is_lead: 0
+  is_lead: false
   created_unix: 174625649446312
 # collision
 - id: 103
@@ -686,7 +686,7 @@
   name: bar-art-11.0.0.pom
   lower_name: bar-art-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746280832
 - id: 104
   version_id: 31
@@ -694,5 +694,5 @@
   name: art-11.0.0.pom
   lower_name: art-11.0.0.pom
   composite_key: ""
-  is_lead: 1
+  is_lead: true
   created_unix: 1746280843

@@ -4,7 +4,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 1
   job_id: job_2
@@ -18,7 +18,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 1
   job_id: job_2
@@ -32,7 +32,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job1 (1)
   attempt: 1
   job_id: job1
@@ -46,7 +46,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job1 (2)
   attempt: 1
   job_id: job1
@@ -60,7 +60,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job2
   attempt: 1
   job_id: job2
@@ -75,7 +75,7 @@
   repo_id: 1
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 1
   job_id: job_2
@@ -89,7 +89,7 @@
   repo_id: 1
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 1
   job_id: job_2
@@ -104,7 +104,7 @@
   repo_id: 1
   owner_id: 2
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 2
   job_id: job_2
@@ -119,7 +119,7 @@
   repo_id: 1
   owner_id: 3
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 1
   job_id: job_2
@@ -134,7 +134,7 @@
   repo_id: 4
   owner_id: 1
   commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_2
   attempt: 0
   job_id: job_2
@@ -149,7 +149,7 @@
   repo_id: 1
   owner_id: 3
   commit_sha: ea09cba7099f7e3bea80dee1a42f0b5d5e127f2e
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_3
   attempt: 1
   job_id: job_3
