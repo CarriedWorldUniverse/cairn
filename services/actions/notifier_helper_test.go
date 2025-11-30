@@ -216,7 +216,9 @@ func TestActionsNotifier_PreExecutionErrorInvalidJobs(t *testing.T) {
 	createdRun := runs[0]
 
 	assert.Equal(t, actions_model.StatusFailure, createdRun.Status)
-	assert.Contains(t, createdRun.PreExecutionError, "actions.workflow.job_parsing_error%!(EXTRA *fmt.wrapError=")
+	assert.Empty(t, createdRun.PreExecutionError)
+	assert.Equal(t, actions_model.ErrorCodeJobParsingError, createdRun.PreExecutionErrorCode)
+	assert.Equal(t, []any{"model.ReadWorkflow: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `hello, ...` into map[string]*model.Job"}, createdRun.PreExecutionErrorDetails)
 }
 
 func TestActionsNotifier_PreExecutionEventDetectionError(t *testing.T) {
@@ -239,7 +241,9 @@ func TestActionsNotifier_PreExecutionEventDetectionError(t *testing.T) {
 	createdRun := runs[0]
 
 	assert.Equal(t, actions_model.StatusFailure, createdRun.Status)
-	assert.Equal(t, "actions.workflow.event_detection_error%!(EXTRA *errors.errorString=nothing is not a valid event)", createdRun.PreExecutionError)
+	assert.Empty(t, createdRun.PreExecutionError)
+	assert.Equal(t, actions_model.ErrorCodeEventDetectionError, createdRun.PreExecutionErrorCode)
+	assert.Equal(t, []any{"nothing is not a valid event"}, createdRun.PreExecutionErrorDetails)
 }
 
 func TestActionsNotifier_handleWorkflows_setRunTrustForPullRequest(t *testing.T) {

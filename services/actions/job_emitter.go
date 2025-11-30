@@ -239,18 +239,15 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 			// This is an error that needs to be reported back to the user for them to correct their workflow, so we
 			// slip this notification into PreExecutionError.
 
-			// This string isn't translated because PreExecutionError needs a design update -- it only stores a single
-			// string that is displayed to all users irrespective of their language. We could guess at the the language
-			// based upon the triggering user of the workflow, but it would just be a rough guess, and it would expose a
-			// user's personal configuration (their language).
 			run := blockedJob.Run
-			run.PreExecutionError = fmt.Sprintf(
-				"Unable to evaluate `strategy.matrix` of job %[1]s due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (%[2]s), or an output that doesn't exist on one of those jobs.",
+			run.PreExecutionErrorCode = actions_model.ErrorCodePersistentIncompleteMatrix
+			run.PreExecutionErrorDetails = []any{
 				blockedJob.JobID,
 				strings.Join(blockedJob.Needs, ", "),
-			)
+			}
 			run.Status = actions_model.StatusFailure
-			err = actions_model.UpdateRunWithoutNotification(ctx, run, "pre_execution_error", "status")
+			err = actions_model.UpdateRunWithoutNotification(ctx, run,
+				"pre_execution_error_code", "pre_execution_error_details", "status")
 			if err != nil {
 				return false, fmt.Errorf("failure updating PreExecutionError: %w", err)
 			}
