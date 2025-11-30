@@ -568,52 +568,110 @@ func TestViewRepoDirectoryReadme(t *testing.T) {
 }
 
 func TestRenamedFileHistory(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		t.Run("Renamed file", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
 
-	t.Run("Renamed file", func(t *testing.T) {
-		defer tests.PrintCurrentTest(t)()
+			req := NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license")
+			resp := MakeRequest(t, req, http.StatusOK)
 
-		req := NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license")
-		resp := MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
 
-		htmlDoc := NewHTMLParser(t, resp.Body)
+			renameNotice := htmlDoc.doc.Find(".ui.bottom.attached.header")
+			assert.Equal(t, 1, renameNotice.Length())
+			assert.Contains(t, renameNotice.Text(), "Renamed from licnse (Browse further)")
 
-		renameNotice := htmlDoc.doc.Find(".ui.bottom.attached.header")
-		assert.Equal(t, 1, renameNotice.Length())
-		assert.Contains(t, renameNotice.Text(), "Renamed from licnse (Browse further)")
+			oldFileHistoryLink, ok := renameNotice.Find("a").Attr("href")
+			assert.True(t, ok)
+			assert.Equal(t, "/user2/repo59/commits/commit/80b83c5c8220c3aa3906e081f202a2a7563ec879/licnse", oldFileHistoryLink)
+		})
 
-		oldFileHistoryLink, ok := renameNotice.Find("a").Attr("href")
-		assert.True(t, ok)
-		assert.Equal(t, "/user2/repo59/commits/commit/80b83c5c8220c3aa3906e081f202a2a7563ec879/licnse", oldFileHistoryLink)
-	})
+		t.Run("Renamed file, pagination", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			defer test.MockVariableValue(&setting.Git.CommitsRangeSize, 1)() // Limit commits displayed on the page to one
 
-	t.Run("Renamed file, pagination", func(t *testing.T) {
-		defer tests.PrintCurrentTest(t)()
-		defer test.MockVariableValue(&setting.Git.CommitsRangeSize, 1)() // Limit commits displayed on the page to one
+			resp := MakeRequest(t, NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license"), http.StatusOK)
+			page1 := NewHTMLParser(t, resp.Body)
 
-		resp := MakeRequest(t, NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license"), http.StatusOK)
-		page1 := NewHTMLParser(t, resp.Body)
+			resp = MakeRequest(t, NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license?page=2"), http.StatusOK)
+			page2 := NewHTMLParser(t, resp.Body)
 
-		resp = MakeRequest(t, NewRequest(t, "GET", "/user2/repo59/commits/branch/master/license?page=2"), http.StatusOK)
-		page2 := NewHTMLParser(t, resp.Body)
+			// Browse further is only shown on 2nd page
+			browseFurtherSel := ".ui.bottom.attached.header a[href='/user2/repo59/commits/commit/80b83c5c8220c3aa3906e081f202a2a7563ec879/licnse']"
+			page1.AssertElement(t, browseFurtherSel, false)
+			page2.AssertElement(t, browseFurtherSel, true)
 
-		// Browse further is only shown on 2nd page
-		browseFurtherSel := ".ui.bottom.attached.header a[href='/user2/repo59/commits/commit/80b83c5c8220c3aa3906e081f202a2a7563ec879/licnse']"
-		page1.AssertElement(t, browseFurtherSel, false)
-		page2.AssertElement(t, browseFurtherSel, true)
+			// Pagination goes after Browser further
+			afterBrowseFurther := page2.Find(browseFurtherSel).Parent().Parent().NextAll()
+			assert.Equal(t, 1, afterBrowseFurther.Find(".pagination.menu").Length())
+		})
 
-		// Pagination goes after Browser further
-		afterBrowseFurther := page2.Find(browseFurtherSel).Parent().Parent().NextAll()
-		assert.Equal(t, 1, afterBrowseFurther.Find(".pagination.menu").Length())
-	})
+		t.Run("Non renamed file", func(t *testing.T) {
+			req := NewRequest(t, "GET", "/user2/repo59/commits/branch/master/README.md")
+			resp := MakeRequest(t, req, http.StatusOK)
 
-	t.Run("Non renamed file", func(t *testing.T) {
-		req := NewRequest(t, "GET", "/user2/repo59/commits/branch/master/README.md")
-		resp := MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
 
-		htmlDoc := NewHTMLParser(t, resp.Body)
+			htmlDoc.AssertElement(t, ".ui.bottom.attached.header", false)
+		})
 
-		htmlDoc.AssertElement(t, ".ui.bottom.attached.header", false)
+		t.Run("Renamed file (with escaped name)", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+			repo, commitID, f := tests.CreateDeclarativeRepo(t, user2, "",
+				[]unit_model.Type{unit_model.TypeCode}, nil,
+				[]*files_service.ChangeRepoFile{
+					{
+						Operation:     "create",
+						TreePath:      "#beep",
+						ContentReader: strings.NewReader("ping pong"),
+					},
+				},
+			)
+			defer f()
+
+			files, err := files_service.ChangeRepoFiles(git.DefaultContext, repo, user2, &files_service.ChangeRepoFilesOptions{
+				Files: []*files_service.ChangeRepoFile{
+					{
+						Operation:     "update",
+						TreePath:      "beep",
+						FromTreePath:  "#beep",
+						ContentReader: strings.NewReader("ping pong"),
+					},
+				},
+				Message:   "rename",
+				OldBranch: "main",
+				NewBranch: "main",
+				Author: &files_service.IdentityOptions{
+					Name:  user2.Name,
+					Email: user2.Email,
+				},
+				Committer: &files_service.IdentityOptions{
+					Name:  user2.Name,
+					Email: user2.Email,
+				},
+				Dates: &files_service.CommitDateOptions{
+					Author:    time.Now(),
+					Committer: time.Now(),
+				},
+				LastCommitID: commitID,
+			})
+			require.NoError(t, err)
+
+			req := NewRequestf(t, "GET", "/%s/commits/branch/main/beep", repo.FullName())
+			resp := MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			renameNotice := htmlDoc.doc.Find(".ui.bottom.attached.header")
+			assert.Equal(t, 1, renameNotice.Length())
+			assert.Contains(t, renameNotice.Text(), "Renamed from #beep (Browse further)")
+
+			oldFileHistoryLink, ok := renameNotice.Find("a").Attr("href")
+			assert.True(t, ok)
+			assert.Equal(t, fmt.Sprintf("/%s/commits/commit/%s/%%23beep", repo.FullName(), files.Commit.SHA), oldFileHistoryLink)
+		})
 	})
 }
 

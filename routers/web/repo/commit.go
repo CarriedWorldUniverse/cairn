@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -272,7 +273,7 @@ func FileHistory(ctx *context.Context) {
 	for _, renames := range renamedFiles {
 		if renames[1] == fileName {
 			ctx.Data["OldFilename"] = renames[0]
-			ctx.Data["OldFilenameHistory"] = fmt.Sprintf("%s/commits/commit/%s/%s", ctx.Repo.RepoLink, oldestCommit.ID.String(), renames[0])
+			ctx.Data["OldFilenameHistory"] = fmt.Sprintf("%s/commits/commit/%s/%s", ctx.Repo.RepoLink, oldestCommit.ID.String(), url.PathEscape(renames[0]))
 			break
 		}
 	}
