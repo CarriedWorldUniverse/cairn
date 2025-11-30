@@ -19,9 +19,9 @@ test.describe('Releases', () => {
   test('External Release Attachments', async ({page, isMobile}) => {
     test.skip(isMobile);
 
-    // Click "New Release"
+    // Click "New release"
     await page.goto('/user2/repo2/releases');
-    await page.click('.button.small.primary');
+    await page.getByRole('link', {name: 'New release'}).click();
 
     // Fill out form and create new release
     await expect(page).toHaveURL('/user2/repo2/releases/new');
@@ -35,7 +35,7 @@ test.describe('Releases', () => {
     await page.fill('input[name=attachment-new-exturl-2]', 'https://forgejo.org/');
     await page.click('.remove-rel-attach');
     await screenshot(page);
-    await page.click('.button.small.primary');
+    await page.getByRole('button', {name: 'Publish release'}).click();
 
     // Validate release page and click edit
     await expect(page).toHaveURL('/user2/repo2/releases');
@@ -69,7 +69,7 @@ test.describe('Releases', () => {
     await page.locator('.attachment_edit:visible').nth(2).fill('Test3');
     await page.locator('.attachment_edit:visible').nth(3).fill('https://gitea.com/');
     await screenshot(page);
-    await page.click('.button.small.primary');
+    await page.getByRole('button', {name: 'Update release'}).click();
 
     // Validate release page and click edit
     await expect(page).toHaveURL('/user2/repo2/releases');
@@ -95,7 +95,7 @@ test.describe('Releases', () => {
 
     await page.locator('input[name=title]').pressSequentially('v2.0');
     await page.locator('input[name=tag_name]').pressSequentially('2.0');
-    await page.click('.button.small.primary');
+    await page.getByRole('button', {name: 'Publish release'}).click();
 
     await page.goto('/user2/repo2/releases/edit/2.0');
 

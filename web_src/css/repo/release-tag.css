@@ -99,17 +99,7 @@
   padding-bottom: 10px;
 }
 
-@media (max-width: 438px) {
-  .repository.new.release .field button,
-  .repository.new.release .field input {
-    width: 100%;
-  }
-}
-
 @media (max-width: 767.98px) {
-  .repository.new.release .field button {
-    margin-bottom: 1em;
-  }
   .release-list-search {
     order: 2 !important;
   }
