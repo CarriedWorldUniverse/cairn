@@ -96,7 +96,7 @@ h4.ui.header .sub.header {
   position: relative;
   background: var(--color-box-header);
   padding: 0.78571429rem 1rem;
-  margin: 0 -1px;
+  margin: 0;
   border-radius: 0;
   border: 1px solid var(--color-secondary);
 }
