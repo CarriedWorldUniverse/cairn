@@ -198,6 +198,7 @@
     "actions.runs.view_most_recent_run": "View most recent run",
     "actions.workflow.job_parsing_error": "Unable to parse jobs in workflow: %v",
     "actions.workflow.event_detection_error": "Unable to parse supported events in workflow: %v",
+    "actions.workflow.persistent_incomplete_matrix": "Unable to evaluate `strategy.matrix` of job %[1]s due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (%[2]s), or an output that doesn't exist on one of those jobs.",
     "actions.workflow.pre_execution_error": "Workflow was not executed due to an error that blocked the execution attempt.",
     "pulse.n_active_issues": {
         "one": "%s active issue",

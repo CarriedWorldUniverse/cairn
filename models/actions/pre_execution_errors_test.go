@@ -1,0 +1,64 @@
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+package actions
+
+import (
+	"testing"
+
+	"forgejo.org/modules/translation"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestTranslatePreExecutionError(t *testing.T) {
+	translation.InitLocales(t.Context())
+	lang := translation.NewLocale("en-US")
+
+	tests := []struct {
+		name     string
+		run      *ActionRun
+		expected string
+	}{
+		{
+			name:     "legacy",
+			run:      &ActionRun{PreExecutionError: "legacy message"},
+			expected: "legacy message",
+		},
+		{
+			name:     "no error",
+			run:      &ActionRun{},
+			expected: "",
+		},
+		{
+			name: "ErrorCodeEventDetectionError",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeEventDetectionError,
+				PreExecutionErrorDetails: []any{"inner error message"},
+			},
+			expected: "Unable to parse supported events in workflow: inner error message",
+		},
+		{
+			name: "ErrorCodeJobParsingError",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeJobParsingError,
+				PreExecutionErrorDetails: []any{"inner error message"},
+			},
+			expected: "Unable to parse jobs in workflow: inner error message",
+		},
+		{
+			name: "ErrorCodePersistentIncompleteMatrix",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodePersistentIncompleteMatrix,
+				PreExecutionErrorDetails: []any{"blocked_job", "needs-1, needs-2"},
+			},
+			expected: "Unable to evaluate `strategy.matrix` of job blocked_job due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (needs-1, needs-2), or an output that doesn't exist on one of those jobs.",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := TranslatePreExecutionError(lang, tt.run)
+			assert.Equal(t, tt.expected, err)
+		})
+	}
+}

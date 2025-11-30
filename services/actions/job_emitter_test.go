@@ -141,12 +141,13 @@ jobs:
 
 func Test_tryHandleIncompleteMatrix(t *testing.T) {
 	tests := []struct {
-		name              string
-		runJobID          int64
-		errContains       string
-		consumed          bool
-		runJobNames       []string
-		preExecutionError string
+		name                     string
+		runJobID                 int64
+		errContains              string
+		consumed                 bool
+		runJobNames              []string
+		preExecutionError        actions_model.PreExecutionError
+		preExecutionErrorDetails []any
 	}{
 		{
 			name:     "not incomplete_matrix",
@@ -164,9 +165,10 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			errContains: "jobStatusResolver attempted to tryHandleIncompleteMatrix for a job (id=603) with an incomplete 'needs' job (id=604)",
 		},
 		{
-			name:              "missing needs for strategy.matrix evaluation",
-			runJobID:          605,
-			preExecutionError: "Unable to evaluate `strategy.matrix` of job job_1 due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (define-matrix-1), or an output that doesn't exist on one of those jobs.",
+			name:                     "missing needs for strategy.matrix evaluation",
+			runJobID:                 605,
+			preExecutionError:        actions_model.ErrorCodePersistentIncompleteMatrix,
+			preExecutionErrorDetails: []any{"job_1", "define-matrix-1"},
 		},
 		{
 			name:        "matrix expanded to 0 jobs",
@@ -258,10 +260,12 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 					}
 					slices.Sort(allJobNames)
 					assert.Equal(t, tt.runJobNames, allJobNames)
-				} else if tt.preExecutionError != "" {
+				} else if tt.preExecutionError != 0 {
 					// expectations are that the ActionRun has a populated PreExecutionError, is marked as failed
 					actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: blockedJob.RunID})
-					assert.Equal(t, tt.preExecutionError, actionRun.PreExecutionError)
+					assert.Empty(t, actionRun.PreExecutionError)
+					assert.Equal(t, tt.preExecutionError, actionRun.PreExecutionErrorCode)
+					assert.Equal(t, tt.preExecutionErrorDetails, actionRun.PreExecutionErrorDetails)
 					assert.Equal(t, actions_model.StatusFailure, actionRun.Status)
 
 					// ActionRunJob is marked as failed
