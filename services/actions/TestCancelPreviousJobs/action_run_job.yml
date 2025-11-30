@@ -4,7 +4,7 @@
   repo_id: 63
   owner_id: 2
   commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   name: job_1
   attempt: 0
   job_id: job_1

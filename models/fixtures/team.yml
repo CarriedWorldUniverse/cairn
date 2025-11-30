@@ -249,5 +249,5 @@
   authorize: 3
   num_repos: 0
   num_members: 0
-  includes_all_repositories: 0
-  can_create_org_repo: 0
+  includes_all_repositories: false
+  can_create_org_repo: false

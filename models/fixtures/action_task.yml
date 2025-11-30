@@ -8,15 +8,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: 6d8ef48297195edcc8e22c70b3020eaa06c52976db67d39b4260c64a69a2cc1508825121b7b8394e48e00b1bf8718b2aaaaa
   token_salt: eeeeeeee
   token_last_eight: eeeeeeee
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 47
   job_id: 192
@@ -28,15 +28,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: 6d8ef48297195edcc8e22c70b3020eaa06c52976db67d39b4260c64a69a2cc1508825121b7b8394e48e00b1bf8718b2a867e
   token_salt: jVuKnSPGgy
   token_last_eight: eeb1a71a
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 48
   job_id: 193
@@ -48,15 +48,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: ffffcfffffffbffffffffffffffffefffffffafffffffffffffffffffffffffffffdffffffffffffffffffffffffffffffff
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 49
   job_id: 194
@@ -68,15 +68,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: b8d3962425466b6709b9ac51446f93260c54afe8e7b6d3686e34f991fb8a8953822b0deed86fe41a103f34bc48dbc4784220
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 50
   job_id: 195
@@ -88,15 +88,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: b8d3962425466b6709b9ac51446f93260c54afe8e7b6d3686e34f991fb8a8953822b0deed86fe41a103f34bc48dbc4784221
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 51
   job_id: 196
@@ -108,15 +108,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: b8d3962425466b6709b9ac51446f93260c54afe8e7b6d3686e34f991fb8a8953822b0deed86fe41a103f34bc48dbc4784222
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 52
   job_id: 192
@@ -128,15 +128,15 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: b8d3962425466b6709b9ac51446f93260c54afe8e7b6d3686e34f991fb8a8953822b0deed86fe41a103f34bc48dbc4784223
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false
 -
   id: 53
   job_id: 192
@@ -148,12 +148,12 @@
   repo_id: 4
   owner_id: 1
   commit_sha: c2d72f548424103f01ee1dc02889c1e2bff816b0
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   token_hash: b8d3962425466b6709b9ac51446f93260c54afe8e7b6d3686e34f991fb8a8953822b0deed86fe41a103f34bc48dbc4784224
   token_salt: ffffffffff
   token_last_eight: ffffffff
   log_filename: artifact-test2/2f/47.log
-  log_in_storage: 1
+  log_in_storage: true
   log_length: 707
   log_size: 90179
-  log_expired: 0
+  log_expired: false

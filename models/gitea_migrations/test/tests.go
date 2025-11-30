@@ -26,6 +26,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"xorm.io/xorm"
+
+	_ "github.com/jackc/pgx/v5/stdlib" // Import pgx driver
 )
 
 // PrepareTestEnv prepares the test environment and reset the database. The skip parameter should usually be 0.
@@ -210,7 +212,7 @@ func deleteDB() error {
 		}
 		return nil
 	case setting.Database.Type.IsPostgreSQL():
-		db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/?sslmode=%s",
+		db, err := sql.Open("pgx", fmt.Sprintf("postgres://%s:%s@%s/?sslmode=%s",
 			setting.Database.User, setting.Database.Passwd, setting.Database.Host, setting.Database.SSLMode))
 		if err != nil {
 			return err
@@ -228,7 +230,7 @@ func deleteDB() error {
 
 		// Check if we need to setup a specific schema
 		if len(setting.Database.Schema) != 0 {
-			db, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+			db, err = sql.Open("pgx", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 				setting.Database.User, setting.Database.Passwd, setting.Database.Host, setting.Database.Name, setting.Database.SSLMode))
 			if err != nil {
 				return err

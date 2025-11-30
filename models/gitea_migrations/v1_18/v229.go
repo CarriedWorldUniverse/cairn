@@ -14,7 +14,7 @@ import (
 
 func UpdateOpenMilestoneCounts(x *xorm.Engine) error {
 	var openMilestoneIDs []int64
-	err := x.Table("milestone").Select("id").Where(builder.Neq{"is_closed": 1}).Find(&openMilestoneIDs)
+	err := x.Table("milestone").Select("id").Where(builder.Neq{"is_closed": true}).Find(&openMilestoneIDs)
 	if err != nil {
 		return fmt.Errorf("error selecting open milestone IDs: %w", err)
 	}

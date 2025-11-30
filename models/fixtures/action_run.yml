@@ -9,13 +9,13 @@
   ref: "refs/heads/master"
   commit_sha: "c2d72f548424103f01ee1dc02889c1e2bff816b0"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
   event_payload: |
     {
@@ -217,13 +217,13 @@
   ref: "refs/heads/master"
   commit_sha: "c2d72f548424103f01ee1dc02889c1e2bff816b0"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
   event_payload: |
     {
@@ -424,13 +424,13 @@
   ref: "refs/heads/master"
   commit_sha: "c2d72f548424103f01ee1dc02889c1e2bff816b0"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
 -
   id: 794
@@ -443,13 +443,13 @@
   ref: "refs/heads/test"
   commit_sha: "c2d72f548424103f01ee1dc02889c1e2bff816b0"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
 -
   id: 891
@@ -462,13 +462,13 @@
   ref: "refs/heads/branch2"
   commit_sha: "985f0301dba5e7b34be866819cd15ad3d8f508ee"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
   event_payload: '{"head_commit":{"id":"5f22f7d0d95d614d25a5b68592adb345a4b5c7fd"}}'
 
@@ -485,13 +485,13 @@
   ref: "refs/heads/main"
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   event: "push"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 1 # success
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
 
 -
@@ -505,13 +505,13 @@
   ref: "refs/heads/bugfix-1"
   commit_sha: "35c5cddfc19397501ec8f4f7bb808a7c8f04445f"
   event: "pull_request"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 2 # failure
   started: 1683636528
   stopped: 1683636626
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0
 
 -
@@ -526,10 +526,10 @@
   commit_sha: "97f29ee599c373c729132a5c46a046978311e0ee"
   event: "workflow_dispatch"
   trigger_event: "workflow_dispatch"
-  is_fork_pull_request: 0
+  is_fork_pull_request: false
   status: 6 # running
   started: 1683636528
   created: 1683636108
   updated: 1683636626
-  need_approval: 0
+  need_approval: false
   approved_by: 0

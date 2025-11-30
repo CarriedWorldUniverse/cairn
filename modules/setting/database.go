@@ -277,6 +277,36 @@ func parsePostgreSQLHostPort(info string) (host, port string) {
 
 func getPostgreSQLConnectionString(dbHost, dbUser, dbPasswd, dbName, dbsslMode string) (connStr string) {
 	dbName, dbParam, _ := strings.Cut(dbName, "?")
+
+	// pgx multi-host specification: "host1:port1,host2:port2"
+	if strings.Contains(dbHost, ",") {
+		var hostParts []string
+		for host := range strings.SplitSeq(dbHost, ",") {
+			trimmed := strings.TrimSpace(host)
+			if trimmed == "" {
+				continue
+			}
+			h, p := parsePostgreSQLHostPort(trimmed)
+			hostParts = append(hostParts, net.JoinHostPort(h, p))
+		}
+
+		// Validate that we have at least one valid host after parsing
+		if len(hostParts) > 0 {
+			connURL := url.URL{
+				Scheme:   "postgres",
+				User:     url.UserPassword(dbUser, dbPasswd),
+				Host:     strings.Join(hostParts, ","),
+				Path:     dbName,
+				OmitHost: false,
+				RawQuery: dbParam,
+			}
+			query := connURL.Query()
+			query.Set("sslmode", dbsslMode)
+			connURL.RawQuery = query.Encode()
+			return connURL.String()
+		}
+	}
+
 	host, port := parsePostgreSQLHostPort(dbHost)
 	connURL := url.URL{
 		Scheme:   "postgres",
