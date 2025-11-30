@@ -16,7 +16,7 @@ import (
 	fm "forgejo.org/modules/forgefed"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/validation"
-	context_service "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 
 	ap "github.com/go-ap/activitypub"
 )
@@ -75,7 +75,7 @@ func ProcessLikeActivity(ctx context.Context, activity *ap.Activity, repositoryI
 }
 
 // Create or update a list of FollowingRepo structs
-func StoreFollowingRepoList(ctx *context_service.Context, localRepoID int64, followingRepoList []string) (int, string, error) {
+func StoreFollowingRepoList(ctx *app_context.Context, localRepoID int64, followingRepoList []string) (int, string, error) {
 	followingRepos := make([]*repo.FollowingRepo, 0, len(followingRepoList))
 	for _, uri := range followingRepoList {
 		federationHost, err := FindOrCreateFederationHost(ctx.Base, uri)

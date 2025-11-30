@@ -7,9 +7,9 @@ import (
 	"context"
 	"strconv"
 
-	action_model "forgejo.org/models/actions"
-	issue_model "forgejo.org/models/issues"
-	package_model "forgejo.org/models/packages"
+	actions_model "forgejo.org/models/actions"
+	issues_model "forgejo.org/models/issues"
+	packages_model "forgejo.org/models/packages"
 	quota_model "forgejo.org/models/quota"
 	repo_model "forgejo.org/models/repo"
 	api "forgejo.org/modules/structs"
@@ -102,14 +102,14 @@ func ToQuotaUsedAttachmentList(ctx context.Context, attachments []*repo_model.At
 			return release.APIURL(), release.HTMLURL(), nil
 		}
 		if a.CommentID != 0 {
-			comment, err := issue_model.GetCommentByID(ctx, a.CommentID)
+			comment, err := issues_model.GetCommentByID(ctx, a.CommentID)
 			if err != nil {
 				return "", "", err
 			}
 			return comment.APIURL(ctx), comment.HTMLURL(ctx), nil
 		}
 		if a.IssueID != 0 {
-			issue, err := issue_model.GetIssueByID(ctx, a.IssueID)
+			issue, err := issues_model.GetIssueByID(ctx, a.IssueID)
 			if err != nil {
 				return "", "", err
 			}
@@ -141,10 +141,10 @@ func ToQuotaUsedAttachmentList(ctx context.Context, attachments []*repo_model.At
 	return &result, nil
 }
 
-func ToQuotaUsedPackageList(ctx context.Context, packages []*package_model.PackageVersion) (*api.QuotaUsedPackageList, error) {
+func ToQuotaUsedPackageList(ctx context.Context, packages []*packages_model.PackageVersion) (*api.QuotaUsedPackageList, error) {
 	result := make(api.QuotaUsedPackageList, len(packages))
 	for i, pv := range packages {
-		d, err := package_model.GetPackageDescriptor(ctx, pv)
+		d, err := packages_model.GetPackageDescriptor(ctx, pv)
 		if err != nil {
 			return nil, err
 		}
@@ -166,10 +166,10 @@ func ToQuotaUsedPackageList(ctx context.Context, packages []*package_model.Packa
 	return &result, nil
 }
 
-func ToQuotaUsedArtifactList(ctx context.Context, artifacts []*action_model.ActionArtifact) (*api.QuotaUsedArtifactList, error) {
+func ToQuotaUsedArtifactList(ctx context.Context, artifacts []*actions_model.ActionArtifact) (*api.QuotaUsedArtifactList, error) {
 	result := make(api.QuotaUsedArtifactList, len(artifacts))
 	for i, a := range artifacts {
-		run, err := action_model.GetRunByID(ctx, a.RunID)
+		run, err := actions_model.GetRunByID(ctx, a.RunID)
 		if err != nil {
 			return nil, err
 		}

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"forgejo.org/models/db"
-	report_model "forgejo.org/models/moderation"
+	moderation_model "forgejo.org/models/moderation"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/timeutil"
 
@@ -19,10 +19,10 @@ func TestRemoveResolvedReportsWhenNoTimeSet(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	// reportAge needs to be an int64 to match what timeutil.Day expects so we cast the value
 	reportAge := int64(20)
-	resolvedReport := &report_model.AbuseReport{
-		Status:     report_model.ReportStatusTypeHandled,
-		ReporterID: 1, ContentType: report_model.ReportedContentTypeRepository,
-		ContentID: 2, Category: report_model.AbuseCategoryTypeOther,
+	resolvedReport := &moderation_model.AbuseReport{
+		Status:     moderation_model.ReportStatusTypeHandled,
+		ReporterID: 1, ContentType: moderation_model.ReportedContentTypeRepository,
+		ContentID: 2, Category: moderation_model.AbuseCategoryTypeOther,
 		CreatedUnix:  timeutil.TimeStampNow(),
 		ResolvedUnix: timeutil.TimeStamp(time.Now().Unix() - timeutil.Day*reportAge),
 	}
@@ -39,10 +39,10 @@ func TestRemoveResolvedReportsWhenMatchTimeSet(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	// keepReportsFor needs to an int64 to match what timeutil.Day expects so we cast the value
 	keepReportsFor := int64(4)
-	resolvedReport := &report_model.AbuseReport{
-		Status:     report_model.ReportStatusTypeHandled,
-		ReporterID: 1, ContentType: report_model.ReportedContentTypeRepository,
-		ContentID: 2, Category: report_model.AbuseCategoryTypeOther,
+	resolvedReport := &moderation_model.AbuseReport{
+		Status:     moderation_model.ReportStatusTypeHandled,
+		ReporterID: 1, ContentType: moderation_model.ReportedContentTypeRepository,
+		ContentID: 2, Category: moderation_model.AbuseCategoryTypeOther,
 		CreatedUnix:  timeutil.TimeStampNow(),
 		ResolvedUnix: timeutil.TimeStamp(time.Now().Unix() - timeutil.Day*keepReportsFor),
 	}
@@ -58,10 +58,10 @@ func TestRemoveResolvedReportsWhenMatchTimeSet(t *testing.T) {
 
 func TestRemoveResolvedReportsWhenTimeSetButReportNew(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
-	resolvedReport := &report_model.AbuseReport{
-		Status:     report_model.ReportStatusTypeHandled,
-		ReporterID: 1, ContentType: report_model.ReportedContentTypeRepository,
-		ContentID: 2, Category: report_model.AbuseCategoryTypeOther,
+	resolvedReport := &moderation_model.AbuseReport{
+		Status:     moderation_model.ReportStatusTypeHandled,
+		ReporterID: 1, ContentType: moderation_model.ReportedContentTypeRepository,
+		ContentID: 2, Category: moderation_model.AbuseCategoryTypeOther,
 		CreatedUnix:  timeutil.TimeStampNow(),
 		ResolvedUnix: timeutil.TimeStampNow(),
 	}
@@ -78,10 +78,10 @@ func TestDoesNotRemoveOpenReports(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	// keepReportsFor needs to an int64 to match what timeutil.Day expects so we cast the value
 	keepReportsFor := int64(4)
-	resolvedReport := &report_model.AbuseReport{
-		Status:     report_model.ReportStatusTypeOpen,
-		ReporterID: 1, ContentType: report_model.ReportedContentTypeRepository,
-		ContentID: 2, Category: report_model.AbuseCategoryTypeOther,
+	resolvedReport := &moderation_model.AbuseReport{
+		Status:     moderation_model.ReportStatusTypeOpen,
+		ReporterID: 1, ContentType: moderation_model.ReportedContentTypeRepository,
+		ContentID: 2, Category: moderation_model.AbuseCategoryTypeOther,
 		CreatedUnix:  timeutil.TimeStampNow(),
 		ResolvedUnix: timeutil.TimeStamp(time.Now().Unix() - timeutil.Day*keepReportsFor),
 	}

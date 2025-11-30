@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"forgejo.org/models/db"
-	issue_model "forgejo.org/models/issues"
+	issues_model "forgejo.org/models/issues"
 	indexer_internal "forgejo.org/modules/indexer/internal"
 	inner_db "forgejo.org/modules/indexer/internal/db"
 	"forgejo.org/modules/indexer/issues/internal"
@@ -67,7 +67,7 @@ func (i *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 				builder.In("issue.id", builder.Select("issue_id").
 					From("comment").
 					Where(builder.And(
-						builder.Eq{"type": issue_model.CommentTypeComment},
+						builder.Eq{"type": issues_model.CommentTypeComment},
 						builder.In("issue_id", subQuery),
 						db.BuildCaseInsensitiveLike("content", token.Term),
 					)),
@@ -92,7 +92,7 @@ func (i *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 
 	// If pagesize == 0, return total count only. It's a special case for search count.
 	if options.Paginator != nil && options.Paginator.PageSize == 0 {
-		total, err := issue_model.CountIssues(ctx, opt, cond)
+		total, err := issues_model.CountIssues(ctx, opt, cond)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (i *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		}, nil
 	}
 
-	ids, total, err := issue_model.IssueIDs(ctx, opt, cond)
+	ids, total, err := issues_model.IssueIDs(ctx, opt, cond)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +54,7 @@ func TestRunnerModification(t *testing.T) {
 			sess.MakeRequest(t, req, http.StatusNotFound)
 		} else {
 			sess.MakeRequest(t, req, http.StatusSeeOther)
-			flashCookie := sess.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DRunner%2Bupdated%2Bsuccessfully", flashCookie.Value)
 		}
@@ -64,7 +64,7 @@ func TestRunnerModification(t *testing.T) {
 			sess.MakeRequest(t, req, http.StatusNotFound)
 		} else {
 			sess.MakeRequest(t, req, http.StatusOK)
-			flashCookie := sess.GetCookie(forgejo_context.CookieNameFlash)
+			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DRunner%2Bdeleted%2Bsuccessfully", flashCookie.Value)
 		}

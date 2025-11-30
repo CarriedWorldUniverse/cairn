@@ -1,3 +1,4 @@
+---
 version: "2"
 output:
   sort-order:
@@ -12,6 +13,7 @@ linters:
     - forbidigo
     - gocritic
     - govet
+    - importas
     - ineffassign
     - nakedret
     - nolintlint
@@ -45,6 +47,41 @@ linters:
     gocritic:
       disabled-checks:
         - ifElseChain
+    importas:
+      alias:
+        # Specific overrides that would violate the default rules further below.
+        - pkg: forgejo.org/models/actions
+          alias: actions_model
+        - pkg: forgejo.org/models/activities
+          alias: activities_model
+        - pkg: forgejo.org/models/db
+          alias: ""
+        - pkg: forgejo.org/models/issues
+          alias: issues_model
+        - pkg: forgejo.org/models/organization
+          alias: org_model
+        - pkg: forgejo.org/models/packages
+          alias: packages_model
+
+        - pkg: forgejo.org/services/actions
+          alias: actions_service
+        - pkg: forgejo.org/services/context
+          alias: app_context
+        - pkg: forgejo.org/services/doctor
+          alias: doctor
+        - pkg: forgejo.org/services/packages
+          alias: packages_service
+        - pkg: forgejo.org/services/repository
+          alias: repo_service
+
+        # Make sure that we follow a consistent naming for model and service aliases.
+        # The \w+? syntax is the RE2 syntax for: one or more \w, prefer fewer
+        #
+        # It's used to make sure that if the model has a plural name, e.g. "issues", it's imported with the singular
+        # name (e.g. "issue") nonetheless.
+        - pkg: 'forgejo.org/(model|service)s/(\w+?)s?'
+          alias: '${2}_${1}'
+
     revive:
       severity: error
       rules:

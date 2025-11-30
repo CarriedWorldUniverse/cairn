@@ -8,7 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
-	organization_model "forgejo.org/models/organization"
+	org_model "forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
@@ -336,7 +336,7 @@ func TestAddTeamReviewRequest(t *testing.T) {
 	t.Run("Protected branch, not official team", func(t *testing.T) {
 		issue, doer := setupForProtectedBranch()
 		// Team 2 is not part of the whitelist for this protected branch
-		team := unittest.AssertExistsAndLoadBean(t, &organization_model.Team{ID: 2})
+		team := unittest.AssertExistsAndLoadBean(t, &org_model.Team{ID: 2})
 
 		comment, err := issues_model.AddTeamReviewRequest(db.DefaultContext, issue, team, doer)
 		require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestAddTeamReviewRequest(t *testing.T) {
 	t.Run("Protected branch, official team", func(t *testing.T) {
 		issue, doer := setupForProtectedBranch()
 		// Team 1 is part of the whitelist for this protected branch
-		team := unittest.AssertExistsAndLoadBean(t, &organization_model.Team{ID: 1})
+		team := unittest.AssertExistsAndLoadBean(t, &org_model.Team{ID: 1})
 
 		comment, err := issues_model.AddTeamReviewRequest(db.DefaultContext, issue, team, doer)
 		require.NoError(t, err)
@@ -376,7 +376,7 @@ func TestAddTeamReviewRequest(t *testing.T) {
 		require.NoError(t, issue.LoadRepo(db.DefaultContext))
 		doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 		// team is a team that has write perms against the repo
-		team := unittest.AssertExistsAndLoadBean(t, &organization_model.Team{ID: 1})
+		team := unittest.AssertExistsAndLoadBean(t, &org_model.Team{ID: 1})
 
 		comment, err := issues_model.AddTeamReviewRequest(db.DefaultContext, issue, team, doer)
 		require.NoError(t, err)

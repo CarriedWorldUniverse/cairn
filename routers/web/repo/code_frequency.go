@@ -9,7 +9,7 @@ import (
 
 	"forgejo.org/modules/base"
 	"forgejo.org/services/context"
-	contributors_service "forgejo.org/services/repository"
+	repo_service "forgejo.org/services/repository"
 )
 
 const (
@@ -29,8 +29,8 @@ func CodeFrequency(ctx *context.Context) {
 
 // CodeFrequencyData returns JSON of code frequency data
 func CodeFrequencyData(ctx *context.Context) {
-	if contributorStats, err := contributors_service.GetContributorStats(ctx, ctx.Cache, ctx.Repo.Repository, ctx.Repo.CommitID); err != nil {
-		if errors.Is(err, contributors_service.ErrAwaitGeneration) {
+	if contributorStats, err := repo_service.GetContributorStats(ctx, ctx.Cache, ctx.Repo.Repository, ctx.Repo.CommitID); err != nil {
+		if errors.Is(err, repo_service.ErrAwaitGeneration) {
 			ctx.Status(http.StatusAccepted)
 			return
 		}

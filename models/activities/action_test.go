@@ -10,7 +10,7 @@ import (
 
 	activities_model "forgejo.org/models/activities"
 	"forgejo.org/models/db"
-	issue_model "forgejo.org/models/issues"
+	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
@@ -32,7 +32,7 @@ func TestAction_GetRepoLink(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
-	comment := unittest.AssertExistsAndLoadBean(t, &issue_model.Comment{ID: 2})
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 2})
 	action := &activities_model.Action{RepoID: repo.ID, CommentID: comment.ID}
 	setting.AppSubURL = "/suburl"
 	expected := path.Join(setting.AppSubURL, owner.Name, repo.Name)
@@ -288,13 +288,13 @@ func TestDeleteIssueActions(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
 	// load an issue
-	issue := unittest.AssertExistsAndLoadBean(t, &issue_model.Issue{ID: 4})
+	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 4})
 	assert.NotEqual(t, issue.ID, issue.Index) // it needs to use different ID/Index to test the DeleteIssueActions to delete some actions by IssueIndex
 
 	// insert a comment
-	err := db.Insert(db.DefaultContext, &issue_model.Comment{Type: issue_model.CommentTypeComment, IssueID: issue.ID})
+	err := db.Insert(db.DefaultContext, &issues_model.Comment{Type: issues_model.CommentTypeComment, IssueID: issue.ID})
 	require.NoError(t, err)
-	comment := unittest.AssertExistsAndLoadBean(t, &issue_model.Comment{Type: issue_model.CommentTypeComment, IssueID: issue.ID})
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{Type: issues_model.CommentTypeComment, IssueID: issue.ID})
 
 	// truncate action table and insert some actions
 	err = db.TruncateBeans(db.DefaultContext, &activities_model.Action{})

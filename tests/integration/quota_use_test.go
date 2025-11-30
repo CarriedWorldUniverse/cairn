@@ -25,7 +25,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
 	"forgejo.org/routers"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	repo_service "forgejo.org/services/repository"
 	"forgejo.org/tests"
 
@@ -708,7 +708,7 @@ func (ctx *quotaWebEnvAsContext) ExpectFlashMessageContains(parts ...string) {
 func (ctx *quotaWebEnvAsContext) ExpectFlashCookieContains(parts ...string) {
 	ctx.t.Helper()
 
-	flashCookie := ctx.Doer.Session.GetCookie(forgejo_context.CookieNameFlash)
+	flashCookie := ctx.Doer.Session.GetCookie(app_context.CookieNameFlash)
 	assert.NotNil(ctx.t, flashCookie)
 
 	// Need to decode the cookie twice

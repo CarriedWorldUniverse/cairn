@@ -10,7 +10,7 @@ import (
 
 	"forgejo.org/models"
 	asymkey_model "forgejo.org/models/asymkey"
-	authmodel "forgejo.org/models/auth"
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/modules/cache"
 	"forgejo.org/modules/eventsource"
 	"forgejo.org/modules/git"
@@ -44,7 +44,7 @@ import (
 	"forgejo.org/services/mailer"
 	mailer_incoming "forgejo.org/services/mailer/incoming"
 	markup_service "forgejo.org/services/markup"
-	repo_migrations "forgejo.org/services/migrations"
+	migration_service "forgejo.org/services/migrations"
 	mirror_service "forgejo.org/services/mirror"
 	pull_service "forgejo.org/services/pull"
 	release_service "forgejo.org/services/release"
@@ -146,7 +146,7 @@ func InitWebInstalled(ctx context.Context) {
 	mustInit(release_service.Init)
 
 	mustInitCtx(ctx, models.Init)
-	mustInitCtx(ctx, authmodel.Init)
+	mustInitCtx(ctx, auth_model.Init)
 	mustInitCtx(ctx, repo_service.Init)
 
 	// Booting long running goroutines.
@@ -157,7 +157,7 @@ func InitWebInstalled(ctx context.Context) {
 	mustInit(pull_service.Init)
 	mustInit(automerge.Init)
 	mustInit(task.Init)
-	mustInit(repo_migrations.Init)
+	mustInit(migration_service.Init)
 	eventsource.GetManager().Init()
 	mustInitCtx(ctx, mailer_incoming.Init)
 

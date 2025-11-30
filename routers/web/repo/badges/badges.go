@@ -12,10 +12,10 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	"forgejo.org/modules/setting"
-	context_module "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
-func getBadgeURL(ctx *context_module.Context, label, text, color string) string {
+func getBadgeURL(ctx *app_context.Context, label, text, color string) string {
 	sb := &strings.Builder{}
 	_ = setting.Badges.GeneratorURLTemplateTemplate.Execute(sb, map[string]string{
 		"label": url.PathEscape(strings.ReplaceAll(label, "-", "--")),
@@ -35,15 +35,15 @@ func getBadgeURL(ctx *context_module.Context, label, text, color string) string 
 	return badgeURL
 }
 
-func redirectToBadge(ctx *context_module.Context, label, text, color string) {
+func redirectToBadge(ctx *app_context.Context, label, text, color string) {
 	ctx.Redirect(getBadgeURL(ctx, label, text, color))
 }
 
-func errorBadge(ctx *context_module.Context, label, text string) { //nolint:unparam
+func errorBadge(ctx *app_context.Context, label, text string) { //nolint:unparam
 	ctx.Redirect(getBadgeURL(ctx, label, text, "crimson"))
 }
 
-func GetWorkflowBadge(ctx *context_module.Context) {
+func GetWorkflowBadge(ctx *app_context.Context) {
 	branch := ctx.Req.URL.Query().Get("branch")
 	if branch != "" {
 		branch = fmt.Sprintf("refs/heads/%s", branch)
@@ -82,7 +82,7 @@ func GetWorkflowBadge(ctx *context_module.Context) {
 	redirectToBadge(ctx, workflowFile, run.Status.String(), color)
 }
 
-func getIssueOrPullBadge(ctx *context_module.Context, label, variant string, num int) {
+func getIssueOrPullBadge(ctx *app_context.Context, label, variant string, num int) {
 	var text string
 	if len(variant) > 0 {
 		text = fmt.Sprintf("%d %s", num, variant)
@@ -92,7 +92,7 @@ func getIssueOrPullBadge(ctx *context_module.Context, label, variant string, num
 	redirectToBadge(ctx, label, text, "blue")
 }
 
-func getIssueBadge(ctx *context_module.Context, variant string, num int) {
+func getIssueBadge(ctx *app_context.Context, variant string, num int) {
 	if !ctx.Repo.CanRead(unit.TypeIssues) &&
 		!ctx.Repo.CanRead(unit.TypeExternalTracker) {
 		errorBadge(ctx, "issues", "Not found")
@@ -108,7 +108,7 @@ func getIssueBadge(ctx *context_module.Context, variant string, num int) {
 	getIssueOrPullBadge(ctx, "issues", variant, num)
 }
 
-func getPullBadge(ctx *context_module.Context, variant string, num int) {
+func getPullBadge(ctx *app_context.Context, variant string, num int) {
 	if !ctx.Repo.Repository.CanEnablePulls() || !ctx.Repo.CanRead(unit.TypePullRequests) {
 		errorBadge(ctx, "pulls", "Not found")
 		return
@@ -117,35 +117,35 @@ func getPullBadge(ctx *context_module.Context, variant string, num int) {
 	getIssueOrPullBadge(ctx, "pulls", variant, num)
 }
 
-func GetOpenIssuesBadge(ctx *context_module.Context) {
+func GetOpenIssuesBadge(ctx *app_context.Context) {
 	getIssueBadge(ctx, "open", ctx.Repo.Repository.NumOpenIssues(ctx))
 }
 
-func GetClosedIssuesBadge(ctx *context_module.Context) {
+func GetClosedIssuesBadge(ctx *app_context.Context) {
 	getIssueBadge(ctx, "closed", ctx.Repo.Repository.NumClosedIssues(ctx))
 }
 
-func GetTotalIssuesBadge(ctx *context_module.Context) {
+func GetTotalIssuesBadge(ctx *app_context.Context) {
 	getIssueBadge(ctx, "", ctx.Repo.Repository.NumIssues(ctx))
 }
 
-func GetOpenPullsBadge(ctx *context_module.Context) {
+func GetOpenPullsBadge(ctx *app_context.Context) {
 	getPullBadge(ctx, "open", ctx.Repo.Repository.NumOpenPulls(ctx))
 }
 
-func GetClosedPullsBadge(ctx *context_module.Context) {
+func GetClosedPullsBadge(ctx *app_context.Context) {
 	getPullBadge(ctx, "closed", ctx.Repo.Repository.NumClosedPulls(ctx))
 }
 
-func GetTotalPullsBadge(ctx *context_module.Context) {
+func GetTotalPullsBadge(ctx *app_context.Context) {
 	getPullBadge(ctx, "", ctx.Repo.Repository.NumPulls(ctx))
 }
 
-func GetStarsBadge(ctx *context_module.Context) {
+func GetStarsBadge(ctx *app_context.Context) {
 	redirectToBadge(ctx, "stars", fmt.Sprintf("%d", ctx.Repo.Repository.NumStars), "blue")
 }
 
-func GetLatestReleaseBadge(ctx *context_module.Context) {
+func GetLatestReleaseBadge(ctx *app_context.Context) {
 	release, err := repo_model.GetLatestReleaseByRepoID(ctx, ctx.Repo.Repository.ID)
 	if err != nil {
 		if repo_model.IsErrReleaseNotExist(err) {

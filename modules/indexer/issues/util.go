@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"forgejo.org/models/db"
-	issue_model "forgejo.org/models/issues"
+	issues_model "forgejo.org/models/issues"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/indexer/issues/internal"
 	"forgejo.org/modules/log"
@@ -18,9 +18,9 @@ import (
 
 // getIssueIndexerData returns the indexer data of an issue and a bool value indicating whether the issue exists.
 func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerData, bool, error) {
-	issue, err := issue_model.GetIssueByID(ctx, issueID)
+	issue, err := issues_model.GetIssueByID(ctx, issueID)
 	if err != nil {
-		if issue_model.IsErrIssueNotExist(err) {
+		if issues_model.IsErrIssueNotExist(err) {
 			return nil, false, nil
 		}
 		return nil, false, err
@@ -50,7 +50,7 @@ func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerD
 		labels = append(labels, label.ID)
 	}
 
-	mentionIDs, err := issue_model.GetIssueMentionIDs(ctx, issueID)
+	mentionIDs, err := issues_model.GetIssueMentionIDs(ctx, issueID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -60,7 +60,7 @@ func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerD
 		reviewRequestedIDs []int64
 	)
 	{
-		reviews, err := issue_model.FindReviews(ctx, issue_model.FindReviewOptions{
+		reviews, err := issues_model.FindReviews(ctx, issues_model.FindReviewOptions{
 			ListOptions:  db.ListOptionsAll,
 			IssueID:      issueID,
 			OfficialOnly: false,
@@ -72,7 +72,7 @@ func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerD
 		reviewedIDsSet := make(container.Set[int64], len(reviews))
 		reviewRequestedIDsSet := make(container.Set[int64], len(reviews))
 		for _, review := range reviews {
-			if review.Type == issue_model.ReviewTypeRequest {
+			if review.Type == issues_model.ReviewTypeRequest {
 				reviewRequestedIDsSet.Add(review.ReviewerID)
 			} else {
 				reviewedIDsSet.Add(review.ReviewerID)
@@ -82,7 +82,7 @@ func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerD
 		reviewRequestedIDs = reviewRequestedIDsSet.Values()
 	}
 
-	subscriberIDs, err := issue_model.GetIssueWatchersIDs(ctx, issue.ID, true)
+	subscriberIDs, err := issues_model.GetIssueWatchersIDs(ctx, issue.ID, true)
 	if err != nil {
 		return nil, false, err
 	}
@@ -121,7 +121,7 @@ func getIssueIndexerData(ctx context.Context, issueID int64) (*internal.IndexerD
 }
 
 func updateRepoIndexer(ctx context.Context, repoID int64) error {
-	ids, err := issue_model.GetIssueIDsByRepoID(ctx, repoID)
+	ids, err := issues_model.GetIssueIDsByRepoID(ctx, repoID)
 	if err != nil {
 		return fmt.Errorf("issue_model.GetIssueIDsByRepoID: %w", err)
 	}
@@ -139,7 +139,7 @@ func updateIssueIndexer(ctx context.Context, issueID int64) error {
 
 func deleteRepoIssueIndexer(ctx context.Context, repoID int64) error {
 	var ids []int64
-	ids, err := issue_model.GetIssueIDsByRepoID(ctx, repoID)
+	ids, err := issues_model.GetIssueIDsByRepoID(ctx, repoID)
 	if err != nil {
 		return fmt.Errorf("issue_model.GetIssueIDsByRepoID: %w", err)
 	}

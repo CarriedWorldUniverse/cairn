@@ -10,7 +10,7 @@ import (
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	forgejo_context "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func TestIssueAddTimeManually(t *testing.T) {
 
 		session.MakeRequest(t, NewRequest(t, "POST", issue2.Link()+"/times/add"), http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "error%3DNo%2Btime%2Bwas%2Bentered.")
 	})
@@ -42,7 +42,7 @@ func TestIssueAddTimeManually(t *testing.T) {
 			"hours": "-1",
 		}), http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "error%3DHours%2Bmust%2Bbe%2Ba%2Bnumber%2Bbetween%2B0%2Band%2B1%252C000.")
 	})
@@ -54,7 +54,7 @@ func TestIssueAddTimeManually(t *testing.T) {
 			"minutes": "-1",
 		}), http.StatusSeeOther)
 
-		flashCookie := session.GetCookie(forgejo_context.CookieNameFlash)
+		flashCookie := session.GetCookie(app_context.CookieNameFlash)
 		assert.NotNil(t, flashCookie)
 		assert.Contains(t, flashCookie.Value, "error%3DMinutes%2Bmust%2Bbe%2Ba%2Bnumber%2Bbetween%2B0%2Band%2B1%252C000.")
 	})

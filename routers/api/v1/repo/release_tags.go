@@ -11,7 +11,7 @@ import (
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
-	releaseservice "forgejo.org/services/release"
+	release_service "forgejo.org/services/release"
 )
 
 // GetReleaseByTag get a single release of a repository by tag name
@@ -120,7 +120,7 @@ func DeleteReleaseByTag(ctx *context.APIContext) {
 		return
 	}
 
-	if err = releaseservice.DeleteReleaseByID(ctx, ctx.Repo.Repository, release, ctx.Doer, false); err != nil {
+	if err = release_service.DeleteReleaseByID(ctx, ctx.Repo.Repository, release, ctx.Doer, false); err != nil {
 		if models.IsErrProtectedTagName(err) {
 			ctx.Error(http.StatusUnprocessableEntity, "delTag", "user not allowed to delete protected tag")
 			return

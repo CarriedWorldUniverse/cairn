@@ -8,13 +8,13 @@ import (
 	"fmt"
 
 	"forgejo.org/models/db"
-	issue_model "forgejo.org/models/issues"
+	issues_model "forgejo.org/models/issues"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/indexer/issues/internal"
 	"forgejo.org/modules/optional"
 )
 
-func ToDBOptions(ctx context.Context, options *internal.SearchOptions) (*issue_model.IssuesOptions, error) {
+func ToDBOptions(ctx context.Context, options *internal.SearchOptions) (*issues_model.IssuesOptions, error) {
 	var sortType string
 	switch options.SortBy {
 	case internal.SortByCreatedAsc:
@@ -49,7 +49,7 @@ func ToDBOptions(ctx context.Context, options *internal.SearchOptions) (*issue_m
 		return value
 	}
 
-	opts := &issue_model.IssuesOptions{
+	opts := &issues_model.IssuesOptions{
 		Paginator:          options.Paginator,
 		RepoIDs:            options.RepoIDs,
 		AllPublic:          options.AllPublic,
@@ -99,7 +99,7 @@ func ToDBOptions(ctx context.Context, options *internal.SearchOptions) (*issue_m
 		}
 
 		if len(options.IncludedLabelIDs) == 0 && len(options.IncludedAnyLabelIDs) > 0 {
-			labels, err := issue_model.GetLabelsByIDs(ctx, options.IncludedAnyLabelIDs, "name")
+			labels, err := issues_model.GetLabelsByIDs(ctx, options.IncludedAnyLabelIDs, "name")
 			if err != nil {
 				return nil, fmt.Errorf("GetLabelsByIDs: %v", err)
 			}

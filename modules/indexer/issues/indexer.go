@@ -12,11 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	db_model "forgejo.org/models/db"
+	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/indexer/issues/bleve"
-	"forgejo.org/modules/indexer/issues/db"
+	db_index "forgejo.org/modules/indexer/issues/db"
 	"forgejo.org/modules/indexer/issues/elasticsearch"
 	"forgejo.org/modules/indexer/issues/internal"
 	"forgejo.org/modules/indexer/issues/meilisearch"
@@ -103,7 +103,7 @@ func InitIssueIndexer(syncReindex bool) {
 				log.Fatal("Unable to issueIndexer.Init with connection %s Error: %v", setting.Indexer.IssueConnStr, err)
 			}
 		case "db":
-			issueIndexer = db.NewIndexer()
+			issueIndexer = db_index.NewIndexer()
 		case "meilisearch":
 			issueIndexer = meilisearch.NewIndexer(setting.Indexer.IssueConnStr, setting.Indexer.IssueConnAuth, setting.Indexer.IssueIndexerName)
 			existed, err = issueIndexer.Init(ctx)
@@ -218,8 +218,8 @@ func PopulateIssueIndexer(ctx context.Context) error {
 		default:
 		}
 		repos, _, err := repo_model.SearchRepositoryByName(ctx, &repo_model.SearchRepoOptions{
-			ListOptions: db_model.ListOptions{Page: page, PageSize: repo_model.RepositoryListDefaultPageSize},
-			OrderBy:     db_model.SearchOrderByID,
+			ListOptions: db.ListOptions{Page: page, PageSize: repo_model.RepositoryListDefaultPageSize},
+			OrderBy:     db.SearchOrderByID,
 			Private:     true,
 			Collaborate: optional.Some(false),
 		})
@@ -319,7 +319,7 @@ func SearchIssues(ctx context.Context, opts *SearchOptions) ([]int64, int64, err
 		// So if the user creates an issue and list issues immediately, the issue may not be listed because the indexer needs time to index the issue.
 		// Even worse, the external indexer like elastic search may not be available for a while,
 		// and the user may not be able to list issues completely until it is available again.
-		indexer = db.NewIndexer()
+		indexer = db_index.NewIndexer()
 	}
 
 	result, err := indexer.Search(ctx, opts)
@@ -337,7 +337,7 @@ func SearchIssues(ctx context.Context, opts *SearchOptions) ([]int64, int64, err
 
 // CountIssues counts issues by options. It is a shortcut of SearchIssues(ctx, opts) but only returns the total count.
 func CountIssues(ctx context.Context, opts *SearchOptions) (int64, error) {
-	opts = opts.Copy(func(options *SearchOptions) { options.Paginator = &db_model.ListOptions{PageSize: 0} })
+	opts = opts.Copy(func(options *SearchOptions) { options.Paginator = &db.ListOptions{PageSize: 0} })
 
 	_, total, err := SearchIssues(ctx, opts)
 	return total, err

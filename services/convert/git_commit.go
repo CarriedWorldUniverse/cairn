@@ -14,7 +14,7 @@ import (
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
-	ctx "forgejo.org/services/context"
+	app_context "forgejo.org/services/context"
 )
 
 // ToCommitUser convert a git.Signature to an api.CommitUser
@@ -78,7 +78,7 @@ type ToCommitOptions struct {
 	Files        bool
 }
 
-func ParseCommitOptions(ctx *ctx.APIContext) ToCommitOptions {
+func ParseCommitOptions(ctx *app_context.APIContext) ToCommitOptions {
 	return ToCommitOptions{
 		Stat:         ctx.FormString("stat") == "" || ctx.FormBool("stat"),
 		Files:        ctx.FormString("files") == "" || ctx.FormBool("files"),
