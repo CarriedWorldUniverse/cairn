@@ -99,7 +99,7 @@ func PersonFeed(ctx *context.APIContext) {
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/PersonFeed"
+	//     "$ref": "#/responses/Outbox"
 	//   "403":
 	//     "$ref": "#/responses/forbidden"
 

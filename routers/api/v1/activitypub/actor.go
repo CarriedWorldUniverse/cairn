@@ -41,6 +41,7 @@ func Actor(ctx *context.APIContext) {
 	actor.URL = ap.IRI(setting.AppURL)
 
 	actor.Inbox = ap.IRI(link + "/inbox")
+	actor.Outbox = ap.IRI(link + "/outbox")
 	actor.PublicKey.ID = ap.IRI(link + "#main-key")
 	actor.PublicKey.Owner = ap.IRI(link)
 
@@ -78,4 +79,34 @@ func ActorInbox(ctx *context.APIContext) {
 	//     "$ref": "#/responses/empty"
 
 	ctx.Status(http.StatusNoContent)
+}
+
+func ActorOutbox(ctx *context.APIContext) {
+	// swagger:operation POST /activitypub/actor/outbox activitypub activitypubInstanceActorOutbox
+	// ---
+	// summary: Display the outbox (always empty)
+	// produces:
+	// - application/ld+json
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/Outbox"
+
+	link := user_model.APServerActorID()
+	outbox := ap.OrderedCollectionNew(ap.IRI(link + "/outbox"))
+
+	binary, err := jsonld.WithContext(
+		jsonld.IRI(ap.ActivityBaseURI),
+	).Marshal(outbox)
+	if err != nil {
+		ctx.ServerError("MarshalJSON", err)
+		return
+	}
+
+	ctx.Resp.Header().Add("Content-Type", activitypub.ActivityStreamsContentType)
+	ctx.Resp.WriteHeader(http.StatusOK)
+
+	_, err = ctx.Resp.Write(binary)
+	if err != nil {
+		log.Error("write to resp err: %s", err)
+	}
 }
