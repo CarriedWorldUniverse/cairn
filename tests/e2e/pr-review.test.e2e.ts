@@ -67,6 +67,34 @@ test('PR: Create review from commit', async ({page}) => {
   await page.waitForURL(/.*\/user2\/repo1\/pulls\/3#issuecomment-\d+/);
   await screenshot(page);
 
+  // #region Use all the resolve/show/hide features
+  // The comment content is visible and offers to "Resolve conversation"
+  await expect(page.locator('.comment-content')).toBeVisible();
+  await page.getByText('Resolve conversation').click();
+
+  // Resolving conversation hides the comment content and gives a "Show resolved" button
+  await expect(page.locator('.comment-content')).toBeHidden();
+  await page.getByText('Show resolved').click();
+
+  // Clicking the "Shows resolved" button makes the comment content show up and
+  // replaces the button with one saying "Hide resolved"
+  await expect(page.locator('.comment-content')).toBeVisible();
+  await expect(page.getByText('Show resolved')).toBeHidden();
+  await page.getByText('Hide resolved').click();
+
+  // Clicking the "Hide resolved" button reverses the previous action
+  await expect(page.locator('.comment-content')).toBeHidden();
+  await expect(page.getByText('Hide resolved')).toBeHidden();
+
+  // Show the comment again to make the "Unresolve conversation" button appear
+  await page.getByText('Show resolved').click();
+  await page.getByText('Unresolve conversation').click();
+
+  // We're back to where we started
+  await expect(page.locator('.comment-content')).toBeVisible();
+  await expect(page.getByText('Resolve conversation')).toBeVisible();
+  // #endregion
+
   // In addition to testing the ability to delete comments, this also
   // performs clean up. If tests are run for multiple platforms, the data isn't reset
   // in-between, and subsequent runs of this test would fail, because when there already is
