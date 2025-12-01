@@ -384,6 +384,18 @@
 						<label>{{ctx.Locale.Tr "admin.auths.oauth2_map_group_to_team_removal"}}</label>
 						<input name="oauth2_group_team_map_removal" type="checkbox" {{if $cfg.GroupTeamMapRemoval}}checked{{end}}>
 					</div>
+					<div class="field">
+						<label for="oauth2_quota_group_claim_name">{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_claim_name"}}</label>
+						<input id="oauth2_quota_group_claim_name" name="oauth2_quota_group_claim_name" value="{{$cfg.QuotaGroupClaimName}}">
+					</div>
+					<div class="field">
+						<label>{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_map"}}</label>
+						<textarea name="oauth2_quota_group_map" rows="5" placeholder='{"Developer": ["MyQuotaGroup"]}'>{{$cfg.QuotaGroupMap}}</textarea>
+					</div>
+					<div class="ui checkbox">
+						<label>{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_map_removal"}}</label>
+						<input name="oauth2_quota_group_map_removal" type="checkbox" {{if $cfg.QuotaGroupMapRemoval}}checked{{end}}>
+					</div>
 				{{end}}
 
 				{{if .Source.IsLDAP}}

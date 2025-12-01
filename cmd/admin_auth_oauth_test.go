@@ -56,6 +56,9 @@ func TestAddOauth(t *testing.T) {
 				"--group-team-map", `{"org_a_team_1": {"organization-a": ["Team 1"]}, "org_a_all_teams": {"organization-a": ["Team 1", "Team 2", "Team 3"]}}`,
 				"--group-team-map-removal",
 				"--allow-username-change",
+				"--quota-group-claim-name", "quota_groups",
+				"--quota-group-map", `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+				"--quota-group-map-removal",
 			},
 			source: &auth.Source{
 				Type:     auth.OAuth2,
@@ -82,6 +85,9 @@ func TestAddOauth(t *testing.T) {
 					AdminGroup:            "admin",
 					GroupTeamMap:          `{"org_a_team_1": {"organization-a": ["Team 1"]}, "org_a_all_teams": {"organization-a": ["Team 1", "Team 2", "Team 3"]}}`,
 					GroupTeamMapRemoval:   true,
+					QuotaGroupClaimName:   "quota_groups",
+					QuotaGroupMap:         `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+					QuotaGroupMapRemoval:  true,
 					RestrictedGroup:       "restricted",
 					SkipLocalTwoFA:        true,
 					AllowUsernameChange:   true,
@@ -188,6 +194,94 @@ func TestAddOauth(t *testing.T) {
 				"--auto-discover-url", "example.com",
 			},
 			errMsg: "invalid Auto Discovery URL: example.com (this must be a valid URL starting with http:// or https://)",
+		},
+		// case 7
+		{
+			args: []string{
+				"oauth-test",
+				"--name", "oauth2 source with quota group claim name",
+				"--provider", "openidConnect",
+				"--auto-discover-url", "https://example.com/.well-known/openid-configuration",
+				"--quota-group-claim-name", "quota_groups",
+			},
+			source: &auth.Source{
+				Type:     auth.OAuth2,
+				Name:     "oauth2 source with quota group claim name",
+				IsActive: true,
+				Cfg: &oauth2.Source{
+					Provider:                      "openidConnect",
+					OpenIDConnectAutoDiscoveryURL: "https://example.com/.well-known/openid-configuration",
+					Scopes:                        []string{},
+					QuotaGroupClaimName:           "quota_groups",
+				},
+			},
+		},
+		// case 8
+		{
+			args: []string{
+				"oauth-test",
+				"--name", "oauth2 source with quota group map",
+				"--provider", "openidConnect",
+				"--auto-discover-url", "https://example.com/.well-known/openid-configuration",
+				"--quota-group-map", `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+			},
+			source: &auth.Source{
+				Type:     auth.OAuth2,
+				Name:     "oauth2 source with quota group map",
+				IsActive: true,
+				Cfg: &oauth2.Source{
+					Provider:                      "openidConnect",
+					OpenIDConnectAutoDiscoveryURL: "https://example.com/.well-known/openid-configuration",
+					Scopes:                        []string{},
+					QuotaGroupMap:                 `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+				},
+			},
+		},
+		// case 9
+		{
+			args: []string{
+				"oauth-test",
+				"--name", "oauth2 source with quota group map removal",
+				"--provider", "openidConnect",
+				"--auto-discover-url", "https://example.com/.well-known/openid-configuration",
+				"--quota-group-map-removal",
+			},
+			source: &auth.Source{
+				Type:     auth.OAuth2,
+				Name:     "oauth2 source with quota group map removal",
+				IsActive: true,
+				Cfg: &oauth2.Source{
+					Provider:                      "openidConnect",
+					OpenIDConnectAutoDiscoveryURL: "https://example.com/.well-known/openid-configuration",
+					Scopes:                        []string{},
+					QuotaGroupMapRemoval:          true,
+				},
+			},
+		},
+		// case 10
+		{
+			args: []string{
+				"oauth-test",
+				"--name", "oauth2 source with all quota group fields",
+				"--provider", "openidConnect",
+				"--auto-discover-url", "https://example.com/.well-known/openid-configuration",
+				"--quota-group-claim-name", "quota_groups",
+				"--quota-group-map", `{"developers": ["dev_quota"], "admins": ["admin_quota"]}`,
+				"--quota-group-map-removal",
+			},
+			source: &auth.Source{
+				Type:     auth.OAuth2,
+				Name:     "oauth2 source with all quota group fields",
+				IsActive: true,
+				Cfg: &oauth2.Source{
+					Provider:                      "openidConnect",
+					OpenIDConnectAutoDiscoveryURL: "https://example.com/.well-known/openid-configuration",
+					Scopes:                        []string{},
+					QuotaGroupClaimName:           "quota_groups",
+					QuotaGroupMap:                 `{"developers": ["dev_quota"], "admins": ["admin_quota"]}`,
+					QuotaGroupMapRemoval:          true,
+				},
+			},
 		},
 	}
 
@@ -657,6 +751,92 @@ func TestUpdateOauth(t *testing.T) {
 				"oauth-test",
 			},
 			errMsg: "--id flag is missing",
+		},
+		// case 23
+		{
+			args: []string{
+				"oauth-test",
+				"--id", "1",
+				"--quota-group-claim-name", "quota_groups",
+			},
+			authSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					CustomURLMapping:    &oauth2.CustomURLMapping{},
+					QuotaGroupClaimName: "quota_groups",
+				},
+			},
+		},
+		// case 24
+		{
+			args: []string{
+				"oauth-test",
+				"--id", "1",
+				"--quota-group-map", `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+			},
+			authSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					CustomURLMapping: &oauth2.CustomURLMapping{},
+					QuotaGroupMap:    `{"oauth_group_1": ["quota_group_1"], "oauth_group_2": ["quota_group_2"]}`,
+				},
+			},
+		},
+		// case 25
+		{
+			args: []string{
+				"oauth-test",
+				"--id", "1",
+				"--quota-group-map-removal",
+			},
+			authSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					CustomURLMapping:     &oauth2.CustomURLMapping{},
+					QuotaGroupMapRemoval: true,
+				},
+			},
+		},
+		// case 26
+		{
+			args: []string{
+				"oauth-test",
+				"--id", "24",
+				"--quota-group-map-removal=false",
+			},
+			id: 24,
+			existingAuthSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					QuotaGroupMapRemoval: true,
+				},
+			},
+			authSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					CustomURLMapping:     &oauth2.CustomURLMapping{},
+					QuotaGroupMapRemoval: false,
+				},
+			},
+		},
+		// case 27
+		{
+			args: []string{
+				"oauth-test",
+				"--id", "1",
+				"--quota-group-claim-name", "quota_groups",
+				"--quota-group-map", `{"developers": ["dev_quota"], "admins": ["admin_quota"]}`,
+				"--quota-group-map-removal",
+			},
+			authSource: &auth.Source{
+				Type: auth.OAuth2,
+				Cfg: &oauth2.Source{
+					CustomURLMapping:     &oauth2.CustomURLMapping{},
+					QuotaGroupClaimName:  "quota_groups",
+					QuotaGroupMap:        `{"developers": ["dev_quota"], "admins": ["admin_quota"]}`,
+					QuotaGroupMapRemoval: true,
+				},
+			},
 		},
 	}
 

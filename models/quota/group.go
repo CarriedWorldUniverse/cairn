@@ -61,7 +61,7 @@ func (g *Group) LoadRules(ctx context.Context) error {
 		Find(&g.Rules)
 }
 
-func (g *Group) isUserInGroup(ctx context.Context, userID int64) (bool, error) {
+func (g *Group) IsUserInGroup(ctx context.Context, userID int64) (bool, error) {
 	return db.GetEngine(ctx).
 		Where("kind = ? AND mapped_id = ? AND group_name = ?", KindUser, userID, g.Name).
 		Get(&GroupMapping{})
@@ -74,7 +74,7 @@ func (g *Group) AddUserByID(ctx context.Context, userID int64) error {
 	}
 	defer committer.Close()
 
-	exists, err := g.isUserInGroup(ctx, userID)
+	exists, err := g.IsUserInGroup(ctx, userID)
 	if err != nil {
 		return err
 	} else if exists {
@@ -99,7 +99,7 @@ func (g *Group) RemoveUserByID(ctx context.Context, userID int64) error {
 	}
 	defer committer.Close()
 
-	exists, err := g.isUserInGroup(ctx, userID)
+	exists, err := g.IsUserInGroup(ctx, userID)
 	if err != nil {
 		return err
 	} else if !exists {

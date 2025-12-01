@@ -27,6 +27,8 @@ const (
 	ErrUsername = "UsernameError"
 	// ErrInvalidGroupTeamMap is returned when a group team mapping is invalid
 	ErrInvalidGroupTeamMap = "InvalidGroupTeamMap"
+	// ErrInvalidQuotaGroupMap is returned when a quota group mapping is invalid
+	ErrInvalidQuotaGroupMap = "InvalidQuotaGroupMap"
 	// ErrEmail is returned when an email address is invalid
 	ErrEmail = "Email"
 )
@@ -42,6 +44,7 @@ func AddBindingRules() {
 	addGlobOrRegexPatternRule()
 	addUsernamePatternRule()
 	addValidGroupTeamMapRule()
+	addValidQuotaGroupMapRule()
 	addEmailBindingRules()
 }
 
@@ -209,6 +212,23 @@ func addValidGroupTeamMapRule() {
 			_, err := auth.UnmarshalGroupTeamMapping(fmt.Sprintf("%v", val))
 			if err != nil {
 				errs.Add([]string{name}, ErrInvalidGroupTeamMap, err.Error())
+				return false, errs
+			}
+
+			return true, errs
+		},
+	})
+}
+
+func addValidQuotaGroupMapRule() {
+	binding.AddRule(&binding.Rule{
+		IsMatch: func(rule string) bool {
+			return rule == "ValidQuotaGroupMap"
+		},
+		IsValid: func(errs binding.Errors, name string, val any) (bool, binding.Errors) {
+			_, err := auth.UnmarshalQuotaGroupMapping(fmt.Sprintf("%v", val))
+			if err != nil {
+				errs.Add([]string{name}, ErrInvalidQuotaGroupMap, err.Error())
 				return false, errs
 			}
 
