@@ -135,7 +135,27 @@ func Dashboard(ctx *context.Context) {
 	ctx.Data["RemoteVersion"] = updatechecker.GetRemoteVersion(ctx)
 	updateSystemStatus()
 	ctx.Data["SysStatus"] = sysStatus
-	ctx.Data["SSH"] = setting.SSH
+
+	entries := []string{
+		"delete_inactive_accounts",
+		"delete_repo_archives",
+		"delete_missing_repos",
+		"git_gc_repos",
+	}
+	if !setting.SSH.Disabled && !setting.SSH.StartBuiltinServer {
+		entries = append(entries, "resync_all_sshkeys", "resync_all_sshprincipals")
+	}
+	entries = append(entries, []string{
+		"resync_all_hooks",
+		"reinit_missing_repos",
+		"sync_external_users",
+		"repo_health_check",
+		"delete_generated_repository_avatars",
+		"sync_repo_branches",
+		"sync_repo_tags",
+	}...)
+	ctx.Data["Entries"] = entries
+
 	prepareDeprecatedWarningsAlert(ctx)
 	ctx.HTML(http.StatusOK, tplDashboard)
 }

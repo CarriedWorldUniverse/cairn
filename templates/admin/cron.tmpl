@@ -20,7 +20,7 @@
 				<tbody>
 					{{range .Entries}}
 						<tr>
-							<td><button type="submit" class="ui primary button" name="op" value="{{.Name}}" title="{{ctx.Locale.Tr "admin.dashboard.operation_run"}}">{{svg "octicon-triangle-right"}}</button></td>
+							<td><button type="submit" class="primary button" name="op" value="{{.Name}}" title="{{ctx.Locale.Tr "admin.dashboard.operation_run"}}">{{svg "octicon-play"}}</button></td>
 							<td>{{ctx.Locale.Tr (printf "admin.dashboard.%s" .Name)}}</td>
 							<td>{{.Spec}}</td>
 							<td>{{DateUtils.FullTime .Next}}</td>
