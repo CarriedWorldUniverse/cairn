@@ -3,6 +3,13 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0;
+  background: none;
+  font-weight: var(--font-weight-medium);
 }
 
 .ui.button.add-code-comment {
