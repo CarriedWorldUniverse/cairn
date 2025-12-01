@@ -4,6 +4,7 @@
 package swagger
 
 import (
+	"forgejo.org/modules/forgefed"
 	api "forgejo.org/modules/structs"
 )
 
@@ -14,9 +15,9 @@ type swaggerResponseActivityPub struct {
 	Body api.ActivityPub `json:"body"`
 }
 
-// Personfeed
-// swagger:response PersonFeed
-type swaggerResponsePersonFeed struct {
+// Outbox
+// swagger:response Outbox
+type swaggerResponseOutbox struct {
 	// in:body
-	Body []api.APPersonFollowItem `json:"body"`
+	Body forgefed.ForgeOutbox `json:"body"`
 }

@@ -57,6 +57,23 @@
         }
       }
     },
+    "/activitypub/actor/outbox": {
+      "post": {
+        "produces": [
+          "application/ld+json"
+        ],
+        "tags": [
+          "activitypub"
+        ],
+        "summary": "Display the outbox (always empty)",
+        "operationId": "activitypubInstanceActorOutbox",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Outbox"
+          }
+        }
+      }
+    },
     "/activitypub/repository-id/{repository-id}": {
       "get": {
         "produces": [
@@ -114,6 +131,33 @@
         "responses": {
           "204": {
             "$ref": "#/responses/empty"
+          }
+        }
+      }
+    },
+    "/activitypub/repository-id/{repository-id}/outbox": {
+      "post": {
+        "produces": [
+          "application/ld+json"
+        ],
+        "tags": [
+          "activitypub"
+        ],
+        "summary": "Display the outbox",
+        "operationId": "activitypubRepositoryOutbox",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int64",
+            "description": "repository ID of the repo",
+            "name": "repository-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Outbox"
           }
         }
       }
@@ -259,7 +303,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/PersonFeed"
+            "$ref": "#/responses/Outbox"
           },
           "403": {
             "$ref": "#/responses/forbidden"
@@ -21925,28 +21969,6 @@
       },
       "x-go-package": "forgejo.org/services/context"
     },
-    "APPersonFollowItem": {
-      "type": "object",
-      "properties": {
-        "actor_id": {
-          "type": "string",
-          "x-go-name": "ActorID"
-        },
-        "note": {
-          "type": "string",
-          "x-go-name": "Note"
-        },
-        "original_item": {
-          "type": "string",
-          "x-go-name": "OriginalItem"
-        },
-        "original_url": {
-          "type": "string",
-          "x-go-name": "OriginalURL"
-        }
-      },
-      "x-go-package": "forgejo.org/modules/structs"
-    },
     "AccessToken": {
       "type": "object",
       "title": "AccessToken represents an API access token.",
@@ -25704,6 +25726,11 @@
     },
     "ForgeLike": {
       "description": "ForgeLike activity data type",
+      "type": "object",
+      "x-go-package": "forgejo.org/modules/forgefed"
+    },
+    "ForgeOutbox": {
+      "description": "ActivityStream OrderedCollection of activities",
       "type": "object",
       "x-go-package": "forgejo.org/modules/forgefed"
     },
@@ -30489,6 +30516,12 @@
         "$ref": "#/definitions/OrganizationPermissions"
       }
     },
+    "Outbox": {
+      "description": "Outbox",
+      "schema": {
+        "$ref": "#/definitions/ForgeOutbox"
+      }
+    },
     "Package": {
       "description": "Package",
       "schema": {
@@ -30510,15 +30543,6 @@
         "type": "array",
         "items": {
           "$ref": "#/definitions/Package"
-        }
-      }
-    },
-    "PersonFeed": {
-      "description": "Personfeed",
-      "schema": {
-        "type": "array",
-        "items": {
-          "$ref": "#/definitions/APPersonFollowItem"
         }
       }
     },

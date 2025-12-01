@@ -892,6 +892,7 @@ func Routes() *web.Route {
 				m.Group("/actor", func() {
 					m.Get("", activitypub.Actor)
 					m.Post("/inbox", activitypub.ReqHTTPUserOrInstanceSignature(), activitypub.ActorInbox)
+					m.Get("/outbox", activitypub.ActorOutbox)
 				})
 				m.Group("/repository-id/{repository-id}", func() {
 					m.Get("", activitypub.ReqHTTPUserSignature(), activitypub.Repository)
@@ -899,6 +900,7 @@ func Routes() *web.Route {
 						bind(ap.Activity{}),
 						activitypub.ReqHTTPUserSignature(),
 						activitypub.RepositoryInbox)
+					m.Get("/outbox", activitypub.ReqHTTPUserSignature(), activitypub.RepositoryOutbox)
 				}, context.RepositoryIDAssignmentAPI())
 			}, tokenRequiresScopes(auth_model.AccessTokenScopeCategoryActivityPub))
 		}
