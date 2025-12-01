@@ -27,6 +27,9 @@ type Source struct {
 	AdminGroup            string
 	GroupTeamMap          string
 	GroupTeamMapRemoval   bool
+	QuotaGroupClaimName   string
+	QuotaGroupMap         string
+	QuotaGroupMapRemoval  bool
 	RestrictedGroup       string
 	SkipLocalTwoFA        bool `json:",omitempty"`
 	AllowUsernameChange   bool

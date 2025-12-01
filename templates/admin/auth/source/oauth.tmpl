@@ -121,4 +121,16 @@
 		<label>{{ctx.Locale.Tr "admin.auths.oauth2_map_group_to_team_removal"}}</label>
 		<input name="oauth2_group_team_map_removal" type="checkbox" {{if .oauth2_group_team_map_removal}}checked{{end}}>
 	</div>
+	<div class="field">
+		<label for="oauth2_quota_group_claim_name">{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_claim_name"}}</label>
+		<input id="oauth2_quota_group_claim_name" name="oauth2_quota_group_claim_name" value="{{.oauth2_quota_group_claim_name}}">
+	</div>
+	<div class="field">
+		<label>{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_map"}}</label>
+		<textarea name="oauth2_quota_group_map" rows="5" placeholder='{"Developer": ["MyQuotaGroup"]}'>{{.oauth2_quota_group_map}}</textarea>
+	</div>
+	<div class="ui checkbox">
+		<label>{{ctx.Locale.Tr "admin.auths.oauth2_quota_group_map_removal"}}</label>
+		<input name="oauth2_quota_group_map_removal" type="checkbox" {{if .oauth2_quota_group_map_removal}}checked{{end}}>
+	</div>
 </div>
