@@ -334,11 +334,15 @@ func (d *PagureDownloader) GetMilestones() ([]*base.Milestone, error) {
 			state = "open"
 		}
 
-		deadline := processDate(details.Date)
+		var deadline *time.Time
+		if details.Date != nil && *details.Date != "" {
+			parsedDeadline := processDate(details.Date)
+			deadline = &parsedDeadline
+		}
 		milestones = append(milestones, &base.Milestone{
 			Title:       name,
 			Description: "",
-			Deadline:    &deadline,
+			Deadline:    deadline,
 			State:       state,
 		})
 	}
