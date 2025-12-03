@@ -183,7 +183,6 @@ func GetResolvedReports(ctx context.Context, keepReportsFor time.Duration) ([]*A
 		Find(&abuseReports)
 }
 
-/*
 // MarkAsHandled will change the status to 'Handled' for all reports linked to the same item (user, repository, issue or comment).
 func MarkAsHandled(ctx context.Context, contentType ReportedContentType, contentID int64) error {
 	return updateStatus(ctx, contentType, contentID, ReportStatusTypeHandled)
@@ -199,8 +198,7 @@ func updateStatus(ctx context.Context, contentType ReportedContentType, contentI
 	_, err := db.GetEngine(ctx).Where(builder.Eq{
 		"content_type": contentType,
 		"content_id":   contentID,
-	}).Cols("status").Update(&AbuseReport{Status: status})
+	}).Update(&AbuseReport{Status: status, ResolvedUnix: timeutil.TimeStampNow()})
 
 	return err
 }
-*/

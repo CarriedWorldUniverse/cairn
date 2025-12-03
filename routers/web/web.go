@@ -822,6 +822,7 @@ func registerRoutes(m *web.Route) {
 				m.Get("", admin.AbuseReports)
 				m.Get("/type/{type:1|2|3|4}/id/{id}", admin.AbuseReportDetails)
 			})
+			m.Post("/abuse_reports/act", admin.PerformAction)
 		}
 	}, adminReq, ctxDataSet("EnableOAuth2", setting.OAuth2.Enabled, "EnablePackages", setting.Packages.Enabled, "EnableModeration", setting.Moderation.Enabled))
 	// ***** END: Admin *****
