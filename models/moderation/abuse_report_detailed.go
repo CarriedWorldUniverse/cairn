@@ -50,6 +50,22 @@ func (ard AbuseReportDetailed) ContentURL() string {
 	}
 }
 
+func (ard AbuseReportDetailed) ReportedContentIsUser() bool {
+	return ard.ContentType == ReportedContentTypeUser
+}
+
+func (ard AbuseReportDetailed) ReportedContentIsRepo() bool {
+	return ard.ContentType == ReportedContentTypeRepository
+}
+
+func (ard AbuseReportDetailed) ReportedContentIsIssue() bool {
+	return ard.ContentType == ReportedContentTypeIssue
+}
+
+func (ard AbuseReportDetailed) ReportedContentIsComment() bool {
+	return ard.ContentType == ReportedContentTypeComment
+}
+
 func GetOpenReports(ctx context.Context) ([]*AbuseReportDetailed, error) {
 	var reports []*AbuseReportDetailed
 
@@ -59,6 +75,7 @@ func GetOpenReports(ctx context.Context) ([]*AbuseReportDetailed, error) {
 	//   - Escaping can be done with double quotes (") or backticks (`).
 	// - For MariaDB/MySQL there is no need to escape the above.
 	// - Therefore we will use double quotes (") but only for PostgreSQL and SQLite.
+	// - Also, note that builder.Union() is broken: gitea.com/xorm/builder/issues/71
 	identifierEscapeChar := ``
 	if setting.Database.Type.IsPostgreSQL() || setting.Database.Type.IsSQLite3() {
 		identifierEscapeChar = `"`
@@ -113,8 +130,8 @@ func GetOpenReportsByTypeAndContentID(ctx context.Context, contentType ReportedC
 
 	// Some remarks concerning PostgreSQL:
 	// - user table should be escaped (e.g. `user`);
-	// - tried to use aliases for table names but errors like 'invalid reference to FROM-clause entry'
-	//   or 'missing FROM-clause entry' were returned;
+	// - tried to use aliases for table names but errors like 'pq: invalid reference to FROM-clause entry'
+	//   or 'pq: missing FROM-clause entry' were returned;
 	err := db.GetEngine(ctx).
 		Select("abuse_report.*, `user`.name AS reporter_name, abuse_report_shadow_copy.created_unix AS shadow_copy_date, abuse_report_shadow_copy.raw_value AS shadow_copy_raw_value").
 		Table("abuse_report").

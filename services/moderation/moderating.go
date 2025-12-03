@@ -4,6 +4,8 @@
 package moderation
 
 import (
+	"slices"
+
 	"forgejo.org/models/issues"
 	"forgejo.org/models/moderation"
 	"forgejo.org/models/repo"
@@ -12,6 +14,50 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/services/context"
 )
+
+type ReportAction int
+
+const (
+	ReportActionNone ReportAction = iota
+	ReportActionMarkAsHandled
+	ReportActionMarkAsIgnored
+)
+
+var allReportActions = []ReportAction{
+	ReportActionNone,
+	ReportActionMarkAsHandled,
+	ReportActionMarkAsIgnored,
+}
+
+func (ra ReportAction) IsValid() bool {
+	return slices.Contains(allReportActions, ra)
+}
+
+type ContentAction int
+
+const (
+	// ContentActionNone means that no action should be done for the reported content itself;
+	// is should be used when needed to just update the status of the report.
+	ContentActionNone ContentAction = iota
+	ContentActionSuspendAccount
+	ContentActionDeleteAccount
+	ContentActionDeleteRepo
+	ContentActionDeleteIssue
+	ContentActionDeleteComment
+)
+
+var allContentActions = []ContentAction{
+	ContentActionNone,
+	ContentActionSuspendAccount,
+	ContentActionDeleteAccount,
+	ContentActionDeleteRepo,
+	ContentActionDeleteIssue,
+	ContentActionDeleteComment,
+}
+
+func (ca ContentAction) IsValid() bool {
+	return slices.Contains(allContentActions, ca)
+}
 
 // GetShadowCopyMap unmarshals the shadow copy raw value of the given abuse report and returns a list of <key, value> pairs
 // (to be rendered when the report is reviewed by an admin).
