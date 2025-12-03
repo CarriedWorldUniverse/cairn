@@ -14,7 +14,7 @@ import (
 	"github.com/42wim/httpsig"
 )
 
-func verifyHTTPUserOrInstanceSignature(ctx app_context.APIContext) (authenticated bool, err error) {
+func verifyHTTPSignature(ctx app_context.APIContext) (authenticated bool, err error) {
 	if !setting.Federation.SignatureEnforced {
 		return true, nil
 	}
@@ -43,49 +43,11 @@ func verifyHTTPUserOrInstanceSignature(ctx app_context.APIContext) (authenticate
 	return true, nil
 }
 
-func verifyHTTPUserSignature(ctx app_context.APIContext) (authenticated bool, err error) {
-	if !setting.Federation.SignatureEnforced {
-		return true, nil
-	}
-
-	r := ctx.Req
-
-	// 1. Figure out what key we need to verify
-	v, err := httpsig.NewVerifier(r)
-	if err != nil {
-		return false, err
-	}
-
-	signatureAlgorithm := httpsig.Algorithm(setting.Federation.SignatureAlgorithms[0])
-	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx, v.KeyId())
-	if err != nil {
-		return false, err
-	}
-
-	err = v.Verify(pubKey, signatureAlgorithm)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
 // ReqHTTPSignature function
-func ReqHTTPUserOrInstanceSignature() func(ctx *app_context.APIContext) {
+func ReqHTTPSignature() func(ctx *app_context.APIContext) {
 	return func(ctx *app_context.APIContext) {
-		if authenticated, err := verifyHTTPUserOrInstanceSignature(*ctx); err != nil {
-			log.Warn("verifyHttpSignatures failed: %v", err)
-			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")
-		} else if !authenticated {
-			ctx.Error(http.StatusForbidden, "reqSignature", "request signature verification failed")
-		}
-	}
-}
-
-// ReqHTTPUserSignature function
-func ReqHTTPUserSignature() func(ctx *app_context.APIContext) {
-	return func(ctx *app_context.APIContext) {
-		if authenticated, err := verifyHTTPUserSignature(*ctx); err != nil {
-			log.Warn("verifyHttpSignatures failed: %v", err)
+		if authenticated, err := verifyHTTPSignature(*ctx); err != nil {
+			log.Warn("verifyHttpSignature failed: %v", err)
 			ctx.Error(http.StatusBadRequest, "reqSignature", "request signature verification failed")
 		} else if !authenticated {
 			ctx.Error(http.StatusForbidden, "reqSignature", "request signature verification failed")
