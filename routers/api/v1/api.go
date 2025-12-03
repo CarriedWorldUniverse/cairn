@@ -878,29 +878,29 @@ func Routes() *web.Route {
 			m.Get("/nodeinfo", misc.NodeInfo)
 			m.Group("/activitypub", func() {
 				m.Group("/user-id/{user-id}", func() {
-					m.Get("", activitypub.ReqHTTPUserOrInstanceSignature(), activitypub.Person)
+					m.Get("", activitypub.ReqHTTPSignature(), activitypub.Person)
 					m.Post("/inbox",
-						activitypub.ReqHTTPUserSignature(),
+						activitypub.ReqHTTPSignature(),
 						bind(ap.Activity{}),
 						activitypub.PersonInbox)
 					m.Group("/activities/{activity-id}", func() {
 						m.Get("", activitypub.PersonActivityNote)
 						m.Get("/activity", activitypub.PersonActivity)
 					})
-					m.Get("/outbox", activitypub.ReqHTTPUserSignature(), activitypub.PersonFeed)
+					m.Get("/outbox", activitypub.ReqHTTPSignature(), activitypub.PersonFeed)
 				}, context.UserIDAssignmentAPI(), checkTokenPublicOnly())
 				m.Group("/actor", func() {
 					m.Get("", activitypub.Actor)
-					m.Post("/inbox", activitypub.ReqHTTPUserOrInstanceSignature(), activitypub.ActorInbox)
+					m.Post("/inbox", activitypub.ReqHTTPSignature(), activitypub.ActorInbox)
 					m.Get("/outbox", activitypub.ActorOutbox)
 				})
 				m.Group("/repository-id/{repository-id}", func() {
-					m.Get("", activitypub.ReqHTTPUserSignature(), activitypub.Repository)
+					m.Get("", activitypub.ReqHTTPSignature(), activitypub.Repository)
 					m.Post("/inbox",
 						bind(ap.Activity{}),
-						activitypub.ReqHTTPUserSignature(),
+						activitypub.ReqHTTPSignature(),
 						activitypub.RepositoryInbox)
-					m.Get("/outbox", activitypub.ReqHTTPUserSignature(), activitypub.RepositoryOutbox)
+					m.Get("/outbox", activitypub.ReqHTTPSignature(), activitypub.RepositoryOutbox)
 				}, context.RepositoryIDAssignmentAPI())
 			}, tokenRequiresScopes(auth_model.AccessTokenScopeCategoryActivityPub))
 		}
