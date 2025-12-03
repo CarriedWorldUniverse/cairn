@@ -23,10 +23,11 @@ import (
 // Factory function for ActorID. Created struct is asserted to be valid
 func NewActorIDFromKeyID(ctx context.Context, uri string) (fm.ActorID, error) {
 	parsedURI, err := url.Parse(uri)
-	parsedURI.Fragment = ""
 	if err != nil {
 		return fm.ActorID{}, err
 	}
+
+	parsedURI.Fragment = ""
 
 	actionsUser := user.NewAPServerActor()
 	clientFactory, err := activitypub.GetClientFactory(ctx)
