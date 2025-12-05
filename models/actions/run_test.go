@@ -238,3 +238,37 @@ jobs:
 	// Expect job with an incomplete matrix to be StatusBlocked:
 	assert.Equal(t, StatusBlocked, job.Status)
 }
+
+func TestActionRun_IncompleteRunsOn(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	pullRequestPosterID := int64(4)
+	repoID := int64(10)
+	pullRequestID := int64(2)
+	runDoesNotNeedApproval := &ActionRun{
+		RepoID:              repoID,
+		PullRequestID:       pullRequestID,
+		PullRequestPosterID: pullRequestPosterID,
+	}
+
+	workflowRaw := []byte(`
+jobs:
+  job2:
+    runs-on: ${{ needs.other-job.outputs.some-output }}
+    steps:
+      - run: true
+`)
+	workflows, err := jobparser.Parse(workflowRaw, false, jobparser.WithJobOutputs(map[string]map[string]string{}), jobparser.SupportIncompleteRunsOn())
+	require.NoError(t, err)
+	require.True(t, workflows[0].IncompleteRunsOn) // must be set for this test scenario to be valid
+
+	require.NoError(t, InsertRun(t.Context(), runDoesNotNeedApproval, workflows))
+
+	jobs, err := db.Find[ActionRunJob](t.Context(), FindRunJobOptions{RunID: runDoesNotNeedApproval.ID})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	job := jobs[0]
+
+	// Expect job with an incomplete runs-on to be StatusBlocked:
+	assert.Equal(t, StatusBlocked, job.Status)
+}

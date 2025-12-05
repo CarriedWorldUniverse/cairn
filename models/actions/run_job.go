@@ -289,3 +289,13 @@ func (job *ActionRunJob) IsIncompleteMatrix() (bool, *jobparser.IncompleteNeeds,
 	}
 	return jobWorkflow.IncompleteMatrix, jobWorkflow.IncompleteMatrixNeeds, nil
 }
+
+// Checks whether the target job has a `runs-on` field with an expression that requires an input from another job.  The
+// job will be blocked until the other job is complete, and then regenerated and deleted.
+func (job *ActionRunJob) IsIncompleteRunsOn() (bool, *jobparser.IncompleteNeeds, *jobparser.IncompleteMatrix, error) {
+	jobWorkflow, err := job.decodeWorkflowPayload()
+	if err != nil {
+		return false, nil, nil, fmt.Errorf("failure decoding workflow payload: %w", err)
+	}
+	return jobWorkflow.IncompleteRunsOn, jobWorkflow.IncompleteRunsOnNeeds, jobWorkflow.IncompleteRunsOnMatrix, nil
+}

@@ -107,6 +107,11 @@ func consistencyCheckRun(ctx context.Context, run *actions_model.ActionRun) erro
 		} else if stop {
 			break
 		}
+		if stop, err := checkJobRunsOnStaticMatrixError(ctx, job); err != nil {
+			return err
+		} else if stop {
+			break
+		}
 	}
 	return nil
 }
@@ -150,6 +155,42 @@ func checkJobWillRevisit(ctx context.Context, job *actions_model.ActionRunJob) (
 		job.JobID,
 		requiredJob,
 		strings.Join(needs, ", "),
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func checkJobRunsOnStaticMatrixError(ctx context.Context, job *actions_model.ActionRunJob) (bool, error) {
+	// If a job has a `runs-on` field that references a matrix dimension like `runs-on: ${{ matrix.platorm }}`, and
+	// `platform` is not part of the job's matrix at all, then it will be tagged as `IsIncompleteRunsOn` and will be
+	// blocked forever.  This only applies if the matrix is static -- that is, the job isn't also tagged
+	// `IsIncompleteMatrix` and the matrix is yet to be fully defined.
+
+	isIncompleteRunsOn, _, matrixReference, err := job.IsIncompleteRunsOn()
+	if err != nil {
+		return false, err
+	} else if !isIncompleteRunsOn || matrixReference == nil {
+		// Not incomplete, or, it's incomplete but not because of a matrix reference error.
+		return false, nil
+	}
+
+	isIncompleteMatrix, _, err := job.IsIncompleteMatrix()
+	if err != nil {
+		return false, err
+	} else if isIncompleteMatrix {
+		// Not a static matrix, so this might be resolved later when the job is expanded.
+		return false, nil
+	}
+
+	// Job doesn't seem like it can proceed; mark the run with an error.
+	if err := job.LoadRun(ctx); err != nil {
+		return false, err
+	}
+	if err := FailRunPreExecutionError(ctx, job.Run, actions_model.ErrorCodeIncompleteRunsOnMissingMatrixDimension, []any{
+		job.JobID,
+		matrixReference.Dimension,
 	}); err != nil {
 		return false, err
 	}

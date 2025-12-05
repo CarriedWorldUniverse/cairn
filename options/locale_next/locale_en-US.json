@@ -217,6 +217,11 @@
     "actions.workflow.persistent_incomplete_matrix": "Unable to evaluate `strategy.matrix` of job %[1]s due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (%[2]s), or an output that doesn't exist on one of those jobs.",
     "actions.workflow.incomplete_matrix_missing_job": "Unable to evaluate `strategy.matrix` of job %[1]s: job %[2]s is not in the `needs` list of job %[1]s (%[3]s).",
     "actions.workflow.incomplete_matrix_missing_output": "Unable to evaluate `strategy.matrix` of job %[1]s: job %[2]s does not have an output %[3]s.",
+    "actions.workflow.incomplete_matrix_unknown_cause": "Unable to evaluate `strategy.matrix` of job %[1]s: unknown error.",
+    "actions.workflow.incomplete_runson_missing_job": "Unable to evaluate `runs-on` of job %[1]s: job %[2]s is not in the `needs` list of job %[1]s (%[3]s).",
+    "actions.workflow.incomplete_runson_missing_output": "Unable to evaluate `runs-on` of job %[1]s: job %[2]s does not have an output %[3]s.",
+    "actions.workflow.incomplete_runson_missing_matrix_dimension": "Unable to evaluate `runs-on` of job %[1]s: matrix dimension %[2]s does not exist.",
+    "actions.workflow.incomplete_runson_unknown_cause": "Unable to evaluate `runs-on` of job %[1]s: unknown error.",
     "actions.workflow.pre_execution_error": "Workflow was not executed due to an error that blocked the execution attempt.",
     "pulse.n_active_issues": {
         "one": "%s active issue",

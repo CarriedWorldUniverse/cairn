@@ -70,6 +70,46 @@ func TestTranslatePreExecutionError(t *testing.T) {
 			},
 			expected: "Unable to evaluate `strategy.matrix` of job blocked_job: job other_job is not in the `needs` list of job blocked_job (needs-1, needs-2).",
 		},
+		{
+			name: "ErrorCodeIncompleteMatrixUnknownCause",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteMatrixUnknownCause,
+				PreExecutionErrorDetails: []any{"blocked_job"},
+			},
+			expected: "Unable to evaluate `strategy.matrix` of job blocked_job: unknown error.",
+		},
+		{
+			name: "ErrorCodeIncompleteRunsOnMissingOutput",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteRunsOnMissingOutput,
+				PreExecutionErrorDetails: []any{"blocked_job", "other_job", "some_output"},
+			},
+			expected: "Unable to evaluate `runs-on` of job blocked_job: job other_job does not have an output some_output.",
+		},
+		{
+			name: "ErrorCodeIncompleteRunsOnMissingJob",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteRunsOnMissingJob,
+				PreExecutionErrorDetails: []any{"blocked_job", "other_job", "needs-1, needs-2"},
+			},
+			expected: "Unable to evaluate `runs-on` of job blocked_job: job other_job is not in the `needs` list of job blocked_job (needs-1, needs-2).",
+		},
+		{
+			name: "ErrorCodeIncompleteRunsOnMissingMatrixDimension",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteRunsOnMissingMatrixDimension,
+				PreExecutionErrorDetails: []any{"blocked_job", "platfurm"},
+			},
+			expected: "Unable to evaluate `runs-on` of job blocked_job: matrix dimension platfurm does not exist.",
+		},
+		{
+			name: "ErrorCodeIncompleteRunsOnUnknownCause",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteRunsOnUnknownCause,
+				PreExecutionErrorDetails: []any{"blocked_job"},
+			},
+			expected: "Unable to evaluate `runs-on` of job blocked_job: unknown error.",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
