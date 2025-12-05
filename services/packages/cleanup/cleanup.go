@@ -47,76 +47,29 @@ func ExecuteCleanupRules(outerCtx context.Context) error {
 		default:
 		}
 
-		if err := pcr.CompiledPattern(); err != nil {
-			return fmt.Errorf("CleanupRule [%d]: CompilePattern failed: %w", pcr.ID, err)
-		}
-
-		olderThan := time.Now().AddDate(0, 0, -pcr.RemoveDays)
-
-		packages, err := packages_model.GetPackagesByType(ctx, pcr.OwnerID, pcr.Type)
+		versionsToRemove, err := GetCleanupTargets(ctx, pcr, true)
 		if err != nil {
-			return fmt.Errorf("CleanupRule [%d]: GetPackagesByType failed: %w", pcr.ID, err)
+			return fmt.Errorf("CleanupRule [%d]: GetCleanupTargets failed: %w", pcr.ID, err)
 		}
 
 		anyVersionDeleted := false
-		for _, p := range packages {
-			pvs, _, err := packages_model.SearchVersions(ctx, &packages_model.PackageSearchOptions{
-				PackageID:  p.ID,
-				IsInternal: optional.Some(false),
-				Sort:       packages_model.SortCreatedDesc,
-			})
-			if err != nil {
-				return fmt.Errorf("CleanupRule [%d]: SearchVersions failed: %w", pcr.ID, err)
+		packageWithVersionDeleted := make(map[int64]bool) // set of Package.ID's where at least one package version was removed
+		for _, ct := range versionsToRemove {
+			if err := packages_service.DeletePackageVersionAndReferences(ctx, ct.PackageVersion); err != nil {
+				return fmt.Errorf("CleanupRule [%d]: DeletePackageVersionAndReferences failed: %w", pcr.ID, err)
 			}
-			versionDeleted := false
-			keep := min(len(pvs), pcr.KeepCount)
-			for _, pv := range pvs[keep:] {
-				if pcr.Type == packages_model.TypeContainer {
-					if skip, err := container_service.ShouldBeSkipped(ctx, pcr, p, pv); err != nil {
-						return fmt.Errorf("CleanupRule [%d]: container.ShouldBeSkipped failed: %w", pcr.ID, err)
-					} else if skip {
-						log.Debug("Rule[%d]: keep '%s/%s' (container)", pcr.ID, p.Name, pv.Version)
-						continue
-					}
-				}
+			packageWithVersionDeleted[ct.Package.ID] = true
+			anyVersionDeleted = true
+		}
 
-				toMatch := pv.LowerVersion
-				if pcr.MatchFullName {
-					toMatch = p.LowerName + "/" + pv.LowerVersion
+		if pcr.Type == packages_model.TypeCargo {
+			for packageID := range packageWithVersionDeleted {
+				owner, err := user_model.GetUserByID(ctx, pcr.OwnerID)
+				if err != nil {
+					return fmt.Errorf("GetUserByID failed: %w", err)
 				}
-
-				if pcr.KeepPatternMatcher != nil && pcr.KeepPatternMatcher.MatchString(toMatch) {
-					log.Debug("Rule[%d]: keep '%s/%s' (keep pattern)", pcr.ID, p.Name, pv.Version)
-					continue
-				}
-				if pv.CreatedUnix.AsLocalTime().After(olderThan) {
-					log.Debug("Rule[%d]: keep '%s/%s' (remove days)", pcr.ID, p.Name, pv.Version)
-					continue
-				}
-				if pcr.RemovePatternMatcher != nil && !pcr.RemovePatternMatcher.MatchString(toMatch) {
-					log.Debug("Rule[%d]: keep '%s/%s' (remove pattern)", pcr.ID, p.Name, pv.Version)
-					continue
-				}
-
-				log.Debug("Rule[%d]: remove '%s/%s'", pcr.ID, p.Name, pv.Version)
-
-				if err := packages_service.DeletePackageVersionAndReferences(ctx, pv); err != nil {
-					return fmt.Errorf("CleanupRule [%d]: DeletePackageVersionAndReferences failed: %w", pcr.ID, err)
-				}
-
-				versionDeleted = true
-				anyVersionDeleted = true
-			}
-
-			if versionDeleted {
-				if pcr.Type == packages_model.TypeCargo {
-					owner, err := user_model.GetUserByID(ctx, pcr.OwnerID)
-					if err != nil {
-						return fmt.Errorf("GetUserByID failed: %w", err)
-					}
-					if err := cargo_service.UpdatePackageIndexIfExists(ctx, owner, owner, p.ID); err != nil {
-						return fmt.Errorf("CleanupRule [%d]: cargo.UpdatePackageIndexIfExists failed: %w", pcr.ID, err)
-					}
+				if err := cargo_service.UpdatePackageIndexIfExists(ctx, owner, owner, packageID); err != nil {
+					return fmt.Errorf("CleanupRule [%d]: cargo.UpdatePackageIndexIfExists failed: %w", pcr.ID, err)
 				}
 			}
 		}
@@ -152,6 +105,83 @@ func ExecuteCleanupRules(outerCtx context.Context) error {
 	}
 
 	return committer.Commit()
+}
+
+type CleanupTarget struct {
+	Package           *packages_model.Package
+	PackageVersion    *packages_model.PackageVersion
+	PackageDescriptor *packages_model.PackageDescriptor
+}
+
+func GetCleanupTargets(ctx context.Context, pcr *packages_model.PackageCleanupRule, skipPackageDescriptor bool) ([]*CleanupTarget, error) {
+	if err := pcr.CompiledPattern(); err != nil {
+		return nil, err
+	}
+
+	olderThan := time.Now().AddDate(0, 0, -pcr.RemoveDays)
+
+	packages, err := packages_model.GetPackagesByType(ctx, pcr.OwnerID, pcr.Type)
+	if err != nil {
+		return nil, fmt.Errorf("failure to GetPackagesByType for package cleanup rule: %w", err)
+	}
+
+	versionsToRemove := make([]*CleanupTarget, 0, 10)
+
+	for _, p := range packages {
+		pvs, _, err := packages_model.SearchVersions(ctx, &packages_model.PackageSearchOptions{
+			PackageID:  p.ID,
+			IsInternal: optional.Some(false),
+			Sort:       packages_model.SortCreatedDesc,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failure to SearchVersions for package cleanup rule: %w", err)
+		}
+		keep := min(len(pvs), pcr.KeepCount)
+		for _, pv := range pvs[keep:] {
+			if pcr.Type == packages_model.TypeContainer {
+				if skip := container_service.ShouldBeSkipped(pv); skip {
+					log.Debug("Rule[%d]: keep '%s/%s' (container)", pcr.ID, p.Name, pv.Version)
+					continue
+				}
+			}
+
+			toMatch := pv.LowerVersion
+			if pcr.MatchFullName {
+				toMatch = p.LowerName + "/" + pv.LowerVersion
+			}
+
+			if pcr.KeepPatternMatcher != nil && pcr.KeepPatternMatcher.MatchString(toMatch) {
+				log.Debug("Rule[%d]: keep '%s/%s' (keep pattern)", pcr.ID, p.Name, pv.Version)
+				continue
+			}
+			if pv.CreatedUnix.AsLocalTime().After(olderThan) {
+				log.Debug("Rule[%d]: keep '%s/%s' (remove days)", pcr.ID, p.Name, pv.Version)
+				continue
+			}
+			if pcr.RemovePatternMatcher != nil && !pcr.RemovePatternMatcher.MatchString(toMatch) {
+				log.Debug("Rule[%d]: keep '%s/%s' (remove pattern)", pcr.ID, p.Name, pv.Version)
+				continue
+			}
+
+			log.Debug("Rule[%d]: remove '%s/%s'", pcr.ID, p.Name, pv.Version)
+
+			var pd *packages_model.PackageDescriptor
+			// GetPackageDescriptor is a bit expensive and can be skipped; only used for cleanup preview to display the package to the UI
+			if !skipPackageDescriptor {
+				pd, err = packages_model.GetPackageDescriptor(ctx, pv)
+				if err != nil {
+					return nil, fmt.Errorf("failure to GetPackageDescriptor for package cleanup rule: %w", err)
+				}
+			}
+			versionsToRemove = append(versionsToRemove, &CleanupTarget{
+				Package:           p,
+				PackageVersion:    pv,
+				PackageDescriptor: pd,
+			})
+		}
+	}
+
+	return versionsToRemove, nil
 }
 
 func CleanupExpiredData(outerCtx context.Context, olderThan time.Duration) error {

@@ -7,20 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	packages_model "forgejo.org/models/packages"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	cargo_service "forgejo.org/services/packages/cargo"
-	container_service "forgejo.org/services/packages/container"
+	cleanup_service "forgejo.org/services/packages/cleanup"
 )
 
 func SetPackagesContext(ctx *context.Context, owner *user_model.User) {
@@ -147,66 +145,18 @@ func SetRulePreviewContext(ctx *context.Context, owner *user_model.User) {
 		return
 	}
 
-	if err := pcr.CompiledPattern(); err != nil {
-		ctx.ServerError("CompiledPattern", err)
-		return
-	}
-
-	olderThan := time.Now().AddDate(0, 0, -pcr.RemoveDays)
-
-	packages, err := packages_model.GetPackagesByType(ctx, pcr.OwnerID, pcr.Type)
+	versionsToRemove, err := cleanup_service.GetCleanupTargets(ctx, pcr, false)
 	if err != nil {
-		ctx.ServerError("GetPackagesByType", err)
+		ctx.ServerError("GetCleanupTargets", err)
 		return
 	}
-
-	versionsToRemove := make([]*packages_model.PackageDescriptor, 0, 10)
-
-	for _, p := range packages {
-		pvs, _, err := packages_model.SearchVersions(ctx, &packages_model.PackageSearchOptions{
-			PackageID:  p.ID,
-			IsInternal: optional.Some(false),
-			Sort:       packages_model.SortCreatedDesc,
-		})
-		if err != nil {
-			ctx.ServerError("SearchVersions", err)
-			return
-		}
-		keep := min(len(pvs), pcr.KeepCount)
-		for _, pv := range pvs[keep:] {
-			if skip, err := container_service.ShouldBeSkipped(ctx, pcr, p, pv); err != nil {
-				ctx.ServerError("ShouldBeSkipped", err)
-				return
-			} else if skip {
-				continue
-			}
-
-			toMatch := pv.LowerVersion
-			if pcr.MatchFullName {
-				toMatch = p.LowerName + "/" + pv.LowerVersion
-			}
-
-			if pcr.KeepPatternMatcher != nil && pcr.KeepPatternMatcher.MatchString(toMatch) {
-				continue
-			}
-			if pv.CreatedUnix.AsLocalTime().After(olderThan) {
-				continue
-			}
-			if pcr.RemovePatternMatcher != nil && !pcr.RemovePatternMatcher.MatchString(toMatch) {
-				continue
-			}
-
-			pd, err := packages_model.GetPackageDescriptor(ctx, pv)
-			if err != nil {
-				ctx.ServerError("GetPackageDescriptor", err)
-				return
-			}
-			versionsToRemove = append(versionsToRemove, pd)
-		}
+	packageDescriptors := make([]*packages_model.PackageDescriptor, len(versionsToRemove))
+	for i := range len(versionsToRemove) {
+		packageDescriptors[i] = versionsToRemove[i].PackageDescriptor
 	}
 
 	ctx.Data["CleanupRule"] = pcr
-	ctx.Data["VersionsToRemove"] = versionsToRemove
+	ctx.Data["VersionsToRemove"] = packageDescriptors
 }
 
 func getCleanupRuleByContext(ctx *context.Context, owner *user_model.User) *packages_model.PackageCleanupRule {
