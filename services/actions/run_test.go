@@ -127,6 +127,16 @@ func TestActions_consistencyCheckRun(t *testing.T) {
 			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingJob,
 			preExecutionErrorDetails: []any{"job_1", "oops-something-wrong-here", "define-matrix"},
 		},
+		{
+			name:                     "inconsistent: static matrix missing dimension",
+			runID:                    903,
+			preExecutionError:        actions_model.ErrorCodeIncompleteRunsOnMissingMatrixDimension,
+			preExecutionErrorDetails: []any{"job_1", "platform-oops-wrong-dimension"},
+		},
+		{
+			name:  "consistent: matrix missing dimension but matrix is dynamic",
+			runID: 904,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

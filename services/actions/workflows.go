@@ -174,6 +174,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		// We don't have any job outputs yet, but `WithJobOutputs(...)` triggers JobParser to supporting its
 		// `IncompleteMatrix` tagging for any jobs that require the inputs of other jobs.
 		jobparser.WithJobOutputs(map[string]map[string]string{}),
+		jobparser.SupportIncompleteRunsOn(),
 	)
 	if err != nil {
 		return nil, nil, err

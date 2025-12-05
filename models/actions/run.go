@@ -341,7 +341,7 @@ func InsertRunJobs(ctx context.Context, run *ActionRun, jobs []*jobparser.Single
 			}
 			payload, _ = v.Marshal()
 
-			if len(needs) > 0 || run.NeedApproval || v.IncompleteMatrix {
+			if len(needs) > 0 || run.NeedApproval || v.IncompleteMatrix || v.IncompleteRunsOn {
 				status = StatusBlocked
 			} else {
 				status = StatusWaiting

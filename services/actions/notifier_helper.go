@@ -418,6 +418,7 @@ func handleWorkflows(
 				// We don't have any job outputs yet, but `WithJobOutputs(...)` triggers JobParser to supporting its
 				// `IncompleteMatrix` tagging for any jobs that require the inputs of other jobs.
 				jobparser.WithJobOutputs(map[string]map[string]string{}),
+				jobparser.SupportIncompleteRunsOn(),
 			)
 			if err != nil {
 				log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)

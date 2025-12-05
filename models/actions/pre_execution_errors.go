@@ -18,9 +18,14 @@ type PreExecutionError int64
 const (
 	ErrorCodeEventDetectionError PreExecutionError = iota + 1
 	ErrorCodeJobParsingError
-	ErrorCodePersistentIncompleteMatrix
+	ErrorCodePersistentIncompleteMatrix // obsolete
 	ErrorCodeIncompleteMatrixMissingJob
 	ErrorCodeIncompleteMatrixMissingOutput
+	ErrorCodeIncompleteMatrixUnknownCause
+	ErrorCodeIncompleteRunsOnMissingJob
+	ErrorCodeIncompleteRunsOnMissingOutput
+	ErrorCodeIncompleteRunsOnMissingMatrixDimension
+	ErrorCodeIncompleteRunsOnUnknownCause
 )
 
 func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string {
@@ -42,6 +47,16 @@ func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string 
 		return lang.TrString("actions.workflow.incomplete_matrix_missing_job", run.PreExecutionErrorDetails...)
 	case ErrorCodeIncompleteMatrixMissingOutput:
 		return lang.TrString("actions.workflow.incomplete_matrix_missing_output", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteMatrixUnknownCause:
+		return lang.TrString("actions.workflow.incomplete_matrix_unknown_cause", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteRunsOnMissingJob:
+		return lang.TrString("actions.workflow.incomplete_runson_missing_job", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteRunsOnMissingOutput:
+		return lang.TrString("actions.workflow.incomplete_runson_missing_output", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteRunsOnMissingMatrixDimension:
+		return lang.TrString("actions.workflow.incomplete_runson_missing_matrix_dimension", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteRunsOnUnknownCause:
+		return lang.TrString("actions.workflow.incomplete_runson_unknown_cause", run.PreExecutionErrorDetails...)
 	}
 	return fmt.Sprintf("<unsupported error: code=%v details=%#v", run.PreExecutionErrorCode, run.PreExecutionErrorDetails)
 }

@@ -33,3 +33,18 @@
   task_id: 104
   output_key: scalar-value
   output_value: just some value
+-
+  id: 107
+  task_id: 105
+  output_key: run-on-this
+  output_value: nixos-25.11
+-
+  id: 108
+  task_id: 106
+  output_key: entire-matrix
+  output_value: '{"datacenter": ["site-a", "site-b"], "node": ["12.x", "14.x"], "pg": [17, 18]}'
+-
+  id: 109
+  task_id: 107
+  output_key: run-on-this
+  output_value: nixos-25.11
