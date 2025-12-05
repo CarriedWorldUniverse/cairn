@@ -11,6 +11,7 @@ import (
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/translation"
 
+	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -154,6 +155,7 @@ func TestActionRunJob_IsIncompleteMatrix(t *testing.T) {
 		name         string
 		job          ActionRunJob
 		isIncomplete bool
+		needs        *jobparser.IncompleteNeeds
 		errContains  string
 	}{
 		{
@@ -163,7 +165,8 @@ func TestActionRunJob_IsIncompleteMatrix(t *testing.T) {
 		},
 		{
 			name:         "incomplete_matrix workflow",
-			job:          ActionRunJob{WorkflowPayload: []byte("name: workflow\nincomplete_matrix: true")},
+			job:          ActionRunJob{WorkflowPayload: []byte("name: workflow\nincomplete_matrix: true\nincomplete_matrix_needs: { job: abc }")},
+			needs:        &jobparser.IncompleteNeeds{Job: "abc"},
 			isIncomplete: true,
 		},
 		{
@@ -175,12 +178,13 @@ func TestActionRunJob_IsIncompleteMatrix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			isIncomplete, err := tt.job.IsIncompleteMatrix()
+			isIncomplete, needs, err := tt.job.IsIncompleteMatrix()
 			if tt.errContains != "" {
 				assert.ErrorContains(t, err, tt.errContains)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.isIncomplete, isIncomplete)
+				assert.Equal(t, tt.needs, needs)
 			}
 		})
 	}

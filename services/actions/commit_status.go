@@ -33,7 +33,7 @@ func CreateCommitStatus(ctx context.Context, jobs ...*actions_model.ActionRunJob
 }
 
 func createCommitStatus(ctx context.Context, job *actions_model.ActionRunJob) error {
-	if incompleteMatrix, err := job.IsIncompleteMatrix(); err != nil {
+	if incompleteMatrix, _, err := job.IsIncompleteMatrix(); err != nil {
 		return fmt.Errorf("job IsIncompleteMatrix: %w", err)
 	} else if incompleteMatrix {
 		// Don't create commit statuses for incomplete matrix jobs because they are never completed.

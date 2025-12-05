@@ -182,7 +182,7 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 // Invoked once a job has all its `needs` parameters met and is ready to transition to waiting, this may expand the
 // job's `strategy.matrix` into multiple new jobs.
 func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.ActionRunJob, jobsInRun []*actions_model.ActionRunJob) (bool, error) {
-	if incompleteMatrix, err := blockedJob.IsIncompleteMatrix(); err != nil {
+	if incompleteMatrix, _, err := blockedJob.IsIncompleteMatrix(); err != nil {
 		return false, fmt.Errorf("job IsIncompleteMatrix: %w", err)
 	} else if !incompleteMatrix {
 		// Not relevant to attempt expansion if it wasn't marked IncompleteMatrix previously.
@@ -240,25 +240,39 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 			// slip this notification into PreExecutionError.
 
 			run := blockedJob.Run
-			run.PreExecutionErrorCode = actions_model.ErrorCodePersistentIncompleteMatrix
-			run.PreExecutionErrorDetails = []any{
-				blockedJob.JobID,
-				strings.Join(blockedJob.Needs, ", "),
-			}
-			run.Status = actions_model.StatusFailure
-			err = actions_model.UpdateRunWithoutNotification(ctx, run,
-				"pre_execution_error_code", "pre_execution_error_details", "status")
-			if err != nil {
-				return false, fmt.Errorf("failure updating PreExecutionError: %w", err)
+
+			var errorCode actions_model.PreExecutionError
+			var errorDetails []any
+
+			// `IncompleteMatrixNeeds` tells us which output was accessed that was missing
+			if swf.IncompleteMatrixNeeds != nil {
+				jobRef := swf.IncompleteMatrixNeeds.Job       // always provided
+				outputRef := swf.IncompleteMatrixNeeds.Output // missing if the entire job wasn't present
+				if outputRef != "" {
+					errorCode = actions_model.ErrorCodeIncompleteMatrixMissingOutput
+					errorDetails = []any{
+						blockedJob.JobID,
+						jobRef,
+						outputRef,
+					}
+				} else {
+					errorCode = actions_model.ErrorCodeIncompleteMatrixMissingJob
+					errorDetails = []any{
+						blockedJob.JobID,
+						jobRef,
+						strings.Join(blockedJob.Needs, ", "),
+					}
+				}
+			} else {
+				errorCode = actions_model.ErrorCodePersistentIncompleteMatrix
+				errorDetails = []any{
+					blockedJob.JobID,
+					strings.Join(blockedJob.Needs, ", "),
+				}
 			}
 
-			// Mark the job as failed as well so that it doesn't remain sitting "blocked" in the UI
-			blockedJob.Status = actions_model.StatusFailure
-			affected, err := UpdateRunJob(ctx, blockedJob, nil, "status")
-			if err != nil {
-				return false, fmt.Errorf("failure updating blockedJob.Status=StatusFailure: %w", err)
-			} else if affected != 1 {
-				return false, fmt.Errorf("expected 1 row to be updated setting blockedJob.Status=StatusFailure, but was %d", affected)
+			if err := FailRunPreExecutionError(ctx, run, errorCode, errorDetails); err != nil {
+				return false, fmt.Errorf("failure when marking run with error: %w", err)
 			}
 
 			// Return `true` to skip running this job in this invalid state

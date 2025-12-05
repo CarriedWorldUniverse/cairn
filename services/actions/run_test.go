@@ -102,3 +102,45 @@ func TestActions_CancelOrApproveRun(t *testing.T) {
 		assert.Equal(t, actions_model.StatusWaiting, job.Status)
 	})
 }
+
+func TestActions_consistencyCheckRun(t *testing.T) {
+	tests := []struct {
+		name                     string
+		runID                    int64
+		errContains              string
+		consumed                 bool
+		runJobNames              []string
+		preExecutionError        actions_model.PreExecutionError
+		preExecutionErrorDetails []any
+	}{
+		{
+			name:  "consistent: not incomplete_matrix",
+			runID: 900,
+		},
+		{
+			name:  "consistent: incomplete_matrix all needs exist",
+			runID: 901,
+		},
+		{
+			name:                     "inconsistent: incomplete_matrix all needs exist",
+			runID:                    902,
+			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingJob,
+			preExecutionErrorDetails: []any{"job_1", "oops-something-wrong-here", "define-matrix"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer unittest.OverrideFixtures("services/actions/TestActions_consistencyCheckRun")()
+			require.NoError(t, unittest.PrepareTestDatabase())
+
+			run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: tt.runID})
+
+			err := consistencyCheckRun(t.Context(), run)
+			require.NoError(t, err)
+
+			run = unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: tt.runID})
+			assert.Equal(t, tt.preExecutionError, run.PreExecutionErrorCode)
+			assert.Equal(t, tt.preExecutionErrorDetails, run.PreExecutionErrorDetails)
+		})
+	}
+}
