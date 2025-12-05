@@ -10,7 +10,6 @@ import (
 	packages_model "forgejo.org/models/packages"
 	container_model "forgejo.org/models/packages/container"
 	"forgejo.org/modules/optional"
-	container_module "forgejo.org/modules/packages/container"
 	packages_service "forgejo.org/services/packages"
 
 	digest "github.com/opencontainers/go-digest"
@@ -82,30 +81,18 @@ func cleanupExpiredUploadedBlobs(ctx context.Context, olderThan time.Duration) e
 	return nil
 }
 
-func ShouldBeSkipped(ctx context.Context, pcr *packages_model.PackageCleanupRule, p *packages_model.Package, pv *packages_model.PackageVersion) (bool, error) {
+func ShouldBeSkipped(pv *packages_model.PackageVersion) bool {
 	// Always skip the "latest" tag
 	if pv.LowerVersion == "latest" {
-		return true, nil
+		return true
 	}
 
 	// Check if the version is a digest (or untagged)
 	if digest.Digest(pv.LowerVersion).Validate() == nil {
-		// Check if there is another manifest referencing this version
-		has, err := packages_model.ExistVersion(ctx, &packages_model.PackageSearchOptions{
-			PackageID: p.ID,
-			Properties: map[string]string{
-				container_module.PropertyManifestReference: pv.LowerVersion,
-			},
-		})
-		if err != nil {
-			return false, err
-		}
-
-		// Skip it if the version is referenced
-		if has {
-			return true, nil
-		}
+		// Don't apply PackageCleanupRules to image versions that aren't tags; rely on `CleanupSHA256` to do mass
+		// cleanup of them once they're dangling due to not being referenced.
+		return true
 	}
 
-	return false, nil
+	return false
 }

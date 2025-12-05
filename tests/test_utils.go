@@ -322,6 +322,13 @@ func PrepareCleanPackageData(t testing.TB) {
 var inTestEnv atomic.Bool
 
 func PrepareTestEnv(t testing.TB, skip ...int) func() {
+	deferFn := PrepareTestEnvWithPackageData(t, skip...)
+	PrepareCleanPackageData(t)
+	return deferFn
+}
+
+// Doesn't perform the `PrepareCleanPackageData` that `PrepareTestEnv` does...
+func PrepareTestEnvWithPackageData(t testing.TB, skip ...int) func() {
 	t.Helper()
 
 	if !inTestEnv.CompareAndSwap(false, true) {
@@ -346,7 +353,6 @@ func PrepareTestEnv(t testing.TB, skip ...int) func() {
 	// do not add more Prepare* functions here, only call necessary ones in the related test functions
 	PrepareGitRepoDirectory(t)
 	PrepareLFSStorage(t)
-	PrepareCleanPackageData(t)
 	return deferFn
 }
 
