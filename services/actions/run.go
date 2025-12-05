@@ -5,25 +5,27 @@ package actions
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	"forgejo.org/modules/timeutil"
 )
 
-func CancelRun(ctx context.Context, run *actions_model.ActionRun) error {
+func killRun(ctx context.Context, run *actions_model.ActionRun, newStatus actions_model.Status) error {
 	return db.WithTx(ctx, func(ctx context.Context) error {
 		jobs, err := actions_model.GetRunJobsByRunID(ctx, run.ID)
 		if err != nil {
 			return err
 		}
 		for _, job := range jobs {
-			status := job.Status
-			if status.IsDone() {
+			oldStatus := job.Status
+			if oldStatus.IsDone() {
 				continue
 			}
 			if job.TaskID == 0 {
-				job.Status = actions_model.StatusCancelled
+				job.Status = newStatus
 				job.Stopped = timeutil.TimeStampNow()
 				_, err := actions_model.UpdateRunJobWithoutNotification(ctx, job, nil, "status", "stopped")
 				if err != nil {
@@ -31,7 +33,7 @@ func CancelRun(ctx context.Context, run *actions_model.ActionRun) error {
 				}
 				continue
 			}
-			if err := StopTask(ctx, job.TaskID, actions_model.StatusCancelled); err != nil {
+			if err := StopTask(ctx, job.TaskID, newStatus); err != nil {
 				return err
 			}
 		}
@@ -46,6 +48,10 @@ func CancelRun(ctx context.Context, run *actions_model.ActionRun) error {
 
 		return nil
 	})
+}
+
+func CancelRun(ctx context.Context, run *actions_model.ActionRun) error {
+	return killRun(ctx, run, actions_model.StatusCancelled)
 }
 
 func ApproveRun(ctx context.Context, run *actions_model.ActionRun, doerID int64) error {
@@ -67,4 +73,86 @@ func ApproveRun(ctx context.Context, run *actions_model.ActionRun, doerID int64)
 
 		return actions_model.UpdateRunApprovalByID(ctx, run.ID, actions_model.DoesNotNeedApproval, doerID)
 	})
+}
+
+func FailRunPreExecutionError(ctx context.Context, run *actions_model.ActionRun, errorCode actions_model.PreExecutionError, details []any) error {
+	if run.PreExecutionErrorCode != 0 {
+		// Already have one error; keep it.
+		return nil
+	}
+
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		run.Status = actions_model.StatusFailure
+		run.PreExecutionErrorCode = errorCode
+		run.PreExecutionErrorDetails = details
+		if err := actions_model.UpdateRunWithoutNotification(ctx, run,
+			"pre_execution_error_code", "pre_execution_error_details", "status"); err != nil {
+			return err
+		}
+
+		// Also mark every pending job as Failed so nothing remains in a waiting/blocked state.
+		return killRun(ctx, run, actions_model.StatusFailure)
+	})
+}
+
+// Perform pre-execution checks that would affect the ability for a job to reach an executing stage.
+func consistencyCheckRun(ctx context.Context, run *actions_model.ActionRun) error {
+	jobs, err := actions_model.GetRunJobsByRunID(ctx, run.ID)
+	if err != nil {
+		return err
+	}
+	for _, job := range jobs {
+		if stop, err := checkJobWillRevisit(ctx, job); err != nil {
+			return err
+		} else if stop {
+			break
+		}
+	}
+	return nil
+}
+
+func checkJobWillRevisit(ctx context.Context, job *actions_model.ActionRunJob) (bool, error) {
+	// If a job has a matrix like `${{ needs.other-job.outputs.some-output }}`, it will be marked as an
+	// `IncompleteMatrix` job until the `other-job` is completed, and it will be marked as StatusBlocked; then when
+	// `other-job` is completed, the job_emitter will check dependent jobs and revisit them.  But, it's possible that
+	// the job didn't list `other-job` in its `needs: [...]` list -- in this case, a job will be marked as StatusBlocked
+	// forever.
+	//
+	// Check to ensure that a job marked with `IncompleteMatrix` doesn't refer to a job that it doesn't have listed in
+	// `needs`.  If that state is discovered, fail the job and mark a PreExecutionError on the run.
+
+	isIncompleteMatrix, matrixNeeds, err := job.IsIncompleteMatrix()
+	if err != nil {
+		return false, err
+	}
+
+	if !isIncompleteMatrix || matrixNeeds == nil {
+		// Not actually IncompleteMatrix, or has no information about the `${{ needs... }}` reference, nothing we can do
+		// here.
+		return false, nil
+	}
+
+	requiredJob := matrixNeeds.Job
+	needs := job.Needs
+	if slices.Contains(needs, requiredJob) {
+		// Looks good, the needed job is listed in `needs`.  It's possible that the matrix may be incomplete by
+		// referencing multiple different outputs, and not *all* outputs are in the job's `needs`... `requiredJob` will
+		// only be the first one that was found while evaluating the matrix.  But as long as at least one job is listed
+		// in `needs`, the job should be revisited by job_emitter and end up at a final resolution.
+		return false, nil
+	}
+
+	// Job doesn't seem like it can proceed; mark the run with an error.
+	if err := job.LoadRun(ctx); err != nil {
+		return false, err
+	}
+	if err := FailRunPreExecutionError(ctx, job.Run, actions_model.ErrorCodeIncompleteMatrixMissingJob, []any{
+		job.JobID,
+		requiredJob,
+		strings.Join(needs, ", "),
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

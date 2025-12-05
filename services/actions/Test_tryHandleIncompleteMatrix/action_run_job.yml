@@ -318,3 +318,44 @@
   task_id: 104
   status: 1 # success
   runs_on: '["fedora"]'
+
+-
+  id: 615
+  run_id: 908
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job_1
+  attempt: 0
+  job_id: job_1
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '["fedora"]'
+  needs: '["define-matrix-1"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      produce-artifacts:
+        name: produce-artifacts (incomplete matrix)
+        runs-on: docker
+        steps:
+          - run: echo "OK!"
+        strategy:
+          matrix:
+            color: ${{ fromJSON(needs.define-matrix-1.outputs.colours-intentional-mistake) }}
+    incomplete_matrix: true
+-
+  id: 616
+  run_id: 908
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-matrix-1
+  attempt: 0
+  job_id: define-matrix-1
+  task_id: 100
+  status: 1 # success
+  runs_on: '["fedora"]'

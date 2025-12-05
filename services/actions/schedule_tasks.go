@@ -184,6 +184,10 @@ func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule)
 		return err
 	}
 
+	if err := consistencyCheckRun(ctx, run); err != nil {
+		return err
+	}
+
 	// Return nil if no errors occurred
 	return nil
 }

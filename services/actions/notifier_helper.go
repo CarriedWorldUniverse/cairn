@@ -403,9 +403,11 @@ func handleWorkflows(
 		}
 
 		var jobs []*jobparser.SingleWorkflow
+		var errorCode actions_model.PreExecutionError
+		var errorDetails []any
 		if dwf.EventDetectionError != nil { // don't even bother trying to parse jobs due to event detection error
-			run.PreExecutionErrorCode = actions_model.ErrorCodeEventDetectionError
-			run.PreExecutionErrorDetails = []any{dwf.EventDetectionError.Error()}
+			errorCode = actions_model.ErrorCodeEventDetectionError
+			errorDetails = []any{dwf.EventDetectionError.Error()}
 			run.Status = actions_model.StatusFailure
 			jobs = []*jobparser.SingleWorkflow{{
 				Name: dwf.EntryName,
@@ -419,8 +421,8 @@ func handleWorkflows(
 			)
 			if err != nil {
 				log.Info("jobparser.Parse: invalid workflow, setting job status to failed: %v", err)
-				run.PreExecutionErrorCode = actions_model.ErrorCodeJobParsingError
-				run.PreExecutionErrorDetails = []any{err.Error()}
+				errorCode = actions_model.ErrorCodeJobParsingError
+				errorDetails = []any{err.Error()}
 				run.Status = actions_model.StatusFailure
 				jobs = []*jobparser.SingleWorkflow{{
 					Name: dwf.EntryName,
@@ -438,7 +440,18 @@ func handleWorkflows(
 			}
 		}
 
-		if err := actions_model.InsertRun(ctx, run, jobs); err != nil {
+		err = db.WithTx(ctx, func(ctx context.Context) error {
+			// Transaction avoids any chance of a run being picked up in a Waiting state when we're about to put it into
+			// a PreExecutionError a millisecond later.
+			if err := actions_model.InsertRun(ctx, run, jobs); err != nil {
+				return err
+			}
+			if errorCode != 0 {
+				return FailRunPreExecutionError(ctx, run, errorCode, errorDetails)
+			}
+			return nil
+		})
+		if err != nil {
 			log.Error("InsertRun: %v", err)
 			continue
 		}
@@ -449,6 +462,11 @@ func handleWorkflows(
 			continue
 		}
 		CreateCommitStatus(ctx, alljobs...)
+
+		if err := consistencyCheckRun(ctx, run); err != nil {
+			log.Error("SanityCheckRun: %v", err)
+			continue
+		}
 	}
 	return nil
 }

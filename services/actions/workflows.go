@@ -179,7 +179,11 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		return nil, nil, err
 	}
 
-	return run, jobNames, actions_model.InsertRun(ctx, run, jobs)
+	if err := actions_model.InsertRun(ctx, run, jobs); err != nil {
+		return run, jobNames, err
+	}
+
+	return run, jobNames, consistencyCheckRun(ctx, run)
 }
 
 func GetWorkflowFromCommit(gitRepo *git.Repository, ref, workflowID string) (*Workflow, error) {

@@ -54,6 +54,22 @@ func TestTranslatePreExecutionError(t *testing.T) {
 			},
 			expected: "Unable to evaluate `strategy.matrix` of job blocked_job due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (needs-1, needs-2), or an output that doesn't exist on one of those jobs.",
 		},
+		{
+			name: "ErrorCodeIncompleteMatrixMissingOutput",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteMatrixMissingOutput,
+				PreExecutionErrorDetails: []any{"blocked_job", "other_job", "some_output"},
+			},
+			expected: "Unable to evaluate `strategy.matrix` of job blocked_job: job other_job does not have an output some_output.",
+		},
+		{
+			name: "ErrorCodeIncompleteMatrixMissingJob",
+			run: &ActionRun{
+				PreExecutionErrorCode:    ErrorCodeIncompleteMatrixMissingJob,
+				PreExecutionErrorDetails: []any{"blocked_job", "other_job", "needs-1, needs-2"},
+			},
+			expected: "Unable to evaluate `strategy.matrix` of job blocked_job: job other_job is not in the `needs` list of job blocked_job (needs-1, needs-2).",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

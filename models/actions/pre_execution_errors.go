@@ -19,6 +19,8 @@ const (
 	ErrorCodeEventDetectionError PreExecutionError = iota + 1
 	ErrorCodeJobParsingError
 	ErrorCodePersistentIncompleteMatrix
+	ErrorCodeIncompleteMatrixMissingJob
+	ErrorCodeIncompleteMatrixMissingOutput
 )
 
 func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string {
@@ -36,6 +38,10 @@ func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string 
 		return lang.TrString("actions.workflow.job_parsing_error", run.PreExecutionErrorDetails...)
 	case ErrorCodePersistentIncompleteMatrix:
 		return lang.TrString("actions.workflow.persistent_incomplete_matrix", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteMatrixMissingJob:
+		return lang.TrString("actions.workflow.incomplete_matrix_missing_job", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteMatrixMissingOutput:
+		return lang.TrString("actions.workflow.incomplete_matrix_missing_output", run.PreExecutionErrorDetails...)
 	}
 	return fmt.Sprintf("<unsupported error: code=%v details=%#v", run.PreExecutionErrorCode, run.PreExecutionErrorDetails)
 }

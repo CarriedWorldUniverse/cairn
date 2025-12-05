@@ -255,6 +255,7 @@ func TestActionsNotifier_handleWorkflows_setRunTrustForPullRequest(t *testing.T)
 
 	testActionsNotifierPullRequest(t, repo, pr, &actions_module.DetectedWorkflow{
 		NeedApproval: true,
+		Content:      []byte("on: pull_request\njobs: { job_a: {} }"),
 	}, webhook_module.HookEventPullRequest)
 
 	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{

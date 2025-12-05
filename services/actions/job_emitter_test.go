@@ -167,8 +167,8 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 		{
 			name:                     "missing needs for strategy.matrix evaluation",
 			runJobID:                 605,
-			preExecutionError:        actions_model.ErrorCodePersistentIncompleteMatrix,
-			preExecutionErrorDetails: []any{"job_1", "define-matrix-1"},
+			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingJob,
+			preExecutionErrorDetails: []any{"job_1", "define-matrix-2", "define-matrix-1"},
 		},
 		{
 			name:        "matrix expanded to 0 jobs",
@@ -223,6 +223,12 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 				"scalar-job (hard-coded value)",
 				"scalar-job (just some value)",
 			},
+		},
+		{
+			name:                     "missing needs for strategy.matrix evaluation",
+			runJobID:                 615,
+			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingOutput,
+			preExecutionErrorDetails: []any{"job_1", "define-matrix-1", "colours-intentional-mistake"},
 		},
 	}
 	for _, tt := range tests {
