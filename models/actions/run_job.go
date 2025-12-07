@@ -6,15 +6,12 @@ package actions
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"slices"
-	"strings"
 	"time"
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
@@ -235,27 +232,6 @@ func AggregateJobStatus(jobs []*ActionRunJob) Status {
 	default:
 		return StatusUnknown // it shouldn't happen
 	}
-}
-
-// StatusDiagnostics returns optional diagnostic information to display to the user derived from
-// ActionRunJob's current status. It should help the user understand in which state the
-// ActionRunJob is and why.
-func (job *ActionRunJob) StatusDiagnostics(lang translation.Locale) []template.HTML {
-	diagnostics := []template.HTML{}
-
-	switch job.Status {
-	case StatusWaiting:
-		joinedLabels := strings.Join(job.RunsOn, ", ")
-		diagnostics = append(diagnostics, lang.TrPluralString(len(job.RunsOn), "actions.status.diagnostics.waiting", joinedLabels))
-	default:
-		diagnostics = append(diagnostics, template.HTML(job.Status.LocaleString(lang)))
-	}
-
-	if job.Run.NeedApproval {
-		diagnostics = append(diagnostics, template.HTML(lang.TrString("actions.need_approval_desc")))
-	}
-
-	return diagnostics
 }
 
 func (job *ActionRunJob) decodeWorkflowPayload() (*jobparser.SingleWorkflow, error) {

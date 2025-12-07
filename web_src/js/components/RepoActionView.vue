@@ -123,7 +123,7 @@ export default {
         // initial value here is configured so that currentingViewingMostRecentAttempt() -> true on the default `data()`, so that the
         // initial render (before `loadJob`'s first execution is complete) doesn't display "You are viewing an
         // out-of-date run..."
-        allAttempts: new Array(parseInt(this.attemptNumber)).fill({index: 0, time_since_started_html: '', status: 'success'}),
+        allAttempts: new Array(parseInt(this.attemptNumber)).fill({index: 0, time_since_started_html: '', status: 'success', status_diagnostics: []}),
       },
     };
   },
@@ -158,6 +158,7 @@ export default {
       if (!this.currentJob.allAttempts) {
         return fallback;
       }
+
       const attempt = this.currentJob.allAttempts.find((attempt) => attempt.number === this.viewingAttemptNumber);
       return attempt || fallback;
     },
@@ -180,6 +181,18 @@ export default {
     viewingOutOfDateRunLabel() {
       return this.locale.viewingOutOfDateRun
         .replace('%[1]s', this.viewingAttempt.time_since_started_html);
+    },
+
+    statusDiagnostics() {
+      if (!this.currentJob.allAttempts) {
+        return this.currentJob.details;
+      }
+
+      const useAttempt = this.currentJob.allAttempts.some((attempt) => attempt.number === this.viewingAttemptNumber);
+      if (useAttempt) {
+        return this.viewingAttempt.status_diagnostics;
+      }
+      return this.currentJob.details;
     },
   },
 
@@ -616,7 +629,7 @@ export default {
               {{ currentJob.title }}
             </h3>
             <ul class="job-info-header-detail">
-              <li v-for="detail in currentJob.details" :key="detail">
+              <li v-for="detail in statusDiagnostics" :key="detail">
                 {{ detail }}
               </li>
             </ul>
