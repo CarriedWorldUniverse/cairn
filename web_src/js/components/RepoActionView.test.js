@@ -94,6 +94,7 @@ test('processes ##[group] and ##[endgroup]', async () => {
           },
         },
         currentJob: {
+          title: 'Test',
           steps: [
             {
               summary: 'Test Job',
@@ -101,7 +102,7 @@ test('processes ##[group] and ##[endgroup]', async () => {
               status: 'success',
             },
           ],
-          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success', status_diagnostics: ['Success']}],
         },
       },
       logs: {
@@ -186,6 +187,7 @@ test('load multiple steps on a finished action', async () => {
           },
         },
         currentJob: {
+          title: 'test',
           steps: [
             {
               summary: 'Test Step #1',
@@ -198,7 +200,7 @@ test('load multiple steps on a finished action', async () => {
               status: 'success',
             },
           ],
-          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success', status_diagnostics: ['Success']}],
         },
       },
       logs: {
@@ -231,6 +233,11 @@ test('load multiple steps on a finished action', async () => {
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(1) .log-msg').text()).toEqual('Step #2 Log #1');
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(2) .log-msg').text()).toEqual('Step #2 Log #2');
   expect(wrapper.get('.job-step-section:nth-of-type(2) .job-log-line:nth-of-type(3) .log-msg').text()).toEqual('Step #2 Log #3');
+
+  // Attempt status
+  expect(wrapper.get('.job-info-header h3').text()).toEqual('test');
+  expect(wrapper.findAll('ul.job-info-header-detail li').length).toEqual(1);
+  expect(wrapper.get('ul.job-info-header-detail li:nth-child(1)').text()).toEqual('Success');
 });
 
 function configureForMultipleAttemptTests({viewHistorical}) {
@@ -246,6 +253,7 @@ function configureForMultipleAttemptTests({viewHistorical}) {
       },
     },
     currentJob: {
+      title: 'test',
       steps: [
         {
           summary: 'Test Job',
@@ -254,8 +262,8 @@ function configureForMultipleAttemptTests({viewHistorical}) {
         },
       ],
       allAttempts: [
-        {number: 2, time_since_started_html: 'yesterday', status: 'success'},
-        {number: 1, time_since_started_html: 'two days ago', status: 'failure'},
+        {number: 2, time_since_started_html: 'yesterday', status: 'success', status_diagnostics: ['Success']},
+        {number: 1, time_since_started_html: 'two days ago', status: 'failure', status_diagnostics: ['Failure']},
       ],
     },
   };
@@ -315,6 +323,11 @@ test('display baseline with most-recent attempt', async () => {
   expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
   expect(wrapper.findAll('.job-attempt-dropdown .svg.octicon-check-circle-fill.text.green').length).toEqual(1);
   expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 2 yesterday');
+
+  // Attempt status
+  expect(wrapper.get('.job-info-header h3').text()).toEqual('test');
+  expect(wrapper.findAll('ul.job-info-header-detail li').length).toEqual(1);
+  expect(wrapper.get('ul.job-info-header-detail li:nth-child(1)').text()).toEqual('Success');
 });
 
 test('display reconfigured for historical attempt', async () => {
@@ -342,6 +355,11 @@ test('display reconfigured for historical attempt', async () => {
   expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
   expect(wrapper.findAll('.job-attempt-dropdown .svg.octicon-x-circle-fill.text.red').length).toEqual(1);
   expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 1 two days ago');
+
+  // Attempt status
+  expect(wrapper.get('.job-info-header h3').text()).toEqual('test');
+  expect(wrapper.findAll('ul.job-info-header-detail li').length).toEqual(1);
+  expect(wrapper.get('ul.job-info-header-detail li:nth-child(1)').text()).toEqual('Failure');
 });
 
 test('historical attempt dropdown interactions', async () => {
@@ -476,6 +494,7 @@ test('artifacts download links', async () => {
           },
         },
         currentJob: {
+          title: 'test',
           steps: [
             {
               summary: 'Test Step #1',
@@ -483,7 +502,7 @@ test('artifacts download links', async () => {
               status: 'success',
             },
           ],
-          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success', status_diagnostics: ['Success']}],
         },
       },
       logs: {
@@ -628,6 +647,11 @@ test('view non-picked action run job', async () => {
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(1) .job-brief-name').text()).toEqual('check-1');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(2) .job-brief-name').text()).toEqual('check-2');
   expect(wrapper.get('.job-brief-list .job-brief-item:nth-of-type(3) .job-brief-name').text()).toEqual('check-3');
+
+  // Attempt status
+  expect(wrapper.get('.job-info-header h3').text()).toEqual('check-1');
+  expect(wrapper.findAll('ul.job-info-header-detail li').length).toEqual(1);
+  expect(wrapper.get('ul.job-info-header-detail li:nth-child(1)').text()).toEqual('waiting (locale)');
 });
 
 test('view without pre-execution error', async () => {
@@ -686,6 +710,7 @@ test('Offset index', async () => {
           },
         },
         currentJob: {
+          title: 'test',
           steps: [
             {
               summary: 'Test Job',
@@ -693,7 +718,7 @@ test('Offset index', async () => {
               status: 'success',
             },
           ],
-          allAttempts: [{number: 1, time_since_started_html: '', status: 'success'}],
+          allAttempts: [{number: 1, time_since_started_html: '', status: 'success', status_diagnostics: ['Success']}],
         },
       },
       logs: {

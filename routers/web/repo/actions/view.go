@@ -32,6 +32,7 @@ import (
 	"forgejo.org/modules/storage"
 	"forgejo.org/modules/templates"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/routers/common"
@@ -241,9 +242,10 @@ type ViewStepLogLine struct {
 }
 
 type TaskAttempt struct {
-	Number  int64         `json:"number"`
-	Started template.HTML `json:"time_since_started_html"`
-	Status  string        `json:"status"`
+	Number            int64           `json:"number"`
+	Started           template.HTML   `json:"time_since_started_html"`
+	Status            string          `json:"status"`
+	StatusDiagnostics []template.HTML `json:"status_diagnostics"`
 }
 
 func ViewPost(ctx *app_context.Context) {
@@ -358,7 +360,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 	}
 
 	resp.State.CurrentJob.Title = current.Name
-	resp.State.CurrentJob.Details = current.StatusDiagnostics(ctx.Locale)
+	resp.State.CurrentJob.Details = statusDiagnostics(current.Status, current, ctx.Locale)
 
 	resp.State.CurrentJob.Steps = make([]*ViewJobStep, 0) // marshal to '[]' instead of 'null' in json
 	resp.Logs.StepsLog = make([]*ViewStepLog, 0)          // marshal to '[]' instead of 'null' in json
@@ -372,9 +374,10 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 		allAttempts := make([]*TaskAttempt, len(taskAttempts))
 		for i, actionTask := range taskAttempts {
 			allAttempts[i] = &TaskAttempt{
-				Number:  actionTask.Attempt,
-				Started: templates.TimeSince(actionTask.Started),
-				Status:  actionTask.Status.String(),
+				Number:            actionTask.Attempt,
+				Started:           templates.TimeSince(actionTask.Started),
+				Status:            actionTask.Status.String(),
+				StatusDiagnostics: statusDiagnostics(actionTask.Status, task.Job, ctx.Locale),
 			}
 		}
 		resp.State.CurrentJob.AllAttempts = allAttempts
@@ -967,4 +970,25 @@ func disableOrEnableWorkflowFile(ctx *app_context.Context, isEnable bool) {
 	redirectURL := fmt.Sprintf("%s/actions?workflow=%s&actor=%s&status=%s", ctx.Repo.RepoLink, url.QueryEscape(workflow),
 		url.QueryEscape(ctx.FormString("actor")), url.QueryEscape(ctx.FormString("status")))
 	ctx.JSONRedirect(redirectURL)
+}
+
+// statusDiagnostics returns optional diagnostic information to display to the user. It should help the user understand
+// what the current Status means and whether an action needs to be performed, for example, approving a job.
+func statusDiagnostics(status actions_model.Status, job *actions_model.ActionRunJob, lang translation.Locale) []template.HTML {
+	// Initialize as empty container for it to be serialized to an empty JSON array, not `null`.
+	diagnostics := []template.HTML{}
+
+	switch status {
+	case actions_model.StatusWaiting:
+		joinedLabels := strings.Join(job.RunsOn, ", ")
+		diagnostics = append(diagnostics, lang.TrPluralString(len(job.RunsOn), "actions.status.diagnostics.waiting", joinedLabels))
+	default:
+		diagnostics = append(diagnostics, template.HTML(status.LocaleString(lang)))
+	}
+
+	if job.Run.NeedApproval {
+		diagnostics = append(diagnostics, template.HTML(lang.TrString("actions.need_approval_desc")))
+	}
+
+	return diagnostics
 }

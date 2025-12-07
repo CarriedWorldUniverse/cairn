@@ -13,6 +13,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	unittest_model "forgejo.org/models/unittest"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/translation"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/contexttest"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_getRunByID(t *testing.T) {
+func TestActionsViewGetRunByID(t *testing.T) {
 	unittest_model.PrepareTestEnv(t)
 
 	repo := unittest_model.AssertExistsAndLoadBean(t, &repo_model.Repository{OwnerID: 5, ID: 4})
@@ -61,7 +62,7 @@ func Test_getRunByID(t *testing.T) {
 	}
 }
 
-func Test_artifactsFind(t *testing.T) {
+func TestActionsViewArtifactsFind(t *testing.T) {
 	unittest_model.PrepareTestEnv(t)
 
 	for _, testCase := range []struct {
@@ -93,7 +94,7 @@ func Test_artifactsFind(t *testing.T) {
 	}
 }
 
-func Test_artifactsFindByNameOrID(t *testing.T) {
+func TestActionsViewArtifactsFindByNameOrID(t *testing.T) {
 	unittest_model.PrepareTestEnv(t)
 
 	for _, testCase := range []struct {
@@ -195,19 +196,22 @@ func baseExpectedViewResponse() *ViewResponse {
 				},
 				AllAttempts: []*TaskAttempt{
 					{
-						Number:  3,
-						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
-						Status:  "running",
+						Number:            3,
+						Started:           template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:            "running",
+						StatusDiagnostics: []template.HTML{"actions.status.running"},
 					},
 					{
-						Number:  2,
-						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
-						Status:  "success",
+						Number:            2,
+						Started:           template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:            "success",
+						StatusDiagnostics: []template.HTML{"actions.status.success"},
 					},
 					{
-						Number:  1,
-						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
-						Status:  "success",
+						Number:            1,
+						Started:           template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:            "success",
+						StatusDiagnostics: []template.HTML{"actions.status.success"},
 					},
 				},
 			},
@@ -281,9 +285,10 @@ func TestActionsViewViewPost(t *testing.T) {
 				}
 				resp.State.CurrentJob.AllAttempts = []*TaskAttempt{
 					{
-						Number:  1,
-						Started: template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
-						Status:  "success",
+						Number:            1,
+						Started:           template.HTML("<relative-time prefix=\"\" tense=\"past\" datetime=\"2023-05-09T12:48:48Z\" data-tooltip-content data-tooltip-interactive=\"true\">2023-05-09 12:48:48 +00:00</relative-time>"),
+						Status:            "success",
+						StatusDiagnostics: []template.HTML{"actions.status.success"},
 					},
 				}
 
@@ -507,6 +512,94 @@ func TestActionsRerun(t *testing.T) {
 			// rerun.  This test was added when the redirect to the correct `attempt` was added and only covers that
 			// addition at this time.
 			assert.Equal(t, redirectObject{Redirect: tt.expectedURL}, actual)
+		})
+	}
+}
+
+func TestActionsViewStatusDiagnostics(t *testing.T) {
+	translation.InitLocales(t.Context())
+	english := translation.NewLocale("en-US")
+
+	testCases := []struct {
+		name     string
+		status   actions_model.Status
+		job      actions_model.ActionRunJob
+		expected []template.HTML
+	}{
+		{
+			name:     "Unknown status",
+			status:   actions_model.StatusUnknown,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"windows"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Unknown"},
+		},
+		{
+			name:     "Waiting without labels",
+			status:   actions_model.StatusWaiting,
+			job:      actions_model.ActionRunJob{RunsOn: []string{}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Waiting for a runner with the following labels: "},
+		},
+		{
+			name:     "Waiting with one label",
+			status:   actions_model.StatusWaiting,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"freebsd"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Waiting for a runner with the following label: freebsd"},
+		},
+		{
+			name:     "Waiting with labels, no approval",
+			status:   actions_model.StatusWaiting,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"docker", "ubuntu"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Waiting for a runner with the following labels: docker, ubuntu"},
+		},
+		{
+			name:   "Waiting with labels, approval",
+			status: actions_model.StatusWaiting,
+			job:    actions_model.ActionRunJob{RunsOn: []string{"docker", "ubuntu"}, Run: &actions_model.ActionRun{NeedApproval: true}},
+			expected: []template.HTML{
+				"Waiting for a runner with the following labels: docker, ubuntu",
+				"Need approval to run workflows for fork pull request.",
+			},
+		},
+		{
+			name:     "Running",
+			status:   actions_model.StatusRunning,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Running"},
+		},
+		{
+			name:     "Success",
+			status:   actions_model.StatusSuccess,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Success"},
+		},
+		{
+			name:     "Failure",
+			status:   actions_model.StatusFailure,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Failure"},
+		},
+		{
+			name:     "Cancelled",
+			status:   actions_model.StatusCancelled,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Canceled"},
+		},
+		{
+			name:     "Skipped",
+			status:   actions_model.StatusSkipped,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Skipped"},
+		},
+		{
+			name:     "Blocked",
+			status:   actions_model.StatusBlocked,
+			job:      actions_model.ActionRunJob{RunsOn: []string{"debian"}, Run: &actions_model.ActionRun{NeedApproval: false}},
+			expected: []template.HTML{"Blocked"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.expected, statusDiagnostics(testCase.status, &testCase.job, english))
 		})
 	}
 }
