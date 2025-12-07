@@ -77,6 +77,9 @@ func TestNavbarItems(t *testing.T) {
 
 		page := NewHTMLParser(t, regularUser.MakeRequest(t, NewRequest(t, "GET", testPage), http.StatusOK).Body)
 		page.AssertElement(t, `details.dropdown a[href="/devtest"]`, true)
+
+		testNavbarUserMenuActiveItem(t, regularUser, "/user/settings")
+		testNavbarUserMenuActiveItem(t, adminUser, "/admin")
 	})
 
 	t.Run(`User dropdown - default conditions`, func(t *testing.T) {
@@ -119,5 +122,15 @@ func TestNavbarItems(t *testing.T) {
 		for _, assertion := range assertions {
 			page.AssertElement(t, assertion.selector, assertion.exists)
 		}
+
+		testNavbarUserMenuActiveItem(t, regularUser, "/user/settings")
+		testNavbarUserMenuActiveItem(t, adminUser, "/admin")
 	})
+}
+
+// When visiting certain pages, the corresponding entry of user menu is highlighted
+func testNavbarUserMenuActiveItem(t *testing.T, session *TestSession, url string) {
+	page := NewHTMLParser(t, session.MakeRequest(t, NewRequest(t, "GET", url), http.StatusOK).Body)
+	// AssertElement will only pass if there's just one such element
+	page.AssertElement(t, "#navbar details.dropdown li > .active", true)
 }
