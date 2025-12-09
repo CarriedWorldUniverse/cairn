@@ -44,7 +44,7 @@ import (
 	"forgejo.org/services/mailer"
 	mailer_incoming "forgejo.org/services/mailer/incoming"
 	markup_service "forgejo.org/services/markup"
-	migration_service "forgejo.org/services/migrations"
+	migrations_service "forgejo.org/services/migrations"
 	mirror_service "forgejo.org/services/mirror"
 	pull_service "forgejo.org/services/pull"
 	release_service "forgejo.org/services/release"
@@ -157,7 +157,7 @@ func InitWebInstalled(ctx context.Context) {
 	mustInit(pull_service.Init)
 	mustInit(automerge.Init)
 	mustInit(task.Init)
-	mustInit(migration_service.Init)
+	mustInit(migrations_service.Init)
 	eventsource.GetManager().Init()
 	mustInitCtx(ctx, mailer_incoming.Init)
 

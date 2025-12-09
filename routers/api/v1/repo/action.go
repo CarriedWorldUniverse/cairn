@@ -19,7 +19,7 @@ import (
 	actions_service "forgejo.org/services/actions"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
-	secret_service "forgejo.org/services/secrets"
+	secrets_service "forgejo.org/services/secrets"
 )
 
 // ListActionsSecrets list an repo's actions secrets
@@ -122,7 +122,7 @@ func (Action) CreateOrUpdateSecret(ctx *context.APIContext) {
 
 	opt := web.GetForm(ctx).(*api.CreateOrUpdateSecretOption)
 
-	_, created, err := secret_service.CreateOrUpdateSecret(ctx, 0, repo.ID, ctx.Params("secretname"), opt.Data)
+	_, created, err := secrets_service.CreateOrUpdateSecret(ctx, 0, repo.ID, ctx.Params("secretname"), opt.Data)
 	if err != nil {
 		if errors.Is(err, util.ErrInvalidArgument) {
 			ctx.Error(http.StatusBadRequest, "CreateOrUpdateSecret", err)
@@ -176,7 +176,7 @@ func (Action) DeleteSecret(ctx *context.APIContext) {
 
 	repo := ctx.Repo.Repository
 
-	err := secret_service.DeleteSecretByName(ctx, 0, repo.ID, ctx.Params("secretname"))
+	err := secrets_service.DeleteSecretByName(ctx, 0, repo.ID, ctx.Params("secretname"))
 	if err != nil {
 		if errors.Is(err, util.ErrInvalidArgument) {
 			ctx.Error(http.StatusBadRequest, "DeleteSecret", err)
