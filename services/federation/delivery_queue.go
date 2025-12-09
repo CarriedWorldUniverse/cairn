@@ -59,16 +59,17 @@ func deliverToInbox(item deliveryQueueItem) error {
 		return err
 	}
 
-	log.Debug("Delivering %s to %s", item.Payload, item.InboxURL)
+	log.Trace("Delivering to: %s, signedBy: %s", item.InboxURL, item.Doer.ID)
 	res, err := apclient.Post(item.Payload, item.InboxURL)
 	if err != nil {
+		log.Info("Delivering to: %s failed: %s, times: %v", item.InboxURL, err, item.DeliveryCount)
 		return err
 	}
 	if res.StatusCode >= 400 {
 		defer res.Body.Close()
 		body, _ := io.ReadAll(io.LimitReader(res.Body, 16*1024))
 
-		log.Warn("Delivering to %s failed: %d %s, %v times", item.InboxURL, res.StatusCode, string(body), item.DeliveryCount)
+		log.Warn("Delivering to: %s failed. Status: %d, responseBody: %s, times: %v", item.InboxURL, res.StatusCode, string(body), item.DeliveryCount)
 		return fmt.Errorf("delivery failed")
 	}
 

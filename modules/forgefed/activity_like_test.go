@@ -1,7 +1,7 @@
 // Copyright 2023, 2024 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package forgefed
+package forgefed_test
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
@@ -23,7 +24,7 @@ func Test_NewForgeLike(t *testing.T) {
 	actorIRI := "https://repo.prod.meissa.de/api/v1/activitypub/user-id/1"
 	objectIRI := "https://codeberg.org/api/v1/activitypub/repository-id/1"
 	startTime, _ := time.Parse("2006-Jan-02", "2024-Mar-07")
-	sut, err := NewForgeLike(actorIRI, objectIRI, startTime)
+	sut, err := forgefed.NewForgeLike(actorIRI, objectIRI, startTime)
 	require.NoError(t, err, "unexpected error: %v\n", err)
 
 	valid, _ := validation.IsValid(sut)
@@ -36,18 +37,18 @@ func Test_NewForgeLike(t *testing.T) {
 
 func Test_LikeMarshalJSON(t *testing.T) {
 	type testPair struct {
-		item    ForgeLike
+		item    forgefed.ForgeLike
 		want    []byte
 		wantErr error
 	}
 
 	tests := map[string]testPair{
 		"empty": {
-			item: ForgeLike{},
+			item: forgefed.ForgeLike{},
 			want: nil,
 		},
 		"with ID": {
-			item: ForgeLike{
+			item: forgefed.ForgeLike{
 				Activity: ap.Activity{
 					Actor:  ap.IRI("https://repo.prod.meissa.de/api/v1/activitypub/user-id/1"),
 					Type:   "Like",
@@ -70,14 +71,14 @@ func Test_LikeMarshalJSON(t *testing.T) {
 func Test_LikeUnmarshalJSON(t *testing.T) {
 	type testPair struct {
 		item    []byte
-		want    *ForgeLike
+		want    *forgefed.ForgeLike
 		wantErr error
 	}
 
 	tests := map[string]testPair{
 		"with ID": {
 			item: []byte(`{"type":"Like","actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1","object":"https://codeberg.org/api/activitypub/repository-id/1"}`),
-			want: &ForgeLike{
+			want: &forgefed.ForgeLike{
 				Activity: ap.Activity{
 					Type:   "Like",
 					Actor:  ap.IRI("https://repo.prod.meissa.de/api/activitypub/user-id/1"),
@@ -88,14 +89,14 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 		},
 		"invalid": {
 			item:    []byte(`{"type":"Invalid","actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1","object":"https://codeberg.org/api/activitypub/repository-id/1"`),
-			want:    &ForgeLike{},
+			want:    &forgefed.ForgeLike{},
 			wantErr: errors.New("cannot parse JSON"),
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := new(ForgeLike)
+			got := new(forgefed.ForgeLike)
 			err := got.UnmarshalJSON(test.item)
 			assert.False(t, (err != nil || test.wantErr != nil) && !strings.Contains(err.Error(), test.wantErr.Error()), "UnmarshalJSON()\n error: %v\n wantErr: %v", err, test.wantErr)
 
@@ -108,7 +109,7 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 
 func Test_ForgeLikeValidation(t *testing.T) {
 	// Successful
-	sut := new(ForgeLike)
+	sut := new(forgefed.ForgeLike)
 	sut.UnmarshalJSON([]byte(`{"type":"Like",
 	"actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1",
 	"object":"https://codeberg.org/api/activitypub/repository-id/1",
@@ -148,7 +149,7 @@ func Test_ForgeLikeValidation(t *testing.T) {
 }
 
 func TestActivityValidation_Attack(t *testing.T) {
-	sut := new(ForgeLike)
+	sut := new(forgefed.ForgeLike)
 	sut.UnmarshalJSON([]byte(`{rubbish}`))
 	assert.Len(t, sut.Validate(), 5)
 }

@@ -1,19 +1,21 @@
 // Copyright 2023, 2024, 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package forgefed
+package forgefed_test
 
 import (
 	"testing"
+
+	"forgejo.org/modules/forgefed"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestActorNew(t *testing.T) {
-	sut, err := NewActorID("https://an.other.forgejo.host/api/v1/activitypub/user-id/5")
+	sut, err := forgefed.NewActorID("https://an.other.forgejo.host/api/v1/activitypub/user-id/5")
 	require.NoError(t, err)
-	assert.Equal(t, ActorID{
+	assert.Equal(t, forgefed.ActorID{
 		ID:                 "5",
 		HostSchema:         "https",
 		Path:               "api/v1/activitypub/user-id",
@@ -23,9 +25,9 @@ func TestActorNew(t *testing.T) {
 		IsPortSupplemented: true,
 	}, sut)
 
-	sut, err = NewActorID("https://an.other.forgejo.host/api/v1/activitypub/actor")
+	sut, err = forgefed.NewActorID("https://an.other.forgejo.host/api/v1/activitypub/actor")
 	require.NoError(t, err)
-	assert.Equal(t, ActorID{
+	assert.Equal(t, forgefed.ActorID{
 		ID:                 "actor",
 		HostSchema:         "https",
 		Path:               "api/v1/activitypub",
@@ -35,9 +37,9 @@ func TestActorNew(t *testing.T) {
 		IsPortSupplemented: true,
 	}, sut)
 
-	sut, err = NewActorID("https://an.other.gts.host/users/me")
+	sut, err = forgefed.NewActorID("https://an.other.gts.host/users/me")
 	require.NoError(t, err)
-	assert.Equal(t, ActorID{
+	assert.Equal(t, forgefed.ActorID{
 		ID:                 "me",
 		HostSchema:         "https",
 		Path:               "users",
@@ -49,7 +51,7 @@ func TestActorNew(t *testing.T) {
 }
 
 func TestActorIdValidation(t *testing.T) {
-	sut := ActorID{}
+	sut := forgefed.ActorID{}
 	sut.HostSchema = "https"
 	sut.Path = "api/v1/activitypub/user-id"
 	sut.Host = "an.other.host"
@@ -60,7 +62,7 @@ func TestActorIdValidation(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, "Value ID should not be empty", result[0])
 
-	sut = ActorID{}
+	sut = forgefed.ActorID{}
 	sut.ID = "1"
 	sut.HostSchema = "https"
 	sut.Path = "api/v1/activitypub/user-id"

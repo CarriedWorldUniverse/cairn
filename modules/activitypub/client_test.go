@@ -2,7 +2,7 @@
 // Copyright 2023 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package activitypub
+package activitypub_test
 
 import (
 	"fmt"
@@ -15,6 +15,7 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/activitypub"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 
@@ -23,7 +24,7 @@ import (
 )
 
 func TestCurrentTime(t *testing.T) {
-	date := CurrentTime()
+	date := activitypub.CurrentTime()
 	_, err := time.Parse(http.TimeFormat, date)
 	require.NoError(t, err)
 	assert.Equal(t, "GMT", date[len(date)-3:])
@@ -65,7 +66,7 @@ func TestClientCtx(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 	pubID := "myGpgId"
-	cf, err := NewClientFactory()
+	cf, err := activitypub.NewClientFactory()
 	log.Debug("ClientFactory: %v\nError: %v", cf, err)
 	require.NoError(t, err)
 
@@ -73,7 +74,7 @@ func TestClientCtx(t *testing.T) {
 
 	log.Debug("Client: %v\nError: %v", c, err)
 	require.NoError(t, err)
-	_ = NewContext(db.DefaultContext, cf)
+	_ = activitypub.NewContext(db.DefaultContext, cf)
 }
 
 /* TODO: bring this test to work or delete
@@ -111,7 +112,7 @@ func TestActivityPubSignedPost(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 	pubID := "https://example.com/pubID"
-	cf, err := NewClientFactory()
+	cf, err := activitypub.NewClientFactory()
 	require.NoError(t, err)
 	c, err := cf.WithKeys(db.DefaultContext, user, pubID)
 	require.NoError(t, err)
@@ -120,7 +121,7 @@ func TestActivityPubSignedPost(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Regexp(t, "^"+setting.Federation.DigestAlgorithm, r.Header.Get("Digest"))
 		assert.Contains(t, r.Header.Get("Signature"), pubID)
-		assert.Equal(t, ActivityStreamsContentType, r.Header.Get("Content-Type"))
+		assert.Equal(t, activitypub.ActivityStreamsContentType, r.Header.Get("Content-Type"))
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		assert.Equal(t, expected, string(body))

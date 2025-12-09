@@ -67,9 +67,6 @@ func (userActivity ForgeUserActivity) Validate() []string {
 	if len(userActivity.To) == 0 {
 		result = append(result, "Missing to")
 	}
-	if len(userActivity.CC) == 0 {
-		result = append(result, "Missing cc")
-	}
 
 	result = append(result, userActivity.Note.Validate()...)
 
