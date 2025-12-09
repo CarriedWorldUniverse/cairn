@@ -635,3 +635,43 @@ func TestPagureDownloadRepoWithPrivateIssues(t *testing.T) {
 		},
 	}, comments)
 }
+
+func TestProcessDate(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *string
+		expected time.Time
+	}{
+		{
+			name:     "nil input",
+			input:    nil,
+			expected: time.Time{},
+		},
+		{
+			name:     "empty string",
+			input:    strPtr(""),
+			expected: time.Time{},
+		},
+		{
+			name:     "unix timestamp",
+			input:    strPtr("1609459200"),
+			expected: time.Unix(1609459200, 0),
+		},
+		{
+			name:     "YYYY-MM-DD format",
+			input:    strPtr("2025-12-12"),
+			expected: time.Date(2025, time.December, 12, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := processDate(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func strPtr(s string) *string {
+	return &s
+}
