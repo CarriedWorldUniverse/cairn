@@ -8,14 +8,14 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	unittest_model "forgejo.org/models/unittest"
+	"forgejo.org/models/unittest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_loadIsRefDeleted(t *testing.T) {
-	unittest_model.PrepareTestEnv(t)
+	unittest.PrepareTestEnv(t)
 
 	runs, total, err := db.FindAndCount[actions_model.ActionRun](db.DefaultContext,
 		actions_model.FindRunOptions{RepoID: 4, Ref: "refs/heads/test"})

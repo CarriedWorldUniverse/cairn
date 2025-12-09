@@ -11,7 +11,7 @@ import (
 	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
 	"forgejo.org/services/forms"
-	secret_service "forgejo.org/services/secrets"
+	secrets_service "forgejo.org/services/secrets"
 )
 
 func SetSecretsContext(ctx *context.Context, ownerID, repoID int64) {
@@ -27,7 +27,7 @@ func SetSecretsContext(ctx *context.Context, ownerID, repoID int64) {
 func PerformSecretsPost(ctx *context.Context, ownerID, repoID int64, redirectURL string) {
 	form := web.GetForm(ctx).(*forms.AddSecretForm)
 
-	s, _, err := secret_service.CreateOrUpdateSecret(ctx, ownerID, repoID, form.Name, util.ReserveLineBreakForTextarea(form.Data))
+	s, _, err := secrets_service.CreateOrUpdateSecret(ctx, ownerID, repoID, form.Name, util.ReserveLineBreakForTextarea(form.Data))
 	if err != nil {
 		log.Error("CreateOrUpdateSecret failed: %v", err)
 		ctx.JSONError(ctx.Tr("secrets.creation.failed"))
@@ -41,7 +41,7 @@ func PerformSecretsPost(ctx *context.Context, ownerID, repoID int64, redirectURL
 func PerformSecretsDelete(ctx *context.Context, ownerID, repoID int64, redirectURL string) {
 	id := ctx.FormInt64("id")
 
-	err := secret_service.DeleteSecretByID(ctx, ownerID, repoID, id)
+	err := secrets_service.DeleteSecretByID(ctx, ownerID, repoID, id)
 	if err != nil {
 		log.Error("DeleteSecretByID(%d) failed: %v", id, err)
 		ctx.JSONError(ctx.Tr("secrets.deletion.failed"))

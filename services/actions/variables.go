@@ -11,11 +11,11 @@ import (
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/util"
-	secret_service "forgejo.org/services/secrets"
+	secrets_service "forgejo.org/services/secrets"
 )
 
 func CreateVariable(ctx context.Context, ownerID, repoID int64, name, data string) (*actions_model.ActionVariable, error) {
-	if err := secret_service.ValidateName(name); err != nil {
+	if err := secrets_service.ValidateName(name); err != nil {
 		return nil, err
 	}
 
@@ -32,7 +32,7 @@ func CreateVariable(ctx context.Context, ownerID, repoID int64, name, data strin
 }
 
 func UpdateVariable(ctx context.Context, variableID, ownerID, repoID int64, name, data string) (bool, error) {
-	if err := secret_service.ValidateName(name); err != nil {
+	if err := secrets_service.ValidateName(name); err != nil {
 		return false, err
 	}
 
@@ -50,7 +50,7 @@ func UpdateVariable(ctx context.Context, variableID, ownerID, repoID int64, name
 }
 
 func DeleteVariableByName(ctx context.Context, ownerID, repoID int64, name string) error {
-	if err := secret_service.ValidateName(name); err != nil {
+	if err := secrets_service.ValidateName(name); err != nil {
 		return err
 	}
 
