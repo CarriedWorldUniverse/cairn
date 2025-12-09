@@ -40,6 +40,13 @@ type ShadowCopyData interface {
 	// GetFieldsMap returns a list of <key, value> pairs with the fields stored within shadow copies
 	// of content reported as abusive, to be used when rendering a shadow copy in the admin UI.
 	GetFieldsMap() []ShadowCopyField
+
+	// GetAbuserID returns the ID of the user who posted the reported content when this info in available within
+	// the shadow copy (i.e. the PosterID field for comments and issues/PRs or the OwnerID field for repositories),
+	// together with a boolean value indicating whether the ID is considered valid or not.
+	// This is used to retrieve the abuser/poster in case the reported content was deleted before an admin managed
+	// to review the report, allowing them to easily access the abuser profile (if this was not also deleted).
+	GetAbuserID() (int64, bool)
 }
 
 func init() {

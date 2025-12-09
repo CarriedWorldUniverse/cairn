@@ -57,6 +57,12 @@ func (ud UserData) GetFieldsMap() []moderation.ShadowCopyField {
 	}
 }
 
+// Implements GetAbuserID() from ShadowCopyData interface, returning (GhostUserID, false), since for users/organizations
+// the ID is not saved within the shadow copy (because it is already stored as ContentID in the abuse report).
+func (ud *UserData) GetAbuserID() (int64, bool) {
+	return GhostUserID, false
+}
+
 // newUserData creates a trimmed down user to be used just to create a JSON structure
 // (keeping only the fields relevant for moderation purposes)
 func newUserData(user *User) UserData {

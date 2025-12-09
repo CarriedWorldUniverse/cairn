@@ -22,6 +22,11 @@ type AbuseReportDetailed struct {
 	ContentReference   string
 	ShadowCopyDate     timeutil.TimeStamp // only for details
 	ShadowCopyRawValue string             // only for details
+
+	// In case the reported content was deleted before the report was handled, this flag can be set
+	// in order to try to determine the abuser/poster ID (and load their details) based on the fields
+	// that might have been saved within the shadow copy (for comments and issues/PRs).
+	ShouldGetAbuserFromShadowCopy bool `xorm:"-"`
 }
 
 func (ard AbuseReportDetailed) ContentTypeIconName() string {
