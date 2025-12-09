@@ -1,11 +1,12 @@
 // Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package forgefed
+package forgefed_test
 
 import (
 	"testing"
 
+	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
@@ -13,7 +14,7 @@ import (
 )
 
 func Test_ForgeUserActivityValidation(t *testing.T) {
-	note := ForgeUserActivityNote{}
+	note := forgefed.ForgeUserActivityNote{}
 	note.Type = "Note"
 	note.Content = ap.NaturalLanguageValues{
 		{
@@ -23,7 +24,7 @@ func Test_ForgeUserActivityValidation(t *testing.T) {
 	}
 	note.URL = ap.IRI("example.org/user-id/57")
 
-	sut := ForgeUserActivity{}
+	sut := forgefed.ForgeUserActivity{}
 	sut.Type = "Create"
 	sut.Actor = ap.IRI("example.org/user-id/23")
 	sut.CC = ap.ItemCollection{

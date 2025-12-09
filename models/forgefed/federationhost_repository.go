@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"forgejo.org/models/db"
+	"forgejo.org/modules/log"
 	"forgejo.org/modules/validation"
 )
 
@@ -16,6 +17,7 @@ func init() {
 }
 
 func GetFederationHost(ctx context.Context, ID int64) (*FederationHost, error) {
+	log.Trace("GetFederationHost: %v", ID)
 	host := new(FederationHost)
 	has, err := db.GetEngine(ctx).Where("id=?", ID).Get(host)
 	if err != nil {
@@ -26,6 +28,7 @@ func GetFederationHost(ctx context.Context, ID int64) (*FederationHost, error) {
 	if res, err := validation.IsValid(host); !res {
 		return nil, err
 	}
+	log.Trace("GetFederationHost: %v, got host %v", ID, host)
 	return host, nil
 }
 

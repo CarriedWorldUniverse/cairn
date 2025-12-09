@@ -1,13 +1,14 @@
 // Copyright 2023 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package forgefed
+package forgefed_test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
+	"forgejo.org/modules/forgefed"
 	"forgejo.org/modules/json"
 
 	ap "github.com/go-ap/activitypub"
@@ -15,18 +16,18 @@ import (
 
 func Test_RepositoryMarshalJSON(t *testing.T) {
 	type testPair struct {
-		item    Repository
+		item    forgefed.Repository
 		want    []byte
 		wantErr error
 	}
 
 	tests := map[string]testPair{
 		"empty": {
-			item: Repository{},
+			item: forgefed.Repository{},
 			want: nil,
 		},
 		"with ID": {
-			item: Repository{
+			item: forgefed.Repository{
 				Actor: ap.Actor{
 					ID: "https://example.com/1",
 				},
@@ -35,7 +36,7 @@ func Test_RepositoryMarshalJSON(t *testing.T) {
 			want: []byte(`{"id":"https://example.com/1"}`),
 		},
 		"with Team as IRI": {
-			item: Repository{
+			item: forgefed.Repository{
 				Team: ap.IRI("https://example.com/1"),
 				Actor: ap.Actor{
 					ID: "https://example.com/1",
@@ -44,7 +45,7 @@ func Test_RepositoryMarshalJSON(t *testing.T) {
 			want: []byte(`{"id":"https://example.com/1","team":"https://example.com/1"}`),
 		},
 		"with Team as IRIs": {
-			item: Repository{
+			item: forgefed.Repository{
 				Team: ap.ItemCollection{
 					ap.IRI("https://example.com/1"),
 					ap.IRI("https://example.com/2"),
@@ -56,7 +57,7 @@ func Test_RepositoryMarshalJSON(t *testing.T) {
 			want: []byte(`{"id":"https://example.com/1","team":["https://example.com/1","https://example.com/2"]}`),
 		},
 		"with Team as Object": {
-			item: Repository{
+			item: forgefed.Repository{
 				Team: ap.Object{ID: "https://example.com/1"},
 				Actor: ap.Actor{
 					ID: "https://example.com/1",
@@ -65,7 +66,7 @@ func Test_RepositoryMarshalJSON(t *testing.T) {
 			want: []byte(`{"id":"https://example.com/1","team":{"id":"https://example.com/1"}}`),
 		},
 		"with Team as slice of Objects": {
-			item: Repository{
+			item: forgefed.Repository{
 				Team: ap.ItemCollection{
 					ap.Object{ID: "https://example.com/1"},
 					ap.Object{ID: "https://example.com/2"},
@@ -95,7 +96,7 @@ func Test_RepositoryMarshalJSON(t *testing.T) {
 func Test_RepositoryUnmarshalJSON(t *testing.T) {
 	type testPair struct {
 		data    []byte
-		want    *Repository
+		want    *forgefed.Repository
 		wantErr error
 	}
 
@@ -110,18 +111,18 @@ func Test_RepositoryUnmarshalJSON(t *testing.T) {
 		},
 		"with Type": {
 			data: []byte(`{"type":"Repository"}`),
-			want: &Repository{
+			want: &forgefed.Repository{
 				Actor: ap.Actor{
-					Type: RepositoryType,
+					Type: forgefed.RepositoryType,
 				},
 			},
 		},
 		"with Type and ID": {
 			data: []byte(`{"id":"https://example.com/1","type":"Repository"}`),
-			want: &Repository{
+			want: &forgefed.Repository{
 				Actor: ap.Actor{
 					ID:   "https://example.com/1",
-					Type: RepositoryType,
+					Type: forgefed.RepositoryType,
 				},
 			},
 		},
@@ -129,7 +130,7 @@ func Test_RepositoryUnmarshalJSON(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := new(Repository)
+			got := new(forgefed.Repository)
 			err := got.UnmarshalJSON(tt.data)
 			if (err != nil || tt.wantErr != nil) && tt.wantErr.Error() != err.Error() {
 				t.Errorf("UnmarshalJSON() error = \"%v\", wantErr \"%v\"", err, tt.wantErr)
