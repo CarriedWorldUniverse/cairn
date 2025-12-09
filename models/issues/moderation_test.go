@@ -39,7 +39,7 @@ func TestIssueDataGetFieldsMap(t *testing.T) {
 	if assert.Len(t, scFields, 8) {
 		testShadowCopyField(t, scFields[0], "RepoID", "2001")
 		testShadowCopyField(t, scFields[1], "Index", "2")
-		testShadowCopyField(t, scFields[2], "PosterID", "1002")
+		testShadowCopyField(t, scFields[2], "Poster", "1002")
 		testShadowCopyField(t, scFields[3], "Title", "Professional marketing services")
 		testShadowCopyField(t, scFields[4], "Content", "Visit my website at promote-your-business.biz for a list of available services.")
 		testShadowCopyField(t, scFields[5], "ContentVersion", "0")
@@ -60,7 +60,7 @@ func TestCommentDataGetFieldsMap(t *testing.T) {
 	scFields := cd.GetFieldsMap()
 
 	if assert.Len(t, scFields, 6) {
-		testShadowCopyField(t, scFields[0], "PosterID", "1002")
+		testShadowCopyField(t, scFields[0], "Poster", "1002")
 		testShadowCopyField(t, scFields[1], "IssueID", "3001")
 		testShadowCopyField(t, scFields[2], "Content", "Check out [alexsmith/website](/alexsmith/website)")
 		testShadowCopyField(t, scFields[3], "ContentVersion", "0")

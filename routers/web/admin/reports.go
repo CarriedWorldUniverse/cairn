@@ -93,6 +93,9 @@ func AbuseReportDetails(ctx *context.Context) {
 	if err = setReportedContentDetails(ctx, reports[0]); err != nil {
 		if user.IsErrUserNotExist(err) || issues.IsErrCommentNotExist(err) || issues.IsErrIssueNotExist(err) || repo_model.IsErrRepoNotExist(err) {
 			ctx.Data["ContentReference"] = ctx.Tr("admin.moderation.deleted_content_ref", reports[0].ContentType, reports[0].ContentID)
+			if contentType == moderation.ReportedContentTypeComment || contentType == moderation.ReportedContentTypeIssue {
+				reports[0].ShouldGetAbuserFromShadowCopy = true
+			}
 		} else {
 			ctx.ServerError("Failed to load reported content details", err)
 			return
@@ -103,11 +106,12 @@ func AbuseReportDetails(ctx *context.Context) {
 }
 
 // setReportedContentDetails adds some values into context data for the given report
-// (icon name, a reference, the URL and in case of issues and comments also the poster name).
+// (icon name, a reference, the URL and in case of issues and comments also the poster name and URL).
 func setReportedContentDetails(ctx *context.Context, report *moderation.AbuseReportDetailed) error {
 	contentReference := ""
 	var contentURL string
 	var poster string
+	var posterURL string
 	contentType := report.ContentType
 	contentID := report.ContentID
 
@@ -143,6 +147,7 @@ func setReportedContentDetails(ctx *context.Context, report *moderation.AbuseRep
 		}
 		if issue.Poster != nil {
 			poster = issue.Poster.Name
+			posterURL = issue.Poster.HomeLink()
 		}
 
 		contentReference = fmt.Sprintf("%s#%d", issue.Repo.FullName(), issue.Index)
@@ -163,6 +168,7 @@ func setReportedContentDetails(ctx *context.Context, report *moderation.AbuseRep
 		}
 		if comment.Poster != nil {
 			poster = comment.Poster.Name
+			posterURL = comment.Poster.HomeLink()
 		}
 
 		contentURL = comment.Link(ctx)
@@ -172,6 +178,7 @@ func setReportedContentDetails(ctx *context.Context, report *moderation.AbuseRep
 	ctx.Data["ContentReference"] = contentReference
 	ctx.Data["ContentURL"] = contentURL
 	ctx.Data["Poster"] = poster
+	ctx.Data["PosterURL"] = posterURL
 	return nil
 }
 

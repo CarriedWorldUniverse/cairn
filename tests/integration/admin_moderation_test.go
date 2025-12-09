@@ -87,9 +87,9 @@ func TestAdminModerationViewReports(t *testing.T) {
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
 			// Check how many reports are being displayed.
-			// Reports linked to the same content (type and id) should be grouped; therefore we should see only 8 instead of 11.
+			// Reports linked to the same content (type and id) should be grouped; therefore we should see only 11 instead of 14.
 			reports := htmlDoc.Find(".admin-setting-content .flex-list .flex-item.report")
-			assert.Equal(t, 8, reports.Length())
+			assert.Equal(t, 11, reports.Length())
 
 			// Check details for shown reports.
 			testReportDetails(t, htmlDoc, "1", "octicon-person", "@SPAM-services", "/SPAM-services", "Illegal content", "1")
@@ -102,17 +102,24 @@ func TestAdminModerationViewReports(t *testing.T) {
 			testReportDetails(t, htmlDoc, "8", "octicon-issue-opened", "contributor/first#1", "/contributor/first/issues/1", "Other violations of platform rules", "1")
 			// #10 is for a Ghost user
 			testReportDetails(t, htmlDoc, "10", "octicon-person", "Reported content with type 1 and id 9999 no longer exists", "", "Other violations of platform rules", "1")
-			// #11 if for a comment who's poster was deleted
+			// #11 is for a comment who's poster was deleted
 			testReportDetails(t, htmlDoc, "11", "octicon-comment", "contributor/first/issues/1#issuecomment-1003", "/contributor/first/issues/1#issuecomment-1003", "Spam", "1")
+			// #12 is for a comment that was deleted but its poster still exists
+			testReportDetails(t, htmlDoc, "12", "octicon-comment", "Reported content with type 4 and id 9991 no longer exists", "", "Other violations of platform rules", "1")
+			// #13 is for a comment that was deleted and the poster was also deleted
+			testReportDetails(t, htmlDoc, "13", "octicon-comment", "Reported content with type 4 and id 9992 no longer exists", "", "Spam", "1")
+			// #14 is for a issue that was deleted but its poster still exists
+			testReportDetails(t, htmlDoc, "14", "octicon-issue-opened", "Reported content with type 3 and id 9991 no longer exists", "", "Spam", "1")
 
 			t.Run("reports details page", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
 
+				// ## There are 3 open reports linked to user 1002.
 				req = NewRequest(t, "GET", "/admin/moderation/reports/type/1/id/1002")
 				resp = session.MakeRequest(t, req, http.StatusOK)
 				htmlDoc = NewHTMLParser(t, resp.Body)
 
-				// Check the title (content reference) and corresponding URL
+				// Check the title (content reference) and corresponding URL.
 				title := htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title a")
 				assert.Equal(t, 1, title.Length())
 				assert.Equal(t, "spammer01", title.Text())
@@ -124,7 +131,7 @@ func TestAdminModerationViewReports(t *testing.T) {
 				reports = htmlDoc.Find(".admin-setting-content .flex-list .flex-item")
 				assert.Equal(t, 3, reports.Length())
 
-				// Poster of comment 1003 was deleted; make sure the details page is still rendered correctly.
+				// ## Poster of comment 1003 was deleted; make sure the details page is still rendered correctly.
 				req = NewRequest(t, "GET", "/admin/moderation/reports/type/4/id/1003")
 				resp = session.MakeRequest(t, req, http.StatusOK)
 				htmlDoc = NewHTMLParser(t, resp.Body)
@@ -136,6 +143,92 @@ func TestAdminModerationViewReports(t *testing.T) {
 				href, exists = title.Attr("href")
 				assert.True(t, exists)
 				assert.Equal(t, "/contributor/first/issues/1#issuecomment-1003", href)
+
+				// ## Comment 9991 was deleted but its poster still exists.
+				req = NewRequest(t, "GET", "/admin/moderation/reports/type/4/id/9991")
+				resp = session.MakeRequest(t, req, http.StatusOK)
+				htmlDoc = NewHTMLParser(t, resp.Body)
+
+				// Check the title (content reference); no URL in case of deleted content.
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title a")
+				assert.Equal(t, 0, title.Length()) // no anchor because the reported content was deleted
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title em")
+				assert.Equal(t, 1, title.Length()) // a generic emphasised title is shown for deleted content
+				assert.Equal(t, "Reported content with type 4 and id 9991 no longer exists", title.Text())
+
+				// Check shadow copies for deleted comment when poster still exists.
+				reports := htmlDoc.Find(".admin-setting-content .flex-list .flex-item")
+				assert.Equal(t, 1, reports.Length()) // there is only one report for this content
+				shadowCopyRows := htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr")
+				assert.Equal(t, 6, shadowCopyRows.Length()) // a shadow copy was created and it has 6 fields
+				posterRowCells := htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:first-of-type td")
+				assert.Equal(t, 2, posterRowCells.Length())
+				assert.Equal(t, "Poster", posterRowCells.Nodes[0].FirstChild.Data) // in case of comment shadow copies, the first field should be 'Poster'
+				// For reports of deleted comments, in case the poster still exists
+				// the value of 'Poster' field should contain a link to the poster profile.
+				poster := htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:first-of-type td:last-of-type a")
+				assert.Equal(t, 1, poster.Length())
+				assert.Equal(t, "grace", poster.Text())
+				href, exists = poster.Attr("href")
+				assert.True(t, exists)
+				assert.Equal(t, "/grace", href)
+
+				// ## Comment 9992 was deleted and its poster was also deleted.
+				req = NewRequest(t, "GET", "/admin/moderation/reports/type/4/id/9992")
+				resp = session.MakeRequest(t, req, http.StatusOK)
+				htmlDoc = NewHTMLParser(t, resp.Body)
+
+				// Check the title (content reference); no URL in case of deleted content.
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title a")
+				assert.Equal(t, 0, title.Length()) // no anchor because the reported content was deleted
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title em")
+				assert.Equal(t, 1, title.Length()) // a generic emphasised title is shown for deleted content
+				assert.Equal(t, "Reported content with type 4 and id 9992 no longer exists", title.Text())
+
+				// Check shadow copies for deleted comment when poster was also deleted.
+				reports = htmlDoc.Find(".admin-setting-content .flex-list .flex-item")
+				assert.Equal(t, 1, reports.Length()) // there is only one report for this content
+				shadowCopyRows = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr")
+				assert.Equal(t, 6, shadowCopyRows.Length()) // a shadow copy was created and it has 6 fields
+				posterRowCells = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:first-of-type td")
+				assert.Equal(t, 2, posterRowCells.Length())
+				assert.Equal(t, "Poster", posterRowCells.Nodes[0].FirstChild.Data) // in case of comment shadow copies, the first field should be 'Poster'
+				// For reports of deleted comments, in case the poster was also deleted
+				// the value of 'Poster' field cannot contain a link to the poster profile but only their ID.
+				poster = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:first-of-type td:last-of-type a")
+				assert.Equal(t, 0, poster.Length())
+				poster = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:first-of-type td:last-of-type")
+				assert.Equal(t, 1, poster.Length())
+				assert.Equal(t, "9999", poster.Text())
+
+				// ## Issue 9991 was deleted but its poster still exists.
+				req = NewRequest(t, "GET", "/admin/moderation/reports/type/3/id/9991")
+				resp = session.MakeRequest(t, req, http.StatusOK)
+				htmlDoc = NewHTMLParser(t, resp.Body)
+
+				// Check the title (content reference); no URL in case of deleted content.
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title a")
+				assert.Equal(t, 0, title.Length()) // no anchor because the reported content was deleted
+				title = htmlDoc.Find(".admin-setting-content .flex-item-main .flex-item-title em")
+				assert.Equal(t, 1, title.Length()) // a generic emphasised title is shown for deleted content
+				assert.Equal(t, "Reported content with type 3 and id 9991 no longer exists", title.Text())
+
+				// Check shadow copies for deleted issue when poster still exists.
+				reports = htmlDoc.Find(".admin-setting-content .flex-list .flex-item")
+				assert.Equal(t, 1, reports.Length()) // there is only one report for this content
+				shadowCopyRows = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr")
+				assert.Equal(t, 8, shadowCopyRows.Length()) // a shadow copy was created and it has 8 fields
+				posterRowCells = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:nth-of-type(3) td")
+				assert.Equal(t, 2, posterRowCells.Length())
+				assert.Equal(t, "Poster", posterRowCells.Nodes[0].FirstChild.Data) // in case of issue shadow copies, the third field should be 'Poster'
+				// For reports of deleted issues, in case the poster still exists
+				// the value of 'Poster' field should contain a link to the poster profile.
+				poster = htmlDoc.Find(".admin-setting-content .flex-list .flex-item:first-of-type details table tr:nth-of-type(3) td:last-of-type a")
+				assert.Equal(t, 1, poster.Length())
+				assert.Equal(t, "frank", poster.Text())
+				href, exists = poster.Attr("href")
+				assert.True(t, exists)
+				assert.Equal(t, "/frank", href)
 			})
 		})
 	})

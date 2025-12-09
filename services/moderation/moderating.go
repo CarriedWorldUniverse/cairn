@@ -61,6 +61,9 @@ func (ca ContentAction) IsValid() bool {
 
 // GetShadowCopyMap unmarshals the shadow copy raw value of the given abuse report and returns a list of <key, value> pairs
 // (to be rendered when the report is reviewed by an admin).
+// It also checks whether the ShouldGetAbuserFromShadowCopy runtime flag is set on the report and if so will try to
+// retrieve the abusive user (when their ID can be found within the shadow copy) in order to set some details
+// (name and profile link) as context data.
 // If the report does not have a shadow copy ID or the raw value is empty, returns nil.
 // If the unmarshal fails a warning is added in the logs and returns nil.
 func GetShadowCopyMap(ctx *context.Context, ard *moderation.AbuseReportDetailed) []moderation.ShadowCopyField {
@@ -81,7 +84,25 @@ func GetShadowCopyMap(ctx *context.Context, ard *moderation.AbuseReportDetailed)
 			log.Warn("Unmarshal failed for shadow copy #%d. %v", ard.ShadowCopyID.Int64, err)
 			return nil
 		}
+
+		if ard.ShouldGetAbuserFromShadowCopy {
+			abuserID, isValidID := data.GetAbuserID()
+			if isValidID {
+				setAbuserDetails(ctx, abuserID)
+			}
+		}
+
 		return data.GetFieldsMap()
 	}
 	return nil
+}
+
+// setAbuserDetails tries to retrieve a user with the given ID and in case
+// a user is found it will set their name and profile URL into ctx.Data.
+func setAbuserDetails(ctx *context.Context, abuserID int64) {
+	abuser, err := user.GetPossibleUserByID(ctx, abuserID)
+	if err == nil {
+		ctx.Data["AbuserName"] = abuser.Name
+		ctx.Data["AbuserURL"] = abuser.HomeLink()
+	}
 }

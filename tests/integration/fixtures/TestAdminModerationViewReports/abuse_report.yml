@@ -120,3 +120,36 @@
   remarks: This user just posted a spammy comment on my issue.
   shadow_copy_id: null
   created_unix: 1752697820 # 2025-07-16 20:30:20
+
+- # Report of a comment that was afterwards deleted (and a shadow copy was created) but the poster still exists.
+  id: 12
+  status: 1
+  reporter_id: 1001 # @contributor
+  content_type: 4   # Comment
+  content_id: 9991  # deleted comment
+  category: 1       # Other
+  remarks: Accuses me of being a frog.
+  shadow_copy_id: 1201
+  created_unix: 1752748200 # 2005-07-17 10:30:00
+
+- # Report of a comment that was afterwards deleted (and a shadow copy was created) and the poster was also deleted.
+  id: 13
+  status: 1
+  reporter_id: 1004 # @reporter1
+  content_type: 4   # Comment
+  content_id: 9992  # deleted comment
+  category: 2       # Spam
+  remarks: This comment advertises a product.
+  shadow_copy_id: 1301
+  created_unix: 1752751260 # 2005-07-17 11:21:00
+
+- # Report of an issue that was afterwards deleted (and a shadow copy was created) but the poster still exists.
+  id: 14
+  status: 1
+  reporter_id: 1004 # @reporter1
+  content_type: 3   # Issue (issues or pull requests)
+  content_id: 9991  # deleted issue
+  category: 2       # Spam
+  remarks: This issue was created for advertising a business.
+  shadow_copy_id: 1401
+  created_unix: 1752751320 # 2005-07-17 11:22:00

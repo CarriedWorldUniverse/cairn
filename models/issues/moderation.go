@@ -27,17 +27,22 @@ type IssueData struct {
 
 // Implements GetFieldsMap() from ShadowCopyData interface, returning a list of <key, value> pairs
 // to be used when rendering the shadow copy for admins reviewing the corresponding abuse report(s).
-func (cd IssueData) GetFieldsMap() []moderation.ShadowCopyField {
+func (id IssueData) GetFieldsMap() []moderation.ShadowCopyField {
 	return []moderation.ShadowCopyField{
-		{Key: "RepoID", Value: strconv.FormatInt(cd.RepoID, 10)},
-		{Key: "Index", Value: strconv.FormatInt(cd.Index, 10)},
-		{Key: "PosterID", Value: strconv.FormatInt(cd.PosterID, 10)},
-		{Key: "Title", Value: cd.Title},
-		{Key: "Content", Value: cd.Content},
-		{Key: "ContentVersion", Value: strconv.Itoa(cd.ContentVersion)},
-		{Key: "CreatedUnix", Value: cd.CreatedUnix.AsLocalTime().String()},
-		{Key: "UpdatedUnix", Value: cd.UpdatedUnix.AsLocalTime().String()},
+		{Key: "RepoID", Value: strconv.FormatInt(id.RepoID, 10)},
+		{Key: "Index", Value: strconv.FormatInt(id.Index, 10)},
+		{Key: "Poster", Value: strconv.FormatInt(id.PosterID, 10)},
+		{Key: "Title", Value: id.Title},
+		{Key: "Content", Value: id.Content},
+		{Key: "ContentVersion", Value: strconv.Itoa(id.ContentVersion)},
+		{Key: "CreatedUnix", Value: id.CreatedUnix.AsLocalTime().String()},
+		{Key: "UpdatedUnix", Value: id.UpdatedUnix.AsLocalTime().String()},
 	}
+}
+
+// Implements GetAbuserID() from ShadowCopyData interface, returning the value of PosterID field.
+func (id *IssueData) GetAbuserID() (int64, bool) {
+	return id.PosterID, true
 }
 
 // newIssueData creates a trimmed down issue to be used just to create a JSON structure
@@ -70,13 +75,18 @@ type CommentData struct {
 // to be used when rendering the shadow copy for admins reviewing the corresponding abuse report(s).
 func (cd CommentData) GetFieldsMap() []moderation.ShadowCopyField {
 	return []moderation.ShadowCopyField{
-		{Key: "PosterID", Value: strconv.FormatInt(cd.PosterID, 10)},
+		{Key: "Poster", Value: strconv.FormatInt(cd.PosterID, 10)},
 		{Key: "IssueID", Value: strconv.FormatInt(cd.IssueID, 10)},
 		{Key: "Content", Value: cd.Content},
 		{Key: "ContentVersion", Value: strconv.Itoa(cd.ContentVersion)},
 		{Key: "CreatedUnix", Value: cd.CreatedUnix.AsLocalTime().String()},
 		{Key: "UpdatedUnix", Value: cd.UpdatedUnix.AsLocalTime().String()},
 	}
+}
+
+// Implements GetAbuserID() from ShadowCopyData interface, returning the value of PosterID field.
+func (cd *CommentData) GetAbuserID() (int64, bool) {
+	return cd.PosterID, true
 }
 
 // newCommentData creates a trimmed down comment to be used just to create a JSON structure
