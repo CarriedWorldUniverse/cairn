@@ -43,36 +43,36 @@ var sysStatus struct {
 	NumGoroutine int
 
 	// General statistics.
-	MemAllocated string // bytes allocated and still in use
-	MemTotal     string // bytes allocated (even if freed)
-	MemSys       string // bytes obtained from system (sum of XxxSys below)
+	MemAllocated int64  // bytes allocated and still in use
+	MemTotal     int64  // bytes allocated (even if freed)
+	MemSys       int64  // bytes obtained from system (sum of XxxSys below)
 	Lookups      uint64 // number of pointer lookups
 	MemMallocs   uint64 // number of mallocs
 	MemFrees     uint64 // number of frees
 
 	// Main allocation heap statistics.
-	HeapAlloc    string // bytes allocated and still in use
-	HeapSys      string // bytes obtained from system
-	HeapIdle     string // bytes in idle spans
-	HeapInuse    string // bytes in non-idle span
-	HeapReleased string // bytes released to the OS
+	HeapAlloc    int64  // bytes allocated and still in use
+	HeapSys      int64  // bytes obtained from system
+	HeapIdle     int64  // bytes in idle spans
+	HeapInuse    int64  // bytes in non-idle span
+	HeapReleased int64  // bytes released to the OS
 	HeapObjects  uint64 // total number of allocated objects
 
 	// Low-level fixed-size structure allocator statistics.
 	//	Inuse is bytes used now.
 	//	Sys is bytes obtained from system.
-	StackInuse  string // bootstrap stacks
-	StackSys    string
-	MSpanInuse  string // mspan structures
-	MSpanSys    string
-	MCacheInuse string // mcache structures
-	MCacheSys   string
-	BuckHashSys string // profiling bucket hash table
-	GCSys       string // GC metadata
-	OtherSys    string // other system allocations
+	StackInuse  int64 // bootstrap stacks
+	StackSys    int64
+	MSpanInuse  int64 // mspan structures
+	MSpanSys    int64
+	MCacheInuse int64 // mcache structures
+	MCacheSys   int64
+	BuckHashSys int64 // profiling bucket hash table
+	GCSys       int64 // GC metadata
+	OtherSys    int64 // other system allocations
 
 	// Garbage collector statistics.
-	NextGC       string // next run in HeapAlloc time (bytes)
+	NextGC       int64  // next run in HeapAlloc time (bytes)
 	LastGCTime   string // last run time
 	PauseTotalNs string
 	PauseNs      string // circular buffer of recent GC pause times, most recent at [(NumGC+255)%256]
@@ -86,31 +86,31 @@ func updateSystemStatus() {
 	runtime.ReadMemStats(m)
 	sysStatus.NumGoroutine = runtime.NumGoroutine()
 
-	sysStatus.MemAllocated = base.FileSize(int64(m.Alloc))
-	sysStatus.MemTotal = base.FileSize(int64(m.TotalAlloc))
-	sysStatus.MemSys = base.FileSize(int64(m.Sys))
+	sysStatus.MemAllocated = int64(m.Alloc)
+	sysStatus.MemTotal = int64(m.TotalAlloc)
+	sysStatus.MemSys = int64(m.Sys)
 	sysStatus.Lookups = m.Lookups
 	sysStatus.MemMallocs = m.Mallocs
 	sysStatus.MemFrees = m.Frees
 
-	sysStatus.HeapAlloc = base.FileSize(int64(m.HeapAlloc))
-	sysStatus.HeapSys = base.FileSize(int64(m.HeapSys))
-	sysStatus.HeapIdle = base.FileSize(int64(m.HeapIdle))
-	sysStatus.HeapInuse = base.FileSize(int64(m.HeapInuse))
-	sysStatus.HeapReleased = base.FileSize(int64(m.HeapReleased))
+	sysStatus.HeapAlloc = int64(m.HeapAlloc)
+	sysStatus.HeapSys = int64(m.HeapSys)
+	sysStatus.HeapIdle = int64(m.HeapIdle)
+	sysStatus.HeapInuse = int64(m.HeapInuse)
+	sysStatus.HeapReleased = int64(m.HeapReleased)
 	sysStatus.HeapObjects = m.HeapObjects
 
-	sysStatus.StackInuse = base.FileSize(int64(m.StackInuse))
-	sysStatus.StackSys = base.FileSize(int64(m.StackSys))
-	sysStatus.MSpanInuse = base.FileSize(int64(m.MSpanInuse))
-	sysStatus.MSpanSys = base.FileSize(int64(m.MSpanSys))
-	sysStatus.MCacheInuse = base.FileSize(int64(m.MCacheInuse))
-	sysStatus.MCacheSys = base.FileSize(int64(m.MCacheSys))
-	sysStatus.BuckHashSys = base.FileSize(int64(m.BuckHashSys))
-	sysStatus.GCSys = base.FileSize(int64(m.GCSys))
-	sysStatus.OtherSys = base.FileSize(int64(m.OtherSys))
+	sysStatus.StackInuse = int64(m.StackInuse)
+	sysStatus.StackSys = int64(m.StackSys)
+	sysStatus.MSpanInuse = int64(m.MSpanInuse)
+	sysStatus.MSpanSys = int64(m.MSpanSys)
+	sysStatus.MCacheInuse = int64(m.MCacheInuse)
+	sysStatus.MCacheSys = int64(m.MCacheSys)
+	sysStatus.BuckHashSys = int64(m.BuckHashSys)
+	sysStatus.GCSys = int64(m.GCSys)
+	sysStatus.OtherSys = int64(m.OtherSys)
 
-	sysStatus.NextGC = base.FileSize(int64(m.NextGC))
+	sysStatus.NextGC = int64(m.NextGC)
 	sysStatus.LastGCTime = time.Unix(0, int64(m.LastGC)).Format(time.RFC3339)
 	sysStatus.PauseTotalNs = fmt.Sprintf("%.1fs", float64(m.PauseTotalNs)/1000/1000/1000)
 	sysStatus.PauseNs = fmt.Sprintf("%.3fs", float64(m.PauseNs[(m.NumGC+255)%256])/1000/1000/1000)
