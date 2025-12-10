@@ -72,42 +72,44 @@
 								{{svg "octicon-x"}}
 							</button>
 							{{if .ContentReference}} {{/* the reference is missing when the content was already deleted */}}
-							<details class="item dropdown dir-rtl">
+							<details class="dropdown item dir-rtl">
 								<summary class="tw-p-1" data-tooltip-content="{{ctx.Locale.Tr "profile.actions.tooltip"}}">{{svg "octicon-kebab-horizontal"}}</summary>
-								<ul
-										hx-target="{{$reportDivSelector}}" hx-indicator="{{$reportDivSelector}}"
-										hx-vals='{"content_type": {{.ContentType}}, "content_id": {{.ContentID}}}'>
-									{{if .ReportedContentIsUser}}
-									<li>
-										<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionSuspendAccount}}}' hx-swap="none" class="item">
-											{{svg "octicon-x"}}{{ctx.Locale.Tr "moderation.action.account.suspend"}}
-										</a>
-									</li>
-									<li>
-										<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteAccount}}, "report_action": {{$.MarkAsHandled}}}' class="item">
-											{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.account.delete"}}
-										</a>
-									</li>
-									{{else if .ReportedContentIsRepo}}
-									<li>
-										<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteRepo}}, "report_action": {{$.MarkAsHandled}}}' class="item">
-											{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.repo.delete"}}
-										</a>
-									</li>
-									{{else if .ReportedContentIsIssue}}
-									<li>
-										<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteIssue}}, "report_action": {{$.MarkAsHandled}}}' class="item">
-											{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.issue.delete"}}
-										</a>
-									</li>
-									{{else if .ReportedContentIsComment}}
-									<li>
-										<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteComment}}, "report_action": {{$.MarkAsHandled}}}' class="item">
-											{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.comment.delete"}}
-										</a>
-									</li>
-									{{end}}
-								</ul>
+								<div class="content">
+									<ul
+											hx-target="{{$reportDivSelector}}" hx-indicator="{{$reportDivSelector}}"
+											hx-vals='{"content_type": {{.ContentType}}, "content_id": {{.ContentID}}}'>
+										{{if .ReportedContentIsUser}}
+										<li>
+											<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionSuspendAccount}}}' hx-swap="none" class="item">
+												{{svg "octicon-x"}}{{ctx.Locale.Tr "moderation.action.account.suspend"}}
+											</a>
+										</li>
+										<li>
+											<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteAccount}}, "report_action": {{$.MarkAsHandled}}}' class="item">
+												{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.account.delete"}}
+											</a>
+										</li>
+										{{else if .ReportedContentIsRepo}}
+										<li>
+											<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteRepo}}, "report_action": {{$.MarkAsHandled}}}' class="item">
+												{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.repo.delete"}}
+											</a>
+										</li>
+										{{else if .ReportedContentIsIssue}}
+										<li>
+											<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteIssue}}, "report_action": {{$.MarkAsHandled}}}' class="item">
+												{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.issue.delete"}}
+											</a>
+										</li>
+										{{else if .ReportedContentIsComment}}
+										<li>
+											<a hx-post="{{$postURL}}" hx-vals='{"content_action": {{$.ActionDeleteComment}}, "report_action": {{$.MarkAsHandled}}}' class="item">
+												{{svg "octicon-trash"}}{{ctx.Locale.Tr "moderation.action.comment.delete"}}
+											</a>
+										</li>
+										{{end}}
+									</ul>
+								</div>
 							</details>
 							{{end}}
 						</div>

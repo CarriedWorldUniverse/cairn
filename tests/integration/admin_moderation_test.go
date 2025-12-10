@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testReportDetails(t *testing.T, htmlDoc *HTMLDoc, reportID, contentIcon, contentRef, contentURL, category, reportsNo string) {
+func testReportDetails(t *testing.T, htmlDoc *HTMLDoc, reportID, contentIcon, contentRef, contentURL, category, reportsNo string, hasMoreActions bool) {
 	// Check icon octicon
 	icon := htmlDoc.Find("#report-" + reportID + " svg." + contentIcon)
 	assert.Equal(t, 1, icon.Length())
@@ -49,6 +49,9 @@ func testReportDetails(t *testing.T, htmlDoc *HTMLDoc, reportID, contentIcon, co
 	count := htmlDoc.Find("#report-" + reportID + " a span")
 	assert.Equal(t, 1, count.Length())
 	assert.Equal(t, reportsNo, count.Text())
+
+	// Check 'More actions' (⋯) dropdown
+	htmlDoc.AssertElement(t, "#report-"+reportID+" > .flex-item-trailing .button-sequence details.dropdown", hasMoreActions)
 }
 
 func TestAdminModerationViewReports(t *testing.T) {
@@ -92,24 +95,24 @@ func TestAdminModerationViewReports(t *testing.T) {
 			assert.Equal(t, 11, reports.Length())
 
 			// Check details for shown reports.
-			testReportDetails(t, htmlDoc, "1", "octicon-person", "@SPAM-services", "/SPAM-services", "Illegal content", "1")
-			testReportDetails(t, htmlDoc, "2", "octicon-repo", "SPAM-services/spammer-Tools", "/SPAM-services/spammer-Tools", "Illegal content", "1")
-			testReportDetails(t, htmlDoc, "3", "octicon-issue-opened", "SPAM-services/spammer-Tools#1", "/SPAM-services/spammer-Tools/issues/1", "Spam", "1")
+			testReportDetails(t, htmlDoc, "1", "octicon-person", "@SPAM-services", "/SPAM-services", "Illegal content", "1", true)
+			testReportDetails(t, htmlDoc, "2", "octicon-repo", "SPAM-services/spammer-Tools", "/SPAM-services/spammer-Tools", "Illegal content", "1", true)
+			testReportDetails(t, htmlDoc, "3", "octicon-issue-opened", "SPAM-services/spammer-Tools#1", "/SPAM-services/spammer-Tools/issues/1", "Spam", "1", true)
 			// #4 is combined with #7 and #9
-			testReportDetails(t, htmlDoc, "4", "octicon-person", "@spammer01", "/spammer01", "Spam", "3")
+			testReportDetails(t, htmlDoc, "4", "octicon-person", "@spammer01", "/spammer01", "Spam", "3", true)
 			// #5 is combined with #6
-			testReportDetails(t, htmlDoc, "5", "octicon-comment", "contributor/first/issues/1#issuecomment-1001", "/contributor/first/issues/1#issuecomment-1001", "Malware", "2")
-			testReportDetails(t, htmlDoc, "8", "octicon-issue-opened", "contributor/first#1", "/contributor/first/issues/1", "Other violations of platform rules", "1")
+			testReportDetails(t, htmlDoc, "5", "octicon-comment", "contributor/first/issues/1#issuecomment-1001", "/contributor/first/issues/1#issuecomment-1001", "Malware", "2", true)
+			testReportDetails(t, htmlDoc, "8", "octicon-issue-opened", "contributor/first#1", "/contributor/first/issues/1", "Other violations of platform rules", "1", true)
 			// #10 is for a Ghost user
-			testReportDetails(t, htmlDoc, "10", "octicon-person", "Reported content with type 1 and id 9999 no longer exists", "", "Other violations of platform rules", "1")
+			testReportDetails(t, htmlDoc, "10", "octicon-person", "Reported content with type 1 and id 9999 no longer exists", "", "Other violations of platform rules", "1", false)
 			// #11 is for a comment who's poster was deleted
-			testReportDetails(t, htmlDoc, "11", "octicon-comment", "contributor/first/issues/1#issuecomment-1003", "/contributor/first/issues/1#issuecomment-1003", "Spam", "1")
+			testReportDetails(t, htmlDoc, "11", "octicon-comment", "contributor/first/issues/1#issuecomment-1003", "/contributor/first/issues/1#issuecomment-1003", "Spam", "1", true)
 			// #12 is for a comment that was deleted but its poster still exists
-			testReportDetails(t, htmlDoc, "12", "octicon-comment", "Reported content with type 4 and id 9991 no longer exists", "", "Other violations of platform rules", "1")
+			testReportDetails(t, htmlDoc, "12", "octicon-comment", "Reported content with type 4 and id 9991 no longer exists", "", "Other violations of platform rules", "1", false)
 			// #13 is for a comment that was deleted and the poster was also deleted
-			testReportDetails(t, htmlDoc, "13", "octicon-comment", "Reported content with type 4 and id 9992 no longer exists", "", "Spam", "1")
+			testReportDetails(t, htmlDoc, "13", "octicon-comment", "Reported content with type 4 and id 9992 no longer exists", "", "Spam", "1", false)
 			// #14 is for a issue that was deleted but its poster still exists
-			testReportDetails(t, htmlDoc, "14", "octicon-issue-opened", "Reported content with type 3 and id 9991 no longer exists", "", "Spam", "1")
+			testReportDetails(t, htmlDoc, "14", "octicon-issue-opened", "Reported content with type 3 and id 9991 no longer exists", "", "Spam", "1", false)
 
 			t.Run("reports details page", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
