@@ -126,5 +126,5 @@ func TestPullRequest_GetDefaultMergeMessage_GlobalTemplate(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Default merge message template", mergeMessage)
-	assert.Equal(t, "This line was read from .forgejo/default_merge_message/MERGE_TEMPLATE.md", body)
+	assert.Equal(t, "\nThis line was read from .forgejo/default_merge_message/MERGE_TEMPLATE.md", body)
 }
