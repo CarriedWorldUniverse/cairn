@@ -1591,3 +1591,43 @@ func TestIssueAndPullRedirect(t *testing.T) {
 	req = NewRequest(t, "GET", "/user2/repo1/pulls/9999999")
 	MakeRequest(t, req, http.StatusNotFound)
 }
+
+func TestIssueUrlHandling(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Overview correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "user2/repo1/issues")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Issue correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "user2/repo1/issues/1")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Overview left-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/extra_text_issues")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Overview right-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/issues_extra_text")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Issue left-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/extra_text_issues/5")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Issue right-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/issues_extra_text/5")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+}

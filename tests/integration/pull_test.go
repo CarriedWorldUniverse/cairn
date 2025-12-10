@@ -171,3 +171,73 @@ func TestShowMergeForManualMerge(t *testing.T) {
 	htmlDoc := NewHTMLParser(t, resp.Body)
 	htmlDoc.AssertElement(t, "#pull-request-merge-form", true)
 }
+
+func TestPullUrlHandling(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Overview correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/pulls")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Pull correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/pulls/5")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Overview left-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/extra_text_pulls")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Overview right-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/pulls_extra_text")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Pull left-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/extra_text_pulls/5")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Pull right-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/pulls_extra_text/5")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("POST Title correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		session := loginUser(t, "user2")
+
+		req := NewRequestWithValues(t, "POST", "/user2/repo1/issues/5/title", map[string]string{"title": "test"})
+		session.MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("POST Title padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		session := loginUser(t, "user2")
+
+		req := NewRequestWithValues(t, "POST", "/user2/repo1/issues_extra_text/5/title", map[string]string{"title": "test"})
+		session.MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Pull content overview correct", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/pulls/5/content-history/overview")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Pull content overview left-padded", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		req := NewRequest(t, "GET", "/user2/repo1/extra_text_pulls/5/content-history/overview")
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+}
