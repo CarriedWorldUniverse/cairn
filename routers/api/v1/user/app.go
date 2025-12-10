@@ -24,7 +24,7 @@ import (
 func ListAccessTokens(ctx *context.APIContext) {
 	// swagger:operation GET /users/{username}/tokens user userGetTokens
 	// ---
-	// summary: List the authenticated user's access tokens
+	// summary: List the specified user's access tokens
 	// produces:
 	// - application/json
 	// parameters:
@@ -71,11 +71,11 @@ func ListAccessTokens(ctx *context.APIContext) {
 	ctx.JSON(http.StatusOK, &apiTokens)
 }
 
-// CreateAccessToken creates an access token for doer
+// CreateAccessToken creates an access token
 func CreateAccessToken(ctx *context.APIContext) {
 	// swagger:operation POST /users/{username}/tokens user userCreateToken
 	// ---
-	// summary: Generate an access token for the current user
+	// summary: Generate an access token for the specified user
 	// consumes:
 	// - application/json
 	// produces:
@@ -141,11 +141,11 @@ func CreateAccessToken(ctx *context.APIContext) {
 	})
 }
 
-// DeleteAccessToken deletes an access token from doer's account
+// DeleteAccessToken deletes an access token
 func DeleteAccessToken(ctx *context.APIContext) {
 	// swagger:operation DELETE /users/{username}/tokens/{token} user userDeleteAccessToken
 	// ---
-	// summary: Delete an access token from current user's account
+	// summary: Delete an access token from the specified user's account
 	// produces:
 	// - application/json
 	// parameters:
