@@ -122,3 +122,52 @@ func TestCalReleaseNumCommitsBehind(t *testing.T) {
 		assert.Equal(t, expectedComputation[r.TagName], actual, "wrong computed fields for %s: %#v", r.TagName, r)
 	}
 }
+
+func Test_getReleaseInfos(t *testing.T) {
+	testCases := []struct {
+		name              string
+		listOptions       db.ListOptions
+		expectedRepoCount int
+		expectedCount     int64
+	}{
+		{
+			name:              "page 1 with page size 1",
+			listOptions:       db.ListOptions{Page: 1, PageSize: 1},
+			expectedRepoCount: 1,
+			expectedCount:     3,
+		},
+		{
+			name:              "page 1 with page size 10",
+			listOptions:       db.ListOptions{Page: 1, PageSize: 10},
+			expectedRepoCount: 3,
+			expectedCount:     3,
+		},
+		{
+			name:              "list all",
+			listOptions:       db.ListOptions{ListAll: true},
+			expectedRepoCount: 3,
+			expectedCount:     3,
+		},
+	}
+
+	unittest.PrepareTestEnv(t)
+	ctx, _ := contexttest.MockContext(t, "user1/repo-release/releases")
+	contexttest.LoadRepo(t, ctx, 1)
+	contexttest.LoadGitRepo(t, ctx)
+	assert.NoError(t, db.Insert(ctx, &repo_model.Release{RepoID: ctx.Repo.Repository.ID, Title: "myrel 1", TagName: "myrel_v1.0"}))
+	assert.NoError(t, db.Insert(ctx, &repo_model.Release{RepoID: ctx.Repo.Repository.ID, Title: "myrel 2", TagName: "myrel_v2.0"}))
+	assert.NoError(t, db.Insert(ctx, &repo_model.Release{RepoID: ctx.Repo.Repository.ID, Title: "myrel 3", TagName: ""}))
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			repos, count, err := getReleaseInfos(ctx, &repo_model.FindReleasesOptions{
+				RepoID:      ctx.Repo.Repository.ID,
+				Keyword:     "myrel",
+				ListOptions: tc.listOptions,
+			})
+			require.NoError(t, err)
+			assert.Len(t, repos, tc.expectedRepoCount)
+			assert.Equal(t, tc.expectedCount, count)
+		})
+	}
+}
