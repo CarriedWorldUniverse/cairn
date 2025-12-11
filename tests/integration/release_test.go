@@ -359,6 +359,24 @@ func TestViewReleaseListKeyword(t *testing.T) {
 	}, links)
 }
 
+func TestViewReleaseListKeywordNoPagination(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	link := repo.Link() + "/releases?q=testing&limit=1"
+
+	session := loginUser(t, "user1")
+	req := NewRequest(t, "GET", link)
+	rsp := session.MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, rsp.Body)
+	releases := htmlDoc.Find("#release-list li.ui.grid")
+	assert.Equal(t, 1, releases.Length())
+
+	pagination := htmlDoc.Find("div.pagination")
+	assert.Zero(t, pagination.Length())
+}
+
 func TestReleaseOnCommit(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 

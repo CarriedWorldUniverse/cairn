@@ -79,10 +79,18 @@ type ReleaseInfo struct {
 	CommitStatuses []*git_model.CommitStatus
 }
 
-func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions) ([]*ReleaseInfo, error) {
+func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions) ([]*ReleaseInfo, int64, error) {
 	releases, err := db.Find[repo_model.Release](ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	counts := int64(len(releases))
+	if !opts.IsListAll() {
+		counts, err = db.Count[repo_model.Release](ctx, opts)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	for _, release := range releases {
@@ -90,7 +98,7 @@ func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions)
 	}
 
 	if err = repo_model.GetReleaseAttachments(ctx, releases...); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Temporary cache commits count of used branches to speed up.
@@ -111,7 +119,7 @@ func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions)
 				if user_model.IsErrUserNotExist(err) {
 					r.Publisher = user_model.NewGhostUser()
 				} else {
-					return nil, err
+					return nil, 0, err
 				}
 			}
 			cacheUsers[r.PublisherID] = r.Publisher
@@ -126,17 +134,17 @@ func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions)
 			Ctx:     ctx,
 		}, r.Note)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		err = r.LoadArchiveDownloadCount(ctx)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		if !r.IsDraft {
 			if err := calReleaseNumCommitsBehind(ctx.Repo, r, countCache); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 
@@ -147,7 +155,7 @@ func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions)
 		if canReadActions {
 			statuses, _, err := git_model.GetLatestCommitStatus(ctx, r.Repo.ID, r.Sha1, db.ListOptionsAll)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 
 			info.CommitStatus = git_model.CalcCommitStatus(statuses)
@@ -157,7 +165,7 @@ func getReleaseInfos(ctx *context.Context, opts *repo_model.FindReleasesOptions)
 		releaseInfos = append(releaseInfos, info)
 	}
 
-	return releaseInfos, nil
+	return releaseInfos, counts, nil
 }
 
 // Releases render releases list page
@@ -188,7 +196,7 @@ func Releases(ctx *context.Context) {
 	writeAccess := ctx.Repo.CanWrite(unit.TypeReleases)
 	ctx.Data["CanCreateRelease"] = writeAccess && !ctx.Repo.Repository.IsArchived
 
-	releases, err := getReleaseInfos(ctx, &repo_model.FindReleasesOptions{
+	releases, releasesCount, err := getReleaseInfos(ctx, &repo_model.FindReleasesOptions{
 		ListOptions: listOptions,
 		// only show draft releases for users who can write, read-only users shouldn't see draft releases.
 		IncludeDrafts: writeAccess,
@@ -208,8 +216,7 @@ func Releases(ctx *context.Context) {
 	ctx.Data["Releases"] = releases
 	addVerifyTagToContext(ctx)
 
-	numReleases := ctx.Data["NumReleases"].(int64)
-	pager := context.NewPagination(int(numReleases), listOptions.PageSize, listOptions.Page, 5)
+	pager := context.NewPagination(int(releasesCount), listOptions.PageSize, listOptions.Page, 5)
 	pager.SetDefaultParams(ctx)
 	ctx.Data["Page"] = pager
 
@@ -341,7 +348,7 @@ func SingleRelease(ctx *context.Context) {
 	writeAccess := ctx.Repo.CanWrite(unit.TypeReleases)
 	ctx.Data["CanCreateRelease"] = writeAccess && !ctx.Repo.Repository.IsArchived
 
-	releases, err := getReleaseInfos(ctx, &repo_model.FindReleasesOptions{
+	releases, _, err := getReleaseInfos(ctx, &repo_model.FindReleasesOptions{
 		ListOptions: db.ListOptions{Page: 1, PageSize: 1},
 		RepoID:      ctx.Repo.Repository.ID,
 		// Include tags in the search too.
