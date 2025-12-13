@@ -177,5 +177,20 @@
     "admin.moderation.moderation_reports": "Moderaatioraportit",
     "migrate.pagure.private_issues.summary": "Yksityiset ongelmat (valinnainen)",
     "teams.add_all_repos.modal.header": "Lisää kaikki tietovarastot",
-    "teams.remove_all_repos.modal.header": "Poista kaikki tietovarastot"
+    "teams.remove_all_repos.modal.header": "Poista kaikki tietovarastot",
+    "repo.pulls.poster_trust_deny": "Kiellä",
+    "repo.pulls.poster_trust_once": "Hyväksy kerran",
+    "repo.pulls.poster_trust_always": "Hyväksy aina",
+    "moderation.action.account.delete": "Poista tili",
+    "moderation.action.account.suspend": "Jäädytä tili",
+    "moderation.action.repo.delete": "Poista tietovarasto",
+    "moderation.action.issue.delete": "Poista ongelma",
+    "moderation.action.comment.delete": "Poista kommentti",
+    "moderation.unknown_action": "Tuntematon toiminto",
+    "moderation.users.cannot_suspend_self": "Et voi jäädyttää omaa tiliäsi.",
+    "moderation.users.cannot_suspend_org": "Organisaatioita ei voi jäädyttää.",
+    "moderation.users.already_suspended": "Käyttäjätili on jo jäädytetty.",
+    "moderation.users.suspend_success": "Käyttäjätili on jäädytetty.",
+    "moderation.issue.deletion_success": "Ongelma on poistettu.",
+    "moderation.comment.deletion_success": "Kommentti on poistettu."
 }
