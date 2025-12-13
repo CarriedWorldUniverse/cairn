@@ -2,12 +2,12 @@
     "fork.n_forks": {
         "one": "%s fork",
         "many": "%s forks",
-        "other": ""
+        "other": "%s forks"
     },
     "stars.n_stars": {
         "one": "%s estrela",
         "many": "%s estrelas",
-        "other": ""
+        "other": "%s estrelas"
     },
     "release.n_downloads": {
         "one": "%s download",
@@ -173,9 +173,9 @@
     "repo.pulls.maintainers_can_edit": "Mantenedores podem editar este pull request.",
     "repo.pulls.maintainers_cannot_edit": "Mantenedores não podem editar este pull request.",
     "pulse.n_active_issues": {
-        "one": "%s issue ativa",
-        "many": "%s issues ativas",
-        "other": ""
+        "one": "%s questão ativa",
+        "many": "%s questões ativas",
+        "other": "%s questões ativas"
     },
     "pulse.n_active_prs": {
         "one": "%s pull request ativo",
@@ -216,5 +216,40 @@
         "many": "Esperando por um runner com os seguintes rótulos: %s",
         "other": "Esperando por um runner com os seguintes rótulos: %s"
     },
-    "keys.verify.token.hint": "Esse token é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>."
+    "keys.verify.token.hint": "Esse token é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>.",
+    "repo.issues.filter_poster.hint": "Filtrar por autor",
+    "repo.issues.filter_assignee.hint": "Filtrar por usuário atribuído",
+    "repo.issues.filter_reviewers.hint": "Filtrar por usuário revisor",
+    "repo.issues.filter_mention.hint": "Filtrar por usuário mencionado",
+    "repo.issues.filter_modified.hint": "Filtrar por data da última modificação",
+    "repo.issues.filter_sort.hint": "Ordenar por: criado/comentários/atualizado/prazo",
+    "search.syntax": "Sintaxe de pesquisa",
+    "admin.dashboard.transfer_lingering_logs": "Transferir registros de actions de trabalhos finalizados do banco de dados para o armazenamento",
+    "actions.workflow.persistent_incomplete_matrix": "Não foi possível avaliar `strategy.matrix` do trabalho %[1]s devido a uma expressão `needs` que era inválida. Ela pode se referir a um trabalho que não está na sua lista de 'needs' (%[2]s), ou uma saída que não existe em um desses trabalhos.",
+    "admin.auths.oauth2_quota_group_claim_name": "Nome de reivindicação para agrupamento desta fonte no gerenciamento de cotas. (Opcional)",
+    "admin.auths.oauth2_quota_group_map": "Mapear grupos reivindicados com grupos de cotas. (Opcional - requer nome de reivindicação acima)",
+    "admin.auths.oauth2_quota_group_map_removal": "Remover usuários de grupos de cotas sincronizados se o usuário não pertence ao grupo correspondente.",
+    "moderation.report.mark_as_handled": "Marcar como resolvido",
+    "moderation.report.mark_as_ignored": "Marcar como ignorado",
+    "moderation.action.account.delete": "Excluir conta",
+    "moderation.action.account.suspend": "Suspender conta",
+    "moderation.action.repo.delete": "Excluir repositório",
+    "moderation.action.issue.delete": "Excluir questão",
+    "moderation.action.comment.delete": "Excluir comentário",
+    "moderation.unknown_action": "Ação desconhecida",
+    "moderation.users.cannot_suspend_self": "Você não pode se suspender.",
+    "moderation.users.cannot_suspend_admins": "Usuários com privilégios de administrador não podem ser suspensos.",
+    "moderation.users.cannot_suspend_org": "Organizações não podem ser suspensas.",
+    "moderation.users.already_suspended": "Esta conta já está suspensa.",
+    "moderation.users.suspend_success": "A conta do usuário foi suspensa.",
+    "moderation.users.cannot_delete_admins": "Usuários com privilégios de administrador não podem ser excluídos.",
+    "moderation.issue.deletion_success": "A questão foi excluída.",
+    "moderation.comment.deletion_success": "O comentário foi excluído.",
+    "actions.workflow.incomplete_matrix_missing_job": "Não foi possível avaliar `strategy.matrix` do trabalho %[1]s: trabalho %[2]s não está na lista de `needs` do trabalho %[1]s (%[3]s).",
+    "actions.workflow.incomplete_matrix_missing_output": "Não foi possível avaliar `strategy.matrix` do trabalho %[1]s: o trabalho %[2]s não tem uma saída %[3]s.",
+    "actions.workflow.incomplete_matrix_unknown_cause": "Não foi possível avaliar `strategy.matrix` do trabalho %[1]s: erro desconhecido.",
+    "actions.workflow.incomplete_runson_missing_job": "Não foi possível avaliar `runs-on` do trabalho %[1]s: o trabalho %[2]s não está na lista `needs` do trabalho %[1]s (%[3]s).",
+    "actions.workflow.incomplete_runson_missing_output": "Não é possível avaliar `runs-on` do trabalho %[1]s: o trabalho %[2]s não tem uma saída %[3]s.",
+    "actions.workflow.incomplete_runson_missing_matrix_dimension": "Não é possível avaliar `runs-on` do trabalho %[1]s: a dimensão da matriz %[2]s não existe.",
+    "actions.workflow.incomplete_runson_unknown_cause": "Não é possível avaliar `runs-on` do trabalho %[1]s: erro desconhecido."
 }
