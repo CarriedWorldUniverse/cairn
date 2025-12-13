@@ -173,5 +173,22 @@
     "migrate.pagure.token.placeholder": "Endast för att skapa privata ärendearkiv",
     "actions.runs.viewing_out_of_date_run": "Du tittar på en föråldrad körning av detta jobb som utfördes %[1]s.",
     "actions.workflow.event_detection_error": "Det går inte att tolka stödda händelser i arbetsflödet: %v",
-    "repo.pulls.poster_manage_approval": "Hantera godkännande"
+    "repo.pulls.poster_manage_approval": "Hantera godkännande",
+    "repo.issues.filter_poster.hint": "Filtrera efter upphovsperson",
+    "repo.issues.filter_assignee.hint": "Filtrera efter tilldelad användare",
+    "repo.issues.filter_reviewers.hint": "Filtrera efter användare som granskat",
+    "repo.issues.filter_mention.hint": "Filtrera efter nämnd användare",
+    "repo.issues.filter_modified.hint": "Filtrera efter senaste ändringsdatum",
+    "repo.pulls.poster_requires_approval.tooltip": "Upphovspersonen till denna pull-begäran är inte godkänd för att köra arbetsflöden som utlöses av en pull-begäran som skapats från ett förgrenat arkiv eller med AGit. Arbetsflöden som utlöses av en `pull_request`-händelse kommer inte att köras förrän de har godkänts.",
+    "repo.pulls.poster_trust_deny": "Neka",
+    "repo.pulls.poster_trust_deny.tooltip": "Arbetsflöden som väntar på godkännande kommer att avbrytas.",
+    "repo.pulls.poster_trust_once": "Godkänn en gång",
+    "repo.pulls.poster_trust_always": "Godkänn alltid",
+    "repo.pulls.poster_trust_revoke": "Återkalla",
+    "admin.dashboard.actions_action_user": "Återkalla Forgejo Actions-förtroende för inaktiva användare",
+    "admin.dashboard.transfer_lingering_logs": "Överför loggar över slutförda åtgärder från databasen till lagringsutrymmet",
+    "actions.workflow.persistent_incomplete_matrix": "Det går inte att utvärdera `strategy.matrix` för jobb %[1]s på grund av ett ogiltigt `needs`-uttryck. Det kan hänvisa till ett jobb som inte finns i dess ’needs’-lista (%[2]s) eller en utdata som inte finns i något av dessa jobb.",
+    "teams.add_all_repos.modal.header": "Lägg till arkiv",
+    "teams.remove_all_repos.modal.header": "Ta bort alla arkiv",
+    "admin.auths.oauth2_quota_group_map_removal": "Ta bort användare från synkroniserade kvotgrupper om användaren inte tillhör motsvarande grupp."
 }

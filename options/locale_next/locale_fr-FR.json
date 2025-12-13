@@ -208,5 +208,18 @@
     "repo.pulls.poster_trust_revoke": "Révoquer",
     "repo.pulls.poster_trust_revoke.tooltip": "L'auteur de cette pull request ne sera plus autorisé pour exécuter les flux de travail déclenchés par un événement `pull_request`, chaque exécution devra être approuvée manuellement.",
     "actions.workflow.job_parsing_error": "Impossible d'analyser le processus dans le flux de travail : %v",
-    "keys.verify.token.hint": "Le jeton est uniquement valide pour 1 minute. <a href=\"%[1]s\">Obtenez en un nouveau s'il a expiré</a>."
+    "keys.verify.token.hint": "Le jeton est uniquement valide pour 1 minute. <a href=\"%[1]s\">Obtenez en un nouveau s'il a expiré</a>.",
+    "repo.issues.filter_poster.hint": "Filtrer par auteur",
+    "repo.issues.filter_assignee.hint": "Filtrer par utilisateur assigné",
+    "repo.issues.filter_reviewers.hint": "Filtrer par l'utilisateur qui a examiné",
+    "repo.issues.filter_mention.hint": "Filtrer par utilisateur mentionné",
+    "repo.issues.filter_modified.hint": "Filtrer par la dernière date modifiée",
+    "repo.issues.filter_sort.hint": "Trier par: date de création/commentaires/mise à jour/date limite",
+    "search.syntax": "Syntaxe de recherche",
+    "admin.dashboard.transfer_lingering_logs": "Transférer les journaux des actions terminées de la base de données au stockage",
+    "actions.status.diagnostics.waiting": {
+        "one": "Attente d'un exécuteur avec l'étiquette suivante : %s",
+        "many": "Attente d'un exécuteur avec les étiquettes suivantes : %s",
+        "other": ""
+    }
 }
