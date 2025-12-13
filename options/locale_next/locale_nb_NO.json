@@ -102,5 +102,32 @@
     "repo.diff.commit.previous-short": "Forrige",
     "discussion.locked": "Denne diskusjonen er låst. Kommentarer kan kun gjøres av bidragsytere.",
     "avatar.constraints_hint": "Egendefinert avatar kan ikke overstige %[1]s i størrelse eller være større enn %[2]d × %[3]d piksler",
-    "meta.last_line": "Vi gir oss ikke. Kongen har sagt nei!"
+    "meta.last_line": "Vi gir oss ikke. Kongen har sagt nei!",
+    "fork.n_forks": {
+        "one": "%s skille",
+        "other": "%s skiller"
+    },
+    "stars.n_stars": {
+        "one": "%s stjerne",
+        "other": "%s stjerner"
+    },
+    "watch.n_watchers": {
+        "one": "%s seer",
+        "other": "%s seere"
+    },
+    "repo.issues.filter_poster.hint": "Filtrer etter skaper",
+    "repo.issues.filter_assignee.hint": "Filtrer etter tildelt bruker",
+    "repo.issues.filter_reviewers.hint": "Filtrer etter bruker som anmelder",
+    "repo.issues.filter_mention.hint": "Filtrer etter nevnt bruker",
+    "repo.issues.filter_modified.hint": "Filtrer etter sist endret dato",
+    "repo.issues.filter_sort.hint": "Sorter etter: skapt/kommentarer/oppdatert/deadline",
+    "repo.pulls.poster_manage_approval": "Endre godkjenning",
+    "repo.pulls.poster_requires_approval": "Noen workflow <a href=\"%[1]s\">venter på å blir anmeldt.</a>",
+    "repo.pulls.poster_requires_approval.tooltip": "Skaperen av denne pull requesten er ikke verifisert til å kjøre workflow som blei kjørt av en pull request skapt i fra en forket repositorie eller med AGit. Workflowene som blei kjørt av `pull_request` event vil ikke kjøre inntil de blir godkjent.",
+    "repo.pulls.poster_is_trusted": "Skaperen av denne pull requesten er <a href=\"%[1]s\">alltid troverdige til å kjøre workflow-er.</a>",
+    "repo.pulls.poster_is_trusted.tooltip": "Skaperen av denne pull requesten har blitt eksplisitt troverdig til å kjøre workflow-er kjørt av `pull_request` event-er.",
+    "repo.pulls.poster_trust_deny": "Avslå",
+    "repo.pulls.poster_trust_deny.tooltip": "Workflow-ene som venter på godkjenning vil være avslått.",
+    "repo.pulls.poster_trust_once": "Godta én gang",
+    "repo.pulls.poster_trust_once.tooltip": "Workflow-ene kjørt av `pull_request`event vil kjøre på denne commit-en, men vil trenge godkjenning for fremtidige commit-er som blir tilsatt til denne pull requesten."
 }
