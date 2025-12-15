@@ -1559,7 +1559,7 @@ func registerRoutes(m *web.Route) {
 			m.Group("/commits", func() {
 				m.Get("", context.RepoRef(), repo.SetWhitespaceBehavior, repo.GetPullDiffStats, repo.ViewPullCommits)
 				m.Get("/list", context.RepoRef(), repo.GetPullCommits)
-				m.Group("/{sha:[a-f0-9]{4,40}}", func() {
+				m.Group("/{sha:[a-f0-9]{4,64}}", func() {
 					m.Get("", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesForSingleCommit)
 					m.Post("/reviews/submit", context.RepoMustNotBeArchived(), web.Bind(forms.SubmitReviewForm{}), repo.SubmitReview)
 				})
@@ -1571,8 +1571,8 @@ func registerRoutes(m *web.Route) {
 			m.Post("/cleanup", context.RepoMustNotBeArchived(), context.RepoRef(), repo.CleanUpPullRequest)
 			m.Group("/files", func() {
 				m.Get("", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesForAllCommitsOfPr)
-				m.Get("/{sha:[a-f0-9]{4,40}}", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesStartingFromCommit)
-				m.Get("/{shaFrom:[a-f0-9]{4,40}}..{shaTo:[a-f0-9]{4,40}}", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesForRange)
+				m.Get("/{sha:[a-f0-9]{4,64}}", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesStartingFromCommit)
+				m.Get("/{shaFrom:[a-f0-9]{4,64}}..{shaTo:[a-f0-9]{4,64}}", context.RepoRef(), repo.SetEditorconfigIfExists, repo.SetDiffViewStyle, repo.SetWhitespaceBehavior, repo.SetShowOutdatedComments, repo.ViewPullFilesForRange)
 				m.Group("/reviews", func() {
 					m.Get("/new_comment", repo.RenderNewCodeCommentForm)
 					m.Post("/comments", web.Bind(forms.CodeCommentForm{}), repo.SetShowOutdatedComments, repo.CreateCodeComment)

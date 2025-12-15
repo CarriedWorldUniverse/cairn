@@ -431,7 +431,7 @@ func TestCountIssues(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	count, err := issues_model.CountIssues(db.DefaultContext, &issues_model.IssuesOptions{})
 	require.NoError(t, err)
-	assert.EqualValues(t, 22, count)
+	assert.EqualValues(t, 23, count)
 }
 
 func TestIssueLoadAttributes(t *testing.T) {

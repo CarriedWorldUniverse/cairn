@@ -491,7 +491,7 @@ func TestAPISearchIssues(t *testing.T) {
 	req = NewRequest(t, "GET", link.String()).AddTokenAuth(publicOnlyToken)
 	resp = MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 15) // 15 public issues
+	assert.Len(t, apiIssues, 16) // 16 public issues
 
 	since := "2000-01-01T00:50:01+00:00" // 946687801
 	before := time.Unix(999307200, 0).Format(time.RFC3339)
@@ -517,7 +517,7 @@ func TestAPISearchIssues(t *testing.T) {
 	req = NewRequest(t, "GET", link.String()).AddTokenAuth(token)
 	resp = MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &apiIssues)
-	assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
+	assert.Equal(t, "23", resp.Header().Get("X-Total-Count"))
 	assert.Len(t, apiIssues, 20)
 
 	query.Add("limit", "10")
@@ -525,7 +525,7 @@ func TestAPISearchIssues(t *testing.T) {
 	req = NewRequest(t, "GET", link.String()).AddTokenAuth(token)
 	resp = MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &apiIssues)
-	assert.Equal(t, "22", resp.Header().Get("X-Total-Count"))
+	assert.Equal(t, "23", resp.Header().Get("X-Total-Count"))
 	assert.Len(t, apiIssues, 10)
 
 	query = url.Values{"assigned": {"true"}, "state": {"all"}}
@@ -554,7 +554,7 @@ func TestAPISearchIssues(t *testing.T) {
 	req = NewRequest(t, "GET", link.String()).AddTokenAuth(token)
 	resp = MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &apiIssues)
-	assert.Len(t, apiIssues, 8)
+	assert.Len(t, apiIssues, 9)
 
 	query = url.Values{"owner": {"org3"}} // organization
 	link.RawQuery = query.Encode()

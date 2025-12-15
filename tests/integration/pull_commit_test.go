@@ -62,6 +62,33 @@ func TestPullCommitLinks(t *testing.T) {
 	assert.Equal(t, "/user2/repo1/pulls/3/commits/5f22f7d0d95d614d25a5b68592adb345a4b5c7fd", commitLinkHref)
 }
 
+func TestPullCommitLinksSHA256(t *testing.T) {
+	if !git.SupportHashSha256 {
+		t.Skip("skipping because installed Git version doesn't support SHA256")
+		return
+	}
+
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequest(t, "GET", "/user2/repo256/pulls/1/commits")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	commitSha := htmlDoc.Find(".commit-list td.sha a.sha.label").First()
+	commitShaHref, commitShaOk := commitSha.Attr("href")
+	assert.True(t, commitShaOk)
+	assert.Equal(t, "/user2/repo256/pulls/1/commits/004581b3bb63754502364664021404490ee747ce58e98d27c046f2e46f5f2f55", commitShaHref)
+
+	commitLink := htmlDoc.Find(".commit-list td.message a").First()
+	commitLinkHref, commitLinkOk := commitLink.Attr("href")
+	assert.True(t, commitLinkOk)
+	assert.Equal(t, "/user2/repo256/pulls/1/commits/004581b3bb63754502364664021404490ee747ce58e98d27c046f2e46f5f2f55", commitLinkHref)
+
+	commitReq := NewRequest(t, "GET", commitShaHref)
+	MakeRequest(t, commitReq, http.StatusOK)
+}
+
 func TestPullCommitSignature(t *testing.T) {
 	t.Cleanup(func() {
 		// Cannot use t.Context(), it is in the done state.
