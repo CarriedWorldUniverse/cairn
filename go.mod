@@ -95,7 +95,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ulikunitz/xz v0.5.15
 	github.com/urfave/cli/v3 v3.5.0
-	github.com/valyala/fastjson v1.6.4
+	github.com/valyala/fastjson v1.6.7
 	github.com/yohcop/openid-go v1.0.1
 	github.com/yuin/goldmark v1.7.13
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
