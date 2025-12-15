@@ -157,7 +157,7 @@ func searchIssueByID(t *testing.T) {
 		{
 			// NOTE: This tests no assignees filtering and also ToSearchOptions() to ensure it will set AssigneeID to 0 when it is passed as -1.
 			opts:        *ToSearchOptions(t.Context(), "", &issues.IssuesOptions{AssigneeID: -1}),
-			expectedIDs: []int64{22, 21, 16, 15, 14, 13, 12, 11, 20, 5, 19, 18, 10, 7, 4, 9, 8, 3, 2},
+			expectedIDs: []int64{24, 22, 21, 16, 15, 14, 13, 12, 11, 20, 5, 19, 18, 10, 7, 4, 9, 8, 3, 2},
 		},
 		{
 			opts: SearchOptions{
@@ -222,7 +222,7 @@ func searchIssueIsPull(t *testing.T) {
 			SearchOptions{
 				IsPull: optional.Some(true),
 			},
-			[]int64{22, 21, 12, 11, 20, 19, 9, 8, 3, 2},
+			[]int64{24, 22, 21, 12, 11, 20, 19, 9, 8, 3, 2},
 		},
 	}
 	for _, test := range tests {
@@ -242,7 +242,7 @@ func searchIssueIsClosed(t *testing.T) {
 			SearchOptions{
 				IsClosed: optional.Some(false),
 			},
-			[]int64{22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 19, 18, 10, 7, 9, 8, 3, 2, 1},
+			[]int64{24, 22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 19, 18, 10, 7, 9, 8, 3, 2, 1},
 		},
 		{
 			SearchOptions{
@@ -305,7 +305,7 @@ func searchIssueByLabelID(t *testing.T) {
 			SearchOptions{
 				ExcludedLabelIDs: []int64{1},
 			},
-			[]int64{22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 5, 19, 18, 10, 7, 4, 9, 8, 3},
+			[]int64{24, 22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 5, 19, 18, 10, 7, 4, 9, 8, 3},
 		},
 	}
 	for _, test := range tests {
@@ -325,7 +325,7 @@ func searchIssueByTime(t *testing.T) {
 			SearchOptions{
 				UpdatedAfterUnix: optional.Some(int64(0)),
 			},
-			[]int64{22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 5, 19, 18, 10, 7, 4, 9, 8, 3, 2, 1},
+			[]int64{24, 22, 21, 17, 16, 15, 14, 13, 12, 11, 20, 6, 5, 19, 18, 10, 7, 4, 9, 8, 3, 2, 1},
 		},
 	}
 	for _, test := range tests {
@@ -345,7 +345,7 @@ func searchIssueWithOrder(t *testing.T) {
 			SearchOptions{
 				SortBy: internal.SortByCreatedAsc,
 			},
-			[]int64{1, 2, 3, 8, 9, 4, 7, 10, 18, 19, 5, 6, 20, 11, 12, 13, 14, 15, 16, 17, 21, 22},
+			[]int64{1, 2, 3, 8, 9, 4, 7, 10, 18, 19, 5, 6, 20, 11, 12, 13, 14, 15, 16, 17, 21, 22, 24},
 		},
 	}
 	for _, test := range tests {
@@ -400,8 +400,8 @@ func searchIssueWithPaginator(t *testing.T) {
 					PageSize: 5,
 				},
 			},
-			[]int64{22, 21, 17, 16, 15},
-			22,
+			[]int64{24, 22, 21, 17, 16},
+			23,
 		},
 	}
 	for _, test := range tests {

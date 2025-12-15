@@ -119,3 +119,16 @@
   index: 1
   head_repo_id: 61
   base_repo_id: 61
+
+- id: 12
+  type: 0 # gitea pull request
+  status: 2 # mergeable
+  issue_id: 24
+  index: 1
+  head_repo_id: 66
+  base_repo_id: 66
+  head_branch: branch2
+  base_branch: master
+  merge_base: 004581b3bb63754502364664021404490ee747ce58e98d27c046f2e46f5f2f55
+  has_merged: false
+
