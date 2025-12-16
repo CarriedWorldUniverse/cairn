@@ -36,6 +36,11 @@
   &:focus {
     text-decoration: none;
   }
+
+  &.disabled {
+    opacity: var(--opacity-disabled);
+    pointer-events: none;
+  }
 }
 
 .button.primary {
