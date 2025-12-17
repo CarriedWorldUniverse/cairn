@@ -18,7 +18,7 @@ pkgs.mkShell {
 
     # backend
     gofumpt
-    sqlite
+    sqlite-interactive
     go
     gopls
     gotestsum
