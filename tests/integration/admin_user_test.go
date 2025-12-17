@@ -45,7 +45,7 @@ func TestAdminViewUsers(t *testing.T) {
 		resp = session.MakeRequest(t, req, http.StatusOK)
 		htmlDoc = NewHTMLParser(t, resp.Body)
 
-		// Only one user (id 42) is a remote user
+		// Only one user (id 43) is a remote user
 		assert.Equal(t, 1, htmlDoc.Find("table tbody tr").Length())
 	})
 
@@ -197,7 +197,7 @@ func TestSourceId(t *testing.T) {
 	resp = session.MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &users)
 	assert.Len(t, users, 1)
-	assert.Equal(t, "federated-example.net", users[0].UserName)
+	assert.Equal(t, "imported", users[0].UserName)
 
 	// Now our new user should be in the list, because we filter by source_id 23
 	req = NewRequest(t, "GET", "/api/v1/admin/users?limit=1&source_id=23").AddTokenAuth(token)
@@ -241,9 +241,9 @@ func TestAdminViewUsersSorted(t *testing.T) {
 		sortType      string
 		expectedUsers []string
 	}{
-		{0, "alphabetically", []string{"federated-example.net", "the_34-user.with.all.allowedChars", "user1", "user10"}},
+		{0, "alphabetically", []string{"imported", "the_34-user.with.all.allowedChars", "user1", "user10"}},
 		{0, "reversealphabetically", []string{"user9", "user8", "user5", "user40"}},
-		{0, "newest", []string{"federated-example.net", "user40", "user39", "user38"}},
+		{0, "newest", []string{"imported", "user40", "user39", "user38"}},
 		{0, "oldest", []string{"user1", "user2", "user4", "user5"}},
 		{44, "recentupdate", []string{"sorttest1", "sorttest2", "sorttest3", "sorttest4"}},
 		{44, "leastupdate", []string{"sorttest10", "sorttest9", "sorttest8", "sorttest7"}},
