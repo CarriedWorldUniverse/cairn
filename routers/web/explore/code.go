@@ -38,10 +38,14 @@ func Code(ctx *context.Context) {
 	path := ctx.FormTrim("path")
 
 	mode := code_indexer.SearchModeExact
-	if m := ctx.FormTrim("mode"); m == "union" ||
-		m == "fuzzy" ||
-		ctx.FormBool("fuzzy") {
+	if m := ctx.FormTrim("mode"); m == "union" {
 		mode = code_indexer.SearchModeUnion
+	} else if m == "fuzzy" || ctx.FormBool("fuzzy") {
+		if setting.Indexer.RepoIndexerEnableFuzzy {
+			mode = code_indexer.SearchModeFuzzy
+		} else {
+			mode = code_indexer.SearchModeUnion
+		}
 	}
 
 	ctx.Data["Keyword"] = keyword

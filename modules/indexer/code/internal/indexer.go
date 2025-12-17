@@ -25,13 +25,18 @@ type CodeSearchMode int
 const (
 	CodeSearchModeExact CodeSearchMode = iota
 	CodeSearchModeUnion
+	CodeSearchModeFuzzy
 )
 
 func (mode CodeSearchMode) String() string {
-	if mode == CodeSearchModeUnion {
+	switch mode {
+	case CodeSearchModeFuzzy:
+		return "fuzzy"
+	case CodeSearchModeUnion:
 		return "union"
+	default:
+		return "exact"
 	}
-	return "exact"
 }
 
 type SearchOptions struct {

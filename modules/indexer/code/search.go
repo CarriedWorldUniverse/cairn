@@ -36,13 +36,14 @@ type SearchResultLanguages = internal.SearchResultLanguages
 type SearchOptions = internal.SearchOptions
 
 // llu:TrKeysSuffix search.
-var CodeSearchOptions = [2]string{"exact", "union"}
+var CodeSearchOptions = []string{"exact", "union", "fuzzy"}
 
 type SearchMode = internal.CodeSearchMode
 
 const (
 	SearchModeExact = internal.CodeSearchModeExact
 	SearchModeUnion = internal.CodeSearchModeUnion
+	SearchModeFuzzy = internal.CodeSearchModeFuzzy
 )
 
 func indices(content string, selectionStartIndex, selectionEndIndex int) (int, int) {

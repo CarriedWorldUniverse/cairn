@@ -39,6 +39,10 @@ const (
 // llu:TrKeysSuffix search.
 var GrepSearchOptions = [3]string{"exact", "union", "regexp"}
 
+func (mode GrepMode) String() string {
+	return GrepSearchOptions[mode]
+}
+
 type GrepOptions struct {
 	RefName           string
 	MaxResultLimit    int

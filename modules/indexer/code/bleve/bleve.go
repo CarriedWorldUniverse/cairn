@@ -259,12 +259,16 @@ func (b *Indexer) Search(ctx context.Context, opts *internal.SearchOptions) (int
 
 	if opts.Mode == internal.CodeSearchModeUnion {
 		query := bleve.NewDisjunctionQuery()
-		for _, field := range strings.Fields(opts.Keyword) {
+		for field := range strings.FieldsSeq(opts.Keyword) {
 			query.AddQuery(inner_bleve.MatchPhraseQuery(field, "Content", repoIndexerAnalyzer, false, 1.0))
 		}
 		keywordQuery = query
 	} else {
-		keywordQuery = inner_bleve.MatchPhraseQuery(opts.Keyword, "Content", repoIndexerAnalyzer, false, 1.0)
+		keywordQuery = inner_bleve.MatchPhraseQuery(opts.Keyword,
+			"Content",
+			repoIndexerAnalyzer,
+			opts.Mode == internal.CodeSearchModeFuzzy,
+			1.0)
 	}
 
 	if len(opts.RepoIDs) > 0 {
