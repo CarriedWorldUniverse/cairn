@@ -91,12 +91,23 @@ func index(ctx context.Context, indexer internal.Indexer, repoID int64) error {
 	return repo_model.UpdateIndexerStatus(ctx, repo, repo_model.RepoIndexerTypeCode, sha)
 }
 
+func setSearchOption(set bool, val string) {
+	if set {
+		if !slices.Contains(CodeSearchOptions, val) {
+			CodeSearchOptions = append(CodeSearchOptions, val)
+		}
+	} else if i := slices.Index(CodeSearchOptions, val); i >= 0 {
+		CodeSearchOptions = append(CodeSearchOptions[:i], CodeSearchOptions[i+1:]...)
+	}
+}
+
 // Init initialize the repo indexer
 func Init() {
 	if !setting.Indexer.RepoIndexerEnabled {
 		(*globalIndexer.Load()).Close()
 		return
 	}
+	setSearchOption(setting.Indexer.RepoIndexerEnableFuzzy, "fuzzy")
 
 	ctx, cancel, finished := process.GetManager().AddTypedContext(context.Background(), "Service: CodeIndexer", process.SystemProcessType, false)
 

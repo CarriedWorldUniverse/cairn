@@ -22,13 +22,16 @@ type searchMode int
 const (
 	ExactSearchMode searchMode = iota
 	UnionSearchMode
+	FuzzySearchMode
 	RegExpSearchMode
 )
 
 func searchModeFromString(s string) searchMode {
 	switch s {
-	case "fuzzy", "union":
+	case "union":
 		return UnionSearchMode
+	case "fuzzy":
+		return FuzzySearchMode
 	case "regexp":
 		return RegExpSearchMode
 	default:
@@ -36,22 +39,12 @@ func searchModeFromString(s string) searchMode {
 	}
 }
 
-func (m searchMode) String() string {
-	switch m {
-	case ExactSearchMode:
-		return "exact"
-	case UnionSearchMode:
-		return "union"
-	case RegExpSearchMode:
-		return "regexp"
-	default:
-		panic("cannot happen")
-	}
-}
-
 func (m searchMode) ToIndexer() code_indexer.SearchMode {
 	if m == ExactSearchMode {
 		return code_indexer.SearchModeExact
+	}
+	if setting.Indexer.RepoIndexerEnableFuzzy && m == FuzzySearchMode {
+		return code_indexer.SearchModeFuzzy
 	}
 	return code_indexer.SearchModeUnion
 }
@@ -83,7 +76,6 @@ func Search(ctx *context.Context) {
 	ctx.Data["Keyword"] = keyword
 	ctx.Data["Language"] = language
 	ctx.Data["CodeSearchPath"] = path
-	ctx.Data["CodeSearchMode"] = mode.String()
 	ctx.Data["PageIsViewCode"] = true
 	ctx.Data["CodeIndexerDisabled"] = !setting.Indexer.RepoIndexerEnabled
 	if setting.Indexer.RepoIndexerEnabled {
@@ -106,11 +98,14 @@ func Search(ctx *context.Context) {
 	var searchResults []*code_indexer.Result
 	var searchResultLanguages []*code_indexer.SearchResultLanguages
 	if setting.Indexer.RepoIndexerEnabled {
+		m := mode.ToIndexer()
+		ctx.Data["CodeSearchMode"] = m.String()
+
 		var err error
 		total, searchResults, searchResultLanguages, err = code_indexer.PerformSearch(ctx, &code_indexer.SearchOptions{
 			RepoIDs:  []int64{ctx.Repo.Repository.ID},
 			Keyword:  keyword,
-			Mode:     mode.ToIndexer(),
+			Mode:     m,
 			Language: language,
 			Filename: path,
 			Paginator: &db.ListOptions{
@@ -128,11 +123,14 @@ func Search(ctx *context.Context) {
 			ctx.Data["CodeIndexerUnavailable"] = !code_indexer.IsAvailable(ctx)
 		}
 	} else {
+		m := mode.ToGitGrep()
+		ctx.Data["CodeSearchMode"] = m.String()
+
 		res, err := git.GrepSearch(ctx, ctx.Repo.GitRepo, keyword, git.GrepOptions{
 			ContextLineNumber: 1,
 			RefName:           ctx.Repo.RefName,
 			Filename:          path,
-			Mode:              mode.ToGitGrep(),
+			Mode:              m,
 		})
 		if err != nil {
 			ctx.ServerError("GrepSearch", err)

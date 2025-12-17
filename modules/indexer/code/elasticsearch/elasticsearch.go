@@ -335,11 +335,14 @@ func extractAggs(searchResult *elastic.SearchResult) []*internal.SearchResultLan
 // Search searches for codes and language stats by given conditions.
 func (b *Indexer) Search(ctx context.Context, opts *internal.SearchOptions) (int64, []*internal.SearchResult, []*internal.SearchResultLanguages, error) {
 	searchType := esMultiMatchTypePhrase
-	if opts.Mode == internal.CodeSearchModeUnion {
+	if opts.Mode == internal.CodeSearchModeUnion || opts.Mode == internal.CodeSearchModeFuzzy {
 		searchType = esMultiMatchTypeBestFields
 	}
 
 	kwQuery := elastic.NewMultiMatchQuery(opts.Keyword, "content").Type(searchType)
+	if opts.Mode == internal.CodeSearchModeFuzzy {
+		kwQuery = kwQuery.Fuzziness("AUTO")
+	}
 	query := elastic.NewBoolQuery()
 	query = query.Must(kwQuery)
 	if len(opts.RepoIDs) > 0 {
