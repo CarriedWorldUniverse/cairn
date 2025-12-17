@@ -28,16 +28,17 @@ func TestServiceActions_startTask(t *testing.T) {
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
-			Title:         "scheduletitle1",
-			RepoID:        repo.ID,
-			OwnerID:       repo.OwnerID,
-			WorkflowID:    workflowID,
-			TriggerUserID: repo.OwnerID,
-			Ref:           "branch",
-			CommitSHA:     "fakeSHA",
-			Event:         webhook_module.HookEventSchedule,
-			EventPayload:  "fakepayload",
-			Specs:         []string{"* * * * *"},
+			Title:             "scheduletitle1",
+			RepoID:            repo.ID,
+			OwnerID:           repo.OwnerID,
+			WorkflowID:        workflowID,
+			WorkflowDirectory: ".forgejo/workflows",
+			TriggerUserID:     repo.OwnerID,
+			Ref:               "branch",
+			CommitSHA:         "fakeSHA",
+			Event:             webhook_module.HookEventSchedule,
+			EventPayload:      "fakepayload",
+			Specs:             []string{"* * * * *"},
 			Content: []byte(
 				`
 jobs:
@@ -80,6 +81,7 @@ func TestCreateScheduleTask(t *testing.T) {
 		assert.Equal(t, cron.RepoID, run.RepoID)
 		assert.Equal(t, cron.OwnerID, run.OwnerID)
 		assert.Equal(t, cron.WorkflowID, run.WorkflowID)
+		assert.Equal(t, cron.WorkflowDirectory, run.WorkflowDirectory)
 		assert.Equal(t, cron.TriggerUserID, run.TriggerUserID)
 		assert.Equal(t, cron.Ref, run.Ref)
 		assert.Equal(t, cron.CommitSHA, run.CommitSHA)
@@ -104,15 +106,16 @@ func TestCreateScheduleTask(t *testing.T) {
 		{
 			name: "simple",
 			cron: actions_model.ActionSchedule{
-				Title:         "scheduletitle1",
-				RepoID:        repo.ID,
-				OwnerID:       repo.OwnerID,
-				WorkflowID:    "some.yml",
-				TriggerUserID: repo.OwnerID,
-				Ref:           "branch",
-				CommitSHA:     "fakeSHA",
-				Event:         webhook_module.HookEventSchedule,
-				EventPayload:  "fakepayload",
+				Title:             "scheduletitle1",
+				RepoID:            repo.ID,
+				OwnerID:           repo.OwnerID,
+				WorkflowID:        "some.yml",
+				WorkflowDirectory: ".forgejo/workflows",
+				TriggerUserID:     repo.OwnerID,
+				Ref:               "branch",
+				CommitSHA:         "fakeSHA",
+				Event:             webhook_module.HookEventSchedule,
+				EventPayload:      "fakepayload",
 				Content: []byte(
 					`
 name: test
@@ -134,15 +137,16 @@ jobs:
 		{
 			name: "enable-email-notifications is true",
 			cron: actions_model.ActionSchedule{
-				Title:         "scheduletitle2",
-				RepoID:        repo.ID,
-				OwnerID:       repo.OwnerID,
-				WorkflowID:    "some.yml",
-				TriggerUserID: repo.OwnerID,
-				Ref:           "branch",
-				CommitSHA:     "fakeSHA",
-				Event:         webhook_module.HookEventSchedule,
-				EventPayload:  "fakepayload",
+				Title:             "scheduletitle2",
+				RepoID:            repo.ID,
+				OwnerID:           repo.OwnerID,
+				WorkflowID:        "some.yml",
+				WorkflowDirectory: ".github/workflows",
+				TriggerUserID:     repo.OwnerID,
+				Ref:               "branch",
+				CommitSHA:         "fakeSHA",
+				Event:             webhook_module.HookEventSchedule,
+				EventPayload:      "fakepayload",
 				Content: []byte(
 					`
 name: test
@@ -275,16 +279,17 @@ func TestServiceActions_DynamicMatrix(t *testing.T) {
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
-			Title:         "scheduletitle1",
-			RepoID:        repo.ID,
-			OwnerID:       repo.OwnerID,
-			WorkflowID:    workflowID,
-			TriggerUserID: repo.OwnerID,
-			Ref:           "branch",
-			CommitSHA:     "fakeSHA",
-			Event:         webhook_module.HookEventSchedule,
-			EventPayload:  "fakepayload",
-			Specs:         []string{"* * * * *"},
+			Title:             "scheduletitle1",
+			RepoID:            repo.ID,
+			OwnerID:           repo.OwnerID,
+			WorkflowID:        workflowID,
+			WorkflowDirectory: ".forgejo/workflows",
+			TriggerUserID:     repo.OwnerID,
+			Ref:               "branch",
+			CommitSHA:         "fakeSHA",
+			Event:             webhook_module.HookEventSchedule,
+			EventPayload:      "fakepayload",
+			Specs:             []string{"* * * * *"},
 			Content: []byte(
 				`
 jobs:

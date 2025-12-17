@@ -40,6 +40,7 @@ func generateGiteaContextForRun(run *actions_model.ActionRun) *model.GithubConte
 	}
 
 	refName := git.RefName(ref)
+	workflowRef := fmt.Sprintf("%s/%s/%s/%s@%s", run.Repo.OwnerName, run.Repo.Name, run.WorkflowDirectory, run.WorkflowID, ref)
 
 	gitContextObj := &model.GithubContext{
 		// standard contexts, see https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
@@ -67,6 +68,7 @@ func generateGiteaContextForRun(run *actions_model.ActionRun) *model.GithubConte
 		ServerURL:        setting.AppURL,                           // string, The URL of the GitHub server. For example: https://github.com.
 		Sha:              sha,                                      // string, The commit SHA that triggered the workflow. The value of this commit SHA depends on the event that triggered the workflow. For more information, see "Events that trigger workflows." For example, ffac537e6cbbf934b08745a378932722df287a53.
 		Workflow:         run.WorkflowID,                           // string, The name of the workflow. If the workflow file doesn't specify a name, the value of this property is the full path of the workflow file in the repository.
+		WorkflowRef:      workflowRef,                              // string, ref path to the workflow file, for example, example/test/.forgejo/workflows/test.yaml@refs/heads/main
 		Workspace:        "",                                       // string, The default working directory on the runner for steps, and the default location of your repository when using the checkout action.
 	}
 	if run.TriggerUser != nil {

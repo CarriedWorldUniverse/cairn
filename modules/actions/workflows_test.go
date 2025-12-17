@@ -4,17 +4,22 @@
 package actions
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"forgejo.org/modules/git"
+	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/test"
 	webhook_module "forgejo.org/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDetectMatched(t *testing.T) {
+func TestActionsWorkflowsDetectMatched(t *testing.T) {
 	testCases := []struct {
 		desc           string
 		commit         *git.Commit
@@ -178,4 +183,216 @@ func TestDetectMatched(t *testing.T) {
 			assert.Equal(t, tc.expected, detectMatched(nil, tc.commit, tc.triggeredEvent, tc.payload, evts[0]))
 		})
 	}
+}
+
+func TestActionsWorkflowsListWorkflowsReturnsNoWorkflowsIfThereAreNone(t *testing.T) {
+	t.Cleanup(test.MockVariableValue(&setting.Git.HomePath, t.TempDir()))
+	require.NoError(t, git.InitSimple(t.Context()))
+
+	committer := git.Signature{
+		Email: "jane@example.com",
+		Name:  "Jane",
+		When:  time.Now(),
+	}
+	repoHome := t.TempDir()
+
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, "README.md"), []byte("My project"), 0o644))
+
+	require.NoError(t, git.InitRepository(t.Context(), repoHome, false, git.Sha1ObjectFormat.Name()))
+	require.NoError(t, git.AddChanges(repoHome, true))
+	require.NoError(t, git.CommitChanges(repoHome, git.CommitChangesOptions{Message: "Import", Committer: &committer}))
+
+	gitRepo, err := git.OpenRepository(t.Context(), repoHome)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	headBranch, err := gitRepo.GetHEADBranch()
+	require.NoError(t, err)
+
+	lastCommitID, err := gitRepo.GetBranchCommitID(headBranch.Name)
+	require.NoError(t, err)
+
+	lastCommit, err := gitRepo.GetCommit(lastCommitID)
+	require.NoError(t, err)
+
+	source, workflows, err := ListWorkflows(lastCommit)
+	require.NoError(t, err)
+
+	assert.Empty(t, source)
+	assert.Empty(t, workflows)
+}
+
+func TestActionsWorkflowsListWorkflowsIgnoresNonWorkflowFiles(t *testing.T) {
+	t.Cleanup(test.MockVariableValue(&setting.Git.HomePath, t.TempDir()))
+	require.NoError(t, git.InitSimple(t.Context()))
+
+	committer := git.Signature{
+		Email: "jane@example.com",
+		Name:  "Jane",
+		When:  time.Now(),
+	}
+	githubWorkflow := []byte(`
+name: GitHub Workflow
+on:
+  push:
+jobs:
+  do-something:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'Hello GitHub'
+`)
+	repoHome := t.TempDir()
+
+	require.NoError(t, os.MkdirAll(filepath.Join(repoHome, ".forgejo/workflows"), os.ModePerm))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".forgejo/workflows", "README.md"), []byte("My project"), 0o644))
+
+	// Prepare a valid workflow in .github/workflows to verify that it is ignored because .forgejo/workflows is present.
+	require.NoError(t, os.MkdirAll(filepath.Join(repoHome, ".github/workflows"), os.ModePerm))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".github/workflows", "github.yaml"), githubWorkflow, 0o644))
+
+	require.NoError(t, git.InitRepository(t.Context(), repoHome, false, git.Sha1ObjectFormat.Name()))
+	require.NoError(t, git.AddChanges(repoHome, true))
+	require.NoError(t, git.CommitChanges(repoHome, git.CommitChangesOptions{Message: "Import", Committer: &committer}))
+
+	gitRepo, err := git.OpenRepository(t.Context(), repoHome)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	headBranch, err := gitRepo.GetHEADBranch()
+	require.NoError(t, err)
+
+	lastCommitID, err := gitRepo.GetBranchCommitID(headBranch.Name)
+	require.NoError(t, err)
+
+	lastCommit, err := gitRepo.GetCommit(lastCommitID)
+	require.NoError(t, err)
+
+	source, workflows, err := ListWorkflows(lastCommit)
+	require.NoError(t, err)
+
+	assert.Equal(t, ".forgejo/workflows", source)
+	assert.Empty(t, workflows)
+}
+
+func TestActionsWorkflowsListWorkflowsReturnsForgejoWorkflowsOnly(t *testing.T) {
+	t.Cleanup(test.MockVariableValue(&setting.Git.HomePath, t.TempDir()))
+	require.NoError(t, git.InitSimple(t.Context()))
+
+	committer := git.Signature{
+		Email: "jane@example.com",
+		Name:  "Jane",
+		When:  time.Now(),
+	}
+	forgejoWorkflow := []byte(`
+name: Forgejo Workflow
+on:
+  push:
+jobs:
+  do-something:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'Hello Forgejo'
+`)
+	githubWorkflow := []byte(`
+name: GitHub Workflow
+on:
+  push:
+jobs:
+  do-something:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'Hello GitHub'
+`)
+	repoHome := t.TempDir()
+
+	require.NoError(t, os.MkdirAll(filepath.Join(repoHome, ".forgejo/workflows"), os.ModePerm))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".forgejo/workflows", "forgejo.yaml"), forgejoWorkflow, 0o644))
+
+	require.NoError(t, os.MkdirAll(filepath.Join(repoHome, ".github/workflows"), os.ModePerm))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".github/workflows", "github.yaml"), githubWorkflow, 0o644))
+
+	require.NoError(t, git.InitRepository(t.Context(), repoHome, false, git.Sha1ObjectFormat.Name()))
+	require.NoError(t, git.AddChanges(repoHome, true))
+	require.NoError(t, git.CommitChanges(repoHome, git.CommitChangesOptions{Message: "Import", Committer: &committer}))
+
+	gitRepo, err := git.OpenRepository(t.Context(), repoHome)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	headBranch, err := gitRepo.GetHEADBranch()
+	require.NoError(t, err)
+
+	lastCommitID, err := gitRepo.GetBranchCommitID(headBranch.Name)
+	require.NoError(t, err)
+
+	lastCommit, err := gitRepo.GetCommit(lastCommitID)
+	require.NoError(t, err)
+
+	source, workflows, err := ListWorkflows(lastCommit)
+	require.NoError(t, err)
+
+	assert.Len(t, workflows, 1)
+	assert.Equal(t, ".forgejo/workflows", source)
+	assert.Equal(t, "forgejo.yaml", workflows[0].Name())
+}
+
+func TestActionsWorkflowsListWorkflowsReturnsGitHubWorkflowsIfForgejoWorkflowsAbsent(t *testing.T) {
+	t.Cleanup(test.MockVariableValue(&setting.Git.HomePath, t.TempDir()))
+	require.NoError(t, git.InitSimple(t.Context()))
+
+	committer := git.Signature{
+		Email: "jane@example.com",
+		Name:  "Jane",
+		When:  time.Now(),
+	}
+	buildWorkflow := []byte(`
+name: Build
+on:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'We are building'
+`)
+	testWorkflow := []byte(`
+name: Test
+on:
+  push:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'We are testing'
+`)
+	repoHome := t.TempDir()
+
+	require.NoError(t, os.MkdirAll(filepath.Join(repoHome, ".github/workflows"), os.ModePerm))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".github/workflows", "build.yaml"), buildWorkflow, 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(repoHome, ".github/workflows", "test.yml"), testWorkflow, 0o644))
+
+	require.NoError(t, git.InitRepository(t.Context(), repoHome, false, git.Sha1ObjectFormat.Name()))
+	require.NoError(t, git.AddChanges(repoHome, true))
+	require.NoError(t, git.CommitChanges(repoHome, git.CommitChangesOptions{Message: "Import", Committer: &committer}))
+
+	gitRepo, err := git.OpenRepository(t.Context(), repoHome)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	headBranch, err := gitRepo.GetHEADBranch()
+	require.NoError(t, err)
+
+	lastCommitID, err := gitRepo.GetBranchCommitID(headBranch.Name)
+	require.NoError(t, err)
+
+	lastCommit, err := gitRepo.GetCommit(lastCommitID)
+	require.NoError(t, err)
+
+	source, workflows, err := ListWorkflows(lastCommit)
+	require.NoError(t, err)
+
+	assert.Len(t, workflows, 2)
+	assert.Equal(t, ".github/workflows", source)
+	assert.Equal(t, "build.yaml", workflows[0].Name())
+	assert.Equal(t, "test.yml", workflows[1].Name())
 }

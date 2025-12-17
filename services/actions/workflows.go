@@ -132,20 +132,21 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 	}
 
 	run := &actions_model.ActionRun{
-		Title:         title,
-		RepoID:        repo.ID,
-		Repo:          repo,
-		OwnerID:       repo.OwnerID,
-		WorkflowID:    entry.WorkflowID,
-		TriggerUserID: doer.ID,
-		TriggerUser:   doer,
-		Ref:           entry.Ref,
-		CommitSHA:     entry.Commit.ID.String(),
-		Event:         webhook.HookEventWorkflowDispatch,
-		EventPayload:  string(p),
-		TriggerEvent:  string(webhook.HookEventWorkflowDispatch),
-		Status:        actions_model.StatusWaiting,
-		NotifyEmail:   notifications,
+		Title:             title,
+		RepoID:            repo.ID,
+		Repo:              repo,
+		OwnerID:           repo.OwnerID,
+		WorkflowID:        entry.WorkflowID,
+		WorkflowDirectory: ".forgejo/workflows",
+		TriggerUserID:     doer.ID,
+		TriggerUser:       doer,
+		Ref:               entry.Ref,
+		CommitSHA:         entry.Commit.ID.String(),
+		Event:             webhook.HookEventWorkflowDispatch,
+		EventPayload:      string(p),
+		TriggerEvent:      string(webhook.HookEventWorkflowDispatch),
+		Status:            actions_model.StatusWaiting,
+		NotifyEmail:       notifications,
 	}
 
 	vars, err := actions_model.GetVariablesOfRun(ctx, run)
@@ -198,7 +199,7 @@ func GetWorkflowFromCommit(gitRepo *git.Repository, ref, workflowID string) (*Wo
 		return nil, err
 	}
 
-	entries, err := actions.ListWorkflows(commit)
+	_, entries, err := actions.ListWorkflows(commit)
 	if err != nil {
 		return nil, err
 	}
