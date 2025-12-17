@@ -19,22 +19,23 @@ import (
 
 // ActionSchedule represents a schedule of a workflow file
 type ActionSchedule struct {
-	ID            int64
-	Title         string
-	Specs         []string
-	RepoID        int64                  `xorm:"index"`
-	Repo          *repo_model.Repository `xorm:"-"`
-	OwnerID       int64                  `xorm:"index"`
-	WorkflowID    string
-	TriggerUserID int64
-	TriggerUser   *user_model.User `xorm:"-"`
-	Ref           string
-	CommitSHA     string
-	Event         webhook_module.HookEventType
-	EventPayload  string `xorm:"LONGTEXT"`
-	Content       []byte
-	Created       timeutil.TimeStamp `xorm:"created"`
-	Updated       timeutil.TimeStamp `xorm:"updated"`
+	ID                int64
+	Title             string
+	Specs             []string
+	RepoID            int64                  `xorm:"index"`
+	Repo              *repo_model.Repository `xorm:"-"`
+	OwnerID           int64                  `xorm:"index"`
+	WorkflowID        string
+	WorkflowDirectory string `xorm:"NOT NULL DEFAULT '.forgejo/workflows'"`
+	TriggerUserID     int64
+	TriggerUser       *user_model.User `xorm:"-"`
+	Ref               string
+	CommitSHA         string
+	Event             webhook_module.HookEventType
+	EventPayload      string `xorm:"LONGTEXT"`
+	Content           []byte
+	Created           timeutil.TimeStamp `xorm:"created"`
+	Updated           timeutil.TimeStamp `xorm:"updated"`
 }
 
 func init() {

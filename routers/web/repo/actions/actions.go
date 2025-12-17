@@ -80,7 +80,7 @@ func List(ctx *context.Context) {
 			ctx.ServerError("GetBranchCommit", err)
 			return
 		}
-		entries, err := actions.ListWorkflows(commit)
+		_, entries, err := actions.ListWorkflows(commit)
 		if err != nil {
 			ctx.ServerError("ListWorkflows", err)
 			return

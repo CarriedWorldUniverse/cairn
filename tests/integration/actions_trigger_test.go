@@ -795,7 +795,7 @@ func TestActionsCreateDeleteRefEvent(t *testing.T) {
 	})
 }
 
-func TestActionsWorkflowDispatchEvent(t *testing.T) {
+func TestActionsWorkflowDispatch(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 
@@ -842,6 +842,8 @@ func TestActionsWorkflowDispatchEvent(t *testing.T) {
 
 		assert.Equal(t, "test", r.Title)
 		assert.Equal(t, "dispatch.yml", r.WorkflowID)
+		// .forgejo/workflows is wrong. It should be .gitea/workflows because the workflow is saved there during setup.
+		assert.Equal(t, ".forgejo/workflows", r.WorkflowDirectory)
 		assert.Equal(t, sha, r.CommitSHA)
 		assert.Equal(t, actions_module.GithubEventWorkflowDispatch, r.TriggerEvent)
 		assert.Len(t, j, 1)

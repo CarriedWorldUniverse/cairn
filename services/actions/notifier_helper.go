@@ -356,17 +356,18 @@ func handleWorkflows(
 
 	for _, dwf := range detectedWorkflows {
 		run := &actions_model.ActionRun{
-			Title:         strings.SplitN(commit.CommitMessage, "\n", 2)[0],
-			RepoID:        input.Repo.ID,
-			OwnerID:       input.Repo.OwnerID,
-			WorkflowID:    dwf.EntryName,
-			TriggerUserID: input.Doer.ID,
-			Ref:           ref,
-			CommitSHA:     commit.ID.String(),
-			Event:         input.Event,
-			EventPayload:  string(p),
-			TriggerEvent:  dwf.TriggerEvent.Name,
-			Status:        actions_model.StatusWaiting,
+			Title:             strings.SplitN(commit.CommitMessage, "\n", 2)[0],
+			RepoID:            input.Repo.ID,
+			OwnerID:           input.Repo.OwnerID,
+			WorkflowID:        dwf.EntryName,
+			WorkflowDirectory: dwf.EntryDirectory,
+			TriggerUserID:     input.Doer.ID,
+			Ref:               ref,
+			CommitSHA:         commit.ID.String(),
+			Event:             input.Event,
+			EventPayload:      string(p),
+			TriggerEvent:      dwf.TriggerEvent.Name,
+			Status:            actions_model.StatusWaiting,
 		}
 
 		if !actions_module.IsDefaultBranchWorkflow(input.Event) {
@@ -572,17 +573,18 @@ func handleSchedules(
 		}
 
 		run := &actions_model.ActionSchedule{
-			Title:         strings.SplitN(commit.CommitMessage, "\n", 2)[0],
-			RepoID:        input.Repo.ID,
-			OwnerID:       input.Repo.OwnerID,
-			WorkflowID:    dwf.EntryName,
-			TriggerUserID: user_model.ActionsUserID,
-			Ref:           input.Repo.DefaultBranch,
-			CommitSHA:     commit.ID.String(),
-			Event:         input.Event,
-			EventPayload:  string(p),
-			Specs:         schedules,
-			Content:       dwf.Content,
+			Title:             strings.SplitN(commit.CommitMessage, "\n", 2)[0],
+			RepoID:            input.Repo.ID,
+			OwnerID:           input.Repo.OwnerID,
+			WorkflowID:        dwf.EntryName,
+			WorkflowDirectory: dwf.EntryDirectory,
+			TriggerUserID:     user_model.ActionsUserID,
+			Ref:               input.Repo.DefaultBranch,
+			CommitSHA:         commit.ID.String(),
+			Event:             input.Event,
+			EventPayload:      string(p),
+			Specs:             schedules,
+			Content:           dwf.Content,
 		}
 		crons = append(crons, run)
 	}

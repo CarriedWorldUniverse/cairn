@@ -123,18 +123,19 @@ func startTasks(ctx context.Context) error {
 func CreateScheduleTask(ctx context.Context, cron *actions_model.ActionSchedule) error {
 	// Create a new action run based on the schedule
 	run := &actions_model.ActionRun{
-		Title:         cron.Title,
-		RepoID:        cron.RepoID,
-		OwnerID:       cron.OwnerID,
-		WorkflowID:    cron.WorkflowID,
-		TriggerUserID: cron.TriggerUserID,
-		Ref:           cron.Ref,
-		CommitSHA:     cron.CommitSHA,
-		Event:         cron.Event,
-		EventPayload:  cron.EventPayload,
-		TriggerEvent:  string(webhook_module.HookEventSchedule),
-		ScheduleID:    cron.ID,
-		Status:        actions_model.StatusWaiting,
+		Title:             cron.Title,
+		RepoID:            cron.RepoID,
+		OwnerID:           cron.OwnerID,
+		WorkflowID:        cron.WorkflowID,
+		WorkflowDirectory: cron.WorkflowDirectory,
+		TriggerUserID:     cron.TriggerUserID,
+		Ref:               cron.Ref,
+		CommitSHA:         cron.CommitSHA,
+		Event:             cron.Event,
+		EventPayload:      cron.EventPayload,
+		TriggerEvent:      string(webhook_module.HookEventSchedule),
+		ScheduleID:        cron.ID,
+		Status:            actions_model.StatusWaiting,
 	}
 
 	vars, err := actions_model.GetVariablesOfRun(ctx, run)

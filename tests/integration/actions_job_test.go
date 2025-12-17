@@ -471,6 +471,7 @@ jobs:
 		assert.Equal(t, setting.AppURL, gtCtx["server_url"].GetStringValue())
 		assert.Equal(t, actionRun.CommitSHA, gtCtx["sha"].GetStringValue())
 		assert.Equal(t, actionRun.WorkflowID, gtCtx["workflow"].GetStringValue())
+		assert.Equal(t, "user2/actions-gitea-context/.gitea/workflows/pull.yml@refs/pull/1/head", gtCtx["workflow_ref"].GetStringValue())
 		assert.Equal(t, setting.Actions.DefaultActionsURL.URL(), gtCtx["gitea_default_actions_url"].GetStringValue())
 		token := gtCtx["token"].GetStringValue()
 		assert.Equal(t, actionTask.TokenLastEight, token[len(token)-8:])
