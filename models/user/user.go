@@ -62,8 +62,11 @@ const (
 	// UserTypeBot defines a bot user
 	UserTypeBot // 4
 
-	// UserTypeRemoteUser defines a remote user for federated users
+	// UserTypeRemoteUser defines a remote user for users created from f3
 	UserTypeRemoteUser // 5
+
+	// UserTypeActivityPubUser defines a user created from ActivityPub
+	UserTypeActivityPubUser // 6
 )
 
 const (
@@ -477,6 +480,10 @@ func (u *User) IsBot() bool {
 
 func (u *User) IsRemote() bool {
 	return u.Type == UserTypeRemoteUser
+}
+
+func (u *User) IsActivityPub() bool {
+	return u.Type == UserTypeActivityPubUser
 }
 
 // DisplayName returns full name if it's not empty,
