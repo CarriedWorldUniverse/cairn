@@ -18,6 +18,7 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/webhook"
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
@@ -102,19 +103,42 @@ func TestActionsAPISearchActionJobs_RepoRunnerAllPendingJobs(t *testing.T) {
 }
 
 func TestActionsAPIWorkflowDispatchReturnInfo(t *testing.T) {
-	onApplicationRun(t, func(t *testing.T, u *url.URL) {
-		workflowName := "dispatch.yml"
-		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
-		token := getUserToken(t, user2.LowerName, auth_model.AccessTokenScopeWriteRepository)
+	testCases := []struct {
+		name              string
+		workflowID        string
+		workflowDirectory string
+	}{
+		{
+			name:              "GitHub",
+			workflowID:        "dispatch.yml",
+			workflowDirectory: ".github/workflows",
+		},
+		{
+			name:              "Gitea",
+			workflowID:        "test.yml",
+			workflowDirectory: ".gitea/workflows",
+		},
+		{
+			name:              "Forgejo",
+			workflowID:        "build.yml",
+			workflowDirectory: ".forgejo/workflows",
+		},
+	}
 
-		// create the repo
-		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "api-repo-workflow-dispatch",
-			[]unit_model.Type{unit_model.TypeActions}, nil,
-			[]*files_service.ChangeRepoFile{
-				{
-					Operation: "create",
-					TreePath:  fmt.Sprintf(".forgejo/workflows/%s", workflowName),
-					ContentReader: strings.NewReader(`name: WD
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+				token := getUserToken(t, user2.LowerName, auth_model.AccessTokenScopeWriteRepository)
+
+				// create the repo
+				repo, _, f := tests.CreateDeclarativeRepo(t, user2, "api-repo-workflow-dispatch",
+					[]unit_model.Type{unit_model.TypeActions}, nil,
+					[]*files_service.ChangeRepoFile{
+						{
+							Operation: "create",
+							TreePath:  fmt.Sprintf("%s/%s", testCase.workflowDirectory, testCase.workflowID),
+							ContentReader: strings.NewReader(`name: WD
 on: [workflow-dispatch]
 jobs:
   t1:
@@ -126,51 +150,65 @@ jobs:
     steps:
       - run: echo "test 2"
 `,
+							),
+						},
+					},
+				)
+				defer f()
+
+				req := NewRequestWithJSON(
+					t,
+					http.MethodPost,
+					fmt.Sprintf(
+						"/api/v1/repos/%s/%s/actions/workflows/%s/dispatches",
+						repo.OwnerName, repo.Name, testCase.workflowID,
 					),
-				},
-			},
-		)
-		defer f()
+					&api.DispatchWorkflowOption{
+						Ref:           repo.DefaultBranch,
+						ReturnRunInfo: true,
+					},
+				)
+				req.AddTokenAuth(token)
 
-		req := NewRequestWithJSON(
-			t,
-			http.MethodPost,
-			fmt.Sprintf(
-				"/api/v1/repos/%s/%s/actions/workflows/%s/dispatches",
-				repo.OwnerName, repo.Name, workflowName,
-			),
-			&api.DispatchWorkflowOption{
-				Ref:           repo.DefaultBranch,
-				ReturnRunInfo: true,
-			},
-		)
-		req.AddTokenAuth(token)
+				res := MakeRequest(t, req, http.StatusCreated)
+				run := new(api.DispatchWorkflowRun)
+				DecodeJSON(t, res, run)
 
-		res := MakeRequest(t, req, http.StatusCreated)
-		run := new(api.DispatchWorkflowRun)
-		DecodeJSON(t, res, run)
+				assert.NotZero(t, run.ID)
+				assert.NotZero(t, run.RunNumber)
+				assert.Len(t, run.Jobs, 2)
 
-		assert.NotZero(t, run.ID)
-		assert.NotZero(t, run.RunNumber)
-		assert.Len(t, run.Jobs, 2)
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: run.ID})
+				assert.Equal(t, "WD", actionRun.Title)
+				assert.Equal(t, repo.ID, actionRun.RepoID)
+				assert.Equal(t, repo.OwnerID, actionRun.OwnerID)
+				assert.Equal(t, testCase.workflowID, actionRun.WorkflowID)
+				assert.Equal(t, testCase.workflowDirectory, actionRun.WorkflowDirectory)
+				assert.Equal(t, user2.ID, actionRun.TriggerUserID)
+				assert.Zero(t, actionRun.ScheduleID)
+				assert.Equal(t, "refs/heads/main", actionRun.Ref)
+				assert.Equal(t, webhook.HookEventType("workflow_dispatch"), actionRun.Event)
+				assert.Equal(t, "workflow_dispatch", actionRun.TriggerEvent)
 
-		req = NewRequestWithJSON(
-			t,
-			http.MethodPost,
-			fmt.Sprintf(
-				"/api/v1/repos/%s/%s/actions/workflows/%s/dispatches",
-				repo.OwnerName, repo.Name, workflowName,
-			),
-			&api.DispatchWorkflowOption{
-				Ref:           repo.DefaultBranch,
-				ReturnRunInfo: false,
-			},
-		)
-		req.AddTokenAuth(token)
-		res = MakeRequest(t, req, http.StatusNoContent)
-		body, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		assert.Empty(t, body) // 204 No Content doesn't support a body, so should be empty
+				req = NewRequestWithJSON(
+					t,
+					http.MethodPost,
+					fmt.Sprintf(
+						"/api/v1/repos/%s/%s/actions/workflows/%s/dispatches",
+						repo.OwnerName, repo.Name, testCase.workflowID,
+					),
+					&api.DispatchWorkflowOption{
+						Ref:           repo.DefaultBranch,
+						ReturnRunInfo: false,
+					},
+				)
+				req.AddTokenAuth(token)
+				res = MakeRequest(t, req, http.StatusNoContent)
+				body, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+				assert.Empty(t, body) // 204 No Content doesn't support a body, so should be empty
+			})
+		}
 	})
 }
 
