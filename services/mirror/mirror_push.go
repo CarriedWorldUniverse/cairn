@@ -192,7 +192,9 @@ func runPushSync(ctx context.Context, m *repo_model.PushMirror) error {
 			return errors.New("Unexpected error")
 		}
 
-		if setting.LFS.StartServer {
+		useSSHAuthentication := len(m.PublicKey) != 0
+
+		if setting.LFS.StartServer && !useSSHAuthentication {
 			log.Trace("SyncMirrors [repo: %-v]: syncing LFS objects...", m.Repo)
 
 			var gitRepo *git.Repository
@@ -220,7 +222,7 @@ func runPushSync(ctx context.Context, m *repo_model.PushMirror) error {
 		// Therefore, we need to create a temporary file that stores the private key, so that OpenSSH can use it.
 		// We delete the temporary file afterwards.
 		privateKeyPath := ""
-		if m.PublicKey != "" {
+		if useSSHAuthentication {
 			f, err := os.CreateTemp(os.TempDir(), m.RemoteName)
 			if err != nil {
 				log.Error("os.CreateTemp: %v", err)

@@ -237,14 +237,15 @@ func TestSSHPushMirror(t *testing.T) {
 		srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
 		assert.False(t, srcRepo.HasWiki())
 		sess := loginUser(t, user.Name)
+
 		pushToRepo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
-			Name:         optional.Some("push-mirror-test"),
+			Name:         optional.Some("push-mirror-misc-test"),
 			AutoInit:     optional.Some(false),
 			EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),
 		})
 		defer f()
-
 		sshURL := fmt.Sprintf("ssh://%s@%s/%s.git", setting.SSH.User, net.JoinHostPort(setting.SSH.ListenHost, strconv.Itoa(setting.SSH.ListenPort)), pushToRepo.FullName())
+
 		t.Run("Mutual exclusive", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
@@ -294,7 +295,17 @@ func TestSSHPushMirror(t *testing.T) {
 			htmlDoc.AssertElement(t, inputSelector, true)
 		})
 
-		t.Run("Normal", func(t *testing.T) {
+		testMirrorPush := func(t *testing.T, srcRepo *repo_model.Repository, expectedSHA string) {
+			t.Helper()
+
+			pushToRepo, _, f := tests.CreateDeclarativeRepoWithOptions(t, user, tests.DeclarativeRepoOptions{
+				Name:         optional.Some("push-mirror-test"),
+				AutoInit:     optional.Some(false),
+				EnabledUnits: optional.Some([]unit.Type{unit.TypeCode}),
+			})
+			defer f()
+			sshURL := fmt.Sprintf("ssh://%s@%s/%s.git", setting.SSH.User, net.JoinHostPort(setting.SSH.ListenHost, strconv.Itoa(setting.SSH.ListenPort)), pushToRepo.FullName())
+
 			var pushMirror *repo_model.PushMirror
 			t.Run("Adding", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
@@ -356,20 +367,19 @@ func TestSSHPushMirror(t *testing.T) {
 
 			t.Run("Check mirrored content", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
-				shortSHA := "1032bbf17f"
 
 				req := NewRequest(t, "GET", fmt.Sprintf("/%s", srcRepo.FullName()))
 				resp := sess.MakeRequest(t, req, http.StatusOK)
 				htmlDoc := NewHTMLParser(t, resp.Body)
 
-				assert.Contains(t, htmlDoc.Find(".shortsha").Text(), shortSHA)
+				assert.Contains(t, htmlDoc.Find(".shortsha").Text(), expectedSHA)
 
 				assert.Eventually(t, func() bool {
 					req = NewRequest(t, "GET", fmt.Sprintf("/%s", pushToRepo.FullName()))
 					resp = sess.MakeRequest(t, req, NoExpectedStatus)
 					htmlDoc = NewHTMLParser(t, resp.Body)
 
-					return resp.Code == http.StatusOK && htmlDoc.Find(".shortsha").Text() == shortSHA
+					return resp.Code == http.StatusOK && htmlDoc.Find(".shortsha").Text() == expectedSHA
 				}, time.Second*30, time.Second)
 			})
 
@@ -384,6 +394,17 @@ func TestSSHPushMirror(t *testing.T) {
 
 				assert.Contains(t, string(knownHosts), string(publicKey))
 			})
+		}
+
+		t.Run("Normal", func(t *testing.T) {
+			testMirrorPush(t, srcRepo, "1032bbf17f")
+		})
+
+		t.Run("LFS", func(t *testing.T) {
+			defer test.MockVariableValue(&setting.LFS.StartServer, true)()
+
+			srcRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 54})
+			testMirrorPush(t, srcRepo, "e9c32647ba")
 		})
 	})
 }
