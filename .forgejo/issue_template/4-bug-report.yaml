@@ -1,5 +1,5 @@
 name: 🐛 Bug Report (server / backend)
-description: Found something you weren't expecting? Report it here!
+description: "[Advanced users only] Found something you weren't expecting? Report it here!"
 title: "bug: "
 labels: bug/new-report
 body:
