@@ -32,27 +32,3 @@ type ActionTaskResponse struct {
 	Entries    []*ActionTask `json:"workflow_runs"`
 	TotalCount int64         `json:"total_count"`
 }
-
-// ActionRunnerLabel represents a Runner Label
-type ActionRunnerLabel struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
-// ActionRunner represents a Runner
-type ActionRunner struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Busy   bool   `json:"busy"`
-	// currently unused as forgejo does not support ephemeral runners, but they are defined in gh api spec
-	Ephemeral bool                 `json:"ephemeral"`
-	Labels    []*ActionRunnerLabel `json:"labels"`
-}
-
-// ActionRunnersResponse returns Runners
-type ActionRunnersResponse struct {
-	Entries    []*ActionRunner `json:"runners"`
-	TotalCount int64           `json:"total_count"`
-}

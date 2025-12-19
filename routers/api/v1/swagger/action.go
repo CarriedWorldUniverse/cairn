@@ -56,17 +56,3 @@ type swaggerRegistrationToken struct {
 	// in: body
 	Body shared.RegistrationToken `json:"body"`
 }
-
-// ActionRunner represents a Runner
-// swagger:response ActionRunner
-type swaggerActionRunner struct {
-	// in: body
-	Body api.ActionRunner `json:"body"`
-}
-
-// ActionRunnersResponse returns Runners
-// swagger:response ActionRunnersResponse
-type swaggerActionRunnerResponse struct {
-	// in: body
-	Body api.ActionRunnersResponse `json:"body"`
-}
