@@ -64,6 +64,8 @@ func subcmdAuth() *cli.Command {
 			microcmdAuthUpdateLdapBindDn(),
 			microcmdAuthAddLdapSimpleAuth(),
 			microcmdAuthUpdateLdapSimpleAuth(),
+			microcmdAuthAddPAM(),
+			microcmdAuthUpdatePAM(),
 			microcmdAuthAddSMTP(),
 			microcmdAuthUpdateSMTP(),
 			microcmdAuthList(),
