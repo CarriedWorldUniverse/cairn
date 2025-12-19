@@ -231,7 +231,7 @@ Forgejo or set your environment appropriately.`, "")
 			continue
 		}
 
-		fields := bytes.Fields(scanner.Bytes())
+		fields := bytes.Split(scanner.Bytes(), []byte(" "))
 		if len(fields) != 3 {
 			continue
 		}
@@ -397,7 +397,7 @@ Forgejo or set your environment appropriately.`, "")
 			continue
 		}
 
-		fields := bytes.Fields(scanner.Bytes())
+		fields := bytes.Split(scanner.Bytes(), []byte(" "))
 		if len(fields) != 3 {
 			continue
 		}
