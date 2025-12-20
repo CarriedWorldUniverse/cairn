@@ -142,6 +142,12 @@
 							</span>
 						{{end}}
 					{{end}}
+					{{if or (eq $.SortType "recentupdate") (eq $.SortType "leastupdate")}}
+					<span class="flex-text-inline">
+						{{svg "octicon-history" 14}}
+						{{ctx.Locale.Tr "issues.updated" (DateUtils.TimeSince .UpdatedUnix)}}
+					</span>
+					{{end}}
 				</div>
 			</div>
 		</div>
