@@ -62,6 +62,7 @@
     "repo.issues.filter_mention.hint": "Filter by mentioned user",
     "repo.issues.filter_modified.hint": "Filter by last modified date",
     "repo.issues.filter_sort.hint": "Sort by: created/comments/updated/deadline",
+    "issues.updated": "updated %s",
     "repo.pulls.poster_manage_approval": "Manage approval",
     "repo.pulls.poster_requires_approval": "Some workflows are <a href=\"%[1]s\">waiting to be reviewed.</a>",
     "repo.pulls.poster_requires_approval.tooltip": "The author of this pull request is not trusted to run workflows triggered by a pull request created from a forked repository or with AGit. The workflows triggered by a `pull_request` event will not run until they are approved.",

@@ -131,6 +131,36 @@ func TestViewIssuesSortByType(t *testing.T) {
 	}
 }
 
+func TestViewIssuesSortByUpdatedTime(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+	// When sorting by update time, the "updated" text and icon should appear
+	for _, sort := range []string{"recentupdate", "leastupdate"} {
+		req := NewRequest(t, "GET", repo.Link()+"/issues?sort="+sort)
+		resp := MakeRequest(t, req, http.StatusOK)
+
+		htmlDoc := NewHTMLParser(t, resp.Body)
+
+		issueList := htmlDoc.doc.Find("#issue-list")
+		updatedText := issueList.Find(".flex-item-body").First().Text()
+		assert.Contains(t, updatedText, "updated")
+
+		historyIcon := issueList.Find(".octicon-history")
+		assert.Positive(t, historyIcon.Length())
+	}
+
+	// When sorting by something else, the "updated" text and icon should NOT appear
+	req := NewRequest(t, "GET", repo.Link()+"/issues?sort=latest")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	issueList := htmlDoc.doc.Find("#issue-list")
+	historyIcon := issueList.Find(".octicon-history")
+	assert.Empty(t, historyIcon.Length())
+}
+
 func TestViewIssuesKeyword(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
