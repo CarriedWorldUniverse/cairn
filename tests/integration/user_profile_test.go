@@ -170,5 +170,37 @@ quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequa
 			assert.True(t, forkedRepo.IsFork, "Repository should be marked as a fork")
 			assert.Equal(t, originalRepo.ID, forkedRepo.ForkID, "Fork should reference original repository")
 		})
+
+		t.Run("private-profile-repo", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+			// Create a private .profile repository
+			profileRepo, _, f := tests.CreateDeclarativeRepo(t, user2, ".profile", nil, nil, []*files_service.ChangeRepoFile{
+				{
+					Operation:     "update",
+					TreePath:      "README.md",
+					ContentReader: strings.NewReader("# Private Profile Content\nThis should NOT show up on user profile."),
+				},
+			})
+			defer f()
+
+			// Make the repository private
+			profileRepo.IsPrivate = true
+			err := repo_service.UpdateRepository(git.DefaultContext, profileRepo, true)
+			require.NoError(t, err)
+
+			// Verify that user2's profile does NOT show the private content
+			req := NewRequest(t, "GET", "/user2")
+			resp := MakeRequest(t, req, http.StatusOK)
+			bodyStr := resp.Body.String()
+
+			assert.NotContains(t, bodyStr, "Private Profile Content", "Private .profile repo should NOT render profile content")
+			assert.NotContains(t, bodyStr, "This should NOT show up on user profile", "Private .profile repo should NOT render profile content")
+
+			// Verify the repository is actually private
+			assert.True(t, profileRepo.IsPrivate, "Repository should be marked as private")
+		})
 	})
 }

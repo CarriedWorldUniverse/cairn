@@ -97,8 +97,8 @@ func PrepareContextForProfileBigAvatar(ctx *context.Context) {
 func FindUserProfileReadme(ctx *context.Context, doer *user_model.User) (profileDbRepo *repo_model.Repository, profileGitRepo *git.Repository, profileReadmeBlob *git.Blob, profileClose func()) {
 	profileDbRepo, err := repo_model.GetRepositoryByName(ctx, ctx.ContextUser.ID, ".profile")
 	if err == nil {
-		// Don't show profile content if .profile repository is a fork
-		if profileDbRepo.IsFork {
+		// Don't show profile content if .profile repository is a fork or private
+		if profileDbRepo.IsFork || profileDbRepo.IsPrivate {
 			return nil, nil, nil, func() {}
 		}
 		perm, err := access_model.GetUserRepoPermission(ctx, profileDbRepo, doer)
