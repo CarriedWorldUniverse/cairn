@@ -140,3 +140,98 @@ func TestDeleteOfflineRunnersErrorOnInvalidOlderThanValue(t *testing.T) {
 	defer timeutil.MockUnset()
 	require.Error(t, DeleteOfflineRunners(db.DefaultContext, timeutil.TimeStampNow(), false))
 }
+
+func TestRunnerEditable(t *testing.T) {
+	testCases := []struct {
+		name     string
+		runner   *ActionRunner
+		ownerID  int64
+		repoID   int64
+		editable bool
+	}{
+		{
+			name:     "admin-can-edit-global-runner",
+			runner:   &ActionRunner{Name: "global-runner", OwnerID: 0, RepoID: 0},
+			ownerID:  0,
+			repoID:   0,
+			editable: true,
+		},
+		{
+			name:     "admin-can-edit-user-runner",
+			runner:   &ActionRunner{Name: "user-runner", OwnerID: 36, RepoID: 0},
+			ownerID:  0,
+			repoID:   0,
+			editable: true,
+		},
+		{
+			name:     "admin-can-edit-repository-runner",
+			runner:   &ActionRunner{Name: "user-runner", OwnerID: 0, RepoID: 110},
+			ownerID:  0,
+			repoID:   0,
+			editable: true,
+		},
+		{
+			name:     "user-can-edit-its-runner",
+			runner:   &ActionRunner{Name: "user-runner", OwnerID: 469, RepoID: 0},
+			ownerID:  469,
+			repoID:   0,
+			editable: true,
+		},
+		{
+			name:     "user-cannot-edit-global-runner",
+			runner:   &ActionRunner{Name: "global-runner", OwnerID: 0, RepoID: 0},
+			ownerID:  469,
+			repoID:   0,
+			editable: false,
+		},
+		{
+			name:     "user-cannot-edit-other-users-runner",
+			runner:   &ActionRunner{Name: "user-runner", OwnerID: 892, RepoID: 0},
+			ownerID:  469,
+			repoID:   0,
+			editable: false,
+		},
+		{
+			name:     "user-cannot-edit-repo-runner",
+			runner:   &ActionRunner{Name: "repo-runner", OwnerID: 0, RepoID: 151},
+			ownerID:  469,
+			repoID:   0,
+			editable: false,
+		},
+		{
+			name:     "repo-can-edit-its-runner",
+			runner:   &ActionRunner{Name: "repo-runner", OwnerID: 0, RepoID: 693},
+			ownerID:  0,
+			repoID:   693,
+			editable: true,
+		},
+		{
+			name:     "repo-cannot-edit-other-repo-runner",
+			runner:   &ActionRunner{Name: "repo-runner", OwnerID: 0, RepoID: 519},
+			ownerID:  0,
+			repoID:   693,
+			editable: false,
+		},
+		{
+			name:     "repo-cannot-edit-global-runner",
+			runner:   &ActionRunner{Name: "global-runner", OwnerID: 0, RepoID: 0},
+			ownerID:  0,
+			repoID:   693,
+			editable: false,
+		},
+		{
+			name:     "repo-cannot-edit-user-runner",
+			runner:   &ActionRunner{Name: "user-runner", OwnerID: 6, RepoID: 0},
+			ownerID:  0,
+			repoID:   693,
+			editable: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := testCase.runner.Editable(testCase.ownerID, testCase.repoID)
+			assert.Equal(t, testCase.editable, result)
+		})
+	}
+}
