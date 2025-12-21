@@ -8,13 +8,11 @@ import (
 	"forgejo.org/services/context"
 )
 
-// https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-an-organization
-
-// GetRegistrationToken returns the token to register user runners
+// GetRegistrationToken returns a token to register user-level runners
 func GetRegistrationToken(ctx *context.APIContext) {
 	// swagger:operation GET /user/actions/runners/registration-token user userGetRunnerRegistrationToken
 	// ---
-	// summary: Get an user's actions runner registration token
+	// summary: Get the user's runner registration token
 	// produces:
 	// - application/json
 	// parameters:
@@ -29,7 +27,7 @@ func GetRegistrationToken(ctx *context.APIContext) {
 	shared.GetRegistrationToken(ctx, ctx.Doer.ID, 0)
 }
 
-// SearchActionRunJobs return a list of actions jobs filtered by the provided parameters
+// SearchActionRunJobs returns a list of actions jobs filtered by the provided parameters
 func SearchActionRunJobs(ctx *context.APIContext) {
 	// swagger:operation GET /user/actions/runners/jobs user userSearchRunJobs
 	// ---
@@ -51,33 +49,16 @@ func SearchActionRunJobs(ctx *context.APIContext) {
 	shared.GetActionRunJobs(ctx, ctx.Doer.ID, 0)
 }
 
-// CreateRegistrationToken returns the token to register user runners
-func CreateRegistrationToken(ctx *context.APIContext) {
-	// swagger:operation POST /user/actions/runners/registration-token user userCreateRunnerRegistrationToken
-	// ---
-	// summary: Get an user's actions runner registration token
-	// produces:
-	// - application/json
-	// parameters:
-	// responses:
-	//   "200":
-	//     "$ref": "#/responses/RegistrationToken"
-	//   "401":
-	//     "$ref": "#/responses/unauthorized"
-
-	shared.GetRegistrationToken(ctx, ctx.Doer.ID, 0)
-}
-
-// ListRunners get user-level runners
+// ListRunners returns the user's runners
 func ListRunners(ctx *context.APIContext) {
 	// swagger:operation GET /user/actions/runners user getUserRunners
 	// ---
-	// summary: Get user-level runners
+	// summary: Get the user's runners
 	// produces:
 	// - application/json
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/ActionRunnersResponse"
+	//     "$ref": "#/responses/ActionRunnerList"
 	//   "400":
 	//     "$ref": "#/responses/error"
 	//   "401":
@@ -87,17 +68,17 @@ func ListRunners(ctx *context.APIContext) {
 	shared.ListRunners(ctx, ctx.Doer.ID, 0)
 }
 
-// GetRunner get an user-level runner
+// GetRunner gets a particular runner that belongs to the user
 func GetRunner(ctx *context.APIContext) {
 	// swagger:operation GET /user/actions/runners/{runner_id} user getUserRunner
 	// ---
-	// summary: Get an user-level runner
+	// summary: Get a particular runner that belongs to the user
 	// produces:
 	// - application/json
 	// parameters:
 	// - name: runner_id
 	//   in: path
-	//   description: id of the runner
+	//   description: ID of the runner
 	//   type: string
 	//   required: true
 	// responses:
@@ -112,17 +93,17 @@ func GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, ctx.Doer.ID, 0, ctx.ParamsInt64("runner_id"))
 }
 
-// DeleteRunner delete an user-level runner
+// DeleteRunner deletes a particular user-level runner
 func DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /user/actions/runners/{runner_id} user deleteUserRunner
 	// ---
-	// summary: Delete an user-level runner
+	// summary: Delete a particular user-level runner
 	// produces:
 	// - application/json
 	// parameters:
 	// - name: runner_id
 	//   in: path
-	//   description: id of the runner
+	//   description: ID of the runner
 	//   type: string
 	//   required: true
 	// responses:

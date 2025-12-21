@@ -27,8 +27,6 @@ type API interface {
 	GetRegistrationToken(*context.APIContext)
 	// SearchActionRunJobs get pending Action run jobs
 	SearchActionRunJobs(*context.APIContext)
-	// CreateRegistrationToken get registration token
-	CreateRegistrationToken(*context.APIContext)
 	// ListRunners list runners
 	ListRunners(*context.APIContext)
 	// GetRunner get a runner

@@ -19,6 +19,7 @@ import (
 	user_model "forgejo.org/models/user"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/webhook"
+	"forgejo.org/routers/api/v1/shared"
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
@@ -350,4 +351,111 @@ func TestActionsAPIGetActionRun(t *testing.T) {
 			assert.Equal(t, dbRun.TriggerUserID, apiRun.TriggerUser.ID)
 		})
 	}
+}
+
+func TestAPIRepoActionsRunnerRegistrationTokenOperations(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestAPIRepoActionsRunnerRegistrationTokenOperations")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, user2.Name)
+	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+
+	t.Run("GetRegistrationToken", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/registration-token")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		var registrationToken shared.RegistrationToken
+		DecodeJSON(t, response, &registrationToken)
+
+		expected := shared.RegistrationToken{Token: "BzcgyhjWhLeKGA4ihJIigeRDrcxrFESd0yizEpb7xZJ"}
+
+		assert.Equal(t, expected, registrationToken)
+	})
+}
+
+func TestAPIRepoActionsRunnerOperations(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestAPIRepoActionsRunnerOperations")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, user2.Name)
+	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+	t.Run("GetRunners", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		assert.Equal(t, "2", response.Header().Get("X-Total-Count"))
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		runnerOne := &api.ActionRunner{
+			ID:          899251,
+			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
+			Name:        "runner-1-repository",
+			Version:     "dev",
+			OwnerID:     0,
+			RepoID:      62,
+			Description: "A superb runner",
+			Labels:      []string{"debian", "gpu"},
+			Status:      "offline",
+		}
+		runnerThree := &api.ActionRunner{
+			ID:          899253,
+			UUID:        "0a7e5e05-2da4-44d5-a72a-615da120cef6",
+			Name:        "runner-3-repository",
+			Version:     "11.3.1",
+			OwnerID:     0,
+			RepoID:      62,
+			Description: "Another fine runner",
+			Labels:      []string{"fedora"},
+			Status:      "offline",
+		}
+
+		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree}, runners)
+	})
+
+	t.Run("GetRunner", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/899251")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		var runner *api.ActionRunner
+		DecodeJSON(t, response, &runner)
+
+		runnerOne := &api.ActionRunner{
+			ID:          899251,
+			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
+			Name:        "runner-1-repository",
+			Version:     "dev",
+			OwnerID:     0,
+			RepoID:      62,
+			Description: "A superb runner",
+			Labels:      []string{"debian", "gpu"},
+			Status:      "offline",
+		}
+
+		assert.Equal(t, runnerOne, runner)
+	})
+
+	t.Run("DeleteRunner", func(t *testing.T) {
+		url := "/api/v1/repos/user2/test_workflows/actions/runners/899253"
+
+		request := NewRequest(t, "GET", url)
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusOK)
+
+		deleteRequest := NewRequest(t, "DELETE", url)
+		deleteRequest.AddTokenAuth(writeToken)
+		MakeRequest(t, deleteRequest, http.StatusNoContent)
+
+		request = NewRequest(t, "GET", url)
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusNotFound)
+	})
 }

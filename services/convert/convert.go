@@ -522,26 +522,32 @@ func ToChangedFile(f *gitdiff.DiffFile, repo *repo_model.Repository, commit stri
 	return file
 }
 
-func ToActionRunner(ctx context.Context, runner *actions_model.ActionRunner) *api.ActionRunner {
-	status := runner.Status()
-	apiStatus := "offline"
-	if runner.IsOnline() {
-		apiStatus = "online"
+func ToActionRunner(runner *actions_model.ActionRunner) (api.ActionRunner, error) {
+	runnerStatus := runner.Status()
+
+	var status api.RunnerStatus
+	switch runnerStatus {
+	case runnerv1.RunnerStatus_RUNNER_STATUS_OFFLINE:
+		status = api.RunnerStatusOffline
+	case runnerv1.RunnerStatus_RUNNER_STATUS_IDLE:
+		status = api.RunnerStatusIdle
+	case runnerv1.RunnerStatus_RUNNER_STATUS_ACTIVE:
+		status = api.RunnerStatusActive
+	default:
+		return api.ActionRunner{}, fmt.Errorf("unexpected runner status: %s", runnerStatus)
 	}
-	labels := make([]*api.ActionRunnerLabel, len(runner.AgentLabels))
-	for i, label := range runner.AgentLabels {
-		labels[i] = &api.ActionRunnerLabel{
-			ID:   int64(i),
-			Name: label,
-			Type: "custom",
-		}
+
+	actionRunner := api.ActionRunner{
+		ID:          runner.ID,
+		Name:        runner.Name,
+		UUID:        runner.UUID,
+		OwnerID:     runner.OwnerID,
+		RepoID:      runner.RepoID,
+		Description: runner.Description,
+		Version:     runner.Version,
+		Status:      status.String(),
+		Labels:      runner.AgentLabels,
 	}
-	return &api.ActionRunner{
-		ID:     runner.ID,
-		Name:   runner.Name,
-		Status: apiStatus,
-		Busy:   status == runnerv1.RunnerStatus_RUNNER_STATUS_ACTIVE,
-		// Ephemeral: runner.Ephemeral,
-		Labels: labels,
-	}
+
+	return actionRunner, nil
 }
