@@ -1,4 +1,5 @@
 // Copyright 2019 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package markdown
@@ -87,6 +88,8 @@ func (g *ASTTransformer) Transform(node *ast.Document, reader text.Reader, pc pa
 			if scope, found := ctx.Metas["scope"]; found {
 				v.Name = fmt.Appendf(v.Name, "-%s", scope)
 			}
+		case *ast.RawHTML:
+			g.transformRawHTML(ctx, v, reader)
 		}
 		return ast.WalkContinue, nil
 	})
