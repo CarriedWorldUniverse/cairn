@@ -8,13 +8,11 @@ import (
 	"forgejo.org/services/context"
 )
 
-// https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-an-organization
-
 // GetRegistrationToken returns the token to register global runners
 func GetRegistrationToken(ctx *context.APIContext) {
 	// swagger:operation GET /admin/runners/registration-token admin adminGetRunnerRegistrationToken
 	// ---
-	// summary: Get a global actions runner registration token
+	// summary: Get a runner registration token for registering global runners
 	// produces:
 	// - application/json
 	// parameters:
@@ -29,7 +27,7 @@ func GetRegistrationToken(ctx *context.APIContext) {
 func SearchActionRunJobs(ctx *context.APIContext) {
 	// swagger:operation GET /admin/runners/jobs admin adminSearchRunJobs
 	// ---
-	// summary: Search action jobs according filter conditions
+	// summary: Search action jobs according to filter conditions
 	// produces:
 	// - application/json
 	// parameters:
@@ -45,31 +43,16 @@ func SearchActionRunJobs(ctx *context.APIContext) {
 	shared.GetActionRunJobs(ctx, 0, 0)
 }
 
-// CreateRegistrationToken returns the token to register global runners
-func CreateRegistrationToken(ctx *context.APIContext) {
-	// swagger:operation POST /admin/actions/runners/registration-token admin adminCreateRunnerRegistrationToken
-	// ---
-	// summary: Get a global actions runner registration token
-	// produces:
-	// - application/json
-	// parameters:
-	// responses:
-	//   "200":
-	//     "$ref": "#/responses/RegistrationToken"
-
-	shared.GetRegistrationToken(ctx, 0, 0)
-}
-
-// ListRunners get all runners
+// ListRunners returns all runners, no matter whether they are global runners or scoped to an organization, user, or repository
 func ListRunners(ctx *context.APIContext) {
 	// swagger:operation GET /admin/actions/runners admin getAdminRunners
 	// ---
-	// summary: Get all runners
+	// summary: Get all runners, no matter whether they are global runners or scoped to an organization, user, or repository
 	// produces:
 	// - application/json
 	// responses:
 	//   "200":
-	//     "$ref": "#/definitions/ActionRunnersResponse"
+	//     "$ref": "#/responses/ActionRunnerList"
 	//   "400":
 	//     "$ref": "#/responses/error"
 	//   "404":
@@ -77,22 +60,22 @@ func ListRunners(ctx *context.APIContext) {
 	shared.ListRunners(ctx, 0, 0)
 }
 
-// GetRunner get a global runner
+// GetRunner returns a particular runner, no matter whether it is a global runner or scoped to an organization, user, or repository
 func GetRunner(ctx *context.APIContext) {
 	// swagger:operation GET /admin/actions/runners/{runner_id} admin getAdminRunner
 	// ---
-	// summary: Get a global runner
+	// summary: Get a particular runner, no matter whether it is a global runner or scoped to an organization, user, or repository
 	// produces:
 	// - application/json
 	// parameters:
 	// - name: runner_id
 	//   in: path
-	//   description: id of the runner
+	//   description: ID of the runner
 	//   type: string
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/definitions/ActionRunner"
+	//     "$ref": "#/responses/ActionRunner"
 	//   "400":
 	//     "$ref": "#/responses/error"
 	//   "404":
@@ -100,17 +83,17 @@ func GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, 0, 0, ctx.ParamsInt64("runner_id"))
 }
 
-// DeleteRunner delete a global runner
+// DeleteRunner removes a particular runner, no matter whether it is a global runner or scoped to an organization, user, or repository
 func DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /admin/actions/runners/{runner_id} admin deleteAdminRunner
 	// ---
-	// summary: Delete a global runner
+	// summary: Delete a particular runner, no matter whether it is a global runner or scoped to an organization, user, or repository
 	// produces:
 	// - application/json
 	// parameters:
 	// - name: runner_id
 	//   in: path
-	//   description: id of the runner
+	//   description: ID of the runner
 	//   type: string
 	//   required: true
 	// responses:

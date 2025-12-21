@@ -6,11 +6,13 @@ package convert
 import (
 	"testing"
 
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -102,4 +104,78 @@ uf51WIBywxztet6vi+jYJK1jFoY4iA==
 			Payload: "tree e20aa0bcd2878f65a93de68a3eed9045d6efdd74\nparent 5cd9b9847563eb730d63d23c1f1b84868e52ae7d\nauthor user2 <user2+committer@example.com> 1759956520 -0600\ncommitter user2 <user2+committer@example.com> 1759956520 -0600\n\nAdd content\n",
 		}, commitVerification)
 	})
+}
+
+func TestToActionRunner(t *testing.T) {
+	testCases := []struct {
+		name           string
+		runner         actions_model.ActionRunner
+		expectedStatus api.RunnerStatus
+	}{
+		{
+			name: "active-runner",
+			runner: actions_model.ActionRunner{
+				ID:          846,
+				UUID:        "0bf6d33b-9be8-4bb3-a210-351ae7f3d48e",
+				OwnerID:     204958,
+				RepoID:      0,
+				Name:        "active-example",
+				Version:     "12.1.2",
+				Description: "A very busy runner",
+				AgentLabels: []string{"debian", "gpu"},
+				LastOnline:  timeutil.TimeStampNow(),
+				LastActive:  timeutil.TimeStampNow(),
+			},
+			expectedStatus: api.RunnerStatusActive,
+		},
+		{
+			name: "offline-runner",
+			runner: actions_model.ActionRunner{
+				ID:          731,
+				UUID:        "29b075f8-cd54-4dc2-b1e2-db303b32b0ce",
+				OwnerID:     0,
+				RepoID:      255289,
+				Name:        "offline-example",
+				Version:     "dev",
+				Description: "",
+				AgentLabels: []string{},
+				LastOnline:  0,
+				LastActive:  0,
+			},
+			expectedStatus: api.RunnerStatusOffline,
+		},
+		{
+			name: "idle-runner",
+			runner: actions_model.ActionRunner{
+				ID:          117,
+				UUID:        "865ca613-f258-49bc-a986-1037ace1ca35",
+				OwnerID:     39115,
+				RepoID:      0,
+				Name:        "idle-example",
+				Version:     "11.3.1",
+				Description: "A runner twiddling its thumbs",
+				AgentLabels: []string{"docker"},
+				LastOnline:  timeutil.TimeStampNow(),
+				LastActive:  timeutil.TimeStampNow().AddDuration(-actions_model.RunnerIdleTime),
+			},
+			expectedStatus: api.RunnerStatusIdle,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actionRunner, err := ToActionRunner(&testCase.runner)
+
+			require.NoError(t, err)
+			assert.Equal(t, testCase.runner.ID, actionRunner.ID)
+			assert.Equal(t, testCase.runner.Name, actionRunner.Name)
+			assert.Equal(t, testCase.runner.UUID, actionRunner.UUID)
+			assert.Equal(t, testCase.runner.OwnerID, actionRunner.OwnerID)
+			assert.Equal(t, testCase.runner.RepoID, actionRunner.RepoID)
+			assert.Equal(t, testCase.runner.Version, actionRunner.Version)
+			assert.Equal(t, testCase.runner.Description, actionRunner.Description)
+			assert.Equal(t, testCase.expectedStatus.String(), actionRunner.Status)
+			assert.Equal(t, testCase.runner.AgentLabels, actionRunner.Labels)
+		})
+	}
 }
