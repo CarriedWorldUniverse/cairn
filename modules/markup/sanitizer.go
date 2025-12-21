@@ -1,5 +1,6 @@
-// Copyright 2017 The Gitea Authors. All rights reserved.
 // Copyright 2017 The Gogs Authors. All rights reserved.
+// Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package markup
@@ -77,6 +78,9 @@ func createDefaultPolicy() *bluemonday.Policy {
 	// Checkboxes
 	policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 	policy.AllowAttrs("checked", "disabled", "data-source-position").OnElements("input")
+
+	// Buttons
+	policy.AllowAttrs("type").Matching(regexp.MustCompile(`^button$`)).OnElements("button")
 
 	// Custom URL-Schemes
 	if len(setting.Markdown.CustomURLSchemes) > 0 {

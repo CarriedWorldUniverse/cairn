@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package markdown_test
@@ -123,6 +124,32 @@ func TestRender_Images(t *testing.T) {
 	test(
 		"[!["+title+"]("+url+")]("+href+")",
 		`<p><a href="`+href+`" rel="nofollow"><img src="`+result+`" alt="`+title+`"/></a></p>`)
+}
+
+func TestRender_Buttons(t *testing.T) {
+	setting.AppURL = AppURL
+
+	test := func(input, expected string) {
+		buffer, err := markdown.RenderString(&markup.RenderContext{
+			Ctx: git.DefaultContext,
+			Links: markup.Links{
+				Base: FullURL,
+			},
+		}, input)
+		require.NoError(t, err)
+		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(buffer)))
+	}
+
+	test(
+		"<button>Test</button>",
+		`<p><button type="button">Test</button></p>`)
+
+	test(
+		`<button class="toggle-escape-button btn interact-bg">Test</button>`,
+		`<p><button type="button" class="toggle-escape-button btn interact-bg">Test</button></p>`)
+	test(
+		`<button type="submit" class="toggle-escape-button btn interact-bg">Test</button>`,
+		`<p><button type="button" class="toggle-escape-button btn interact-bg">Test</button></p>`)
 }
 
 func testAnswers(baseURLContent, baseURLImages string) []string {
