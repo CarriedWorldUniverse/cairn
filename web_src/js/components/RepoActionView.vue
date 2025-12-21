@@ -472,12 +472,14 @@ export default {
         <button class="ui basic small compact button primary" @click="approveRun()" v-if="canApprove">
           {{ locale.approve }}
         </button>
-        <button class="ui basic small compact button red" @click="cancelRun()" v-else-if="canCancel">
-          {{ locale.cancel }}
-        </button>
-        <button class="ui basic small compact button tw-mr-0 tw-whitespace-nowrap link-action" :data-url="`${run.link}/rerun`" v-else-if="canRerun">
-          {{ locale.rerun_all }}
-        </button>
+        <div class="action-info-summary-actions" v-else>
+          <button class="ui basic small compact button red" @click="cancelRun()" v-if="canCancel">
+            {{ locale.cancel }}
+          </button>
+          <button class="ui basic small compact button tw-mr-0 tw-whitespace-nowrap link-action" :data-url="`${run.link}/rerun`" v-if="canRerun">
+            {{ locale.rerun_all }}
+          </button>
+        </div>
       </div>
       <div class="action-summary">
         {{ run.commit.localeCommit }}
@@ -629,15 +631,27 @@ export default {
 
 .action-info-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
 .action-info-summary-title {
   display: flex;
   align-items: center;
   gap: 0.5em;
+}
+
+.action-info-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--button-spacing);
+  margin-left: auto;
+}
+
+.action-info-summary-actions > button {
+  margin: 0;
 }
 
 .action-info-summary-title-text {
