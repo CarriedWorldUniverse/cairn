@@ -22,7 +22,7 @@ jobs:
           cat <<'EOF'
           ${{ toJSON(github) }}
           EOF
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - run: su forgejo -c 'make deps-backend deps-tools'
       - run: su forgejo -c 'make --always-make -j$(nproc) lint-backend tidy-check swagger-check lint-swagger fmt-check swagger-validate' # ensure the "go-licenses" make target runs
@@ -34,7 +34,7 @@ jobs:
       image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - run: make deps-frontend
       - run: make lint-frontend
       - run: make checks-frontend
@@ -78,7 +78,7 @@ jobs:
           MINIO_ROOT_USER: 123456
           MINIO_ROOT_PASSWORD: 12345678
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: install git >= 2.42
         uses: ./.forgejo/workflows-composite/apt-install-from
@@ -105,7 +105,7 @@ jobs:
       image: 'data.forgejo.org/oci/playwright:latest'
       options: --tmpfs /tmp:exec,noatime
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
         with:
           fetch-depth: 20
       - uses: ./.forgejo/workflows-composite/setup-env
@@ -175,7 +175,7 @@ jobs:
         env:
           ALLOW_EMPTY_PASSWORD: "yes" # redis & valkey will immediately shutdown with no defined password unless overridden
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: install git >= 2.42
         uses: ./.forgejo/workflows-composite/apt-install-from
@@ -208,7 +208,7 @@ jobs:
           MYSQL_EXTRA_FLAGS: --innodb-adaptive-flushing=OFF --innodb-buffer-pool-size=4G --innodb-log-buffer-size=128M --innodb-flush-log-at-trx-commit=0 --innodb-flush-log-at-timeout=30 --innodb-flush-method=nosync --innodb-fsync-threshold=1000000000 --disable-log-bin
         options: --tmpfs /bitnami/mysql/data:noatime
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: install dependencies & git >= 2.42
         uses: ./.forgejo/workflows-composite/apt-install-from
@@ -246,7 +246,7 @@ jobs:
           POSTGRESQL_EXTRA_FLAGS: -c full_page_writes=off
         options: --tmpfs /bitnami/postgresql
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: install dependencies & git >= 2.42
         uses: ./.forgejo/workflows-composite/apt-install-from
@@ -268,7 +268,7 @@ jobs:
       image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - name: install dependencies & git >= 2.42
         uses: ./.forgejo/workflows-composite/apt-install-from
@@ -296,7 +296,7 @@ jobs:
       image: 'data.forgejo.org/oci/node:24-bookworm'
       options: --tmpfs /tmp:exec,noatime
     steps:
-      - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
       - run: su forgejo -c 'make deps-backend deps-tools'
       - run: su forgejo -c 'make security-check'
