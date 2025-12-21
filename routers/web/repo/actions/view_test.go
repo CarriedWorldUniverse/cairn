@@ -382,6 +382,55 @@ func TestActionsViewViewPost(t *testing.T) {
 	}
 }
 
+func TestActionsViewCancelableUntilAllJobsFinished(t *testing.T) {
+	unittest.PrepareTestEnv(t)
+
+	tests := []struct {
+		name     string
+		runIndex int64
+		assert   func(*testing.T, *ViewResponse)
+	}{
+		{
+			name:     "failed and running",
+			runIndex: 191,
+			assert: func(t *testing.T, actual *ViewResponse) {
+				assert.Equal(t, "failure", actual.State.Run.Jobs[0].Status)
+				assert.Equal(t, "running", actual.State.Run.Jobs[1].Status)
+				assert.True(t, actual.State.Run.CanCancel)
+			},
+		},
+		{
+			name:     "failed and success",
+			runIndex: 192,
+			assert: func(t *testing.T, actual *ViewResponse) {
+				assert.Equal(t, "failure", actual.State.Run.Jobs[0].Status)
+				assert.Equal(t, "success", actual.State.Run.Jobs[1].Status)
+				assert.False(t, actual.State.Run.CanCancel)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, resp := contexttest.MockContext(t, "user2/repo1/actions/runs/0")
+			contexttest.LoadUser(t, ctx, 1)
+			contexttest.LoadRepo(t, ctx, 4)
+			ctx.SetParams(":run", fmt.Sprintf("%d", tt.runIndex))
+			ctx.SetParams(":attempt", fmt.Sprintf("%d", 0))
+			web.SetForm(ctx, &ViewRequest{})
+
+			ViewPost(ctx)
+			require.Equal(t, http.StatusOK, resp.Result().StatusCode, "failure in ViewPost(): %q", resp.Body.String())
+
+			var actual ViewResponse
+			err := json.Unmarshal(resp.Body.Bytes(), &actual)
+			require.NoError(t, err)
+
+			tt.assert(t, &actual)
+		})
+	}
+}
+
 func TestActionsViewRedirectToLatestAttempt(t *testing.T) {
 	unittest.PrepareTestEnv(t)
 

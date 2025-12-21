@@ -282,7 +282,6 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 	resp.State.Run.Title = run.Title
 	resp.State.Run.TitleHTML = templates.RenderCommitMessage(ctx, run.Title, metas)
 	resp.State.Run.Link = run.Link()
-	resp.State.Run.CanCancel = !run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanApprove = run.NeedApproval && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanRerun = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanDeleteArtifact = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
@@ -310,6 +309,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 		})
 	}
 	resp.State.Run.Done = done
+	resp.State.Run.CanCancel = !done && ctx.Repo.CanWrite(unit.TypeActions)
 
 	pusher := ViewUser{
 		DisplayName: run.TriggerUser.GetDisplayName(),
