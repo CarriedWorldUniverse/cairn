@@ -16,7 +16,7 @@
 				</a>
 				<div class="flex-item-body">
 					<b>{{if not $.CurWorkflow}}{{.WorkflowID}} {{end}}#{{.Index}}</b> -
-					{{- if .ScheduleID -}}
+					{{if .ScheduleID -}}
 						{{ctx.Locale.Tr "actions.runs.scheduled"}}
 					{{- else -}}
 						{{ctx.Locale.Tr "actions.runs.commit"}}
