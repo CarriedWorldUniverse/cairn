@@ -475,6 +475,9 @@ func TestRegExp_hashCurrentPattern(t *testing.T) {
 		":abcd3ef",
 		".abcd3ef",
 		" (abcd3ef). ",
+		"abcd3ef...",
+		"...abcd3ef",
+		"(!...abcd3ef",
 	}
 	falseTestCases := []string{
 		"test",
@@ -484,6 +487,7 @@ func TestRegExp_hashCurrentPattern(t *testing.T) {
 		"abcdefghijklmnopqrstuvwxyzabcdefghijklmO",
 		"commit/abcdefd",
 		"abcd3ef...defabcd",
+		"f..defabcd",
 	}
 
 	for _, testCase := range trueTestCases {
