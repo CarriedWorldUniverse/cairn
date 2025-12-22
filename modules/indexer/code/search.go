@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"html/template"
+	"slices"
 	"strings"
 
 	"forgejo.org/modules/highlight"
@@ -45,6 +46,19 @@ const (
 	SearchModeUnion = internal.CodeSearchModeUnion
 	SearchModeFuzzy = internal.CodeSearchModeFuzzy
 )
+
+type Results []*Result
+
+// Get the set of repo IDs from a list of search results
+func (res Results) RepoIDs() []int64 {
+	ids := make([]int64, len(res))
+	for _, r := range res {
+		if !slices.Contains(ids, r.RepoID) {
+			ids = append(ids, r.RepoID)
+		}
+	}
+	return ids
+}
 
 func indices(content string, selectionStartIndex, selectionEndIndex int) (int, int) {
 	startIndex := selectionStartIndex
@@ -218,7 +232,7 @@ func searchResult(result *internal.SearchResult, startIndex, endIndex int) (*Res
 }
 
 // PerformSearch perform a search on a repository
-func PerformSearch(ctx context.Context, opts *SearchOptions) (int, []*Result, []*SearchResultLanguages, error) {
+func PerformSearch(ctx context.Context, opts *SearchOptions) (int, Results, []*SearchResultLanguages, error) {
 	if opts == nil || len(opts.Keyword) == 0 {
 		return 0, nil, nil, nil
 	}
