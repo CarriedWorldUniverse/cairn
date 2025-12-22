@@ -1,7 +1,7 @@
 <script>
 import {SvgIcon} from '../svg.js';
 import ActionRunStatus from './ActionRunStatus.vue';
-import ActionJobStep from './ActionJobStep.vue';
+import ActionJobStepList from './ActionJobStepList.vue';
 import {toggleElem} from '../utils/dom.js';
 import {GET, POST, DELETE} from '../modules/fetch.js';
 
@@ -10,7 +10,7 @@ export default {
   components: {
     SvgIcon,
     ActionRunStatus,
-    ActionJobStep,
+    ActionJobStepList,
   },
   props: {
     initialJobData: {
@@ -243,7 +243,7 @@ export default {
     },
 
     appendLogs(stepIndex, logLines, startTime) {
-      this.$refs.jobSteps[stepIndex].appendLogs(logLines, startTime);
+      this.$refs.stepList.appendLogs(stepIndex, logLines, startTime);
     },
 
     async fetchArtifacts() {
@@ -401,9 +401,6 @@ export default {
 
     toggleTimeDisplay(type) {
       this.timeVisible[`log-time-${type}`] = !this.timeVisible[`log-time-${type}`];
-      for (const el of this.$refs.steps.querySelectorAll(`.log-time-${type}`)) {
-        toggleElem(el, this.timeVisible[`log-time-${type}`]);
-      }
     },
 
     toggleFullScreen() {
@@ -435,9 +432,7 @@ export default {
         // so logline can be selected by querySelector
         await this.loadJob();
       }
-      const logLine = this.$refs.steps.querySelector(selectedLogStep);
-      if (!logLine) return;
-      logLine.querySelector('.line-num').click();
+      this.$refs.stepList.scrollIntoView(step, selectedLogStep);
     },
 
     runAttemptLabel(attempt) {
@@ -591,25 +586,17 @@ export default {
             </div>
           </div>
         </div>
-        <div class="job-step-container" ref="steps" v-if="currentJob.steps.length">
-          <div class="job-step-section" v-for="(jobStep, i) in currentJob.steps" :key="i">
-            <ActionJobStep
-              ref="jobSteps"
-              :run-status="run.status"
-              :is-expandable="isExpandable"
-              :is-done="isDone"
-              :step-id="i"
-              :status="jobStep.status"
-              :summary="jobStep.summary"
-              :duration="jobStep.duration"
-              :expanded="currentJobStepsStates[i].expanded"
-              :cursor="currentJobStepsStates[i].cursor"
-              :time-visible-timestamp="timeVisible['log-time-stamp']"
-              :time-visible-seconds="timeVisible['log-time-seconds']"
-              @toggle="() => toggleStepLogs(i)"
-            />
-          </div>
-        </div>
+        <ActionJobStepList
+          ref="stepList"
+          :steps="currentJob.steps"
+          :step-states="currentJobStepsStates"
+          :run-status="run.status"
+          :is-expandable="isExpandable"
+          :is-done="isDone"
+          :time-visible-timestamp="timeVisible['log-time-stamp']"
+          :time-visible-seconds="timeVisible['log-time-seconds']"
+          @toggle-step-logs="toggleStepLogs"
+        />
       </div>
     </div>
   </div>
@@ -881,13 +868,6 @@ export default {
   flex: 1;
 }
 
-.job-step-container {
-  max-height: 100%;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-  border-top: 1px solid var(--color-console-border);
-  z-index: 0;
-}
-
 @media (max-width: 767.98px) {
   .action-view-body {
     flex-direction: column;
@@ -911,62 +891,6 @@ export default {
   100% {
     transform: rotate(-360deg);
   }
-}
-
-.job-step-section {
-  margin: 10px;
-}
-
-.job-step-section .job-step-logs {
-  font-family: var(--fonts-monospace);
-  margin: 8px 0;
-  font-size: 12px;
-}
-
-.job-step-section .job-step-logs .job-log-line {
-  display: flex;
-}
-
-.job-log-line:hover,
-.job-log-line:target {
-  background-color: var(--color-console-hover-bg);
-}
-
-.job-log-line:target {
-  scroll-margin-top: 95px;
-}
-
-/* class names 'log-time-seconds' and 'log-time-stamp' are used in the method toggleTimeDisplay */
-.job-log-line .line-num, .log-time-seconds {
-  width: 48px;
-  color: var(--color-text-light-3);
-  text-align: right;
-  user-select: none;
-}
-
-.job-log-line:target > .line-num {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
-.log-time-seconds {
-  padding-right: 2px;
-}
-
-.job-log-line .log-time,
-.log-time-stamp {
-  color: var(--color-text-light-3);
-  margin-left: 10px;
-  white-space: nowrap;
-}
-
-.job-step-section .job-step-logs .job-log-line .log-msg {
-  flex: 1;
-  word-break: break-all;
-  white-space: break-spaces;
-  margin-left: 10px;
-  overflow-wrap: anywhere;
-  color: var(--color-console-fg);
 }
 
 /* selectors here are intentionally exact to only match fullscreen */
