@@ -162,14 +162,12 @@ func GetReviewers(ctx context.Context, repo *Repository, doerID, posterID int64)
 	return users, db.GetEngine(ctx).Where(cond).OrderBy(user_model.GetOrderByName()).Find(&users)
 }
 
-// GetIssuePostersWithSearch returns users with limit of 30 whose username started with prefix that have authored an issue/pull request for the given repository
-// If isShowFullName is set to true, also include full name prefix search
-func GetIssuePostersWithSearch(ctx context.Context, repo *Repository, isPull bool, search string, isShowFullName bool) ([]*user_model.User, error) {
+// GetIssuePostersWithSearch returns up to 30 users whose username starts with or full_name contains the given search string for the given repository.
+func GetIssuePostersWithSearch(ctx context.Context, repo *Repository, isPull bool, search string) ([]*user_model.User, error) {
 	users := make([]*user_model.User, 0, 30)
-	prefixCond := db.BuildCaseInsensitiveLike("name", search+"%")
-	if isShowFullName {
-		prefixCond = db.BuildCaseInsensitiveLike("full_name", "%"+search+"%")
-	}
+	prefixCond := builder.Or(
+		db.BuildCaseInsensitiveLike("name", search+"%"),
+		db.BuildCaseInsensitiveLike("full_name", "%"+search+"%"))
 
 	cond := builder.In("`user`.id",
 		builder.Select("poster_id").From("issue").Where(

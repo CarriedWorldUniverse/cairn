@@ -1547,34 +1547,39 @@ func TestIssuePostersSearch(t *testing.T) {
 		Results []*userSearchInfo `json:"results"`
 	}
 
-	t.Run("Name search", func(t *testing.T) {
-		defer tests.PrintCurrentTest(t)()
-		defer test.MockVariableValue(&setting.UI.DefaultShowFullName, false)()
+	testCase := func(t *testing.T, showFullName bool, url, wantUserName string, wantUserID int64) {
+		t.Helper()
+		defer test.MockVariableValue(&setting.UI.DefaultShowFullName, showFullName)()
 
-		req := NewRequest(t, "GET", "/user2/repo1/issues/posters?q=USer2")
+		req := NewRequest(t, "GET", url)
 		resp := MakeRequest(t, req, http.StatusOK)
 
 		var data userSearchResponse
 		DecodeJSON(t, resp, &data)
 
 		assert.Len(t, data.Results, 1)
-		assert.Equal(t, "user2", data.Results[0].UserName)
-		assert.EqualValues(t, 2, data.Results[0].UserID)
+		assert.Equal(t, wantUserName, data.Results[0].UserName)
+		assert.Equal(t, wantUserID, data.Results[0].UserID)
+	}
+
+	t.Run("Name search", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		testCase(t, false, "/user2/repo1/issues/posters?q=USer2", "user2", 2)
+	})
+
+	t.Run("Name search (default full_name)", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		testCase(t, true, "/user2/repo1/issues/posters?q=USer2", "user2", 2)
 	})
 
 	t.Run("Full name search", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
-		defer test.MockVariableValue(&setting.UI.DefaultShowFullName, true)()
+		testCase(t, true, "/user2/repo1/issues/posters?q=OnE", "user1", 1)
+	})
 
-		req := NewRequest(t, "GET", "/user2/repo1/issues/posters?q=OnE")
-		resp := MakeRequest(t, req, http.StatusOK)
-
-		var data userSearchResponse
-		DecodeJSON(t, resp, &data)
-
-		assert.Len(t, data.Results, 1)
-		assert.Equal(t, "user1", data.Results[0].UserName)
-		assert.EqualValues(t, 1, data.Results[0].UserID)
+	t.Run("Full name search (no default full_name)", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		testCase(t, false, "/user2/repo1/issues/posters?q=OnE", "user1", 1)
 	})
 }
 
