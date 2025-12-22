@@ -39,6 +39,8 @@ var (
 	ActionSecret = deriveKey("action_secret")
 	// Used for the `task` table where type == TaskTypeMigrateRepo.
 	MigrateTask = deriveKey("migrate_repo_task")
+	// Used for the `webhook` table.
+	Webhook = deriveKey("webhook")
 )
 
 var (
