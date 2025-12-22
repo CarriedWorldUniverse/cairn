@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package repo
@@ -12,6 +13,7 @@ import (
 	"forgejo.org/modules/git"
 	code_indexer "forgejo.org/modules/indexer/code"
 	"forgejo.org/modules/setting"
+	"forgejo.org/routers/common"
 	"forgejo.org/services/context"
 )
 
@@ -62,10 +64,7 @@ func (m searchMode) ToGitGrep() git.GrepMode {
 
 // Search render repository search page
 func Search(ctx *context.Context) {
-	language := ctx.FormTrim("l")
-	keyword := ctx.FormTrim("q")
-
-	path := ctx.FormTrim("path")
+	opts := common.InitCodeSearchOptions(ctx)
 	mode := ExactSearchMode
 	if modeStr := ctx.FormString("mode"); len(modeStr) > 0 {
 		mode = searchModeFromString(modeStr)
@@ -73,9 +72,6 @@ func Search(ctx *context.Context) {
 		mode = UnionSearchMode
 	}
 
-	ctx.Data["Keyword"] = keyword
-	ctx.Data["Language"] = language
-	ctx.Data["CodeSearchPath"] = path
 	ctx.Data["PageIsViewCode"] = true
 	ctx.Data["CodeIndexerDisabled"] = !setting.Indexer.RepoIndexerEnabled
 	if setting.Indexer.RepoIndexerEnabled {
@@ -84,7 +80,7 @@ func Search(ctx *context.Context) {
 		ctx.Data["CodeSearchOptions"] = git.GrepSearchOptions
 	}
 
-	if keyword == "" {
+	if opts.Keyword == "" {
 		ctx.HTML(http.StatusOK, tplSearch)
 		return
 	}
@@ -104,10 +100,10 @@ func Search(ctx *context.Context) {
 		var err error
 		total, searchResults, searchResultLanguages, err = code_indexer.PerformSearch(ctx, &code_indexer.SearchOptions{
 			RepoIDs:  []int64{ctx.Repo.Repository.ID},
-			Keyword:  keyword,
+			Keyword:  opts.Keyword,
 			Mode:     m,
-			Language: language,
-			Filename: path,
+			Language: opts.Language,
+			Filename: opts.Path,
 			Paginator: &db.ListOptions{
 				Page:     page,
 				PageSize: setting.UI.RepoSearchPagingNum,
@@ -126,10 +122,10 @@ func Search(ctx *context.Context) {
 		m := mode.ToGitGrep()
 		ctx.Data["CodeSearchMode"] = m.String()
 
-		res, err := git.GrepSearch(ctx, ctx.Repo.GitRepo, keyword, git.GrepOptions{
+		res, err := git.GrepSearch(ctx, ctx.Repo.GitRepo, opts.Keyword, git.GrepOptions{
 			ContextLineNumber: 1,
 			RefName:           ctx.Repo.RefName,
-			Filename:          path,
+			Filename:          opts.Path,
 			Mode:              m,
 		})
 		if err != nil {
