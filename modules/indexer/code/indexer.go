@@ -21,6 +21,7 @@ import (
 	"forgejo.org/modules/process"
 	"forgejo.org/modules/queue"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/util"
 )
 
 var (
@@ -171,12 +172,12 @@ func Init() {
 				log.Fatal("PID: %d Unable to initialize the bleve Repository Indexer at path: %s Error: %v", os.Getpid(), setting.Indexer.RepoPath, err)
 			}
 		case "elasticsearch":
-			log.Info("PID: %d Initializing Repository Indexer at: %s", os.Getpid(), setting.Indexer.RepoConnStr)
+			log.Info("PID: %d Initializing Repository Indexer at: %s", os.Getpid(), util.SanitizeCredentialURLs(setting.Indexer.RepoConnStr))
 			defer func() {
 				if err := recover(); err != nil {
 					log.Error("PANIC whilst initializing repository indexer: %v\nStacktrace: %s", err, log.Stack(2))
 					log.Error("The indexer files are likely corrupted and may need to be deleted")
-					log.Error("You can completely remove the \"%s\" index to make Forgejo recreate the indexes", setting.Indexer.RepoConnStr)
+					log.Error("You can completely remove the \"%s\" index to make Forgejo recreate the indexes", util.SanitizeCredentialURLs(setting.Indexer.RepoConnStr))
 				}
 			}()
 
@@ -186,7 +187,7 @@ func Init() {
 				cancel()
 				(*globalIndexer.Load()).Close()
 				close(waitChannel)
-				log.Fatal("PID: %d Unable to initialize the elasticsearch Repository Indexer connstr: %s Error: %v", os.Getpid(), setting.Indexer.RepoConnStr, err)
+				log.Fatal("PID: %d Unable to initialize the elasticsearch Repository Indexer connstr: %s Error: %v", os.Getpid(), util.SanitizeCredentialURLs(setting.Indexer.RepoConnStr), err)
 			}
 
 		default:
