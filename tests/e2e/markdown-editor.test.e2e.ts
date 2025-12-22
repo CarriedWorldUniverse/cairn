@@ -560,3 +560,29 @@ test('Markdown bold/italic toolbar and shortcut', async ({page}) => {
   await textarea.press('ControlOrMeta+KeyI');
   await expect(textarea).toHaveValue(`line 1\nline 2\nline 3\nline 4`);
 });
+
+test('Monospace button aria-label', async ({page}) => {
+  // Load page with editor
+  const response = await page.goto('/user2/repo1/issues/new');
+  expect(response?.status()).toBe(200);
+
+  const monospaceButton = page.locator('.markdown-switch-monospace');
+  const enableText = await monospaceButton.getAttribute('data-enable-text');
+  const disableText = await monospaceButton.getAttribute('data-disable-text');
+
+  async function assertAriaLabel(enabled: boolean) {
+    const expected = enabled ? disableText : enableText;
+
+    await expect(monospaceButton).toHaveAttribute('aria-label', expected);
+  }
+
+  const enabled = await monospaceButton.getAttribute('aria-checked') === 'true';
+
+  await assertAriaLabel(enabled);
+
+  await monospaceButton.click();
+  await assertAriaLabel(!enabled);
+
+  await monospaceButton.click();
+  await assertAriaLabel(enabled);
+});
