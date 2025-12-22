@@ -1,3 +1,8 @@
+<!--
+Copyright 2025 The Forgejo Authors. All rights reserved.
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 <script>
 import {SvgIcon} from '../svg.js';
 import ActionRunStatus from './ActionRunStatus.vue';
@@ -164,6 +169,14 @@ export default {
       const list = line.nextSibling;
       list.classList.toggle('hidden', event.newState !== 'open');
     },
+
+    scrollIntoView(lineID) {
+      const logLine = this.$refs.logsContainer.querySelector(lineID);
+      if (!logLine) {
+        return;
+      }
+      logLine.querySelector('.line-num').scrollIntoView();
+    },
   },
 };
 </script>
@@ -231,8 +244,61 @@ export default {
   position: sticky;
   top: 60px;
 }
+
+.job-step-logs {
+  font-family: var(--fonts-monospace);
+  margin: 8px 0;
+  font-size: 12px;
+}
+
 </style>
 <style>
 /* some elements are not managed by vue, so we need to use global style */
+
+.job-step-logs .job-log-line {
+  display: flex;
+}
+
+.job-step-logs .job-log-line .log-msg {
+  flex: 1;
+  word-break: break-all;
+  white-space: break-spaces;
+  margin-left: 10px;
+  overflow-wrap: anywhere;
+  color: var(--color-console-fg);
+}
+
+.job-log-line:hover,
+.job-log-line:target {
+  background-color: var(--color-console-hover-bg);
+}
+
+.job-log-line:target {
+  scroll-margin-top: 95px;
+}
+
+/* class names 'log-time-seconds' and 'log-time-stamp' are used in the method toggleTimeDisplay */
+.job-log-line .line-num, .log-time-seconds {
+  width: 48px;
+  color: var(--color-text-light-3);
+  text-align: right;
+  user-select: none;
+}
+
+.job-log-line:target > .line-num {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.log-time-seconds {
+  padding-right: 2px;
+}
+
+.job-log-line .log-time,
+.log-time-stamp {
+  color: var(--color-text-light-3);
+  margin-left: 10px;
+  white-space: nowrap;
+}
 
 </style>

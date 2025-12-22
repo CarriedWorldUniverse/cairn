@@ -1,3 +1,6 @@
+// Copyright 2025 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import {describe, expect, test, vi} from 'vitest';
 import {mount} from '@vue/test-utils';
 import ActionJobStep from './ActionJobStep.vue';
@@ -261,5 +264,23 @@ describe('ActionJobStep', () => {
 
     // Check if after the log list exists another log line
     expect(wrapper.get('.job-log-list + .job-log-line > .log-msg').text()).toEqual('A line outside the group');
+  });
+
+  test('scrollIntoView focuses on a line from the log', () => {
+    const wrapper = createWrapper();
+    const logLines = [
+      {index: 1, timestamp: 1765163618, message: 'Starting build'},
+      {index: 2, timestamp: 1765163619, message: 'Running tests'},
+      {index: 3, timestamp: 1765163620, message: 'Build complete'},
+    ];
+    wrapper.vm.appendLogs(logLines, 1765163618);
+
+    const scrollIntoViewMock = vi.fn();
+    const targetElement = wrapper.find('#jobstep-12321-1 .line-num').element;
+    targetElement.scrollIntoView = scrollIntoViewMock;
+
+    wrapper.vm.scrollIntoView('#jobstep-12321-1');
+
+    expect(scrollIntoViewMock).toHaveBeenCalled();
   });
 });
