@@ -177,6 +177,19 @@ func TestAPIGlobalActionsRunnerOperations(t *testing.T) {
 		assert.Contains(t, runners, runnerThree)
 	})
 
+	t.Run("GetRunnersPaginated", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/admin/actions/runners?page=1&limit=5")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		assert.NotEmpty(t, response.Header().Get("Link"))
+		assert.NotEmpty(t, response.Header().Get("X-Total-Count"))
+		assert.Len(t, runners, 5)
+	})
+
 	t.Run("GetGlobalRunner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/admin/actions/runners/130793")
 		request.AddTokenAuth(readToken)

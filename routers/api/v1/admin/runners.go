@@ -50,6 +50,15 @@ func ListRunners(ctx *context.APIContext) {
 	// summary: Get all runners, no matter whether they are global runners or scoped to an organization, user, or repository
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: page
+	//   in: query
+	//   description: page number of results to return (1-based)
+	//   type: integer
+	// - name: limit
+	//   in: query
+	//   description: page size of results
+	//   type: integer
 	// responses:
 	//   "200":
 	//     "$ref": "#/responses/ActionRunnerList"

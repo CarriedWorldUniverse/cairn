@@ -56,6 +56,15 @@ func ListRunners(ctx *context.APIContext) {
 	// summary: Get the user's runners
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: page
+	//   in: query
+	//   description: page number of results to return (1-based)
+	//   type: integer
+	// - name: limit
+	//   in: query
+	//   description: page size of results
+	//   type: integer
 	// responses:
 	//   "200":
 	//     "$ref": "#/responses/ActionRunnerList"
