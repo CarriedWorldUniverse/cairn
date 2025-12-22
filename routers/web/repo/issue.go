@@ -3767,7 +3767,7 @@ func PullPosters(ctx *context.Context) {
 func issuePosters(ctx *context.Context, isPullList bool) {
 	repo := ctx.Repo.Repository
 	search := strings.TrimSpace(ctx.FormString("q"))
-	posters, err := repo_model.GetIssuePostersWithSearch(ctx, repo, isPullList, search, setting.UI.DefaultShowFullName)
+	posters, err := repo_model.GetIssuePostersWithSearch(ctx, repo, isPullList, search)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
