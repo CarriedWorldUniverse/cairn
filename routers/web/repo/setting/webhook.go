@@ -215,17 +215,14 @@ func WebhookCreate(ctx *context.Context) {
 	if ctx.HasError() {
 		// pre-fill the form with the submitted data
 		var w webhook.Webhook
+		w.ID = -1 // We are going to encrypt it using this ID, bind the encrypted value to a ID that will never exist in the database. Safety precaution.
 		w.URL = fields.URL
 		w.ContentType = fields.ContentType
 		w.Secret = fields.Secret
 		w.HookEvent = ParseHookEvent(fields.WebhookCoreForm)
 		w.IsActive = fields.Active
 		w.HTTPMethod = fields.HTTPMethod
-		err := w.SetHeaderAuthorization(fields.AuthorizationHeader)
-		if err != nil {
-			ctx.ServerError("SetHeaderAuthorization", err)
-			return
-		}
+		w.SetHeaderAuthorization(fields.AuthorizationHeader)
 		ctx.Data["Webhook"] = w
 		ctx.Data["HookMetadata"] = fields.Metadata
 
@@ -255,15 +252,12 @@ func WebhookCreate(ctx *context.Context) {
 		OwnerID:         orCtx.OwnerID,
 		IsSystemWebhook: orCtx.IsSystemWebhook,
 	}
-	err = w.SetHeaderAuthorization(fields.AuthorizationHeader)
-	if err != nil {
-		ctx.ServerError("SetHeaderAuthorization", err)
-		return
-	}
 	if err := w.UpdateEvent(); err != nil {
 		ctx.ServerError("UpdateEvent", err)
 		return
-	} else if err := webhook.CreateWebhook(ctx, w); err != nil {
+	}
+
+	if err := webhook.CreateWebhook(ctx, w, fields.AuthorizationHeader); err != nil {
 		ctx.ServerError("CreateWebhook", err)
 		return
 	}
@@ -302,11 +296,7 @@ func WebhookUpdate(ctx *context.Context) {
 	w.IsActive = fields.Active
 	w.HTTPMethod = fields.HTTPMethod
 
-	err := w.SetHeaderAuthorization(fields.AuthorizationHeader)
-	if err != nil {
-		ctx.ServerError("SetHeaderAuthorization", err)
-		return
-	}
+	w.SetHeaderAuthorization(fields.AuthorizationHeader)
 
 	if ctx.HasError() {
 		ctx.Data["HookMetadata"] = fields.Metadata
@@ -314,6 +304,7 @@ func WebhookUpdate(ctx *context.Context) {
 		return
 	}
 
+	var err error
 	var meta []byte
 	if fields.Metadata != nil {
 		meta, err = json.Marshal(fields.Metadata)

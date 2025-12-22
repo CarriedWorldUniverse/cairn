@@ -77,7 +77,7 @@ func CopyDefaultWebhooksToRepo(ctx context.Context, repoID int64) error {
 	for _, w := range ws {
 		w.ID = 0
 		w.RepoID = repoID
-		if err := CreateWebhook(ctx, w); err != nil {
+		if err := CreateWebhook(ctx, w, ""); err != nil {
 			return fmt.Errorf("CreateWebhook: %v", err)
 		}
 	}

@@ -98,7 +98,7 @@ func TestCreateWebhook(t *testing.T) {
 			Events:      `{"push_only":false,"send_everything":false,"choose_events":true,"events":{"create":false,"push":true,"pull_request":true}}`,
 		}
 		unittest.AssertNotExistsBean(t, hook)
-		require.NoError(t, CreateWebhook(db.DefaultContext, hook))
+		require.NoError(t, CreateWebhook(db.DefaultContext, hook, ""))
 		hookFromDb := unittest.AssertExistsAndLoadBean(t, hook)
 		assert.Equal(t, []string{
 			string(webhook_module.HookEventPush),
@@ -114,7 +114,7 @@ func TestCreateWebhook(t *testing.T) {
 			Events:      `{"push_only":false,"send_everything":false,"choose_events":true,"events":{"action_run_recover":false,"action_run_success":true}}`,
 		}
 		unittest.AssertNotExistsBean(t, hook)
-		require.NoError(t, CreateWebhook(db.DefaultContext, hook))
+		require.NoError(t, CreateWebhook(db.DefaultContext, hook, ""))
 		hookFromDb := unittest.AssertExistsAndLoadBean(t, hook)
 		assert.Equal(t, []string{string(webhook_module.HookEventActionRunSuccess)}, hookFromDb.EventsArray())
 	})
@@ -127,7 +127,7 @@ func TestCreateWebhook(t *testing.T) {
 			Events:      `{"push_only":false,"send_everything":false,"choose_events":true,"events":{"create":true,"delete":true,"fork":true,"issues":true,"issue_assign":true,"issue_label":true,"issue_milestone":true,"issue_comment":true,"push":true,"pull_request":true,"pull_request_assign":true,"pull_request_label":true,"pull_request_milestone":true,"pull_request_comment":true,"pull_request_review":true,"pull_request_sync":true,"pull_request_review_request":true,"wiki":true,"repository":true,"release":true,"package":true,"action_run_failure":true,"action_run_recover":true,"action_run_success":true}}`,
 		}
 		unittest.AssertNotExistsBean(t, hook)
-		require.NoError(t, CreateWebhook(db.DefaultContext, hook))
+		require.NoError(t, CreateWebhook(db.DefaultContext, hook, ""))
 		hookFromDb := unittest.AssertExistsAndLoadBean(t, hook)
 		assert.Equal(t, []string{
 			string(webhook_module.HookEventCreate),

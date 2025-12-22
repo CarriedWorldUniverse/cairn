@@ -11,10 +11,9 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/keying"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
-	"forgejo.org/modules/secret"
-	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	webhook_module "forgejo.org/modules/webhook"
@@ -137,7 +136,7 @@ type Webhook struct {
 	LastStatus                webhook_module.HookStatus // Last delivery status
 
 	// HeaderAuthorizationEncrypted should be accessed using HeaderAuthorization() and SetHeaderAuthorization()
-	HeaderAuthorizationEncrypted string `xorm:"TEXT"`
+	HeaderAuthorizationEncrypted []byte `xorm:"BLOB"`
 
 	CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
 	UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
@@ -376,10 +375,15 @@ func (w *Webhook) EventsArray() []string {
 // HeaderAuthorization returns the decrypted Authorization header.
 // Not on the reference (*w), to be accessible on WebhooksNew.
 func (w Webhook) HeaderAuthorization() (string, error) {
-	if w.HeaderAuthorizationEncrypted == "" {
+	if len(w.HeaderAuthorizationEncrypted) == 0 {
 		return "", nil
 	}
-	return secret.DecryptSecret(setting.SecretKey, w.HeaderAuthorizationEncrypted)
+
+	headerAuthorization, err := keying.Webhook.Decrypt(w.HeaderAuthorizationEncrypted, keying.ColumnAndID("header_authorization_encrypted", w.ID))
+	if err != nil {
+		return "", err
+	}
+	return string(headerAuthorization), nil
 }
 
 // HeaderAuthorizationTrimPrefix returns the decrypted Authorization with a specified prefix trimmed.
@@ -392,23 +396,31 @@ func (w Webhook) HeaderAuthorizationTrimPrefix(prefix string) (string, error) {
 }
 
 // SetHeaderAuthorization encrypts and sets the Authorization header.
-func (w *Webhook) SetHeaderAuthorization(cleartext string) error {
+func (w *Webhook) SetHeaderAuthorization(cleartext string) {
 	if cleartext == "" {
-		w.HeaderAuthorizationEncrypted = ""
-		return nil
+		w.HeaderAuthorizationEncrypted = nil
+		return
 	}
-	ciphertext, err := secret.EncryptSecret(setting.SecretKey, cleartext)
-	if err != nil {
-		return err
-	}
-	w.HeaderAuthorizationEncrypted = ciphertext
-	return nil
+
+	w.HeaderAuthorizationEncrypted = keying.Webhook.Encrypt([]byte(cleartext), keying.ColumnAndID("header_authorization_encrypted", w.ID))
 }
 
 // CreateWebhook creates a new web hook.
-func CreateWebhook(ctx context.Context, w *Webhook) error {
+func CreateWebhook(ctx context.Context, w *Webhook, authorizationHeader string) error {
 	w.Type = strings.TrimSpace(w.Type)
-	return db.Insert(ctx, w)
+
+	if len(authorizationHeader) == 0 {
+		return db.Insert(ctx, w)
+	}
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		if err := db.Insert(ctx, w); err != nil {
+			return err
+		}
+
+		w.SetHeaderAuthorization(authorizationHeader)
+		_, err := db.GetEngine(ctx).Cols("header_authorization_encrypted").ID(w.ID).Update(w)
+		return err
+	})
 }
 
 // CreateWebhooks creates multiple web hooks

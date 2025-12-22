@@ -40,7 +40,7 @@ func TestDeleteComment(t *testing.T) {
 			RepoID:   issue.RepoID,
 			IsActive: true,
 			Events:   `{"choose_events":true,"events":{"issue_comment": true}}`,
-		}))
+		}, ""))
 		hookTaskCount := unittest.GetCount(t, &webhook_model.HookTask{})
 
 		require.NoError(t, issue_service.DeleteComment(db.DefaultContext, nil, comment))
@@ -68,7 +68,7 @@ func TestDeleteComment(t *testing.T) {
 			RepoID:   issue.RepoID,
 			IsActive: true,
 			Events:   `{"choose_events":true,"events":{"issue_comment": true}}`,
-		}))
+		}, ""))
 		hookTaskCount := unittest.GetCount(t, &webhook_model.HookTask{})
 
 		require.NoError(t, comment.LoadReview(t.Context()))
@@ -101,7 +101,7 @@ func TestUpdateComment(t *testing.T) {
 			RepoID:   issue.RepoID,
 			IsActive: true,
 			Events:   `{"choose_events":true,"events":{"issue_comment": true}}`,
-		}))
+		}, ""))
 		hookTaskCount := unittest.GetCount(t, &webhook_model.HookTask{})
 		oldContent := comment.Content
 		comment.Content = "Hello!"
@@ -132,7 +132,7 @@ func TestUpdateComment(t *testing.T) {
 			RepoID:   issue.RepoID,
 			IsActive: true,
 			Events:   `{"choose_events":true,"events":{"issue_comment": true}}`,
-		}))
+		}, ""))
 		hookTaskCount := unittest.GetCount(t, &webhook_model.HookTask{})
 		oldContent := comment.Content
 		comment.Content = "Hello!"
