@@ -69,4 +69,10 @@ type swaggerActionRunner struct {
 type swaggerActionRunnerListResponse struct {
 	// in:body
 	Body []api.ActionRunner `json:"body"`
+
+	// Total number of runners matching the search criteria (excluding page and limit)
+	TotalCount int64 `json:"X-Total-Count"`
+
+	// Links to other pages, if any
+	Link string `json:"Link"`
 }

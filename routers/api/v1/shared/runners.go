@@ -87,10 +87,12 @@ func ListRunners(ctx *context.APIContext, ownerID, repoID int64) {
 		ctx.Error(http.StatusUnprocessableEntity, "", fmt.Errorf("ownerID and repoID should not be both set: %d and %d", ownerID, repoID))
 		return
 	}
+
+	listOptions := utils.GetListOptions(ctx)
 	runners, total, err := db.FindAndCount[actions_model.ActionRunner](ctx, &actions_model.FindRunnerOptions{
 		OwnerID:     ownerID,
 		RepoID:      repoID,
-		ListOptions: utils.GetListOptions(ctx),
+		ListOptions: listOptions,
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "FindCountRunners", map[string]string{})
@@ -106,6 +108,8 @@ func ListRunners(ctx *context.APIContext, ownerID, repoID int64) {
 		}
 		runnerList[i] = actionRunner
 	}
+
+	ctx.SetLinkHeader(int(total), listOptions.PageSize)
 	ctx.SetTotalCountHeader(total)
 	ctx.JSON(http.StatusOK, &runnerList)
 }

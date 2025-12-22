@@ -147,6 +147,19 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree}, runners)
 	})
 
+	t.Run("GetRunnersPaginated", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners?page=1&limit=1")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		assert.NotEmpty(t, response.Header().Get("Link"))
+		assert.NotEmpty(t, response.Header().Get("X-Total-Count"))
+		assert.Len(t, runners, 1)
+	})
+
 	t.Run("GetRunner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners/655691")
 		request.AddTokenAuth(readToken)

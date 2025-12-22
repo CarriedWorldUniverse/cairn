@@ -321,6 +321,20 @@
         ],
         "summary": "Get all runners, no matter whether they are global runners or scoped to an organization, user, or repository",
         "operationId": "getAdminRunners",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "page number of results to return (1-based)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "description": "page size of results",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/ActionRunnerList"
@@ -2627,6 +2641,18 @@
             "name": "org",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "integer",
+            "description": "page number of results to return (1-based)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "description": "page size of results",
+            "name": "limit",
+            "in": "query"
           }
         ],
         "responses": {
@@ -5308,6 +5334,18 @@
             "name": "repo",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "integer",
+            "description": "page number of results to return (1-based)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "description": "page size of results",
+            "name": "limit",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18737,6 +18775,20 @@
         ],
         "summary": "Get the user's runners",
         "operationId": "getUserRunners",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "page number of results to return (1-based)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "description": "page size of results",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/ActionRunnerList"
@@ -29848,6 +29900,17 @@
         "type": "array",
         "items": {
           "$ref": "#/definitions/ActionRunner"
+        }
+      },
+      "headers": {
+        "Link": {
+          "type": "string",
+          "description": "Links to other pages, if any"
+        },
+        "X-Total-Count": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Total number of runners matching the search criteria (excluding page and limit)"
         }
       }
     },
