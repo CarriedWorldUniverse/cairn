@@ -88,6 +88,10 @@
 #workflow_dispatch_dropdown > button {
   white-space: nowrap;
 }
+#workflow_dispatch_dropdown .menu {
+  max-height: 500px;
+  overflow-x: auto;
+}
 @media (max-width: 640px) or (767.98px < width < 854px) {
   #workflow_dispatch_dropdown .menu {
     left: auto;

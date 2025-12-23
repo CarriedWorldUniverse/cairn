@@ -29,7 +29,7 @@ var (
 		Enabled:                      true,
 		DefaultActionsURL:            defaultActionsURLForgejo,
 		SkipWorkflowStrings:          []string{"[skip ci]", "[ci skip]", "[no ci]", "[skip actions]", "[actions skip]"},
-		LimitDispatchInputs:          10,
+		LimitDispatchInputs:          100,
 		ConcurrencyGroupQueueEnabled: true,
 	}
 )

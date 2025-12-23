@@ -113,7 +113,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 	}
 
 	if int64(len(inputs)) > setting.Actions.LimitDispatchInputs {
-		return nil, nil, errors.New("to many inputs")
+		return nil, nil, errors.New("too many inputs")
 	}
 
 	jobNames := util.KeysOfMap(wf.Jobs)

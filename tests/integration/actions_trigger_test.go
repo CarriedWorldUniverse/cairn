@@ -875,6 +875,88 @@ func TestActionsWorkflowDispatch(t *testing.T) {
 	})
 }
 
+func TestActionsWorkflowDispatchRejectsInputsThatExceedLimit(t *testing.T) {
+	workflow := `
+name: test
+on:
+  workflow_dispatch:
+    inputs:
+      boolean:
+        description: 'Boolean'
+        type: boolean
+      number:
+        description: 'Number'
+        default: '100'
+        type: number
+      string:
+        description: 'String'
+        type: string
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "OK"
+`
+
+	defer test.MockVariableValue(&setting.Actions.LimitDispatchInputs, 2)()
+
+	testCases := []struct {
+		name          string
+		inputs        map[string]string
+		expectedError string
+	}{
+		{
+			name:   "below-limit",
+			inputs: map[string]string{"boolean": "true", "number": "10"},
+		},
+		{
+			name:          "beyond-limit",
+			inputs:        map[string]string{"boolean": "true", "number": "10", "string": "my input"},
+			expectedError: "too many inputs",
+		},
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
+			[]unit_model.Type{unit_model.TypeActions}, nil,
+			[]*files_service.ChangeRepoFile{
+				{
+					Operation:     "create",
+					TreePath:      ".forgejo/workflows/dispatch.yaml",
+					ContentReader: strings.NewReader(workflow),
+				},
+			},
+		)
+		defer f()
+
+		gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+		require.NoError(t, err)
+		defer gitRepo.Close()
+
+		workflow, err := actions_service.GetWorkflowFromCommit(gitRepo, "main", "dispatch.yaml")
+		require.NoError(t, err)
+		assert.Equal(t, "refs/heads/main", workflow.Ref)
+		assert.Equal(t, sha, workflow.Commit.ID.String())
+
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				inputGetter := func(key string) string {
+					return testCase.inputs[key]
+				}
+
+				_, _, err = workflow.Dispatch(db.DefaultContext, inputGetter, repo, user2)
+				if testCase.expectedError == "" {
+					require.NoError(t, err)
+				} else {
+					assert.EqualError(t, err, testCase.expectedError)
+				}
+			})
+		}
+	})
+}
+
 func TestActionsWorkflowDispatchDynamicMatrix(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
