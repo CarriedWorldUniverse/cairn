@@ -302,7 +302,7 @@ func main() {
 			if name == "docker" || name == ".git" || name == "node_modules" {
 				return fs.SkipDir
 			}
-		} else if name == "bindata.go" || fpath == "modules/translation/i18n/i18n_test.go" {
+		} else if name == "bindata.go" || fpath == "modules/translation/i18n/i18n_test.go" || fpath == "modules/translation/i18n/i18n_ini_test.go" {
 			// skip false positives
 		} else if strings.HasSuffix(name, ".go") {
 			onError(HandleGoFile(handler, fpath, nil))
