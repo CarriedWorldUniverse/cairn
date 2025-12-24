@@ -133,6 +133,48 @@ jobs:
 			},
 			want: map[int64]actions_model.Status{2: actions_model.StatusSkipped},
 		},
+		{
+			name: "unblocked workflow call outer job with success",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "job1.innerjob1", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 2, JobID: "job1.innerjob2", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 3, JobID: "job1", Status: actions_model.StatusBlocked, Needs: []string{"job1.innerjob1", "job1.innerjob2"}, WorkflowPayload: []byte(
+					`
+name: test
+on: push
+jobs:
+  job2:
+    if: false
+    uses: ./.forgejo/workflows/reusable.yml
+__metadata:
+  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
+`)},
+			},
+			want: map[int64]actions_model.Status{
+				3: actions_model.StatusSuccess,
+			},
+		},
+		{
+			name: "unblocked workflow call outer job with internal failure",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "job1.innerjob1", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 2, JobID: "job1.innerjob2", Status: actions_model.StatusFailure, Needs: []string{}},
+				{ID: 3, JobID: "job1", Status: actions_model.StatusBlocked, Needs: []string{"job1.innerjob1", "job1.innerjob2"}, WorkflowPayload: []byte(
+					`
+name: test
+on: push
+jobs:
+  job2:
+    if: false
+    uses: ./.forgejo/workflows/reusable.yml
+__metadata:
+  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
+`)},
+			},
+			want: map[int64]actions_model.Status{
+				3: actions_model.StatusFailure,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -378,6 +420,52 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 				} else {
 					assert.False(t, skip, "skip flag")
 				}
+			}
+		})
+	}
+}
+
+func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
+	tests := []struct {
+		name         string
+		runJobID     int64
+		updateFields []string
+		outputs      map[string]string
+	}{
+		{
+			name:     "not workflow call outer job",
+			runJobID: 600,
+		},
+		{
+			name:         "outputs for every context",
+			runJobID:     601,
+			updateFields: []string{"task_id"},
+			outputs:      map[string]string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer unittest.OverrideFixtures("services/actions/Test_tryHandleWorkflowCallOuterJob")()
+			require.NoError(t, unittest.PrepareTestDatabase())
+
+			outerJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: tt.runJobID})
+			require.EqualValues(t, 0, outerJob.TaskID)
+
+			updateFields, err := tryHandleWorkflowCallOuterJob(t.Context(), outerJob)
+			require.NoError(t, err)
+			assert.Equal(t, tt.updateFields, updateFields)
+
+			if tt.updateFields != nil {
+				// TaskID expected to be set by tryHandleWorkflowCallOuterJob
+				require.NotEqualValues(t, 0, outerJob.TaskID)
+
+				taskOutputs, err := actions_model.FindTaskOutputByTaskID(t.Context(), outerJob.TaskID)
+				require.NoError(t, err)
+				outputMap := map[string]string{}
+				for _, to := range taskOutputs {
+					outputMap[to.OutputKey] = to.OutputValue
+				}
+				assert.Equal(t, tt.outputs, outputMap)
 			}
 		})
 	}

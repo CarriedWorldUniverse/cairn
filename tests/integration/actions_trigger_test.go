@@ -1006,6 +1006,77 @@ func TestActionsWorkflowDispatchDynamicMatrix(t *testing.T) {
 	})
 }
 
+func TestActionsWorkflowDispatchReusableWorkflow(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		// create the repo
+		repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
+			[]unit_model.Type{unit_model.TypeActions}, nil,
+			[]*files_service.ChangeRepoFile{
+				{
+					Operation: "create",
+					TreePath:  ".forgejo/workflows/dispatch.yml",
+					ContentReader: strings.NewReader(
+						"name: test\n" +
+							"on: [workflow_dispatch]\n" +
+							"jobs:\n" +
+							"  test:\n" +
+							"    uses: ./.forgejo/workflows/reusable.yml\n",
+					),
+				},
+				{
+					Operation: "create",
+					TreePath:  ".forgejo/workflows/reusable.yml",
+					ContentReader: strings.NewReader(
+						"name: test\n" +
+							"on: [workflow_call]\n" +
+							"jobs:\n" +
+							"  inner:\n" +
+							"    runs-on: ubuntu-latest\n" +
+							"    steps:\n" +
+							"      - run: echo helloworld\n",
+					),
+				},
+			},
+		)
+		defer f()
+
+		gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+		require.NoError(t, err)
+		defer gitRepo.Close()
+
+		workflow, err := actions_service.GetWorkflowFromCommit(gitRepo, "main", "dispatch.yml")
+		require.NoError(t, err)
+		assert.Equal(t, "refs/heads/main", workflow.Ref)
+		assert.Equal(t, sha, workflow.Commit.ID.String())
+
+		inputGetter := func(key string) string {
+			return ""
+		}
+
+		run, _, err := workflow.Dispatch(db.DefaultContext, inputGetter, repo, user2)
+		require.NoError(t, err)
+
+		var runJobs []*actions_model.ActionRunJob
+		db.GetEngine(t.Context()).Where("run_id=?", run.ID).Find(&runJobs)
+		assert.Len(t, runJobs, 2)
+
+		var parentJob *actions_model.ActionRunJob
+		var childJob *actions_model.ActionRunJob
+		for _, j := range runJobs {
+			switch j.JobID {
+			case "test":
+				parentJob = j
+			case "test.inner":
+				childJob = j
+			}
+		}
+		assert.NotNil(t, parentJob, "parentJob")
+		assert.NotNil(t, childJob, "childJob")
+	})
+}
+
 func TestActionsWorkflowDispatchConcurrencyGroup(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})

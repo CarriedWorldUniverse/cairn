@@ -421,6 +421,44 @@ func CreateTaskForRunner(ctx context.Context, runner *ActionRunner) (*ActionTask
 	return task, true, nil
 }
 
+// Placeholder tasks are created when the status/content of an `ActionRunJob` is resolved by Forgejo without dispatch to
+// a runner, specifically in the case of a workflow call's outer job.
+func CreatePlaceholderTask(ctx context.Context, job *ActionRunJob, outputs map[string]string) (*ActionTask, error) {
+	actionTask := &ActionTask{
+		JobID:             job.ID,
+		Attempt:           1,
+		Started:           timeutil.TimeStampNow(),
+		Stopped:           timeutil.TimeStampNow(),
+		Status:            job.Status,
+		RepoID:            job.RepoID,
+		OwnerID:           job.OwnerID,
+		CommitSHA:         job.CommitSHA,
+		IsForkPullRequest: job.IsForkPullRequest,
+	}
+	// token isn't used on a placeholder task, but generation is needed due to the unique constraint on field TokenHash
+	actionTask.GenerateToken()
+
+	err := db.WithTx(ctx, func(ctx context.Context) error {
+		_, err := db.GetEngine(ctx).Insert(actionTask)
+		if err != nil {
+			return fmt.Errorf("failure inserting action_task: %w", err)
+		}
+
+		for key, value := range outputs {
+			err := InsertTaskOutputIfNotExist(ctx, actionTask.ID, key, value)
+			if err != nil {
+				return fmt.Errorf("failure inserting action_task_output %q: %w", key, err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return actionTask, nil
+}
+
 func UpdateTask(ctx context.Context, task *ActionTask, cols ...string) error {
 	sess := db.GetEngine(ctx).ID(task.ID)
 	if len(cols) > 0 {

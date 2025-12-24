@@ -275,3 +275,13 @@ func (job *ActionRunJob) IsIncompleteRunsOn() (bool, *jobparser.IncompleteNeeds,
 	}
 	return jobWorkflow.IncompleteRunsOn, jobWorkflow.IncompleteRunsOnNeeds, jobWorkflow.IncompleteRunsOnMatrix, nil
 }
+
+// Check whether this job is a caller of a reusable workflow -- in other words, the real work done in this job is in
+// spawned child jobs, not this job.
+func (job *ActionRunJob) IsWorkflowCallOuterJob() (bool, error) {
+	jobWorkflow, err := job.decodeWorkflowPayload()
+	if err != nil {
+		return false, fmt.Errorf("failure decoding workflow payload: %w", err)
+	}
+	return jobWorkflow.Metadata.WorkflowCallID != "", nil
+}
