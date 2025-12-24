@@ -181,6 +181,8 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		// `IncompleteMatrix` tagging for any jobs that require the inputs of other jobs.
 		jobparser.WithJobOutputs(map[string]map[string]string{}),
 		jobparser.SupportIncompleteRunsOn(),
+		jobparser.ExpandLocalReusableWorkflows(expandLocalReusableWorkflows(entry.Commit)),
+		jobparser.ExpandInstanceReusableWorkflows(expandInstanceReusableWorkflows(ctx)),
 	)
 	if err != nil {
 		return nil, nil, err

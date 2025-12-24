@@ -159,3 +159,40 @@ func TestActionRunJob_IsIncompleteRunsOn(t *testing.T) {
 		})
 	}
 }
+
+func TestActionRunJob_IsWorkflowCallOuterJob(t *testing.T) {
+	tests := []struct {
+		name                   string
+		job                    ActionRunJob
+		isWorkflowCallOuterJob bool
+		errContains            string
+	}{
+		{
+			name:                   "normal workflow",
+			job:                    ActionRunJob{WorkflowPayload: []byte("name: workflow")},
+			isWorkflowCallOuterJob: false,
+		},
+		{
+			name:                   "workflow_call outer job",
+			job:                    ActionRunJob{WorkflowPayload: []byte("name: test\njobs:\n  job:\n    if: false\n__metadata:\n  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed\n")},
+			isWorkflowCallOuterJob: true,
+		},
+		{
+			name:        "unparseable workflow",
+			job:         ActionRunJob{WorkflowPayload: []byte("name: []\nincomplete_runs_on: true")},
+			errContains: "failure unmarshaling WorkflowPayload to SingleWorkflow: yaml: unmarshal errors",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isWorkflowCallOuterJob, err := tt.job.IsWorkflowCallOuterJob()
+			if tt.errContains != "" {
+				assert.ErrorContains(t, err, tt.errContains)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.isWorkflowCallOuterJob, isWorkflowCallOuterJob)
+			}
+		})
+	}
+}

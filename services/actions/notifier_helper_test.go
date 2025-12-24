@@ -4,6 +4,7 @@
 package actions
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"testing"
@@ -17,9 +18,11 @@ import (
 	actions_module "forgejo.org/modules/actions"
 	"forgejo.org/modules/git"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/test"
 	webhook_module "forgejo.org/modules/webhook"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
+	"code.forgejo.org/forgejo/runner/v12/act/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -352,4 +355,59 @@ func TestActionsNotifier_WorkflowDetection(t *testing.T) {
 
 	assert.Equal(t, ".forgejo/workflows", runs[0].WorkflowDirectory)
 	assert.Equal(t, "test.yml", runs[0].WorkflowID)
+}
+
+// Verifies that the notifier_helper's `handleWorkflows` provides the local & remote reusable workflow expansion
+// routines to the jobparser, and that data flows into them accurately.
+func TestActionsNotifier_ExpandReusableWorkflow(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	var localReusableCalled []string
+	var localReusableCalledGitCommit []*git.Commit
+	defer test.MockVariableValue(&expandLocalReusableWorkflows,
+		func(commit *git.Commit) jobparser.LocalWorkflowFetcher {
+			return func(job *jobparser.Job, path string) ([]byte, error) {
+				localReusableCalledGitCommit = append(localReusableCalledGitCommit, commit)
+				localReusableCalled = append(localReusableCalled, path)
+				return []byte("{ on: pull_request, jobs: { j1: { runs-on: debian-latest } } }"), nil
+			}
+		})()
+	remoteReusableCalled := []*model.NonLocalReusableWorkflowReference{}
+	defer test.MockVariableValue(&expandInstanceReusableWorkflows,
+		func(ctx context.Context) jobparser.InstanceWorkflowFetcher {
+			return func(job *jobparser.Job, ref *model.NonLocalReusableWorkflowReference) ([]byte, error) {
+				remoteReusableCalled = append(remoteReusableCalled, ref)
+				return []byte("{ on: pull_request, jobs: { j1: { runs-on: debian-latest } } }"), nil
+			}
+		})()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 10})
+	pr := unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{ID: 3})
+
+	dw := &actions_module.DetectedWorkflow{
+		Content: []byte("{ on: pull_request, jobs: { j1: { uses: \"./.forgejo/workflows/reusable-path.yml\" }, j2: { uses: \"some-org/some-repo/.forgejo/workflows/reusable-path.yml@main\" }} }"),
+	}
+	testActionsNotifierPullRequest(t, repo, pr, dw, webhook_module.HookEventPullRequestSync)
+
+	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
+		RepoID: repo.ID,
+	})
+	require.NoError(t, err)
+	require.Len(t, runs, 1)
+	run := runs[0]
+	assert.EqualValues(t, 0, run.PreExecutionErrorCode, "pre execution error details: %#v", run.PreExecutionErrorDetails)
+
+	require.Len(t, localReusableCalled, 1, "localReusableCalled")
+	require.Len(t, localReusableCalledGitCommit, 1, "localReusableCalledGitCommit")
+	require.Len(t, remoteReusableCalled, 1, "remoteReusableCalled")
+
+	assert.Equal(t, "./.forgejo/workflows/reusable-path.yml", localReusableCalled[0])
+	assert.Equal(t, "test", localReusableCalledGitCommit[0].CommitMessage)
+	assert.Equal(t, &model.NonLocalReusableWorkflowReference{
+		Org:         "some-org",
+		Repo:        "some-repo",
+		Filename:    "reusable-path.yml",
+		Ref:         "main",
+		GitPlatform: "forgejo",
+	}, remoteReusableCalled[0])
 }
