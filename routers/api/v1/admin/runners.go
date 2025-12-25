@@ -8,9 +8,9 @@ import (
 	"forgejo.org/services/context"
 )
 
-// GetRegistrationToken returns the token to register global runners
-func GetRegistrationToken(ctx *context.APIContext) {
-	// swagger:operation GET /admin/runners/registration-token admin adminGetRunnerRegistrationToken
+// GetRunnerRegistrationToken returns a token to register global runners
+func GetRunnerRegistrationToken(ctx *context.APIContext) {
+	// swagger:operation GET /admin/actions/runners/registration-token admin adminGetRunnerRegistrationToken
 	// ---
 	// summary: Get a runner registration token for registering global runners
 	// produces:
@@ -23,11 +23,58 @@ func GetRegistrationToken(ctx *context.APIContext) {
 	shared.GetRegistrationToken(ctx, 0, 0)
 }
 
-// SearchActionRunJobs return a list of actions jobs filtered by the provided parameters
+// GetRegistrationToken returns the token to register global runners
+//
+// Deprecated: This operation has been deprecated in Forgejo 15. Use GetRunnerRegistrationToken instead.
+func GetRegistrationToken(ctx *context.APIContext) {
+	// swagger:operation GET /admin/runners/registration-token admin adminGetRegistrationToken
+	// ---
+	// summary: Get a runner registration token for registering global runners
+	// description: >
+	//   This operation has been deprecated in Forgejo 15.
+	//   Use [`/admin/actions/runners/registration-token`](#/admin/adminGetRunnerRegistrationToken) instead.
+	// deprecated: true
+	// produces:
+	// - application/json
+	// parameters:
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/RegistrationToken"
+
+	shared.GetRegistrationToken(ctx, 0, 0)
+}
+
+// GetActionRunJobs returns a list of action run jobs
+func GetActionRunJobs(ctx *context.APIContext) {
+	// swagger:operation GET /admin/actions/runners/jobs admin adminGetActionRunJobs
+	// ---
+	// summary: Get action run jobs
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: labels
+	//   in: query
+	//   description: a comma separated list of labels to search for
+	//   type: string
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/RunJobList"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	shared.GetActionRunJobs(ctx, 0, 0)
+}
+
+// SearchActionRunJobs returns a list of actions jobs filtered by the provided parameters
+//
+// Deprecated: This operation has been deprecated in Forgejo 15. Use GetActionRunJobs instead.
 func SearchActionRunJobs(ctx *context.APIContext) {
 	// swagger:operation GET /admin/runners/jobs admin adminSearchRunJobs
 	// ---
 	// summary: Search action jobs according to filter conditions
+	// description: >
+	//   This operation has been deprecated in Forgejo 15.
+	//   Use [`/admin/actions/runners/jobs`](#/admin/adminGetActionRunJobs) instead.
+	// deprecated: true
 	// produces:
 	// - application/json
 	// parameters:

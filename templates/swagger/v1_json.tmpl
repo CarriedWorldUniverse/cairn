@@ -348,6 +348,51 @@
         }
       }
     },
+    "/admin/actions/runners/jobs": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get action run jobs",
+        "operationId": "adminGetActionRunJobs",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "a comma separated list of labels to search for",
+            "name": "labels",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RunJobList"
+          },
+          "403": {
+            "$ref": "#/responses/forbidden"
+          }
+        }
+      }
+    },
+    "/admin/actions/runners/registration-token": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get a runner registration token for registering global runners",
+        "operationId": "adminGetRunnerRegistrationToken",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RegistrationToken"
+          }
+        }
+      }
+    },
     "/admin/actions/runners/{runner_id}": {
       "get": {
         "produces": [
@@ -1236,6 +1281,7 @@
     },
     "/admin/runners/jobs": {
       "get": {
+        "description": "This operation has been deprecated in Forgejo 15. Use [`/admin/actions/runners/jobs`](#/admin/adminGetActionRunJobs) instead.\n",
         "produces": [
           "application/json"
         ],
@@ -1244,6 +1290,7 @@
         ],
         "summary": "Search action jobs according to filter conditions",
         "operationId": "adminSearchRunJobs",
+        "deprecated": true,
         "parameters": [
           {
             "type": "string",
@@ -1264,6 +1311,7 @@
     },
     "/admin/runners/registration-token": {
       "get": {
+        "description": "This operation has been deprecated in Forgejo 15. Use [`/admin/actions/runners/registration-token`](#/admin/adminGetRunnerRegistrationToken) instead.\n",
         "produces": [
           "application/json"
         ],
@@ -1271,7 +1319,8 @@
           "admin"
         ],
         "summary": "Get a runner registration token for registering global runners",
-        "operationId": "adminGetRunnerRegistrationToken",
+        "operationId": "adminGetRegistrationToken",
+        "deprecated": true,
         "responses": {
           "200": {
             "$ref": "#/responses/RegistrationToken"

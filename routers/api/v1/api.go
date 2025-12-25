@@ -1702,13 +1702,14 @@ func Routes() *web.Route {
 			})
 			m.Group("/actions/runners", func() {
 				m.Get("", admin.ListRunners)
-				m.Get("/registration-token", admin.GetRegistrationToken)
+				m.Get("/registration-token", admin.GetRunnerRegistrationToken)
 				m.Get("/{runner_id}", admin.GetRunner)
 				m.Delete("/{runner_id}", admin.DeleteRunner)
+				m.Get("/jobs", admin.GetActionRunJobs)
 			})
 			m.Group("/runners", func() {
-				m.Get("/registration-token", admin.GetRegistrationToken)
-				m.Get("/jobs", admin.SearchActionRunJobs)
+				m.Get("/registration-token", admin.GetRegistrationToken) //nolint:staticcheck
+				m.Get("/jobs", admin.SearchActionRunJobs)                //nolint:staticcheck
 			})
 			if setting.Quota.Enabled {
 				m.Group("/quota", func() {
