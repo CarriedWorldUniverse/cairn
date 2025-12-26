@@ -61,8 +61,21 @@ func TestAPIGetTrackedTimes(t *testing.T) {
 	var filterAPITimes api.TrackedTimeList
 	DecodeJSON(t, resp, &filterAPITimes)
 	assert.Len(t, filterAPITimes, 2)
-	assert.Equal(t, int64(3), filterAPITimes[0].ID)
-	assert.Equal(t, int64(6), filterAPITimes[1].ID)
+	assert.EqualValues(t, 3, filterAPITimes[0].ID)
+	assert.EqualValues(t, 6, filterAPITimes[1].ID)
+
+	// test pagination
+	allIDs := []int64{}
+	for _, page := range []int{1, 2, 3} {
+		req = NewRequestf(t, "GET", "/api/v1/repos/%s/%s/issues/%d/times?page=%d&limit=1", user2.Name, issue2.Repo.Name, issue2.Index, page).
+			AddTokenAuth(token)
+		resp = MakeRequest(t, req, http.StatusOK)
+		var pageAPITimes api.TrackedTimeList
+		DecodeJSON(t, resp, &pageAPITimes)
+		require.Len(t, pageAPITimes, 1)
+		allIDs = append(allIDs, pageAPITimes[0].ID)
+	}
+	assert.Equal(t, []int64{2, 3, 6}, allIDs)
 }
 
 func TestAPIDeleteTrackedTime(t *testing.T) {

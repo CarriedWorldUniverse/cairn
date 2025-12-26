@@ -148,7 +148,7 @@ func (opts *FindTrackedTimesOptions) toSession(e db.Engine) db.Engine {
 
 // GetTrackedTimes returns all tracked times that fit to the given options.
 func GetTrackedTimes(ctx context.Context, options *FindTrackedTimesOptions) (trackedTimes TrackedTimeList, err error) {
-	err = options.toSession(db.GetEngine(ctx)).Find(&trackedTimes)
+	err = options.toSession(db.GetEngine(ctx)).Asc("tracked_time.id").Find(&trackedTimes)
 	return trackedTimes, err
 }
 
