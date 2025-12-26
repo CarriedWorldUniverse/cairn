@@ -227,12 +227,21 @@ jobs:
             curl -sS -X DELETE $url/api/v1/repos/forgejo-experimental/forgejo/releases/tags/$tag > /dev/null
             curl -sS -X DELETE $url/api/v1/repos/forgejo-experimental/forgejo/tags/$tag > /dev/null
           fi
+
+          # FIXME: remove these diagnostic commands that are intended to ensure the `rm` below works.
+          git config --list
+          echo "RUNNER_TEMP = $RUNNER_TEMP"
+
           # actions/checkout@v6 sets http.https://codeberg.org/.extraheader with the automatic token. Get rid of it so
           # it does not prevent using the token that has write permissions. As of @v6, it is stored in
-          # /tmp/git-credentials-(uuid).config and included in the repo via
-          # includeif.gitdir:...=/tmp/git-credentials-(uuid).config. Since we don't need these credentials anymore we
-          # can just remove the generated config file.
-          rm /tmp/git-credentials-*
+          # $RUNNER_TEMP/git-credentials-(uuid).config and included in the repo via
+          # includeif.gitdir:...=$RUNNER_TEMP/git-credentials-(uuid).config. Since we don't need these credentials
+          # anymore we can just remove the generated config file.
+          rm -f $RUNNER_TEMP/git-credentials-*
+
+          # FIXME: remove these diagnostic comamnds that are intended to ensure the `rm` above works.
+          git config --list
+
           if test -f .git/shallow ; then
             echo "unexpected .git/shallow file is present"
             echo "it suggests a checkout --depth X was used which may prevent pushing the commit"
