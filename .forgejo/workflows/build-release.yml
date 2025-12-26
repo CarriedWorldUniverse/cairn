@@ -227,11 +227,14 @@ jobs:
             curl -sS -X DELETE $url/api/v1/repos/forgejo-experimental/forgejo/releases/tags/$tag > /dev/null
             curl -sS -X DELETE $url/api/v1/repos/forgejo-experimental/forgejo/tags/$tag > /dev/null
           fi
-          # actions/checkout@v3 sets http.https://codeberg.org/.extraheader with the automatic token.
-          # Get rid of it so it does not prevent using the token that has write permissions
-          git config --local --unset http.https://codeberg.org/.extraheader
+          # actions/checkout@v6 sets http.https://codeberg.org/.extraheader with the automatic token. Get rid of it so
+          # it does not prevent using the token that has write permissions. As of @v6, it is stored in
+          # /tmp/git-credentials-(uuid).config and included in the repo via
+          # includeif.gitdir:...=/tmp/git-credentials-(uuid).config. Since we don't need these credentials anymore we
+          # can just remove the generated config file.
+          rm /tmp/git-credentials-*
           if test -f .git/shallow ; then
-            echo "unexptected .git/shallow file is present"
+            echo "unexpected .git/shallow file is present"
             echo "it suggests a checkout --depth X was used which may prevent pushing the commit"
             echo "it happens when actions/checkout is called without depth: 0"
           fi
