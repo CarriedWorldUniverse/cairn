@@ -29,5 +29,25 @@
     "error.not_found.title": "Asebtar ulac-it",
     "moderation.abuse_category.placeholder": "Fren taggayt",
     "migrate.pagure.project_url": "Tansa URL n usenfar Pagure",
-    "themes.names.forgejo-auto": "Forgejo (akken i yella usentel n unagraw)"
+    "themes.names.forgejo-auto": "Forgejo (akken i yella usentel n unagraw)",
+    "stars.n_stars": {
+        "one": "%s n yitri",
+        "other": "%s n yitran"
+    },
+    "relativetime.days": {
+        "one": "%d n wass aya",
+        "other": "%d n wussan aya"
+    },
+    "relativetime.weeks": {
+        "one": "%d u imalas aya",
+        "other": "%d n imalasen aya"
+    },
+    "relativetime.months": {
+        "one": "%d n wayyur aya",
+        "other": "%d n wayyuren aya"
+    },
+    "relativetime.years": {
+        "one": "%d n useggas aya",
+        "other": "%d n iseggasen aya"
+    }
 }

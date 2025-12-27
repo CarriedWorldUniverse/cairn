@@ -251,5 +251,8 @@
     "actions.workflow.incomplete_runson_missing_job": "Nevar novērtēt darba %[1]s `runs-on`: darbs %[2]s nav %[1]s `needs` sarakstā (%[3]s).",
     "actions.workflow.incomplete_runson_missing_output": "Nevar novērtēt darba %[1]s `runs-on`: darbam %[2]s nav izvades %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Nevar novērtēt darba %[1]s `runs-on`: matricas dimensija %[2]s nepastāv.",
-    "actions.workflow.incomplete_runson_unknown_cause": "Nevar novērtēt darba %[1]s `runs-on`: nezināma kļūda."
+    "actions.workflow.incomplete_runson_unknown_cause": "Nevar novērtēt darba %[1]s `runs-on`: nezināma kļūda.",
+    "issues.updated": "atjaunināts %s",
+    "search.fuzzy": "Aptuveni",
+    "search.fuzzy_tooltip": "Iekļaut iznākumus, kas aptuveni atbilst meklētajam"
 }
