@@ -251,5 +251,8 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Não é possível avaliar `runs-on` do trabalho %[1]s: erro desconhecido.",
     "admin.auths.oauth2_quota_group_claim_name": "Nome da reivindicação que fornece nomes de grupos para esta fonte a ser usada para gestão de quotas. (Opcional)",
     "admin.auths.oauth2_quota_group_map": "Atribuir grupos reivindicados a grupos de quotas. (Opcional - requer o nome da reivindicação acima)",
-    "admin.auths.oauth2_quota_group_map_removal": "Remover os utilizadores dos grupos de quotas sincronizados se o utilizador não pertencer ao grupo correspondente."
+    "admin.auths.oauth2_quota_group_map_removal": "Remover os utilizadores dos grupos de quotas sincronizados se o utilizador não pertencer ao grupo correspondente.",
+    "issues.updated": "%s atualizado",
+    "search.fuzzy": "Difusa",
+    "search.fuzzy_tooltip": "Incluir resultados que correspondam aproximadamente ao termo de pesquisa"
 }
