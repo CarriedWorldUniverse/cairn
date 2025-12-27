@@ -6,6 +6,7 @@ package integration
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -105,6 +106,13 @@ func (doc *HTMLDoc) Find(selector string) *goquery.Selection {
 func (doc *HTMLDoc) FindByText(selector, text string) *goquery.Selection {
 	return doc.doc.Find(selector).FilterFunction(func(i int, s *goquery.Selection) bool {
 		return s.Text() == text
+	})
+}
+
+// FindByText gets all elements by selector that also has the given text, w/ leading & trailing whitespace trimmed
+func (doc *HTMLDoc) FindByTextTrim(selector, text string) *goquery.Selection {
+	return doc.doc.Find(selector).FilterFunction(func(i int, s *goquery.Selection) bool {
+		return strings.TrimSpace(s.Text()) == text
 	})
 }
 
