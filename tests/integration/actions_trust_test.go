@@ -20,6 +20,7 @@ import (
 	actions_module "forgejo.org/modules/actions"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/structs"
+	"forgejo.org/modules/translation"
 	actions_service "forgejo.org/services/actions"
 	pull_service "forgejo.org/services/pull"
 	repo_service "forgejo.org/services/repository"
@@ -66,6 +67,32 @@ func actionsTrustTestAssertTrustPanel(t *testing.T, session *TestSession, url st
 func actionsTrustTestAssertNoTrustPanel(t *testing.T, session *TestSession, url string) {
 	t.Helper()
 	actionsTrustTestAssertTrustPanelPresence(t, session, url, false)
+}
+
+func actionsTrustTestAssertPRIsWIP(t *testing.T, session *TestSession, url string) {
+	t.Helper()
+
+	req := NewRequest(t, "GET", url)
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	locale := translation.NewLocale("en-US")
+	assert.Equal(t, 1, htmlDoc.FindByTextTrim("div", locale.TrString("repo.pulls.cannot_merge_work_in_progress")).Length())
+}
+
+func actionsTrustTestAssertPRConflicted(t *testing.T, session *TestSession, url string) {
+	t.Helper()
+
+	req := NewRequest(t, "GET", url)
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+
+	locale := translation.NewLocale("en-US")
+
+	// ....Eventually is used because conflict checking is async and may not complete immediately.
+	require.Eventually(t, func() bool {
+		return htmlDoc.FindByTextTrim("div", locale.TrString("repo.pulls.files_conflicted")).Length() == 1
+	}, 5*time.Second, time.Millisecond*100)
 }
 
 func actionsTrustTestCreateBaseRepo(t *testing.T, owner *user_model.User) (*repo_model.Repository, func()) {
@@ -127,13 +154,19 @@ func actionsTrustTestRequireRun(t *testing.T, repo *repo_model.Repository, modif
 func actionsTrustTestRepoCreateBranch(t *testing.T, doer *user_model.User, repo *repo_model.Repository) *structs.FilesResponse {
 	t.Helper()
 
-	return actionsTrustTestModifyRepo(t, doer, repo, "file_in_fork.txt", "main", "fork-branch-1")
+	return actionsTrustTestModifyRepo(t, doer, repo, "file_in_fork.txt", "main", "fork-branch-1", "content")
+}
+
+func actionsTrustMakePRConflicted(t *testing.T, doer *user_model.User, repo *repo_model.Repository) *structs.FilesResponse {
+	t.Helper()
+
+	return actionsTrustTestModifyRepo(t, doer, repo, "file_in_fork.txt", "main", "main", "conflicting content")
 }
 
 func actionsTrustTestRepoModify(t *testing.T, doer *user_model.User, baseRepo, headRepo *repo_model.Repository, filename string) *structs.FilesResponse {
 	t.Helper()
 
-	modified := actionsTrustTestModifyRepo(t, doer, headRepo, filename, "fork-branch-1", "fork-branch-1")
+	modified := actionsTrustTestModifyRepo(t, doer, headRepo, filename, "fork-branch-1", "fork-branch-1", "content")
 	// the creation of the run is not synchronous
 	require.Eventually(t, func() bool {
 		return unittest.BeanExists(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: modified.Commit.SHA})
@@ -141,7 +174,7 @@ func actionsTrustTestRepoModify(t *testing.T, doer *user_model.User, baseRepo, h
 	return modified
 }
 
-func actionsTrustTestModifyRepo(t *testing.T, doer *user_model.User, repo *repo_model.Repository, filename, oldBranch, newBranch string) *structs.FilesResponse {
+func actionsTrustTestModifyRepo(t *testing.T, doer *user_model.User, repo *repo_model.Repository, filename, oldBranch, newBranch, content string) *structs.FilesResponse {
 	t.Helper()
 
 	// add a new file to the forked repo
@@ -150,7 +183,7 @@ func actionsTrustTestModifyRepo(t *testing.T, doer *user_model.User, repo *repo_
 			{
 				Operation:     "create",
 				TreePath:      filename,
-				ContentReader: strings.NewReader("content"),
+				ContentReader: strings.NewReader(content),
 			},
 		},
 		Message:   "add " + filename,
@@ -218,6 +251,23 @@ func actionsTrustTestCreatePullRequestFromForkedRepo(t *testing.T, baseUser *use
 	actionsTrustTestRequireRun(t, baseRepo, addFileToForkedResp)
 
 	return forkedRepo, pullRequest, addFileToForkedResp
+}
+
+// Mark the PR as a work-in-progress PR
+func actionsTrustTestSetPullRequestWIP(t *testing.T, pullRequest *issues_model.PullRequest, wip bool) {
+	t.Helper()
+	newTitle := pullRequest.Issue.Title
+	if wip && !pullRequest.IsWorkInProgress(t.Context()) {
+		newTitle = fmt.Sprintf("WIP: %s", pullRequest.Issue.Title)
+	} else if !wip {
+		prefix := pullRequest.GetWorkInProgressPrefix(t.Context())
+		newTitle = pullRequest.Issue.Title[len(prefix):]
+	}
+	pullRequest.Issue.Title = newTitle
+	require.NoError(t, issues_model.UpdateIssueCols(t.Context(), pullRequest.Issue, "name"))
+
+	pullRequest.Issue = nil
+	require.NoError(t, pullRequest.LoadIssue(t.Context()))
 }
 
 func TestActionsPullRequestTrustPanel(t *testing.T) {
@@ -350,6 +400,39 @@ func TestActionsPullRequestTrustPanel(t *testing.T) {
 			assert.True(t, actionRun.NeedApproval)
 			actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
 			assert.Equal(t, actions_model.StatusBlocked.String(), actionRunJob.Status.String())
+		})
+	})
+}
+
+func TestActionsPullRequestTrustPanelWIPConflicts(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		ownerUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2}) // owner of the repo
+
+		regularUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5}) // a regular user with no specific permission
+		regularSession := loginUser(t, regularUser.Name)
+
+		userAdmin := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1}) // the instance admin
+		adminSession := loginUser(t, userAdmin.Name)
+
+		baseRepo, f := actionsTrustTestCreateBaseRepo(t, ownerUser)
+		defer f()
+
+		_, pullRequest, _ := actionsTrustTestCreatePullRequestFromForkedRepo(t, ownerUser, baseRepo, regularUser)
+		pullRequestLink := pullRequest.Issue.Link()
+
+		actionsTrustTestSetPullRequestWIP(t, pullRequest, true)
+		actionsTrustTestAssertPRIsWIP(t, adminSession, pullRequestLink)
+
+		t.Run("Regular user sees pending approval even though PR is a WIP PR", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
+		})
+
+		actionsTrustTestSetPullRequestWIP(t, pullRequest, false)
+		_ = actionsTrustMakePRConflicted(t, userAdmin, baseRepo)
+		actionsTrustTestAssertPRConflicted(t, adminSession, pullRequestLink)
+
+		t.Run("Regular user sees pending approval even though PR is conflicted", func(t *testing.T) {
+			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
 		})
 	})
 }
