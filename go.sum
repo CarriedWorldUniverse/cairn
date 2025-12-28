@@ -20,8 +20,8 @@ code.forgejo.org/f3/gof3/v3 v3.11.1 h1:c0vE8XvqpbXuSv8gzttn96k5T2FQi0u9bYnux46qS
 code.forgejo.org/f3/gof3/v3 v3.11.1/go.mod h1:1p2UKrqZiwxKneQF2DKrMnc403YIgR/lfcfvadZtmDs=
 code.forgejo.org/forgejo-contrib/go-libravatar v0.0.0-20191008002943-06d1c002b251 h1:HTZl3CBk3ABNYtFI6TPLvJgGKFIhKT5CBk0sbOtkDKU=
 code.forgejo.org/forgejo-contrib/go-libravatar v0.0.0-20191008002943-06d1c002b251/go.mod h1:PphB88CPbx601QrWPMZATeorACeVmQlyv3u+uUMbSaM=
-code.forgejo.org/forgejo/actions-proto v0.5.3 h1:dDProRNB4CDvEl9gfo8jkiVfGdiW7fXAt5TM9Irka28=
-code.forgejo.org/forgejo/actions-proto v0.5.3/go.mod h1:33iTdur/jVa/wAQP+BuciRTK9WZcVaxy0BNEnSWWFDM=
+code.forgejo.org/forgejo/actions-proto v0.6.0 h1:dw1Dogk9A4V/yrLVkhe9dSZPsqNAIkI1kCXPSqG3tZA=
+code.forgejo.org/forgejo/actions-proto v0.6.0/go.mod h1:+444hHBs9/qDh5X/AedaTv0Egj3vd/EXP93vg9zFV2E=
 code.forgejo.org/forgejo/go-rpmutils v1.0.0 h1:RZGGeKt70p/WaIEL97pyT6uiiEIoN8/aLmS5Z6WmX0M=
 code.forgejo.org/forgejo/go-rpmutils v1.0.0/go.mod h1:cg+VbgLXfrDPza9T+kBsMb3TVmmzPN4XseT6gDGLSUk=
 code.forgejo.org/forgejo/go-xsd-duration v0.0.0-20220703122237-02e73435a078 h1:RArF5AsF9LH4nEoJxqRxcP5r8hhRfWcId84G82YbqzA=
