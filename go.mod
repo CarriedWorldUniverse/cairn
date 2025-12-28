@@ -50,7 +50,7 @@ require (
 	github.com/go-co-op/gocron v1.37.0
 	github.com/go-enry/go-enry/v2 v2.9.2
 	github.com/go-ldap/ldap/v3 v3.4.12
-	github.com/go-openapi/spec v0.22.2
+	github.com/go-openapi/spec v0.22.3
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/go-webauthn/webauthn v0.14.0
 	github.com/gobwas/glob v0.2.3
