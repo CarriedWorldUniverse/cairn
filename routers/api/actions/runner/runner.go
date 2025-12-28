@@ -152,6 +152,7 @@ func (s *Service) FetchTask(
 		latestVersion++
 	}
 
+	var additionalTasks []*runnerv1.Task
 	if tasksVersion != latestVersion {
 		// if the task version in request is not equal to the version in db,
 		// it means there may still be some tasks not be assigned.
@@ -162,10 +163,28 @@ func (s *Service) FetchTask(
 		} else if ok {
 			task = t
 		}
+
+		taskCapacity := req.Msg.GetTaskCapacity()
+		taskCapacity-- // remove 1 for the task already fetched as `task`
+		for taskCapacity > 0 {
+			if t, ok, err := actions_service.PickTask(ctx, runner); err != nil {
+				// Don't return an error to the client/runner -- we've already assigned one-or-more tasks to the runner
+				// and if we don't return them, they can't be picked up by another runner and will become zombie tasks.
+				// Log the error and return the tasks we've assigned so far.
+				log.Error("pick task failed: %v", err)
+				break
+			} else if ok {
+				additionalTasks = append(additionalTasks, t)
+				taskCapacity--
+			} else {
+				break
+			}
+		}
 	}
 	res := connect.NewResponse(&runnerv1.FetchTaskResponse{
-		Task:         task,
-		TasksVersion: latestVersion,
+		Task:            task,
+		TasksVersion:    latestVersion,
+		AdditionalTasks: additionalTasks,
 	})
 	return res, nil
 }

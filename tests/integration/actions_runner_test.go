@@ -123,6 +123,35 @@ func (r *mockRunner) fetchTask(t *testing.T, timeout ...time.Duration) *runnerv1
 	return task
 }
 
+func (r *mockRunner) maybeFetchMultipleTasks(t *testing.T, taskCapacity *int64) (*runnerv1.Task, []*runnerv1.Task) {
+	resp, err := r.client.runnerServiceClient.FetchTask(t.Context(), connect.NewRequest(&runnerv1.FetchTaskRequest{
+		TasksVersion: r.lastTasksVersion,
+		TaskCapacity: taskCapacity,
+	}))
+	require.NoError(t, err)
+	r.lastTasksVersion = resp.Msg.TasksVersion
+	return resp.Msg.Task, resp.Msg.AdditionalTasks
+}
+
+func (r *mockRunner) fetchMultipleTasks(t *testing.T, taskCapacity *int64, timeout ...time.Duration) (*runnerv1.Task, []*runnerv1.Task) {
+	fetchTimeout := 10 * time.Second
+	if len(timeout) > 0 {
+		fetchTimeout = timeout[0]
+	}
+	var task *runnerv1.Task
+	var additional []*runnerv1.Task
+	require.Eventually(t, func() bool {
+		maybeTask, maybeAdditional := r.maybeFetchMultipleTasks(t, taskCapacity)
+		if maybeTask != nil {
+			task = maybeTask
+			additional = maybeAdditional
+			return true
+		}
+		return false
+	}, fetchTimeout, time.Millisecond*100, "failed to fetch a task")
+	return task, additional
+}
+
 type mockTaskOutcome struct {
 	result  runnerv1.Result
 	outputs map[string]string
