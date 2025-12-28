@@ -391,8 +391,49 @@ func tryHandleWorkflowCallOuterJob(ctx context.Context, job *actions_model.Actio
 		return nil, nil
 	}
 
-	// Insert a placeholder task; this will be used in the future to store computed outputs
-	actionTask, err := actions_model.CreatePlaceholderTask(ctx, job, map[string]string{})
+	// Gather all the data that is needed to perform an expression evaluation of the job's outputs:
+	singleWorkflow, err := job.DecodeWorkflowPayload()
+	if err != nil {
+		return nil, fmt.Errorf("failure to decode workflow payload: %w", err)
+	}
+	err = job.LoadRun(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failure to load job's run: %w", err)
+	}
+	err = job.Run.LoadRepo(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failure to load run's repo: %w", err)
+	}
+	githubContext := generateGiteaContextForRun(job.Run)
+	taskNeeds, err := FindTaskNeeds(ctx, job)
+	if err != nil {
+		return nil, fmt.Errorf("failure to 'needs' for job: %w", err)
+	}
+	needs := make([]string, 0, len(taskNeeds))
+	jobResults := make(map[string]string, len(taskNeeds))
+	jobOutputs := make(map[string]map[string]string, len(taskNeeds))
+	for jobID, n := range taskNeeds {
+		needs = append(needs, jobID)
+		jobResults[jobID] = n.Result.String()
+		jobOutputs[jobID] = n.Outputs
+	}
+	vars, err := actions_model.GetVariablesOfRun(ctx, job.Run)
+	if err != nil {
+		return nil, fmt.Errorf("failure to 'var' for run: %w", err)
+	}
+
+	// With all the required contexts, we can calculate the outputs.
+	outputs := jobparser.EvaluateWorkflowCallOutputs(
+		singleWorkflow,
+		githubContext,
+		vars,
+		needs,
+		jobResults,
+		jobOutputs,
+	)
+
+	// Insert a placeholder task with all the computed outputs
+	actionTask, err := actions_model.CreatePlaceholderTask(ctx, job, outputs)
 	if err != nil {
 		return nil, fmt.Errorf("failure to insert placeholder task: %w", err)
 	}

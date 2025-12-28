@@ -440,7 +440,15 @@ func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 			name:         "outputs for every context",
 			runJobID:     601,
 			updateFields: []string{"task_id"},
-			outputs:      map[string]string{},
+			outputs: map[string]string{
+				"from_inner_job":        "abcdefghijklmnopqrstuvwxyz",
+				"from_inner_job_result": "success",
+				"from_forgejo_ctx":      "refs/heads/main",
+				"from_input_ctx":        "hello, world!",
+				"from_vars_repo":        "this is a repo variable",
+				"from_vars_org":         "this is an org variable",
+				"from_vars_global":      "this is a global variable",
+			},
 		},
 	}
 	for _, tt := range tests {
