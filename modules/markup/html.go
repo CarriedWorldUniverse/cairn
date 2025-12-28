@@ -46,6 +46,9 @@ var (
 
 	// valid chars in encoded path and parameter: [-+~_%.a-zA-Z0-9/]
 
+	// httpSchemePattern matches https:// or http://
+	httpSchemePattern = regexp.MustCompile(`^https?://`)
+
 	// hashCurrentPattern matches string that represents a commit SHA, e.g. d8a994ef243349f321568f9e36d5c3f444b99cae
 	// Although SHA1 hashes are 40 chars long, SHA256 are 64, the regex matches the hash from 7 to 64 chars in length
 	// so that abbreviated hash links can be used as well. This matches git and GitHub usability.
@@ -72,7 +75,7 @@ var (
 	//   https://html.spec.whatwg.org/multipage/input.html#e-mail-state-(type%3Demail)
 	emailRegex = regexp.MustCompile("(?:\\s|^|\\(|\\[)([a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9]{2,}(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+)(?:\\s|$|\\)|\\]|;|,|\\?|!|\\.(\\s|$))")
 
-	// Fediverse handle regex (same as emailRegex but with additonal @ or !
+	// Fediverse handle regex (same as emailRegex but with additional @ or !
 	// at start)
 	fediRegex = regexp.MustCompile("(?:\\s|^|\\(|\\[)([@!]([a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+)@([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9]{2,}(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+))(?:\\s|$|\\)|\\]|;|,|\\?|!|\\.(\\s|$))")
 
@@ -826,10 +829,7 @@ func pullReviewCommitPatternProcessor(ctx *RenderContext, node *html.Node) {
 
 		text := "!" + id + " (commit "
 
-		baseURLEnd := strings.Index(urlFull, repoSlug) + len(repoSlug)
-		if len(ctx.Links.Base) > 0 && !strings.HasPrefix(ctx.Links.Base, urlFull[:baseURLEnd]) {
-			text = repoSlug + "@" + text
-		}
+		optionalRepoSlugAndInstancePath(ctx, &text, urlFull, repoSlug)
 
 		aNode.AppendChild(&html.Node{
 			Type: html.TextNode,
@@ -1083,10 +1083,7 @@ func fullHashPatternProcessor(ctx *RenderContext, node *html.Node) {
 		// We need to figure out the base of the provided URL, which is up to and including the
 		// `<owner>/<repo>` slug.
 		// With that we can determine if it matches the current repo, or if the slug should be shown.
-		baseURLEnd := strings.Index(urlFull, repoSlug) + len(repoSlug)
-		if len(ctx.Links.Base) > 0 && !strings.HasPrefix(ctx.Links.Base, urlFull[:baseURLEnd]) {
-			text = repoSlug + "@" + text
-		}
+		optionalRepoSlugAndInstancePath(ctx, &text, urlFull, repoSlug)
 
 		// 3rd capture group matches an optional file path after the SHA
 		filePath := ""
@@ -1191,10 +1188,7 @@ func comparePatternProcessor(ctx *RenderContext, node *html.Node) {
 
 		text := text1 + textDots + text2
 
-		baseURLEnd := strings.Index(urlFull, repoSlug) + len(repoSlug)
-		if len(ctx.Links.Base) > 0 && !strings.HasPrefix(ctx.Links.Base, urlFull[:baseURLEnd]) {
-			text = repoSlug + "@" + text
-		}
+		optionalRepoSlugAndInstancePath(ctx, &text, urlFull, repoSlug)
 
 		extra := ""
 		if query != "" {
@@ -1524,4 +1518,28 @@ func createDescriptionLink(href, content string) *html.Node {
 	}
 	textNode.Parent = linkNode
 	return linkNode
+}
+
+// Adds an optional repo slug and optionally the instance domain and URL
+//
+// The repo slug is added if the link points to a different repo
+// The instance domain and sub-path is added if the link points to a different instance
+func optionalRepoSlugAndInstancePath(ctx *RenderContext, text *string, fullURL, slug string) {
+	if len(ctx.Links.Base) > 0 {
+		// The fullURL is the url to e.g. the commit. The slug is e.g. `forgejo/forgejo`.
+		// To retrieve the instance domain and sub-path we need to remove the repo slug
+		slugStart := strings.LastIndex(fullURL, slug)
+		targetInstance := fullURL[:slugStart]
+
+		// Check if the URL points to a different instance
+		if setting.AppURL != targetInstance {
+			// Remove the http scheme for displaying
+			targetInstance = httpSchemePattern.ReplaceAllString(targetInstance, "")
+
+			*text = targetInstance + slug + "@" + *text
+		} else if !strings.HasSuffix(strings.TrimSuffix(ctx.Links.Base, "/"), slug) {
+			// If it is a link to a different repo, but on the same instance only add the repo slug
+			*text = slug + "@" + *text
+		}
+	}
 }
