@@ -4,6 +4,7 @@
 package forgejo_migrations
 
 import (
+	"xorm.io/builder"
 	"xorm.io/xorm"
 )
 
@@ -19,7 +20,11 @@ func addForeignKeysCollaboration(x *xorm.Engine) error {
 		RepoID int64 `xorm:"UNIQUE(s) INDEX NOT NULL REFERENCES(repository, id)"`
 		UserID int64 `xorm:"UNIQUE(s) INDEX NOT NULL REFERENCES(user, id)"`
 	}
-	return syncDoctorForeignKey(x, []any{
+	return syncForeignKeyWithDelete(x,
 		new(Collaboration),
-	})
+		builder.Or(
+			builder.Expr("NOT EXISTS (SELECT id FROM repository WHERE repository.id = collaboration.repo_id)"),
+			builder.Expr("NOT EXISTS (SELECT id FROM `user` WHERE `user`.id = collaboration.user_id)"),
+		),
+	)
 }

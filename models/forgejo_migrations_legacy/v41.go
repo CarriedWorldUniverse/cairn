@@ -4,7 +4,6 @@
 package forgejo_migrations_legacy
 
 import (
-	"errors"
 	"fmt"
 
 	"forgejo.org/modules/log"
@@ -13,23 +12,24 @@ import (
 	"xorm.io/xorm"
 )
 
-func syncDoctorForeignKey(x *xorm.Engine, beans []any) error {
-	for _, bean := range beans {
-		// Sync() drops indexes by default, which will cause unnecessary rebuilding of indexes when syncDoctorForeignKey
-		// is used with partial bean definitions; so we disable that option
-		_, err := x.SyncWithOptions(xorm.SyncOptions{IgnoreDropIndices: true}, bean)
-		if err != nil {
-			if errors.Is(err, xorm.ErrForeignKeyViolation) {
-				tableName := x.TableName(bean)
-				log.Error(
-					"Foreign key creation on table %s failed. Run `forgejo doctor check --all` to identify the orphaned records preventing this foreign key from being created. Error was: %v",
-					tableName, err)
-				return err
-			}
-			return err
-		}
+// syncForeignKeyWithDelete will delete any records that match `cond`, and if present, log and warn to the
+// administrator; then it will perform an `xorm.Sync()` in order to create foreign keys on the table definition.
+func syncForeignKeyWithDelete(x *xorm.Engine, bean any, cond builder.Cond) error {
+	rowsDeleted, err := x.Where(cond).Delete(bean)
+	if err != nil {
+		return fmt.Errorf("failure to delete inconsistent records before foreign key sync: %w", err)
 	}
-	return nil
+	if rowsDeleted > 0 {
+		tableName := x.TableName(bean)
+		log.Warn(
+			"Foreign key creation on table %s required deleting %d records with inconsistent foreign key values.",
+			tableName, rowsDeleted)
+	}
+
+	// Sync() drops indexes by default, which will cause unnecessary rebuilding of indexes when syncForeignKeyWithDelete
+	// is used with partial bean definitions; so we disable that option
+	_, err = x.SyncWithOptions(xorm.SyncOptions{IgnoreDropIndices: true}, bean)
+	return err
 }
 
 func AddForeignKeysStopwatchTrackedTime(x *xorm.Engine) error {
@@ -50,6 +50,7 @@ func AddForeignKeysStopwatchTrackedTime(x *xorm.Engine) error {
 	err := x.Table("tracked_time").
 		Join("LEFT", "`user`", "`tracked_time`.user_id = `user`.id").
 		Where(builder.IsNull{"`user`.id"}).
+		Where(builder.NotNull{"tracked_time.user_id"}).
 		Find(&trackedTime)
 	if err != nil {
 		return err
@@ -63,8 +64,25 @@ func AddForeignKeysStopwatchTrackedTime(x *xorm.Engine) error {
 		}
 	}
 
-	return syncDoctorForeignKey(x, []any{
+	err = syncForeignKeyWithDelete(x,
 		new(Stopwatch),
+		builder.Or(
+			builder.Expr("NOT EXISTS (SELECT id FROM issue WHERE issue.id = stopwatch.issue_id)"),
+			builder.Expr("NOT EXISTS (SELECT id FROM `user` WHERE `user`.id = stopwatch.user_id)"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	return syncForeignKeyWithDelete(x,
 		new(TrackedTime),
-	})
+		builder.Or(
+			builder.And(
+				builder.Expr("user_id IS NOT NULL"),
+				builder.Expr("NOT EXISTS (SELECT id FROM `user` WHERE `user`.id = tracked_time.user_id)"),
+			),
+			builder.Expr("NOT EXISTS (SELECT id FROM issue WHERE issue.id = tracked_time.issue_id)"),
+		),
+	)
 }

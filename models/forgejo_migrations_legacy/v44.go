@@ -4,6 +4,7 @@
 package forgejo_migrations_legacy
 
 import (
+	"xorm.io/builder"
 	"xorm.io/xorm"
 )
 
@@ -12,7 +13,11 @@ func AddForeignKeysAccess(x *xorm.Engine) error {
 		UserID int64 `xorm:"UNIQUE(s) REFERENCES(user, id)"`
 		RepoID int64 `xorm:"UNIQUE(s) REFERENCES(repository, id)"`
 	}
-	return syncDoctorForeignKey(x, []any{
+	return syncForeignKeyWithDelete(x,
 		new(Access),
-	})
+		builder.Or(
+			builder.Expr("NOT EXISTS (SELECT id FROM repository WHERE repository.id = access.repo_id)"),
+			builder.Expr("NOT EXISTS (SELECT id FROM `user` WHERE `user`.id = access.user_id)"),
+		),
+	)
 }
