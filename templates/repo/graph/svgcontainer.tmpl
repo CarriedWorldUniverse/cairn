@@ -3,8 +3,16 @@
 		{{range $flowid, $flow := .Graph.Flows}}
 			<g id="flow-{{$flow.ID}}" class="flow-group flow-color-{{$flow.ColorNumber}} flow-color-16-{{$flow.Color16}}" data-flow="{{$flow.ID}}" data-color="{{$flow.ColorNumber}}">
 				<path d="{{range $i, $glyph := $flow.Glyphs -}}
-					{{- if or (eq $glyph.Glyph '*') (eq $glyph.Glyph '|') -}}
+					{{- if eq $glyph.Glyph '|' -}}
 						M {{Eval $glyph.Column "*" 5 "+" 5}} {{Eval $glyph.Row "*" 12 "+" 0}} v 12 {{/* */ -}}
+					{{- else if eq $glyph.Glyph '*' -}}
+						{{- if and $glyph.ConnectsUp $glyph.ConnectsDown -}}
+							M {{Eval $glyph.Column "*" 5 "+" 5}} {{Eval $glyph.Row "*" 12 "+" 0}} v 12 {{/* */ -}}
+						{{- else if $glyph.ConnectsUp -}}
+							M {{Eval $glyph.Column "*" 5 "+" 5}} {{Eval $glyph.Row "*" 12 "+" 0}} v 6 {{/* */ -}}
+						{{- else if $glyph.ConnectsDown -}}
+							M {{Eval $glyph.Column "*" 5 "+" 5}} {{Eval $glyph.Row "*" 12 "+" 6}} v 6 {{/* */ -}}
+						{{- end -}}
 					{{- else if eq $glyph.Glyph '/' -}}
 						M {{Eval $glyph.Column "*" 5 "+" 10}} {{Eval $glyph.Row "*" 12 "+" 0}} l -10 12 {{/* */ -}}
 					{{- else if eq $glyph.Glyph '\\' -}}
