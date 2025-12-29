@@ -66,7 +66,8 @@ func TestGenerateGiteaContext(t *testing.T) {
 			EventPayload:      `{"repository": {"name": "testrepo"}}`,
 		}
 
-		context := GenerateGiteaContext(run, nil)
+		context, err := GenerateGiteaContext(run, nil)
+		require.NoError(t, err)
 
 		assert.Equal(t, "testuser", context["actor"])
 		assert.Equal(t, setting.AppURL+"api/v1", context["api_url"])
@@ -121,13 +122,15 @@ func TestGenerateGiteaContext(t *testing.T) {
 		}
 
 		job := &actions_model.ActionRunJob{
-			ID:      100,
-			RunID:   1,
-			JobID:   "test-job",
-			Attempt: 1,
+			ID:              100,
+			RunID:           1,
+			JobID:           "test-job",
+			Attempt:         1,
+			WorkflowPayload: []byte("on: [push]"),
 		}
 
-		context := GenerateGiteaContext(run, job)
+		context, err := GenerateGiteaContext(run, job)
+		require.NoError(t, err)
 
 		assert.Equal(t, "test-job", context["job"])
 		assert.Equal(t, "1", context["run_id"])
@@ -166,7 +169,8 @@ func TestGenerateGiteaContext(t *testing.T) {
 			EventPayload:      string(payloadBytes),
 		}
 
-		context := GenerateGiteaContext(run, nil)
+		context, err := GenerateGiteaContext(run, nil)
+		require.NoError(t, err)
 
 		assert.Equal(t, "main", context["base_ref"])
 		assert.Equal(t, "feature-branch", context["head_ref"])
@@ -207,7 +211,8 @@ func TestGenerateGiteaContext(t *testing.T) {
 			EventPayload:      string(payloadBytes),
 		}
 
-		context := GenerateGiteaContext(run, nil)
+		context, err := GenerateGiteaContext(run, nil)
+		require.NoError(t, err)
 
 		assert.Equal(t, "main", context["base_ref"])
 		assert.Equal(t, "feature-branch", context["head_ref"])
@@ -217,6 +222,33 @@ func TestGenerateGiteaContext(t *testing.T) {
 		assert.Equal(t, "main", context["ref_name"])
 		assert.Equal(t, "branch", context["ref_type"])
 		assert.Equal(t, "testowner/testrepo/.github/workflows/test-workflow.yml@refs/heads/main", context["workflow_ref"])
+	})
+
+	t.Run("workflow_call job", func(t *testing.T) {
+		run := &actions_model.ActionRun{
+			ID:           1,
+			Index:        42,
+			TriggerUser:  testUser,
+			Repo:         testRepo,
+			TriggerEvent: "push",
+			Ref:          "refs/heads/main",
+			CommitSHA:    "abc123def456",
+			WorkflowID:   "test-workflow",
+			EventPayload: `{}`,
+		}
+
+		job := &actions_model.ActionRunJob{
+			ID:              100,
+			RunID:           1,
+			JobID:           "test-job",
+			Attempt:         1,
+			WorkflowPayload: []byte("on: { workflow_call: { inputs: {} } }\n__metadata:\n  workflow_call_parent: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed\n"),
+		}
+
+		context, err := GenerateGiteaContext(run, job)
+		require.NoError(t, err)
+
+		assert.Equal(t, "workflow_call", context["event_name"])
 	})
 }
 
