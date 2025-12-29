@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import htmx from 'htmx.org';
 import {initCompReactionSelector} from './comp/ReactionSelector.js';
 import {initRepoIssueContentHistory} from './repo-issue-content.js';
 import {initDiffFileTree} from './repo-diff-filetree.js';
@@ -151,6 +152,7 @@ function onShowMoreFiles() {
   initViewedCheckboxListenerFor();
   countAndUpdateViewedFiles();
   initImageDiff();
+  htmx.process(document.body);
 }
 
 export async function loadMoreFiles(url) {

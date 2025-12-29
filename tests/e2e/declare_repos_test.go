@@ -6,6 +6,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -143,6 +144,34 @@ body:
 				readStringFile(t, "tests/e2e/declarative-repo/long-diff-test/2-README.md"))
 			addCommitToBranch(t, user, repo, "test-branch", "test-branch", "test-README.md", commit2Sha,
 				readStringFile(t, "tests/e2e/declarative-repo/long-diff-test/3-README.md"))
+		}),
+		newRepo(t, 2, "huge-diff-test", nil, []FileChanges{{
+			Filename: "glossary.po",
+			Versions: []string{
+				func() string {
+					var sb strings.Builder
+					sb.Write([]byte("0"))
+					for i := 1; i < 2000; i++ {
+						sb.WriteString(strconv.Itoa(i))
+						sb.WriteByte('\n')
+					}
+					return sb.String()
+				}(),
+			},
+		}}, func(user *user_model.User, repo *repo_model.Repository) {
+			addCommitToBranch(t, user, repo, "main", "main-2", "glossary.po", "",
+				func() string {
+					var sb strings.Builder
+					sb.Write([]byte("0"))
+					for i := 1; i < 2000; i++ {
+						sb.WriteString(strconv.Itoa(i))
+						if i%12 == 0 {
+							sb.WriteString("Blub")
+						}
+						sb.WriteByte('\n')
+					}
+					return sb.String()
+				}())
 		}),
 		// add your repo declarations here
 	}
