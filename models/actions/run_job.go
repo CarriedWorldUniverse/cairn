@@ -287,3 +287,12 @@ func (job *ActionRunJob) IsWorkflowCallOuterJob() (bool, error) {
 	}
 	return jobWorkflow.Metadata.WorkflowCallID != "", nil
 }
+
+// Check whether the target job was generated as a result of expanding a reusable workflow.
+func (job *ActionRunJob) IsWorkflowCallInnerJob() (bool, error) {
+	jobWorkflow, err := job.DecodeWorkflowPayload()
+	if err != nil {
+		return false, fmt.Errorf("failure decoding workflow payload: %w", err)
+	}
+	return jobWorkflow.Metadata.WorkflowCallParent != "", nil
+}

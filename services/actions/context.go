@@ -80,8 +80,19 @@ func generateGiteaContextForRun(run *actions_model.ActionRun) *model.GithubConte
 
 // GenerateGiteaContext generate the gitea context without token and gitea_runtime_token
 // job can be nil when generating a context for parsing workflow-level expressions
-func GenerateGiteaContext(run *actions_model.ActionRun, job *actions_model.ActionRunJob) map[string]any {
+func GenerateGiteaContext(run *actions_model.ActionRun, job *actions_model.ActionRunJob) (map[string]any, error) {
 	gitContextObj := generateGiteaContextForRun(run)
+
+	if job != nil {
+		// Setting the `github.event_name` value to `workflow_call` while executing a reusable workflow's inner job
+		// causes forgejo-runner to read `on.workflow_call.inputs` and populate its values into the `inputs` context.
+		workflowCall, err := job.IsWorkflowCallInnerJob()
+		if err != nil {
+			return nil, fmt.Errorf("failed to inspect workflow call state: %w", err)
+		} else if workflowCall {
+			gitContextObj.EventName = "workflow_call"
+		}
+	}
 
 	gitContext, _ := githubContextToMap(gitContextObj)
 
@@ -108,7 +119,7 @@ func GenerateGiteaContext(run *actions_model.ActionRun, job *actions_model.Actio
 		gitContext["run_attempt"] = fmt.Sprint(job.Attempt)
 	}
 
-	return gitContext
+	return gitContext, nil
 }
 
 func githubContextToMap(gitContext *model.GithubContext) (map[string]any, error) {
