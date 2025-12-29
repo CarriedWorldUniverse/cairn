@@ -4,6 +4,7 @@
 package forgejo_migrations
 
 import (
+	"xorm.io/builder"
 	"xorm.io/xorm"
 )
 
@@ -19,7 +20,11 @@ func addForeignKeysPullRequest1(x *xorm.Engine) error {
 		IssueID    int64 `xorm:"INDEX REFERENCES(issue, id)"`
 		BaseRepoID int64 `xorm:"INDEX REFERENCES(repository, id)"`
 	}
-	return syncDoctorForeignKey(x, []any{
+	return syncForeignKeyWithDelete(x,
 		new(PullRequest),
-	})
+		builder.Or(
+			builder.Expr("NOT EXISTS (SELECT id FROM issue WHERE issue.id = pull_request.issue_id)"),
+			builder.Expr("NOT EXISTS (SELECT id FROM repository WHERE repository.id = pull_request.base_repo_id)"),
+		),
+	)
 }

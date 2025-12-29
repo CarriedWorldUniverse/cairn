@@ -4,6 +4,7 @@
 package forgejo_migrations
 
 import (
+	"xorm.io/builder"
 	"xorm.io/xorm"
 )
 
@@ -18,7 +19,8 @@ func addForeignKeysForgejoAuthToken(x *xorm.Engine) error {
 	type ForgejoAuthToken struct {
 		UID int64 `xorm:"INDEX REFERENCES(user, id)"`
 	}
-	return syncDoctorForeignKey(x, []any{
+	return syncForeignKeyWithDelete(x,
 		new(ForgejoAuthToken),
-	})
+		builder.Expr("NOT EXISTS (SELECT id FROM `user` WHERE `user`.id = forgejo_auth_token.uid)"),
+	)
 }
