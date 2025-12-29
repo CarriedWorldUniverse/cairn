@@ -80,6 +80,9 @@ func (parser *Parser) AddLineToGraph(graph *Graph, row int, line []byte) error {
 				}
 				continue
 			}
+			if column < len(parser.oldGlyphs) && parser.oldGlyphs[column] == '|' {
+				graph.continuationAbove[[2]int{row, column}] = true
+			}
 			err2 := graph.AddCommit(row, column, flowID, line[idx+5:])
 			if err != nil && err2 != nil {
 				err = fmt.Errorf("%v %w", err2, err)

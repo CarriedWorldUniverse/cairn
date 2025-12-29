@@ -15,6 +15,7 @@ import (
 	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/container"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
 )
@@ -27,18 +28,20 @@ func NewGraph() *Graph {
 		Column: -1,
 	}
 	graph.Flows = map[int64]*Flow{}
+	graph.continuationAbove = map[[2]int]bool{}
 	return graph
 }
 
 // Graph represents a collection of flows
 type Graph struct {
-	Flows          map[int64]*Flow
-	Commits        []*Commit
-	MinRow         int
-	MinColumn      int
-	MaxRow         int
-	MaxColumn      int
-	relationCommit *Commit
+	Flows             map[int64]*Flow
+	Commits           []*Commit
+	MinRow            int
+	MinColumn         int
+	MaxRow            int
+	MaxColumn         int
+	relationCommit    *Commit
+	continuationAbove map[[2]int]bool
 }
 
 // Width returns the width of the graph
@@ -49,6 +52,69 @@ func (graph *Graph) Width() int {
 // Height returns the height of the graph
 func (graph *Graph) Height() int {
 	return graph.MaxRow - graph.MinRow + 1
+}
+
+// ComputeGlyphConnectivity sets ConnectsUp/ConnectsDown for commit glyphs based on parent/child relationships
+func (graph *Graph) ComputeGlyphConnectivity() {
+	revs := make(container.Set[string])
+	revByPos := make(map[[2]int]string)
+	for _, c := range graph.Commits {
+		if c.Rev != "" {
+			revs.Add(c.Rev)
+			revByPos[[2]int{c.Row, c.Column}] = c.Rev
+		}
+	}
+
+	connectsDown := make(container.Set[string])
+	connectsUp := make(container.Set[string])
+
+	// Commits with parents connect down (even if parent is on another page)
+	// Commits with visible children connect up
+	for _, c := range graph.Commits {
+		if len(c.ParentHashes) > 0 {
+			connectsDown.Add(c.Rev)
+		}
+		for _, parentHash := range c.ParentHashes {
+			if revs.Contains(parentHash) {
+				connectsUp.Add(parentHash)
+			}
+		}
+	}
+
+	// Commits with a non-commit glyph above also connect up
+	for _, flow := range graph.Flows {
+		for _, g := range flow.Glyphs {
+			if g.Glyph != '*' {
+				pos := [2]int{g.Row + 1, g.Column}
+				if rev, exists := revByPos[pos]; exists {
+					connectsUp.Add(rev)
+				}
+			}
+		}
+	}
+
+	// Commits with continuation from previous page connect up
+	for pos := range graph.continuationAbove {
+		if rev, exists := revByPos[pos]; exists {
+			connectsUp.Add(rev)
+		}
+	}
+
+	for _, flow := range graph.Flows {
+		for i := range flow.Glyphs {
+			glyph := &flow.Glyphs[i]
+			if glyph.Glyph == '*' {
+				pos := [2]int{glyph.Row, glyph.Column}
+				if rev, exists := revByPos[pos]; exists {
+					glyph.ConnectsUp = connectsUp.Contains(rev)
+					glyph.ConnectsDown = connectsDown.Contains(rev)
+				}
+			} else {
+				glyph.ConnectsUp = true
+				glyph.ConnectsDown = true
+			}
+		}
+	}
 }
 
 // AddGlyph adds glyph to flows
@@ -175,17 +241,19 @@ func (flow *Flow) AddGlyph(row, column int, glyph byte) {
 	}
 
 	flow.Glyphs = append(flow.Glyphs, Glyph{
-		row,
-		column,
-		glyph,
+		Row:    row,
+		Column: column,
+		Glyph:  glyph,
 	})
 }
 
 // Glyph represents a coordinate and glyph
 type Glyph struct {
-	Row    int
-	Column int
-	Glyph  byte
+	Row          int
+	Column       int
+	Glyph        byte
+	ConnectsUp   bool
+	ConnectsDown bool
 }
 
 // RelationCommit represents an empty relation commit
@@ -195,28 +263,36 @@ var RelationCommit = &Commit{
 
 // NewCommit creates a new commit from a provided line
 func NewCommit(row, column int, line []byte) (*Commit, error) {
-	data := bytes.SplitN(line, []byte("|"), 5)
-	if len(data) < 5 {
+	data := bytes.SplitN(line, []byte("|"), 6)
+	if len(data) < 6 {
 		return nil, fmt.Errorf("malformed data section on line %d with commit: %s", row, string(line))
 	}
 	// Format is a slight modification from RFC1123Z
-	t, err := time.Parse("Mon, _2 Jan 2006 15:04:05 -0700", string(data[2]))
+	t, err := time.Parse("Mon, _2 Jan 2006 15:04:05 -0700", string(data[3]))
 	if err != nil {
 		return nil, fmt.Errorf("could not parse date of commit: %w", err)
 	}
+
+	var parents []string
+	for p := range bytes.FieldsSeq(data[0]) {
+		parents = append(parents, string(p))
+	}
+
 	return &Commit{
 		Row:    row,
 		Column: column,
-		// 0 matches git log --pretty=format:%d => ref names, like the --decorate option of git-log(1)
-		Refs: newRefsFromRefNames(data[0]),
-		// 1 matches git log --pretty=format:%H => commit hash
-		Rev: string(data[1]),
-		// 2 matches git log --pretty=format:%aD => author date, RFC2822 style
+		// 0 matches git log --pretty=format:%P => parent hashes
+		ParentHashes: parents,
+		// 1 matches git log --pretty=format:%d => ref names, like the --decorate option of git-log(1)
+		Refs: newRefsFromRefNames(data[1]),
+		// 2 matches git log --pretty=format:%H => commit hash
+		Rev: string(data[2]),
+		// 3 matches git log --pretty=format:%aD => author date, RFC2822 style
 		Date: t,
-		// 3 matches git log --pretty=format:%h => abbreviated commit hash
-		ShortRev: string(data[3]),
-		// 4 matches git log --pretty=format:%s => subject
-		Subject: string(data[4]),
+		// 4 matches git log --pretty=format:%h => abbreviated commit hash
+		ShortRev: string(data[4]),
+		// 5 matches git log --pretty=format:%s => subject
+		Subject: string(data[5]),
 	}, nil
 }
 
@@ -254,6 +330,7 @@ type Commit struct {
 	Date         time.Time
 	ShortRev     string
 	Subject      string
+	ParentHashes []string
 }
 
 // OnlyRelation returns whether this a relation only commit

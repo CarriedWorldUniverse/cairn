@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"forgejo.org/modules/git"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkGetCommitGraph(b *testing.B) {
@@ -32,7 +35,7 @@ func BenchmarkGetCommitGraph(b *testing.B) {
 }
 
 func BenchmarkParseCommitString(b *testing.B) {
-	testString := "* DATA:|4e61bacab44e9b4730e44a6615d04098dd3a8eaf|2016-12-20 21:10:41 +0100|4e61bac|Add route for graph"
+	testString := "* DATA:abc123||4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|Add route for graph"
 
 	parser := &Parser{}
 	parser.Reset()
@@ -241,7 +244,7 @@ func TestParseGlyphs(t *testing.T) {
 }
 
 func TestCommitStringParsing(t *testing.T) {
-	dataFirstPart := "* DATA:|4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|"
+	dataFirstPart := "* DATA:abc123||4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|"
 	tests := []struct {
 		shouldPass    bool
 		testName      string
@@ -267,6 +270,138 @@ func TestCommitStringParsing(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewCommitParentHashes(t *testing.T) {
+	tests := []struct {
+		name            string
+		data            string
+		expectedParents []string
+	}{
+		{
+			name:            "no parents (orphan)",
+			data:            "||4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|subject",
+			expectedParents: nil,
+		},
+		{
+			name:            "single parent",
+			data:            "abc123||4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|subject",
+			expectedParents: []string{"abc123"},
+		},
+		{
+			name:            "multiple parents (merge)",
+			data:            "abc123 def456||4e61bacab44e9b4730e44a6615d04098dd3a8eaf|Tue, 20 Dec 2016 21:10:41 +0100|4e61bac|subject",
+			expectedParents: []string{"abc123", "def456"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			commit, err := NewCommit(0, 0, []byte(test.data))
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedParents, commit.ParentHashes)
+		})
+	}
+}
+
+func TestComputeGlyphConnectivity(t *testing.T) {
+	addCommit := func(graph *Graph, row, col int, hash string, parents []string) {
+		flowID := int64(col + 1)
+		commit := &Commit{Row: row, Column: col, Rev: hash, ParentHashes: parents, Flow: flowID}
+		graph.AddGlyph(row, col, flowID, 1, '*')
+		graph.Commits = append(graph.Commits, commit)
+		graph.Flows[flowID].Commits = append(graph.Flows[flowID].Commits, commit)
+	}
+
+	getCommitConnectivity := func(graph *Graph, row, col int) (up, down bool) {
+		for _, flow := range graph.Flows {
+			for _, g := range flow.Glyphs {
+				if g.Row == row && g.Column == col && g.Glyph == '*' {
+					return g.ConnectsUp, g.ConnectsDown
+				}
+			}
+		}
+		return false, false
+	}
+
+	t.Run("ConnectsDown/no parents", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "orphan", nil)
+		graph.ComputeGlyphConnectivity()
+
+		_, down := getCommitConnectivity(graph, 0, 0)
+		assert.False(t, down)
+	})
+
+	t.Run("ConnectsDown/has parent in graph", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "child", []string{"parent"})
+		addCommit(graph, 1, 0, "parent", nil)
+		graph.ComputeGlyphConnectivity()
+
+		_, down := getCommitConnectivity(graph, 0, 0)
+		assert.True(t, down)
+	})
+
+	t.Run("ConnectsDown/has parent outside graph", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "child", []string{"parent-not-in-graph"})
+		graph.ComputeGlyphConnectivity()
+
+		_, down := getCommitConnectivity(graph, 0, 0)
+		assert.True(t, down)
+	})
+
+	t.Run("ConnectsUp/no child, no glyph above, no continuation", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "orphan", nil)
+		graph.ComputeGlyphConnectivity()
+
+		up, _ := getCommitConnectivity(graph, 0, 0)
+		assert.False(t, up)
+	})
+
+	t.Run("ConnectsUp/has visible child", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "child", []string{"parent"})
+		addCommit(graph, 1, 0, "parent", nil)
+		graph.ComputeGlyphConnectivity()
+
+		up, _ := getCommitConnectivity(graph, 1, 0)
+		assert.True(t, up)
+	})
+
+	t.Run("ConnectsUp/has non-commit glyph above", func(t *testing.T) {
+		graph := NewGraph()
+		graph.AddGlyph(0, 0, 1, 1, '|')
+		addCommit(graph, 1, 0, "commit", nil)
+		graph.ComputeGlyphConnectivity()
+
+		up, _ := getCommitConnectivity(graph, 1, 0)
+		assert.True(t, up)
+	})
+
+	t.Run("ConnectsUp/has continuationAbove", func(t *testing.T) {
+		graph := NewGraph()
+		addCommit(graph, 0, 0, "commit", nil)
+		graph.continuationAbove[[2]int{0, 0}] = true
+		graph.ComputeGlyphConnectivity()
+
+		up, _ := getCommitConnectivity(graph, 0, 0)
+		assert.True(t, up)
+	})
+
+	t.Run("non-commit glyphs always connect both ways", func(t *testing.T) {
+		for _, glyph := range []byte{'|', '/', '\\'} {
+			graph := NewGraph()
+			graph.AddGlyph(0, 0, 1, 1, glyph)
+			graph.ComputeGlyphConnectivity()
+
+			g := graph.Flows[1].Glyphs[0]
+			assert.True(t, g.ConnectsUp, "glyph %q should connect up", glyph)
+			assert.True(t, g.ConnectsDown, "glyph %q should connect down", glyph)
+		}
+	})
 }
 
 var testglyphs = `* 
