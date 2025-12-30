@@ -2,6 +2,9 @@
 
 set -ex
 
+# WARNING: Changes to the behaviour of this file should be backported to all active releases, as it is used in
+# `build-release.yml` from release branches.
+
 end_to_end=$1
 end_to_end_pr=$2
 forgejo=$3
