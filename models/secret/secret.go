@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	actions_module "forgejo.org/modules/actions"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"
@@ -120,28 +118,17 @@ func (s *Secret) SetSecret(data string) {
 	s.Data = keying.ActionSecret.Encrypt([]byte(data), keying.ColumnAndID("data", s.ID))
 }
 
-func GetSecretsOfTask(ctx context.Context, task *actions_model.ActionTask) (map[string]string, error) {
+func FetchActionSecrets(ctx context.Context, ownerID, repoID int64) (map[string]string, error) {
 	secrets := map[string]string{}
 
-	secrets["GITHUB_TOKEN"] = task.Token
-	secrets["GITEA_TOKEN"] = task.Token
-	secrets["FORGEJO_TOKEN"] = task.Token
-
-	if task.Job.Run.IsForkPullRequest && task.Job.Run.TriggerEvent != actions_module.GithubEventPullRequestTarget {
-		// ignore secrets for fork pull request, except GITHUB_TOKEN, GITEA_TOKEN and FORGEJO_TOKEN which are automatically generated.
-		// for the tasks triggered by pull_request_target event, they could access the secrets because they will run in the context of the base branch
-		// see the documentation: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
-		return secrets, nil
-	}
-
-	ownerSecrets, err := db.Find[Secret](ctx, FindSecretsOptions{OwnerID: task.Job.Run.Repo.OwnerID})
+	ownerSecrets, err := db.Find[Secret](ctx, FindSecretsOptions{OwnerID: ownerID})
 	if err != nil {
-		log.Error("find secrets of owner %v: %v", task.Job.Run.Repo.OwnerID, err)
+		log.Error("find secrets of owner %v: %v", ownerID, err)
 		return nil, err
 	}
-	repoSecrets, err := db.Find[Secret](ctx, FindSecretsOptions{RepoID: task.Job.Run.RepoID})
+	repoSecrets, err := db.Find[Secret](ctx, FindSecretsOptions{RepoID: repoID})
 	if err != nil {
-		log.Error("find secrets of repo %v: %v", task.Job.Run.RepoID, err)
+		log.Error("find secrets of repo %v: %v", repoID, err)
 		return nil, err
 	}
 

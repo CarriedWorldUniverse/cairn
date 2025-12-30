@@ -10,7 +10,6 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	secret_model "forgejo.org/models/secret"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
@@ -39,7 +38,7 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv
 		}
 		job = t.Job
 
-		secrets, err := secret_model.GetSecretsOfTask(ctx, t)
+		secrets, err := getSecretsOfTask(ctx, t)
 		if err != nil {
 			return fmt.Errorf("GetSecretsOfTask: %w", err)
 		}
