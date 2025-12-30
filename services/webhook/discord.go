@@ -223,7 +223,7 @@ func (d discordConvertor) Push(p *api.PushPayload) (DiscordPayload, error) {
 		if utf8.RuneCountInString(message) > 50 {
 			message = fmt.Sprintf("%.47s...", message)
 		}
-		text += fmt.Sprintf("[%s](%s) %s - %s", commit.ID[:7], commit.URL, message, commit.Author.Name)
+		text += fmt.Sprintf("[`%s`](%s) %s \\- %s", commit.ID[:7], commit.URL, message, commit.Author.Name)
 		// add linebreak to each commit but the last
 		if i < len(p.Commits)-1 {
 			text += "\n"
