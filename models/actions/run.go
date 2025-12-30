@@ -208,6 +208,30 @@ func (run *ActionRun) SetDefaultConcurrencyGroup() {
 	))
 }
 
+func (run *ActionRun) FindOuterWorkflowCall(ctx context.Context, innerCall *ActionRunJob) (*ActionRunJob, error) {
+	allJobs, err := GetRunJobsByRunID(ctx, run.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failure to get run jobs: %w", err)
+	}
+	if innerCall.workflowPayloadDecoded == nil || innerCall.workflowPayloadDecoded.Metadata.WorkflowCallParent == "" {
+		return nil, errors.New("invalid state for FindOuterWorkflowCall")
+	}
+	parent := innerCall.workflowPayloadDecoded.Metadata.WorkflowCallParent
+	for _, job := range allJobs {
+		if job.ID == innerCall.ID {
+			continue
+		}
+		swf, err := job.DecodeWorkflowPayload()
+		if err != nil {
+			return nil, err
+		}
+		if swf.Metadata.WorkflowCallID == parent {
+			return job, nil
+		}
+	}
+	return nil, fmt.Errorf("no workflow call with ID %s found in run %d", parent, run.ID)
+}
+
 func actionsCountOpenCacheKey(repoID int64) string {
 	return fmt.Sprintf("Actions:CountOpenActionRuns:%d", repoID)
 }

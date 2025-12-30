@@ -6,8 +6,6 @@ package secret
 import (
 	"testing"
 
-	"forgejo.org/models/actions"
-	"forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/util"
@@ -85,17 +83,8 @@ func TestInsertEncryptedSecret(t *testing.T) {
 		})
 	})
 
-	t.Run("Get secrets", func(t *testing.T) {
-		secrets, err := GetSecretsOfTask(t.Context(), &actions.ActionTask{
-			Job: &actions.ActionRunJob{
-				Run: &actions.ActionRun{
-					RepoID: 1,
-					Repo: &repo.Repository{
-						OwnerID: 2,
-					},
-				},
-			},
-		})
+	t.Run("FetchActionSecrets", func(t *testing.T) {
+		secrets, err := FetchActionSecrets(t.Context(), 2, 1)
 		require.NoError(t, err)
 		assert.Equal(t, "some owner secret", secrets["OWNER_SECRET"])
 		assert.Equal(t, "some repository secret", secrets["REPO_SECRET"])
