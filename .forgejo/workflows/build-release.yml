@@ -206,7 +206,7 @@ jobs:
           origin-url: ${{ env.GITHUB_SERVER_URL }}
           origin-repo: ${{ github.repository }}
           origin-token: ${{ secrets.CASCADE_ORIGIN_TOKEN }}
-          origin-ref: refs/heads/forgejo
+          origin-ref: ${{ github.ref }}
           destination-url: https://code.forgejo.org
           destination-fork-repo: ${{ vars.CASCADE_DESTINATION_DOER }}/end-to-end
           destination-repo: forgejo/end-to-end
