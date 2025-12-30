@@ -101,6 +101,7 @@ func GenerateGiteaContext(run *actions_model.ActionRun, job *actions_model.Actio
 
 	// additional contexts
 	gitContext["gitea_default_actions_url"] = setting.Actions.DefaultActionsURL.URL()
+	gitContext["forgejo_server_version"] = setting.AppVer
 
 	if job != nil {
 		gitContext["job"] = job.JobID
