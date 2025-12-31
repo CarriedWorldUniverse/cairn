@@ -185,47 +185,6 @@ It needs some tricks to tweak the left/right borders with active state */
   border-color: var(--color-primary-active);
 }
 
-/* secondary */
-
-.ui.secondary.labels .label,
-.ui.ui.ui.secondary.label,
-.ui.secondary.button,
-.ui.secondary.buttons .button,
-.ui.secondary.button:focus,
-.ui.secondary.buttons .button:focus {
-  background: var(--color-secondary-button);
-}
-
-.ui.secondary.button:hover,
-.ui.secondary.buttons .button:hover {
-  background: var(--color-secondary-hover);
-}
-
-.ui.secondary.button:active,
-.ui.secondary.buttons .button:active {
-  background: var(--color-secondary-active);
-}
-
-.ui.basic.secondary.buttons .button,
-.ui.basic.secondary.button {
-  color: var(--color-secondary-button);
-  border-color: var(--color-secondary-button);
-}
-
-.ui.basic.secondary.buttons .button:hover,
-.ui.basic.secondary.button:hover,
-.ui.basic.secondary.button:focus,
-.ui.basic.secondary.buttons .button:focus {
-  color: var(--color-secondary-hover);
-  border-color: var(--color-secondary-hover);
-}
-
-.ui.basic.secondary.buttons .button:active,
-.ui.basic.secondary.button:active {
-  color: var(--color-secondary-active);
-  border-color: var(--color-secondary-active);
-}
-
 /* red */
 
 .ui.red.labels .label,
