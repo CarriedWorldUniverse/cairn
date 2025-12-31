@@ -7,7 +7,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -35,7 +35,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -76,7 +76,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -117,7 +117,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -159,7 +159,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -200,7 +200,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: run-tests
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -243,7 +243,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: run-tests
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -283,7 +283,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: scalar-job
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -328,7 +328,7 @@
   is_fork_pull_request: 0
   name: job_1
   attempt: 0
-  job_id: job_1
+  job_id: produce-artifacts
   task_id: 0
   status: 7 # blocked
   runs_on: '["fedora"]'
@@ -594,5 +594,261 @@
   attempt: 0
   job_id: define-runs-on
   task_id: 107
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 629
+  run_id: 915
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: consume-runs-on
+  attempt: 0
+  job_id: consume-runs-on
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      consume-runs-on:
+        name: consume-runs-on
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@non-existent-reference
+        with:
+          workflow_input: ${{ needs.define-workflow-call.outputs.workflow_input }}
+    incomplete_with: true
+
+-
+  id: 630
+  run_id: 916
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@simple
+        with:
+          workflow_input: ${{ needs.define-workflow-call.outputs.workflow_input }}
+    incomplete_with: true
+-
+  id: 631
+  run_id: 916
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 108
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 632
+  run_id: 917
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@more-incomplete
+        with:
+          workflow_input: ${{ needs.define-workflow-call.outputs.workflow_input }}
+    incomplete_with: true
+-
+  id: 633
+  run_id: 917
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 109
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 634
+  run_id: 918
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@more-incomplete
+        with:
+          workflow_input: ${{ needs.oops-i-misspelt-the-job-id.outputs.workflow_input }}
+    incomplete_with: true
+-
+  id: 635
+  run_id: 918
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 109
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 636
+  run_id: 919
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@more-incomplete
+        with:
+          workflow_input: ${{ needs.define-workflow-call.outputs.output-doesnt-exist }}
+    incomplete_with: true
+-
+  id: 637
+  run_id: 919
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 109
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 638
+  run_id: 920
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: some-repo/some-org/.forgejo/workflows/reusable.yml@more-incomplete
+        with:
+          workflow_input: ${{ matrix.dimension-oops-error }}
+        strategy:
+          matrix:
+            dimension1: [ abc, def ]
+    incomplete_with: true
+-
+  id: 639
+  run_id: 920
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 109
+  status: 1 # success
+  runs_on: '["fedora"]'
+
+-
+  id: 640
+  run_id: 921
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: perform-workflow-call
+  attempt: 0
+  job_id: perform-workflow-call
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["define-workflow-call"]'
+  workflow_payload: |
+    "on":
+      push:
+    jobs:
+      perform-workflow-call:
+        name: perform-workflow-call
+        uses: ./.forgejo/workflows/reusable.yml
+        with:
+          workflow_input: ${{ needs.define-workflow-call.outputs.workflow_input }}
+    incomplete_with: true
+-
+  id: 641
+  run_id: 921
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: define-workflow-call
+  attempt: 0
+  job_id: define-workflow-call
+  task_id: 108
   status: 1 # success
   runs_on: '["fedora"]'

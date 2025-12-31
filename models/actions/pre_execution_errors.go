@@ -26,6 +26,10 @@ const (
 	ErrorCodeIncompleteRunsOnMissingOutput
 	ErrorCodeIncompleteRunsOnMissingMatrixDimension
 	ErrorCodeIncompleteRunsOnUnknownCause
+	ErrorCodeIncompleteWithMissingJob
+	ErrorCodeIncompleteWithMissingOutput
+	ErrorCodeIncompleteWithMissingMatrixDimension
+	ErrorCodeIncompleteWithUnknownCause
 )
 
 func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string {
@@ -57,6 +61,14 @@ func TranslatePreExecutionError(lang translation.Locale, run *ActionRun) string 
 		return lang.TrString("actions.workflow.incomplete_runson_missing_matrix_dimension", run.PreExecutionErrorDetails...)
 	case ErrorCodeIncompleteRunsOnUnknownCause:
 		return lang.TrString("actions.workflow.incomplete_runson_unknown_cause", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteWithMissingJob:
+		return lang.TrString("actions.workflow.incomplete_with_missing_job", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteWithMissingOutput:
+		return lang.TrString("actions.workflow.incomplete_with_missing_output", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteWithMissingMatrixDimension:
+		return lang.TrString("actions.workflow.incomplete_with_missing_matrix_dimension", run.PreExecutionErrorDetails...)
+	case ErrorCodeIncompleteWithUnknownCause:
+		return lang.TrString("actions.workflow.incomplete_with_unknown_cause", run.PreExecutionErrorDetails...)
 	}
 	return fmt.Sprintf("<unsupported error: code=%v details=%#v", run.PreExecutionErrorCode, run.PreExecutionErrorDetails)
 }

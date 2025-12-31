@@ -260,7 +260,7 @@ func (job *ActionRunJob) ClearCachedWorkflowPayload() {
 // Checks whether the target job is an `(incomplete matrix)` job that will be blocked until the matrix is complete, and
 // then regenerated and deleted.  If it is incomplete, and if the information is available, the specific job and/or
 // output that causes it to be incomplete will be returned as well.
-func (job *ActionRunJob) IsIncompleteMatrix() (bool, *jobparser.IncompleteNeeds, error) {
+func (job *ActionRunJob) HasIncompleteMatrix() (bool, *jobparser.IncompleteNeeds, error) {
 	jobWorkflow, err := job.DecodeWorkflowPayload()
 	if err != nil {
 		return false, nil, fmt.Errorf("failure decoding workflow payload: %w", err)
@@ -270,12 +270,21 @@ func (job *ActionRunJob) IsIncompleteMatrix() (bool, *jobparser.IncompleteNeeds,
 
 // Checks whether the target job has a `runs-on` field with an expression that requires an input from another job.  The
 // job will be blocked until the other job is complete, and then regenerated and deleted.
-func (job *ActionRunJob) IsIncompleteRunsOn() (bool, *jobparser.IncompleteNeeds, *jobparser.IncompleteMatrix, error) {
+func (job *ActionRunJob) HasIncompleteRunsOn() (bool, *jobparser.IncompleteNeeds, *jobparser.IncompleteMatrix, error) {
 	jobWorkflow, err := job.DecodeWorkflowPayload()
 	if err != nil {
 		return false, nil, nil, fmt.Errorf("failure decoding workflow payload: %w", err)
 	}
 	return jobWorkflow.IncompleteRunsOn, jobWorkflow.IncompleteRunsOnNeeds, jobWorkflow.IncompleteRunsOnMatrix, nil
+}
+
+// Check whether the target job was generated as a result of expanding a reusable workflow.
+func (job *ActionRunJob) IsWorkflowCallInnerJob() (bool, error) {
+	jobWorkflow, err := job.DecodeWorkflowPayload()
+	if err != nil {
+		return false, fmt.Errorf("failure decoding workflow payload: %w", err)
+	}
+	return jobWorkflow.Metadata.WorkflowCallParent != "", nil
 }
 
 // Check whether this job is a caller of a reusable workflow -- in other words, the real work done in this job is in
@@ -288,11 +297,12 @@ func (job *ActionRunJob) IsWorkflowCallOuterJob() (bool, error) {
 	return jobWorkflow.Metadata.WorkflowCallID != "", nil
 }
 
-// Check whether the target job was generated as a result of expanding a reusable workflow.
-func (job *ActionRunJob) IsWorkflowCallInnerJob() (bool, error) {
+// Checks whether the target job has a `with` field with an expression that requires an input from another job.  The job
+// will be blocked until the other job is complete, and then regenerated and deleted.
+func (job *ActionRunJob) HasIncompleteWith() (bool, *jobparser.IncompleteNeeds, *jobparser.IncompleteMatrix, error) {
 	jobWorkflow, err := job.DecodeWorkflowPayload()
 	if err != nil {
-		return false, fmt.Errorf("failure decoding workflow payload: %w", err)
+		return false, nil, nil, fmt.Errorf("failure decoding workflow payload: %w", err)
 	}
-	return jobWorkflow.Metadata.WorkflowCallParent != "", nil
+	return jobWorkflow.IncompleteWith, jobWorkflow.IncompleteWithNeeds, jobWorkflow.IncompleteWithMatrix, nil
 }

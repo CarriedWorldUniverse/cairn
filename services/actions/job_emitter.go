@@ -168,7 +168,20 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 				// success/failure.  checkJobsOfRun will do additional work in these cases to "finish" the workflow call
 				// job as well.
 				if allSucceed {
-					ret[id] = actions_model.StatusSuccess
+					isIncompleteMatrix, _, _ := r.jobMap[id].HasIncompleteMatrix()
+					isIncompleteWith, _, _, _ := r.jobMap[id].HasIncompleteWith()
+					if isIncompleteMatrix || isIncompleteWith {
+						// The `needs` of this job are done.  For an outer workflow call, that usually means that the
+						// inner jobs are done.  But if the job is incomplete, that means that the `needs` that were
+						// required to define the job are done, and now the job can be expanded with the missing values
+						// that come from `${{ needs... }}`.  By putting this job into `Waiting` state, it will go into
+						// `tryHandleIncompleteMatrix` to be reparsed, replaced with a full job definition, with new
+						// `needs` that contain its inner jobs:
+						ret[id] = actions_model.StatusWaiting
+					} else {
+						// This job is done by virtue of its inner jobs being done successfully.
+						ret[id] = actions_model.StatusSuccess
+					}
 				} else {
 					ret[id] = actions_model.StatusFailure
 				}
@@ -201,17 +214,22 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 // Invoked once a job has all its `needs` parameters met and is ready to transition to waiting, this may expand the
 // job's `strategy.matrix` into multiple new jobs.
 func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.ActionRunJob, jobsInRun []*actions_model.ActionRunJob) (bool, error) {
-	incompleteMatrix, _, err := blockedJob.IsIncompleteMatrix()
+	incompleteMatrix, _, err := blockedJob.HasIncompleteMatrix()
 	if err != nil {
-		return false, fmt.Errorf("job IsIncompleteMatrix: %w", err)
+		return false, fmt.Errorf("job HasIncompleteMatrix: %w", err)
 	}
 
-	incompleteRunsOn, _, _, err := blockedJob.IsIncompleteRunsOn()
+	incompleteRunsOn, _, _, err := blockedJob.HasIncompleteRunsOn()
 	if err != nil {
-		return false, fmt.Errorf("job IsIncompleteRunsOn: %w", err)
+		return false, fmt.Errorf("job HasIncompleteRunsOn: %w", err)
 	}
 
-	if !incompleteMatrix && !incompleteRunsOn {
+	incompleteWith, _, _, err := blockedJob.HasIncompleteWith()
+	if err != nil {
+		return false, fmt.Errorf("job HasIncompleteWith: %w", err)
+	}
+
+	if !incompleteMatrix && !incompleteRunsOn && !incompleteWith {
 		// Not relevant to attempt re-parsing the job if it wasn't marked as Incomplete[...] previously.
 		return false, nil
 	}
@@ -247,13 +265,28 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 
 	// Re-parse the blocked job, providing all the other completed jobs' outputs, to turn this incomplete job into
 	// one-or-more new jobs:
+	expandLocalReusableWorkflow, expandCleanup := lazyRepoExpandLocalReusableWorkflow(ctx, blockedJob.RepoID, blockedJob.CommitSHA)
+	defer expandCleanup()
 	newJobWorkflows, err := jobparser.Parse(blockedJob.WorkflowPayload, false,
 		jobparser.WithJobOutputs(jobOutputs),
 		jobparser.WithWorkflowNeeds(blockedJob.Needs),
 		jobparser.SupportIncompleteRunsOn(),
+		jobparser.ExpandLocalReusableWorkflows(expandLocalReusableWorkflow),
+		jobparser.ExpandInstanceReusableWorkflows(expandInstanceReusableWorkflows(ctx)),
 	)
 	if err != nil {
-		return false, fmt.Errorf("failure re-parsing SingleWorkflow: %w", err)
+		// Reparsing errors are quite rare here since we were already able to parse this workflow in the past to
+		// generate `blockedJob`, but it would be possible with a remote reusable workflow if the reference disappears
+		// from the remote repo -- eg. it was `@v1` and the `v1` tag was removed.
+		if err := FailRunPreExecutionError(
+			ctx,
+			blockedJob.Run,
+			actions_model.ErrorCodeJobParsingError,
+			[]any{err.Error()}); err != nil {
+			return false, fmt.Errorf("setting run into PreExecutionError state failed: %w", err)
+		}
+		// Return `true` to skip running this job in this invalid state
+		return true, nil
 	}
 
 	// Even though every job in the `needs` list is done, perform a consistency check if the job was still unable to be
@@ -261,20 +294,51 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 	// reported back to the user for them to correct their workflow, so we slip this notification into
 	// PreExecutionError.
 	for _, swf := range newJobWorkflows {
-		if swf.IncompleteMatrix {
-			errorCode, errorDetails := persistentIncompleteMatrixError(blockedJob, swf.IncompleteMatrixNeeds)
-			if err := FailRunPreExecutionError(ctx, blockedJob.Run, errorCode, errorDetails); err != nil {
-				return false, fmt.Errorf("failure when marking run with error: %w", err)
+		// If the re-evaluated job has the same job ID as the input job, and it's still incomplete, then we'll consider
+		// it to be a "persistent incomplete" job with some error that needs to be reported to the user.  If the
+		// re-evaluated job has a different job ID, then it's likely an expanded job -- such as from a reusable workflow
+		// -- which could have it's own `needs` that allows it to expand into a correct job in the future.
+		jobID, job := swf.Job()
+		if jobID == blockedJob.JobID {
+			if swf.IncompleteMatrix {
+				errorCode, errorDetails := persistentIncompleteMatrixError(blockedJob, swf.IncompleteMatrixNeeds)
+				if err := FailRunPreExecutionError(ctx, blockedJob.Run, errorCode, errorDetails); err != nil {
+					return false, fmt.Errorf("setting run into PreExecutionError state failed: %w", err)
+				}
+				// Return `true` to skip running this job in this invalid state
+				return true, nil
+			} else if swf.IncompleteRunsOn {
+				errorCode, errorDetails := persistentIncompleteRunsOnError(blockedJob, swf.IncompleteRunsOnNeeds, swf.IncompleteRunsOnMatrix)
+				if err := FailRunPreExecutionError(ctx, blockedJob.Run, errorCode, errorDetails); err != nil {
+					return false, fmt.Errorf("setting run into PreExecutionError state failed: %w", err)
+				}
+				// Return `true` to skip running this job in this invalid state
+				return true, nil
+			} else if swf.IncompleteWith {
+				errorCode, errorDetails := persistentIncompleteWithError(blockedJob, swf.IncompleteWithNeeds, swf.IncompleteWithMatrix)
+				if err := FailRunPreExecutionError(ctx, blockedJob.Run, errorCode, errorDetails); err != nil {
+					return false, fmt.Errorf("setting run into PreExecutionError state failed: %w", err)
+				}
+				// Return `true` to skip running this job in this invalid state
+				return true, nil
 			}
-			// Return `true` to skip running this job in this invalid state
-			return true, nil
-		} else if swf.IncompleteRunsOn {
-			errorCode, errorDetails := persistentIncompleteRunsOnError(blockedJob, swf.IncompleteRunsOnNeeds, swf.IncompleteRunsOnMatrix)
-			if err := FailRunPreExecutionError(ctx, blockedJob.Run, errorCode, errorDetails); err != nil {
-				return false, fmt.Errorf("failure when marking run with error: %w", err)
+
+			// When `InsertRunJobs` is run on a job (including `blockedJob` when it was persisted), the `needs` are
+			// removed from it's WorkflowPayload and moved up to the database record so that Forgejo can manage ordering
+			// the run execution.  Now that `blockedJob` has been changed from incomplete->complete by reparsing it and
+			// providing its inputs, it would have been reparsed with an empty `needs` entry because of this earlier
+			// removal.  And the returned record could have its own new `needs` if it was a reusable workflow with inner
+			// jobs.  So, merge the old database list of needs with the new reparsed list of needs, and store them in
+			// the new `SingleWorkflow` which will be paseed to `InsertRunJobs` where it will be ripped out again.
+			//
+			// This is only relevant for `blockedJob` and not for any other generated jobs since they wouldn't have yet
+			// gone through `InsertRunJobs` to have this mutation performed.
+			newNeeds := append(job.Needs(), blockedJob.Needs...)
+			_ = job.RawNeeds.Encode(newNeeds)
+			err := swf.SetJob(jobID, job)
+			if err != nil {
+				return false, fmt.Errorf("failure to update needs in job: %w", err)
 			}
-			// Return `true` to skip running this job in this invalid state
-			return true, nil
 		}
 	}
 
@@ -371,6 +435,49 @@ func persistentIncompleteRunsOnError(job *actions_model.ActionRunJob, incomplete
 
 	// Not sure why we ended up in `IncompleteRunsOn` when nothing was marked as incomplete
 	errorCode = actions_model.ErrorCodeIncompleteRunsOnUnknownCause
+	errorDetails = []any{job.JobID}
+	return errorCode, errorDetails
+}
+
+func persistentIncompleteWithError(job *actions_model.ActionRunJob, incompleteNeeds *jobparser.IncompleteNeeds, incompleteMatrix *jobparser.IncompleteMatrix) (actions_model.PreExecutionError, []any) {
+	var errorCode actions_model.PreExecutionError
+	var errorDetails []any
+
+	// `incompleteMatrix` tells us which dimension of a matrix was accessed that was missing
+	if incompleteMatrix != nil {
+		dimension := incompleteMatrix.Dimension
+		errorCode = actions_model.ErrorCodeIncompleteWithMissingMatrixDimension
+		errorDetails = []any{
+			job.JobID,
+			dimension,
+		}
+		return errorCode, errorDetails
+	}
+
+	// `incompleteNeeds` tells us what part of a `${{ needs... }}` expression was missing
+	if incompleteNeeds != nil {
+		jobRef := incompleteNeeds.Job       // always provided
+		outputRef := incompleteNeeds.Output // missing if the entire job wasn't present
+		if outputRef != "" {
+			errorCode = actions_model.ErrorCodeIncompleteWithMissingOutput
+			errorDetails = []any{
+				job.JobID,
+				jobRef,
+				outputRef,
+			}
+		} else {
+			errorCode = actions_model.ErrorCodeIncompleteWithMissingJob
+			errorDetails = []any{
+				job.JobID,
+				jobRef,
+				strings.Join(job.Needs, ", "),
+			}
+		}
+		return errorCode, errorDetails
+	}
+
+	// Not sure why we ended up in `IncompleteWith` when nothing was marked as incomplete
+	errorCode = actions_model.ErrorCodeIncompleteWithUnknownCause
 	errorDetails = []any{job.JobID}
 	return errorCode, errorDetails
 }
