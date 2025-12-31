@@ -48,3 +48,13 @@
   task_id: 107
   output_key: run-on-this
   output_value: nixos-25.11
+-
+  id: 110
+  task_id: 108
+  output_key: workflow_input
+  output_value: my-workflow-input
+-
+  id: 111
+  task_id: 109
+  output_key: workflow_input
+  output_value: my-workflow-input

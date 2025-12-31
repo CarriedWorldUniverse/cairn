@@ -327,3 +327,51 @@ jobs:
 		})
 	}
 }
+
+func TestActionRun_IncompleteWith(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	pullRequestPosterID := int64(4)
+	repoID := int64(10)
+	pullRequestID := int64(2)
+	runDoesNotNeedApproval := &ActionRun{
+		RepoID:              repoID,
+		PullRequestID:       pullRequestID,
+		PullRequestPosterID: pullRequestPosterID,
+	}
+
+	workflowRaw := []byte(`
+jobs:
+  outer-job:
+    with:
+      some_input: ${{ needs.other-job.outputs.some-output }}
+    uses: ./.forgejo/workflows/reusable.yml
+`)
+	workflows, err := jobparser.Parse(workflowRaw, false,
+		jobparser.WithJobOutputs(map[string]map[string]string{}),
+		jobparser.ExpandLocalReusableWorkflows(func(job *jobparser.Job, path string) ([]byte, error) {
+			return []byte(`
+on:
+  workflow_call:
+    inputs:
+      some_input:
+        type: string
+jobs:
+  inner-job:
+    runs-on: debian
+    steps: []
+`), nil
+		}))
+	require.NoError(t, err)
+	require.True(t, workflows[0].IncompleteWith) // must be set for this test scenario to be valid
+
+	require.NoError(t, InsertRun(t.Context(), runDoesNotNeedApproval, workflows))
+
+	jobs, err := db.Find[ActionRunJob](t.Context(), FindRunJobOptions{RunID: runDoesNotNeedApproval.ID})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	job := jobs[0]
+
+	// Expect job with an incomplete with to be StatusBlocked:
+	assert.Equal(t, StatusBlocked, job.Status)
+}

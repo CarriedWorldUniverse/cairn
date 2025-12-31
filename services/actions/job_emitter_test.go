@@ -4,6 +4,8 @@
 package actions
 
 import (
+	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -12,6 +14,7 @@ import (
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/test"
 
+	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"code.forgejo.org/forgejo/runner/v12/act/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -155,6 +158,58 @@ __metadata:
 			},
 		},
 		{
+			name: "unblocked workflow call outer job, incomplete `with`",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "job0", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 2, JobID: "job1", Status: actions_model.StatusBlocked, Needs: []string{"job0"}, WorkflowPayload: []byte(
+					`
+name: test
+on: push
+jobs:
+  job2:
+    if: false
+    uses: ./.forgejo/workflows/reusable.yml
+    with:
+      something: ${{ needs.job0.outputs.something }}
+incomplete_with: true
+incomplete_with_needs:
+  job: job0
+  output: something
+__metadata:
+  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
+`)},
+			},
+			want: map[int64]actions_model.Status{
+				2: actions_model.StatusWaiting,
+			},
+		},
+		{
+			name: "unblocked workflow call outer job, incomplete `strategy.matrix`",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "job0", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 2, JobID: "job1", Status: actions_model.StatusBlocked, Needs: []string{"job0"}, WorkflowPayload: []byte(
+					`
+name: test
+on: push
+jobs:
+  job2:
+    if: false
+    uses: ./.forgejo/workflows/reusable.yml
+    strategy:
+      matrix: ${{ fromJSON(needs.job0.outputs.something) }}
+incomplete_matrix: true
+incomplete_matrix_needs:
+  job: job0
+  output: something
+__metadata:
+  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
+`)},
+			},
+			want: map[int64]actions_model.Status{
+				2: actions_model.StatusWaiting,
+			},
+		},
+		{
 			name: "unblocked workflow call outer job with internal failure",
 			jobs: actions_model.ActionJobList{
 				{ID: 1, JobID: "job1.innerjob1", Status: actions_model.StatusSuccess, Needs: []string{}},
@@ -184,21 +239,67 @@ __metadata:
 	}
 }
 
+const testWorkflowCallSimpleExpansion = `
+on:
+  workflow_call:
+    inputs:
+      workflow_input:
+        type: string
+jobs:
+  inner_job:
+    name: "inner ${{ inputs.workflow_input }}"
+    runs-on: debian-latest
+    steps:
+      - run: echo ${{ inputs.workflow_input }}
+`
+
+const testWorkflowCallMoreIncompleteExpansion = `
+on:
+  workflow_call:
+    inputs:
+      workflow_input:
+        type: string
+jobs:
+  define-runs-on:
+    name: "inner define-runs-on ${{ inputs.workflow_input }}"
+    runs-on: docker
+    outputs:
+      scalar-value: ${{ steps.define.outputs.scalar }}
+    steps:
+      - id: define
+        run: |
+          echo 'scalar=scalar value' >> "$FORGEJO_OUTPUT"
+  scalar-job:
+    name: "inner incomplete-job ${{ inputs.workflow_input }}"
+    runs-on: ${{ needs.define-runs-on.outputs.scalar-value }}
+    needs: define-runs-on
+    steps: []
+`
+
 func Test_tryHandleIncompleteMatrix(t *testing.T) {
 	// Shouldn't get any decoding errors during this test -- pop them up from a log warning to a test fatal error.
 	defer test.MockVariableValue(&model.OnDecodeNodeError, func(node yaml.Node, out any, err error) {
 		t.Fatalf("Failed to decode node %v into %T: %v", node, out, err)
 	})()
 
+	type localReusableWorkflowCallArgs struct {
+		repoID    int64
+		commitSHA string
+		path      string
+	}
+
 	tests := []struct {
-		name                     string
-		runJobID                 int64
-		errContains              string
-		consumed                 bool
-		runJobNames              []string
-		preExecutionError        actions_model.PreExecutionError
-		preExecutionErrorDetails []any
-		runsOn                   map[string][]string
+		name                          string
+		runJobID                      int64
+		errContains                   string
+		consumed                      bool
+		runJobNames                   []string
+		preExecutionError             actions_model.PreExecutionError
+		preExecutionErrorDetails      []any
+		runsOn                        map[string][]string
+		needs                         map[string][]string
+		expectIncompleteJob           []string
+		localReusableWorkflowCallArgs *localReusableWorkflowCallArgs
 	}{
 		{
 			name:     "not incomplete",
@@ -219,7 +320,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			name:                     "missing needs for strategy.matrix evaluation",
 			runJobID:                 605,
 			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingJob,
-			preExecutionErrorDetails: []any{"job_1", "define-matrix-2", "define-matrix-1"},
+			preExecutionErrorDetails: []any{"produce-artifacts", "define-matrix-2", "define-matrix-1"},
 		},
 		{
 			name:        "matrix expanded to 0 jobs",
@@ -279,7 +380,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			name:                     "missing needs output for strategy.matrix evaluation",
 			runJobID:                 615,
 			preExecutionError:        actions_model.ErrorCodeIncompleteMatrixMissingOutput,
-			preExecutionErrorDetails: []any{"job_1", "define-matrix-1", "colours-intentional-mistake"},
+			preExecutionErrorDetails: []any{"produce-artifacts", "define-matrix-1", "colours-intentional-mistake"},
 		},
 		{
 			name:     "runs-on evaluation with needs",
@@ -356,11 +457,125 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			preExecutionError:        actions_model.ErrorCodeIncompleteRunsOnMissingMatrixDimension,
 			preExecutionErrorDetails: []any{"consume-runs-on", "dimension-oops-error"},
 		},
+		{
+			name:                     "workflow call remote reference unavailable",
+			runJobID:                 629,
+			preExecutionError:        actions_model.ErrorCodeJobParsingError,
+			preExecutionErrorDetails: []any{"unable to read instance workflow \"some-repo/some-org/.forgejo/workflows/reusable.yml@non-existent-reference\": someone deleted that reference maybe"},
+		},
+		{
+			name:     "workflow call with needs expansion",
+			runJobID: 630,
+			consumed: true,
+			runJobNames: []string{
+				"define-workflow-call",
+				"inner my-workflow-input",
+				"perform-workflow-call",
+			},
+			needs: map[string][]string{
+				"define-workflow-call":    nil,
+				"inner my-workflow-input": nil,
+				"perform-workflow-call":   {"define-workflow-call", "perform-workflow-call.inner_job"},
+			},
+		},
+		// Before reusable workflow expansion, there weren't any cases where evaluating a job in the job emitter could
+		// result in more incomplete jobs being generated (other than errors).  This is the first such case -- run job
+		// ID 632 references reusable workflow "more-incomplete" which generates more incomplete jobs.
+		{
+			name:     "workflow call generates more incomplete jobs",
+			runJobID: 632,
+			consumed: true,
+			runJobNames: []string{
+				"define-workflow-call",
+				"inner define-runs-on my-workflow-input",
+				"inner incomplete-job my-workflow-input",
+				"perform-workflow-call",
+			},
+			runsOn: map[string][]string{
+				"define-workflow-call":                   {"fedora"},
+				"perform-workflow-call":                  {},
+				"inner define-runs-on my-workflow-input": {"docker"},
+				"inner incomplete-job my-workflow-input": {"${{ needs[format('{0}.{1}', 'perform-workflow-call', 'define-runs-on')].outputs.scalar-value }}"},
+			},
+			needs: map[string][]string{
+				"define-workflow-call":                   nil,
+				"inner define-runs-on my-workflow-input": nil,
+				"inner incomplete-job my-workflow-input": {"perform-workflow-call.define-runs-on"},
+				"perform-workflow-call": {
+					"define-workflow-call",
+					"perform-workflow-call.define-runs-on",
+					"perform-workflow-call.scalar-job",
+				},
+			},
+			expectIncompleteJob: []string{"inner incomplete-job my-workflow-input"},
+		},
+		{
+			name:                     "missing needs job for workflow call evaluation",
+			runJobID:                 634,
+			preExecutionError:        actions_model.ErrorCodeIncompleteWithMissingJob,
+			preExecutionErrorDetails: []any{"perform-workflow-call", "oops-i-misspelt-the-job-id", "define-workflow-call"},
+		},
+		{
+			name:                     "missing needs output for workflow call evaluation",
+			runJobID:                 636,
+			preExecutionError:        actions_model.ErrorCodeIncompleteWithMissingOutput,
+			preExecutionErrorDetails: []any{"perform-workflow-call", "define-workflow-call", "output-doesnt-exist"},
+		},
+		{
+			name:                     "missing matrix dimension for workflow call evaluation",
+			runJobID:                 638,
+			preExecutionError:        actions_model.ErrorCodeIncompleteWithMissingMatrixDimension,
+			preExecutionErrorDetails: []any{"perform-workflow-call", "dimension-oops-error"},
+		},
+		{
+			name:     "local workflow call with needs expansion",
+			runJobID: 640,
+			consumed: true,
+			runJobNames: []string{
+				"define-workflow-call",
+				"inner my-workflow-input",
+				"perform-workflow-call",
+			},
+			localReusableWorkflowCallArgs: &localReusableWorkflowCallArgs{
+				repoID:    63,
+				commitSHA: "97f29ee599c373c729132a5c46a046978311e0ee",
+				path:      "./.forgejo/workflows/reusable.yml",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer unittest.OverrideFixtures("services/actions/Test_tryHandleIncompleteMatrix")()
 			require.NoError(t, unittest.PrepareTestDatabase())
+
+			// Mock access to reusable workflows, both local and remote
+			var localReusableCalled []*localReusableWorkflowCallArgs
+			var cleanupCallCount int
+			defer test.MockVariableValue(&lazyRepoExpandLocalReusableWorkflow,
+				func(ctx context.Context, repoID int64, commitSHA string) (jobparser.LocalWorkflowFetcher, CleanupFunc) {
+					fetcher := func(job *jobparser.Job, path string) ([]byte, error) {
+						localReusableCalled = append(localReusableCalled, &localReusableWorkflowCallArgs{repoID, commitSHA, path})
+						return []byte(testWorkflowCallSimpleExpansion), nil
+					}
+					cleanup := func() {
+						cleanupCallCount++
+					}
+					return fetcher, cleanup
+				})()
+			defer test.MockVariableValue(&expandInstanceReusableWorkflows,
+				func(ctx context.Context) jobparser.InstanceWorkflowFetcher {
+					return func(job *jobparser.Job, ref *model.NonLocalReusableWorkflowReference) ([]byte, error) {
+						switch ref.Ref {
+						case "non-existent-reference":
+							return nil, errors.New("someone deleted that reference maybe")
+						case "simple":
+							return []byte(testWorkflowCallSimpleExpansion), nil
+						case "more-incomplete":
+							return []byte(testWorkflowCallMoreIncompleteExpansion), nil
+						}
+						return nil, errors.New("unknown workflow reference")
+					}
+				})()
 
 			blockedJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: tt.runJobID})
 
@@ -381,7 +596,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 
 					// expectations are that the ActionRun has an empty PreExecutionError
 					actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: blockedJob.RunID})
-					assert.EqualValues(t, 0, actionRun.PreExecutionErrorCode)
+					assert.EqualValues(t, 0, actionRun.PreExecutionErrorCode, "PreExecutionError Details: %#v", actionRun.PreExecutionErrorDetails)
 
 					// compare jobs that exist with `runJobNames` to ensure new jobs are inserted:
 					allJobsInRun, err := db.Find[actions_model.ActionRunJob](t.Context(), actions_model.FindRunJobOptions{RunID: blockedJob.RunID})
@@ -403,6 +618,37 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 								assert.Equalf(t, expected, j.RunsOn, "comparing runsOn expectations for job %q", j.Name)
 							}
 						}
+					}
+
+					if tt.needs != nil {
+						for _, j := range allJobsInRun {
+							expected, ok := tt.needs[j.Name]
+							if assert.Truef(t, ok, "unable to find runsOn[%q] in test case", j.Name) {
+								slices.Sort(j.Needs)
+								slices.Sort(expected)
+								assert.Equalf(t, expected, j.Needs, "comparing needs expectations for job %q", j.Name)
+							}
+						}
+					}
+
+					if tt.expectIncompleteJob != nil {
+						for _, j := range allJobsInRun {
+							if slices.Contains(tt.expectIncompleteJob, j.Name) {
+								m, _, err := j.HasIncompleteMatrix()
+								require.NoError(t, err)
+								r, _, _, err := j.HasIncompleteRunsOn()
+								require.NoError(t, err)
+								w, _, _, err := j.HasIncompleteWith()
+								require.NoError(t, err)
+								assert.True(t, m || r || w, "job %s was expected to still be marked as incomplete", j.Name)
+							}
+						}
+					}
+
+					if tt.localReusableWorkflowCallArgs != nil {
+						require.Len(t, localReusableCalled, 1)
+						assert.Equal(t, tt.localReusableWorkflowCallArgs, localReusableCalled[0])
+						assert.Equal(t, 1, cleanupCallCount)
 					}
 				} else if tt.preExecutionError != 0 {
 					// expectations are that the ActionRun has a populated PreExecutionError, is marked as failed

@@ -126,7 +126,7 @@ func checkJobWillRevisit(ctx context.Context, job *actions_model.ActionRunJob) (
 	// Check to ensure that a job marked with `IncompleteMatrix` doesn't refer to a job that it doesn't have listed in
 	// `needs`.  If that state is discovered, fail the job and mark a PreExecutionError on the run.
 
-	isIncompleteMatrix, matrixNeeds, err := job.IsIncompleteMatrix()
+	isIncompleteMatrix, matrixNeeds, err := job.HasIncompleteMatrix()
 	if err != nil {
 		return false, err
 	}
@@ -164,11 +164,11 @@ func checkJobWillRevisit(ctx context.Context, job *actions_model.ActionRunJob) (
 
 func checkJobRunsOnStaticMatrixError(ctx context.Context, job *actions_model.ActionRunJob) (bool, error) {
 	// If a job has a `runs-on` field that references a matrix dimension like `runs-on: ${{ matrix.platorm }}`, and
-	// `platform` is not part of the job's matrix at all, then it will be tagged as `IsIncompleteRunsOn` and will be
+	// `platform` is not part of the job's matrix at all, then it will be tagged as `HasIncompleteRunsOn` and will be
 	// blocked forever.  This only applies if the matrix is static -- that is, the job isn't also tagged
-	// `IsIncompleteMatrix` and the matrix is yet to be fully defined.
+	// `HasIncompleteMatrix` and the matrix is yet to be fully defined.
 
-	isIncompleteRunsOn, _, matrixReference, err := job.IsIncompleteRunsOn()
+	isIncompleteRunsOn, _, matrixReference, err := job.HasIncompleteRunsOn()
 	if err != nil {
 		return false, err
 	} else if !isIncompleteRunsOn || matrixReference == nil {
@@ -176,7 +176,7 @@ func checkJobRunsOnStaticMatrixError(ctx context.Context, job *actions_model.Act
 		return false, nil
 	}
 
-	isIncompleteMatrix, _, err := job.IsIncompleteMatrix()
+	isIncompleteMatrix, _, err := job.HasIncompleteMatrix()
 	if err != nil {
 		return false, err
 	} else if isIncompleteMatrix {

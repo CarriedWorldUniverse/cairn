@@ -22,17 +22,17 @@ func TestCreateCommitStatus_IncompleteMatrix(t *testing.T) {
 	err := createCommitStatus(t.Context(), job)
 	require.ErrorContains(t, err, "object does not exist [id: 7a3858dc7f059543a8807a8b551304b7e362a7ef")
 
-	// Transition from IsIncompleteMatrix()=false to true...
-	isIncomplete, _, err := job.IsIncompleteMatrix()
+	// Transition from HasIncompleteMatrix()=false to true...
+	isIncomplete, _, err := job.HasIncompleteMatrix()
 	require.NoError(t, err)
 	require.False(t, isIncomplete)
 	job.WorkflowPayload = append(job.WorkflowPayload, "\nincomplete_matrix: true\n"...)
 	job.ClearCachedWorkflowPayload()
-	isIncomplete, _, err = job.IsIncompleteMatrix()
+	isIncomplete, _, err = job.HasIncompleteMatrix()
 	require.NoError(t, err)
 	require.True(t, isIncomplete)
 
-	// Now there should be no error since createCommitStatus will exit early due to the IsIncompleteMatrix() flag.
+	// Now there should be no error since createCommitStatus will exit early due to the HasIncompleteMatrix() flag.
 	err = createCommitStatus(t.Context(), job)
 	require.NoError(t, err)
 }
