@@ -1,22 +1,19 @@
 {
-    "repo.pulls.merged_title_desc": {
-        "other": "මර්ජ්%[1]d සිට <code>%[2]s</code> දක්වා <code>%[3]s</code> %[4]s"
-    },
-    "repo.pulls.title_desc": {
-        "other": "%[1]d සිට <code>%[2]s</code> දක්වා <code id=\"%[4]s\">%[3]s</code>"
-    },
-    "migrate.git.description": "ඕනෑම Git සේවාවකින් පමණක් ගබඩාවක් සංක්රමණය කරන්න.",
-    "migrate.gitea.description": "Gitea.com හෝ වෙනත් Gitea අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
-    "migrate.gitlab.description": "gitlab.com හෝ වෙනත් GitLab අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
-    "migrate.gogs.description": "notabug.org හෝ වෙනත් Gogs අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
-    "migrate.onedev.description": "code.onedev.io හෝ වෙනත් OnedeV අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
-    "migrate.gitbucket.description": "GitBucket අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
-    "pulse.n_active_issues": {
-        "one": "%s ක්රියාකාරී නිකුතුව",
-        "other": "%s ක්රියාකාරී ගැටළු"
-    },
-    "pulse.n_active_prs": {
-        "one": "%s ක්රියාකාරී අදින්න ඉල්ලීම",
-        "other": "%s ක්රියාකාරී අදින්න ඉල්ලීම්"
-    }
+	"repo.pulls.merged_title_desc": "මර්ජ්%[1]d සිට <code>%[2]s</code> දක්වා <code>%[3]s</code> %[4]s",
+	"repo.pulls.title_desc": "%[1]d සිට <code>%[2]s</code> දක්වා <code id=\"%[4]s\">%[3]s</code>",
+	"migrate.git.description": "ඕනෑම Git සේවාවකින් පමණක් ගබඩාවක් සංක්රමණය කරන්න.",
+	"migrate.gitea.description": "Gitea.com හෝ වෙනත් Gitea අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
+	"migrate.gitlab.description": "gitlab.com හෝ වෙනත් GitLab අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
+	"migrate.gogs.description": "notabug.org හෝ වෙනත් Gogs අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
+	"migrate.onedev.description": "code.onedev.io හෝ වෙනත් OnedeV අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
+	"migrate.gitbucket.description": "GitBucket අවස්ථා වලින් දත්ත සංක්රමණය කරන්න.",
+	"pulse.n_active_issues": {
+		"one": "%s ක්රියාකාරී නිකුතුව",
+		"other": "%s ක්රියාකාරී ගැටළු"
+	},
+	"pulse.n_active_prs": {
+		"one": "%s ක්රියාකාරී අදින්න ඉල්ලීම",
+		"other": "%s ක්රියාකාරී අදින්න ඉල්ලීම්"
+	},
+	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
 }
