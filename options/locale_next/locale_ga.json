@@ -1,17 +1,24 @@
 {
-    "migrate.git.description": "Aistrigh stór amháin ó aon seirbhís Git.",
-    "migrate.gitea.description": "Aistrigh sonraí ó gitea.com nó ó chásanna Gitea eile.",
-    "migrate.gitlab.description": "Aistrigh sonraí ó gitlab.com nó ó chásanna GitLab eile.",
-    "migrate.gogs.description": "Aistrigh sonraí ó notabug.org nó ó chásanna eile de chuid Gogs.",
-    "migrate.onedev.description": "Aistrigh sonraí ó code.onedev.io nó ó chásanna OneDev eile.",
-    "migrate.gitbucket.description": "Aistrigh sonraí ó chásanna GitBucket.",
-    "migrate.codebase.description": "Aistrigh sonraí ó codebasehq.com.",
-    "pulse.n_active_issues": {
-        "one": "%s Eagrán Gníomhach",
-        "other": "%s Ceisteanna Gníomhacha"
-    },
-    "pulse.n_active_prs": {
-        "one": "%s Iarratas Tarraingthe Gníomhach",
-        "other": "%s Iarratais Tharraing Ghníomhach"
-    }
+	"migrate.git.description": "Aistrigh stór amháin ó aon seirbhís Git.",
+	"migrate.gitea.description": "Aistrigh sonraí ó gitea.com nó ó chásanna Gitea eile.",
+	"migrate.gitlab.description": "Aistrigh sonraí ó gitlab.com nó ó chásanna GitLab eile.",
+	"migrate.gogs.description": "Aistrigh sonraí ó notabug.org nó ó chásanna eile de chuid Gogs.",
+	"migrate.onedev.description": "Aistrigh sonraí ó code.onedev.io nó ó chásanna OneDev eile.",
+	"migrate.gitbucket.description": "Aistrigh sonraí ó chásanna GitBucket.",
+	"migrate.codebase.description": "Aistrigh sonraí ó codebasehq.com.",
+	"pulse.n_active_issues": {
+		"one": "%s Eagrán Gníomhach",
+		"two": "%s Ceisteanna Gníomhacha",
+		"few": "",
+		"many": "",
+		"other": ""
+	},
+	"pulse.n_active_prs": {
+		"one": "%s Iarratas Tarraingthe Gníomhach",
+		"two": "%s Iarratais Tharraing Ghníomhach",
+		"few": "",
+		"many": "",
+		"other": ""
+	},
+	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
 }
