@@ -1,139 +1,144 @@
 {
-    "fork.n_forks": {
-        "one": "%s bifurcación",
-        "other": "%s bifurcaciones"
-    },
-    "stars.n_stars": {
-        "one": "%s estrella",
-        "other": "%s estrellas"
-    },
-    "release.n_downloads": {
-        "one": "%s descarga",
-        "other": "%s descargas"
-    },
-    "repo.pulls.merged_title_desc": {
-        "one": "fusionó %[1]d confirmación de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
-        "many": "fusionó %[1]d confirmaciones de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
-        "other": "fusionó %[1]d confirmaciones de <code>%[2]s</code> en <code>%[3]s</code> %[4]s"
-    },
-    "repo.pulls.title_desc": {
-        "one": "quiere fusionar %[1]d confirmación de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
-        "many": "quiere fusionar %[1]d confirmaciones de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
-        "other": "quiere fusionar %[1]d confirmaciones de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>"
-    },
-    "search.milestone_kind": "Buscar hitos…",
-    "error.not_found.title": "Página no encontrada",
-    "themes.names.forgejo-auto": "Forgejo (seguir el tema del sistema)",
-    "themes.names.forgejo-dark": "Forgejo oscuro",
-    "themes.names.forgejo-light": "Forgejo claro",
-    "home.welcome.no_activity": "Sin actividad",
-    "meta.last_line": "¡Gracias por traducir Forgejo! Esta línea no es vista por los usuarios pero sirve para otros propósitos en la gestión de la traducción. Puedes colocar un dato curioso en la traducción en lugar de traducirla.",
-    "relativetime.now": "ahora",
-    "relativetime.mins": {
-        "one": "hace %d minuto",
-        "many": "hace %d minutos",
-        "other": "hace %d minutos"
-    },
-    "relativetime.hours": {
-        "one": "hace %d hora",
-        "many": "hace %d horas",
-        "other": "hace %d horas"
-    },
-    "relativetime.future": "en el futuro",
-    "home.explore_repos": "Explorar repositorios",
-    "home.explore_users": "Explorar usuarios",
-    "home.explore_orgs": "Explorar organizaciones",
-    "moderation.abuse_category.malware": "Malware",
-    "relativetime.1day": "ayer",
-    "relativetime.2months": "hace dos meses",
-    "relativetime.1year": "el año pasado",
-    "relativetime.2years": "hace dos años",
-    "repo.form.cannot_create": "Todos los espacios en los que puedes crear repositorios llegaron al límite de repositorios.",
-    "stars.list.none": "Nadie le ha dado una estrella a este repo.",
-    "watch.list.none": "Nadie está observando este repo.",
-    "followers.incoming.list.self.none": "Nadie está siguiendo tu perfil.",
-    "followers.incoming.list.none": "Nadie está siguiendo a este usuario.",
-    "followers.outgoing.list.self.none": "No estás siguiendo a nadie.",
-    "followers.outgoing.list.none": "%s no sigue a nadie.",
-    "relativetime.1week": "la semana pasada",
-    "relativetime.2weeks": "hace dos semanas",
-    "relativetime.1month": "el mes pasado",
-    "alert.asset_load_failed": "Error al cargar recursos desde {path}. Por favor, asegúrate de que se puede acceder a los recursos.",
-    "install.invalid_lfs_path": "Imposible crear la raíz LFS en la ruta indicada: %[1]s",
-    "alert.range_error": " debe ser un número entre %[1]s y %[2]s.",
-    "relativetime.days": {
-        "one": "hace %d día",
-        "many": "hace %d días",
-        "other": "hace %d días"
-    },
-    "relativetime.years": {
-        "one": "hace %d año",
-        "many": "hace %d años",
-        "other": "hace %d años"
-    },
-    "repo.settings.push_mirror.branch_filter.label": "Filtro de rama (opcional)",
-    "relativetime.weeks": {
-        "one": "hace %d semana",
-        "many": "hace %d semanas",
-        "other": "hace %d semanas"
-    },
-    "relativetime.months": {
-        "one": "hace %d mes",
-        "many": "hace %d meses",
-        "other": "hace %d meses"
-    },
-    "profile.actions.tooltip": "Mas acciones",
-    "profile.edit.link": "Editar perfil",
-    "admin.moderation.no_open_reports": "Actualmente no hay informes abiertos.",
-    "moderation.report_abuse_form.invalid": "Argumentos inválidos",
-    "admin.moderation.reports": "Informes",
-    "incorrect_root_url": "Esta instancia de Forgejo está configurada para servirse en \"%s\". Estás viendo Forgejo a través de una URL distinta, lo que puede hacer que se rompan partes de la aplicación. La URL canónica la controlan los administradores de Forgejo a través del ajuste ROOT_URL en app.ini.",
-    "admin.moderation.moderation_reports": "Informes de moderación",
-    "home.welcome.activity_hint": "Aún no hay nada en tu feed. Tus acciones y la actividad en los repositorios a los que sigues se mostrarán aquí.",
-    "feed.atom.link": "Feed Atom",
-    "keys.ssh.link": "Claves SSH",
-    "keys.gpg.link": "Claves GPG",
-    "admin.config.moderation_config": "Configuración de moderación",
-    "admin.moderation.deleted_content_ref": "El contenido reportado con tipo %[1]v e id %[2]d ya no existe",
-    "moderation.report_abuse": "Reportar abuso",
-    "moderation.report_content": "Reportar contenido",
-    "moderation.report_abuse_form.header": "Reportar abuso a un administrador",
-    "moderation.report_abuse_form.already_reported": "Ya has reportado este contenido",
-    "moderation.abuse_category": "Categoría",
-    "repo.issue_indexer.title": "Índice de incidencias",
-    "relativetime.2days": "hace dos días",
-    "moderation.abuse_category.illegal_content": "Contenido ilegal",
-    "repo.settings.push_mirror.branch_filter.description": "Ramas a seguir. Deje en blanco para seguir todas las ramas. Consulte la <a href=\"%[1]s\">%[2]s documentation</a> de la sintaxis. Ejemplos: <code>main, release/*</code>",
-    "moderation.reporting_failed": "No fue posible enviar el nuevo reporte de abuso: %v",
-    "moderation.abuse_category.placeholder": "Seleccione una categoría",
-    "moderation.abuse_category.other_violations": "Otras violaciones a las reglas de la plataforma",
-    "moderation.report_remarks": "Detalles",
-    "moderation.report_remarks.placeholder": "Por favor añada detalles respecto al abuso que está reportando.",
-    "moderation.submit_report": "Enviar reporte",
-    "mail.actions.successful_run_after_failure_subject": "Se recuperó el flujo %[1]s en el repositorio %[2]s",
-    "mail.actions.successful_run_after_failure": "Se recobró el flujo %[1]s en el repositorio %[2]s",
-    "mail.actions.not_successful_run": "Falló el flujo %[1]s en el repositorio %[2]s",
-    "repo.pulls.already_merged": "Fallo al fusionar: Esta solicitud de incorporación ya había sido fusionada.",
-    "warning.repository.out_of_sync": "La base de datos que representa este repositorio está desincronizada. Si esta advertencia continúa mostrándose después de empujar un commit a este repositorio, contacte al administrador.",
-    "moderation.report_abuse_form.details": "Este formulario se usa para reportar usuarios que crean perfiles, repositorios, incidencias, comentarios spam o se comportan de manera inapropiada.",
-    "moderation.reported_thank_you": "Gracias por su reporte. La administración ha sido notificada de esto.",
-    "mail.actions.not_successful_run_subject": "El flujo %[1]s falló en el repositorio %[2]s",
-    "migrate.github.description": "Migrar datos desde github.com o un servidor GitHub Enterprise.",
-    "migrate.git.description": "Migrar un repositorio sólo desde cualquier servicio Git.",
-    "migrate.gitea.description": "Migrar datos de gitea.com u otra instancia de Gitea.",
-    "migrate.gitlab.description": "Migrar datos de gitlab.com u otra instancia de GitLab.",
-    "migrate.gogs.description": "Migrar datos de notabug.org u otra instancia de Gogs.",
-    "migrate.onedev.description": "Migrar datos desde code.onedev.io u otra instancia de OneDev.",
-    "migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
-    "migrate.codebase.description": "Migrar datos desde codebasehq.com.",
-    "migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo.",
-    "moderation.abuse_category.spam": "Spam",
-    "pulse.n_active_issues": {
-        "one": "%s incidencia activa",
-        "other": "%s incidencias activas"
-    },
-    "pulse.n_active_prs": {
-        "one": "%s pull request activa",
-        "other": "%s pull requests activas"
-    }
+	"fork.n_forks": {
+		"one": "%s bifurcación",
+		"many": "%s bifurcaciones",
+		"other": ""
+	},
+	"stars.n_stars": {
+		"one": "%s estrella",
+		"many": "%s estrellas",
+		"other": ""
+	},
+	"release.n_downloads": {
+		"one": "%s descarga",
+		"many": "%s descargas",
+		"other": ""
+	},
+	"repo.pulls.merged_title_desc": {
+		"one": "fusionó %[1]d confirmación de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
+		"many": "fusionó %[1]d confirmaciones de <code>%[2]s</code> en <code>%[3]s</code> %[4]s",
+		"other": "fusionó %[1]d confirmaciones de <code>%[2]s</code> en <code>%[3]s</code> %[4]s"
+	},
+	"repo.pulls.title_desc": {
+		"one": "quiere fusionar %[1]d confirmación de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
+		"many": "quiere fusionar %[1]d confirmaciones de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>",
+		"other": "quiere fusionar %[1]d confirmaciones de <code>%[2]s</code> en <code id=\"%[4]s\">%[3]s</code>"
+	},
+	"search.milestone_kind": "Buscar hitos…",
+	"error.not_found.title": "Página no encontrada",
+	"themes.names.forgejo-auto": "Forgejo (seguir el tema del sistema)",
+	"themes.names.forgejo-dark": "Forgejo oscuro",
+	"themes.names.forgejo-light": "Forgejo claro",
+	"home.welcome.no_activity": "Sin actividad",
+	"meta.last_line": "¡Gracias por traducir Forgejo! Esta línea no es vista por los usuarios pero sirve para otros propósitos en la gestión de la traducción. Puedes colocar un dato curioso en la traducción en lugar de traducirla.\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"relativetime.now": "ahora",
+	"relativetime.mins": {
+		"one": "hace %d minuto",
+		"many": "hace %d minutos",
+		"other": "hace %d minutos"
+	},
+	"relativetime.hours": {
+		"one": "hace %d hora",
+		"many": "hace %d horas",
+		"other": "hace %d horas"
+	},
+	"relativetime.future": "en el futuro",
+	"home.explore_repos": "Explorar repositorios",
+	"home.explore_users": "Explorar usuarios",
+	"home.explore_orgs": "Explorar organizaciones",
+	"moderation.abuse_category.malware": "Malware",
+	"relativetime.1day": "ayer",
+	"relativetime.2months": "hace dos meses",
+	"relativetime.1year": "el año pasado",
+	"relativetime.2years": "hace dos años",
+	"repo.form.cannot_create": "Todos los espacios en los que puedes crear repositorios llegaron al límite de repositorios.",
+	"stars.list.none": "Nadie le ha dado una estrella a este repo.",
+	"watch.list.none": "Nadie está observando este repo.",
+	"followers.incoming.list.self.none": "Nadie está siguiendo tu perfil.",
+	"followers.incoming.list.none": "Nadie está siguiendo a este usuario.",
+	"followers.outgoing.list.self.none": "No estás siguiendo a nadie.",
+	"followers.outgoing.list.none": "%s no sigue a nadie.",
+	"relativetime.1week": "la semana pasada",
+	"relativetime.2weeks": "hace dos semanas",
+	"relativetime.1month": "el mes pasado",
+	"alert.asset_load_failed": "Error al cargar recursos desde {path}. Por favor, asegúrate de que se puede acceder a los recursos.",
+	"install.invalid_lfs_path": "Imposible crear la raíz LFS en la ruta indicada: %[1]s",
+	"alert.range_error": " debe ser un número entre %[1]s y %[2]s.",
+	"relativetime.days": {
+		"one": "hace %d día",
+		"many": "hace %d días",
+		"other": "hace %d días"
+	},
+	"relativetime.years": {
+		"one": "hace %d año",
+		"many": "hace %d años",
+		"other": "hace %d años"
+	},
+	"repo.settings.push_mirror.branch_filter.label": "Filtro de rama (opcional)",
+	"relativetime.weeks": {
+		"one": "hace %d semana",
+		"many": "hace %d semanas",
+		"other": "hace %d semanas"
+	},
+	"relativetime.months": {
+		"one": "hace %d mes",
+		"many": "hace %d meses",
+		"other": "hace %d meses"
+	},
+	"profile.actions.tooltip": "Mas acciones",
+	"profile.edit.link": "Editar perfil",
+	"admin.moderation.no_open_reports": "Actualmente no hay informes abiertos.",
+	"moderation.report_abuse_form.invalid": "Argumentos inválidos",
+	"admin.moderation.reports": "Informes",
+	"incorrect_root_url": "Esta instancia de Forgejo está configurada para servirse en \"%s\". Estás viendo Forgejo a través de una URL distinta, lo que puede hacer que se rompan partes de la aplicación. La URL canónica la controlan los administradores de Forgejo a través del ajuste ROOT_URL en app.ini.",
+	"admin.moderation.moderation_reports": "Informes de moderación",
+	"home.welcome.activity_hint": "Aún no hay nada en tu feed. Tus acciones y la actividad en los repositorios a los que sigues se mostrarán aquí.",
+	"feed.atom.link": "Feed Atom",
+	"keys.ssh.link": "Claves SSH",
+	"keys.gpg.link": "Claves GPG",
+	"admin.config.moderation_config": "Configuración de moderación",
+	"admin.moderation.deleted_content_ref": "El contenido reportado con tipo %[1]v e id %[2]d ya no existe",
+	"moderation.report_abuse": "Reportar abuso",
+	"moderation.report_content": "Reportar contenido",
+	"moderation.report_abuse_form.header": "Reportar abuso a un administrador",
+	"moderation.report_abuse_form.already_reported": "Ya has reportado este contenido",
+	"moderation.abuse_category": "Categoría",
+	"repo.issue_indexer.title": "Índice de incidencias",
+	"relativetime.2days": "hace dos días",
+	"moderation.abuse_category.illegal_content": "Contenido ilegal",
+	"repo.settings.push_mirror.branch_filter.description": "Ramas a seguir. Deje en blanco para seguir todas las ramas. Consulte la <a href=\"%[1]s\">%[2]s documentation</a> de la sintaxis. Ejemplos: <code>main, release/*</code>",
+	"moderation.reporting_failed": "No fue posible enviar el nuevo reporte de abuso: %v",
+	"moderation.abuse_category.placeholder": "Seleccione una categoría",
+	"moderation.abuse_category.other_violations": "Otras violaciones a las reglas de la plataforma",
+	"moderation.report_remarks": "Detalles",
+	"moderation.report_remarks.placeholder": "Por favor añada detalles respecto al abuso que está reportando.",
+	"moderation.submit_report": "Enviar reporte",
+	"mail.actions.successful_run_after_failure_subject": "Se recuperó el flujo %[1]s en el repositorio %[2]s",
+	"mail.actions.successful_run_after_failure": "Se recobró el flujo %[1]s en el repositorio %[2]s",
+	"mail.actions.not_successful_run": "Falló el flujo %[1]s en el repositorio %[2]s",
+	"repo.pulls.already_merged": "Fallo al fusionar: Esta solicitud de incorporación ya había sido fusionada.",
+	"warning.repository.out_of_sync": "La base de datos que representa este repositorio está desincronizada. Si esta advertencia continúa mostrándose después de empujar un commit a este repositorio, contacte al administrador.",
+	"moderation.report_abuse_form.details": "Este formulario se usa para reportar usuarios que crean perfiles, repositorios, incidencias, comentarios spam o se comportan de manera inapropiada.",
+	"moderation.reported_thank_you": "Gracias por su reporte. La administración ha sido notificada de esto.",
+	"mail.actions.not_successful_run_subject": "El flujo %[1]s falló en el repositorio %[2]s",
+	"migrate.github.description": "Migrar datos desde github.com o un servidor GitHub Enterprise.",
+	"migrate.git.description": "Migrar un repositorio sólo desde cualquier servicio Git.",
+	"migrate.gitea.description": "Migrar datos de gitea.com u otra instancia de Gitea.",
+	"migrate.gitlab.description": "Migrar datos de gitlab.com u otra instancia de GitLab.",
+	"migrate.gogs.description": "Migrar datos de notabug.org u otra instancia de Gogs.",
+	"migrate.onedev.description": "Migrar datos desde code.onedev.io u otra instancia de OneDev.",
+	"migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
+	"migrate.codebase.description": "Migrar datos desde codebasehq.com.",
+	"migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo.",
+	"moderation.abuse_category.spam": "Spam",
+	"pulse.n_active_issues": {
+		"one": "%s incidencia activa",
+		"many": "%s incidencias activas",
+		"other": ""
+	},
+	"pulse.n_active_prs": {
+		"one": "%s pull request activa",
+		"many": "%s pull requests activas",
+		"other": ""
+	}
 }
