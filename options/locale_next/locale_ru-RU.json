@@ -245,14 +245,18 @@
     "moderation.issue.deletion_success": "Задача была удалена.",
     "moderation.comment.deletion_success": "Комментарий был удалён.",
     "actions.workflow.incomplete_matrix_missing_job": "Не удалось проверить `strategy.matrix` задачи %[1]s – задача %[2]s отсутствует в списке требуемых (`needs`) задачи %[1]s (%[3]s).",
-    "actions.workflow.incomplete_matrix_missing_output": "Не удалось проверить `strategy.matrix` задачи %[1]s – задача %[2]s не имеет интерфейс вывода %[3]s.",
+    "actions.workflow.incomplete_matrix_missing_output": "Не удалось проверить `strategy.matrix` задачи %[1]s – у задачи %[2]s не хватает интерфейса вывода %[3]s.",
     "actions.workflow.incomplete_matrix_unknown_cause": "Не удалось проверить `strategy.matrix` задачи %[1]s – неизвестная ошибка.",
     "actions.workflow.incomplete_runson_missing_job": "Не удалось проверить `runs-on` задачи %[1]s – задача %[2]s отсутствует в списке требуемых (`needs`) задачи %[1]s (%[3]s).",
-    "actions.workflow.incomplete_runson_missing_output": "Не удалось проверить `runs-on` задачи %[1]s – задача %[2]s не имеет интерфейс вывода %[3]s.",
+    "actions.workflow.incomplete_runson_missing_output": "Не удалось проверить `runs-on` задачи %[1]s – у задачи %[2]s не хватает интерфейс вывода %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Не удалось проверить `runs-on` задачи %[1]s – измерение матрицы %[2]s не существует.",
     "actions.workflow.incomplete_runson_unknown_cause": "Не удалось проверить `runs-on` задачи %[1]s – неизвестная ошибка.",
     "admin.auths.oauth2_quota_group_map": "Связывать группы из указанного выше утверждения (claim) с группами квот",
     "search.fuzzy": "Приблиз.",
     "search.fuzzy_tooltip": "Включает результаты, приблизительно соответствующие запросу",
-    "issues.updated": "обнов. %s"
+    "issues.updated": "обнов. %s",
+    "actions.workflow.incomplete_with_missing_job": "Не удалось проверить `with` задачи %[1]s – задача %[2]s не указана в списке `needs` задачи %[1]s (%[3]s).",
+    "actions.workflow.incomplete_with_missing_output": "Не удалось проверить `with` задачи %[1]s – у задачи %[2]s не хватает интерфейса вывода %[3]s.",
+    "actions.workflow.incomplete_with_missing_matrix_dimension": "Не удалось проверить `with` задачи %[1]s: в матрице не указано измерение %[2]s.",
+    "actions.workflow.incomplete_with_unknown_cause": "Не удалось проверить `with` задачи %[1]s: неизвестная ошибка."
 }

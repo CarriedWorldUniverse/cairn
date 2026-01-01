@@ -194,5 +194,9 @@
     "admin.auths.oauth2_quota_group_map_removal": "如果用户不是对应组的成员，则将用户从同步的配额组中移出。",
     "search.fuzzy": "模糊",
     "issues.updated": "更新于 %s",
-    "search.fuzzy_tooltip": "包含与搜索关键字相似的结果"
+    "search.fuzzy_tooltip": "包含与搜索关键字相似的结果",
+    "actions.workflow.incomplete_with_missing_job": "无法解析任务‘%[1]s’的`with`：任务‘%[2]s’不在任务‘%[1]s’的`needs`列表（‘%[3]s’）中。",
+    "actions.workflow.incomplete_with_missing_output": "无法解析任务‘%[1]s’的`with`：任务‘%[2]s’没有输出‘%[3]s’。",
+    "actions.workflow.incomplete_with_missing_matrix_dimension": "无法解析任务‘%[1]s’的`with`：矩阵维度‘%[2]s’不存在。",
+    "actions.workflow.incomplete_with_unknown_cause": "无法解析任务‘%[1]s’的`with`：未知错误。"
 }
