@@ -883,16 +883,6 @@ export default {
 
 <style>
 /* some elements are not managed by vue, so we need to use global style */
-.job-status-rotate {
-  animation: job-status-rotate-keyframes 1s linear infinite;
-}
-
-@keyframes job-status-rotate-keyframes {
-  100% {
-    transform: rotate(-360deg);
-  }
-}
-
 /* selectors here are intentionally exact to only match fullscreen */
 
 .full.height > .action-view-right {
