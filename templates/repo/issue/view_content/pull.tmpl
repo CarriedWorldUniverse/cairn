@@ -390,7 +390,7 @@
 			{{end}}
 
 			{{if and .Issue.PullRequest.HeadRepo (not .Issue.PullRequest.HasMerged) (not .Issue.IsClosed)}}
-				{{template "repo/issue/view_content/pull_merge_instruction" dict "PullRequest" .Issue.PullRequest "ShowMergeInstructions" .ShowMergeInstructions "AutodetectManualMerge" .AutodetectManualMerge}}
+				{{template "repo/issue/view_content/pull_merge_instruction" dict "PullRequest" .Issue.PullRequest "ShowMergeInstructions" .ShowMergeInstructions "AutodetectManualMerge" .AutodetectManualMerge "DefaultMergeMessage" .DefaultMergeMessage "DefaultMergeBody" .DefaultMergeBody "IsPullFilesConflicted" .IsPullFilesConflicted}}
 			{{end}}
 		</div>
 	</div>
