@@ -475,7 +475,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			needs: map[string][]string{
 				"define-workflow-call":    nil,
 				"inner my-workflow-input": nil,
-				"perform-workflow-call":   {"define-workflow-call", "perform-workflow-call.inner_job"},
+				"perform-workflow-call":   {"perform-workflow-call.inner_job"},
 			},
 		},
 		// Before reusable workflow expansion, there weren't any cases where evaluating a job in the job emitter could
@@ -502,7 +502,6 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 				"inner define-runs-on my-workflow-input": nil,
 				"inner incomplete-job my-workflow-input": {"perform-workflow-call.define-runs-on"},
 				"perform-workflow-call": {
-					"define-workflow-call",
 					"perform-workflow-call.define-runs-on",
 					"perform-workflow-call.scalar-job",
 				},

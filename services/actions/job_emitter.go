@@ -298,7 +298,7 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 		// it to be a "persistent incomplete" job with some error that needs to be reported to the user.  If the
 		// re-evaluated job has a different job ID, then it's likely an expanded job -- such as from a reusable workflow
 		// -- which could have it's own `needs` that allows it to expand into a correct job in the future.
-		jobID, job := swf.Job()
+		jobID, _ := swf.Job()
 		if jobID == blockedJob.JobID {
 			if swf.IncompleteMatrix {
 				errorCode, errorDetails := persistentIncompleteMatrixError(blockedJob, swf.IncompleteMatrixNeeds)
@@ -321,23 +321,6 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 				}
 				// Return `true` to skip running this job in this invalid state
 				return true, nil
-			}
-
-			// When `InsertRunJobs` is run on a job (including `blockedJob` when it was persisted), the `needs` are
-			// removed from it's WorkflowPayload and moved up to the database record so that Forgejo can manage ordering
-			// the run execution.  Now that `blockedJob` has been changed from incomplete->complete by reparsing it and
-			// providing its inputs, it would have been reparsed with an empty `needs` entry because of this earlier
-			// removal.  And the returned record could have its own new `needs` if it was a reusable workflow with inner
-			// jobs.  So, merge the old database list of needs with the new reparsed list of needs, and store them in
-			// the new `SingleWorkflow` which will be paseed to `InsertRunJobs` where it will be ripped out again.
-			//
-			// This is only relevant for `blockedJob` and not for any other generated jobs since they wouldn't have yet
-			// gone through `InsertRunJobs` to have this mutation performed.
-			newNeeds := append(job.Needs(), blockedJob.Needs...)
-			_ = job.RawNeeds.Encode(newNeeds)
-			err := swf.SetJob(jobID, job)
-			if err != nil {
-				return false, fmt.Errorf("failure to update needs in job: %w", err)
 			}
 		}
 	}
