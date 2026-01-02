@@ -13,9 +13,6 @@ import (
 	"forgejo.org/modules/gitrepo"
 	api "forgejo.org/modules/structs"
 
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/forgefed"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

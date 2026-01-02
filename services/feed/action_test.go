@@ -18,9 +18,6 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/forgefed"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

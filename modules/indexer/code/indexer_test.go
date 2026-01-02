@@ -14,11 +14,6 @@ import (
 	"forgejo.org/modules/indexer/code/elasticsearch"
 	"forgejo.org/modules/indexer/code/internal"
 
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/forgefed"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

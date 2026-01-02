@@ -8,13 +8,7 @@ import (
 
 	"forgejo.org/models/unittest"
 
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/forgefed"
-	_ "forgejo.org/models/organization"
-	_ "forgejo.org/models/repo"
-	_ "forgejo.org/models/user"
+	_ "forgejo.org/modules/testimport"
 )
 
 func TestMain(m *testing.M) {

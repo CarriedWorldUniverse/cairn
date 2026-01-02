@@ -9,10 +9,6 @@ import (
 
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/markup"
-
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/forgefed"
-	_ "forgejo.org/models/issues"
 )
 
 func TestMain(m *testing.M) {
