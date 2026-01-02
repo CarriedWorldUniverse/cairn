@@ -421,12 +421,14 @@ func CreateTaskForRunner(ctx context.Context, runner *ActionRunner) (*ActionTask
 	return task, true, nil
 }
 
-// Placeholder tasks are created when the status/content of an `ActionRunJob` is resolved by Forgejo without dispatch to
-// a runner, specifically in the case of a workflow call's outer job.
+// Placeholder tasks are created when the status/content of an [ActionRunJob] is resolved by Forgejo without dispatch to
+// a runner, specifically in the case of a workflow call's outer job. It is the responsibility of the caller to
+// increment the job's Attempt field before invoking this method, and to update that field in the database, so that
+// reruns can function for placeholder tasks and provide updated outputs.
 func CreatePlaceholderTask(ctx context.Context, job *ActionRunJob, outputs map[string]string) (*ActionTask, error) {
 	actionTask := &ActionTask{
 		JobID:             job.ID,
-		Attempt:           1,
+		Attempt:           job.Attempt,
 		Started:           timeutil.TimeStampNow(),
 		Stopped:           timeutil.TimeStampNow(),
 		Status:            job.Status,

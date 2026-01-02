@@ -58,7 +58,7 @@ func TestActionTask_CreatePlaceholderTask(t *testing.T) {
 
 	assert.NotEqualValues(t, 0, task.ID)
 	assert.Equal(t, job.ID, task.JobID)
-	assert.EqualValues(t, 1, task.Attempt)
+	assert.EqualValues(t, 0, task.Attempt)
 	assert.NotEqualValues(t, 0, task.Started)
 	assert.NotEqualValues(t, 0, task.Stopped)
 	assert.Equal(t, job.Status, task.Status)

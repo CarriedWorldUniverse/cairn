@@ -672,10 +672,11 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 
 func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 	tests := []struct {
-		name         string
-		runJobID     int64
-		updateFields []string
-		outputs      map[string]string
+		name            string
+		runJobID        int64
+		updateFields    []string
+		outputs         map[string]string
+		expectedAttempt int
 	}{
 		{
 			name:     "not workflow call outer job",
@@ -684,7 +685,7 @@ func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 		{
 			name:         "outputs for every context",
 			runJobID:     601,
-			updateFields: []string{"task_id"},
+			updateFields: []string{"task_id", "attempt"},
 			outputs: map[string]string{
 				"from_inner_job":        "abcdefghijklmnopqrstuvwxyz",
 				"from_inner_job_result": "success",
@@ -694,6 +695,22 @@ func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 				"from_vars_org":         "this is an org variable",
 				"from_vars_global":      "this is a global variable",
 			},
+			expectedAttempt: 1,
+		},
+		{
+			name:         "attempt 2 rerun task",
+			runJobID:     603,
+			updateFields: []string{"task_id", "attempt"},
+			outputs: map[string]string{
+				"from_inner_job":        "abcdefghijklmnopqrstuvwxyz",
+				"from_inner_job_result": "success",
+				"from_forgejo_ctx":      "refs/heads/main",
+				"from_input_ctx":        "hello, world!",
+				"from_vars_repo":        "this is a repo variable",
+				"from_vars_org":         "this is an org variable",
+				"from_vars_global":      "this is a global variable",
+			},
+			expectedAttempt: 2,
 		},
 	}
 	for _, tt := range tests {
@@ -709,6 +726,8 @@ func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 			assert.Equal(t, tt.updateFields, updateFields)
 
 			if tt.updateFields != nil {
+				assert.EqualValues(t, tt.expectedAttempt, outerJob.Attempt)
+
 				// TaskID expected to be set by tryHandleWorkflowCallOuterJob
 				require.NotEqualValues(t, 0, outerJob.TaskID)
 
