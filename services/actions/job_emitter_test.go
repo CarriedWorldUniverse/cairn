@@ -581,14 +581,14 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			jobsInRun, err := db.Find[actions_model.ActionRunJob](t.Context(), actions_model.FindRunJobOptions{RunID: blockedJob.RunID})
 			require.NoError(t, err)
 
-			skip, err := tryHandleIncompleteMatrix(t.Context(), blockedJob, jobsInRun)
+			behaviour, err := tryHandleIncompleteMatrix(t.Context(), blockedJob, jobsInRun)
 
 			if tt.errContains != "" {
 				require.ErrorContains(t, err, tt.errContains)
 			} else {
 				require.NoError(t, err)
 				if tt.consumed {
-					assert.True(t, skip, "skip flag")
+					assert.Equal(t, behaviourIgnoreJob, behaviour)
 
 					// blockedJob should no longer exist in the database
 					unittest.AssertNotExistsBean(t, &actions_model.ActionRunJob{ID: tt.runJobID})
@@ -660,10 +660,10 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 					blockedJobReloaded := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: tt.runJobID})
 					assert.Equal(t, actions_model.StatusFailure, blockedJobReloaded.Status)
 
-					// skip is set to true
-					assert.True(t, skip, "skip flag")
+					// ensure all other jobs in this run are ignored
+					assert.Equal(t, behaviourIgnoreAllJobsInRun, behaviour)
 				} else {
-					assert.False(t, skip, "skip flag")
+					assert.Equal(t, behaviourExecuteJob, behaviour)
 				}
 			}
 		})
