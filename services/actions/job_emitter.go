@@ -523,12 +523,14 @@ func tryHandleWorkflowCallOuterJob(ctx context.Context, job *actions_model.Actio
 	)
 
 	// Insert a placeholder task with all the computed outputs
+	job.Attempt++
 	actionTask, err := actions_model.CreatePlaceholderTask(ctx, job, outputs)
 	if err != nil {
 		return nil, fmt.Errorf("failure to insert placeholder task: %w", err)
 	}
 
-	// Populate task_id and ask caller to update it in DB:
+	// Populate task_id and ask caller to update it in DB.
+	// Update previously incremented attempt field as well.
 	job.TaskID = actionTask.ID
-	return []string{"task_id"}, nil
+	return []string{"task_id", "attempt"}, nil
 }
