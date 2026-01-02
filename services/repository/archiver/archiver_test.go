@@ -12,9 +12,6 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/services/contexttest"
 
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/forgefed"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

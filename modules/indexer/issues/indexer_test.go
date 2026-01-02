@@ -13,11 +13,6 @@ import (
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/forgefed"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

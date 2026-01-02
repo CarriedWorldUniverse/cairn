@@ -12,10 +12,6 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/forgefed"
-	_ "forgejo.org/models/system"
-
 	"github.com/stretchr/testify/require"
 )
 
