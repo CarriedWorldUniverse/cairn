@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
@@ -94,7 +95,8 @@ func createCommitStatus(ctx context.Context, job *actions_model.ActionRunJob) er
 	state := toCommitStatus(job.Status)
 	if statuses, _, err := git_model.GetLatestCommitStatus(ctx, repo.ID, sha, db.ListOptionsAll); err == nil {
 		for _, v := range statuses {
-			if v.Context == ctxname {
+			// TrimSpace(ctxname) to match stored value which is trimmed in `git.NewCommitStatus`
+			if v.Context == strings.TrimSpace(ctxname) {
 				if v.State == state {
 					// no need to update
 					return nil

@@ -7,9 +7,14 @@ import (
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
+	git_model "forgejo.org/models/git"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/cache"
+	"forgejo.org/modules/structs"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"xorm.io/builder"
 )
 
 func TestCreateCommitStatus_IncompleteMatrix(t *testing.T) {
@@ -35,4 +40,45 @@ func TestCreateCommitStatus_IncompleteMatrix(t *testing.T) {
 	// Now there should be no error since createCommitStatus will exit early due to the IsIncompleteMatrix() flag.
 	err = createCommitStatus(t.Context(), job)
 	require.NoError(t, err)
+}
+
+func TestCreateCommitStatus_AvoidsDuplicates(t *testing.T) {
+	defer unittest.OverrideFixtures("services/actions/TestCreateCommitStatus")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+	cache.Init()
+
+	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 400})
+	targetCommitStatusFilter := builder.Eq{"repo_id": 4, "sha": job.CommitSHA}
+
+	// Begin with 0 commit statuses
+	assert.Equal(t, 0, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+
+	err := createCommitStatus(t.Context(), job)
+	require.NoError(t, err)
+
+	// Should have 1 commit status now with one createCommitStatus call
+	assert.Equal(t, 1, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+	status := unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{}, targetCommitStatusFilter)
+	assert.EqualValues(t, 4, status.RepoID)
+	assert.Equal(t, structs.CommitStatusState("pending"), status.State)
+	assert.Equal(t, "c7cd3cd144e6d23c9d6f3d07e52b2c1a956e0338", status.SHA)
+	assert.Equal(t, "/user5/repo4/actions/runs/200/jobs/0", status.TargetURL)
+	assert.Equal(t, "Blocked by required conditions", status.Description)
+	assert.Equal(t, "39c46bc9f0f68e0dcfbb59118e12778fa095b066", status.ContextHash)
+	assert.Equal(t, "/ job_2 (push)", status.Context) // This test is intended to cover the runName = "" case, which trims whitespace in this context string -- don't change it in the future
+
+	// No status change, but createCommitStatus invoked again
+	err = createCommitStatus(t.Context(), job)
+	require.NoError(t, err)
+
+	// Should have just the same 1 commit status since the context & state was unchanged.
+	assert.Equal(t, 1, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+
+	// Update job status & create new commit status
+	job.Status = actions_model.StatusSuccess
+	err = createCommitStatus(t.Context(), job)
+	require.NoError(t, err)
+
+	// Should have 2 commit statuses now
+	assert.Equal(t, 2, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
 }
