@@ -225,7 +225,7 @@ export default {
 .auto-merge-small .auto-merge-tip {
   display: none;
   left: 38px;
-  top: -1px;
+  top: -0.5px;
   bottom: -1px;
   position: absolute;
   align-items: center;
@@ -234,6 +234,10 @@ export default {
   border: 1px solid var(--color-info-border);
   border-left: none;
   padding-right: 1rem;
+}
+
+.menu .item:has(.auto-merge-small:hover) {
+  overflow: unset;
 }
 
 .auto-merge-small:hover {
