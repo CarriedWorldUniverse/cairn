@@ -2,7 +2,6 @@ import fastGlob from 'fast-glob';
 import wrapAnsi from 'wrap-ansi';
 import {init as licenseChecker} from 'license-checker-rseidelsohn';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import {VueLoaderPlugin} from 'vue-loader';
 import EsBuildLoader from 'esbuild-loader';
 import {parse} from 'node:path';
@@ -144,9 +143,8 @@ export default {
   output: {
     path: fileURLToPath(new URL('public/assets', import.meta.url)),
     filename: () => 'js/[name].js',
-    chunkFilename: ({chunk}) => {
-      const language = (/monaco.*languages?_.+?_(.+?)_/.exec(chunk.id) || [])[1];
-      return `js/${language ? `monaco-language-${language.toLowerCase()}` : `[name]`}.[contenthash:8].js`;
+    chunkFilename: () => {
+      return `js/[name].[contenthash:8].js`;
     },
   },
   optimization: {
@@ -254,9 +252,6 @@ export default {
       filename: '[file].[contenthash:8].map',
       ...(sourceMaps === 'reduced' && {include: /^js\/index\.js$/}),
     }),
-    new MonacoWebpackPlugin({
-      filename: 'js/monaco-[name].[contenthash:8].worker.js',
-    }),
   ],
   performance: {
     hints: false,
@@ -283,7 +278,6 @@ export default {
     colors: true,
     entrypoints: false,
     excludeAssets: [
-      /^js\/monaco-language-.+\.js$/,
       !isProduction && /^licenses.txt$/,
     ].filter(Boolean),
     groupAssetsByChunk: false,

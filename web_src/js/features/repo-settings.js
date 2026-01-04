@@ -1,8 +1,8 @@
 import $ from 'jquery';
 import {minimatch} from 'minimatch';
-import {createMonaco} from './codeeditor.js';
 import {onInputDebounce, toggleElem} from '../utils/dom.js';
 import {POST} from '../modules/fetch.js';
+import {createCodemirror} from './codemirror.ts';
 
 const {appSubUrl} = window.config;
 
@@ -71,7 +71,7 @@ export function initRepoSettingSearchTeamBox() {
 export function initRepoSettingGitHook() {
   if (!$('.edit.githook').length) return;
   const filename = document.querySelector('.hook-filename').textContent;
-  const _promise = createMonaco($('#content')[0], filename, {language: 'shell'});
+  const _promise = createCodemirror($('#content')[0], filename, {language: 'shell'});
 }
 
 export function initRepoSettingBranches() {

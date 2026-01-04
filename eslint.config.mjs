@@ -528,11 +528,7 @@ export default tseslint.config(
       'no-this-before-super': [2],
       'no-throw-literal': [2],
       'no-undef-init': [2],
-
-      'no-undef': [2, {
-        typeof: true,
-      }],
-
+      'no-undef': [0],
       'no-undefined': [0],
       'no-underscore-dangle': [0],
       'no-unexpected-multiline': [2],

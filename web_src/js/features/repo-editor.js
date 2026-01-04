@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import {htmlEscape} from 'escape-goat';
-import {createCodeEditor} from './codeeditor.js';
+import {createCodeEditor} from './codeeditor.ts';
 import {hideElem, showElem, createElementFromHTML} from '../utils/dom.js';
 import {initMarkupContent} from '../markup/content.js';
 import {attachRefIssueContextPopup} from './contextpopup.js';
@@ -9,7 +9,7 @@ import {initTab} from '../modules/tab.ts';
 import {showModal} from '../modules/modal.ts';
 
 function initEditPreviewTab($form) {
-  const $tabMenu = $form.find('.tabular.menu');
+  const $tabMenu = $form.find('.switch');
   initTab($tabMenu[0]);
   const $previewTab = $tabMenu.find(
     `.item[data-tab="${$tabMenu.data('preview')}"]`,

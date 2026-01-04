@@ -14,27 +14,12 @@ function shouldIgnoreError(err) {
   // If the error stack trace does not include the base URL of our script assets, it likely came
   // from a browser extension or inline script. Ignore these errors.
   if (!err.stack?.includes(assetBaseUrl)) return true;
-  // Ignore some known internal errors that we are unable to currently fix (eg via Monaco).
-  const ignorePatterns = [
-    '/assets/js/monaco.', // https://codeberg.org/forgejo/forgejo/issues/3638 , https://github.com/go-gitea/gitea/issues/30861 , https://github.com/microsoft/monaco-editor/issues/4496
-  ];
-  for (const pattern of ignorePatterns) {
-    if (err.stack?.includes(pattern)) return true;
-  }
   return false;
 }
-
-const filteredErrors = new Set([
-  'getModifierState is not a function', // https://github.com/microsoft/monaco-editor/issues/4325
-]);
 
 export function showGlobalErrorMessage(msg) {
   const pageContent = document.querySelector('.page-content');
   if (!pageContent) return;
-
-  for (const filteredError of filteredErrors) {
-    if (msg.includes(filteredError)) return;
-  }
 
   // compact the message to a data attribute to avoid too many duplicated messages
   const msgCompact = msg.replace(/\W/g, '').trim();
