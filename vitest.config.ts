@@ -1,7 +1,6 @@
 import {defineConfig} from 'vitest/config';
 import vuePlugin from '@vitejs/plugin-vue';
 import {stringPlugin} from 'vite-string-plugin';
-import {resolve} from 'node:path';
 
 export default defineConfig({
   test: {
@@ -15,9 +14,6 @@ export default defineConfig({
     globals: true,
     watch: false,
     mockReset: true,
-    alias: {
-      'monaco-editor': resolve(import.meta.dirname, '/node_modules/monaco-editor/esm/vs/editor/editor.api'),
-    },
   },
   plugins: [
     stringPlugin(),

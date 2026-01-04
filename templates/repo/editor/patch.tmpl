@@ -18,15 +18,18 @@
 				</div>
 			</div>
 			<div class="field">
-				<div class="ui top attached tabular menu" data-write="write">
-					<a class="active item" data-tab="write">{{svg "octicon-code" 16 "tw-mr-1"}}{{ctx.Locale.Tr "repo.editor.new_patch"}}</a>
+				<div id="editor-bar">
+					<div class="switch" data-write="write">
+						<button type="button" class="active item" data-tab="write">{{svg "octicon-code" 16 "tw-mr-1"}}{{ctx.Locale.Tr "repo.editor.new_patch"}}</button>
+					</div>
+					<button class="secondary button" id="editor-find" type="button">{{svg "octicon-search"}}<span class="text not-mobile">Search</span></button>
 				</div>
 				<div class="ui bottom attached active tab segment" data-tab="write">
 					<textarea id="edit_area" name="content" class="tw-hidden" data-id="repo-{{.Repository.Name}}-patch"
 						data-context="{{.RepoLink}}"
 						data-line-wrap-extensions="{{.LineWrapExtensions}}">
 {{.FileContent}}</textarea>
-					<div class="editor-loading is-loading"></div>
+					{{template "shared/codemirror_container" .}}
 				</div>
 			</div>
 			{{template "repo/editor/commit_form" .}}

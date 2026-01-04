@@ -138,11 +138,6 @@
       "automerge": true
     },
     {
-      "description": "Hold back on some package updates for a few days",
-      "matchPackageNames": ["monaco-editor"],
-      "minimumReleaseAge": "30 days"
-    },
-    {
       "description": "Disable indirect updates for stable branches",
       "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
       "matchManagers": ["gomod"],

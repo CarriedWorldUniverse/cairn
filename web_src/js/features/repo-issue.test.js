@@ -2,7 +2,6 @@ import {vi} from 'vitest';
 
 import {issueTitleHTML} from './repo-issue.js';
 
-// monaco-editor does not have any exports fields, which trips up vitest
 vi.mock('./comp/ComboMarkdownEditor.js', () => ({}));
 // jQuery is missing
 vi.mock('./common-global.js', () => ({}));
