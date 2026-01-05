@@ -903,15 +903,6 @@ export default {
 
 <style>
 /* some elements are not managed by vue, so we need to use global style */
-.job-status-rotate {
-  animation: job-status-rotate-keyframes 1s linear infinite;
-}
-
-@keyframes job-status-rotate-keyframes {
-  100% {
-    transform: rotate(-360deg);
-  }
-}
 
 .job-step-section {
   margin: 10px;

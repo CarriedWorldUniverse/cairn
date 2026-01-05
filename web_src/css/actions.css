@@ -94,3 +94,12 @@
     right: 0;
   }
 }
+
+.job-status-rotate {
+  animation: job-status-rotate-keyframes 1s linear infinite;
+}
+@keyframes job-status-rotate-keyframes {
+  100% {
+    transform: rotate(-360deg);
+  }
+}
