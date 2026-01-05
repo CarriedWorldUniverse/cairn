@@ -41,5 +41,6 @@
     "followers.outgoing.list.self.none": "Vi sekvas neniun.",
     "followers.outgoing.list.none": "%s ne plu sekvas vin.",
     "relativetime.future": "estonte",
-    "repo.pulls.already_merged": "La kunfandaĵo malsukcesis: Ĉi tiu tirpeto jam estas kunfandita."
+    "repo.pulls.already_merged": "La kunfandaĵo malsukcesis: Ĉi tiu tirpeto jam estas kunfandita.",
+    "home.welcome.activity_hint": "Nenio estas en via fluo ankoraŭ. Viaj agoj kaj aktiveco el deponejoj, kiujn vi rigardas, aperos ĉi tie."
 }

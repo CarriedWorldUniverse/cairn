@@ -17,5 +17,6 @@
     "relativetime.1month": "oxirgi oy",
     "relativetime.2months": "ikki oy oldin",
     "relativetime.1year": "oxirgi yil",
-    "relativetime.2years": "ikki yil oldin"
+    "relativetime.2years": "ikki yil oldin",
+    "repo.settings.push_mirror.branch_filter.label": "Branch filteri (ixtiyoriy)"
 }

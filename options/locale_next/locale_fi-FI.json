@@ -141,5 +141,7 @@
     "user.ghost.tooltip": "Tämä käyttäjä on poistettu tai häntä ei voida yhdistää.",
     "og.repo.summary_card.alt_description": "Yhteenvetokortti tietovarastosta %[1]s, kuvattu seuraavasti: %[2]s",
     "migrate.pagure.incorrect_url": "Virheellinen lähdetietovaraston URL-osoite on syötetty",
-    "actions.runs.viewing_out_of_date_run": "Katselet tämän työn vanhentunutta suorituskertaa, joka suoritettiin %[1]s."
+    "actions.runs.viewing_out_of_date_run": "Katselet tämän työn vanhentunutta suorituskertaa, joka suoritettiin %[1]s.",
+    "admin.moderation.moderation_reports": "Moderaatioraportit",
+    "migrate.pagure.private_issues.summary": "Yksityiset ongelmat (valinnainen)"
 }
