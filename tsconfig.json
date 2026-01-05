@@ -25,6 +25,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
-    "exactOptionalPropertyTypes": false,
+    "exactOptionalPropertyTypes": false
   }
 }

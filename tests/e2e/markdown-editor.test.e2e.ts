@@ -23,16 +23,15 @@ test('Markdown image preview behaviour', async ({page}) => {
   // Click 'Edit file' tab
   await page.locator('[data-tooltip-content="Edit file"]').click();
 
-  // This yields the monaco editor
-  const editor = page.getByRole('presentation').nth(0);
-  await editor.click();
+  // This yields the codemirror editor
+  await page.locator('.cm-content').click();
   // Clear all the content
   await page.keyboard.press('ControlOrMeta+KeyA');
   // Add the image
   await page.keyboard.type('![Logo of Forgejo](./assets/logo.svg "Logo of Forgejo")');
 
   // Click 'Preview' tab
-  await page.locator('a[data-tab="preview"]').click();
+  await page.locator('button[data-tab="preview"]').click();
 
   // Check for the image preview via the expected attribute
   const preview = page.locator('div[data-tab="preview"] p[dir="auto"] a');

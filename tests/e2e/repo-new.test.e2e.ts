@@ -81,7 +81,7 @@ test('New repo: initialize later', async ({page}) => {
   // Otherwise, filling the filename might not populate the tree_path form field or preview tab
   // The editor has race conditions, likely related to https://codeberg.org/forgejo/forgejo/issues/3371
   await expect(page.locator('.is-loading')).toBeHidden();
-  await page.locator('.view-lines').click();
+  await page.locator('.cm-content').click();
   await page.keyboard.type('# Heading\n\nHello Forgejo!');
   await page.getByPlaceholder('Name your file…').fill('README.md');
   await expect(page.getByText('Preview')).toBeVisible();
