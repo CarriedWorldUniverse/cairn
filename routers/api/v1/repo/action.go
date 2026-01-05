@@ -574,6 +574,43 @@ func (Action) GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, 0, ctx.Repo.Repository.ID, ctx.ParamsInt64("runner_id"))
 }
 
+// RegisterRunner registers a new repository-level runner
+func (Action) RegisterRunner(ctx *context.APIContext) {
+	// swagger:operation POST /repos/{owner}/{repo}/actions/runners repository registerRepoRunner
+	// ---
+	// summary: Register a new repository-level runner
+	// consumes:
+	// - application/json
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/RegisterRunnerOptions"
+	// responses:
+	//   "201":
+	//     "$ref": "#/responses/RegisterRunnerResponse"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "401":
+	//     "$ref": "#/responses/unauthorized"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	shared.RegisterRunner(ctx, 0, ctx.Repo.Repository.ID)
+}
+
 // DeleteRunner removes a particular runner that belongs to a repository
 func (Action) DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /repos/{owner}/{repo}/actions/runners/{runner_id} repository deleteRepoRunner

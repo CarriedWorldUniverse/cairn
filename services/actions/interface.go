@@ -31,6 +31,8 @@ type API interface {
 	ListRunners(*context.APIContext)
 	// GetRunner get a runner
 	GetRunner(*context.APIContext)
+	// RegisterRunner registers a new runner
+	RegisterRunner(*context.APIContext)
 	// DeleteRunner delete runner
 	DeleteRunner(*context.APIContext)
 }

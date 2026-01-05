@@ -16,6 +16,7 @@ import (
 	"forgejo.org/routers/api/v1/shared"
 	"forgejo.org/tests"
 
+	gouuid "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,7 +112,7 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadOrganization)
 	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteOrganization)
 
-	t.Run("GetRunners", func(t *testing.T) {
+	t.Run("Get runners", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners")
 		request.AddTokenAuth(readToken)
 		response := MakeRequest(t, request, http.StatusOK)
@@ -147,7 +148,7 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree}, runners)
 	})
 
-	t.Run("GetRunnersPaginated", func(t *testing.T) {
+	t.Run("Get runners paginated", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners?page=1&limit=1")
 		request.AddTokenAuth(readToken)
 		response := MakeRequest(t, request, http.StatusOK)
@@ -160,7 +161,7 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		assert.Len(t, runners, 1)
 	})
 
-	t.Run("GetRunner", func(t *testing.T) {
+	t.Run("Get runner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners/655691")
 		request.AddTokenAuth(readToken)
 		response := MakeRequest(t, request, http.StatusOK)
@@ -183,7 +184,7 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		assert.Equal(t, runnerOne, runner)
 	})
 
-	t.Run("DeleteRunner", func(t *testing.T) {
+	t.Run("Delete runner", func(t *testing.T) {
 		url := "/api/v1/orgs/org3/actions/runners/655691"
 
 		request := NewRequest(t, "GET", url)
@@ -197,5 +198,74 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		request = NewRequest(t, "GET", url)
 		request.AddTokenAuth(readToken)
 		MakeRequest(t, request, http.StatusNotFound)
+	})
+
+	t.Run("Register runner", func(t *testing.T) {
+		options := api.RegisterRunnerOptions{Name: "api-runner", Description: "Some description"}
+
+		request := NewRequestWithJSON(t, "POST", "/api/v1/orgs/org3/actions/runners", options)
+		request.AddTokenAuth(writeToken)
+		response := MakeRequest(t, request, http.StatusCreated)
+
+		var registerRunnerResponse *api.RegisterRunnerResponse
+		DecodeJSON(t, response, &registerRunnerResponse)
+
+		assert.NotNil(t, registerRunnerResponse)
+		assert.Positive(t, registerRunnerResponse.ID)
+		assert.Equal(t, gouuid.Version(4), gouuid.MustParse(registerRunnerResponse.UUID).Version())
+		assert.Regexp(t, "(?i)^[0-9a-f]{40}$", registerRunnerResponse.Token)
+
+		registeredRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
+		assert.Equal(t, registerRunnerResponse.ID, registeredRunner.ID)
+		assert.Equal(t, registerRunnerResponse.UUID, registeredRunner.UUID)
+		assert.Equal(t, int64(3), registeredRunner.OwnerID)
+		assert.Zero(t, registeredRunner.RepoID)
+		assert.Equal(t, "api-runner", registeredRunner.Name)
+		assert.Equal(t, "Some description", registeredRunner.Description)
+		assert.Empty(t, registeredRunner.AgentLabels)
+		assert.Empty(t, registeredRunner.Version)
+		assert.NotEmpty(t, registeredRunner.TokenHash)
+		assert.NotEmpty(t, registeredRunner.TokenSalt)
+	})
+
+	t.Run("Runner registration does not update runner with identical name", func(t *testing.T) {
+		options := api.RegisterRunnerOptions{Name: "api-runner"}
+
+		request := NewRequestWithJSON(t, "POST", "/api/v1/orgs/org3/actions/runners", options)
+		request.AddTokenAuth(writeToken)
+		response := MakeRequest(t, request, http.StatusCreated)
+
+		var registerRunnerResponse *api.RegisterRunnerResponse
+		DecodeJSON(t, response, &registerRunnerResponse)
+
+		secondRequest := NewRequestWithJSON(t, "POST", "/api/v1/orgs/org3/actions/runners", options)
+		secondRequest.AddTokenAuth(writeToken)
+		secondResponse := MakeRequest(t, secondRequest, http.StatusCreated)
+
+		var secondRegisterRunnerResponse *api.RegisterRunnerResponse
+		DecodeJSON(t, secondResponse, &secondRegisterRunnerResponse)
+
+		firstRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
+		secondRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: secondRegisterRunnerResponse.UUID})
+
+		assert.NotEqual(t, firstRunner.ID, secondRunner.ID)
+		assert.NotEqual(t, firstRunner.UUID, secondRunner.UUID)
+	})
+
+	t.Run("Runner registration requires write token for organization scope", func(t *testing.T) {
+		options := api.RegisterRunnerOptions{Name: "api-runner"}
+
+		request := NewRequestWithJSON(t, "POST", "/api/v1/orgs/org3/actions/runners", options)
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusForbidden)
+
+		type errorResponse struct {
+			Message string `json:"message"`
+		}
+
+		var errorMessage *errorResponse
+		DecodeJSON(t, response, &errorMessage)
+
+		assert.Equal(t, "token does not have at least one of required scope(s): [write:organization]", errorMessage.Message)
 	})
 }

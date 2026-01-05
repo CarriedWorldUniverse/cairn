@@ -139,6 +139,33 @@ func GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, 0, 0, ctx.ParamsInt64("runner_id"))
 }
 
+// RegisterRunner registers a new global runner
+func RegisterRunner(ctx *context.APIContext) {
+	// swagger:operation POST /admin/actions/runners admin registerAdminRunner
+	// ---
+	// summary: Register a new global runner
+	// consumes:
+	// - application/json
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/RegisterRunnerOptions"
+	// responses:
+	//   "201":
+	//     "$ref": "#/responses/RegisterRunnerResponse"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "401":
+	//     "$ref": "#/responses/unauthorized"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	shared.RegisterRunner(ctx, 0, 0)
+}
+
 // DeleteRunner removes a particular runner, no matter whether it is a global runner or scoped to an organization, user, or repository
 func DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /admin/actions/runners/{runner_id} admin deleteAdminRunner

@@ -102,6 +102,33 @@ func GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, ctx.Doer.ID, 0, ctx.ParamsInt64("runner_id"))
 }
 
+// RegisterRunner registers a new user-level runner
+func RegisterRunner(ctx *context.APIContext) {
+	// swagger:operation POST /user/actions/runners user registerUserRunner
+	// ---
+	// summary: Register a new user-level runner
+	// consumes:
+	// - application/json
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/RegisterRunnerOptions"
+	// responses:
+	//   "201":
+	//     "$ref": "#/responses/RegisterRunnerResponse"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "401":
+	//     "$ref": "#/responses/unauthorized"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	shared.RegisterRunner(ctx, ctx.Doer.ID, 0)
+}
+
 // DeleteRunner deletes a particular user-level runner
 func DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /user/actions/runners/{runner_id} user deleteUserRunner
