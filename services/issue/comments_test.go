@@ -18,8 +18,6 @@ import (
 	issue_service "forgejo.org/services/issue"
 	"forgejo.org/tests"
 
-	_ "forgejo.org/services/webhook"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

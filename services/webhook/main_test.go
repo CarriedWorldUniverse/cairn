@@ -9,10 +9,6 @@ import (
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/hostmatcher"
 	"forgejo.org/modules/setting"
-
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/forgefed"
 )
 
 func TestMain(m *testing.M) {

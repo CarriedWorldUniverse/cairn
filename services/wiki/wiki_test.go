@@ -14,7 +14,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 
-	_ "forgejo.org/models/actions"
+	_ "forgejo.org/modules/testimport"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

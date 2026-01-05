@@ -11,8 +11,6 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/activitypub"
 
-	_ "forgejo.org/models" // https://forum.gitea.com/t/testfixtures-could-not-clean-table-access-no-such-table-access/4137/4
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
