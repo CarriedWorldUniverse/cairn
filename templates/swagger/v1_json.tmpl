@@ -346,6 +346,42 @@
             "$ref": "#/responses/notFound"
           }
         }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Register a new global runner",
+        "operationId": "registerAdminRunner",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RegisterRunnerOptions"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/RegisterRunnerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "401": {
+            "$ref": "#/responses/unauthorized"
+          },
+          "404": {
+            "$ref": "#/responses/notFound"
+          }
+        }
       }
     },
     "/admin/actions/runners/jobs": {
@@ -2710,6 +2746,49 @@
           },
           "400": {
             "$ref": "#/responses/error"
+          },
+          "404": {
+            "$ref": "#/responses/notFound"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "organization"
+        ],
+        "summary": "Register a new organization-level runner",
+        "operationId": "registerOrgRunner",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "name of the organization",
+            "name": "org",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RegisterRunnerOptions"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/RegisterRunnerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "401": {
+            "$ref": "#/responses/unauthorized"
           },
           "404": {
             "$ref": "#/responses/notFound"
@@ -5403,6 +5482,56 @@
           },
           "400": {
             "$ref": "#/responses/error"
+          },
+          "404": {
+            "$ref": "#/responses/notFound"
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Register a new repository-level runner",
+        "operationId": "registerRepoRunner",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "owner of the repo",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "name of the repo",
+            "name": "repo",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RegisterRunnerOptions"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/RegisterRunnerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "401": {
+            "$ref": "#/responses/unauthorized"
           },
           "404": {
             "$ref": "#/responses/notFound"
@@ -18852,6 +18981,42 @@
             "$ref": "#/responses/notFound"
           }
         }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "user"
+        ],
+        "summary": "Register a new user-level runner",
+        "operationId": "registerUserRunner",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RegisterRunnerOptions"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/RegisterRunnerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "401": {
+            "$ref": "#/responses/unauthorized"
+          },
+          "404": {
+            "$ref": "#/responses/notFound"
+          }
+        }
       }
     },
     "/user/actions/runners/jobs": {
@@ -28320,6 +28485,46 @@
       },
       "x-go-package": "forgejo.org/modules/structs"
     },
+    "RegisterRunnerOptions": {
+      "type": "object",
+      "title": "RegisterRunnerOptions declares the accepted options for registering runners.",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "description": {
+          "description": "Description of the runner to register.",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "description": "Name of the runner to register. The name of the runner does not have to be unique.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "forgejo.org/modules/structs"
+    },
+    "RegisterRunnerResponse": {
+      "type": "object",
+      "title": "RegisterRunnerResponse contains the details of the just registered runner.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ID"
+        },
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        },
+        "uuid": {
+          "type": "string",
+          "x-go-name": "UUID"
+        }
+      },
+      "x-go-package": "forgejo.org/modules/structs"
+    },
     "RegistrationToken": {
       "description": "RegistrationToken is a string used to register a runner with a server",
       "type": "object",
@@ -30715,6 +30920,12 @@
         }
       }
     },
+    "RegisterRunnerResponse": {
+      "description": "RegisterRunnerResponse contains the details of the just registered runner.",
+      "schema": {
+        "$ref": "#/definitions/RegisterRunnerResponse"
+      }
+    },
     "RegistrationToken": {
       "description": "RegistrationToken is a string used to register a runner with a server",
       "schema": {
@@ -31039,7 +31250,7 @@
     "parameterBodies": {
       "description": "parameterBodies",
       "schema": {
-        "$ref": "#/definitions/NoteOptions"
+        "$ref": "#/definitions/RegisterRunnerOptions"
       }
     },
     "quotaExceeded": {

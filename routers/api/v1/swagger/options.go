@@ -239,4 +239,7 @@ type swaggerParameterBodies struct {
 
 	// in:body
 	NoteOptions api.NoteOptions
+
+	// in:body
+	RegisterRunnerOptions api.RegisterRunnerOptions
 }

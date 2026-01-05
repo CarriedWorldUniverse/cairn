@@ -76,3 +76,10 @@ type swaggerActionRunnerListResponse struct {
 	// Links to other pages, if any
 	Link string `json:"Link"`
 }
+
+// RegisterRunnerResponse contains the details of the just registered runner.
+// swagger:response RegisterRunnerResponse
+type swaggerRegisterRunnerResponse struct {
+	// in: body
+	Body api.RegisterRunnerResponse `json:"body"`
+}

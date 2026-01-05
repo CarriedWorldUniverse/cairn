@@ -856,7 +856,9 @@ func Routes() *web.Route {
 			})
 
 			m.Group("/runners", func() {
-				m.Get("", reqToken(), reqChecker, act.ListRunners)
+				m.Combo("").
+					Get(reqToken(), reqChecker, act.ListRunners).
+					Post(reqToken(), reqChecker, bind(api.RegisterRunnerOptions{}), act.RegisterRunner)
 				m.Get("/registration-token", reqToken(), reqChecker, act.GetRegistrationToken)
 				m.Get("/{runner_id}", reqToken(), reqChecker, act.GetRunner)
 				m.Delete("/{runner_id}", reqToken(), reqChecker, act.DeleteRunner)
@@ -1019,7 +1021,9 @@ func Routes() *web.Route {
 				})
 
 				m.Group("/runners", func() {
-					m.Get("", reqToken(), user.ListRunners)
+					m.Combo("").
+						Get(reqToken(), user.ListRunners).
+						Post(bind(api.RegisterRunnerOptions{}), user.RegisterRunner)
 					m.Get("/registration-token", reqToken(), user.GetRegistrationToken)
 					m.Get("/{runner_id}", reqToken(), user.GetRunner)
 					m.Delete("/{runner_id}", reqToken(), user.DeleteRunner)
@@ -1701,7 +1705,9 @@ func Routes() *web.Route {
 					Delete(admin.DeleteHook)
 			})
 			m.Group("/actions/runners", func() {
-				m.Get("", admin.ListRunners)
+				m.Combo("").
+					Get(admin.ListRunners).
+					Post(bind(api.RegisterRunnerOptions{}), admin.RegisterRunner)
 				m.Get("/registration-token", admin.GetRunnerRegistrationToken)
 				m.Get("/{runner_id}", admin.GetRunner)
 				m.Delete("/{runner_id}", admin.DeleteRunner)

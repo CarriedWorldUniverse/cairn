@@ -324,6 +324,38 @@ func (Action) GetRunner(ctx *context.APIContext) {
 	shared.GetRunner(ctx, ctx.Org.Organization.ID, 0, ctx.ParamsInt64("runner_id"))
 }
 
+// RegisterRunner registers a new organization-level runner
+func (Action) RegisterRunner(ctx *context.APIContext) {
+	// swagger:operation POST /orgs/{org}/actions/runners organization registerOrgRunner
+	// ---
+	// summary: Register a new organization-level runner
+	// consumes:
+	// - application/json
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: org
+	//   in: path
+	//   description: name of the organization
+	//   type: string
+	//   required: true
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/RegisterRunnerOptions"
+	// responses:
+	//   "201":
+	//     "$ref": "#/responses/RegisterRunnerResponse"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "401":
+	//     "$ref": "#/responses/unauthorized"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	shared.RegisterRunner(ctx, ctx.Org.Organization.ID, 0)
+}
+
 // DeleteRunner removes a particular runner that belongs to the organization
 func (Action) DeleteRunner(ctx *context.APIContext) {
 	// swagger:operation DELETE /orgs/{org}/actions/runners/{runner_id} organization deleteOrgRunner
