@@ -66,6 +66,7 @@ func TestCreateCommitStatus_AvoidsDuplicates(t *testing.T) {
 	assert.Equal(t, "Blocked by required conditions", status.Description)
 	assert.Equal(t, "39c46bc9f0f68e0dcfbb59118e12778fa095b066", status.ContextHash)
 	assert.Equal(t, "/ job_2 (push)", status.Context) // This test is intended to cover the runName = "" case, which trims whitespace in this context string -- don't change it in the future
+	assert.EqualValues(t, 1, status.Index)
 
 	// No status change, but createCommitStatus invoked again
 	err = createCommitStatus(t.Context(), job)
@@ -74,11 +75,30 @@ func TestCreateCommitStatus_AvoidsDuplicates(t *testing.T) {
 	// Should have just the same 1 commit status since the context & state was unchanged.
 	assert.Equal(t, 1, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
 
+	// Change status, but still pending -- should add new commit status just for the Description change
+	job.Status = actions_model.StatusWaiting // Blocked -> Waiting
+	err = createCommitStatus(t.Context(), job)
+	require.NoError(t, err)
+
+	// New commit status added
+	assert.Equal(t, 2, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+	status = unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{Index: 2}, targetCommitStatusFilter)
+	assert.Equal(t, structs.CommitStatusState("pending"), status.State)
+	assert.Equal(t, "Waiting to run", status.Description)
+
+	// Invoke createCommitStatus again, check no new record created again
+	err = createCommitStatus(t.Context(), job)
+	require.NoError(t, err)
+	assert.Equal(t, 2, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+
 	// Update job status & create new commit status
 	job.Status = actions_model.StatusSuccess
 	err = createCommitStatus(t.Context(), job)
 	require.NoError(t, err)
 
-	// Should have 2 commit statuses now
-	assert.Equal(t, 2, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+	// New commit status added w/ updated state & description
+	assert.Equal(t, 3, unittest.GetCount(t, &git_model.CommitStatus{}, targetCommitStatusFilter))
+	status = unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{Index: 3}, targetCommitStatusFilter)
+	assert.Equal(t, structs.CommitStatusState("success"), status.State)
+	assert.Equal(t, "Successful in 1m38s", status.Description)
 }
