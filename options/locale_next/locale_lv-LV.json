@@ -142,7 +142,7 @@
     "migrate.codebase.description": "Pārcelt datus no codebasehq.com.",
     "migrate.forgejo.description": "Pārcelt datus no codeberg.org vai citiem Fogejo serveriem.",
     "repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts.",
-    "admin.config.security": "Drošības kondigurācija",
+    "admin.config.security": "Drošības konfigurācija",
     "settings.twofa_reenroll.description": "Atkārtoti ieslēgt savu divpakāpju autentificēšanos",
     "error.must_enable_2fa": "Šis Forgejo serveris pieprasa lietotājiem iespējot divpakāpju autentificēšanos, pirms viņi var piekļūt savam kontam. Iespējo to: %s",
     "admin.config.global_2fa_requirement.title": "Visaptveroša divpakāpju prasība",
