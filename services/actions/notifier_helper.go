@@ -187,8 +187,8 @@ func notify(ctx context.Context, input *notifyInput) error {
 	return handleWorkflows(ctx, detectedWorkflows, commit, input, ref.String())
 }
 
-func getGitRepoAndCommit(_ context.Context, input *notifyInput) (*git.Repository, *git.Commit, git.RefName, error) {
-	gitRepo, err := gitrepo.OpenRepository(context.Background(), input.Repo)
+func getGitRepoAndCommit(ctx context.Context, input *notifyInput) (*git.Repository, *git.Commit, git.RefName, error) {
+	gitRepo, err := gitrepo.OpenRepository(ctx, input.Repo)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("git.OpenRepository: %w", err)
 	}
@@ -598,7 +598,7 @@ func DetectAndHandleSchedules(ctx context.Context, repo *repo_model.Repository) 
 		return nil
 	}
 
-	gitRepo, err := gitrepo.OpenRepository(context.Background(), repo)
+	gitRepo, err := gitrepo.OpenRepository(ctx, repo)
 	if err != nil {
 		return fmt.Errorf("git.OpenRepository: %w", err)
 	}
