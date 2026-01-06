@@ -52,3 +52,9 @@ func MockProtect[T any](p *T) (reset func()) {
 func SleepTillNextSecond() {
 	time.Sleep(time.Second - time.Since(time.Now().Truncate(time.Second)))
 }
+
+// When this is called, sleep until the truncated unix time to a minute was
+// increased by one.
+func SleepTillNextMinute() {
+	time.Sleep(time.Minute - time.Since(time.Now().Truncate(time.Minute)))
+}
