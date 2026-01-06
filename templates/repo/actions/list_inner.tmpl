@@ -1,12 +1,16 @@
 {{if .HasWorkflowsOrRuns}}
 <div class="ui stackable grid">
 	<div class="four wide column">
-		<div class="ui fluid vertical menu">
+		<div class="ui fluid vertical menu actions-menu">
 			<a class="item{{if not $.CurWorkflow}} active{{end}}" href="?actor={{$.CurActor}}&status={{$.CurStatus}}">{{ctx.Locale.Tr "actions.runs.all_workflows"}}</a>
 			{{range .workflows}}
-				<a class="item{{if eq .Entry.Name $.CurWorkflow}} active{{end}}" href="?workflow={{.Entry.Name}}&actor={{$.CurActor}}&status={{$.CurStatus}}">{{.Entry.Name}}
+				<a class="item{{if eq .Entry.Name $.CurWorkflow}} active{{end}}" href="?workflow={{.Entry.Name}}&actor={{$.CurActor}}&status={{$.CurStatus}}">
+					<span class="content" data-tooltip-content="{{.Entry.Name}}">
+						{{.Entry.Name}}
+					</span>
+
 					{{if .ErrMsg}}
-						<span data-tooltip-content="{{.ErrMsg}}">
+						<span class="error" data-tooltip-content="{{.ErrMsg}}">
 							{{svg "octicon-alert" 16 "text red"}}
 						</span>
 					{{end}}
