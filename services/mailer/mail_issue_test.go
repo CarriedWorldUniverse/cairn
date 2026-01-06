@@ -18,6 +18,7 @@ import (
 )
 
 func TestCloseIssue(t *testing.T) {
+	defer unittest.OverrideFixtures("services/mailer/fixtures/TestCloseIssue")()
 	defer require.NoError(t, unittest.PrepareTestDatabase())
 
 	called := false

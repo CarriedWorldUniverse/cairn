@@ -1654,8 +1654,14 @@ func ViewIssue(ctx *context.Context) {
 		ctx.ServerError("LoadAttachmentsByIssue", err)
 		return
 	}
+
 	if err := issue.Comments.LoadPosters(ctx); err != nil {
 		ctx.ServerError("LoadPosters", err)
+		return
+	}
+
+	if err := issue.Comments.LoadReviews(ctx); err != nil {
+		ctx.ServerError("LoadReviews", err)
 		return
 	}
 
@@ -1664,7 +1670,11 @@ func ViewIssue(ctx *context.Context) {
 		metas := ctx.Repo.Repository.ComposeMetas(ctx)
 		metas["scope"] = fmt.Sprintf("comment-%d", commentIdx)
 
-		if comment.Type == issues_model.CommentTypeComment || comment.Type == issues_model.CommentTypeReview {
+		if comment.Review != nil && comment.Review.Type == issues_model.ReviewTypePending {
+			continue
+		}
+
+		if comment.Type == issues_model.CommentTypeComment {
 			comment.RenderedContent, err = markdown.RenderString(&markup.RenderContext{
 				Links: markup.Links{
 					Base: ctx.Repo.RepoLink,

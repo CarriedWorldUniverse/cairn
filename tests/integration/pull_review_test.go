@@ -64,6 +64,20 @@ func TestPullView_ReviewerMissed(t *testing.T) {
 	assert.True(t, test.IsNormalPageCompleted(resp.Body.String()))
 }
 
+func TestPullRequestParticipants(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestPullRequestParticipants")()
+	defer tests.PrepareTestEnv(t)()
+	session := loginUser(t, "user1")
+
+	req := NewRequest(t, "GET", "/user2/repo1/pulls/2")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	assert.Contains(t, resp.Body.String(), "2 participants")
+	assert.Contains(t, resp.Body.String(), `<a href="/user1" data-tooltip-content="user1">`)
+	assert.Contains(t, resp.Body.String(), `<a href="/user2" data-tooltip-content="user2">`)
+	// does not contain user10 which has a pending review for this issue
+	assert.NotContains(t, resp.Body.String(), `<a href="/user10" data-tooltip-content="user10">`)
+}
+
 func loadComment(t *testing.T, commentID string) *issues_model.Comment {
 	t.Helper()
 	id, err := strconv.ParseInt(commentID, 10, 64)

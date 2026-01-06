@@ -591,10 +591,12 @@ func GetParticipantsIDsByIssueID(ctx context.Context, issueID int64) ([]int64, e
 	userIDs := make([]int64, 0, 5)
 	return userIDs, db.GetEngine(ctx).
 		Table("comment").
-		Cols("poster_id").
-		Where("issue_id = ?", issueID).
-		And("type in (?,?,?)", CommentTypeComment, CommentTypeCode, CommentTypeReview).
-		Distinct("poster_id").
+		Cols("`comment`.poster_id").
+		Where("`comment`.issue_id = ?", issueID).
+		And("`comment`.type in (?,?,?)", CommentTypeComment, CommentTypeCode, CommentTypeReview).
+		And("`review`.type is null or `review`.type != ?", ReviewTypePending).
+		Join("LEFT", "`review`", "`review`.id = `comment`.review_id").
+		Distinct("`comment`.poster_id").
 		Find(&userIDs)
 }
 
@@ -623,9 +625,11 @@ func (issue *Issue) GetParticipantIDsByIssue(ctx context.Context) ([]int64, erro
 	if err := db.GetEngine(ctx).Table("comment").Cols("poster_id").
 		Where("`comment`.issue_id = ?", issue.ID).
 		And("`comment`.type in (?,?,?)", CommentTypeComment, CommentTypeCode, CommentTypeReview).
+		And("`review`.type != ?", ReviewTypePending).
 		And("`user`.is_active = ?", true).
 		And("`user`.prohibit_login = ?", false).
 		Join("INNER", "`user`", "`user`.id = `comment`.poster_id").
+		Join("INNER", "`review`", "`review`.reviewer_id = `user`.id").
 		Distinct("poster_id").
 		Find(&userIDs); err != nil {
 		return nil, fmt.Errorf("get poster IDs: %w", err)

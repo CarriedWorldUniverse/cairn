@@ -417,7 +417,7 @@ func (comments CommentList) getReviewIDs() []int64 {
 	})
 }
 
-func (comments CommentList) loadReviews(ctx context.Context) error {
+func (comments CommentList) LoadReviews(ctx context.Context) error {
 	if len(comments) == 0 {
 		return nil
 	}
@@ -476,7 +476,7 @@ func (comments CommentList) LoadAttributes(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err = comments.loadReviews(ctx); err != nil {
+	if err = comments.LoadReviews(ctx); err != nil {
 		return err
 	}
 
