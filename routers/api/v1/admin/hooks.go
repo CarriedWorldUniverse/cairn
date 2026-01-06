@@ -35,7 +35,7 @@ func ListHooks(ctx *context.APIContext) {
 	//   type: integer
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/HookList"
+	//     "$ref": "#/responses/HookListWithoutPagination"
 
 	sysHooks, total, err := webhook.GetSystemWebhooks(ctx, utils.GetListOptions(ctx), false)
 	if err != nil {

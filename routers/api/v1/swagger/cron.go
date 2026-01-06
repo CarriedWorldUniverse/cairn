@@ -12,4 +12,7 @@ import (
 type swaggerResponseCronList struct {
 	// in:body
 	Body []api.Cron `json:"body"`
+
+	// The total number of cron jobs
+	TotalCount int64 `json:"X-Total-Count"`
 }

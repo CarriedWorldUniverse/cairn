@@ -198,7 +198,7 @@ func ListPinnedIssues(ctx *context.APIContext) {
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/IssueList"
+	//     "$ref": "#/responses/IssueListWithoutPagination"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 	issues, err := issues_model.GetPinnedIssues(ctx, ctx.Repo.Repository.ID, false)

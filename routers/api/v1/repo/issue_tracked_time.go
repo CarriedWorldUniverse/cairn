@@ -411,7 +411,7 @@ func ListTrackedTimesByUser(ctx *context.APIContext) {
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/TrackedTimeList"
+	//     "$ref": "#/responses/TrackedTimeListWithoutPagination"
 	//   "400":
 	//     "$ref": "#/responses/error"
 	//   "403":

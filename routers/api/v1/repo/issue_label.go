@@ -44,7 +44,7 @@ func ListIssueLabels(ctx *context.APIContext) {
 	//   required: true
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/LabelList"
+	//     "$ref": "#/responses/LabelListWithoutPagination"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 
@@ -98,7 +98,7 @@ func AddIssueLabels(ctx *context.APIContext) {
 	//     "$ref": "#/definitions/IssueLabelsOption"
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/LabelList"
+	//     "$ref": "#/responses/LabelListWithoutPagination"
 	//   "403":
 	//     "$ref": "#/responses/forbidden"
 	//   "404":
@@ -254,7 +254,7 @@ func ReplaceIssueLabels(ctx *context.APIContext) {
 	//     "$ref": "#/definitions/IssueLabelsOption"
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/LabelList"
+	//     "$ref": "#/responses/LabelListWithoutPagination"
 	//   "403":
 	//     "$ref": "#/responses/forbidden"
 	//   "404":

@@ -68,7 +68,7 @@ func ListMyOrgs(ctx *context.APIContext) {
 	//   type: integer
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/OrganizationList"
+	//     "$ref": "#/responses/OrganizationListWithoutPagination"
 	//   "401":
 	//     "$ref": "#/responses/unauthorized"
 	//   "403":
@@ -102,7 +102,7 @@ func ListUserOrgs(ctx *context.APIContext) {
 	//   type: integer
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/OrganizationList"
+	//     "$ref": "#/responses/OrganizationListWithoutPagination"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 

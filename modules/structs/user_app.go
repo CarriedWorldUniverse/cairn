@@ -19,7 +19,6 @@ type AccessToken struct {
 }
 
 // AccessTokenList represents a list of API access token.
-// swagger:response AccessTokenList
 type AccessTokenList []*AccessToken
 
 // CreateAccessTokenOption options when create access token
