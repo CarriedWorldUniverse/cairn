@@ -743,7 +743,7 @@ func CreateReviewRequests(ctx *context.APIContext) {
 	//     "$ref": "#/definitions/PullReviewRequestOptions"
 	// responses:
 	//   "201":
-	//     "$ref": "#/responses/PullReviewList"
+	//     "$ref": "#/responses/PullReviewListWithoutPagination"
 	//   "422":
 	//     "$ref": "#/responses/validationError"
 	//   "404":

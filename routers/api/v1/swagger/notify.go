@@ -19,6 +19,16 @@ type swaggerNotificationThread struct {
 type swaggerNotificationThreadList struct {
 	// in:body
 	Body []api.NotificationThread `json:"body"`
+
+	// The total number of notification threads
+	TotalCount int64 `json:"X-Total-Count"`
+}
+
+// NotificationThreadListWithoutPagination - Notification threads without pagination headers
+// swagger:response NotificationThreadListWithoutPagination
+type swaggerNotificationThreadListWithoutPagination struct {
+	// in:body
+	Body []api.NotificationThread `json:"body"`
 }
 
 // Number of unread notifications

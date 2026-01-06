@@ -21,6 +21,13 @@ type swaggerResponseIssueList struct {
 	Body []api.Issue `json:"body"`
 }
 
+// IssueListWithoutPagination - Issues without pagination headers (used for pinned issues, dependencies, etc.)
+// swagger:response IssueListWithoutPagination
+type swaggerIssueListWithoutPagination struct {
+	// in:body
+	Body []api.Issue `json:"body"`
+}
+
 // Comment
 // swagger:response Comment
 type swaggerResponseComment struct {
@@ -33,6 +40,16 @@ type swaggerResponseComment struct {
 type swaggerResponseCommentList struct {
 	// in:body
 	Body []api.Comment `json:"body"`
+
+	// The total number of comments
+	TotalCount int64 `json:"X-Total-Count"`
+}
+
+// CommentListWithoutPagination - Comments without pagination headers
+// swagger:response CommentListWithoutPagination
+type swaggerCommentListWithoutPagination struct {
+	// in:body
+	Body []api.Comment `json:"body"`
 }
 
 // TimelineList
@@ -40,6 +57,9 @@ type swaggerResponseCommentList struct {
 type swaggerResponseTimelineList struct {
 	// in:body
 	Body []api.TimelineComment `json:"body"`
+
+	// The total number of timeline comments
+	TotalCount int64 `json:"X-Total-Count"`
 }
 
 // Label
@@ -52,6 +72,16 @@ type swaggerResponseLabel struct {
 // LabelList
 // swagger:response LabelList
 type swaggerResponseLabelList struct {
+	// in:body
+	Body []api.Label `json:"body"`
+
+	// The total number of labels
+	TotalCount int64 `json:"X-Total-Count"`
+}
+
+// LabelListWithoutPagination - Labels for a specific issue (no pagination headers)
+// swagger:response LabelListWithoutPagination
+type swaggerLabelListWithoutPagination struct {
 	// in:body
 	Body []api.Label `json:"body"`
 }
@@ -68,6 +98,9 @@ type swaggerResponseMilestone struct {
 type swaggerResponseMilestoneList struct {
 	// in:body
 	Body []api.Milestone `json:"body"`
+
+	// The total number of milestones
+	TotalCount int64 `json:"X-Total-Count"`
 }
 
 // TrackedTime
@@ -80,6 +113,16 @@ type swaggerResponseTrackedTime struct {
 // TrackedTimeList
 // swagger:response TrackedTimeList
 type swaggerResponseTrackedTimeList struct {
+	// in:body
+	Body []api.TrackedTime `json:"body"`
+
+	// The total number of tracked times
+	TotalCount int64 `json:"X-Total-Count"`
+}
+
+// TrackedTimeListWithoutPagination - Tracked times for a specific user (no pagination headers)
+// swagger:response TrackedTimeListWithoutPagination
+type swaggerTrackedTimeListWithoutPagination struct {
 	// in:body
 	Body []api.TrackedTime `json:"body"`
 }
@@ -110,6 +153,9 @@ type swaggerResponseStopWatch struct {
 type swaggerResponseStopWatchList struct {
 	// in:body
 	Body []api.StopWatch `json:"body"`
+
+	// The total number of stop watches
+	TotalCount int64 `json:"X-Total-Count"`
 }
 
 // Reaction
@@ -122,6 +168,16 @@ type swaggerReaction struct {
 // ReactionList
 // swagger:response ReactionList
 type swaggerReactionList struct {
+	// in:body
+	Body []api.Reaction `json:"body"`
+
+	// The total number of reactions
+	TotalCount int64 `json:"X-Total-Count"`
+}
+
+// ReactionListWithoutPagination - Reactions for a specific comment (no pagination headers)
+// swagger:response ReactionListWithoutPagination
+type swaggerReactionListWithoutPagination struct {
 	// in:body
 	Body []api.Reaction `json:"body"`
 }

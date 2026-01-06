@@ -126,7 +126,7 @@ func ReadNotifications(ctx *context.APIContext) {
 	//   required: false
 	// responses:
 	//   "205":
-	//     "$ref": "#/responses/NotificationThreadList"
+	//     "$ref": "#/responses/NotificationThreadListWithoutPagination"
 
 	lastRead := int64(0)
 	qLastRead := ctx.FormTrim("last_read_at")

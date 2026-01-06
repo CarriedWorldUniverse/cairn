@@ -12,4 +12,7 @@ import (
 type swaggerActivityFeedsList struct {
 	// in:body
 	Body []api.Activity `json:"body"`
+
+	// The total number of activity feeds
+	TotalCount int64 `json:"X-Total-Count"`
 }

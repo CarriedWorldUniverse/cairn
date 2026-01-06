@@ -1567,7 +1567,7 @@ func GetPullRequestFiles(ctx *context.APIContext) {
 	//   type: integer
 	// responses:
 	//   "200":
-	//     "$ref": "#/responses/ChangedFileList"
+	//     "$ref": "#/responses/ChangedFileListWithPagination"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 
