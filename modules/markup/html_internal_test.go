@@ -12,6 +12,7 @@ import (
 
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/util"
 
 	"github.com/stretchr/testify/assert"
@@ -19,9 +20,10 @@ import (
 )
 
 const (
-	TestAppURL  = "http://localhost:3000/"
-	TestOrgRepo = "gogits/gogs"
-	TestRepoURL = TestAppURL + TestOrgRepo + "/"
+	TestAppURL              = "http://localhost:3000/"
+	TestOrgRepo             = "gogits/gogs"
+	TestRepoURLWithoutSlash = TestAppURL + TestOrgRepo
+	TestRepoURL             = TestAppURL + TestOrgRepo + "/"
 )
 
 // externalIssueLink an HTML link to an alphanumeric-style issue
@@ -107,7 +109,7 @@ func TestRender_IssueIndexPattern(t *testing.T) {
 }
 
 func TestRender_IssueIndexPattern2(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	// numeric: render inputs with valid mentions
 	test := func(s, expectedFmt, marker string, indices ...int) {
@@ -174,7 +176,7 @@ func TestRender_IssueIndexPattern2(t *testing.T) {
 }
 
 func TestRender_IssueIndexPattern3(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	// alphanumeric: render inputs without valid mentions
 	test := func(s string) {
@@ -202,7 +204,7 @@ func TestRender_IssueIndexPattern3(t *testing.T) {
 }
 
 func TestRender_IssueIndexPattern4(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	// alphanumeric: render inputs with valid mentions
 	test := func(s, expectedFmt string, names ...string) {
@@ -222,7 +224,7 @@ func TestRender_IssueIndexPattern4(t *testing.T) {
 }
 
 func TestRender_IssueIndexPattern5(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	// regexp: render inputs without valid mentions
 	test := func(s, expectedFmt, pattern string, ids, names []string) {
@@ -265,7 +267,7 @@ func TestRender_IssueIndexPattern5(t *testing.T) {
 }
 
 func TestRender_IssueIndexPattern_Document(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 	metas := map[string]string{
 		"format": "https://someurl.com/{user}/{repo}/{index}",
 		"user":   "someUser",
@@ -301,9 +303,9 @@ func testRenderIssueIndexPattern(t *testing.T, input, expected string, ctx *Rend
 }
 
 func TestRender_AutoLink(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
-	test := func(input, expected, base string) {
+	assert := func(input, expected, base string) {
 		var buffer strings.Builder
 		err := PostProcess(&RenderContext{
 			Ctx: git.DefaultContext,
@@ -330,7 +332,7 @@ func TestRender_AutoLink(t *testing.T) {
 
 	t.Run("Issue", func(t *testing.T) {
 		// render valid issue URLs
-		test(util.URLJoin(TestRepoURL, "issues", "3333"),
+		assert(util.URLJoin(TestRepoURL, "issues", "3333"),
 			numericIssueLink(util.URLJoin(TestRepoURL, "issues"), "ref-issue", 3333, "#"),
 			TestRepoURL)
 	})
@@ -338,81 +340,90 @@ func TestRender_AutoLink(t *testing.T) {
 	t.Run("Commit", func(t *testing.T) {
 		// render valid commit URLs
 		tmp := util.URLJoin(TestRepoURL, "commit", "d8a994ef243349f321568f9e36d5c3f444b99cae")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24</code></a>", TestRepoURL)
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">"+TestOrgRepo+"@d8a994ef24</code></a>", "https://localhost/forgejo/forgejo")
-		test(
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24</code></a>", TestRepoURLWithoutSlash)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">"+TestOrgRepo+"@d8a994ef24</code></a>", "/forgejo/forgejo")
+		assert(
 			tmp+"#diff-2",
 			"<a href=\""+tmp+"#diff-2\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24 (diff-2)</code></a>",
 			TestRepoURL,
 		)
-		test(
+		assert(
 			tmp+"#diff-953bb4f01b7c77fa18f0cd54211255051e647dbc",
 			"<a href=\""+tmp+"#diff-953bb4f01b7c77fa18f0cd54211255051e647dbc\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24 (diff-953bb4f01b)</code></a>",
-			TestRepoURL,
+			TestRepoURLWithoutSlash,
 		)
 
 		// render other commit URLs
 		tmp = "https://external-link.gitea.io/go-gitea/gitea/commit/d8a994ef243349f321568f9e36d5c3f444b99cae#diff-2"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24 (diff-2)</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">go-gitea/gitea@d8a994ef24 (diff-2)</code></a>", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">external-link.gitea.io/go-gitea/gitea@d8a994ef24 (diff-2)</code></a>", TestOrgRepo)
+		defer test.MockVariableValue(&setting.AppURL, "https://external-link.gitea.io/")()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">d8a994ef24 (diff-2)</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
 
-		tmp = "http://localhost:3000/gogits/gogs/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		tmp = TestAppURL + "gogits/gogs/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">localhost:3000/gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/gogits/gogs")
 
 		tmp = "http://localhost:3000/sub/gogits/gogs/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/sub/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/gogs@190d949293</code></a>", "http://localhost:3000/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">localhost:3000/sub/gogits/gogs@190d949293</code></a>", TestRepoURLWithoutSlash)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">localhost:3000/sub/gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL+"sub/")()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/sub/gogits/gogs")
 
 		tmp = "http://localhost:3000/sub1/sub2/sub3/gogits/gogs/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/sub1/sub2/sub3/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/gogs@190d949293</code></a>", "http://localhost:3000/sub1/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL+"sub1/sub2/sub3/")()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">190d949293</code></a>", "http://localhost:3000/sub1/sub2/sub3/gogits/gogs")
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">localhost:3000/sub1/sub2/sub3/gogits/gogs@190d949293</code></a>", "http://localhost:3000/sub1/gogits/gogs")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">localhost:3000/sub1/sub2/sub3/gogits/gogs@190d949293</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
 
 		// if the repository happens to be named like one of the known app routes (e.g. `src`),
 		// we can parse the URL correctly, if there is no sub path
 		tmp = "http://localhost:3000/gogits/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/src@190d949293</code></a>", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/src@190d949293</code></a>", TestRepoURL)
 		tmp = "http://localhost:3000/gogits/src/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/src@190d949293</code></a>", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">gogits/src@190d949293</code></a>", TestRepoURL)
 		// but if there is a sub path, we cannot reliably distinguish the repo name from the app route
 		tmp = "http://localhost:3000/sub/gogits/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">sub/gogits@190d949293</code></a>", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"commit\"><code class=\"nohighlight\">sub/gogits@190d949293</code></a>", TestRepoURL)
 	})
 
 	t.Run("Compare", func(t *testing.T) {
 		tmp := util.URLJoin(TestRepoURL, "compare", "d8a994ef243349f321568f9e36d5c3f444b99cae..190d9492934af498c3f669d6a2431dc5459e5b20")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">d8a994ef24..190d949293</code></a>", TestRepoURL)
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">"+TestOrgRepo+"@d8a994ef24..190d949293</code></a>", "https://localhost/forgejo/forgejo")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">d8a994ef24..190d949293</code></a>", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">"+TestOrgRepo+"@d8a994ef24..190d949293</code></a>", "https://localhost/forgejo/forgejo")
 
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL+"sub/")()
 		tmp = "http://localhost:3000/sub/gogits/gogs/compare/190d9492934af498c3f669d6a2431dc5459e5b20..d8a994ef243349f321568f9e36d5c3f444b99cae"
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "http://localhost:3000/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub/gogits/gogs")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub/gogits/gugs")
+		defer test.MockVariableValue(&setting.AppURL, "https://external-link.gitea.io/")()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">localhost:3000/sub/gogits/gogs@190d949293..d8a994ef24</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
 
+		defer test.MockVariableValue(&setting.AppURL, TestAppURL+"sub1/sub2/sub3/")()
 		tmp = "http://localhost:3000/sub1/sub2/sub3/gogits/gogs/compare/190d9492934af498c3f669d6a2431dc5459e5b20..d8a994ef243349f321568f9e36d5c3f444b99cae"
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub1/sub2/sub3/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub1/gogits/gogs")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">190d949293..d8a994ef24</code></a>", "http://localhost:3000/sub1/sub2/sub3/gogits/gogs")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "/gogits/gous")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">gogits/gogs@190d949293..d8a994ef24</code></a>", "https://external-link.gitea.io/go-gitea/gitea")
 
 		tmp = "https://codeberg.org/forgejo/forgejo/compare/8bbac4c679bea930c74849c355a60ed3c52f8eb5...e2278e5a38187a1dc84dc41d583ec8b44e7257c1?files=options/locale/locale_fi-FI.ini"
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>", "https://codeberg.org/forgejo/forgejo")
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">forgejo/forgejo@8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>", TestRepoURL)
-		test(tmp+".", "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">forgejo/forgejo@8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>.", TestRepoURL)
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">codeberg.org/forgejo/forgejo@8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>", TestRepoURL)
+		assert(tmp+".", "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">codeberg.org/forgejo/forgejo@8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>.", TestRepoURL)
+		defer test.MockVariableValue(&setting.AppURL, "https://codeberg.org/")()
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini)</code></a>", "https://codeberg.org/forgejo/forgejo")
 
 		tmp = "https://codeberg.org/forgejo/forgejo/compare/8bbac4c679bea930c74849c355a60ed3c52f8eb5...e2278e5a38187a1dc84dc41d583ec8b44e7257c1?files=options/locale/locale_fi-FI.ini#L2"
-		test(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini#L2)</code></a>", "https://codeberg.org/forgejo/forgejo")
+		assert(tmp, "<a href=\""+tmp+"\" class=\"compare\"><code class=\"nohighlight\">8bbac4c679...e2278e5a38 (options/locale/locale_fi-FI.ini#L2)</code></a>", "https://codeberg.org/forgejo/forgejo")
 	})
 
 	t.Run("Invalid URLs", func(t *testing.T) {
 		tmp := "https://local host/gogits/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20"
-		test(tmp, "<a href=\"https://local\" class=\"link\">https://local</a> host/gogits/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20", TestRepoURL)
+		assert(tmp, "<a href=\"https://local\" class=\"link\">https://local</a> host/gogits/src/commit/190d9492934af498c3f669d6a2431dc5459e5b20", TestRepoURL)
 	})
 }
 
 func TestRender_IssueIndexPatternRef(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	test := func(input, expected string) {
 		var buf strings.Builder
@@ -428,7 +439,7 @@ func TestRender_IssueIndexPatternRef(t *testing.T) {
 }
 
 func TestRender_FullIssueURLs(t *testing.T) {
-	setting.AppURL = TestAppURL
+	defer test.MockVariableValue(&setting.AppURL, TestAppURL)()
 
 	test := func(input, expected string) {
 		var result strings.Builder
