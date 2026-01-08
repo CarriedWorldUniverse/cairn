@@ -14,6 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"forgejo.org/modules/git"
+	"forgejo.org/modules/json"
+	"forgejo.org/modules/private"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 
@@ -160,6 +163,136 @@ func TestDelayWriter(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, out)
 	})
+}
+
+func TestRunHookPrePostReceive(t *testing.T) {
+	// Setup the environment.
+	defer test.MockVariableValue(&setting.InternalToken, "Random")()
+	defer test.MockVariableValue(&setting.InstallLock, true)()
+	defer test.MockVariableValue(&setting.Git.VerbosePush, true)()
+	t.Setenv("SSH_ORIGINAL_COMMAND", "true")
+
+	tests := []struct {
+		name        string
+		inputLine   string
+		oldCommitID string
+		newCommitID string
+		refFullName string
+	}{
+		{
+			name:        "base case",
+			inputLine:   "00000000000000000000 00000000000000000001 refs/head/main\n",
+			oldCommitID: "00000000000000000000",
+			newCommitID: "00000000000000000001",
+			refFullName: "refs/head/main",
+		},
+		{
+			name:        "nbsp case",
+			inputLine:   "00000000000000000000 00000000000000000001 refs/head/ma\u00A0in\n",
+			oldCommitID: "00000000000000000000",
+			newCommitID: "00000000000000000001",
+			refFullName: "refs/head/ma\u00A0in",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup the Stdin.
+			f, err := os.OpenFile(t.TempDir()+"/stdin", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666)
+			require.NoError(t, err)
+			_, err = f.Write([]byte(tt.inputLine))
+			require.NoError(t, err)
+			_, err = f.Seek(0, 0)
+			require.NoError(t, err)
+			defer test.MockVariableValue(os.Stdin, *f)()
+
+			// Setup the server that processes the hooks.
+			var serverError error
+			var hookOpts *private.HookOptions
+
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					serverError = err
+					w.WriteHeader(500)
+					return
+				}
+
+				err = json.Unmarshal(body, &hookOpts)
+				if err != nil {
+					serverError = err
+					w.WriteHeader(500)
+					return
+				}
+
+				w.WriteHeader(200)
+
+				resp := &private.HookPostReceiveResult{}
+				bytes, err := json.Marshal(resp)
+				if err != nil {
+					serverError = err
+					return
+				}
+
+				_, err = w.Write(bytes)
+				if err != nil {
+					serverError = err
+					return
+				}
+			}))
+			defer ts.Close()
+			defer test.MockVariableValue(&setting.LocalURL, ts.URL+"/")()
+
+			t.Run("pre-receive", func(t *testing.T) {
+				app := cli.Command{}
+				app.Commands = []*cli.Command{subcmdHookPreReceive()}
+
+				finish := captureOutput(t, os.Stdout)
+				err = app.Run(t.Context(), []string{"./forgejo", "pre-receive"})
+				require.NoError(t, err)
+				out := finish()
+				require.Empty(t, out)
+
+				require.NoError(t, serverError)
+				require.NotNil(t, hookOpts)
+
+				require.Len(t, hookOpts.OldCommitIDs, 1)
+				assert.Equal(t, tt.oldCommitID, hookOpts.OldCommitIDs[0])
+				require.Len(t, hookOpts.NewCommitIDs, 1)
+				assert.Equal(t, tt.newCommitID, hookOpts.NewCommitIDs[0])
+				require.Len(t, hookOpts.RefFullNames, 1)
+				assert.Equal(t, git.RefName(tt.refFullName), hookOpts.RefFullNames[0])
+			})
+
+			// seek stdin back to beginning
+			_, err = f.Seek(0, 0)
+			require.NoError(t, err)
+			// reset state from prev test
+			serverError = nil
+			hookOpts = nil
+
+			t.Run("post-receive", func(t *testing.T) {
+				app := cli.Command{}
+				app.Commands = []*cli.Command{subcmdHookPostReceive()}
+
+				finish := captureOutput(t, os.Stdout)
+				err = app.Run(t.Context(), []string{"./forgejo", "post-receive"})
+				require.NoError(t, err)
+				out := finish()
+				require.Empty(t, out)
+
+				require.NoError(t, serverError)
+				require.NotNil(t, hookOpts)
+
+				require.Len(t, hookOpts.OldCommitIDs, 1)
+				assert.Equal(t, tt.oldCommitID, hookOpts.OldCommitIDs[0])
+				require.Len(t, hookOpts.NewCommitIDs, 1)
+				assert.Equal(t, tt.newCommitID, hookOpts.NewCommitIDs[0])
+				require.Len(t, hookOpts.RefFullNames, 1)
+				assert.Equal(t, git.RefName(tt.refFullName), hookOpts.RefFullNames[0])
+			})
+		})
+	}
 }
 
 func TestRunHookUpdate(t *testing.T) {
