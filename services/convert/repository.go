@@ -4,7 +4,7 @@
 package convert
 
 import (
-	"context"
+	stdCtx "context"
 	"time"
 
 	"forgejo.org/models"
@@ -15,14 +15,15 @@ import (
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/services/context"
 )
 
 // ToRepo converts a Repository to api.Repository
-func ToRepo(ctx context.Context, repo *repo_model.Repository, permissionInRepo access_model.Permission) *api.Repository {
+func ToRepo(ctx stdCtx.Context, repo *repo_model.Repository, permissionInRepo access_model.Permission) *api.Repository {
 	return innerToRepo(ctx, repo, permissionInRepo, false)
 }
 
-func innerToRepo(ctx context.Context, repo *repo_model.Repository, permissionInRepo access_model.Permission, isParent bool) *api.Repository {
+func innerToRepo(ctx stdCtx.Context, repo *repo_model.Repository, permissionInRepo access_model.Permission, isParent bool) *api.Repository {
 	var parent *api.Repository
 
 	if permissionInRepo.Units == nil && permissionInRepo.UnitsMode == nil {
@@ -179,9 +180,19 @@ func innerToRepo(ctx context.Context, repo *repo_model.Repository, permissionInR
 
 	repoAPIURL := repo.APIURL()
 
+	// Calculate the effective permission for `ToUserWithAccessMode` for the repo owner.  When accessing a public repo,
+	// permissionInRepo.AccessMode will be AccessModeRead even for an anonymous user -- in that case, downgrade
+	// `ownerViewPerms` to `AccessModeNone`.  `innerToRepo` doesn't have great access to recognize an anonymous user, so
+	// the best-effort made here is to check if `ctx` is an `APIContext`.
+	ownerViewPerms := permissionInRepo.AccessMode
+	apiCtx, ok := ctx.(*context.APIContext)
+	if ok && apiCtx.Doer == nil {
+		ownerViewPerms = perm.AccessModeNone
+	}
+
 	return &api.Repository{
 		ID:                            repo.ID,
-		Owner:                         ToUserWithAccessMode(ctx, repo.Owner, permissionInRepo.AccessMode),
+		Owner:                         ToUserWithAccessMode(ctx, repo.Owner, ownerViewPerms),
 		Name:                          repo.Name,
 		FullName:                      repo.FullName(),
 		Description:                   repo.Description,
@@ -246,7 +257,7 @@ func innerToRepo(ctx context.Context, repo *repo_model.Repository, permissionInR
 }
 
 // ToRepoTransfer convert a models.RepoTransfer to a structs.RepeTransfer
-func ToRepoTransfer(ctx context.Context, t *models.RepoTransfer) *api.RepoTransfer {
+func ToRepoTransfer(ctx stdCtx.Context, t *models.RepoTransfer) *api.RepoTransfer {
 	teams, _ := ToTeams(ctx, t.Teams, false)
 
 	return &api.RepoTransfer{
