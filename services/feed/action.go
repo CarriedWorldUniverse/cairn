@@ -300,6 +300,10 @@ func (*actionNotifier) AutoMergePullRequest(ctx context.Context, doer *user_mode
 }
 
 func (*actionNotifier) NotifyPullRevieweDismiss(ctx context.Context, doer *user_model.User, review *issues_model.Review, comment *issues_model.Comment) {
+	if err := review.LoadReviewer(ctx); err != nil {
+		log.Error("LoadReviewer '%d/%d': %v", review.ID, review.ReviewerID, err)
+		return
+	}
 	reviewerName := review.Reviewer.Name
 	if len(review.OriginalAuthor) > 0 {
 		reviewerName = review.OriginalAuthor

@@ -110,7 +110,13 @@ func GPGKeyToEntity(ctx context.Context, k *GPGKey) (*openpgp.Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	return keys[0], err
+
+	for _, key := range keys {
+		if key.PrimaryKey.KeyIdString() == k.KeyID {
+			return key, nil
+		}
+	}
+	return nil, fmt.Errorf("key with %s id not found", k.KeyID)
 }
 
 // parseSubGPGKey parse a sub Key

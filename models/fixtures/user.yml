@@ -46,6 +46,7 @@
   email: user2@example.com
   keep_email_private: true
   keep_pronouns_private: true
+  pronouns: he/him
   email_notifications_preference: enabled
   passwd: ZogKvWdyEx:password
   passwd_hash_algo: dummy
