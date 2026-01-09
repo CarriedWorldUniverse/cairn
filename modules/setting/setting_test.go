@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,8 +30,18 @@ func TestMakeAbsoluteAssetURL(t *testing.T) {
 }
 
 func TestMakeManifestData(t *testing.T) {
-	jsonBytes := MakeManifestData(`Example App '\"`, "https://example.com", "https://example.com/foo/bar")
+	jsonBytes, err := GetManifestJSON()
+	require.NoError(t, err)
 	assert.True(t, json.Valid(jsonBytes))
+}
+
+func TestMakeManifestDataStandalone(t *testing.T) {
+	defer test.MockVariableValue(&PWA.Standalone, true)()
+
+	jsonBytes, err := GetManifestJSON()
+	require.NoError(t, err)
+	assert.True(t, json.Valid(jsonBytes))
+	assert.Contains(t, string(jsonBytes), `"standalone"`)
 }
 
 func TestLoadServiceDomainListsForFederation(t *testing.T) {
