@@ -1,4 +1,5 @@
 // Copyright 2023 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package misc
@@ -26,6 +27,29 @@ func SSHInfo(rw http.ResponseWriter, req *http.Request) {
 
 func DummyOK(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func ManifestJSON(w http.ResponseWriter, req *http.Request) {
+	httpcache.SetCacheControlInHeader(w.Header(), setting.StaticCacheTime)
+	w.Header().Add("content-type", "application/manifest+json;charset=UTF-8")
+
+	manifestJSON := util.FilePathJoinAbs(setting.CustomPath, "public/manifest.json")
+	if ok, _ := util.IsExist(manifestJSON); ok {
+		http.ServeFile(w, req, manifestJSON)
+		return
+	}
+
+	bytes, err := setting.GetManifestJSON()
+	if err != nil {
+		log.Error("unable to marshal manifest JSON. Error: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(bytes); err != nil {
+		log.Error("unable to write manifest JSON. Error: %v", err)
+		return
+	}
 }
 
 func StaticRedirect(target string) func(w http.ResponseWriter, req *http.Request) {
