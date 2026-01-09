@@ -28,6 +28,9 @@ The [contributor guide](https://forgejo.org/docs/next/contributor/) contains inf
 
 ### Release notes
 
-- [ ] I do not want this change to show in the release notes.
-- [ ] I want the title to show in the release notes with a link to this pull request.
-- [ ] I want the content of the `release-notes/<pull request number>.md` to be be used for the release notes instead of the title.
+- [ ] This change will be noticed by a Forgejo user or admin (feature, bug fix, performance, etc.). I suggest to include a release note for this change.
+- [ ] This change is not visible to a Forgejo user or admin (refactor, dependency upgrade, etc.). I think there is no need to add a release note for this change.
+
+*The decision if the pull request will be shown in the release notes is up to the mergers / release team.*
+
+The content of the `release-notes/<pull request number>.md` file will serve as the basis for the release notes. If the file does not exist, the title of the pull request will be used instead.
