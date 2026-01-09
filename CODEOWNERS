@@ -54,9 +54,9 @@ tests/integration/api_.* @Cyborus
 
 # Federation code, requires care to be taken with regards to interoperability
 # and backwards compatibility due to the way signatures work.
-services/federation/.* @famfo
-modules/forgefed/.* @famfo
-models/forgefed/.* @famfo
-routers/api/v1/activitypub/.* @famfo
-tests/integration/api_activitypub_.* @famfo
-tests/integration/activitypub_.* @famfo
+services/federation/.* @famfo @0xllx0
+modules/forgefed/.* @famfo @0xllx0
+models/forgefed/.* @famfo @0xllx0
+routers/api/v1/activitypub/.* @famfo @0xllx0
+tests/integration/api_activitypub_.* @famfo @0xllx0
+tests/integration/activitypub_.* @famfo @0xllx0
