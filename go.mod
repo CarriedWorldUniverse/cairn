@@ -7,7 +7,7 @@ toolchain go1.25.5
 require (
 	code.forgejo.org/f3/gof3/v3 v3.11.1
 	code.forgejo.org/forgejo-contrib/go-libravatar v0.0.0-20191008002943-06d1c002b251
-	code.forgejo.org/forgejo/actions-proto v0.5.3
+	code.forgejo.org/forgejo/actions-proto v0.6.0
 	code.forgejo.org/forgejo/go-rpmutils v1.0.0
 	code.forgejo.org/forgejo/levelqueue v1.0.0
 	code.forgejo.org/forgejo/reply v1.0.2
