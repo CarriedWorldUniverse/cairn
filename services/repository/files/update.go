@@ -43,7 +43,6 @@ type ChangeRepoFile struct {
 	ContentReader io.ReadSeeker
 	SHA           string
 	Options       *RepoFileOptions
-	Symlink       bool
 }
 
 // ChangeRepoFilesOptions holds the repository files update options
@@ -62,8 +61,13 @@ type ChangeRepoFilesOptions struct {
 type RepoFileOptions struct {
 	treePath     string
 	fromTreePath string
-	executable   bool
-	symlink      bool
+	entryMode    git.EntryMode
+}
+
+func RepoFileOptionMode(entryMode git.EntryMode) *RepoFileOptions {
+	return &RepoFileOptions{
+		entryMode: entryMode,
+	}
 }
 
 // ChangeRepoFiles adds, updates or removes multiple files in the given repository
@@ -114,11 +118,14 @@ func ChangeRepoFiles(ctx context.Context, repo *repo_model.Repository, doer *use
 			}
 		}
 
+		mode := git.EntryModeBlob
+		if file.Options != nil && file.Options.entryMode != 0 {
+			mode = file.Options.entryMode
+		}
 		file.Options = &RepoFileOptions{
 			treePath:     treePath,
 			fromTreePath: fromTreePath,
-			executable:   false,
-			symlink:      file.Symlink,
+			entryMode:    mode,
 		}
 		treePaths = append(treePaths, treePath)
 	}
@@ -320,7 +327,7 @@ func handleCheckErrors(file *ChangeRepoFile, actualBaseCommit *git.Commit, lastK
 			// haven't been made. We throw an error if one wasn't provided.
 			return models.ErrSHAOrCommitIDNotProvided{}
 		}
-		file.Options.executable = fromEntry.IsExecutable()
+		file.Options.entryMode = fromEntry.Mode()
 	}
 	if file.Operation == "create" || file.Operation == "update" {
 		// For the path where this file will be created/updated, we need to make
@@ -430,13 +437,7 @@ func CreateOrUpdateFile(ctx context.Context, t *TemporaryUploadRepository, file 
 	}
 
 	// Add the object to the index
-	mode := "100644" // regular file
-	if file.Options.executable {
-		mode = "100755"
-	} else if file.Options.symlink {
-		mode = "120644"
-	}
-	if err := t.AddObjectToIndex(mode, objectHash, file.Options.treePath); err != nil {
+	if err := t.AddObjectToIndex(file.Options.entryMode.String(), objectHash, file.Options.treePath); err != nil {
 		return err
 	}
 
