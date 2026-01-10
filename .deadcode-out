@@ -238,6 +238,7 @@ forgejo.org/services/repository
 
 forgejo.org/services/repository/files
 	ContentType.String
+	RepoFileOptionMode
 
 forgejo.org/services/repository/gitgraph
 	Parser.Reset

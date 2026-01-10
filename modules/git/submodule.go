@@ -5,6 +5,7 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +19,8 @@ import (
 
 	"gopkg.in/ini.v1" //nolint:depguard // used to read .gitmodules
 )
+
+const MaxGitmodulesFileSize = 64 * 1024
 
 // GetSubmodule returns the Submodule of a given path
 func (c *Commit) GetSubmodule(path string, entry *TreeEntry) (Submodule, error) {
@@ -55,8 +58,12 @@ func (c *Commit) readSubmodules() error {
 		return err
 	}
 
-	rc, _, err := entry.Blob().NewTruncatedReader(10 * 1024)
+	rc, _, err := entry.Blob().NewReader(MaxGitmodulesFileSize)
 	if err != nil {
+		if errors.As(err, &BlobTooLargeError{}) {
+			c.submodules = make(map[string]Submodule)
+			return nil
+		}
 		return err
 	}
 	defer rc.Close()
