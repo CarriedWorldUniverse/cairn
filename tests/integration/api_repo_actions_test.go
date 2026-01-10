@@ -13,6 +13,7 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	auth_model "forgejo.org/models/auth"
+	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
@@ -20,6 +21,7 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/webhook"
 	"forgejo.org/routers/api/v1/shared"
+	repo_service "forgejo.org/services/repository"
 	files_service "forgejo.org/services/repository/files"
 	"forgejo.org/tests"
 
@@ -544,5 +546,26 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		DecodeJSON(t, response, &errorMessage)
 
 		assert.Equal(t, "token does not have at least one of required scope(s): [write:repository]", errorMessage.Message)
+	})
+
+	t.Run("Endpoints disabled if Actions disabled", func(t *testing.T) {
+		repository, _, cleanUp := tests.CreateDeclarativeRepo(t, user2, "no-actions",
+			[]unit_model.Type{unit_model.TypeCode, unit_model.TypeActions}, []unit_model.Type{}, nil)
+		defer cleanUp()
+
+		requestURL := fmt.Sprintf("/api/v1/repos/%s/actions/runners", repository.FullName())
+
+		request := NewRequest(t, "GET", requestURL)
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusOK)
+
+		enabledUnits := []repo_model.RepoUnit{{RepoID: repository.ID, Type: unit_model.TypeCode}}
+		disabledUnits := []unit_model.Type{unit_model.TypeActions}
+		err := repo_service.UpdateRepositoryUnits(db.DefaultContext, repository, enabledUnits, disabledUnits)
+		require.NoError(t, err)
+
+		request = NewRequest(t, "GET", requestURL)
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusNotFound)
 	})
 }
