@@ -9,13 +9,17 @@ import (
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
+	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
+	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	api "forgejo.org/modules/structs"
+	repo_service "forgejo.org/services/repository"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPIRepoVariablesTestCreateRepositoryVariable(t *testing.T) {
@@ -233,4 +237,31 @@ func TestAPIRepoVariablesGetAllRepositoryVariables(t *testing.T) {
 	assert.Equal(t, repo.ID, actionVariables[1].RepoID)
 	assert.Equal(t, "SECOND", actionVariables[1].Name)
 	assert.Equal(t, "Dolor sit amet", actionVariables[1].Data)
+}
+
+func TestAPIRepoVariablesEndpointsDisabledIfActionsDisabled(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, user2.Name)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+	repository, _, cleanUp := tests.CreateDeclarativeRepo(t, user2, "no-actions",
+		[]unit_model.Type{unit_model.TypeCode, unit_model.TypeActions}, []unit_model.Type{}, nil)
+	defer cleanUp()
+
+	getURL := fmt.Sprintf("/api/v1/repos/%s/actions/variables", repository.FullName())
+
+	getRequest := NewRequest(t, "GET", getURL)
+	getRequest.AddTokenAuth(token)
+	MakeRequest(t, getRequest, http.StatusOK)
+
+	enabledUnits := []repo_model.RepoUnit{{RepoID: repository.ID, Type: unit_model.TypeCode}}
+	disabledUnits := []unit_model.Type{unit_model.TypeActions}
+	err := repo_service.UpdateRepositoryUnits(db.DefaultContext, repository, enabledUnits, disabledUnits)
+	require.NoError(t, err)
+
+	getRequest = NewRequest(t, "GET", getURL)
+	getRequest.AddTokenAuth(token)
+	MakeRequest(t, getRequest, http.StatusNotFound)
 }

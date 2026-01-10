@@ -436,9 +436,16 @@ func reqSiteAdmin() func(ctx *context.APIContext) {
 	}
 }
 
-// reqOwner user should be the owner of the repo or site admin.
-func reqOwner() func(ctx *context.APIContext) {
+// reqOwner requires that the current user is either the owner of the repository or an administrator. If one or more
+// unitTypes are given, it also requires that at least one the respective unitTypes is enabled.
+func reqOwner(unitTypes ...unit.Type) func(ctx *context.APIContext) {
 	return func(ctx *context.APIContext) {
+		if len(unitTypes) > 0 && !slices.ContainsFunc(unitTypes, func(unitType unit.Type) bool {
+			return ctx.Repo.Repository.UnitEnabled(ctx, unitType)
+		}) {
+			ctx.NotFound()
+			return
+		}
 		if !ctx.Repo.IsOwner() && !ctx.IsUserSiteAdmin() {
 			ctx.Error(http.StatusForbidden, "reqOwner", "user should be the owner of the repo")
 			return
@@ -466,7 +473,8 @@ func reqAdmin() func(ctx *context.APIContext) {
 	}
 }
 
-// reqRepoWriter user should have a permission to write to a repo, or be a site admin
+// reqRepoWriter requires that the current user has permission to write to a repository or that it is an administrator.
+// One or more unitTypes have to be specified, and at least one of them has to be enabled.
 func reqRepoWriter(unitTypes ...unit.Type) func(ctx *context.APIContext) {
 	return func(ctx *context.APIContext) {
 		if !slices.ContainsFunc(unitTypes, func(unitType unit.Type) bool {
@@ -1145,7 +1153,7 @@ func Routes() *web.Route {
 				}, reqToken())
 				addActionsRoutes(
 					m,
-					reqOwner(),
+					reqOwner(unit.TypeActions),
 					repo.NewAction(),
 				)
 				m.Group("/hooks/git", func() {
