@@ -1,11 +1,11 @@
 {{if and (gt $.Issue.PullRequest.CommitsBehind 0) (not $.Issue.IsClosed) (not $.Issue.PullRequest.IsChecking) (not $.IsPullFilesConflicted) (not $.IsPullRequestBroken)}}
 	<div class="divider"></div>
 	<div class="item item-section">
-		<div class="item-section-left flex-text-inline">
+		<div class="flex-text-inline">
 			{{svg "octicon-alert"}}
 			{{ctx.Locale.Tr "repo.pulls.outdated_with_base_branch"}}
 		</div>
-		<div class="item-section-right">
+		<div>
 			{{if and $.UpdateAllowed $.UpdateByRebaseAllowed}}
 				<div class="tw-inline-block">
 					<div class="ui buttons update-button">

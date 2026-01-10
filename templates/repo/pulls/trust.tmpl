@@ -14,45 +14,37 @@ Template Attributes:
 		<div class="pull-request-trust-panel" id="pull-request-trust-panel">
 			<div class="divider"></div>
 			<div class="item item-section">
-				<div class="item-section-left flex-text-inline" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_is_trusted.tooltip"}}">
+				<div data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_is_trusted.tooltip"}}">
 					{{ctx.Locale.Tr "repo.pulls.poster_is_trusted" "https://forgejo.org/docs/latest/user/actions/security-pull-request/"}}
 				</div>
-				<div class="item-section-right">
-					<form id="pull-request-trust-panel-revoke" class="ui form" method="post" action="{{.Link}}/action-user-trust">
-						<input type="hidden" name="trust" value="revoke">
-						<button class="ui primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_revoke.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_revoke"}}</button>
-					</form>
-				</div>
+				<form id="pull-request-trust-panel-revoke" method="post" action="{{.Link}}/action-user-trust">
+					<input type="hidden" name="trust" value="revoke">
+					<button class="primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_revoke.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_revoke"}}</button>
+				</form>
 			</div>
 		</div>
 	{{else if and .PullRequestPosterIsNotTrustedWithActions .SomePullRequestRunsNeedApproval}}
 		<div class="pull-request-trust-panel" id="pull-request-trust-panel">
 			<div class="divider"></div>
 			<div class="item item-section">
-				<div class="item-section-left flex-text-inline" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_requires_approval.tooltip"}}">
+				<div data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_requires_approval.tooltip"}}">
 					{{svg "octicon-alert" 16 "text red"}}
 					{{ctx.Locale.Tr "repo.pulls.poster_requires_approval" "https://forgejo.org/docs/latest/user/actions/security-pull-request/"}}
 				</div>
 				{{if .UserCanDelegateTrustWithPullRequest}}
-					<div class="item-section-right">
-						<div class="tw-inline-block">
-							<form id="pull-request-trust-panel-deny" class="ui form" method="post" action="{{.Link}}/action-user-trust">
-								<input type="hidden" name="trust" value="deny">
-								<button class="ui primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_deny.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_deny"}}</button>
-							</form>
-						</div>
-						<div class="tw-inline-block">
-							<form id="pull-request-trust-panel-once" class="ui form" method="post" action="{{.Link}}/action-user-trust">
-								<input type="hidden" name="trust" value="once">
-								<button class="ui primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_once.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_once"}}</button>
-							</form>
-						</div>
-						<div class="tw-inline-block">
-							<form id="pull-request-trust-panel-always" class="ui form" method="post" action="{{.Link}}/action-user-trust">
-								<input type="hidden" name="trust" value="always">
-								<button class="ui primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_always.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_always"}}</button>
-							</form>
-						</div>
+					<div class="button-sequence">
+						<form id="pull-request-trust-panel-deny" method="post" action="{{.Link}}/action-user-trust">
+							<input type="hidden" name="trust" value="deny">
+							<button class="primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_deny.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_deny"}}</button>
+						</form>
+						<form id="pull-request-trust-panel-once" method="post" action="{{.Link}}/action-user-trust">
+							<input type="hidden" name="trust" value="once">
+							<button class="primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_once.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_once"}}</button>
+						</form>
+						<form id="pull-request-trust-panel-always" method="post" action="{{.Link}}/action-user-trust">
+							<input type="hidden" name="trust" value="always">
+							<button class="primary button" data-tooltip-content="{{ctx.Locale.Tr "repo.pulls.poster_trust_always.tooltip"}}">{{ctx.Locale.Tr "repo.pulls.poster_trust_always"}}</button>
+						</form>
 					</div>
 				{{end}}
 			</div>
