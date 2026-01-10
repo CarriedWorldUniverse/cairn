@@ -36,7 +36,7 @@
 			{{if .Issue.PullRequest.HasMerged}}
 				{{if .IsPullBranchDeletable}}
 					<div class="item item-section text tw-flex-1">
-						<div class="item-section-left">
+						<div>
 							<h3 class="tw-mb-2">
 								{{ctx.Locale.Tr "repo.pulls.merged_success"}}
 							</h3>
@@ -44,14 +44,14 @@
 								{{ctx.Locale.Tr "repo.pulls.merged_info_text" (HTMLFormat "<code>%s</code>" .HeadTarget)}}
 							</div>
 						</div>
-						<div class="item-section-right">
+						<div>
 							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}" data-modal-id="delete-branch">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
 						</div>
 					</div>
 				{{end}}
 			{{else if .Issue.IsClosed}}
 				<div class="item item-section text tw-flex-1">
-					<div class="item-section-left">
+					<div>
 						<h3 class="tw-mb-2">{{ctx.Locale.Tr "repo.pulls.closed"}}</h3>
 						<div class="merge-section-info">
 							{{if .IsPullRequestBroken}}
@@ -62,7 +62,7 @@
 						</div>
 					</div>
 					{{if and .IsPullBranchDeletable (not .IsPullRequestBroken)}}
-						<div class="item-section-right">
+						<div>
 							<button class="delete-button ui button" data-url="{{.DeleteBranchLink}}" data-modal-id="delete-branch">{{ctx.Locale.Tr "repo.branch.delete_html"}}</button>
 						</div>
 					{{end}}
@@ -85,7 +85,7 @@
 				</div>
 			{{else if .IsPullWorkInProgress}}
 				<div class="item toggle-wip" data-title="{{.Issue.Title}}" data-wip-prefixes="{{JsonUtils.EncodeToString .PullRequestWorkInProgressPrefixes}}" data-update-url="{{.Issue.Link}}/title">
-					<div class="item-section-left flex-text-inline tw-flex-1">
+					<div class="flex-text-inline tw-flex-1">
 						{{svg "octicon-x"}}
 						{{ctx.Locale.Tr "repo.pulls.cannot_merge_work_in_progress"}}
 					</div>
