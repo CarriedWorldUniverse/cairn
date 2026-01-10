@@ -15,6 +15,7 @@ import (
 	"text/tabwriter"
 
 	"forgejo.org/models/db"
+	git_model "forgejo.org/models/git"
 	"forgejo.org/models/gitea_migrations"
 	migrate_base "forgejo.org/models/gitea_migrations/base"
 	repo_model "forgejo.org/models/repo"
@@ -41,6 +42,7 @@ func cmdDoctor() *cli.Command {
 			cmdRecreateTable(),
 			cmdDoctorConvert(),
 			cmdAvatarStripExif(),
+			cmdCleanupCommitStatuses(),
 		},
 	}
 }
@@ -112,6 +114,54 @@ func cmdAvatarStripExif() *cli.Command {
 		Usage:  "Strip EXIF metadata from all images in the avatar storage",
 		Before: noDanglingArgs,
 		Action: runAvatarStripExif,
+	}
+}
+
+func cmdCleanupCommitStatuses() *cli.Command {
+	return &cli.Command{
+		Name:  "cleanup-commit-status",
+		Usage: "Cleanup extra records in commit_status table",
+		Description: `Forgejo suffered from a bug which caused the creation of more entries in the
+"commit_status" table than necessary. This operation removes the redundant
+data caused by the bug. Removing this data is almost always safe.
+These reundant records can be accessed by users through the API, making it
+possible, but unlikely, that removing it could have an impact to
+integrating services (API: /repos/{owner}/{repo}/commits/{ref}/statuses).
+
+It is safe to run while Forgejo is online.
+
+On very large Forgejo instances, the performance of operation will improve
+if the buffer-size option is used with large values. Approximately 130 MB of
+memory is required for every 100,000 records in the buffer.
+
+Bug reference: https://codeberg.org/forgejo/forgejo/issues/10671
+`,
+
+		Before: multipleBefore(noDanglingArgs, PrepareConsoleLoggerLevel(log.INFO)),
+		Action: runCleanupCommitStatus,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "verbose",
+				Aliases: []string{"V"},
+				Usage:   "Show process details",
+			},
+			&cli.BoolFlag{
+				Name:  "dry-run",
+				Usage: "Report statistics from the operation but do not modify the database",
+			},
+			&cli.IntFlag{
+				Name:  "buffer-size",
+				Usage: "Record count per query while iterating records; larger values are typically faster but use more memory",
+				// See IterateByKeyset's documentation for performance notes which led to the choice of the default
+				// buffer size for this operation.
+				Value: 100000,
+			},
+			&cli.IntFlag{
+				Name:  "delete-chunk-size",
+				Usage: "Number of records to delete per DELETE query",
+				Value: 1000,
+			},
+		},
 	}
 }
 
@@ -321,4 +371,20 @@ func runAvatarStripExif(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+func runCleanupCommitStatus(ctx context.Context, cli *cli.Command) error {
+	ctx, cancel := installSignals(ctx)
+	defer cancel()
+
+	if err := initDB(ctx); err != nil {
+		return err
+	}
+
+	bufferSize := cli.Int("buffer-size")
+	deleteChunkSize := cli.Int("delete-chunk-size")
+	dryRun := cli.Bool("dry-run")
+	log.Debug("bufferSize = %d, deleteChunkSize = %d, dryRun = %v", bufferSize, deleteChunkSize, dryRun)
+
+	return git_model.CleanupCommitStatus(ctx, bufferSize, deleteChunkSize, dryRun)
 }

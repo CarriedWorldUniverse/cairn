@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"forgejo.org/models/db"
+	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/setting"
@@ -21,7 +22,6 @@ import (
 )
 
 func TestIterate(t *testing.T) {
-	db.SetLogSQL(t.Context(), true)
 	defer test.MockVariableValue(&setting.Database.IterateBufferSize, 50)()
 
 	t.Run("No Modifications", func(t *testing.T) {
@@ -114,4 +114,32 @@ func TestIterate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, remainingRepoIDs)
 	})
+}
+
+func TestIterateMultipleFields(t *testing.T) {
+	for _, bufferSize := range []int{1, 2, 3, 10} { // 8 records in fixture
+		t.Run(fmt.Sprintf("No Modifications bufferSize=%d", bufferSize), func(t *testing.T) {
+			require.NoError(t, unittest.PrepareTestDatabase())
+
+			// Fetch all the commit status IDs...
+			var remainingIDs []int64
+			err := db.GetEngine(t.Context()).Table(&git_model.CommitStatus{}).Cols("id").Find(&remainingIDs)
+			require.NoError(t, err)
+			require.NotEmpty(t, remainingIDs)
+
+			// Ensure that every repo unit ID is found when doing iterate:
+			err = db.IterateByKeyset(t.Context(),
+				nil,
+				[]string{"repo_id", "sha", "context", "index", "id"},
+				bufferSize,
+				func(ctx context.Context, commit_status *git_model.CommitStatus) error {
+					remainingIDs = slices.DeleteFunc(remainingIDs, func(n int64) bool {
+						return commit_status.ID == n
+					})
+					return nil
+				})
+			require.NoError(t, err)
+			assert.Empty(t, remainingIDs)
+		})
+	}
 }
