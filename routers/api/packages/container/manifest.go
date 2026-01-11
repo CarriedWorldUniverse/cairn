@@ -8,17 +8,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 
 	"forgejo.org/models/db"
 	packages_model "forgejo.org/models/packages"
 	container_model "forgejo.org/models/packages/container"
+	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	packages_module "forgejo.org/modules/packages"
 	container_module "forgejo.org/modules/packages/container"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	notify_service "forgejo.org/services/notify"
 	packages_service "forgejo.org/services/packages"
@@ -117,6 +120,7 @@ func processImageManifest(ctx context.Context, mci *manifestCreationInfo, buf *p
 		if err != nil {
 			return err
 		}
+		metadata.Annotations = manifest.Annotations
 
 		blobReferences := make([]*blobReference, 0, 1+len(manifest.Layers))
 
@@ -320,6 +324,7 @@ func createPackageAndVersion(ctx context.Context, mci *manifestCreationInfo, met
 		LowerName: strings.ToLower(mci.Image),
 	}
 	var err error
+
 	if p, err = packages_model.TryInsertPackage(ctx, p); err != nil {
 		if err == packages_model.ErrDuplicatePackage {
 			created = false
@@ -331,8 +336,31 @@ func createPackageAndVersion(ctx context.Context, mci *manifestCreationInfo, met
 
 	if created {
 		if _, err := packages_model.InsertProperty(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepository, strings.ToLower(mci.Owner.LowerName+"/"+mci.Image)); err != nil {
-			log.Error("Error setting package property: %v", err)
+			log.Error("Error setting package property %s: %v", container_module.PropertyRepository, err)
 			return nil, err
+		}
+		if _, err := packages_model.InsertProperty(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepositoryAutolinkingPending, "yes"); err != nil {
+			log.Error("Error setting package property %s: %v", container_module.PropertyRepositoryAutolinkingPending, err)
+			return nil, err
+		}
+	}
+
+	// Check if auto-linking is required (this only happens after creation of package (not version!))
+	autolinkRequiredProps, err := packages_model.GetPropertiesByName(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepositoryAutolinkingPending)
+	if err != nil {
+		log.Error("Error getting package properties %s: %v", container_module.PropertyRepositoryAutolinkingPending, err)
+		return nil, err
+	}
+	if len(autolinkRequiredProps) > 0 {
+		autolinkRequiredProp := autolinkRequiredProps[0]
+		if autolinkRequiredProp != nil && autolinkRequiredProp.Value == "yes" { // check if auto-link is required (this prevents re-auto-linking on new versions, since the property is not set there)
+			if _, err := tryAutoLink(ctx, p, mci.Owner.LowerName, mci.Image, metadata, mci.Creator); err != nil {
+				log.Error("Auto-linking failed for package %d: %v", p.ID, err)
+			}
+			// remove property regardless of success/failure to keep behavior consistent and prevent retries on re-runs.
+			if err := packages_model.DeletePropertyByName(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepositoryAutolinkingPending); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -480,4 +508,99 @@ func createManifestBlob(ctx context.Context, mci *manifestCreationInfo, pv *pack
 	})
 
 	return pb, !exists, manifestDigest, err
+}
+
+// Attempty to link a package to a repository in the following order of precedence: by annotation, by label and finally by image name.
+// If it fails, it returns false, nil. Only actual errors are returned, so don't use the err return only to determine if the linking was performed.
+func tryAutoLink(ctx context.Context, p *packages_model.Package, imageOwner, imageName string, metadata *container_module.Metadata, doer *user_model.User) (linked bool, err error) {
+	// We can use the same function for linking by annotation as is used for
+	// linking by label, since the field has the exact same structure
+	if linkedByAnnotation, err := tryAutolinkByLabel(ctx, p, metadata.Annotations, doer); err != nil {
+		return false, err
+	} else if linkedByAnnotation {
+		log.Info("Image %s/%s was auto-linked by annotation", imageOwner, imageName)
+		return true, nil
+	}
+
+	if linkedByLabel, err := tryAutolinkByLabel(ctx, p, metadata.Labels, doer); err != nil {
+		return false, err
+	} else if linkedByLabel {
+		log.Info("Image %s/%s was auto-linked by label", imageOwner, imageName)
+		return true, nil
+	}
+
+	if linkedByName, err := tryAutolinkByImageName(ctx, p, imageOwner, imageName, doer); err != nil {
+		return false, err
+	} else if linkedByName {
+		log.Info("Image %s/%s was auto-linked by image name", imageOwner, imageName)
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// Tries to link a package to a repository by label from metadata.
+// If it fails, it returns false, nil. Only actual errors are returned, so don't use the err return to determine if the linking was performed.
+func tryAutolinkByLabel(ctx context.Context, p *packages_model.Package, labels map[string]string, doer *user_model.User) (linked bool, err error) {
+	if labels == nil {
+		return false, nil
+	}
+
+	labelRepo, ok := labels["org.opencontainers.image.source"]
+	if !ok {
+		return false, nil
+	}
+
+	u, err := url.Parse(labelRepo)
+	if err != nil {
+		log.Warn("Failed to extract label value org.opencontainers.image.source: value is not in format '{host}/{owner}/{repo}' (is: %s)", labelRepo)
+		return false, nil // we do not return an error here, since a malformed label should simply be ignored
+	}
+
+	fullBasePath := fmt.Sprintf("%s://%s/", u.Scheme, u.Host)
+	if setting.AppURL != fullBasePath {
+		log.Warn("Failed to extract label value org.opencontainers.image.source: host does not match Forgejo AppURL (is: %s, want: %s)", fullBasePath, setting.AppURL)
+		return false, nil
+	}
+
+	pathParts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(pathParts) != 2 {
+		log.Warn("Failed to extract label value org.opencontainers.image.source: value is not in format '{host}/{owner}/{repo}' (is: %s)", labelRepo)
+	}
+
+	repository, err := repo_model.GetRepositoryByOwnerAndName(ctx, pathParts[0], pathParts[1])
+	if err != nil {
+		if !repo_model.IsErrRepoNotExist(err) {
+			return false, err // this is a legit error
+		}
+		return false, nil
+	}
+
+	if err := packages_service.LinkToRepository(ctx, p, repository, doer); err != nil {
+		if errors.Is(err, util.ErrPermissionDenied) {
+			return false, nil // we don't want an error case if the user does not have write access to the repo they have write access to
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// Tries to link a package to a repository by its name (using {owner}/{repo}[/...]).
+// If it fails, it returns false, nil. Only actual errors are returned, so don't use the err return to determine if the linking was performed.
+func tryAutolinkByImageName(ctx context.Context, p *packages_model.Package, imageOwner, imageName string, doer *user_model.User) (linked bool, err error) {
+	repoName := strings.SplitN(imageName, "/", 2)[0] // [0] = repo; [1] = remainer (no need to check length since SplitN always returns at least one element)
+	repository, err := repo_model.GetRepositoryByOwnerAndName(ctx, imageOwner, repoName)
+	if err != nil {
+		if !repo_model.IsErrRepoNotExist(err) {
+			return false, err // this is a legit error
+		}
+		return false, nil
+	}
+	if err := packages_service.LinkToRepository(ctx, p, repository, doer); err != nil {
+		if errors.Is(err, util.ErrPermissionDenied) {
+			return false, nil // we don't want an error case if the user does not have write access to the repo they have write access to
+		}
+		return false, err
+	}
+	return true, nil
 }

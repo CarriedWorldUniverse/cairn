@@ -105,6 +105,7 @@ func getOrCreateUploadVersion(ctx context.Context, pi *packages_service.PackageI
 			LowerName: strings.ToLower(pi.Name),
 		}
 		var err error
+
 		if p, err = packages_model.TryInsertPackage(ctx, p); err != nil {
 			if err == packages_model.ErrDuplicatePackage {
 				created = false
@@ -116,7 +117,11 @@ func getOrCreateUploadVersion(ctx context.Context, pi *packages_service.PackageI
 
 		if created {
 			if _, err := packages_model.InsertProperty(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepository, strings.ToLower(pi.Owner.LowerName+"/"+pi.Name)); err != nil {
-				log.Error("Error setting package property: %v", err)
+				log.Error("Error setting package property %s: %v", container_module.PropertyRepository, err)
+				return err
+			}
+			if _, err := packages_model.InsertProperty(ctx, packages_model.PropertyTypePackage, p.ID, container_module.PropertyRepositoryAutolinkingPending, "yes"); err != nil {
+				log.Error("Error setting package property %s: %v", container_module.PropertyRepositoryAutolinkingPending, err)
 				return err
 			}
 		}
