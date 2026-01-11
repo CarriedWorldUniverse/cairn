@@ -343,7 +343,7 @@ func TestRepoGenerateTemplatingSymlink(t *testing.T) {
 							Operation:     "create",
 							TreePath:      "problem/Readme.md",
 							ContentReader: strings.NewReader(tc.symlinkTarget),
-							Symlink:       true,
+							Options:       files_service.RepoFileOptionMode(git.EntryModeSymlink),
 						},
 					}),
 				})
@@ -420,7 +420,7 @@ func TestRepoGenerateTemplatingSymlinkGlobFile(t *testing.T) {
 					Operation:     "create",
 					TreePath:      ".forgejo/template",
 					ContentReader: strings.NewReader("/etc/passwd"),
-					Symlink:       true,
+					Options:       files_service.RepoFileOptionMode(git.EntryModeSymlink),
 				},
 			}),
 		})

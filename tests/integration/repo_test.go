@@ -1551,42 +1551,130 @@ func TestRepoIssueFilterLinks(t *testing.T) {
 func TestRepoSubmoduleView(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
-		repo, _, f := tests.CreateDeclarativeRepo(t, user2, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
-		defer f()
+		t.Run("FromGit", func(t *testing.T) {
+			repo, _, f := tests.CreateDeclarativeRepo(t, user2, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
+			defer f()
 
-		// Clone the repository, add a submodule and push it.
-		dstPath := t.TempDir()
+			// Clone the repository, add a submodule and push it.
+			dstPath := t.TempDir()
 
-		uClone := *u
-		uClone.Path = repo.FullName()
-		uClone.User = url.UserPassword(user2.Name, userPassword)
+			uClone := *u
+			uClone.Path = repo.FullName()
+			uClone.User = url.UserPassword(user2.Name, userPassword)
 
-		t.Run("Clone", doGitClone(dstPath, &uClone))
+			t.Run("Clone", doGitClone(dstPath, &uClone))
 
-		_, _, err := git.NewCommand(git.DefaultContext, "submodule", "add").AddDynamicArguments(u.JoinPath("/user2/repo1").String()).RunStdString(&git.RunOpts{Dir: dstPath})
-		require.NoError(t, err)
+			_, _, err := git.NewCommand(git.DefaultContext, "submodule", "add").AddDynamicArguments(u.JoinPath("/user2/repo1").String()).RunStdString(&git.RunOpts{Dir: dstPath})
+			require.NoError(t, err)
 
-		_, _, err = git.NewCommand(git.DefaultContext, "add", "repo1", ".gitmodules").RunStdString(&git.RunOpts{Dir: dstPath})
-		require.NoError(t, err)
+			_, _, err = git.NewCommand(git.DefaultContext, "add", "repo1", ".gitmodules").RunStdString(&git.RunOpts{Dir: dstPath})
+			require.NoError(t, err)
 
-		_, _, err = git.NewCommand(git.DefaultContext, "commit", "-m", "add submodule").RunStdString(&git.RunOpts{Dir: dstPath})
-		require.NoError(t, err)
+			_, _, err = git.NewCommand(git.DefaultContext, "commit", "-m", "add submodule").RunStdString(&git.RunOpts{Dir: dstPath})
+			require.NoError(t, err)
 
-		_, _, err = git.NewCommand(git.DefaultContext, "push").RunStdString(&git.RunOpts{Dir: dstPath})
-		require.NoError(t, err)
+			_, _, err = git.NewCommand(git.DefaultContext, "push").RunStdString(&git.RunOpts{Dir: dstPath})
+			require.NoError(t, err)
 
-		// Check that the submodule entry exist and the link is correct.
-		req := NewRequest(t, "GET", "/"+repo.FullName())
-		resp := MakeRequest(t, req, http.StatusOK)
+			// Check that the submodule entry exist and the link is correct.
+			req := NewRequest(t, "GET", "/"+repo.FullName())
+			resp := MakeRequest(t, req, http.StatusOK)
 
-		htmlDoc := NewHTMLParser(t, resp.Body)
-		htmlDoc.AssertElement(t, fmt.Sprintf(`tr[data-entryname="repo1"] a[href="%s"]`, u.JoinPath("/user2/repo1").String()), true)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+			htmlDoc.AssertElement(t, fmt.Sprintf(`tr[data-entryname="repo1"] a[href="%s"]`, u.JoinPath("/user2/repo1").String()), true)
 
-		// Check that a link to the submodule returns a redirect and that the redirect link is correct.
-		req = NewRequest(t, "GET", "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/repo1")
-		resp = MakeRequest(t, req, http.StatusSeeOther)
+			// Check that a link to the submodule returns a redirect and that the redirect link is correct.
+			req = NewRequest(t, "GET", "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/repo1")
+			resp = MakeRequest(t, req, http.StatusSeeOther)
 
-		assert.Equal(t, u.JoinPath("/user2/repo1").String(), resp.Header().Get("Location"))
+			assert.Equal(t, u.JoinPath("/user2/repo1").String(), resp.Header().Get("Location"))
+		})
+
+		t.Run("Declarative", func(t *testing.T) {
+			repo, _, f := tests.CreateDeclarativeRepo(t, user2, "", []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
+				{
+					Operation: "create",
+					TreePath:  ".gitmodules",
+					ContentReader: strings.NewReader(`[submodule "relative-module"]
+  path = relative-module
+  url = https://git.example.org/submodule.git
+`),
+				}, {
+					Operation:     "create",
+					TreePath:      "relative-module",
+					FromTreePath:  "",
+					ContentReader: nil,
+					SHA:           "95601d16476a",
+					Options:       files_service.RepoFileOptionMode(git.EntryModeCommit),
+				},
+			})
+			defer f()
+
+			// Check that the submodule entry exist and the link is correct.
+			req := NewRequest(t, "GET", "/"+repo.FullName())
+			resp := MakeRequest(t, req, http.StatusOK)
+
+			expectedDst := "https://git.example.org/submodule"
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			href, ok := htmlDoc.Find(`tr[data-entryname="relative-module"] a`).Attr("href")
+			assert.True(t, ok, "could not find entry 'relative-module' in file list")
+			assert.Equal(t, expectedDst, href)
+
+			// Check that a link to the submodule returns a redirect and that the redirect link is correct.
+			req = NewRequest(t, "GET", "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/relative-module")
+			resp = MakeRequest(t, req, http.StatusSeeOther)
+
+			assert.Equal(t, expectedDst, resp.Header().Get("Location"))
+		})
+
+		t.Run("SubmodulesFileTooBig", func(t *testing.T) {
+			repo, _, f := tests.CreateDeclarativeRepo(t, user2, "", []unit_model.Type{unit_model.TypeCode}, nil, []*files_service.ChangeRepoFile{
+				{
+					Operation: "create",
+					TreePath:  ".gitmodules",
+					ContentReader: strings.NewReader(strings.Repeat("#", git.MaxGitmodulesFileSize-5) + // ensure that the partial read is invalid
+						`
+[submodule "relative-module"]
+  path = relative-module
+  url = https://git.example.org/submodule.git
+`),
+				}, {
+					Operation:     "create",
+					TreePath:      "relative-module",
+					FromTreePath:  "",
+					ContentReader: nil,
+					SHA:           "95601d16476a",
+					Options:       files_service.RepoFileOptionMode(git.EntryModeCommit),
+				},
+			})
+			defer f()
+
+			// Check that the submodule entry exist and the link is correct.
+			req := NewRequest(t, "GET", "/"+repo.FullName())
+			resp := MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			_, ok := htmlDoc.Find(`tr[data-entryname="relative-module"] td.name a`).Attr("href")
+			assert.False(t, ok, "should not find a link to 'relative-module' in file list")
+
+			// Check that a link to the submodule returns a redirect and that the redirect link is correct.
+			req = NewRequest(t, "GET", "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/relative-module")
+			resp = MakeRequest(t, req, http.StatusSeeOther)
+
+			assert.Equal(t, "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/", resp.Header().Get("Location"))
+
+			// Check that a warning is present
+			req = NewRequest(t, "GET", "/"+repo.FullName()+"/src/branch/"+repo.DefaultBranch+"/.gitmodules")
+			resp = MakeRequest(t, req, http.StatusOK)
+
+			htmlDoc = NewHTMLParser(t, resp.Body)
+
+			warn, err := htmlDoc.Find(`.non-diff-file-content .warning`).Html()
+			require.NoError(t, err)
+			assert.NotEmpty(t, warn)
+		})
 	})
 }
 

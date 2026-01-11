@@ -445,6 +445,10 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 				ctx.Data["FileWarning"] = strings.Join(warnings, "\n")
 			}
 		}
+	} else if ctx.Repo.TreePath == ".gitmodules" {
+		if fInfo.fileSize > git.MaxGitmodulesFileSize {
+			ctx.Data["FileWarning"] = ctx.Locale.Tr("repo.view.gitmodules_too_large")
+		}
 	}
 
 	isDisplayingSource := ctx.FormString("display") == "source"

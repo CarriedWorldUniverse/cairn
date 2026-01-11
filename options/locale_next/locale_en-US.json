@@ -247,5 +247,6 @@
     "editor.toggle_case": "Toggle case sensitivity",
     "editor.toggle_regex": "Toggle using regular expressions",
     "editor.toggle_whole_word": "Toggle matching whole words",
+    "repo.view.gitmodules_too_large": "The .gitmodules file is too large and will be ignored (on API calls for instance)",
     "meta.last_line": "Thank you for translating Forgejo! This line isn't seen by the users but it serves other purposes in the translation management. You can place a fun fact in the translation instead of translating it."
 }

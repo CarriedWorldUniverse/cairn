@@ -141,6 +141,28 @@ func (b *Blob) Name() string {
 	return b.name
 }
 
+// NewReader return a blob-reader which fails immediately with [BlobTooLargeError] if the file is bigger than the limit
+func (b *Blob) NewReader(limit int64) (rc io.ReadCloser, actualSize int64, err error) {
+	actualSize = b.Size()
+	if actualSize > limit {
+		return nil, actualSize, BlobTooLargeError{
+			Size:  actualSize,
+			Limit: limit,
+		}
+	}
+	r, _, cancel, err := b.newReader()
+	if err != nil {
+		return nil, actualSize, err
+	}
+
+	return &blobReader{
+		rd:                r,
+		n:                 actualSize,
+		additionalDiscard: 0,
+		cancel:            cancel,
+	}, actualSize, nil
+}
+
 // NewTruncatedReader return a blob-reader which silently truncates when the limit is reached (io.EOF will be returned)
 func (b *Blob) NewTruncatedReader(limit int64) (rc io.ReadCloser, fullSize int64, err error) {
 	r, fullSize, cancel, err := b.newReader()
@@ -168,14 +190,7 @@ func (b BlobTooLargeError) Error() string {
 // GetContentBase64 Reads the content of the blob and returns it as base64 encoded string.
 // Returns [BlobTooLargeError] if the (unencoded) content is larger than the limit.
 func (b *Blob) GetContentBase64(limit int64) (string, error) {
-	if b.Size() > limit {
-		return "", BlobTooLargeError{
-			Size:  b.Size(),
-			Limit: limit,
-		}
-	}
-
-	rc, size, err := b.NewTruncatedReader(limit)
+	rc, size, err := b.NewReader(limit)
 	if err != nil {
 		return "", err
 	}
