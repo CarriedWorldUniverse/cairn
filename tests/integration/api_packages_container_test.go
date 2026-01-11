@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -17,12 +19,15 @@ import (
 	"forgejo.org/models/db"
 	packages_model "forgejo.org/models/packages"
 	container_model "forgejo.org/models/packages/container"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/git"
 	container_module "forgejo.org/modules/packages/container"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
+	packages_service "forgejo.org/services/packages"
 	"forgejo.org/tests"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -62,20 +67,20 @@ func TestPackageContainer(t *testing.T) {
 
 	unknownDigest := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 
-	blobDigest := "sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4"
 	blobContent, _ := base64.StdEncoding.DecodeString(`H4sIAAAJbogA/2IYBaNgFIxYAAgAAP//Lq+17wAEAAA=`)
+	blobDigest := "sha256:" + sha256Hash(string(blobContent))
 
-	configDigest := "sha256:4607e093bec406eaadb6f3a340f63400c9d3a7038680744c406903766b938f0d"
 	configContent := `{"architecture":"amd64","config":{"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],"Cmd":["/true"],"ArgsEscaped":true,"Image":"sha256:9bd8b88dc68b80cffe126cc820e4b52c6e558eb3b37680bfee8e5f3ed7b8c257"},"container":"b89fe92a887d55c0961f02bdfbfd8ac3ddf66167db374770d2d9e9fab3311510","container_config":{"Hostname":"b89fe92a887d","Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],"Cmd":["/bin/sh","-c","#(nop) ","CMD [\"/true\"]"],"ArgsEscaped":true,"Image":"sha256:9bd8b88dc68b80cffe126cc820e4b52c6e558eb3b37680bfee8e5f3ed7b8c257"},"created":"2022-01-01T00:00:00.000000000Z","docker_version":"20.10.12","history":[{"created":"2022-01-01T00:00:00.000000000Z","created_by":"/bin/sh -c #(nop) COPY file:0e7589b0c800daaf6fa460d2677101e4676dd9491980210cb345480e513f3602 in /true "},{"created":"2022-01-01T00:00:00.000000001Z","created_by":"/bin/sh -c #(nop)  CMD [\"/true\"]","empty_layer":true}],"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:0ff3b91bdf21ecdf2f2f3d4372c2098a14dbe06cd678e8f0a85fd4902d00e2e2"]}}`
+	configDigest := "sha256:" + sha256Hash(configContent)
 
-	manifestDigest := "sha256:4f10484d1c1bb13e3956b4de1cd42db8e0f14a75be1617b60f2de3cd59c803c6"
 	manifestContent := `{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:4607e093bec406eaadb6f3a340f63400c9d3a7038680744c406903766b938f0d","size":1069},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","digest":"sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4","size":32}]}`
+	manifestDigest := "sha256:" + sha256Hash(manifestContent)
 
-	untaggedManifestDigest := "sha256:4305f5f5572b9a426b88909b036e52ee3cf3d7b9c1b01fac840e90747f56623d"
 	untaggedManifestContent := `{"schemaVersion":2,"mediaType":"` + oci.MediaTypeImageManifest + `","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:4607e093bec406eaadb6f3a340f63400c9d3a7038680744c406903766b938f0d","size":1069},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","digest":"sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4","size":32}]}`
+	untaggedManifestDigest := "sha256:" + sha256Hash(untaggedManifestContent)
 
-	indexManifestDigest := "sha256:bab112d6efb9e7f221995caaaa880352feb5bd8b1faf52fae8d12c113aa123ec"
 	indexManifestContent := `{"schemaVersion":2,"mediaType":"` + oci.MediaTypeImageIndex + `","manifests":[{"mediaType":"application/vnd.docker.distribution.manifest.v2+json","digest":"` + manifestDigest + `","platform":{"os":"linux","architecture":"arm","variant":"v7"}},{"mediaType":"` + oci.MediaTypeImageManifest + `","digest":"` + untaggedManifestDigest + `","platform":{"os":"linux","architecture":"arm64","variant":"v8"}}]}`
+	indexManifestDigest := "sha256:" + sha256Hash(indexManifestContent)
 
 	anonymousToken := ""
 	readUserToken := ""
@@ -906,4 +911,208 @@ func TestPackageContainer(t *testing.T) {
 		})
 		session.MakeRequest(t, req, http.StatusSeeOther)
 	})
+
+	t.Run("AutoLinking", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		// create repo which is used for auto-linking
+		repo := createTestRepositoryWithPackageRegistry(t, user, "autolink-repo")
+
+		// Test repo for the private user, used to test unauthorized auto-linking.
+		// We don't need the repo object, but the name is used in the annotation pushed in the test.
+		_ = createTestRepositoryWithPackageRegistry(t, privateUser, "autolink-repo")
+
+		// some paths to push to
+		urlExistingRepo := fmt.Sprintf("%sv2/%s/%s", setting.AppURL, user.Name, repo.Name)
+		nameNonexistingRepo1 := "nonexisting-repo"
+		urlNonexistingRepo1 := fmt.Sprintf("%sv2/%s/%s", setting.AppURL, user.Name, nameNonexistingRepo1)
+		nameNonexistingRepo2 := "another-nonexisting-repo"
+		urlNonexistingRepo2 := fmt.Sprintf("%sv2/%s/%s", setting.AppURL, user.Name, nameNonexistingRepo2)
+		nameNonexistingRepo3 := "secret-repo"
+		urlNonexistingRepo3 := fmt.Sprintf("%sv2/%s/%s", setting.AppURL, user.Name, nameNonexistingRepo3)
+		nameNonexistingRepo4 := "more-repo-names-generator"
+		urlNonexistingRepo4 := fmt.Sprintf("%sv2/%s/%s", setting.AppURL, user.Name, nameNonexistingRepo4)
+		nameExistingRepoNested := "nested-image1"
+		urlExistingRepoNested := fmt.Sprintf("%sv2/%s/%s/%s", setting.AppURL, user.Name, repo.Name, nameExistingRepoNested)
+
+		// variable to hold an auto-linked package, which will be unlinked again in a later test
+		var linkedPackage *packages_model.Package
+
+		t.Run("PushToArbitraryRepo", func(t *testing.T) {
+			// Upload blobs and manifest
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo1, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo1, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlNonexistingRepo1, "v1"), strings.NewReader(manifestContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, nameNonexistingRepo1)
+			require.NoError(t, err)
+			require.Equal(t, nameNonexistingRepo1, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, int64(0), p.RepoID)
+		})
+
+		t.Run("PushToExisingRepo", func(t *testing.T) {
+			// Upload blobs and manifest which should create a package with tag "v1"
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepo, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepo, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlExistingRepo, "v1"), strings.NewReader(manifestContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			// get the resulting package
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, repo.Name)
+			require.NoError(t, err)
+			require.Equal(t, repo.Name, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, repo.ID, p.RepoID)
+			linkedPackage = p // store auto-linked package for the next test
+		})
+
+		t.Run("PushToExistingRepoNested", func(t *testing.T) {
+			// Upload blobs and manifest which should create a package with tag "v1"
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepoNested, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepoNested, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlExistingRepoNested, "v1"), strings.NewReader(manifestContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			// get the resulting package
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, repo.Name+"/"+nameExistingRepoNested)
+			require.NoError(t, err)
+			require.Equal(t, repo.Name+"/"+nameExistingRepoNested, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, repo.ID, p.RepoID)
+		})
+
+		t.Run("PushVersionToUnlinkedRepo", func(t *testing.T) {
+			// unlink previously auto-linked package
+			require.NoError(t,
+				packages_service.UnlinkFromRepository(t.Context(), linkedPackage, user),
+			)
+			// test if correctly unlinked
+			checkPackageForUnlinked, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, repo.Name)
+			require.NoError(t, err)
+			require.Equal(t, int64(0), checkPackageForUnlinked.RepoID)
+
+			// push updated version (e.g. tag v2)
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepo, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlExistingRepo, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlExistingRepo, "v2"), strings.NewReader(manifestContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			// test if still unlinked
+			checkPackageForStillUnlinked, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, repo.Name)
+			require.NoError(t, err)
+			assert.Equal(t, int64(0), checkPackageForStillUnlinked.RepoID)
+		})
+
+		t.Run("PushWithLabel", func(t *testing.T) {
+			// Pushes to non-existing path but tries to link using an image label.
+
+			// same as configContent, but with the added label in config: "org.opencontainers.image.source": "{AppURL}/user2/autolink-repo"
+			configWithOpenContainersSourceLabelContent := `{"architecture":"amd64","config":{"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],"Cmd":["/true"],"ArgsEscaped":true,"Labels":{"org.opencontainers.image.source":"` + setting.AppURL + `user2/autolink-repo"},"Image":"sha256:9bd8b88dc68b80cffe126cc820e4b52c6e558eb3b37680bfee8e5f3ed7b8c257"},"container":"b89fe92a887d55c0961f02bdfbfd8ac3ddf66167db374770d2d9e9fab3311510","container_config":{"Hostname":"b89fe92a887d","Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],"Cmd":["/bin/sh","-c","#(nop) ","CMD [\"/true\"]"],"ArgsEscaped":true,"Image":"sha256:9bd8b88dc68b80cffe126cc820e4b52c6e558eb3b37680bfee8e5f3ed7b8c257"},"created":"2022-01-01T00:00:00.000000000Z","docker_version":"20.10.12","history":[{"created":"2022-01-01T00:00:00.000000000Z","created_by":"/bin/sh -c #(nop) COPY file:0e7589b0c800daaf6fa460d2677101e4676dd9491980210cb345480e513f3602 in /true "},{"created":"2022-01-01T00:00:00.000000001Z","created_by":"/bin/sh -c #(nop)  CMD [\"/true\"]","empty_layer":true}],"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:0ff3b91bdf21ecdf2f2f3d4372c2098a14dbe06cd678e8f0a85fd4902d00e2e2"]}}`
+			configWithOpenContainersSourceLabelDigest := "sha256:" + sha256Hash(configWithOpenContainersSourceLabelContent)
+			manifestWithOpenContainersSourceLabelContent := `{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"` + configWithOpenContainersSourceLabelDigest + `","size":` + strconv.Itoa(len(configWithOpenContainersSourceLabelContent)) + `},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","digest":"` + blobDigest + `","size":32}]}`
+
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo2, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo2, configWithOpenContainersSourceLabelDigest), strings.NewReader(configWithOpenContainersSourceLabelContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlNonexistingRepo2, "v1"), strings.NewReader(manifestWithOpenContainersSourceLabelContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, nameNonexistingRepo2)
+			require.NoError(t, err)
+			require.Equal(t, nameNonexistingRepo2, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, repo.ID, p.RepoID)
+		})
+
+		t.Run("PushWithAnnotation", func(t *testing.T) {
+			// Pushes to non-existing path but tries to link using a push annotation in the manifest.
+
+			// same as configContent, but with the added annotation directly within the manifest: "org.opencontainers.image.source": "{AppURL}/user2/autolink-repo"
+			manifestWithOpenContainersSourceAnnotationContent := `{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"` + configDigest + `","size":` + strconv.Itoa(len(configContent)) + `},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","digest":"` + blobDigest + `","size":32}],"annotations":{"org.opencontainers.image.source":"` + setting.AppURL + `user2/autolink-repo"}}`
+
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo3, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo3, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlNonexistingRepo3, "v1"), strings.NewReader(manifestWithOpenContainersSourceAnnotationContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated)
+
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, nameNonexistingRepo3)
+			require.NoError(t, err)
+			require.Equal(t, nameNonexistingRepo3, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, repo.ID, p.RepoID)
+		})
+
+		t.Run("PushWithAnnotationNoPermissions", func(t *testing.T) {
+			// This tests pushes a manifest as user2, but tries to link to an existing repo of user31.
+			// This should fail silently with the created package not automatically getting linked.
+
+			// same as configContent above (also uses blob[Digest/Content]), but with an added annotation to auto-link to a repo of the private user: "org.opencontainers.image.source": "{AppURL}/user31/autolink-repo"
+			manifestWithOpenContainersSourceAnnotationPrivateUserContent := `{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"` + configDigest + `","size":` + strconv.Itoa(len(configContent)) + `},"layers":[{"mediaType":"application/vnd.docker.image.rootfs.diff.tar.gzip","digest":"` + blobDigest + `","size":32}],"annotations":{"org.opencontainers.image.source":"` + setting.AppURL + `user31/autolink-repo"}}`
+
+			req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo4, blobDigest), bytes.NewReader(blobContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "POST", fmt.Sprintf("%s/blobs/uploads?digest=%s", urlNonexistingRepo4, configDigest), strings.NewReader(configContent)).
+				AddTokenAuth(userToken)
+			MakeRequest(t, req, http.StatusCreated)
+			req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/manifests/%s", urlNonexistingRepo4, "v1"), strings.NewReader(manifestWithOpenContainersSourceAnnotationPrivateUserContent)).
+				AddTokenAuth(userToken).
+				SetHeader("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			MakeRequest(t, req, http.StatusCreated) // wrongly annotated pushes still get pushed, but not auto linked
+
+			p, err := packages_model.GetPackageByName(t.Context(), user.ID, packages_model.TypeContainer, nameNonexistingRepo4)
+			require.NoError(t, err)
+			require.Equal(t, nameNonexistingRepo4, p.Name) // just to make sure we have grabbed the correct package
+			assert.Equal(t, int64(0), p.RepoID)            // ensure not linked
+		})
+	})
+}
+
+func createTestRepositoryWithPackageRegistry(t *testing.T, user *user_model.User, name string) *repo_model.Repository {
+	ctx := NewAPITestContext(t, user.Name, name, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+	t.Run("CreateRepo", doAPICreateRepository(ctx, nil, git.Sha1ObjectFormat, func(t *testing.T, r api.Repository) {
+		require.True(t, r.HasPackages)
+	}))
+
+	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, name)
+	require.NoError(t, err)
+
+	return repo
+}
+
+func sha256Hash(in string) string {
+	sum := sha256.Sum256([]byte(in))
+	return hex.EncodeToString(sum[:])
 }
