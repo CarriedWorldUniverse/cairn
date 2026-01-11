@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	llu "forgejo.org/build/lint-locale-usage"
+	lluAsymKey "forgejo.org/models/asymkey/lint-locale-usage"
 	lluUnit "forgejo.org/models/unit/lint-locale-usage"
 	lluMigrate "forgejo.org/services/migrations/lint-locale-usage"
 )
@@ -71,6 +72,8 @@ func HandleGoFile(handler llu.Handler, fname string, src any) error {
 		case *ast.CompositeLit:
 			if strings.HasSuffix(fname, "models/unit/unit.go") {
 				lluUnit.HandleCompositeUnit(handler, fset, n2)
+			} else if strings.Contains(fname, "models/asymkey/") {
+				lluAsymKey.HandleCompositeErrorReason(handler, fset, n2)
 			}
 
 		case *ast.FuncDecl:

@@ -6,13 +6,6 @@ translation_meta.test
 # this also gets instantiated as a Messenger once
 repo.migrate.migrating_failed.error
 
-# models/asymkey/gpg_key_object_verification.go: $ObjectVerification.Reason
-# unfortunately, it is non-trivial to parse all the occurences
-gpg.error.extract_sign
-gpg.error.failed_retrieval_gpg_keys
-gpg.error.generate_hash
-gpg.error.no_committer_account
-
 # models/system/notice.go: func (n *Notice) TrStr() string
 admin.notices.type_1
 admin.notices.type_2
