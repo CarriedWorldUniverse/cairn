@@ -467,3 +467,68 @@ func ParseCommitsWithStatus(ctx context.Context, commits []*git.Commit, repo *re
 func hashCommitStatusContext(context string) string {
 	return fmt.Sprintf("%x", sha1.Sum([]byte(context)))
 }
+
+func CleanupCommitStatus(ctx context.Context, bufferSize, deleteChunkSize int, dryRun bool) error {
+	startTime := time.Now()
+
+	var lastCommitStatus CommitStatus
+	deleteTargets := make([]int64, 0, deleteChunkSize)
+	recordCount := 0
+	deleteCount := 0
+
+	err := db.IterateByKeyset(ctx,
+		nil,
+		[]string{"repo_id", "sha", "context", "index", "id"},
+		bufferSize,
+		func(ctx context.Context, commitStatus *CommitStatus) error {
+			if commitStatus.RepoID != lastCommitStatus.RepoID ||
+				commitStatus.SHA != lastCommitStatus.SHA ||
+				commitStatus.Context != lastCommitStatus.Context ||
+				commitStatus.State != lastCommitStatus.State ||
+				commitStatus.Description != lastCommitStatus.Description {
+				// New context, or changed state/description; keep it, start looking for duplicates of it.
+				lastCommitStatus = *commitStatus
+			} else {
+				// Same context as previous record, and same state -- this record shouldn't have been stored.
+				deleteTargets = append(deleteTargets, commitStatus.ID)
+
+				if len(deleteTargets) == deleteChunkSize {
+					// Flush delete chunk
+					log.Debug("deleting chunk of %d records (dryRun=%v)", len(deleteTargets), dryRun)
+					if !dryRun {
+						if err := db.DeleteByIDs[CommitStatus](ctx, deleteTargets...); err != nil {
+							return err
+						}
+					}
+					deleteCount += len(deleteTargets)
+					deleteTargets = make([]int64, 0, deleteChunkSize)
+				}
+			}
+			recordCount++
+			return nil
+		})
+	if err != nil {
+		return err
+	}
+
+	if len(deleteTargets) > 0 {
+		log.Debug("deleting final chunk of %d records (dryRun=%v)", len(deleteTargets), dryRun)
+		if !dryRun {
+			if err := db.DeleteByIDs[CommitStatus](ctx, deleteTargets...); err != nil {
+				return err
+			}
+		}
+		deleteCount += len(deleteTargets)
+	}
+
+	duration := time.Since(startTime)
+
+	if dryRun {
+		log.Info("Reviewed %d records in commit_status, and would delete %d", recordCount, deleteCount)
+	} else {
+		log.Info("Reviewed %d records in commit_status, and deleted %d", recordCount, deleteCount)
+	}
+	log.Info("Cleanup commit status took %d milliseconds", duration.Milliseconds())
+
+	return nil
+}
