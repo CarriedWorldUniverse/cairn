@@ -256,6 +256,13 @@ func extendBeansForCascade(beans []any) ([]any, error) {
 			if deduplicateTables.Contains(schema.Name) {
 				continue
 			}
+
+			for _, column := range schema.Columns() {
+				if column.IsDeleted {
+					return nil, fmt.Errorf("unable to use table %q in a cascade operation, as it has a soft-delete column %q", schema.Name, column.FieldName)
+				}
+			}
+
 			deduplicateTables.Add(schema.Name)
 			for _, referencingTable := range referencedTables[schema.Name] {
 				table := tableMap[referencingTable]

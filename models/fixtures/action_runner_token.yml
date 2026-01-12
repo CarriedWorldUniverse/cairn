@@ -1,8 +1,8 @@
 -
   id: 1 # instance scope
   token: xeiWBL5kuTYxGPynHCqQdoeYmJAeG3IzGXCYTrDX
-  owner_id: 0
-  repo_id: 0
+  owner_id: null
+  repo_id: null
   is_active: true
   created: 1695617748
   updated: 1695617748
@@ -11,7 +11,7 @@
   id: 2 # user scope and can't be used
   token: vohJB9QcZuSv1gAXESTk2uqpSjHhsKT9j4zYF84x
   owner_id: 1
-  repo_id: 0
+  repo_id: null
   is_active: false
   created: 1695617749
   updated: 1695617749
@@ -20,7 +20,7 @@
   id: 3 # user scope and can be used
   token: gjItAeJ3CA74hNPmPPo0Zco8I1eMaNcP1jVifjOE
   owner_id: 1
-  repo_id: 0
+  repo_id: null
   is_active: true
   created: 1695617750
   updated: 1695617750
@@ -28,7 +28,7 @@
 -
   id: 4 # repo scope
   token: NOjLubxzFxPGhPXflZknys0gjVvQNhomFbAYuhbH
-  owner_id: 0
+  owner_id: null
   repo_id: 1
   is_active: true
   created: 1695617751
