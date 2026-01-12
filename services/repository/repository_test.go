@@ -10,6 +10,7 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,4 +54,11 @@ func TestConvertMirrorToNormalRepo(t *testing.T) {
 	err = ConvertMirrorToNormalRepo(db.DefaultContext, repo)
 	require.NoError(t, err)
 	assert.False(t, repo.IsMirror)
+}
+
+func TestDeleteRepository(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	require.NoError(t, DeleteRepository(t.Context(), doer, repo, false))
 }

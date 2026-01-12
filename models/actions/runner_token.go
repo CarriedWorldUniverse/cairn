@@ -12,6 +12,8 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
+
+	"xorm.io/builder"
 )
 
 // ActionRunnerToken represents runner tokens
@@ -29,15 +31,14 @@ import (
 type ActionRunnerToken struct {
 	ID       int64
 	Token    string                 `xorm:"UNIQUE"`
-	OwnerID  int64                  `xorm:"index"`
+	OwnerID  int64                  `xorm:"index REFERENCES(user, id)"`
 	Owner    *user_model.User       `xorm:"-"`
-	RepoID   int64                  `xorm:"index"`
+	RepoID   int64                  `xorm:"index REFERENCES(repository, id)"`
 	Repo     *repo_model.Repository `xorm:"-"`
 	IsActive bool                   // true means it can be used
 
 	Created timeutil.TimeStamp `xorm:"created"`
 	Updated timeutil.TimeStamp `xorm:"updated"`
-	Deleted timeutil.TimeStamp `xorm:"deleted"`
 }
 
 func init() {
@@ -77,6 +78,16 @@ func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerTo
 		ownerID = 0
 	}
 
+	// To ensure that NULL values are used for the unused columns, rather than attempting to insert 0 values which will
+	// cause FK violation, manage the list of columns that xorm will insert.
+	cols := []string{"is_active", "token"}
+	if ownerID != 0 {
+		cols = append(cols, "owner_id")
+	}
+	if repoID != 0 {
+		cols = append(cols, "repo_id")
+	}
+
 	token := util.CryptoRandomString(util.RandomStringHigh)
 	runnerToken := &ActionRunnerToken{
 		OwnerID:  ownerID,
@@ -86,15 +97,31 @@ func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerTo
 	}
 
 	return runnerToken, db.WithTx(ctx, func(ctx context.Context) error {
-		if _, err := db.GetEngine(ctx).Where("owner_id =? AND repo_id = ?", ownerID, repoID).Cols("is_active").Update(&ActionRunnerToken{
+		if _, err := db.GetEngine(ctx).Where(runnerTokenCond(ownerID, repoID)).Cols("is_active").Update(&ActionRunnerToken{
 			IsActive: false,
 		}); err != nil {
 			return err
 		}
 
-		_, err := db.GetEngine(ctx).Insert(runnerToken)
+		_, err := db.GetEngine(ctx).Cols(cols...).Insert(runnerToken)
 		return err
 	})
+}
+
+func runnerTokenCond(ownerID, repoID int64) builder.Cond {
+	var condOwnerID builder.Cond
+	if ownerID == 0 {
+		condOwnerID = builder.IsNull{"owner_id"}
+	} else {
+		condOwnerID = builder.Eq{"owner_id": ownerID}
+	}
+	var condRepoID builder.Cond
+	if repoID == 0 {
+		condRepoID = builder.IsNull{"repo_id"}
+	} else {
+		condRepoID = builder.Eq{"repo_id": repoID}
+	}
+	return builder.And(condOwnerID, condRepoID)
 }
 
 // GetLatestRunnerToken returns the latest runner token
@@ -106,7 +133,7 @@ func GetLatestRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRu
 	}
 
 	var runnerToken ActionRunnerToken
-	has, err := db.GetEngine(ctx).Where("owner_id=? AND repo_id=?", ownerID, repoID).
+	has, err := db.GetEngine(ctx).Where(runnerTokenCond(ownerID, repoID)).
 		OrderBy("id DESC").Get(&runnerToken)
 	if err != nil {
 		return nil, err

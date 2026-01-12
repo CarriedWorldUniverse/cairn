@@ -34,7 +34,7 @@ func TestUpdateRunnerToken(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	token := unittest.AssertExistsAndLoadBean(t, &ActionRunnerToken{ID: 3})
 	token.IsActive = true
-	require.NoError(t, UpdateRunnerToken(db.DefaultContext, token))
+	require.NoError(t, UpdateRunnerToken(db.DefaultContext, token, "is_active"))
 	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, 1, 0)
 	require.NoError(t, err)
 	assert.Equal(t, expectedToken, token)

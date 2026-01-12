@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"forgejo.org/models"
+	"forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
 	"forgejo.org/models/unittest"
@@ -21,12 +22,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestDeleteOrganization(t *testing.T) {
+	defer unittest.OverrideFixtures("services/org/TestDeleteOrganization")()
 	require.NoError(t, unittest.PrepareTestDatabase())
+
 	org := unittest.AssertExistsAndLoadBean(t, &organization.Organization{ID: 6})
 	require.NoError(t, DeleteOrganization(db.DefaultContext, org, false))
 	unittest.AssertNotExistsBean(t, &organization.Organization{ID: 6})
 	unittest.AssertNotExistsBean(t, &organization.OrgUser{OrgID: 6})
 	unittest.AssertNotExistsBean(t, &organization.Team{OrgID: 6})
+	orgID := int64(6)
+	unittest.AssertNotExistsBean(t, &actions.ActionRunnerToken{OwnerID: orgID})
 
 	org = unittest.AssertExistsAndLoadBean(t, &organization.Organization{ID: 3})
 	err := DeleteOrganization(db.DefaultContext, org, false)
