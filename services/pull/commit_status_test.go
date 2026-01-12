@@ -22,8 +22,8 @@ func TestMergeRequiredContextsCommitStatus(t *testing.T) {
 		},
 		{
 			{Context: "Build 1", State: structs.CommitStatusSuccess},
-			{Context: "Build 2", State: structs.CommitStatusSuccess},
-			{Context: "Build 2t", State: structs.CommitStatusPending},
+			{Context: "Build 2", State: structs.CommitStatusPending},
+			{Context: "Build 2t", State: structs.CommitStatusSuccess},
 		},
 		{
 			{Context: "Build 1", State: structs.CommitStatusSuccess},
@@ -58,8 +58,6 @@ func TestMergeRequiredContextsCommitStatus(t *testing.T) {
 	}
 
 	for i, commitStatuses := range testCases {
-		if MergeRequiredContextsCommitStatus(commitStatuses, testCasesRequiredContexts[i]) != testCasesExpected[i] {
-			assert.Fail(t, "Test case failed", "Test case %d failed", i+1)
-		}
+		assert.Equal(t, testCasesExpected[i], MergeRequiredContextsCommitStatus(commitStatuses, testCasesRequiredContexts[i]), "Test case %d failed", i+1)
 	}
 }
