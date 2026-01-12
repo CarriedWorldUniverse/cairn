@@ -251,5 +251,8 @@
     "actions.workflow.incomplete_runson_missing_job": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: úloha %[2]s není v seznamu `needs` úlohy %[1]s (%[3]s).",
     "actions.workflow.incomplete_runson_missing_output": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: úloha %[2]s nemá výstup %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: dimenze matice %[2]s neexistuje.",
-    "actions.workflow.incomplete_runson_unknown_cause": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: neznámá chyba."
+    "actions.workflow.incomplete_runson_unknown_cause": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: neznámá chyba.",
+    "issues.updated": "aktualizováno %s",
+    "search.fuzzy": "Přibližné",
+    "search.fuzzy_tooltip": "Zahrnout výsledky, které jsou v přibližné shodě s hledaným výrazem"
 }
