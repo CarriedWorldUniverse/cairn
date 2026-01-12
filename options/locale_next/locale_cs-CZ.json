@@ -254,5 +254,5 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: neznámá chyba.",
     "issues.updated": "aktualizováno %s",
     "search.fuzzy": "Přibližné",
-    "search.fuzzy_tooltip": "Zahrnout výsledky v přibližné shodě s hledaným výrazem"
+    "search.fuzzy_tooltip": "Zahrnout výsledky, které jsou v přibližné shodě s hledaným výrazem"
 }
