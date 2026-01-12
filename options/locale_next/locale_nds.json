@@ -236,5 +236,8 @@
     "actions.workflow.incomplete_runson_missing_output": "Kann de `runs-on` vun Upgaav %[1]s nich utweerten: Upgaav %[2]s hett keene Utgaav %[3]s.",
     "actions.workflow.incomplete_matrix_unknown_cause": "Kann de `strategy.matrix` vun Upgaav %[1]s nich utweerten: Unbekannter Fehler.",
     "actions.workflow.incomplete_runson_unknown_cause": "Kann de `runs-on` vun Upgaav %[1]s nich utweerten: Unbekannter Fehler.",
-    "actions.workflow.incomplete_runson_missing_matrix_dimension": "Kann de `runs-on` vun Upgaav %[1]s nich utweerten: Matrix-Richt %[2]s gifft dat nich."
+    "actions.workflow.incomplete_runson_missing_matrix_dimension": "Kann de `runs-on` vun Upgaav %[1]s nich utweerten: Matrix-Richt %[2]s gifft dat nich.",
+    "issues.updated": "%s verneeit",
+    "search.fuzzy": "Umslags",
+    "search.fuzzy_tooltip": "Ok Resultaten wiesen, wat so wat umslags to de Söökwoorden passen"
 }

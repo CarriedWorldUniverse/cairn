@@ -251,5 +251,8 @@
     "actions.workflow.incomplete_runson_missing_output": "Не удалось проверить `runs-on` задачи %[1]s – задача %[2]s не имеет интерфейс вывода %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Не удалось проверить `runs-on` задачи %[1]s – измерение матрицы %[2]s не существует.",
     "actions.workflow.incomplete_runson_unknown_cause": "Не удалось проверить `runs-on` задачи %[1]s – неизвестная ошибка.",
-    "admin.auths.oauth2_quota_group_map": "Связывать группы из указанного выше утверждения (claim) с группами квот"
+    "admin.auths.oauth2_quota_group_map": "Связывать группы из указанного выше утверждения (claim) с группами квот",
+    "issues.updated": "обнов. %s",
+    "search.fuzzy": "Приблиз.",
+    "search.fuzzy_tooltip": "Включает результаты, приблизительно соответствующие запросу"
 }

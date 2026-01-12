@@ -196,5 +196,8 @@
     "actions.workflow.event_detection_error": "Impossibile analizzare gli eventi previsti nel flusso di lavoro: %v",
     "actions.workflow.pre_execution_error": "Il flusso di lavoro non è stato completato a causa di un errore che ha bloccato il tentativo di esecuzione.",
     "teams.add_all_repos.modal.header": "Aggiungi tutti i repositori",
-    "teams.remove_all_repos.modal.header": "Rimuovi tutti i repositori"
+    "teams.remove_all_repos.modal.header": "Rimuovi tutti i repositori",
+    "moderation.action.account.delete": "Elimina profilo",
+    "moderation.action.account.suspend": "Sospendi profilo",
+    "moderation.action.comment.delete": "Elimina commento"
 }

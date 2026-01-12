@@ -236,5 +236,8 @@
     "actions.workflow.incomplete_runson_missing_job": "`runs-on` vom Job %[1]s konnte nicht evaluiert werden: %[2]s ist nicht in der `needs`-Liste von Job %[1]s (%[3]s).",
     "actions.workflow.incomplete_runson_missing_output": "`runs-on` vom Job %[1]s konnte nicht evaluiert werden: %[2]s hat keine Ausgabe %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "`runs-on` vom Job %[1]s konnte nicht evaluiert werden: Matrixdimension %[2]s existiert nicht.",
-    "actions.workflow.incomplete_runson_unknown_cause": "`runs-on` vom Job %[1]s konnte nicht evaluiert werden: unbekannter Fehler."
+    "actions.workflow.incomplete_runson_unknown_cause": "`runs-on` vom Job %[1]s konnte nicht evaluiert werden: unbekannter Fehler.",
+    "issues.updated": "%s aktualisiert",
+    "search.fuzzy": "Unscharf",
+    "search.fuzzy_tooltip": "Ergebnisse, die ungefähr zum Suchbegriff passen, einbinden"
 }
