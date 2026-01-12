@@ -40,9 +40,12 @@ func MergeRequiredContextsCommitStatus(commitStatuses []*git_model.CommitStatus,
 			var targetStatus structs.CommitStatusState
 			for _, commitStatus := range commitStatuses {
 				if gp.Match(commitStatus.Context) {
-					targetStatus = commitStatus.State
+					if targetStatus == "" {
+						targetStatus = commitStatus.State
+					} else if commitStatus.State.NoBetterThan(targetStatus) {
+						targetStatus = commitStatus.State
+					}
 					matchedCount++
-					break
 				}
 			}
 
