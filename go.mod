@@ -11,7 +11,7 @@ require (
 	code.forgejo.org/forgejo/go-rpmutils v1.0.0
 	code.forgejo.org/forgejo/levelqueue v1.0.0
 	code.forgejo.org/forgejo/reply v1.0.2
-	code.forgejo.org/forgejo/runner/v12 v12.5.0
+	code.forgejo.org/forgejo/runner/v12 v12.5.1
 	code.forgejo.org/go-chi/binding v1.0.1
 	code.forgejo.org/go-chi/cache v1.0.1
 	code.forgejo.org/go-chi/captcha v1.0.2
@@ -175,7 +175,7 @@ require (
 	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
-	github.com/go-git/go-git/v5 v5.16.3 // indirect
+	github.com/go-git/go-git/v5 v5.16.4 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-openapi/jsonpointer v0.22.4 // indirect
 	github.com/go-openapi/jsonreference v0.21.4 // indirect

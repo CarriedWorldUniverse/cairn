@@ -30,8 +30,8 @@ code.forgejo.org/forgejo/levelqueue v1.0.0 h1:9krYpU6BM+j/1Ntj6m+VCAIu0UNnne1/Uf
 code.forgejo.org/forgejo/levelqueue v1.0.0/go.mod h1:fmG6zhVuqim2rxSFOoasgXO8V2W/k9U31VVYqLIRLhQ=
 code.forgejo.org/forgejo/reply v1.0.2 h1:dMhQCHV6/O3L5CLWNTol+dNzDAuyCK88z4J/lCdgFuQ=
 code.forgejo.org/forgejo/reply v1.0.2/go.mod h1:RyZUfzQLc+fuLIGjTSQWDAJWPiL4WtKXB/FifT5fM7U=
-code.forgejo.org/forgejo/runner/v12 v12.5.0 h1:/ZHlKlDZBAjd6CNFLd53n/FtFSoqlZg3Z3oZ5b/9uUg=
-code.forgejo.org/forgejo/runner/v12 v12.5.0/go.mod h1:GwKqxU5CIkpUSBnOCwmT9GRpz2V4mdfdp9LQEKQ70HE=
+code.forgejo.org/forgejo/runner/v12 v12.5.1 h1:XTVGqSN68Y4LWsT5foZjzEIZC3dgVvYriKhQ8KUmplY=
+code.forgejo.org/forgejo/runner/v12 v12.5.1/go.mod h1:aqDGVIwMxGMkj2P5qW8QO10Q/CfMl2lou72Tf+UCHcA=
 code.forgejo.org/forgejo/ssh v0.0.0-20241211213324-5fc306ca0616 h1:kEZL84+02jY9RxXM4zHBWZ3Fml0B09cmP1LGkDsCfIA=
 code.forgejo.org/forgejo/ssh v0.0.0-20241211213324-5fc306ca0616/go.mod h1:zpHEXBstFnQYtGnB8k8kQLol82umzn/2/snG7alWVD8=
 code.forgejo.org/go-chi/binding v1.0.1 h1:coKNI+X1NzRN7X85LlrpvBRqk0TXpJ+ja28vusQWEuY=
@@ -284,8 +284,8 @@ github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 h1:+zs/tPmkDkHx3U66D
 github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376/go.mod h1:an3vInlBmSxCcxctByoQdvwPiA7DTK7jaaFDBTtu0ic=
 github.com/go-git/go-billy/v5 v5.6.2 h1:6Q86EsPXMa7c3YZ3aLAQsMA0VlWmy43r6FHqa/UNbRM=
 github.com/go-git/go-billy/v5 v5.6.2/go.mod h1:rcFC2rAsp/erv7CMz9GczHcuD0D32fWzH+MJAU+jaUU=
-github.com/go-git/go-git/v5 v5.16.3 h1:Z8BtvxZ09bYm/yYNgPKCzgWtaRqDTgIKRgIRHBfU6Z8=
-github.com/go-git/go-git/v5 v5.16.3/go.mod h1:4Ge4alE/5gPs30F2H1esi2gPd69R0C39lolkucHBOp8=
+github.com/go-git/go-git/v5 v5.16.4 h1:7ajIEZHZJULcyJebDLo99bGgS0jRrOxzZG4uCk2Yb2Y=
+github.com/go-git/go-git/v5 v5.16.4/go.mod h1:4Ge4alE/5gPs30F2H1esi2gPd69R0C39lolkucHBOp8=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-ini/ini v1.67.0 h1:z6ZrTEZqSWOTyH2FlglNbNgARyHG8oLW9gMELqKr06A=
