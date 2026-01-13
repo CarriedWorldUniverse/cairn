@@ -24,6 +24,7 @@ import (
 	f3_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 	f3_tests "code.forgejo.org/f3/gof3/v3/tree/tests/f3"
 	f3_tests_forge "code.forgejo.org/f3/gof3/v3/tree/tests/f3/forge"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
 )
@@ -61,14 +62,14 @@ func TestF3_CmdMirror_LocalForgejo(t *testing.T) {
 
 	ctx := t.Context()
 
-	mirrorOptions := f3_tests_forge.GetFactory(options.Name)().NewOptions(t)
+	mirrorForge := f3_tests_forge.GetFactory(options.Name)()
+	mirrorOptions := mirrorForge.NewOptions(t)
 	mirrorTree := f3_generic.GetFactory("f3")(ctx, mirrorOptions)
 
 	fixtureOptions := f3_tests_forge.GetFactory(f3_filesystem_options.Name)().NewOptions(t)
 	fixtureTree := f3_generic.GetFactory("f3")(ctx, fixtureOptions)
 
 	log := fixtureTree.GetLogger()
-	creator := f3_tests.NewCreator(t, "CmdMirrorLocalForgejo", log)
 
 	log.Trace("======= build fixture")
 
@@ -77,9 +78,10 @@ func TestF3_CmdMirror_LocalForgejo(t *testing.T) {
 		fixtureUserID := "userID01"
 		fixtureProjectID := "projectID01"
 
+		creator := f3_tests.NewCreator(t, "CMFixture", fixtureTree)
 		userFormat := creator.GenerateUser()
 		userFormat.SetID(fixtureUserID)
-		users := fixtureTree.MustFind(f3_generic.NewPathFromString("/forge/users"))
+		users := fixtureTree.MustFind(f3_generic.NewNodePathFromString("/forge/users"))
 		user := users.CreateChild(ctx)
 		user.FromFormat(userFormat)
 		user.Upsert(ctx)
@@ -87,7 +89,7 @@ func TestF3_CmdMirror_LocalForgejo(t *testing.T) {
 
 		projectFormat := creator.GenerateProject()
 		projectFormat.SetID(fixtureProjectID)
-		projects := user.MustFind(f3_generic.NewPathFromString("projects"))
+		projects := f3_generic.MustFind(user, f3_generic.NewNodePathFromString("projects"))
 		project := projects.CreateChild(ctx)
 		project.FromFormat(projectFormat)
 		project.Upsert(ctx)
@@ -98,25 +100,8 @@ func TestF3_CmdMirror_LocalForgejo(t *testing.T) {
 
 	log.Trace("======= create mirror")
 
-	var toPath string
-	var projects f3_generic.NodeInterface
-	{
-		userFormat := creator.GenerateUser()
-		users := mirrorTree.MustFind(f3_generic.NewPathFromString("/forge/users"))
-		user := users.CreateChild(ctx)
-		user.FromFormat(userFormat)
-		user.Upsert(ctx)
-		require.Equal(t, user.GetID(), users.GetIDFromName(ctx, userFormat.UserName))
-
-		projectFormat := creator.GenerateProject()
-		projects = user.MustFind(f3_generic.NewPathFromString("projects"))
-		project := projects.CreateChild(ctx)
-		project.FromFormat(projectFormat)
-		project.Upsert(ctx)
-		require.Equal(t, project.GetID(), projects.GetIDFromName(ctx, projectFormat.Name))
-
-		toPath = fmt.Sprintf("/forge/users/%s/projects/%s", userFormat.UserName, projectFormat.Name)
-	}
+	otherProjectName := "otherproject"
+	toPath := "/forge/users/otheruser/projects/" + otherProjectName
 
 	log.Trace("======= mirror %s => %s", fromPath, toPath)
 	output, err := runApp(ctx,
@@ -131,7 +116,10 @@ func TestF3_CmdMirror_LocalForgejo(t *testing.T) {
 	require.NoError(t, err)
 	log.Trace("======= assert")
 	require.Contains(t, output, fmt.Sprintf("mirror %s", fromPath))
-	projects.List(ctx)
-	require.NotEmpty(t, projects.GetChildren())
-	log.Trace("======= project %s", projects.GetChildren()[0])
+	project := f3_generic.NilNode
+	mirrorTree.ApplyAndGet(ctx, f3_generic.NewNodePathFromString(toPath), f3_generic.NewApplyOptions(func(ctx context.Context, parent, p f3_generic.Path, node f3_generic.NodeInterface) {
+		project = node
+	}))
+	require.NotEqual(t, f3_generic.NilNode, project)
+	assert.Equal(t, otherProjectName, project.GetName())
 }

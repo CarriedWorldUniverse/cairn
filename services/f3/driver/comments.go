@@ -12,18 +12,18 @@ import (
 	issues_model "forgejo.org/models/issues"
 
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 )
 
 type comments struct {
 	container
 }
 
-func (o *comments) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
+func (o *comments) ListPage(ctx context.Context, node f3_tree_generic.NodeInterface, _ f3_tree_generic.ListOptions, page int) f3_tree_generic.ChildrenList {
 	pageSize := o.getPageSize()
 
-	project := f3_tree.GetProjectID(o.GetNode())
-	commentable := f3_tree.GetCommentableID(o.GetNode())
+	project := f3_tree.GetProjectID(node)
+	commentable := f3_tree.GetCommentableID(node)
 
 	issue, err := issues_model.GetIssueByIndex(ctx, project, commentable)
 	if err != nil {
@@ -41,9 +41,15 @@ func (o *comments) ListPage(ctx context.Context, page int) generic.ChildrenSlice
 		panic(fmt.Errorf("error while listing comments: %v", err))
 	}
 
-	return f3_tree.ConvertListed(ctx, o.GetNode(), f3_tree.ConvertToAny(forgejoComments...)...)
+	for _, forgejoComment := range forgejoComments {
+		if err := forgejoComment.LoadPoster(ctx); err != nil {
+			panic(fmt.Errorf("LoadPoster %+v %w", *forgejoComment, err))
+		}
+	}
+
+	return f3_tree.ConvertListed(ctx, node, f3_tree.ConvertToAny(forgejoComments...)...)
 }
 
-func newComments() generic.NodeDriverInterface {
+func newComments() f3_tree_generic.NodeDriverInterface {
 	return &comments{}
 }

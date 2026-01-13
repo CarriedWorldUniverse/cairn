@@ -14,6 +14,7 @@ import (
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
+	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
 	"code.forgejo.org/f3/gof3/v3/tree/generic"
 	f3_util "code.forgejo.org/f3/gof3/v3/util"
@@ -46,7 +47,7 @@ func (o *reaction) ToFormat() f3.Interface {
 	}
 	return &f3.Reaction{
 		Common:  f3.NewCommon(fmt.Sprintf("%d", o.forgejoReaction.ID)),
-		UserID:  f3_tree.NewUserReference(o.forgejoReaction.User.ID),
+		UserID:  f3_tree.NewUserReference(f3_util.ToString(o.forgejoReaction.User.ID)),
 		Content: o.forgejoReaction.Type,
 	}
 }
@@ -89,7 +90,7 @@ func (o *reaction) Patch(ctx context.Context) {
 }
 
 func (o *reaction) Put(ctx context.Context) f3_id.NodeID {
-	o.Trace("%v", o.forgejoReaction.User)
+	o.Trace("%+v", o.forgejoReaction.User)
 
 	sess := db.GetEngine(ctx)
 
@@ -97,20 +98,20 @@ func (o *reaction) Put(ctx context.Context) f3_id.NodeID {
 	reactionableID := f3_tree.GetReactionableID(o.GetNode())
 
 	switch reactionable.GetKind() {
-	case f3_tree.KindIssue, f3_tree.KindPullRequest:
+	case f3_kind.KindIssue, f3_kind.KindPullRequest:
 		project := f3_tree.GetProjectID(o.GetNode())
 		issue, err := issues_model.GetIssueByIndex(ctx, project, reactionableID)
 		if err != nil {
 			panic(fmt.Errorf("GetIssueByIndex %v %w", reactionableID, err))
 		}
 		o.forgejoReaction.IssueID = issue.ID
-	case f3_tree.KindComment:
+	case f3_kind.KindComment:
 		o.forgejoReaction.CommentID = reactionableID
 	default:
 		panic(fmt.Errorf("unexpected type %v", reactionable.GetKind()))
 	}
 
-	o.Trace("%v", o.forgejoReaction)
+	o.Trace("%+v", o.forgejoReaction)
 
 	if _, err := sess.Insert(o.forgejoReaction); err != nil {
 		panic(err)

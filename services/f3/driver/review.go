@@ -48,7 +48,7 @@ func (o *review) ToFormat() f3.Interface {
 
 	review := &f3.Review{
 		Common:     f3.NewCommon(o.GetNativeID()),
-		ReviewerID: f3_tree.NewUserReference(o.forgejoReview.ReviewerID),
+		ReviewerID: f3_tree.NewUserReference(f3_util.ToString(o.forgejoReview.ReviewerID)),
 		Official:   o.forgejoReview.Official,
 		CommitID:   o.forgejoReview.CommitID,
 		Content:    o.forgejoReview.Content,
@@ -71,7 +71,7 @@ func (o *review) ToFormat() f3.Interface {
 	}
 
 	if o.forgejoReview.Reviewer != nil {
-		review.ReviewerID = f3_tree.NewUserReference(o.forgejoReview.Reviewer.ID)
+		review.ReviewerID = f3_tree.NewUserReference(f3_util.ToString(o.forgejoReview.Reviewer.ID))
 	}
 
 	return review

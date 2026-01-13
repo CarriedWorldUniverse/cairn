@@ -51,23 +51,23 @@ func (o *issue) ToFormat() f3.Interface {
 
 	milestone := &f3.Reference{}
 	if o.forgejoIssue.Milestone != nil {
-		milestone = f3_tree.NewIssueMilestoneReference(o.forgejoIssue.Milestone.ID)
+		milestone = f3_tree.NewIssueMilestoneReference(f3_util.ToString(o.forgejoIssue.Milestone.ID))
 	}
 
 	assignees := make([]*f3.Reference, 0, len(o.forgejoIssue.Assignees))
 	for _, assignee := range o.forgejoIssue.Assignees {
-		assignees = append(assignees, f3_tree.NewUserReference(assignee.ID))
+		assignees = append(assignees, f3_tree.NewUserReference(f3_util.ToString(assignee.ID)))
 	}
 
 	labels := make([]*f3.Reference, 0, len(o.forgejoIssue.Labels))
 	for _, label := range o.forgejoIssue.Labels {
-		labels = append(labels, f3_tree.NewIssueLabelReference(label.ID))
+		labels = append(labels, f3_tree.NewIssueLabelReference(f3_util.ToString(label.ID)))
 	}
 
 	return &f3.Issue{
 		Title:     o.forgejoIssue.Title,
 		Common:    f3.NewCommon(o.GetNativeID()),
-		PosterID:  f3_tree.NewUserReference(o.forgejoIssue.Poster.ID),
+		PosterID:  f3_tree.NewUserReference(f3_util.ToString(o.forgejoIssue.Poster.ID)),
 		Assignees: assignees,
 		Labels:    labels,
 		Content:   o.forgejoIssue.Content,

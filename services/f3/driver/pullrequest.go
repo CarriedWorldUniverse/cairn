@@ -19,7 +19,7 @@ import (
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
-	f3_path "code.forgejo.org/f3/gof3/v3/path"
+	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
 	"code.forgejo.org/f3/gof3/v3/tree/generic"
 	f3_util "code.forgejo.org/f3/gof3/v3/util"
@@ -53,17 +53,17 @@ func (o *pullRequest) repositoryToReference(ctx context.Context, repository *rep
 	if repository == nil {
 		panic("unexpected nil repository")
 	}
-	forge := o.getTree().GetRoot().GetChild(f3_id.NewNodeID(f3_tree.KindForge)).GetDriver().(*forge)
+	forge := o.getTree().GetRoot().GetChild(f3_id.NewNodeID(f3_kind.KindForge)).GetDriver().(*forge)
 	owners := forge.getOwnersPath(ctx, fmt.Sprintf("%d", repository.OwnerID))
-	return f3_tree.NewRepositoryReference(owners.String(), repository.OwnerID, repository.ID)
+	return f3_tree.NewRepositoryReference(owners.String(), f3_util.ToString(repository.OwnerID), f3_util.ToString(repository.ID), f3.RepositoryNameDefault)
 }
 
 func (o *pullRequest) referenceToRepository(reference *f3.Reference) int64 {
 	var project int64
-	if reference.Get() == "../../repository/vcs" {
+	if reference.Get() == "../../repositories/vcs" {
 		project = f3_tree.GetProjectID(o.GetNode())
 	} else {
-		p := f3_tree.ToPath(f3_path.PathAbsolute(generic.NewElementNode, o.GetNode().GetCurrentPath().String(), reference.Get()))
+		p := generic.PathAbsolute(generic.NewNode, o.GetNode().GetCurrentPath().String(), reference.Get())
 		o.Trace("%v %v", o.GetNode().GetCurrentPath().String(), p)
 		_, project = p.OwnerAndProjectID()
 	}
@@ -77,7 +77,7 @@ func (o *pullRequest) ToFormat() f3.Interface {
 
 	var milestone *f3.Reference
 	if o.forgejoPullRequest.Milestone != nil {
-		milestone = f3_tree.NewIssueMilestoneReference(o.forgejoPullRequest.Milestone.ID)
+		milestone = f3_tree.NewIssueMilestoneReference(f3_util.ToString(o.forgejoPullRequest.Milestone.ID))
 	}
 
 	var mergedTime *time.Time
@@ -125,7 +125,7 @@ func (o *pullRequest) ToFormat() f3.Interface {
 
 	return &f3.PullRequest{
 		Common:         f3.NewCommon(o.GetNativeID()),
-		PosterID:       f3_tree.NewUserReference(o.forgejoPullRequest.Poster.ID),
+		PosterID:       f3_tree.NewUserReference(f3_util.ToString(o.forgejoPullRequest.Poster.ID)),
 		Title:          o.forgejoPullRequest.Title,
 		Content:        o.forgejoPullRequest.Content,
 		Milestone:      milestone,

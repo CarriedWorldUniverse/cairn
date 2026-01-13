@@ -57,7 +57,7 @@ func (o *reviewComment) ToFormat() f3.Interface {
 
 	return &f3.ReviewComment{
 		Common:    f3.NewCommon(o.GetNativeID()),
-		PosterID:  f3_tree.NewUserReference(o.forgejoReviewComment.Poster.ID),
+		PosterID:  f3_tree.NewUserReference(f3_util.ToString(o.forgejoReviewComment.Poster.ID)),
 		Content:   o.forgejoReviewComment.Content,
 		TreePath:  o.forgejoReviewComment.TreePath,
 		DiffHunk:  patch2diff(o.forgejoReviewComment.PatchQuoted),

@@ -27,67 +27,67 @@ func (o *treeDriver) Init() {
 
 func (o *treeDriver) Factory(ctx context.Context, kind f3_kind.Kind) generic.NodeDriverInterface {
 	switch kind {
-	case f3_tree.KindForge:
+	case f3_kind.KindForge:
 		return newForge()
-	case f3_tree.KindOrganizations:
+	case f3_kind.KindOrganizations:
 		return newOrganizations()
-	case f3_tree.KindOrganization:
+	case f3_kind.KindOrganization:
 		return newOrganization()
-	case f3_tree.KindUsers:
+	case f3_kind.KindUsers:
 		return newUsers()
-	case f3_tree.KindUser:
+	case f3_kind.KindUser:
 		return newUser()
-	case f3_tree.KindProjects:
+	case f3_kind.KindProjects:
 		return newProjects()
-	case f3_tree.KindProject:
+	case f3_kind.KindProject:
 		return newProject()
-	case f3_tree.KindIssues:
+	case f3_kind.KindIssues:
 		return newIssues()
-	case f3_tree.KindIssue:
+	case f3_kind.KindIssue:
 		return newIssue()
-	case f3_tree.KindComments:
+	case f3_kind.KindComments:
 		return newComments()
-	case f3_tree.KindComment:
+	case f3_kind.KindComment:
 		return newComment()
-	case f3_tree.KindAttachments:
+	case f3_kind.KindAttachments:
 		return newAttachments()
-	case f3_tree.KindAttachment:
+	case f3_kind.KindAttachment:
 		return newAttachment()
-	case f3_tree.KindLabels:
+	case f3_kind.KindLabels:
 		return newLabels()
-	case f3_tree.KindLabel:
+	case f3_kind.KindLabel:
 		return newLabel()
-	case f3_tree.KindReactions:
+	case f3_kind.KindReactions:
 		return newReactions()
-	case f3_tree.KindReaction:
+	case f3_kind.KindReaction:
 		return newReaction()
-	case f3_tree.KindReviews:
+	case f3_kind.KindReviews:
 		return newReviews()
-	case f3_tree.KindReview:
+	case f3_kind.KindReview:
 		return newReview()
-	case f3_tree.KindReviewComments:
+	case f3_kind.KindReviewComments:
 		return newReviewComments()
-	case f3_tree.KindReviewComment:
+	case f3_kind.KindReviewComment:
 		return newReviewComment()
-	case f3_tree.KindMilestones:
+	case f3_kind.KindMilestones:
 		return newMilestones()
-	case f3_tree.KindMilestone:
+	case f3_kind.KindMilestone:
 		return newMilestone()
-	case f3_tree.KindPullRequests:
+	case f3_kind.KindPullRequests:
 		return newPullRequests()
-	case f3_tree.KindPullRequest:
+	case f3_kind.KindPullRequest:
 		return newPullRequest()
-	case f3_tree.KindReleases:
+	case f3_kind.KindReleases:
 		return newReleases()
-	case f3_tree.KindRelease:
+	case f3_kind.KindRelease:
 		return newRelease()
-	case f3_tree.KindTopics:
+	case f3_kind.KindTopics:
 		return newTopics()
-	case f3_tree.KindTopic:
+	case f3_kind.KindTopic:
 		return newTopic()
-	case f3_tree.KindRepositories:
+	case f3_kind.KindRepositories:
 		return newRepositories()
-	case f3_tree.KindRepository:
+	case f3_kind.KindRepository:
 		return newRepository(ctx)
 	case f3_kind.KindRoot:
 		return newRoot(o.GetTree().(f3_tree.TreeInterface).NewFormat(kind))

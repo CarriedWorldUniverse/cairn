@@ -11,17 +11,18 @@ import (
 	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 
+	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 )
 
 type attachments struct {
 	container
 }
 
-func (o *attachments) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
+func (o *attachments) ListPage(ctx context.Context, node f3_tree_generic.NodeInterface, _ f3_tree_generic.ListOptions, page int) f3_tree_generic.ChildrenList {
 	if page > 1 {
-		return generic.NewChildrenSlice(0)
+		return f3_tree_generic.NewChildrenList(0)
 	}
 
 	attachable := f3_tree.GetAttachable(o.GetNode())
@@ -30,7 +31,7 @@ func (o *attachments) ListPage(ctx context.Context, page int) generic.ChildrenSl
 	var attachments []*repo_model.Attachment
 
 	switch attachable.GetKind() {
-	case f3_tree.KindRelease:
+	case f3_kind.KindRelease:
 		release, err := repo_model.GetReleaseByID(ctx, attachableID)
 		if err != nil {
 			panic(fmt.Errorf("GetReleaseByID %v %w", attachableID, err))
@@ -42,7 +43,7 @@ func (o *attachments) ListPage(ctx context.Context, page int) generic.ChildrenSl
 
 		attachments = release.Attachments
 
-	case f3_tree.KindComment:
+	case f3_kind.KindComment:
 		comment, err := issues_model.GetCommentByID(ctx, attachableID)
 		if err != nil {
 			panic(fmt.Errorf("GetCommentByID %v %w", attachableID, err))
@@ -54,7 +55,7 @@ func (o *attachments) ListPage(ctx context.Context, page int) generic.ChildrenSl
 
 		attachments = comment.Attachments
 
-	case f3_tree.KindIssue, f3_tree.KindPullRequest:
+	case f3_kind.KindIssue, f3_kind.KindPullRequest:
 		repoID := f3_tree.GetProjectID(o.GetNode())
 		issue, err := issues_model.GetIssueByIndex(ctx, repoID, attachableID)
 		if err != nil {
@@ -74,6 +75,6 @@ func (o *attachments) ListPage(ctx context.Context, page int) generic.ChildrenSl
 	return f3_tree.ConvertListed(ctx, o.GetNode(), f3_tree.ConvertToAny(attachments...)...)
 }
 
-func newAttachments() generic.NodeDriverInterface {
+func newAttachments() f3_tree_generic.NodeDriverInterface {
 	return &attachments{}
 }
