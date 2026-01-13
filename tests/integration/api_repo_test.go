@@ -52,7 +52,7 @@ func TestAPIUserReposWithWrongToken(t *testing.T) {
 		AddTokenAuth(wrongToken)
 	resp := MakeRequest(t, req, http.StatusUnauthorized)
 
-	assert.Contains(t, resp.Body.String(), "user does not exist")
+	assert.Contains(t, resp.Body.String(), "access token does not exist")
 }
 
 func TestAPISearchRepo(t *testing.T) {

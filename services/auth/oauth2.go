@@ -147,7 +147,10 @@ func parseToken(req *http.Request) (string, bool) {
 // userIDFromToken returns the user id corresponding to the OAuth token.
 // It will set 'IsApiToken' to true if the token is an API token and
 // set 'ApiTokenScope' to the scope of the access token
-func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store DataStore) int64 {
+func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store DataStore) (int64, error) {
+	if tokenSHA == "" {
+		return 0, auth_model.ErrAccessTokenEmpty{}
+	}
 	// Let's see if token is valid.
 	if strings.Contains(tokenSHA, ".") {
 		// First attempt to decode an actions JWT, returning the actions user
@@ -155,7 +158,7 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store Dat
 			if CheckTaskIsRunning(ctx, taskID) {
 				store.GetData()["IsActionsToken"] = true
 				store.GetData()["ActionsTaskID"] = taskID
-				return user_model.ActionsUserID
+				return user_model.ActionsUserID, nil
 			}
 		}
 
@@ -169,7 +172,7 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store Dat
 				store.GetData()["ApiTokenScope"] = auth_model.AccessTokenScopeAll // fallback to all
 			}
 		}
-		return uid
+		return uid, nil
 	}
 	t, err := auth_model.GetAccessTokenBySHA(ctx, tokenSHA)
 	if err != nil {
@@ -182,19 +185,22 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store Dat
 				store.GetData()["IsActionsToken"] = true
 				store.GetData()["ActionsTaskID"] = task.ID
 
-				return user_model.ActionsUserID
+				return user_model.ActionsUserID, nil
 			}
 		} else if !auth_model.IsErrAccessTokenNotExist(err) && !auth_model.IsErrAccessTokenEmpty(err) {
 			log.Error("GetAccessTokenBySHA: %v", err)
 		}
-		return 0
+		return 0, err
 	}
 	if err := t.UpdateLastUsed(ctx); err != nil {
 		log.Error("UpdateLastUsed: %v", err)
 	}
+	if t.UID == 0 {
+		return 0, auth_model.ErrAccessTokenNotExist{}
+	}
 	store.GetData()["IsApiToken"] = true
 	store.GetData()["ApiTokenScope"] = t.Scope
-	return t.UID
+	return t.UID, nil
 }
 
 // Verify extracts the user ID from the OAuth token in the query parameters
@@ -213,10 +219,9 @@ func (o *OAuth2) Verify(req *http.Request, w http.ResponseWriter, store DataStor
 		return nil, nil
 	}
 
-	id := o.userIDFromToken(req.Context(), token, store)
-
-	if id <= 0 && id != -2 { // -2 means actions, so we need to allow it.
-		return nil, user_model.ErrUserNotExist{}
+	id, err := o.userIDFromToken(req.Context(), token, store)
+	if err != nil {
+		return nil, err
 	}
 	log.Trace("OAuth2 Authorization: Found token for user[%d]", id)
 
