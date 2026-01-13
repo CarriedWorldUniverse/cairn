@@ -12,6 +12,7 @@ import (
 	"text/tabwriter"
 
 	"forgejo.org/models/db"
+	git_model "forgejo.org/models/git"
 	"forgejo.org/models/migrations"
 	migrate_base "forgejo.org/models/migrations/base"
 	"forgejo.org/modules/container"
@@ -33,6 +34,7 @@ var CmdDoctor = &cli.Command{
 		cmdDoctorCheck,
 		cmdRecreateTable,
 		cmdDoctorConvert,
+		cmdCleanupCommitStatuses,
 	},
 }
 
@@ -90,6 +92,52 @@ This command will cause Xorm to recreate tables, copying over the data and delet
 
 You should back-up your database before doing this and ensure that your database is up-to-date first.`,
 	Action: runRecreateTable,
+}
+
+var cmdCleanupCommitStatuses = &cli.Command{
+	Name:  "cleanup-commit-status",
+	Usage: "Cleanup extra records in commit_status table",
+	Description: `Forgejo suffered from a bug which caused the creation of more entries in the
+"commit_status" table than necessary. This operation removes the redundant
+data caused by the bug. Removing this data is almost always safe.
+These reundant records can be accessed by users through the API, making it
+possible, but unlikely, that removing it could have an impact to
+integrating services (API: /repos/{owner}/{repo}/commits/{ref}/statuses).
+
+It is safe to run while Forgejo is online.
+
+On very large Forgejo instances, the performance of operation will improve
+if the buffer-size option is used with large values. Approximately 130 MB of
+memory is required for every 100,000 records in the buffer.
+
+Bug reference: https://codeberg.org/forgejo/forgejo/issues/10671
+`,
+
+	Before: PrepareConsoleLoggerLevel(log.INFO),
+	Action: runCleanupCommitStatus,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "verbose",
+			Aliases: []string{"V"},
+			Usage:   "Show process details",
+		},
+		&cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "Report statistics from the operation but do not modify the database",
+		},
+		&cli.IntFlag{
+			Name:  "buffer-size",
+			Usage: "Record count per query while iterating records; larger values are typically faster but use more memory",
+			// See IterateByKeyset's documentation for performance notes which led to the choice of the default
+			// buffer size for this operation.
+			Value: 100000,
+		},
+		&cli.IntFlag{
+			Name:  "delete-chunk-size",
+			Usage: "Number of records to delete per DELETE query",
+			Value: 1000,
+		},
+	},
 }
 
 func runRecreateTable(ctx *cli.Context) error {
@@ -216,4 +264,20 @@ func runDoctorCheck(ctx *cli.Context) error {
 		}
 	}
 	return doctor.RunChecks(stdCtx, colorize, ctx.Bool("fix"), checks)
+}
+
+func runCleanupCommitStatus(ctx *cli.Context) error {
+	stdCtx, cancel := installSignals()
+	defer cancel()
+
+	if err := initDB(stdCtx); err != nil {
+		return err
+	}
+
+	bufferSize := ctx.Int("buffer-size")
+	deleteChunkSize := ctx.Int("delete-chunk-size")
+	dryRun := ctx.Bool("dry-run")
+	log.Debug("bufferSize = %d, deleteChunkSize = %d, dryRun = %v", bufferSize, deleteChunkSize, dryRun)
+
+	return git_model.CleanupCommitStatus(stdCtx, bufferSize, deleteChunkSize, dryRun)
 }

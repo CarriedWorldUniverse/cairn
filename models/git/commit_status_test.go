@@ -269,3 +269,46 @@ func TestCommitStatusesHideActionsURL(t *testing.T) {
 	assert.Empty(t, statuses[0].TargetURL)
 	assert.Equal(t, "https://mycicd.org/1", statuses[1].TargetURL)
 }
+
+func TestCleanupCommitStatus(t *testing.T) {
+	defer unittest.OverrideFixtures("models/git/TestCleanupCommitStatus")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	// No changes after a dry run:
+	originalCount := unittest.GetCount(t, &git_model.CommitStatus{})
+	err := git_model.CleanupCommitStatus(t.Context(), 100, 100, true)
+	require.NoError(t, err)
+	countAfterDryRun := unittest.GetCount(t, &git_model.CommitStatus{})
+	assert.Equal(t, originalCount, countAfterDryRun)
+
+	// Perform actual cleanup
+	err = git_model.CleanupCommitStatus(t.Context(), 100, 100, false)
+	require.NoError(t, err)
+
+	// Varying descriptions
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 10})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 11})
+
+	// Varying state
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 12})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 13})
+
+	// Varying context
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 14})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 15})
+
+	// Varying sha
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 16})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 17})
+
+	// Varying repo ID
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 18})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 19})
+
+	// Expected to remain or be removed from cleanup of fixture data:
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 20})
+	unittest.AssertNotExistsBean(t, &git_model.CommitStatus{ID: 21})
+	unittest.AssertNotExistsBean(t, &git_model.CommitStatus{ID: 22})
+	unittest.AssertExistsAndLoadBean(t, &git_model.CommitStatus{ID: 23})
+	unittest.AssertNotExistsBean(t, &git_model.CommitStatus{ID: 24})
+}
