@@ -12,14 +12,14 @@ import (
 	repo_model "forgejo.org/models/repo"
 
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 )
 
 type topics struct {
 	container
 }
 
-func (o *topics) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
+func (o *topics) ListPage(ctx context.Context, node f3_tree_generic.NodeInterface, _ f3_tree_generic.ListOptions, page int) f3_tree_generic.ChildrenList {
 	pageSize := o.getPageSize()
 
 	sess := db.GetEngine(ctx)
@@ -33,9 +33,9 @@ func (o *topics) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
 		panic(fmt.Errorf("error while listing topics: %v", err))
 	}
 
-	return f3_tree.ConvertListed(ctx, o.GetNode(), f3_tree.ConvertToAny(topics...)...)
+	return f3_tree.ConvertListed(ctx, node, f3_tree.ConvertToAny(topics...)...)
 }
 
-func newTopics() generic.NodeDriverInterface {
+func newTopics() f3_tree_generic.NodeDriverInterface {
 	return &topics{}
 }

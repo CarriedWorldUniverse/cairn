@@ -13,7 +13,6 @@ import (
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
 	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
-	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
 	"code.forgejo.org/f3/gof3/v3/tree/generic"
 	"code.forgejo.org/f3/gof3/v3/util"
 )
@@ -37,17 +36,17 @@ func (o *forge) getOwnersKind(ctx context.Context, id string) f3_kind.Kind {
 		if err != nil {
 			panic(fmt.Errorf("user_repo.GetUserByID: %w", err))
 		}
-		kind = f3_tree.KindUsers
+		kind = f3_kind.KindUsers
 		if user.IsOrganization() {
-			kind = f3_tree.KindOrganization
+			kind = f3_kind.KindOrganization
 		}
 		o.ownersKind[id] = kind
 	}
 	return kind
 }
 
-func (o *forge) getOwnersPath(ctx context.Context, id string) f3_tree.Path {
-	return f3_tree.NewPathFromString("/").SetForge().SetOwners(o.getOwnersKind(ctx, id))
+func (o *forge) getOwnersPath(ctx context.Context, id string) generic.Path {
+	return generic.NewNodePathFromString("/").SetForge().SetOwners(o.getOwnersKind(ctx, id))
 }
 
 func (o *forge) Equals(context.Context, generic.NodeInterface) bool { return true }

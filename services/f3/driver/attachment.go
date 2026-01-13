@@ -21,8 +21,9 @@ import (
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
+	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 	f3_util "code.forgejo.org/f3/gof3/v3/util"
 	"github.com/google/uuid"
 )
@@ -145,11 +146,11 @@ func (o *attachment) Put(ctx context.Context) f3_id.NodeID {
 	attachableID := f3_tree.GetAttachableID(o.GetNode())
 
 	switch attachable.GetKind() {
-	case f3_tree.KindRelease:
+	case f3_kind.KindRelease:
 		o.forgejoAttachment.ReleaseID = attachableID
-	case f3_tree.KindComment:
+	case f3_kind.KindComment:
 		o.forgejoAttachment.CommentID = attachableID
-	case f3_tree.KindIssue, f3_tree.KindPullRequest:
+	case f3_kind.KindIssue, f3_kind.KindPullRequest:
 		o.forgejoAttachment.IssueID = attachableID
 	default:
 		panic(fmt.Errorf("unexpected type %s", attachable.GetKind()))
@@ -180,6 +181,6 @@ func (o *attachment) Delete(ctx context.Context) {
 	}
 }
 
-func newAttachment() generic.NodeDriverInterface {
+func newAttachment() f3_tree_generic.NodeDriverInterface {
 	return &attachment{}
 }

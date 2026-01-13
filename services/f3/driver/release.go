@@ -56,7 +56,7 @@ func (o *release) ToFormat() f3.Interface {
 		Body:            o.forgejoRelease.Note,
 		Draft:           o.forgejoRelease.IsDraft,
 		Prerelease:      o.forgejoRelease.IsPrerelease,
-		PublisherID:     f3_tree.NewUserReference(o.forgejoRelease.Publisher.ID),
+		PublisherID:     f3_tree.NewUserReference(f3_util.ToString(o.forgejoRelease.Publisher.ID)),
 		Created:         o.forgejoRelease.CreatedUnix.AsTime(),
 	}
 }

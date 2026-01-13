@@ -47,7 +47,7 @@ func (o *comment) ToFormat() f3.Interface {
 	}
 	return &f3.Comment{
 		Common:   f3.NewCommon(fmt.Sprintf("%d", o.forgejoComment.ID)),
-		PosterID: f3_tree.NewUserReference(o.forgejoComment.Poster.ID),
+		PosterID: f3_tree.NewUserReference(f3_util.ToString(o.forgejoComment.Poster.ID)),
 		Content:  o.forgejoComment.Content,
 		Created:  o.forgejoComment.CreatedUnix.AsTime(),
 		Updated:  o.forgejoComment.UpdatedUnix.AsTime(),
@@ -59,6 +59,7 @@ func (o *comment) FromFormat(content f3.Interface) {
 
 	o.forgejoComment = &issues_model.Comment{
 		ID:       f3_util.ParseInt(comment.GetID()),
+		Type:     issues_model.CommentTypeComment,
 		PosterID: comment.PosterID.GetIDAsInt(),
 		Poster: &user_model.User{
 			ID: comment.PosterID.GetIDAsInt(),
@@ -98,7 +99,15 @@ func (o *comment) Patch(ctx context.Context) {
 
 func (o *comment) Put(ctx context.Context) f3_id.NodeID {
 	node := o.GetNode()
-	o.Trace("%s", node.GetID())
+
+	issueIndex := f3_tree.GetCommentableID(node)
+	repositoryID := f3_tree.GetProjectID(node)
+
+	issue, err := issues_model.GetIssueByIndex(ctx, repositoryID, issueIndex)
+	if issues_model.IsErrIssueNotExist(err) {
+		panic(fmt.Errorf("issue index %d not found in repository id %d", issueIndex, repositoryID))
+	}
+	o.forgejoComment.IssueID = issue.ID
 
 	sess := db.GetEngine(ctx)
 

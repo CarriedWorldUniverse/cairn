@@ -28,6 +28,19 @@ type user struct {
 	forgejoUser *user_model.User
 }
 
+const fakeEmailSuffix = ".fakeemail"
+
+func fromFakeEmail(mail string) string {
+	return strings.TrimSuffix(mail, fakeEmailSuffix)
+}
+
+func toFakeEmail(mail string) string {
+	if !strings.HasSuffix(mail, fakeEmailSuffix) {
+		return mail + fakeEmailSuffix
+	}
+	return mail
+}
+
 func getSystemUserByName(name string) *user_model.User {
 	switch name {
 	case user_model.GhostUserName:
@@ -90,6 +103,7 @@ func (o *user) Get(ctx context.Context) bool {
 	if err != nil {
 		panic(fmt.Errorf("user %v %w", id, err))
 	}
+	u.Email = fromFakeEmail(u.Email)
 	o.forgejoUser = u
 	return true
 }
@@ -103,7 +117,8 @@ func (o *user) Put(ctx context.Context) f3_id.NodeID {
 	}
 
 	o.forgejoUser.LowerName = strings.ToLower(o.forgejoUser.Name)
-	o.Trace("%v", *o.forgejoUser)
+	o.forgejoUser.Email = toFakeEmail(o.forgejoUser.Email)
+	o.Trace("%+v", *o.forgejoUser)
 	overwriteDefault := &user_model.CreateUserOverwriteOptions{
 		IsActive: optional.Some(true),
 	}
@@ -118,6 +133,11 @@ func (o *user) Put(ctx context.Context) f3_id.NodeID {
 func (o *user) Delete(ctx context.Context) {
 	node := o.GetNode()
 	o.Trace("%s", node.GetID())
+
+	if o.forgejoUser.ID == 1 && o.forgejoUser.IsAdmin {
+		o.Debug("silently ignore a request to delete the admin user with ID 1 because it is assumed to be required: %+v", o.forgejoUser.Type)
+		return
+	}
 
 	if err := user_service.DeleteUser(ctx, o.forgejoUser, true); err != nil {
 		panic(err)

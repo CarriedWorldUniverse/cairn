@@ -888,7 +888,7 @@ func CountUsers(ctx context.Context, opts *CountUserFilter) int64 {
 func countUsers(ctx context.Context, opts *CountUserFilter) int64 {
 	sess := db.GetEngine(ctx)
 	cond := builder.NewCond()
-	cond = cond.And(builder.Eq{"type": UserTypeIndividual})
+	cond = cond.And(builder.In("type", UserTypeIndividual, UserTypeRemoteUser))
 
 	if opts != nil {
 		if opts.LastLoginSince != nil {

@@ -76,10 +76,12 @@ func (o *repository) SetFetchFunc(fetchFunc func(ctx context.Context, destinatio
 	o.f.FetchFunc = fetchFunc
 }
 
+const RepositoryNameWiki = "vcs.wiki"
+
 func (o *repository) getURL() string {
 	owner := f3_tree.GetOwnerName(o.GetNode())
 	repoName := f3_tree.GetProjectName(o.GetNode())
-	if o.f.GetID() == f3.RepositoryNameWiki {
+	if o.f.GetID() == RepositoryNameWiki {
 		repoName += ".wiki"
 	}
 	return repo_model.RepoPath(owner, repoName)
@@ -87,6 +89,10 @@ func (o *repository) getURL() string {
 
 func (o *repository) GetRepositoryURL() string {
 	return o.getURL()
+}
+
+func (o *repository) Delete(ctx context.Context) {
+	o.Trace("ignore attempt to delete repository")
 }
 
 func (o *repository) GetRepositoryPushURL() string {

@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.5
 
 require (
-	code.forgejo.org/f3/gof3/v3 v3.11.1
+	code.forgejo.org/f3/gof3/v3 v3.11.15
 	code.forgejo.org/forgejo-contrib/go-libravatar v0.0.0-20191008002943-06d1c002b251
 	code.forgejo.org/forgejo/actions-proto v0.6.0
 	code.forgejo.org/forgejo/go-rpmutils v1.0.0
@@ -63,7 +63,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/gorilla/sessions v1.4.0
-	github.com/hashicorp/go-version v1.7.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/huandu/xstrings v1.5.0
 	github.com/inbucket/html2text v0.9.0
@@ -94,7 +94,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ulikunitz/xz v0.5.15
-	github.com/urfave/cli/v3 v3.5.0
+	github.com/urfave/cli/v3 v3.6.1
 	github.com/valyala/fastjson v1.6.7
 	github.com/yohcop/openid-go v1.0.1
 	github.com/yuin/goldmark v1.7.16

@@ -11,13 +11,19 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 
+	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 )
 
 type projects struct {
 	container
+}
+
+func (o *projects) LookupMappedID(ctx context.Context, id f3_id.NodeID, f f3.Interface) f3_id.NodeID {
+	project := f.(*f3.Project)
+	return o.GetIDFromName(ctx, project.Name)
 }
 
 func (o *projects) GetIDFromName(ctx context.Context, name string) f3_id.NodeID {
@@ -34,10 +40,10 @@ func (o *projects) GetIDFromName(ctx context.Context, name string) f3_id.NodeID 
 	return f3_id.NewNodeID(forgejoProject.ID)
 }
 
-func (o *projects) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
+func (o *projects) ListPage(ctx context.Context, node f3_tree_generic.NodeInterface, _ f3_tree_generic.ListOptions, page int) f3_tree_generic.ChildrenList {
 	pageSize := o.getPageSize()
 
-	owner := f3_tree.GetOwner(o.GetNode())
+	owner := f3_tree.GetOwner(node)
 
 	forgejoProjects, _, err := repo_model.SearchRepository(ctx, &repo_model.SearchRepoOptions{
 		ListOptions: db.ListOptions{Page: page, PageSize: pageSize},
@@ -48,9 +54,9 @@ func (o *projects) ListPage(ctx context.Context, page int) generic.ChildrenSlice
 		panic(fmt.Errorf("error while listing projects: %v", err))
 	}
 
-	return f3_tree.ConvertListed(ctx, o.GetNode(), f3_tree.ConvertToAny(forgejoProjects...)...)
+	return f3_tree.ConvertListed(ctx, node, f3_tree.ConvertToAny(forgejoProjects...)...)
 }
 
-func newProjects() generic.NodeDriverInterface {
+func newProjects() f3_tree_generic.NodeDriverInterface {
 	return &projects{}
 }

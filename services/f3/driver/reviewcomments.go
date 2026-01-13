@@ -12,17 +12,17 @@ import (
 	issues_model "forgejo.org/models/issues"
 
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
-	"code.forgejo.org/f3/gof3/v3/tree/generic"
+	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"
 )
 
 type reviewComments struct {
 	container
 }
 
-func (o *reviewComments) ListPage(ctx context.Context, page int) generic.ChildrenSlice {
+func (o *reviewComments) ListPage(ctx context.Context, node f3_tree_generic.NodeInterface, _ f3_tree_generic.ListOptions, page int) f3_tree_generic.ChildrenList {
 	pageSize := o.getPageSize()
 
-	id := f3_tree.GetReviewID(o.GetNode())
+	id := f3_tree.GetReviewID(node)
 
 	sess := db.GetEngine(ctx).
 		Table("comment").
@@ -35,9 +35,9 @@ func (o *reviewComments) ListPage(ctx context.Context, page int) generic.Childre
 		panic(fmt.Errorf("error while listing reviewComments: %v", err))
 	}
 
-	return f3_tree.ConvertListed(ctx, o.GetNode(), f3_tree.ConvertToAny(forgejoReviewComments...)...)
+	return f3_tree.ConvertListed(ctx, node, f3_tree.ConvertToAny(forgejoReviewComments...)...)
 }
 
-func newReviewComments() generic.NodeDriverInterface {
+func newReviewComments() f3_tree_generic.NodeDriverInterface {
 	return &reviewComments{}
 }

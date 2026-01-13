@@ -24,7 +24,6 @@ import (
 )
 
 func CmdF3(ctx context.Context) *cli.Command {
-	ctx = f3_logger.ContextSetLogger(ctx, util.NewF3Logger(nil, log.GetLogger(log.DEFAULT)))
 	return &cli.Command{
 		Name:  "f3",
 		Usage: "F3",
@@ -38,7 +37,9 @@ func SubcmdF3Mirror(ctx context.Context) *cli.Command {
 	mirrorCmd := f3_cmd.CreateCmdMirror()
 	mirrorCmd.Before = prepareWorkPathAndCustomConf(ctx)
 	f3Action := mirrorCmd.Action
-	mirrorCmd.Action = func(ctx context.Context, cli *cli.Command) error { return runMirror(ctx, cli, f3Action) }
+	mirrorCmd.Action = func(ctx context.Context, cli *cli.Command) error {
+		return runMirror(ctx, cli, f3Action)
+	}
 	return mirrorCmd
 }
 
@@ -67,6 +68,8 @@ func runMirror(ctx context.Context, c *cli.Command, action cli.ActionFunc) error
 		if err := models.Init(ctx); err != nil {
 			return err
 		}
+
+		ctx = f3_logger.ContextSetLogger(ctx, util.NewF3Logger(nil, log.GetLogger(log.DEFAULT)))
 	}
 
 	err := action(ctx, c)
