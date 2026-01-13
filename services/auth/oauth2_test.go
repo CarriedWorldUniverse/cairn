@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"forgejo.org/models/auth"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/web/middleware"
@@ -27,10 +28,31 @@ func TestUserIDFromToken(t *testing.T) {
 		ds := make(middleware.ContextData)
 
 		o := OAuth2{}
-		uid := o.userIDFromToken(t.Context(), token, ds)
+		uid, err := o.userIDFromToken(t.Context(), token, ds)
+		require.NoError(t, err)
 		assert.Equal(t, int64(user_model.ActionsUserID), uid)
 		assert.Equal(t, true, ds["IsActionsToken"])
 		assert.Equal(t, ds["ActionsTaskID"], int64(RunningTaskID))
+	})
+
+	t.Run("Actions error-JWT", func(t *testing.T) {
+		cases := map[string]struct {
+			Token string
+			Error error
+		}{
+			"Empty":    {"", auth.ErrAccessTokenEmpty{}},
+			"To short": {"abc", auth.ErrAccessTokenNotExist{Token: "abc"}},
+		}
+
+		ds := make(middleware.ContextData)
+		o := OAuth2{}
+		for name, c := range cases {
+			t.Run(name, func(t *testing.T) {
+				uid, err := o.userIDFromToken(t.Context(), c.Token, ds)
+				require.ErrorIs(t, err, c.Error)
+				assert.Equal(t, int64(0), uid)
+			})
+		}
 	})
 }
 
@@ -60,13 +82,14 @@ func TestParseToken(t *testing.T) {
 		ExpectedToken string
 		Expected      bool
 	}{
-		"Token Uppercase":  {Header: "Token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
-		"Token Lowercase":  {Header: "token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
-		"Token Unicode":    {Header: "to\u212Aen 1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
-		"Bearer Uppercase": {Header: "Bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
-		"Bearer Lowercase": {Header: "bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
-		"Missing type":     {Header: "1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
-		"Three Parts":      {Header: "abc 1234567890 test", ExpectedToken: "", Expected: false},
+		"Token Uppercase":   {Header: "Token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Token Lowercase":   {Header: "token 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Token Unicode":     {Header: "to\u212Aen 1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
+		"Bearer Uppercase":  {Header: "Bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Bearer Lowercase":  {Header: "bearer 1234567890123456789012345687901325467890", ExpectedToken: "1234567890123456789012345687901325467890", Expected: true},
+		"Missing type":      {Header: "1234567890123456789012345687901325467890", ExpectedToken: "", Expected: false},
+		"Three Parts":       {Header: "abc 1234567890 test", ExpectedToken: "", Expected: false},
+		"Token Three Parts": {Header: "Token 1234567890 test", ExpectedToken: "", Expected: false},
 	}
 
 	for name := range cases {
