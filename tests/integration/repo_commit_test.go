@@ -82,3 +82,19 @@ func TestRepoCommitHeader(t *testing.T) {
 		assert.Equal(t, commit.ID.String()[:10], sha.Find(".shortsha").Text())
 	})
 }
+
+func TestLastCommit(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Anonymous", func(t *testing.T) {
+		req := NewRequest(t, "POST", "/user2/repo1/lastcommit/65f1bf27bc3bf70f64657658635e66094edbcb4d")
+		MakeRequest(t, req, http.StatusOK)
+	})
+
+	t.Run("Signed in", func(t *testing.T) {
+		session := loginUser(t, "user2")
+
+		req := NewRequest(t, "POST", "/user2/repo1/lastcommit/65f1bf27bc3bf70f64657658635e66094edbcb4d")
+		session.MakeRequest(t, req, http.StatusOK)
+	})
+}
