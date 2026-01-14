@@ -50,14 +50,6 @@ func UpdateVariable(ctx context.Context, variableID, ownerID, repoID int64, name
 }
 
 func DeleteVariableByName(ctx context.Context, ownerID, repoID int64, name string) error {
-	if err := secrets_service.ValidateName(name); err != nil {
-		return err
-	}
-
-	if err := envNameCIRegexMatch(name); err != nil {
-		return err
-	}
-
 	v, err := GetVariable(ctx, actions_model.FindVariablesOpts{
 		OwnerID: ownerID,
 		RepoID:  repoID,
@@ -86,6 +78,7 @@ func GetVariable(ctx context.Context, opts actions_model.FindVariablesOpts) (*ac
 // reference to:
 // https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables
 // https://docs.github.com/en/actions/security-guides/encrypted-secrets#naming-your-secrets
+// https://forgejo.org/docs/next/user/actions/basic-concepts/#name-constraints
 var (
 	forbiddenEnvNameCIRx = regexp.MustCompile("(?i)^CI$")
 )

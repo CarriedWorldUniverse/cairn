@@ -1,5 +1,5 @@
-// Copyright 2023 The Gitea Authors. All rights reserved.
-// SPDX-License-Identifier: MIT
+// Copyright 2026 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 package integration
 
@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
+	org_model "forgejo.org/models/organization"
 	secret_model "forgejo.org/models/secret"
 	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/keying"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/tests"
@@ -21,12 +21,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAPIUserSecrets(t *testing.T) {
+func TestAPIOrgSecrets(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
-	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: "user1"})
-	session := loginUser(t, user.Name)
-	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
+	org := unittest.AssertExistsAndLoadBean(t, &org_model.Organization{Name: "org3"})
+	session := loginUser(t, "user2")
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteOrganization)
+
+	t.Run("List", func(t *testing.T) {
+		listURL := fmt.Sprintf("/api/v1/orgs/%s/actions/secrets", org.Name)
+		req := NewRequest(t, "GET", listURL).AddTokenAuth(token)
+		res := MakeRequest(t, req, http.StatusOK)
+		secrets := []*api.Secret{}
+		DecodeJSON(t, res, &secrets)
+		assert.Empty(t, secrets)
+
+		createData := api.CreateOrUpdateSecretOption{Data: "a secret to create"}
+		req = NewRequestWithJSON(t, "PUT", listURL+"/first", createData).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+		req = NewRequestWithJSON(t, "PUT", listURL+"/sec2", createData).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+		req = NewRequestWithJSON(t, "PUT", listURL+"/last", createData).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+
+		req = NewRequest(t, "GET", listURL).AddTokenAuth(token)
+		res = MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, res, &secrets)
+		assert.Len(t, secrets, 3)
+		expectedValues := []string{"FIRST", "SEC2", "LAST"}
+		for _, secret := range secrets {
+			assert.Contains(t, expectedValues, secret.Name)
+		}
+	})
 
 	t.Run("Create", func(t *testing.T) {
 		cases := []struct {
@@ -35,7 +61,7 @@ func TestAPIUserSecrets(t *testing.T) {
 		}{
 			{
 				Name:           "",
-				ExpectedStatus: http.StatusNotFound,
+				ExpectedStatus: http.StatusMethodNotAllowed,
 			},
 			{
 				Name:           "-",
@@ -72,7 +98,7 @@ func TestAPIUserSecrets(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/user/actions/secrets/%s", c.Name), api.CreateOrUpdateSecretOption{
+			req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, c.Name), api.CreateOrUpdateSecretOption{
 				Data: "data",
 			}).AddTokenAuth(token)
 			MakeRequest(t, req, c.ExpectedStatus)
@@ -80,8 +106,8 @@ func TestAPIUserSecrets(t *testing.T) {
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		name := "update_user_secret_and_test_data"
-		url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", name)
+		name := "update_org_secret_and_test_data"
+		url := fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, name)
 
 		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
 			Data: "initial",
@@ -101,7 +127,7 @@ func TestAPIUserSecrets(t *testing.T) {
 
 	t.Run("Delete", func(t *testing.T) {
 		name := "delete_secret"
-		url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", name)
+		url := fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, name)
 
 		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
 			Data: "initial",
@@ -118,10 +144,10 @@ func TestAPIUserSecrets(t *testing.T) {
 	})
 
 	t.Run("Delete with forbidden names", func(t *testing.T) {
-		secret, err := secret_model.InsertEncryptedSecret(t.Context(), user.ID, 0, "FORGEJO_FORBIDDEN", "illegal")
+		secret, err := secret_model.InsertEncryptedSecret(t.Context(), org.ID, 0, "FORGEJO_FORBIDDEN", "illegal")
 		require.NoError(t, err)
 
-		url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", secret.Name)
+		url := fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, secret.Name)
 
 		req := NewRequest(t, "DELETE", url).
 			AddTokenAuth(token)
