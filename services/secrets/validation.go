@@ -12,7 +12,7 @@ import (
 // https://docs.github.com/en/actions/security-guides/encrypted-secrets#naming-your-secrets
 var (
 	namePattern            = regexp.MustCompile("(?i)^[A-Z_][A-Z0-9_]*$")
-	forbiddenPrefixPattern = regexp.MustCompile("(?i)^GIT(EA|HUB)_")
+	forbiddenPrefixPattern = regexp.MustCompile("(?i)^FORGEJO_|GITEA_|GITHUB_")
 
 	ErrInvalidName = util.NewInvalidArgumentErrorf("invalid secret name")
 )

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	actions_model "forgejo.org/models/actions"
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
@@ -15,6 +16,7 @@ import (
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPIUserVariablesCreateUserVariable(t *testing.T) {
@@ -58,6 +60,10 @@ func TestAPIUserVariablesCreateUserVariable(t *testing.T) {
 			ExpectedStatus: http.StatusBadRequest,
 		},
 		{
+			Name:           "forgejo_var",
+			ExpectedStatus: http.StatusBadRequest,
+		},
+		{
 			Name:           "github_var",
 			ExpectedStatus: http.StatusBadRequest,
 		},
@@ -69,9 +75,19 @@ func TestAPIUserVariablesCreateUserVariable(t *testing.T) {
 
 	for _, c := range cases {
 		req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/user/actions/variables/%s", c.Name), api.CreateVariableOption{
-			Value: "value",
+			Value: "value" + c.Name,
 		}).AddTokenAuth(token)
 		MakeRequest(t, req, c.ExpectedStatus)
+
+		if c.ExpectedStatus < 300 {
+			req = NewRequest(t, "GET", fmt.Sprintf("/api/v1/user/actions/variables/%s", c.Name)).
+				AddTokenAuth(token)
+			res := MakeRequest(t, req, http.StatusOK)
+			variable := api.ActionVariable{}
+			DecodeJSON(t, res, &variable)
+			assert.Equal(t, variable.Name, c.Name)
+			assert.Equal(t, variable.Data, "value"+c.Name)
+		}
 	}
 }
 
@@ -116,6 +132,11 @@ func TestAPIUserVariablesUpdateUserVariable(t *testing.T) {
 		},
 		{
 			Name:           variableName,
+			UpdateName:     "forgejo_foo",
+			ExpectedStatus: http.StatusBadRequest,
+		},
+		{
+			Name:           variableName,
 			UpdateName:     "updated_var_name",
 			ExpectedStatus: http.StatusNoContent,
 		},
@@ -142,6 +163,8 @@ func TestAPIUserVariablesDeleteUserVariable(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	user1 := unittest.AssertExistsAndLoadBean(t, &user_model.User{Name: "user1"})
+	variable, err := actions_model.InsertVariable(t.Context(), user1.ID, 0, "FORGEJO_FORBIDDEN", "illegal")
+	require.NoError(t, err)
 
 	session := loginUser(t, user1.Name)
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
@@ -154,6 +177,14 @@ func TestAPIUserVariablesDeleteUserVariable(t *testing.T) {
 	}).AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusNoContent)
 
+	req = NewRequest(t, "DELETE", url).AddTokenAuth(token)
+	MakeRequest(t, req, http.StatusNoContent)
+
+	req = NewRequest(t, "DELETE", url).AddTokenAuth(token)
+	MakeRequest(t, req, http.StatusNotFound)
+
+	// deleting of forbidden names should still be possible
+	url = fmt.Sprintf("/api/v1/user/actions/variables/%s", variable.Name)
 	req = NewRequest(t, "DELETE", url).AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusNoContent)
 
