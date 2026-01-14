@@ -168,3 +168,8 @@
 .tippy-svg-arrow-inner {
   fill: var(--color-body);
 }
+
+/* Stopwatch popup needs extra help with overriding tippy's styling. */
+.tippy-box .active-stopwatch-popup {
+  display: flex !important;
+}
