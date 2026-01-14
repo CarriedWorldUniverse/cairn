@@ -124,7 +124,7 @@ func cmdCleanupCommitStatuses() *cli.Command {
 		Description: `Forgejo suffered from a bug which caused the creation of more entries in the
 "commit_status" table than necessary. This operation removes the redundant
 data caused by the bug. Removing this data is almost always safe.
-These reundant records can be accessed by users through the API, making it
+These redundant records can be accessed by users through the API, making it
 possible, but unlikely, that removing it could have an impact to
 integrating services (API: /repos/{owner}/{repo}/commits/{ref}/statuses).
 
