@@ -186,6 +186,31 @@ func TestDatabaseMissingABranch(t *testing.T) {
 	})
 }
 
+func TestSwitchDefaultBranchButtonVisibility(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		session := loginUser(t, "user5")
+
+		t.Run("Check switch default branch button", func(t *testing.T) {
+			t.Run("Repo admin", func(t *testing.T) {
+				repo4 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
+
+				// Check that the button is present
+				resp := session.MakeRequest(t, NewRequest(t, "GET", "/"+repo4.FullName()+"/branches"), http.StatusOK)
+				htmlDoc := NewHTMLParser(t, resp.Body)
+				assert.Equal(t, 1, htmlDoc.doc.Find("a[href='/"+repo4.FullName()+"/settings/branches']").Length())
+			})
+			t.Run("None repo admin", func(t *testing.T) {
+				repo40 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 40})
+
+				// Check that the button is NOT present
+				resp := session.MakeRequest(t, NewRequest(t, "GET", "/"+repo40.FullName()+"/branches"), http.StatusOK)
+				htmlDoc := NewHTMLParser(t, resp.Body)
+				assert.Equal(t, 0, htmlDoc.doc.Find("a[href='/"+repo40.FullName()+"/settings/branches']").Length())
+			})
+		})
+	})
+}
+
 func TestCreateBranchButtonVisibility(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		session := loginUser(t, "user1")
