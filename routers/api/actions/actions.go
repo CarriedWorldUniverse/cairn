@@ -20,5 +20,8 @@ func Routes(prefix string) *web.Route {
 	path, handler = runner.NewRunnerServiceHandler()
 	m.Post(path+"*", http.StripPrefix(prefix, handler).ServeHTTP)
 
+	m.Mount("/.well-known", OIDCRoutes(prefix))
+	m.Get(idTokenRouteBase, IDTokenContexter(), generateIDToken)
+
 	return m
 }

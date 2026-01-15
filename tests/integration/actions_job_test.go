@@ -365,6 +365,41 @@ func TestActionsGiteaContext(t *testing.T) {
 		t.Skip()
 	}
 
+	testCases := []struct {
+		name                string
+		treePath            string
+		fileContent         string
+		enableOpenIDConnect bool
+	}{
+		{
+			name:     "openid_connect_disabled",
+			treePath: ".gitea/workflows/pull.yml",
+			fileContent: `name: Pull Request
+on: pull_request
+jobs:
+  wf1-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'test the pull'
+`,
+			enableOpenIDConnect: false,
+		},
+		{
+			name:     "openid_connect_enabled",
+			treePath: ".gitea/workflows/pull-enabled.yml",
+			fileContent: `name: Pull Request
+on: pull_request
+jobs:
+  wf1-job:
+    enable-openid-connect: true
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'test the pull'
+`,
+			enableOpenIDConnect: true,
+		},
+	}
+
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 		user2Session := loginUser(t, user2.Name)
@@ -377,75 +412,79 @@ func TestActionsGiteaContext(t *testing.T) {
 		runner := newMockRunner()
 		runner.registerAsRepoRunner(t, baseRepo.OwnerName, baseRepo.Name, "mock-runner", []string{"ubuntu-latest"})
 
-		// init the workflow
-		wfTreePath := ".gitea/workflows/pull.yml"
-		wfFileContent := `name: Pull Request
-on: pull_request
-jobs:
-  wf1-job:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo 'test the pull'
-`
-		opts := getWorkflowCreateFileOptions(user2, baseRepo.DefaultBranch, fmt.Sprintf("create %s", wfTreePath), wfFileContent)
-		createWorkflowFile(t, user2Token, baseRepo.OwnerName, baseRepo.Name, wfTreePath, opts)
-		// user2 creates a pull request
-		doAPICreateFile(user2APICtx, "user2-patch.txt", &api.CreateFileOptions{
-			FileOptions: api.FileOptions{
-				NewBranchName: "user2/patch-1",
-				Message:       "create user2-patch.txt",
-				Author: api.Identity{
-					Name:  user2.Name,
-					Email: user2.Email,
-				},
-				Committer: api.Identity{
-					Name:  user2.Name,
-					Email: user2.Email,
-				},
-				Dates: api.CommitDateOptions{
-					Author:    time.Now(),
-					Committer: time.Now(),
-				},
-			},
-			ContentBase64: base64.StdEncoding.EncodeToString([]byte("user2-fix")),
-		})(t)
-		apiPull, err := doAPICreatePullRequest(user2APICtx, baseRepo.OwnerName, baseRepo.Name, baseRepo.DefaultBranch, "user2/patch-1")(t)
-		require.NoError(t, err)
-		task := runner.fetchTask(t)
-		gtCtx := task.Context.GetFields()
-		actionTask := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: task.Id})
-		actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: actionTask.JobID})
-		actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
-		require.NoError(t, actionRun.LoadAttributes(t.Context()))
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				opts := getWorkflowCreateFileOptions(user2, baseRepo.DefaultBranch, fmt.Sprintf("create %s", tc.treePath), tc.fileContent)
+				createWorkflowFile(t, user2Token, baseRepo.OwnerName, baseRepo.Name, tc.treePath, opts)
+				// user2 creates a pull request
+				doAPICreateFile(user2APICtx, "user2-patch.txt", &api.CreateFileOptions{
+					FileOptions: api.FileOptions{
+						NewBranchName: tc.name,
+						Message:       "create user2-patch.txt",
+						Author: api.Identity{
+							Name:  user2.Name,
+							Email: user2.Email,
+						},
+						Committer: api.Identity{
+							Name:  user2.Name,
+							Email: user2.Email,
+						},
+						Dates: api.CommitDateOptions{
+							Author:    time.Now(),
+							Committer: time.Now(),
+						},
+					},
+					ContentBase64: base64.StdEncoding.EncodeToString([]byte("user2-fix")),
+				})(t)
+				apiPull, err := doAPICreatePullRequest(user2APICtx, baseRepo.OwnerName, baseRepo.Name, baseRepo.DefaultBranch, tc.name)(t)
+				require.NoError(t, err)
+				task := runner.fetchTask(t)
+				gtCtx := task.Context.GetFields()
+				actionTask := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: task.Id})
+				actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: actionTask.JobID})
+				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
+				require.NoError(t, actionRun.LoadAttributes(t.Context()))
 
-		assert.Equal(t, user2.Name, gtCtx["actor"].GetStringValue())
-		assert.Equal(t, setting.AppURL+"api/v1", gtCtx["api_url"].GetStringValue())
-		assert.Equal(t, apiPull.Base.Ref, gtCtx["base_ref"].GetStringValue())
-		runEvent := map[string]any{}
-		require.NoError(t, json.Unmarshal([]byte(actionRun.EventPayload), &runEvent))
-		assert.True(t, reflect.DeepEqual(gtCtx["event"].GetStructValue().AsMap(), runEvent))
-		assert.Equal(t, actionRun.TriggerEvent, gtCtx["event_name"].GetStringValue())
-		assert.Equal(t, apiPull.Head.Ref, gtCtx["head_ref"].GetStringValue())
-		assert.Equal(t, actionRunJob.JobID, gtCtx["job"].GetStringValue())
-		assert.Equal(t, actionRun.Ref, gtCtx["ref"].GetStringValue())
-		assert.Equal(t, (git.RefName(actionRun.Ref)).ShortName(), gtCtx["ref_name"].GetStringValue())
-		assert.False(t, gtCtx["ref_protected"].GetBoolValue())
-		assert.Equal(t, (git.RefName(actionRun.Ref)).RefType(), gtCtx["ref_type"].GetStringValue())
-		assert.Equal(t, actionRun.Repo.OwnerName+"/"+actionRun.Repo.Name, gtCtx["repository"].GetStringValue())
-		assert.Equal(t, actionRun.Repo.OwnerName, gtCtx["repository_owner"].GetStringValue())
-		assert.Equal(t, actionRun.Repo.HTMLURL(), gtCtx["repositoryUrl"].GetStringValue())
-		assert.Equal(t, fmt.Sprint(actionRunJob.RunID), gtCtx["run_id"].GetStringValue())
-		assert.Equal(t, fmt.Sprint(actionRun.Index), gtCtx["run_number"].GetStringValue())
-		assert.Equal(t, fmt.Sprint(actionRunJob.Attempt), gtCtx["run_attempt"].GetStringValue())
-		assert.Equal(t, "Actions", gtCtx["secret_source"].GetStringValue())
-		assert.Equal(t, setting.AppURL, gtCtx["server_url"].GetStringValue())
-		assert.Equal(t, actionRun.CommitSHA, gtCtx["sha"].GetStringValue())
-		assert.Equal(t, actionRun.WorkflowID, gtCtx["workflow"].GetStringValue())
-		assert.Equal(t, "user2/actions-gitea-context/.gitea/workflows/pull.yml@refs/pull/1/head", gtCtx["workflow_ref"].GetStringValue())
-		assert.Equal(t, setting.Actions.DefaultActionsURL.URL(), gtCtx["gitea_default_actions_url"].GetStringValue())
-		assert.Equal(t, setting.AppVer, gtCtx["forgejo_server_version"].GetStringValue())
-		token := gtCtx["token"].GetStringValue()
-		assert.Equal(t, actionTask.TokenLastEight, token[len(token)-8:])
+				assert.Equal(t, user2.Name, gtCtx["actor"].GetStringValue())
+				assert.Equal(t, setting.AppURL+"api/v1", gtCtx["api_url"].GetStringValue())
+				assert.Equal(t, apiPull.Base.Ref, gtCtx["base_ref"].GetStringValue())
+				runEvent := map[string]any{}
+				require.NoError(t, json.Unmarshal([]byte(actionRun.EventPayload), &runEvent))
+				assert.True(t, reflect.DeepEqual(gtCtx["event"].GetStructValue().AsMap(), runEvent))
+				assert.Equal(t, actionRun.TriggerEvent, gtCtx["event_name"].GetStringValue())
+				assert.Equal(t, apiPull.Head.Ref, gtCtx["head_ref"].GetStringValue())
+				assert.Equal(t, actionRunJob.JobID, gtCtx["job"].GetStringValue())
+				assert.Equal(t, actionRun.Ref, gtCtx["ref"].GetStringValue())
+				assert.Equal(t, (git.RefName(actionRun.Ref)).ShortName(), gtCtx["ref_name"].GetStringValue())
+				assert.False(t, gtCtx["ref_protected"].GetBoolValue())
+				assert.Equal(t, (git.RefName(actionRun.Ref)).RefType(), gtCtx["ref_type"].GetStringValue())
+				assert.Equal(t, actionRun.Repo.OwnerName+"/"+actionRun.Repo.Name, gtCtx["repository"].GetStringValue())
+				assert.Equal(t, actionRun.Repo.OwnerName, gtCtx["repository_owner"].GetStringValue())
+				assert.Equal(t, actionRun.Repo.HTMLURL(), gtCtx["repositoryUrl"].GetStringValue())
+				assert.Equal(t, fmt.Sprint(actionRunJob.RunID), gtCtx["run_id"].GetStringValue())
+				assert.Equal(t, fmt.Sprint(actionRun.Index), gtCtx["run_number"].GetStringValue())
+				assert.Equal(t, fmt.Sprint(actionRunJob.Attempt), gtCtx["run_attempt"].GetStringValue())
+				assert.Equal(t, "Actions", gtCtx["secret_source"].GetStringValue())
+				assert.Equal(t, setting.AppURL, gtCtx["server_url"].GetStringValue())
+				assert.Equal(t, actionRun.CommitSHA, gtCtx["sha"].GetStringValue())
+				assert.Equal(t, actionRun.WorkflowID, gtCtx["workflow"].GetStringValue())
+				assert.Contains(t, gtCtx["workflow_ref"].GetStringValue(), fmt.Sprintf("user2/actions-gitea-context/%s@refs/pull", tc.treePath))
+				assert.Equal(t, setting.Actions.DefaultActionsURL.URL(), gtCtx["gitea_default_actions_url"].GetStringValue())
+				assert.Equal(t, setting.AppVer, gtCtx["forgejo_server_version"].GetStringValue())
+				token := gtCtx["token"].GetStringValue()
+				assert.Equal(t, actionTask.TokenLastEight, token[len(token)-8:])
+				if tc.enableOpenIDConnect {
+					assert.NotEmpty(t, gtCtx["forgejo_actions_id_token_request_token"].GetStringValue())
+					assert.Equal(t,
+						fmt.Sprintf("%sapi/actions/_apis/pipelines/workflows/%d/idtoken?placeholder=true",
+							setting.AppURL, actionRunJob.RunID), gtCtx["forgejo_actions_id_token_request_url"].GetStringValue(),
+					)
+				} else {
+					assert.Empty(t, gtCtx["forgejo_actions_id_token_request_token"].GetStringValue())
+					assert.Empty(t, gtCtx["forgejo_actions_id_token_request_url"].GetStringValue())
+				}
+			})
+		}
 
 		doAPIDeleteRepository(user2APICtx)(t)
 	})

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/auth"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
@@ -22,7 +23,14 @@ func TestUserIDFromToken(t *testing.T) {
 
 	t.Run("Actions JWT", func(t *testing.T) {
 		const RunningTaskID = 47
-		token, err := actions.CreateAuthorizationToken(RunningTaskID, 1, 2)
+		task := &actions_model.ActionTask{
+			ID: RunningTaskID,
+			Job: &actions_model.ActionRunJob{
+				ID:    2,
+				RunID: 1,
+			},
+		}
+		token, err := actions.CreateAuthorizationToken(task, map[string]any{}, false)
 		require.NoError(t, err)
 
 		ds := make(middleware.ContextData)
