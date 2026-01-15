@@ -171,6 +171,8 @@ func InitWebInstalled(ctx context.Context) {
 	actions_service.Init()
 	mustInit(stats.Init)
 
+	mustInit(actions_router.InitOIDC)
+
 	// Finally start up the cron
 	cron.NewContext(ctx)
 }

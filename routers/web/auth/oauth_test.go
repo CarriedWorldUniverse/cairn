@@ -10,6 +10,7 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/services/auth/source/oauth2"
 
@@ -19,7 +20,7 @@ import (
 )
 
 func createAndParseToken(t *testing.T, grant *auth.OAuth2Grant) *oauth2.OIDCToken {
-	signingKey, err := oauth2.CreateJWTSigningKey("HS256", make([]byte, 32))
+	signingKey, err := jwtx.CreateSigningKey("HS256", make([]byte, 32))
 	require.NoError(t, err)
 	assert.NotNil(t, signingKey)
 

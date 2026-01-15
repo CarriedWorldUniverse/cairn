@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	actions_model "forgejo.org/models/actions"
 	"forgejo.org/modules/storage"
 	"forgejo.org/routers/api/actions"
 	actions_service "forgejo.org/services/actions"
@@ -35,7 +36,14 @@ func toProtoJSON(m protoreflect.ProtoMessage) io.Reader {
 }
 
 func uploadArtifact(t *testing.T, body string) string {
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -88,7 +96,14 @@ func TestActionsArtifactV4UploadSingleFile(t *testing.T) {
 func TestActionsArtifactV4UploadSingleFileWrongChecksum(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -132,7 +147,14 @@ func TestActionsArtifactV4UploadSingleFileWrongChecksum(t *testing.T) {
 func TestActionsArtifactV4UploadSingleFileWithRetentionDays(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -180,7 +202,14 @@ func TestActionsArtifactV4UploadSingleFileWithRetentionDays(t *testing.T) {
 func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -243,7 +272,14 @@ func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing
 func TestActionsArtifactV4UploadSingleFileWithChunksOutOfOrder(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -308,7 +344,14 @@ func TestActionsArtifactV4UploadSingleFileWithChunksOutOfOrder(t *testing.T) {
 func TestActionsArtifactV4DownloadSingle(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -369,7 +412,14 @@ func TestActionsArtifactV4DownloadRange(t *testing.T) {
 func TestActionsArtifactV4Delete(t *testing.T) {
 	defer prepareTestEnvActionsArtifacts(t)()
 
-	token, err := actions_service.CreateAuthorizationToken(48, 792, 193)
+	task := &actions_model.ActionTask{
+		ID: 48,
+		Job: &actions_model.ActionRunJob{
+			ID:    193,
+			RunID: 792,
+		},
+	}
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
 	require.NoError(t, err)
 
 	// delete artifact by name

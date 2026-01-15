@@ -25,6 +25,7 @@ import (
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
@@ -153,7 +154,7 @@ type AccessTokenResponse struct {
 	IDToken      string    `json:"id_token,omitempty"`
 }
 
-func newAccessTokenResponse(ctx go_context.Context, grant *auth.OAuth2Grant, serverKey, clientKey oauth2.JWTSigningKey) (*AccessTokenResponse, *AccessTokenError) {
+func newAccessTokenResponse(ctx go_context.Context, grant *auth.OAuth2Grant, serverKey, clientKey jwtx.SigningKey) (*AccessTokenResponse, *AccessTokenError) {
 	if setting.OAuth2.InvalidateRefreshTokens {
 		if err := grant.IncreaseCounter(ctx); err != nil {
 			return nil, &AccessTokenError{
@@ -741,7 +742,7 @@ func AccessTokenOAuth(ctx *context.Context) {
 	clientKey := serverKey
 	if serverKey.IsSymmetric() {
 		var err error
-		clientKey, err = oauth2.CreateJWTSigningKey(serverKey.SigningMethod().Alg(), []byte(form.ClientSecret))
+		clientKey, err = jwtx.CreateSigningKey(serverKey.SigningMethod().Alg(), []byte(form.ClientSecret))
 		if err != nil {
 			handleAccessTokenError(ctx, AccessTokenError{
 				ErrorCode:        AccessTokenErrorCodeInvalidRequest,
@@ -764,7 +765,7 @@ func AccessTokenOAuth(ctx *context.Context) {
 	}
 }
 
-func handleRefreshToken(ctx *context.Context, form forms.AccessTokenForm, serverKey, clientKey oauth2.JWTSigningKey) {
+func handleRefreshToken(ctx *context.Context, form forms.AccessTokenForm, serverKey, clientKey jwtx.SigningKey) {
 	app, err := auth.GetOAuth2ApplicationByClientID(ctx, form.ClientID)
 	if err != nil {
 		handleAccessTokenError(ctx, AccessTokenError{
@@ -824,7 +825,7 @@ func handleRefreshToken(ctx *context.Context, form forms.AccessTokenForm, server
 	ctx.JSON(http.StatusOK, accessToken)
 }
 
-func handleAuthorizationCode(ctx *context.Context, form forms.AccessTokenForm, serverKey, clientKey oauth2.JWTSigningKey) {
+func handleAuthorizationCode(ctx *context.Context, form forms.AccessTokenForm, serverKey, clientKey jwtx.SigningKey) {
 	app, err := auth.GetOAuth2ApplicationByClientID(ctx, form.ClientID)
 	if err != nil {
 		handleAccessTokenError(ctx, AccessTokenError{

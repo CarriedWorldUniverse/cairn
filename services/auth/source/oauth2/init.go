@@ -11,6 +11,7 @@ import (
 
 	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
@@ -28,9 +29,14 @@ const UsersStoreKey = "gitea-oauth2-sessions"
 // ProviderHeaderKey is the HTTP header key
 const ProviderHeaderKey = "gitea-oauth2-provider"
 
+// DefaultSigningKey is the default signing key for JWTs.
+var DefaultSigningKey jwtx.SigningKey
+
 // Init initializes the oauth source
 func Init(ctx context.Context) error {
-	if err := InitSigningKey(); err != nil {
+	var err error
+	DefaultSigningKey, err = jwtx.InitSigningKey(setting.GetGeneralTokenSigningSecret, setting.OAuth2.JWTSigningPrivateKeyFile, setting.OAuth2.JWTSigningAlgorithm)
+	if err != nil {
 		return err
 	}
 

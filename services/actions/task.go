@@ -10,6 +10,8 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
+	actions_module "forgejo.org/modules/actions"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
@@ -82,17 +84,38 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv
 }
 
 func generateTaskContext(t *actions_model.ActionTask) (*structpb.Struct, error) {
-	giteaRuntimeToken, err := CreateAuthorizationToken(t.ID, t.Job.RunID, t.JobID)
-	if err != nil {
-		return nil, err
-	}
-
-	gitCtx, err := GenerateGiteaContext(t.Job.Run, t.Job)
+	run := t.Job.Run
+	gitCtx, err := GenerateGiteaContext(run, t.Job)
 	if err != nil {
 		return nil, err
 	}
 	gitCtx["token"] = t.Token
+
+	enableOpenIDConnect, err := t.Job.EnableOpenIDConnect()
+	if err != nil {
+		return nil, err
+	}
+
+	// Override the setting from the workflow is this is coming from a fork pull request
+	// and this isn't a pull_request_target event.
+	if run.IsForkPullRequest && run.TriggerEvent != actions_module.GithubEventPullRequestTarget {
+		enableOpenIDConnect = false
+	}
+
+	giteaRuntimeToken, err := CreateAuthorizationToken(t, gitCtx, enableOpenIDConnect)
+	if err != nil {
+		return nil, err
+	}
+
 	gitCtx["gitea_runtime_token"] = giteaRuntimeToken
+
+	if enableOpenIDConnect {
+		gitCtx["forgejo_actions_id_token_request_token"] = giteaRuntimeToken
+		// The "placeholder=true" at the end of the URL is meaningless, but we need a param
+		// here if we want to match the format used in GitHub actions examples (e.g., to ensure
+		// that "ACTIONS_ID_TOKEN_REQUEST_URL&audience=..." will work as expected).
+		gitCtx["forgejo_actions_id_token_request_url"] = setting.AppURL + setting.AppSubURL + fmt.Sprintf("api/actions/_apis/pipelines/workflows/%d/idtoken?placeholder=true", t.Job.RunID)
+	}
 
 	return structpb.NewStruct(gitCtx)
 }
