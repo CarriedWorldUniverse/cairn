@@ -15,7 +15,7 @@ jobs:
     if: ( vars.ROLE == 'forgejo-coding' ) && contains(github.event.pull_request.labels.*.name, 'worth a release-note')
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/ci:1'
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v6
 
@@ -28,17 +28,12 @@ jobs:
           ${{ toJSON(github.event) }}
           EOF
 
-      - uses: https://data.forgejo.org/actions/setup-go@v6
-        with:
-          go-version-file: "go.mod"
-          cache: false
-
-      - name: apt install jq
+      - name: install release-notes-assistant
         run: |
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -qq
-          apt-get -q install -y -qq jq
+          set -x
+          wget -O /usr/local/bin/rna https://code.forgejo.org/forgejo/release-notes-assistant/releases/download/${{ env.RNA_VERSION}}/release-notes-assistant
+          chmod +x /usr/local/bin/rna
 
       - name: release-notes-assistant preview
         run: |
-          go run code.forgejo.org/forgejo/release-notes-assistant@$RNA_VERSION --config .release-notes-assistant.yaml --storage pr --storage-location ${{ github.event.pull_request.number }}  --forgejo-url $GITHUB_SERVER_URL --repository $GITHUB_REPOSITORY --token ${{ secrets.RELEASE_NOTES_ASSISTANT_TOKEN }} preview ${{ github.event.pull_request.number }}
+          rna --config .release-notes-assistant.yaml --storage pr --storage-location ${{ github.event.pull_request.number }} --forgejo-url $GITHUB_SERVER_URL --repository $GITHUB_REPOSITORY --token ${{ secrets.RELEASE_NOTES_ASSISTANT_TOKEN }} preview ${{ github.event.pull_request.number }}
