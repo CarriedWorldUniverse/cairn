@@ -205,8 +205,10 @@ func TestCancelPreviousJobs(t *testing.T) {
 
 func TestCancelPreviousWithConcurrencyGroup(t *testing.T) {
 	for _, tc := range []struct {
-		name         string
-		updateRun901 map[string]any
+		name              string
+		updateRun901      map[string]any
+		updateRun901Jobs  map[string]any
+		expected901Status actions_model.Status
 	}{
 		// run 900 & 901 in the fixture data have almost the same data and so should both be cancelled by
 		// TestCancelPreviousWithConcurrencyGroup -- but each test case will vary something different about 601 to
@@ -220,8 +222,15 @@ func TestCancelPreviousWithConcurrencyGroup(t *testing.T) {
 			updateRun901: map[string]any{"concurrency_group": "321cba"},
 		},
 		{
-			name:         "only cancels running",
-			updateRun901: map[string]any{"status": actions_model.StatusSuccess},
+			name:              "only cancels running",
+			updateRun901:      map[string]any{"status": actions_model.StatusSuccess},
+			updateRun901Jobs:  map[string]any{"status": actions_model.StatusSuccess},
+			expected901Status: actions_model.StatusSuccess,
+		},
+		{
+			name:              "cancels running job in failed run",
+			updateRun901:      map[string]any{"status": actions_model.StatusFailure}, // still has a running job in it (601), but run is marked as failed as-if another job had failed in it
+			expected901Status: actions_model.StatusCancelled,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -235,18 +244,20 @@ func TestCancelPreviousWithConcurrencyGroup(t *testing.T) {
 				affected, err := e.Table(&actions_model.ActionRun{}).Where("id = ?", 901).Update(tc.updateRun901)
 				require.NoError(t, err)
 				require.EqualValues(t, 1, affected)
-				newStatus, ok := tc.updateRun901["status"]
-				if ok {
-					expected901Status = newStatus.(actions_model.Status)
-				}
+			}
+			if tc.updateRun901Jobs != nil {
+				affected, err := e.Table(&actions_model.ActionRunJob{}).Where("run_id = ?", 901).Update(tc.updateRun901Jobs)
+				require.NoError(t, err)
+				require.EqualValues(t, 1, affected)
+			}
+			if tc.expected901Status != actions_model.StatusUnknown {
+				expected901Status = tc.expected901Status
 			}
 
 			run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: 900})
 			assert.Equal(t, actions_model.StatusRunning, run.Status)
 			assert.EqualValues(t, 1683636626, run.Updated)
 			assert.Equal(t, "abc123", run.ConcurrencyGroup)
-			run = unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: 901})
-			assert.Equal(t, expected901Status, run.Status)
 			runJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: 900})
 			assert.Equal(t, actions_model.StatusRunning, runJob.Status)
 			assert.EqualValues(t, 1683636528, runJob.Started)
