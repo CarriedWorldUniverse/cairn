@@ -363,7 +363,7 @@ func renameTable(sess *xorm.Session, bean any, tableName, tempTableName string, 
 
 		schema := sess.Engine().Dialect().URI().Schema
 		sess.Engine().SetSchema("")
-		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE ? || '_id_seq' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&originalSequences); err != nil {
+		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_schema = ? AND (sequence_name LIKE ? || '_id_seq' AND sequence_catalog = ?)", schema, tableName, setting.Database.Name).Find(&originalSequences); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
@@ -392,7 +392,7 @@ func renameTable(sess *xorm.Session, bean any, tableName, tempTableName string, 
 
 		var indices []string
 		sess.Engine().SetSchema("")
-		if err := sess.Table("pg_indexes").Cols("indexname").Where("tablename = ? ", tableName).Find(&indices); err != nil {
+		if err := sess.Table("pg_indexes").Cols("indexname").Where("tablename = ? AND schemaname = ?", tableName, schema).Find(&indices); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
@@ -408,7 +408,7 @@ func renameTable(sess *xorm.Session, bean any, tableName, tempTableName string, 
 
 		var sequences []string
 		sess.Engine().SetSchema("")
-		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_name LIKE 'tmp_recreate__' || ? || '_id_seq' AND sequence_catalog = ?", tableName, setting.Database.Name).Find(&sequences); err != nil {
+		if err := sess.Table("information_schema.sequences").Cols("sequence_name").Where("sequence_schema = ? AND sequence_name LIKE 'tmp_recreate__' || ? || '_id_seq' AND sequence_catalog = ?", schema, tableName, setting.Database.Name).Find(&sequences); err != nil {
 			log.Error("Unable to rename %s to %s. Error: %v", tempTableName, tableName, err)
 			return err
 		}
