@@ -479,6 +479,10 @@ func GetRunByIndex(ctx context.Context, repoID, index int64) (*ActionRun, error)
 	return run, nil
 }
 
+// Error returned when ActionRun's optimistic concurrency control has indicated that the record has been updated in the
+// database by another session since it was loaded in-memory in this session.
+var ErrActionRunOutOfDate = errors.New("run has changed")
+
 // UpdateRun updates a run.
 // It requires the inputted run has Version set.
 // It will return error if the version is not matched (it means the run has been changed after loaded).
@@ -495,8 +499,9 @@ func UpdateRunWithoutNotification(ctx context.Context, run *ActionRun, cols ...s
 		return err
 	}
 	if affected == 0 {
-		return errors.New("run has changed")
-		// It's impossible that the run is not found, since Gitea never deletes runs.
+		// UPDATE has no conditions on it, and we never delete runs, so the only possible cause of this is
+		// `xorm:"version"` tagged field indicated that the version has changed since the record was loaded.
+		return ErrActionRunOutOfDate
 	}
 
 	if run.Status != 0 || slices.Contains(cols, "status") {

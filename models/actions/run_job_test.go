@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/test"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"github.com/stretchr/testify/assert"
@@ -280,4 +281,61 @@ func TestActionRunJob_HasIncompleteWith(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateRunJobWithoutNotificationConcurrency(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	testJob := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+	testRun := unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: testJob.RunID})
+
+	// UpdateRunJobWithoutNotification is intended to update the related `ActionRun`, setting its `Started`, `Stopped`,
+	// and `Status` field to an appropriate state considering the job update.  It has a retry loop to perform this work
+	// even if `ActionRun` is updated concurrently.  To test that loop, we're going to intercept the invocation of
+	// AggregateJobStatus and freeze that update process, perform a different modification to the run, and then release
+	// the frozen test.  The retry loop should trigger and a second pass updating the `ActionRun` should succeed.
+
+	syncBeginPoint := make(chan any)
+	syncMidPoint := make(chan any)
+	syncEndPoint := make(chan any)
+	firstPass := true
+
+	defer test.MockVariableValue(&AggregateJobStatus, func(jobs []*ActionRunJob) Status {
+		// Synchronization here needs to handle the faact that `AggregateJobStatus` will be invoked twice -- pause
+		// correctly on the first run, but continue with no concerns on the second run.
+		if firstPass {
+			firstPass = false
+			// Signal that we're in AggregateJobStatus()...
+			close(syncBeginPoint)
+			// Wait until signalled to continue
+			<-syncMidPoint
+		}
+		return StatusCancelled
+	})()
+
+	go func() {
+		testJob.Status = StatusCancelled
+		updated, err := UpdateRunJobWithoutNotification(t.Context(), testJob, nil, "status")
+		close(syncEndPoint) // close before asserts, so that the test doesn't hang if it fails
+		require.NoError(t, err)
+		assert.EqualValues(t, 1, updated)
+	}()
+
+	// Wait until UpdateRunJobWithoutNotification reaches AggregateJobStatus()...
+	<-syncBeginPoint
+
+	// Perform a concurrent modification to `ActionRun`
+	testRun.Status = StatusSkipped
+	err := UpdateRunWithoutNotification(t.Context(), testRun, "status")
+	require.NoError(t, err)
+
+	// Signal for AggregateJobStatus to continue
+	close(syncMidPoint)
+
+	// Wait for goroutine to complete
+	<-syncEndPoint
+
+	// Reload the `ActionRun`
+	testRun = unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: testJob.RunID})
+	assert.Equal(t, StatusCancelled, testRun.Status)
 }
