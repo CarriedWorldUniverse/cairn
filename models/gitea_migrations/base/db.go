@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -469,74 +468,24 @@ func DropTableColumns(sess *xorm.Session, tableName string, columnNames ...strin
 			if err != nil {
 				return err
 			}
-			if len(indexRes) != 1 {
-				continue
+			containsDroppedColumn := false
+			for _, r := range indexRes {
+				indexCol := string(r["name"])
+				if slices.Contains(columnNames, indexCol) {
+					containsDroppedColumn = true
+					break
+				}
 			}
-			indexColumn := string(indexRes[0]["name"])
-			for _, name := range columnNames {
-				if name == indexColumn {
-					_, err := sess.Exec(fmt.Sprintf("DROP INDEX `%s`", indexName))
-					if err != nil {
-						return err
-					}
+			if containsDroppedColumn {
+				if _, err := sess.Exec(fmt.Sprintf("DROP INDEX `%s`", indexName)); err != nil {
+					return err
 				}
 			}
 		}
-
-		// Here we need to get the columns from the original table
-		sql := fmt.Sprintf("SELECT sql FROM sqlite_master WHERE tbl_name='%s' and type='table'", tableName)
-		res, err := sess.Query(sql)
-		if err != nil {
-			return err
-		}
-		tableSQL := string(res[0]["sql"])
-
-		// Get the string offset for column definitions: `CREATE TABLE ( column-definitions... )`
-		columnDefinitionsIndex := strings.Index(tableSQL, "(")
-		if columnDefinitionsIndex < 0 {
-			return errors.New("couldn't find column definitions")
-		}
-
-		// Separate out the column definitions
-		tableSQL = tableSQL[columnDefinitionsIndex:]
-
-		// Remove the required columnNames
-		for _, name := range columnNames {
-			tableSQL = regexp.MustCompile(regexp.QuoteMeta("`"+name+"`")+"[^`,)]*?[,)]").ReplaceAllString(tableSQL, "")
-		}
-
-		// Ensure the query is ended properly
-		tableSQL = strings.TrimSpace(tableSQL)
-		if tableSQL[len(tableSQL)-1] != ')' {
-			if tableSQL[len(tableSQL)-1] == ',' {
-				tableSQL = tableSQL[:len(tableSQL)-1]
+		for _, col := range columnNames {
+			if _, err := sess.Exec(fmt.Sprintf("ALTER TABLE `%s` DROP COLUMN `%s`", tableName, col)); err != nil {
+				return fmt.Errorf("drop table `%s` column %s encountered error: %w", tableName, col, err)
 			}
-			tableSQL += ")"
-		}
-
-		// Find all the columns in the table
-		columns := regexp.MustCompile("`([^`]*)`").FindAllString(tableSQL, -1)
-
-		tableSQL = fmt.Sprintf("CREATE TABLE `new_%s_new` ", tableName) + tableSQL
-		if _, err := sess.Exec(tableSQL); err != nil {
-			return err
-		}
-
-		// Now restore the data
-		columnsSeparated := strings.Join(columns, ",")
-		insertSQL := fmt.Sprintf("INSERT INTO `new_%s_new` (%s) SELECT %s FROM %s", tableName, columnsSeparated, columnsSeparated, tableName)
-		if _, err := sess.Exec(insertSQL); err != nil {
-			return err
-		}
-
-		// Now drop the old table
-		if _, err := sess.Exec(fmt.Sprintf("DROP TABLE `%s`", tableName)); err != nil {
-			return err
-		}
-
-		// Rename the table
-		if _, err := sess.Exec(fmt.Sprintf("ALTER TABLE `new_%s_new` RENAME TO `%s`", tableName, tableName)); err != nil {
-			return err
 		}
 
 	case setting.Database.Type.IsPostgreSQL():
