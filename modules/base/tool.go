@@ -118,7 +118,15 @@ func EntryIcon(entry *git.TreeEntry) string {
 		return "file-submodule"
 	}
 
+	if IsCitationFile(entry) {
+		return "cross-reference"
+	}
+
 	return "file"
+}
+
+func IsCitationFile(entry *git.TreeEntry) bool {
+	return entry.Name() == "CITATION.cff" || entry.Name() == "CITATION.bib"
 }
 
 // SetupGiteaRoot Sets GITEA_ROOT if it is not already set and returns the value

@@ -188,6 +188,11 @@ func TestRepoViewFileLines(t *testing.T) {
 				TreePath:      "seemingly-empty",
 				ContentReader: strings.NewReader("\n"),
 			},
+			{
+				Operation:     "create",
+				TreePath:      "CITATION.cff",
+				ContentReader: strings.NewReader(""),
+			},
 		})
 		defer f()
 
@@ -219,6 +224,19 @@ func TestRepoViewFileLines(t *testing.T) {
 			testEOL(t, "test-4", true)
 			testEOL(t, "empty", true)
 			testEOL(t, "seemingly-empty", true)
+		})
+		t.Run("list", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequest(t, "GET", repo.Link())
+			resp := MakeRequest(t, req, http.StatusOK)
+			htmlDoc := NewHTMLParser(t, resp.Body)
+
+			nodes := htmlDoc.Find("#repo-files-table tr")
+			t.Run("CITATION.cff", func(t *testing.T) {
+				c, ok := nodes.Find(`.name a[title="CITATION.cff"] svg`).Attr("class")
+				assert.True(t, ok, "could not find CITATION.cff line")
+				assert.Contains(t, c, "octicon-cross-reference")
+			})
 		})
 	})
 }

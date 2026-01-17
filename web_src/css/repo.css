@@ -252,6 +252,7 @@ td .commit-summary {
   color: var(--color-primary);
 }
 
+.repository.file.list #repo-files-table tbody .svg.octicon-cross-reference,
 .repository.file.list #repo-files-table tbody .svg.octicon-file,
 .repository.file.list #repo-files-table tbody .svg.octicon-file-symlink-file,
 .repository.file.list #repo-files-table tbody .svg.octicon-file-directory-symlink {
