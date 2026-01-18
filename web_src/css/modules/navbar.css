@@ -33,10 +33,6 @@
   display: flex;
 }
 
-#navbar > .menu > .item {
-  color: var(--color-nav-text);
-}
-
 #navbar .dropdown .item {
   justify-content: stretch;
 }
