@@ -152,7 +152,13 @@ func drawRepoSummaryCard(ctx *context.Context, repo *repo_model.Repository) (*ca
 	}
 
 	issueDescription.SetMargin(10)
-	_, err = issueDescription.DrawText(repo.Description, color.Gray{128}, 36, card.Top, card.Left)
+	// Replace new lines with spaces to match repo description in-app rendering
+	issueDescriptionText := strings.NewReplacer(
+		"\r\n", " ",
+		"\r", " ",
+		"\n", " ",
+	).Replace(repo.Description)
+	_, err = issueDescription.DrawText(issueDescriptionText, color.Gray{128}, 36, card.Top, card.Left)
 	if err != nil {
 		return nil, err
 	}
