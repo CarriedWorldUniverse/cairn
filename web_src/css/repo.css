@@ -887,6 +887,16 @@ citation-information .tab:not(.active) {
     display: grid;
     grid-template-columns: 1fr auto;
     column-gap: 1rem;
+    span.compare {
+      /* Same height as .timeline-item .badge for alignment */
+      height: 34px;
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .repository.view.issue .comment-list .timeline-item .forced-push span.compare {
+    margin-inline-start: 1rem;
   }
 }
 
