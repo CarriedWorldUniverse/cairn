@@ -20,7 +20,7 @@
 				<dt>{{ctx.Locale.Tr "admin.config.offline_mode"}}</dt>
 				<dd>{{if .OfflineMode}}{{svg "octicon-check"}}{{else}}{{svg "octicon-x"}}{{end}}</dd>
 				<dt>{{ctx.Locale.Tr "admin.config.disable_router_log"}}</dt>
-				<dd>{{if .DisableRouterLog}}{{svg "octicon-check"}}{{else}}{{svg "octicon-x"}}{{end}}</dd>
+				<dd>{{if .Loggers.router.IsEnabled}}{{svg "octicon-x"}}{{else}}{{svg "octicon-check"}}{{end}}</dd>
 
 				<div class="divider"></div>
 
