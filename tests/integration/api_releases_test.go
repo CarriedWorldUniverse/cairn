@@ -497,6 +497,28 @@ func TestAPIReleaseMissingAsset(t *testing.T) {
 	MakeRequest(t, req, http.StatusBadRequest)
 }
 
+func TestAPIReleaseMissingTitle(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+	session := loginUser(t, owner.LowerName)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+	gitRepo, err := gitrepo.OpenRepository(git.DefaultContext, repo)
+	require.NoError(t, err)
+	defer gitRepo.Close()
+
+	err = gitRepo.CreateTag("v0.0.1", "master")
+	require.NoError(t, err)
+
+	target, err := gitRepo.GetTagCommitID("v0.0.1")
+	require.NoError(t, err)
+
+	r := createNewReleaseUsingAPI(t, token, owner, repo, target, "", "", "")
+	assert.Equal(t, r.Title, target)
+}
+
 func TestAPIReleaseGithubFormat(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
