@@ -60,7 +60,8 @@ func GenerateRandomAvatar(ctx context.Context, u *User) error {
 	return nil
 }
 
-// AvatarLinkWithSize returns a link to the user's avatar with size. size <= 0 means default size
+// AvatarLinkWithSize returns a link to the user's avatar. Size is only used for
+// GenerateEmailAvatarFastLink, for external email-based avatar services
 func (u *User) AvatarLinkWithSize(ctx context.Context, size int) string {
 	if u.IsGhost() || u.ID <= 0 {
 		return avatars.DefaultAvatarLink()
@@ -88,7 +89,7 @@ func (u *User) AvatarLinkWithSize(ctx context.Context, size int) string {
 		if u.Avatar == "" {
 			return avatars.DefaultAvatarLink()
 		}
-		return avatars.GenerateUserAvatarImageLink(u.Avatar, size)
+		return avatars.GenerateUserAvatarImageLink(u.Avatar)
 	}
 	return avatars.GenerateEmailAvatarFastLink(ctx, u.AvatarEmail, size)
 }

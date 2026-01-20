@@ -165,10 +165,7 @@ func GenerateUserAvatarFastLink(userName string, size int) string {
 }
 
 // GenerateUserAvatarImageLink returns a link for `User.Avatar` image file: "/avatars/${User.Avatar}"
-func GenerateUserAvatarImageLink(userAvatar string, size int) string {
-	if size > 0 {
-		return setting.AppSubURL + "/avatars/" + url.PathEscape(userAvatar) + "?size=" + strconv.Itoa(size)
-	}
+func GenerateUserAvatarImageLink(userAvatar string) string {
 	return setting.AppSubURL + "/avatars/" + url.PathEscape(userAvatar)
 }
 
@@ -210,9 +207,6 @@ func generateEmailAvatarLink(ctx context.Context, email string, size int, final 
 		}
 		// for non-final link, we should return fast (use a 302 redirection link)
 		urlStr := setting.AppSubURL + "/avatar/" + url.PathEscape(emailHash)
-		if size > 0 {
-			urlStr += "?size=" + strconv.Itoa(size)
-		}
 		return urlStr
 	}
 

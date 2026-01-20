@@ -123,7 +123,6 @@ func ProfilePost(ctx *context.Context) {
 }
 
 // UpdateAvatarSetting update user's avatar
-// FIXME: limit size.
 func UpdateAvatarSetting(ctx *context.Context, form *forms.AvatarForm, ctxUser *user_model.User) error {
 	ctxUser.UseCustomAvatar = form.Source == forms.AvatarLocal
 	if len(form.Gravatar) > 0 {
