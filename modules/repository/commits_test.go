@@ -5,7 +5,6 @@
 package repository
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -126,7 +124,7 @@ func TestPushCommits_AvatarLink(t *testing.T) {
 	}
 
 	assert.Equal(t,
-		"/avatars/ab53a2911ddf9b4817ac01ddcd3d975f?size="+strconv.Itoa(28*setting.Avatar.RenderedSizeFactor),
+		"/avatars/ab53a2911ddf9b4817ac01ddcd3d975f",
 		pushCommits.AvatarLink(db.DefaultContext, "user2@example.com"))
 
 	assert.Equal(t,
