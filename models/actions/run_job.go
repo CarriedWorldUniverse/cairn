@@ -5,14 +5,12 @@ package actions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"time"
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
@@ -176,7 +174,7 @@ func UpdateRunJobWithoutNotification(ctx context.Context, job *ActionRunJob, con
 		}
 	}
 
-	for {
+	{
 		// Other goroutines may aggregate the status of the run and update it too.
 		// So we need load the run and its jobs before updating the run.
 		run, err := GetRunByID(ctx, job.RunID)
@@ -204,16 +202,10 @@ func UpdateRunJobWithoutNotification(ctx context.Context, job *ActionRunJob, con
 		}
 		if updateRequired {
 			// As the caller has to ensure the ActionRunNowDone notification is sent we can ignore doing so here.
-			if err := UpdateRunWithoutNotification(ctx, run, "status", "started", "stopped"); err != nil && errors.Is(err, ErrActionRunOutOfDate) {
-				// Retry update; another session affected `run` simultaneously. It wasn't necessarily another update
-				// from this same loop -- there are other codepaths that update `ActionRun`.
-				log.Debug("UpdateRunWithoutNotification failed with %v; looping for retry", err)
-				continue
-			} else if err != nil {
+			if err := UpdateRunWithoutNotification(ctx, run, "status", "started", "stopped"); err != nil {
 				return 0, fmt.Errorf("update run %d: %w", run.ID, err)
 			}
 		}
-		break // exit retry loop
 	}
 
 	return affected, nil
