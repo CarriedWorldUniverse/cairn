@@ -68,8 +68,9 @@ func Search(ctx *context.Context) {
 	mode := ExactSearchMode
 	if modeStr := ctx.FormString("mode"); len(modeStr) > 0 {
 		mode = searchModeFromString(modeStr)
-	} else if ctx.FormOptionalBool("fuzzy").ValueOrDefault(true) { // for backward compatibility in links
-		mode = UnionSearchMode
+	} else if ctx.FormOptionalBool("fuzzy").ValueOrDefault(true) &&
+		setting.Indexer.RepoIndexerEnableFuzzy { // for backward compatibility in links
+		mode = FuzzySearchMode
 	}
 
 	ctx.Data["PageIsViewCode"] = true
@@ -81,6 +82,11 @@ func Search(ctx *context.Context) {
 	}
 
 	if opts.Keyword == "" {
+		if setting.Indexer.RepoIndexerEnabled {
+			ctx.Data["CodeSearchMode"] = mode.ToIndexer().String()
+		} else {
+			ctx.Data["CodeSearchMode"] = mode.ToGitGrep().String()
+		}
 		ctx.HTML(http.StatusOK, tplSearch)
 		return
 	}

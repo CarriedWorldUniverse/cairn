@@ -83,6 +83,9 @@ func testSearchRepo(t *testing.T, indexer bool) {
 		code_indexer.UpdateRepoIndexer(repo)
 	}
 
+	testEmptySearch(t, indexer, true)
+	testEmptySearch(t, indexer, false)
+
 	testSearch(t, "/user2/glob/search?q=", []string{}, indexer)
 	testSearch(t, "/user2/glob/search?q=loren&page=1", []string{"a.txt"}, indexer)
 	testSearch(t, "/user2/glob/search?q=loren&page=1&mode=exact", []string{"a.txt"}, indexer)
@@ -95,6 +98,30 @@ func testSearchRepo(t *testing.T, indexer bool) {
 	testSearch(t, "/user2/glob/search?q=file3&page=1&mode=exact", []string{"x/b.txt"}, indexer)
 	testSearch(t, "/user2/glob/search?q=file4&page=1&mode=exact", []string{}, indexer)
 	testSearch(t, "/user2/glob/search?q=file5&page=1&mode=exact", []string{}, indexer)
+}
+
+func testEmptySearch(t *testing.T, indexer, withFuzzy bool) {
+	defer test.MockVariableValue(&setting.Indexer.RepoIndexerEnableFuzzy, withFuzzy)()
+	req := NewRequest(t, "GET", "/user2/glob/search")
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	container := NewHTMLParser(t, resp.Body).
+		Find(".repository").
+		Find(".ui.container")
+
+	key := "search.exact"
+	if withFuzzy && indexer {
+		key = "search.fuzzy"
+	}
+
+	expected := translation.NewLocale("en-US").TrString(key)
+	menu := container.Find(".menu[data-test-tag=fuzzy-dropdown]")
+	defaultOpt := menu.
+		Parent().
+		Find(".text").
+		Text()
+
+	assert.Equal(t, expected, strings.TrimSpace(defaultOpt))
 }
 
 func testSearch(t *testing.T, rawURL string, expected []string, indexer bool) {
@@ -131,10 +158,23 @@ func testSearch(t *testing.T, rawURL string, expected []string, indexer bool) {
 
 // testDropdownOptions verifies additional properties of dropdown options
 func testDropdownOptions(t *testing.T, container *goquery.Selection, options []string, locale translation.Locale) {
-	for _, option := range options {
+	tr := make([]string, len(options))
+	for i, option := range options {
+		tr[i] = locale.TrString(fmt.Sprintf("search.%s", option))
+	}
+
+	// assert that the default value (in a .text adjacent to the menu) is a valid option
+	defaultOpt := container.
+		Find(".menu[data-test-tag=fuzzy-dropdown]").
+		Parent().
+		Find(".text").
+		Text()
+	assert.Contains(t, tr, strings.TrimSpace(defaultOpt))
+
+	for i, option := range options {
 		label := container.Find(fmt.Sprintf("label.item:has(input[value='%s'])", option))
 		name := strings.TrimSpace(label.Text())
-		assert.Equal(t, name, locale.TrString(fmt.Sprintf("search.%s", option)))
+		assert.Equal(t, name, tr[i])
 
 		tooltip, exists := label.Attr("data-tooltip-content")
 		assert.True(t, exists)
