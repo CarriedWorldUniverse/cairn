@@ -93,5 +93,6 @@
 	"repo.issues.filter_reviewers.hint": "Filtri laŭ uzanto kiu recenzis",
 	"repo.issues.filter_mention.hint": "Filtri laŭ menciita uzanto",
 	"repo.issues.filter_modified.hint": "Filtri laŭ lasta modifdato",
-	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": " ",
+	"moderation.report_remarks": "Rimarkoj"
 }

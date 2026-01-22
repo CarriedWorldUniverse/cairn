@@ -33,7 +33,7 @@
 	"alert.asset_load_failed": "Kunne ikke indlæse aktivfiler fra {path}. Sørg for, at aktivfilerne er tilgængelige.",
 	"install.invalid_lfs_path": "Kan ikke oprette LFS-roden på den angivne sti: %[1]s",
 	"alert.range_error": " skal være et tal mellem %[1]s og %[2]s.",
-	"meta.last_line": "Livet er det dejligste eventyr. - (H.C. Andersen)\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Livet er det dejligste eventyr. - (H.C. Andersen)",
 	"mail.actions.not_successful_run_subject": "Arbejdsgangen %[1]s mislykkedes i depotet %[2]s",
 	"mail.actions.successful_run_after_failure_subject": "Arbejdsgang %[1]s gendannet i depotet %[2]s",
 	"mail.actions.successful_run_after_failure": "Arbejdsgang %[1]s gendannet i depotet %[2]s",

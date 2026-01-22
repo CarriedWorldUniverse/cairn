@@ -53,7 +53,7 @@
 	"home.explore_repos": "Uuri lähtekoodi hoidlaid",
 	"home.explore_users": "Otsi kasutajaid",
 	"home.explore_orgs": "Tutvu organisatsioonidega",
-	"meta.last_line": "Tänud, et oled Forgejo'd tõlkinud! Work hard and put in the effort, and love will come. (Tee tööd ja näe vaeva, siis tuleb armastus - A. H. Tammsaare)\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Tänud, et oled Forgejo'd tõlkinud! Work hard and put in the effort, and love will come. (Tee tööd ja näe vaeva, siis tuleb armastus - A. H. Tammsaare).",
 	"keys.ssh.link": "SSH võtmed",
 	"keys.gpg.link": "GPG võtmed",
 	"profile.edit.link": "Muuda profiili",
@@ -66,5 +66,11 @@
 	"release.n_downloads": {
 		"one": "%s allalaadimine",
 		"other": "%s allalaadimist"
-	}
+	},
+	"fork.n_forks": {
+		"one": "%s koodiharu",
+		"other": "%s koodiharu"
+	},
+	"compare.branches.title": "Võrdle alamharusid",
+	"repo.settings.push_mirror.branch_filter.label": "Alamharude filter (kui soovid)"
 }

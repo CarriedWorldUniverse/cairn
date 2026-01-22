@@ -5,5 +5,5 @@
 	"home.explore_users": "Кулланучыларны өйрәнү",
 	"home.explore_orgs": "Оешмаларны өйрәнү",
 	"fork.n_forks": "%s чәнечке",
-	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": " "
 }

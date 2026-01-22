@@ -1,13 +1,7 @@
 {
-	"fork.n_forks": {
-		"other": "%s のフォーク"
-	},
-	"stars.n_stars": {
-		"other": "%s のスター"
-	},
-	"release.n_downloads": {
-		"other": "%s のダウンロード"
-	},
+	"fork.n_forks": "%s のフォーク",
+	"stars.n_stars": "%s のスター",
+	"release.n_downloads": "%s のダウンロード",
 	"repo.pulls.merged_title_desc": "が %[1]d 個のコミットを <code>%[2]s</code> から <code>%[3]s</code> へマージ %[4]s",
 	"repo.pulls.title_desc": "が <code>%[2]s</code> から <code id=\"%[4]s\">%[3]s</code> への %[1]d コミットのマージを希望しています",
 	"search.milestone_kind": "マイルストーンを検索...",
@@ -21,11 +15,7 @@
 	"migrate.gitbucket.description": "GitBucket インスタンスからデータを移行します。",
 	"migrate.codebase.description": "codebasehq.com からデータを移行します。",
 	"migrate.forgejo.description": "codeberg.orgまたは他のインスタンスからデータを移行する。",
-	"pulse.n_active_issues": {
-		"other": "%s件のアクティブなイシュー"
-	},
-	"pulse.n_active_prs": {
-		"other": "%s件のアクティブなプルリクエスト"
-	},
-	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
+	"pulse.n_active_issues": "%s件のアクティブなイシュー",
+	"pulse.n_active_prs": "%s件のアクティブなプルリクエスト",
+	"meta.last_line": " "
 }
