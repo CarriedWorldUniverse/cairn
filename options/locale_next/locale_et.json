@@ -1,4 +1,5 @@
 {
+	"packages.alpine.repository.branches": "Alamharud",
 	"stars.n_stars": {
 		"one": "%s tärn",
 		"other": "%s tärni"

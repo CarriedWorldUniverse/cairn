@@ -1,4 +1,10 @@
 {
+	"packages.filter.container.tagged": "Được gắn nhãn",
+	"packages.filter.container.untagged": "Không được gắn nhãn",
+	"packages.details.project_site": "Trang mạng dự án",
+	"packages.details.repository_site": "Trang mạng kho mã",
+	"packages.details.documentation_site": "Trang mạng tài liệu",
+	"packages.npm.details.tag": "Nhãn",
 	"fork.n_forks": "%s phân nhánh",
 	"stars.n_stars": "%s sao",
 	"moderation.abuse_category.malware": "Mã độc",

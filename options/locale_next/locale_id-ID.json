@@ -1,4 +1,7 @@
 {
+	"packages.filter.type": "Jenis",
+	"packages.alpine.repository.branches": "Cabang",
+	"packages.alpine.repository.repositories": "Repositori",
 	"repo.pulls.merged_title_desc": "commit %[1]d telah digabungkan dari <code>%[2]s</code> menjadi <code>%[3]s</code> %[4]s",
 	"repo.pulls.title_desc": "ingin menggabungkan komit %[1]d dari <code>%[2]s</code> menuju <code id=\"%[4]s\">%[3]s</code>",
 	"moderation.abuse_category.malware": "Perangkat pembahaya",

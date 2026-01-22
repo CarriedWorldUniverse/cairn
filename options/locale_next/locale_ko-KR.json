@@ -1,4 +1,12 @@
 {
+	"packages.filter.type": "유형",
+	"packages.details.author": "작성자",
+	"packages.dependency.id": "ID",
+	"packages.dependency.version": "버전",
+	"packages.alpine.repository.branches": "브랜치",
+	"packages.alpine.repository.repositories": "저장소",
+	"packages.maven.download": "종속성을 다운로드하려면 명령줄을 통해 실행하세요:",
+	"packages.nuget.dependency.framework": "타겟 프레임워크",
 	"stars.n_stars": "%s 좋아요",
 	"repo.pulls.merged_title_desc": "님이 <code>%[2]s</code> 에서 <code>%[3]s</code> 로 %[1]d 커밋을 %[4]s 병합함",
 	"repo.pulls.title_desc": "<code>%[2]s</code> 에서 <code id=\"%[4]s\">%[3]s</code> 로 %[1]d개의 커밋들을 병합하려함",

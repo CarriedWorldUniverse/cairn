@@ -1,4 +1,8 @@
 {
+	"packages.filter.type": "認證類型",
+	"packages.alpine.repository.branches": "分支列表",
+	"packages.alpine.repository.repositories": "儲存庫管理",
+	"packages.container.labels": "標籤",
 	"repo.pulls.merged_title_desc": "於 %[4]s 將 %[1]d 次代碼提交從 <code>%[2]s</code>合併至 <code>%[3]s</code>",
 	"moderation.abuse_category.malware": "惡意程式",
 	"meta.last_line": " "
