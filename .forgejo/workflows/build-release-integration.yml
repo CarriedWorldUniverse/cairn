@@ -1,6 +1,9 @@
 name: Integration tests for the release process
 enable-email-notifications: true
 
+env:
+  FORGEJO_VERSION: 11.0.10 # renovate: datasource=docker depName=code.forgejo.org/forgejo/forgejo
+
 on:
   push:
     paths:
@@ -33,7 +36,7 @@ jobs:
         with:
           user: root
           password: admin1234
-          image-version: 1.21
+          image-version: ${{ env.FORGEJO_VERSION }}
           lxc-ip-prefix: 10.0.9
 
       - name: publish the forgejo release
