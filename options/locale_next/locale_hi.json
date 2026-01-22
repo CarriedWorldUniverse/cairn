@@ -56,7 +56,7 @@
 		"one": "%d महीने पहले",
 		"other": "%d महीनों पहले"
 	},
-	"meta.last_line": "तीतर के दो पीछे तीतर तीतर के दो आगे तीतर बोलो कितने तीतर ?\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "तीतर के दो पीछे तीतर तीतर के दो आगे तीतर बोलो कितने तीतर ?",
 	"relativetime.now": "अभी",
 	"avatar.constraints_hint": "कस्टम अवतार का फ़ाइल आकार 200 किलोबाइट से अधिक नहीं होना चाहिए और 125x125 पिक्सेल से बड़ा नहीं होना चाहिए",
 	"home.welcome.activity_hint": "आपकी फीड में अभी कुछ भी नहीं है। आपके कार्य और रिपॉजिटरी यहाँ दिखेंगे।",

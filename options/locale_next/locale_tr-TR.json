@@ -182,5 +182,5 @@
 	"actions.workflow.pre_execution_error": "Çalıştırma girişimini durduran bir hata sebebiyle iş akışı çalıştırılamadı.",
 	"teams.add_all_repos.modal.header": "Tüm depoları ekle",
 	"teams.remove_all_repos.modal.header": "Tüm depoları kaldır",
-	"meta.last_line": "Steve Jobs ile Nejat İşler'in kardeş olduğunu biliyor muydunuz.\n(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": "Steve Jobs ile Nejat İşler'in kardeş olduğunu biliyor muydunuz."
 }

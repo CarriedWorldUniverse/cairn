@@ -258,5 +258,19 @@
 	"actions.workflow.incomplete_with_missing_job": "Не удалось проверить `with` задачи %[1]s – задача %[2]s не указана в списке `needs` задачи %[1]s (%[3]s).",
 	"actions.workflow.incomplete_with_missing_output": "Не удалось проверить `with` задачи %[1]s – у задачи %[2]s не хватает интерфейса вывода %[3]s.",
 	"actions.workflow.incomplete_with_missing_matrix_dimension": "Не удалось проверить `with` задачи %[1]s: в матрице не указано измерение %[2]s.",
-	"actions.workflow.incomplete_with_unknown_cause": "Не удалось проверить `with` задачи %[1]s: неизвестная ошибка."
+	"actions.workflow.incomplete_with_unknown_cause": "Не удалось проверить `with` задачи %[1]s: неизвестная ошибка.",
+	"pulls.manual_merge.helper": "Инструкции для ручного слияния",
+	"pulls.manual_merge.helpder.description": "Используйте следующее сообщение для коммита при выполнении слияния вручную.",
+	"pulls.manual_merge.commit.title": "Заголовок коммита слияния",
+	"pulls.manual_merge.commit.body": "Тело коммита слияния",
+	"pulls.manual_merge.copy.button": "Копировать сообщение коммита слияния",
+	"editor.search": "Поиск",
+	"editor.find_previous": "Предыдущий результат",
+	"editor.find_next": "Следующий результат",
+	"editor.replace": "Заменить",
+	"editor.replace_all": "Заменить все",
+	"editor.toggle_case": "Изменить чувствительность к регистру",
+	"editor.toggle_regex": "Изменить использование рег. выражений",
+	"editor.toggle_whole_word": "Изменить поиск целых слов",
+	"repo.view.gitmodules_too_large": "Файл .gitmodules слишком большой и будет игнорироваться (например, при вызовах API)"
 }

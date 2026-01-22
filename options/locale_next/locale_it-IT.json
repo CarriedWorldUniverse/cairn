@@ -107,7 +107,7 @@
 	},
 	"editor.textarea.tab_hint": "Linea già indentata. Premi di nuovo <kbd>Tab</kbd> o <kbd>Esc</kbd> per uscire dall'editor.",
 	"repo.diff.commit.previous-short": "Precedente",
-	"meta.last_line": "Ambaraba cicci cocco.\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Ambaraba cicci cocco.",
 	"migrate.github.description": "Migrare i dati da github.com o da server GitHub Enterprise.",
 	"migrate.git.description": "Migra un repositorio solo da qualsiasi servizio Git.",
 	"migrate.gitea.description": "Migrare i dati da gitea.com o altre istanze di Gitea.",

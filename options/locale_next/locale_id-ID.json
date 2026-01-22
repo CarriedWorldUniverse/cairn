@@ -134,5 +134,5 @@
 	"actions.workflow.job_parsing_error": "Tidak dapat memproses pekerjaan dalam alur kerja: %v",
 	"actions.workflow.event_detection_error": "Tidak dapat memproses peristiwa yang didukung dalam alur kerja: %v",
 	"actions.workflow.pre_execution_error": "Alur kerja tidak dijalankan karena terjadi kesalahan yang menghalangi upaya eksekusi.",
-	"meta.last_line": "Terima kasih telah menerjemahkan Forgejo! Baris ini tidak terlihat oleh pengguna, tetapi memiliki fungsi lain dalam manajemen terjemahan. Anda dapat menambahkan fakta menarik dalam terjemahan alih-alih menerjemahkannya.\n(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": "Terima kasih telah menerjemahkan Forgejo! Baris ini tidak terlihat oleh pengguna, tetapi memiliki fungsi lain dalam manajemen terjemahan. Anda dapat menambahkan fakta menarik dalam terjemahan alih-alih menerjemahkannya."
 }
