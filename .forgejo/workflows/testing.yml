@@ -38,7 +38,8 @@ jobs:
       - run: make deps-frontend
       - run: make lint-frontend
       - run: make checks-frontend
-      - run: |
+      - name: make test-frontend-coverage
+        run: |
           # Usage of `dayjs` can be impacted by local system timezone and can be sensitive to DST differences; since
           # frontend tests are very short they're run twice with varying DST rules to reduce regression risk.
           TZ=Europe/Berlin make test-frontend-coverage
@@ -50,7 +51,7 @@ jobs:
         run: |
           apt-get update -qq
           apt-get -q install -qq -y zstd
-      - name: "Cache frontend build for playwright testing"
+      - name: 'Cache frontend build for playwright testing'
         uses: https://data.forgejo.org/actions/cache/save@v5
         with:
           path: ${{github.workspace}}/public/assets
@@ -68,7 +69,7 @@ jobs:
         options: --tmpfs /bitnami/elasticsearch/data
         env:
           discovery.type: single-node
-          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       minio:
         image: data.forgejo.org/oci/bitnami/minio:2024.8.17
         options: >-
@@ -109,13 +110,13 @@ jobs:
         with:
           fetch-depth: 20
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: "Restore frontend build"
+      - name: 'Restore frontend build'
         uses: https://data.forgejo.org/actions/cache/restore@v5
         id: cache-frontend
         with:
           path: ${{github.workspace}}/public/assets
           key: frontend-build-${{ github.sha }}
-      - name: "Build frontend (if not cached)"
+      - name: 'Build frontend (if not cached)'
         if: steps.cache-frontend.outputs.cache-hit != 'true'
         run: |
           su forgejo -c 'make deps-frontend frontend'
@@ -173,7 +174,7 @@ jobs:
         image: ${{ matrix.cacher.image }}
         options: ${{ matrix.cacher.options }}
         env:
-          ALLOW_EMPTY_PASSWORD: "yes" # redis & valkey will immediately shutdown with no defined password unless overridden
+          ALLOW_EMPTY_PASSWORD: 'yes' # redis & valkey will immediately shutdown with no defined password unless overridden
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v6
       - uses: ./.forgejo/workflows-composite/setup-env
