@@ -133,7 +133,7 @@
 	"settings.twofa_reenroll.description": "Znovu zaregistrujte Vaše dvojfaktorové overenie",
 	"settings.must_enable_2fa": "Táto inštancia Forgejo vyžaduje, aby používatelia povolili dvojfaktorové overenie predtým, ako budú môcť pristupovať k svojim účtom.",
 	"error.must_enable_2fa": "Táto inštancia Forgejo vyžaduje, aby používatelia povolili dvojfaktorové overenie predtým, ako budú môcť pristupovať k svojim účtom. Povolíte ho tu: %s",
-	"meta.last_line": "Ďakujem za preklad Forgejo! Tento riadok používatelia nevidia, ale slúži na iné účely v správe prekladov. Namiesto prekladu môžete do prekladu vložiť zaujímavý fakt.\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Ďakujem za preklad Forgejo! Tento riadok používatelia nevidia, ale slúži na iné účely v správe prekladov. Namiesto prekladu môžete do prekladu vložiť zaujímavý fakt.",
 	"moderation.abuse_category": "Kategória",
 	"warning.repository.out_of_sync": "Databázová reprezentácia tohto repozitára nie je synchronizovaná. Ak sa toto upozornenie zobrazuje aj po odoslaní commitu do tohto repozitára, kontaktujte administrátora.",
 	"repo.pulls.already_merged": "Zlúčenie zlyhalo: Táto žiadosť už bola spracovaná.",

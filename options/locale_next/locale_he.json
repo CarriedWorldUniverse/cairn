@@ -106,5 +106,5 @@
 	"repo.diff.commit.previous-short": "הקודם",
 	"discussion.locked": "הדיון ננעל. היכולת להגיב מוגבלת לתורמים בלבד.",
 	"discussion.sidebar.reference": "מקור",
-	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": " "
 }
