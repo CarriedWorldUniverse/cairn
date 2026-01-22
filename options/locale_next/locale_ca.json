@@ -154,7 +154,7 @@
 	"migrate.pagure.project_url": "URL del projecte de Pagure",
 	"migrate.pagure.project_example": "L'URL del projecte de pagure, per exemple: https://pagure.io/pagure",
 	"migrate.pagure.token_label": "Testimoni de l'API de Pagure",
-	"meta.last_line": "Molt estudiar anglès i vinga a fer espíquings i ràitings i tal... I què passa amb el català? Eh?! Me'l noto una mica oxidat! També és important.\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Molt estudiar anglès i vinga a fer espíquings i ràitings i tal... I què passa amb el català? Eh?! Me'l noto una mica oxidat! També és important.",
 	"pulse.n_active_issues": {
 		"one": "%s incidència activa",
 		"many": "%s incidències actives",

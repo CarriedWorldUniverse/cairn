@@ -20,7 +20,7 @@
 		"other": "иска да слее %[1]d подавания от <code>%[2]s</code> в <code id=\"%[4]s\">%[3]s</code>"
 	},
 	"mail.actions.run_info_trigger": "Задействано поради: %[1]s от: %[2]s",
-	"meta.last_line": "В България расте най-старото дърво в страната, Байкушевата мура, на възраст над 1300 години. (this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "В България расте най-старото дърво в страната, Байкушевата мура, на възраст над 1300 години.",
 	"relativetime.1day": "вчера",
 	"relativetime.2months": "преди два месеца",
 	"home.explore_repos": "Разглеждане на хранилища",
@@ -118,5 +118,27 @@
 	"pulse.n_active_prs": {
 		"one": "%s активна заявка за сливане",
 		"other": "%s активни заявки за сливане"
-	}
+	},
+	"watch.n_watchers": {
+		"one": "наблюдател",
+		"other": "наблюдатели"
+	},
+	"repo.issues.filter_poster.hint": "Филтриране по автор",
+	"repo.issues.filter_assignee.hint": "Филтриране по назначен потребител",
+	"repo.issues.filter_reviewers.hint": "Филтриране по потребител, който е прегледал",
+	"repo.issues.filter_mention.hint": "Филтриране по споменат портребител",
+	"repo.issues.filter_modified.hint": "Филтрирай по дата на последното изменение",
+	"repo.issues.filter_sort.hint": "Сортиране по: създаден/коментари/актуализиран/краен срок",
+	"issues.updated": "актуализирано %s",
+	"repo.pulls.poster_manage_approval": "Управление на одобренията",
+	"repo.pulls.poster_requires_approval": "Някои работни процеси са <a href=\"%[1]s\">в очакване на преглед.</a>",
+	"repo.pulls.poster_requires_approval.tooltip": "На автора на това искане за изтегляне не се доверява да изпълнява работни потоци, задействани от искане за изтегляне, създадено от разклонено хранилище или с AGit. Работните потоци, задействани от събитие `pull_request`, няма да се изпълняват, докато не бъдат одобрени.",
+	"repo.pulls.poster_is_trusted": "Авторът на това искане за изтегляне е <a href=\"%[1]s\">винаги надежден за изпълнение на работни процеси.</a>pick",
+	"repo.pulls.poster_is_trusted.tooltip": "На автора на това искане за изтегляне се предоставя изрично доверие да изпълнява работни потоци, задействани от събития `pull_request`.",
+	"repo.pulls.poster_trust_deny": "Отказване",
+	"repo.pulls.poster_trust_deny.tooltip": "Работните процеси, които чакат одобрение, ще бъдат отменени.",
+	"repo.pulls.poster_trust_once": "Одобри веднъж",
+	"repo.pulls.poster_trust_always": "Одобрявай винаги",
+	"repo.pulls.poster_trust_revoke": "Отмяна",
+	"repo.pulls.already_merged": "Сливането се провали: Тази заявка за сливане вече е била слята."
 }

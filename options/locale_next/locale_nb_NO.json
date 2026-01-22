@@ -102,7 +102,7 @@
 	"repo.diff.commit.previous-short": "Forrige",
 	"discussion.locked": "Denne diskusjonen er låst. Kommentarer kan kun gjøres av bidragsytere.",
 	"avatar.constraints_hint": "Egendefinert avatar kan ikke overstige %[1]s i størrelse eller være større enn %[2]d × %[3]d piksler",
-	"meta.last_line": "Vi gir oss ikke. Kongen har sagt nei!\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Vi gir oss ikke. Kongen har sagt nei!",
 	"fork.n_forks": {
 		"one": "%s skille",
 		"other": "%s skiller"

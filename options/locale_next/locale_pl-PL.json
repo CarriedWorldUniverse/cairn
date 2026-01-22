@@ -233,5 +233,5 @@
 	"migrate.pagure.private_issues.summary": "Prywatne zgłoszenia (opcjonalne)",
 	"actions.runs.view_most_recent_run": "Pokaż ostatnie uruchomienie",
 	"actions.runs.run_attempt_label": "Próba uruchomienia #%[1]s (%[2]s)",
-	"meta.last_line": "(this string was needed to make weblate regenerate the file and can be removed)"
+	"meta.last_line": " "
 }

@@ -1,13 +1,7 @@
 {
-	"fork.n_forks": {
-		"other": "%s 個分叉"
-	},
-	"stars.n_stars": {
-		"other": "%s 顆星星"
-	},
-	"release.n_downloads": {
-		"other": "%s 次下載"
-	},
+	"fork.n_forks": "%s 個分叉",
+	"stars.n_stars": "%s 顆星星",
+	"release.n_downloads": "%s 次下載",
 	"repo.pulls.merged_title_desc": "將 %[1]d 次提交從 <code>%[2]s</code> 合併至 <code>%[3]s</code> %[4]s",
 	"repo.pulls.title_desc": "請求將 %[1]d 次程式碼提交從 <code>%[2]s</code> 合併至 <code id=\"%[4]s\">%[3]s</code>",
 	"search.milestone_kind": "搜尋里程碑…",
@@ -76,7 +70,7 @@
 	"moderation.report_abuse_form.details": "這個表單是用來檢舉用戶建立垃圾帳號、儲存庫、問題、留言，或其他不當行為。",
 	"moderation.report_abuse_form.invalid": "無效參數",
 	"moderation.report_abuse_form.already_reported": "您已檢舉此內容",
-	"meta.last_line": "Rubi-chan? Hai! Nani ga suki? Choko minto yori mo a･na･ta♡ Ayumu-chan? Hai! Nani ga suki? Sutoroberii fureibaa yori mo a･na･ta♡ Shiki-chan! Hai! Nani ga suki? Kukkii and kuriimu yori mo a･na･ta♡ Minna? Hai! Nani ga suki? Mochiron daisuki AiScReam.\n(this string was needed to make weblate regenerate the file and can be removed)",
+	"meta.last_line": "Rubi-chan? Hai! Nani ga suki? Choko minto yori mo a･na･ta♡ Ayumu-chan? Hai! Nani ga suki? Sutoroberii fureibaa yori mo a･na･ta♡ Shiki-chan! Hai! Nani ga suki? Kukkii and kuriimu yori mo a･na･ta♡ Minna? Hai! Nani ga suki? Mochiron daisuki AiScReam.",
 	"admin.dashboard.cleanup_offline_runners": "清理離線 runners",
 	"settings.visibility.description": "個人資料的可見度會影響他人存取您非私人儲存庫的能力。<a href=\"%s\" target=\"_blank\">了解更多</a>",
 	"avatar.constraints_hint": "自定義大頭貼的大小不得超過 %[1]s，且解析度不得大於 %[2]d×%[3]d 像素",
@@ -91,10 +85,6 @@
 	"migrate.gitbucket.description": "從 GitBucket 站點遷移資料。",
 	"migrate.codebase.description": "從 codebasehq.com 遷移資料。",
 	"migrate.forgejo.description": "從 codeberg.org 或其他 Forgejo 站點遷移資料。",
-	"pulse.n_active_issues": {
-		"other": "%s 個問題"
-	},
-	"pulse.n_active_prs": {
-		"other": "%s 個合併請求"
-	}
+	"pulse.n_active_issues": "%s 個問題",
+	"pulse.n_active_prs": "%s 個合併請求"
 }
