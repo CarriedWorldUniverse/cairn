@@ -254,5 +254,14 @@
     "admin.auths.oauth2_quota_group_map_removal": "Remover os utilizadores dos grupos de quotas sincronizados se o utilizador não pertencer ao grupo correspondente.",
     "issues.updated": "%s atualizado",
     "search.fuzzy": "Difusa",
-    "search.fuzzy_tooltip": "Incluir resultados que correspondam aproximadamente ao termo de pesquisa"
+    "search.fuzzy_tooltip": "Incluir resultados que correspondam aproximadamente ao termo de pesquisa",
+    "repo.view.gitmodules_too_large": "O ficheiro .gitmodules é demasiado grande e será ignorado (por exemplo, em chamadas API)",
+    "editor.search": "Procurar",
+    "editor.find_previous": "Ocorrência anterior",
+    "editor.find_next": "Ocorrência seguinte",
+    "editor.replace": "Substituir",
+    "editor.replace_all": "Substituir tudo",
+    "editor.toggle_case": "Ativar/desativar a diferenciação de maiúsculas e minúsculas",
+    "editor.toggle_regex": "Ativar/desativar o uso de expressões regulares",
+    "editor.toggle_whole_word": "Ativar/desativar correspondência de palavras inteiras"
 }

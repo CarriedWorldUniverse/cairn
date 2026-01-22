@@ -239,5 +239,14 @@
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Kann de `runs-on` vun Upgaav %[1]s nich utweerten: Matrix-Richt %[2]s gifft dat nich.",
     "issues.updated": "%s verneeit",
     "search.fuzzy": "Umslags",
-    "search.fuzzy_tooltip": "Ok Resultaten wiesen, wat so wat umslags to de Söökwoorden passen"
+    "search.fuzzy_tooltip": "Ok Resultaten wiesen, wat so wat umslags to de Söökwoorden passen",
+    "repo.view.gitmodules_too_large": "De .gitmodules-Datei is to grot un word minnacht (to’n Bispööl för API-Upropen)",
+    "editor.search": "Söök",
+    "editor.find_previous": "Lester Fund",
+    "editor.find_next": "Anner Fund",
+    "editor.replace": "Utwesseln",
+    "editor.replace_all": "All utwesseln",
+    "editor.toggle_case": "Grot- un Kleenschrievens minnachten an- of utknipsen",
+    "editor.toggle_regex": "Regel-Utdrücken bruken an- of utknipsen",
+    "editor.toggle_whole_word": "Hele Woorden söken an- of utknipsen"
 }

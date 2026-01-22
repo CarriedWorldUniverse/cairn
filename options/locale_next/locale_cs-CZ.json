@@ -254,5 +254,14 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Nepodařilo se vyhodnotit `runs-on` úlohy %[1]s: neznámá chyba.",
     "issues.updated": "aktualizováno %s",
     "search.fuzzy": "Přibližné",
-    "search.fuzzy_tooltip": "Zahrnout výsledky, které jsou v přibližné shodě s hledaným výrazem"
+    "search.fuzzy_tooltip": "Zahrnout výsledky, které jsou v přibližné shodě s hledaným výrazem",
+    "repo.view.gitmodules_too_large": "Soubor .gitmodules je příliš velký a bude ignorován (např. při voláních API)",
+    "editor.search": "Hledat",
+    "editor.find_previous": "Předchozí výsledek",
+    "editor.find_next": "Další výsledek",
+    "editor.replace": "Nahradit",
+    "editor.replace_all": "Nahradit vše",
+    "editor.toggle_case": "Přepnout rozlišování velikosti písmen",
+    "editor.toggle_regex": "Přepnout používání regulárních výrazů",
+    "editor.toggle_whole_word": "Přepnout shodu s celými slovy"
 }

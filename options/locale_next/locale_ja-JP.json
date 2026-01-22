@@ -31,5 +31,6 @@
     "pulse.n_active_prs": {
         "one": "%s件のアクティブなプルリクエスト",
         "other": "%s件のアクティブなプルリクエスト"
-    }
+    },
+    "meta.last_line": " "
 }

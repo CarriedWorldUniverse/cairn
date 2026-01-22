@@ -35,5 +35,6 @@
     "relativetime.years": {
         "one": "hai %d ano",
         "other": "hai %d anos"
-    }
+    },
+    "meta.last_line": " "
 }

@@ -6,5 +6,6 @@
     "relativetime.mins": {
         "one": "ante %d minuta",
         "other": "%d minuta abhinc"
-    }
+    },
+    "meta.last_line": " "
 }

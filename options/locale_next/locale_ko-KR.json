@@ -10,5 +10,6 @@
     "pulse.n_active_issues": {
         "one": "%s 개의 활성화된 이슈",
         "other": "%s 개의 활성화된 이슈"
-    }
+    },
+    "meta.last_line": " "
 }

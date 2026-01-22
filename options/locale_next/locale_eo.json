@@ -92,5 +92,7 @@
     "repo.issues.filter_assignee.hint": "Filtri laŭ asignita uzanto",
     "repo.issues.filter_reviewers.hint": "Filtri laŭ uzanto kiu recenzis",
     "repo.issues.filter_mention.hint": "Filtri laŭ menciita uzanto",
-    "repo.issues.filter_modified.hint": "Filtri laŭ lasta modifdato"
+    "repo.issues.filter_modified.hint": "Filtri laŭ lasta modifdato",
+    "moderation.report_remarks": "Rimarkoj",
+    "meta.last_line": " "
 }

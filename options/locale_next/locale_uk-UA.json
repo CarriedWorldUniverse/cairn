@@ -139,7 +139,7 @@
     "repo.commit.load_tags_failed": "Завантаження тегів не вдалося через внутрішню помилку",
     "admin.auths.allow_username_change.description": "Дозволити користувачам змінювати ім’я користувача в налаштуваннях профілю",
     "admin.auths.allow_username_change": "Дозволити змінювати імена",
-    "warning.repository.out_of_sync": "База даних цього репозиторію не синхронізована. Якщо ви знову бачите це попередження після надсилання коміту в цей репозиторій, зверніться до адміністратора.",
+    "warning.repository.out_of_sync": "База даних цього репозиторію не синхронізована. Якщо ви знову бачите це попередження після надсилання коміту в цей репозиторій, зверніться до адміністрації.",
     "repo.pulls.already_merged": "Не вдалося об’єднати: цей запит на злиття вже об’єднано.",
     "migrate.pagure.description": "Перенести дані з pagure.io або інших екземплярів Pagure.",
     "migrate.pagure.token_label": "Токен API Pagure",
@@ -254,5 +254,14 @@
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Неможливо оцінити `runs-on` завдання %[1]s: розмір матриці %[2]s не існує.",
     "issues.updated": "оновлено %s",
     "search.fuzzy": "Нечіткий",
-    "search.fuzzy_tooltip": "Включати результати, які приблизно відповідають пошуковому запиту"
+    "search.fuzzy_tooltip": "Включати результати, які приблизно відповідають пошуковому запиту",
+    "repo.view.gitmodules_too_large": "Файл .gitmodules занадто великий і буде проігнорований (наприклад, при викликах API)",
+    "editor.search": "Знайти",
+    "editor.find_previous": "Попередній",
+    "editor.find_next": "Наступний",
+    "editor.replace": "Замінити",
+    "editor.replace_all": "Замінити все",
+    "editor.toggle_case": "Перемкнути врахування регістру",
+    "editor.toggle_regex": "Перемкнути регулярні вирази",
+    "editor.toggle_whole_word": "Перемкнути пошук цілих слів"
 }

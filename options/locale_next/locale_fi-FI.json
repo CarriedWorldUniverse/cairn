@@ -192,5 +192,11 @@
     "moderation.users.already_suspended": "Käyttäjätili on jo jäädytetty.",
     "moderation.users.suspend_success": "Käyttäjätili on jäädytetty.",
     "moderation.issue.deletion_success": "Ongelma on poistettu.",
-    "moderation.comment.deletion_success": "Kommentti on poistettu."
+    "moderation.comment.deletion_success": "Kommentti on poistettu.",
+    "issues.updated": "päivitetty %s",
+    "search.fuzzy": "Sumea",
+    "mail.issue.action.close_by_commit": "%[1]s sulki %[2]s kommitissa %[3]s.",
+    "editor.search": "Hae",
+    "editor.replace": "Korvaa",
+    "editor.replace_all": "Korvaa kaikki"
 }

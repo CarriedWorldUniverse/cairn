@@ -29,5 +29,6 @@
     "error.not_found.title": "Asebtar ulac-it",
     "moderation.abuse_category.placeholder": "Fren taggayt",
     "migrate.pagure.project_url": "Tansa URL n usenfar Pagure",
-    "themes.names.forgejo-auto": "Forgejo (akken i yella usentel n unagraw)"
+    "themes.names.forgejo-auto": "Forgejo (akken i yella usentel n unagraw)",
+    "meta.last_line": " "
 }
