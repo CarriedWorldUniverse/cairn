@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Load renovate repo cache
-        uses: https://data.forgejo.org/actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: https://data.forgejo.org/actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             .tmp/cache/renovate/repository
@@ -70,7 +70,7 @@ jobs:
 
       - name: Save renovate repo cache
         if: always() && env.RENOVATE_DRY_RUN != 'full'
-        uses: https://data.forgejo.org/actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: https://data.forgejo.org/actions/cache/save@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             .tmp/cache/renovate/repository
