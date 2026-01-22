@@ -1,4 +1,7 @@
 {
+	"packages.filter.type": "نوع",
+	"packages.alpine.repository.branches": "شاخه‎ها",
+	"packages.alpine.repository.repositories": "مخازن",
 	"repo.pulls.merged_title_desc": {
 		"one": "واکشی %[1]d سپرده از <code>%[2]s</code> به <code>%[3]s</code> %[4]s",
 		"other": "واکشی %[1]d سپرده‌ها از <code>%[2]s</code> به <code>%[3]s</code> %[4]s"

@@ -1,4 +1,6 @@
 {
+	"packages.alpine.repository.repositories": "Repozitáre",
+	"packages.container.labels": "Štítky",
 	"fork.n_forks": {
 		"one": "%s fork",
 		"few": "%s forky",
