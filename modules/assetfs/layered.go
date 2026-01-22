@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -97,14 +96,12 @@ func (l *LayeredFS) ReadFile(elems ...string) ([]byte, error) {
 func (l *LayeredFS) ReadLayeredFile(elems ...string) ([]byte, string, error) {
 	name := util.PathJoinRel(elems...)
 	for _, layer := range l.layers {
-		f, err := layer.Open(name)
-		if os.IsNotExist(err) {
+		bs, err := fs.ReadFile(layer, name)
+		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		} else if err != nil {
 			return nil, layer.name, err
 		}
-		bs, err := io.ReadAll(f)
-		_ = f.Close()
 		return bs, layer.name, err
 	}
 	return nil, "", fs.ErrNotExist
