@@ -55,7 +55,7 @@
     "jquery": "3.7.1",
     "katex": "0.16.27",
     "mermaid": "11.12.2",
-    "mini-css-extract-plugin": "2.9.3",
+    "mini-css-extract-plugin": "2.10.0",
     "minimatch": "10.1.1",
     "pdfobject": "2.3.0",
     "postcss": "8.5.6",
