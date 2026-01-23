@@ -158,6 +158,6 @@
     },
     "teams.add_all_repos.modal.header": "Додај сви репозиторијуми",
     "teams.remove_all_repos.modal.header": "Обриши сви репозиторијуми",
-    "meta.last_line": "If you know a Latin and a Cyrillic alphabet, then you basically already know how the Greek alphabet works from which those alphabets stem from. Also, learning Cyrillic isn't difficult, but while Serbo-Croatian grammar can be annoying at times, at least its pronunciation is pretty easy – unlike Russian haha.",
+    "meta.last_line": "If you know a Latin and a Cyrillic alphabet, then you basically already know how the Greek alphabet works from which those alphabets stem from. Also, learning Cyrillic isn't difficult, but while Serbo-Croatian grammar can be annoying at times, at least its pronunciation is pretty easy – unlike Russian haha.\n(I also agree that Cyrillic isn't difficult. And comes with advantage of lack of unreadable words like Illinois)",
     "migrate.pagure.token_label": "Pagure АПИ токен"
 }

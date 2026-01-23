@@ -43,5 +43,6 @@
     "relativetime.1year": "oxirgi yil",
     "relativetime.2years": "ikki yil oldin",
     "search.syntax": "Qidiruv sintaksisi",
-    "repo.settings.push_mirror.branch_filter.label": "Branch filteri (ixtiyoriy)"
+    "repo.settings.push_mirror.branch_filter.label": "Branch filteri (ixtiyoriy)",
+    "meta.last_line": " "
 }

@@ -27,5 +27,6 @@
     "pulse.n_active_prs": {
         "one": "%s تقاضای واکشی فعال",
         "other": "%s تقاضاهای واکشی فعال"
-    }
+    },
+    "meta.last_line": " "
 }

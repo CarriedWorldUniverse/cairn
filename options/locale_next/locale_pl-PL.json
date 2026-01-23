@@ -227,5 +227,6 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Nie można ocenić `runs-on` zadania %[1]s: nieznany błąd.",
     "actions.workflow.pre_execution_error": "Workflow nie został uruchomiony z powodu błędu, który zablokował próbę jego wykonania.",
     "teams.add_all_repos.modal.header": "Dodaj wszystkie repozytoria",
-    "teams.remove_all_repos.modal.header": "Usuń wszystkie repozytoria"
+    "teams.remove_all_repos.modal.header": "Usuń wszystkie repozytoria",
+    "meta.last_line": " "
 }

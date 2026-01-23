@@ -254,5 +254,14 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Nevar novērtēt darba %[1]s `runs-on`: nezināma kļūda.",
     "issues.updated": "atjaunināts %s",
     "search.fuzzy": "Aptuveni",
-    "search.fuzzy_tooltip": "Iekļaut iznākumus, kas aptuveni atbilst meklētajam"
+    "search.fuzzy_tooltip": "Iekļaut iznākumus, kas aptuveni atbilst meklētajam",
+    "repo.view.gitmodules_too_large": "Datne .gitmodules ir pārāk liela un netiks ņemta vērā (piemēram, API izsaukumos)",
+    "editor.search": "Meklēt",
+    "editor.find_previous": "Iepriekšējais atradums",
+    "editor.find_next": "Nākamais atradums",
+    "editor.replace": "Aizstāt",
+    "editor.replace_all": "Aizstāt visu",
+    "editor.toggle_case": "Pārslēgt reģistrjutīgumu",
+    "editor.toggle_regex": "Pārslēgt regulāro izteiksmju izmantošanu",
+    "editor.toggle_whole_word": "Pārslēgt atbilstību veseliem vārdiem"
 }

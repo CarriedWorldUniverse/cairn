@@ -194,5 +194,14 @@
     "actions.workflow.incomplete_runson_unknown_cause": "无法解析任务‘%[1]s’的`runs-on`：未知错误。",
     "admin.auths.oauth2_quota_group_claim_name": "用于设定该来源配额组名的声明（claim）的名称。（可选）",
     "admin.auths.oauth2_quota_group_map": "将声明组映射到配额组。（可选，需要填写上述声明名称）",
-    "admin.auths.oauth2_quota_group_map_removal": "如果用户不是对应组的成员，则将用户从同步的配额组中移出。"
+    "admin.auths.oauth2_quota_group_map_removal": "如果用户不是对应组的成员，则将用户从同步的配额组中移出。",
+    "repo.view.gitmodules_too_large": ".gitmodules 因太大而被（API等）忽略",
+    "editor.search": "查找",
+    "editor.find_previous": "上一个结果",
+    "editor.find_next": "下一个结果",
+    "editor.replace": "替换",
+    "editor.replace_all": "替换全部",
+    "editor.toggle_case": "切换大小写敏感",
+    "editor.toggle_regex": "切换正则表达式",
+    "editor.toggle_whole_word": "切换全词匹配"
 }
