@@ -85,7 +85,9 @@ func Init(ctx context.Context) error {
 			detailConcat := strings.Join(unexpectedKeys, "\n\t")
 			log.Fatal("An unexpected ssh public key was discovered. Forgejo will shutdown to require this to be fixed. Fix by either:\n"+
 				"Option 1: Delete the file %s, and Forgejo will recreate it with only expected ssh public keys.\n"+
-				"Option 2: Permit unexpected keys by setting [server].SSH_ALLOW_UNEXPECTED_AUTHORIZED_KEYS=true in Forgejo's config file.\n\t"+
+				"Option 2: Permit unexpected keys by setting [server].SSH_ALLOW_UNEXPECTED_AUTHORIZED_KEYS=true in Forgejo's config file.\n"+
+				"Option 3: If unused, disable SSH support by setting [server].DISABLE_SSH=true in Forgejo's config file.\n"+
+				"\t"+
 				detailConcat, filepath.Join(setting.SSH.RootPath, "authorized_keys"))
 		}
 	}

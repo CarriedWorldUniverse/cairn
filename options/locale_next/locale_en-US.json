@@ -115,6 +115,8 @@
 	"alert.asset_load_failed": "Failed to load asset files from {path}. Please make sure the asset files can be accessed.",
 	"alert.range_error": " must be a number between %[1]s and %[2]s.",
 	"install.invalid_lfs_path": "Unable to create the LFS root at the specified path: %[1]s",
+	"install.ssh_authorized_keys_inspection_error": "Failed to inspect existing authorized_keys file: %v",
+	"install.ssh_authorized_keys_unexpected_key": "Enabling SSH for Forgejo conflicts with the file located at %s that contains existing SSH keys. Suggestions: use a dedicated system user for Forgejo, or disable SSH.",
 	"profile.actions.tooltip": "More actions",
 	"profile.edit.link": "Edit profile",
 	"feed.atom.link": "Atom feed",
