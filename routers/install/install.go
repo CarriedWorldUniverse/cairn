@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"forgejo.org/models/asymkey"
 	"forgejo.org/models/db"
 	db_install "forgejo.org/models/db/install"
 	"forgejo.org/models/gitea_migrations"
@@ -403,6 +404,25 @@ func SubmitInstall(ctx *context.Context) {
 	} else {
 		cfg.Section("server").Key("DISABLE_SSH").SetValue("false")
 		cfg.Section("server").Key("SSH_PORT").SetValue(fmt.Sprint(form.SSHPort))
+
+		sshKeyErrors, err := asymkey.InspectPublicKeys(ctx)
+		if err != nil {
+			ctx.RenderWithErr(ctx.Tr("install.ssh_authorized_keys_inspection_error", err), tplInstall, &form)
+			return
+		}
+
+		var authorizedKeysWillCauseFatalError bool
+		for _, finding := range sshKeyErrors {
+			if finding.Type == asymkey.InspectionResultUnexpectedKey {
+				// Any single finding of this type would cause `ssh.Init` to have a fatal error on Forgejo startup, so
+				// let's note it here while the install page is still usable and allow users to deal with it.
+				authorizedKeysWillCauseFatalError = true
+			}
+		}
+		if authorizedKeysWillCauseFatalError {
+			ctx.RenderWithErr(ctx.Tr("install.ssh_authorized_keys_unexpected_key", filepath.Join(setting.SSH.RootPath, "authorized_keys")), tplInstall, &form)
+			return
+		}
 	}
 
 	if form.LFSRootPath != "" {
