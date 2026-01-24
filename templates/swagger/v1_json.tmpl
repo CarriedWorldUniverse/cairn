@@ -5781,6 +5781,12 @@
             "description": "Only returns workflow runs that are associated with the specified head_sha.",
             "name": "head_sha",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Only return workflow runs that involve the given Git reference, for example, `refs/heads/main`.",
+            "name": "ref",
+            "in": "query"
           }
         ],
         "responses": {
