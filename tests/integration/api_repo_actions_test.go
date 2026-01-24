@@ -271,6 +271,11 @@ func TestActionsAPIGetListActionRun(t *testing.T) {
 			query:       "?head_sha=97f29ee599c373c729132a5c46a046978311e0ee",
 			expectedIDs: []int64{892, 894},
 		},
+		{
+			name:        "Search for Git reference",
+			query:       "?ref=refs/heads/main",
+			expectedIDs: []int64{892, 894},
+		},
 	}
 
 	for _, tt := range testqueries {
