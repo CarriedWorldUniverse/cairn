@@ -54,6 +54,13 @@ func searchIssueWithKeyword(t *testing.T) {
 			[]int64{2},
 		},
 		{
+			"ISSUe2", // case-insensitive search
+			&SearchOptions{
+				RepoIDs: []int64{1},
+			},
+			[]int64{2},
+		},
+		{
 			"first",
 			&SearchOptions{
 				RepoIDs: []int64{1},
