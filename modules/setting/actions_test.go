@@ -4,6 +4,7 @@
 package setting
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -214,5 +215,6 @@ func Test_getIDTokenSettingsForActions(t *testing.T) {
 	cfg, err = NewConfigProviderFromData(iniStr)
 	require.NoError(t, err)
 	err = loadActionsFrom(cfg)
-	require.Errorf(t, err, "invalid [actions] ID_TOKEN_SIGNING_ALGORITHM %q", Actions.IDTokenSigningAlgorithm)
+	require.ErrorContains(t, err,
+		fmt.Sprintf("invalid [actions] ID_TOKEN_SIGNING_ALGORITHM: %q", Actions.IDTokenSigningAlgorithm))
 }
