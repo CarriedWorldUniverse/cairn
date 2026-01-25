@@ -6,6 +6,7 @@
 // templates/repo/view_file.tmpl
 // web_src/css/repo.css
 // web_src/css/repo/file-view.css
+// web_src/css/modules/tippy.css
 // web_src/js/features/repo-code.js
 // web_src/js/features/repo-unicode-escape.js
 // @watch end
@@ -152,4 +153,15 @@ test('Copy line permalink', async ({page}) => {
   await page.locator('.tippy-box .copy-line-permalink').click({force: true});
   const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboardText).toContain('README.md?display=source#L1');
+});
+
+test('Line menu styles', async ({page}) => {
+  const response = await page.goto('/user2/repo1/src/branch/master/README.md?display=source#L1');
+  expect(response?.status()).toBe(200);
+
+  await page.locator('.code-line-button').click();
+  const button = page.locator('.tippy-box .ref-in-new-issue');
+
+  await expect(button).toHaveCSS('display', 'flex');
+  await expect(button).toHaveCSS('padding', '9px 18px');
 });

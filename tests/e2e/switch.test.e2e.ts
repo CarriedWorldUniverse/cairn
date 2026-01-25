@@ -8,29 +8,14 @@
 // @watch end
 
 import {expect} from '@playwright/test';
-import {test} from './utils_e2e.ts';
+import {test, login_user} from './utils_e2e.ts';
 
-test('Switch CSS properties', async ({browser}) => {
-  // This test doesn't need JS and runs a little faster without it
-  const context = await browser.newContext({javaScriptEnabled: false});
-  const page = await context.newPage();
-
+test.describe('Switch CSS properties', () => {
   const noBg = 'rgba(0, 0, 0, 0)';
   const activeBg = 'rgb(226, 226, 229)';
 
-  const normalMargin = '0px';
-  const normalPadding = '15.75px';
-
-  const specialLeftMargin = '-4px';
-  const specialPadding = '19.75px';
-
-  async function evaluateSwitchItem(page, selector, isActive, background, marginLeft, marginRight, paddingLeft, paddingRight) {
+  async function evaluateSwitchItem(page, selector, isActive, marginLeft, marginRight, paddingLeft, paddingRight, itemHeight) {
     const item = page.locator(selector);
-    if (isActive) {
-      await expect(item).toHaveClass(/active/);
-    } else {
-      await expect(item).not.toHaveClass(/active/);
-    }
     const cs = await item.evaluate((el) => {
       // In Firefox getComputedStyle is undefined if returned from evaluate
       const s = getComputedStyle(el);
@@ -42,33 +27,71 @@ test('Switch CSS properties', async ({browser}) => {
         paddingRight: s.paddingRight,
       };
     });
-    expect(cs.backgroundColor).toBe(background);
     expect(cs.marginLeft).toBe(marginLeft);
     expect(cs.marginRight).toBe(marginRight);
     expect(cs.paddingLeft).toBe(paddingLeft);
     expect(cs.paddingRight).toBe(paddingRight);
+
+    if (isActive) {
+      await expect(item).toHaveClass(/active/);
+      expect(cs.backgroundColor).toBe(activeBg);
+    } else {
+      await expect(item).not.toHaveClass(/active/);
+      expect(cs.backgroundColor).toBe(noBg);
+    }
+
+    expect((await item.boundingBox()).height).toBeCloseTo(itemHeight);
+
+    return true;
   }
 
-  await page.goto('/user2/repo1/pulls');
+  const normalMargin = '0px';
+  const normalPadding = '15.75px';
 
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', true, activeBg, normalMargin, normalMargin, normalPadding, normalPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', false, noBg, specialLeftMargin, normalMargin, specialPadding, normalPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', false, noBg, normalMargin, normalMargin, normalPadding, normalPadding);
+  const specialLeftMargin = '-4px';
+  const specialPadding = '19.75px';
 
-  await page.goto('/user2/repo1/pulls?state=closed');
+  // Subtest for areas that can be evaluated without JS
+  test('No JS', async ({browser}) => {
+    const context = await browser.newContext({javaScriptEnabled: false});
+    const page = await context.newPage();
 
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', false, noBg, normalMargin, specialLeftMargin, normalPadding, specialPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', true, activeBg, normalMargin, normalMargin, normalPadding, normalPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', false, noBg, specialLeftMargin, normalMargin, specialPadding, normalPadding);
+    const itemHeight = await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches) ? 38 : 34;
 
-  await page.goto('/user2/repo1/pulls?state=all');
+    await page.goto('/user2/repo1/pulls');
 
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', false, noBg, normalMargin, normalMargin, normalPadding, normalPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', false, noBg, normalMargin, specialLeftMargin, normalPadding, specialPadding);
-  await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', true, activeBg, normalMargin, normalMargin, normalPadding, normalPadding);
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', true, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', false, specialLeftMargin, normalMargin, specialPadding, normalPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', false, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
 
-  // E2E already runs clients with both fine and coarse pointer simulated
-  // This test will verify that coarse-related CSS is working as intended
-  const itemHeight = await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches) ? 38 : 34;
-  expect((await page.locator('#issue-filters .switch > .item:nth-child(1)').boundingBox()).height).toBeCloseTo(itemHeight);
+    await page.goto('/user2/repo1/pulls?state=closed');
+
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', false, normalMargin, specialLeftMargin, normalPadding, specialPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', true, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', false, specialLeftMargin, normalMargin, specialPadding, normalPadding, itemHeight)).toBeTruthy();
+
+    await page.goto('/user2/repo1/pulls?state=all');
+
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(1)', false, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(2)', false, normalMargin, specialLeftMargin, normalPadding, specialPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '#issue-filters .switch > .item:nth-child(3)', true, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
+  });
+
+  // Subtest for areas that can't be reached without JS
+  test('With JS', async ({browser}, workerInfo) => {
+    const context = await login_user(browser, workerInfo, 'user2');
+    const page = await context.newPage();
+
+    // Go to files tab of a reviewable pull request
+    await page.goto('/user2/repo1/pulls/5/files');
+
+    // Open review box
+    await page.locator('#review-box .js-btn-review').click();
+
+    // Markdown editor has a special rule for a shorter switch
+    const itemHeight = 28;
+
+    expect(await evaluateSwitchItem(page, '.review-box-panel .switch > .item:nth-child(1)', true, normalMargin, normalMargin, normalPadding, normalPadding, itemHeight)).toBeTruthy();
+    expect(await evaluateSwitchItem(page, '.review-box-panel .switch > .item:nth-child(2)', false, specialLeftMargin, normalMargin, specialPadding, normalPadding, itemHeight)).toBeTruthy();
+  });
 });
