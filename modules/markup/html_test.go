@@ -1329,3 +1329,42 @@ func TestRender_FilePreview(t *testing.T) {
 		)
 	})
 }
+
+func TestRenderDescriptionHTML(t *testing.T) {
+	defer test.MockVariableValue(&setting.AppURL, markup.TestAppURL)()
+
+	test := func(input, expected string) {
+		buffer, err := markup.RenderDescriptionHTML(&markup.RenderContext{
+			Ctx: git.DefaultContext,
+		}, input)
+		require.NoError(t, err)
+		assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(buffer))
+	}
+
+	markup.InitializeSanitizer()
+
+	test(
+		"https://www.example.com",
+		`<a href="https://www.example.com" target="_blank" rel="noopener noreferrer">https://www.example.com</a>`)
+
+	test(
+		"Example repository with `Arc`",
+		"Example repository with `Arc`")
+
+	test(
+		"Example repository with `Arc` and tools.",
+		"Example repository with `Arc` and tools.")
+
+	test(
+		"`Arc<Test>` implements",
+		"`Arc&lt;Test&gt;` implements")
+
+	test(
+		"Arc<test> is broken",
+		"Arc<test> is broken</test>")
+
+	// issue #10770
+	test(
+		"A weird alternative to `Arc<RwLock<T>>`",
+		"A weird alternative to `Arc&lt;RwLock&lt;T&gt;&gt;`")
+}

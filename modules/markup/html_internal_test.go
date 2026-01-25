@@ -615,3 +615,30 @@ func TestRegExp_shortLinkPattern(t *testing.T) {
 		assert.False(t, shortLinkPattern.MatchString(testCase))
 	}
 }
+
+func TestRender_escapeInlineCodeBlocks(t *testing.T) {
+	test := func(input, expected string) {
+		result := escapeInlineCodeBlocks(input)
+		assert.Equal(t, expected, result)
+	}
+	test("`<test>`",
+		"`&lt;test&gt;`")
+	test("<test>",
+		"<test>")
+	test("`<foo>` <bar> `<baz>`",
+		"`&lt;foo&gt;` <bar> `&lt;baz&gt;`")
+	test("<foo> `<bar>` <baz>",
+		"<foo> `&lt;bar&gt;` <baz>")
+	test("<foo> `<bar> <baz>",
+		"<foo> `<bar> <baz>")
+	test("<foo> `<bar>` `<baz>",
+		"<foo> `&lt;bar&gt;` `<baz>")
+	test("<foo> `<bar>` `",
+		"<foo> `&lt;bar&gt;` `")
+	test("<foo> `<bar>` ``",
+		"<foo> `&lt;bar&gt;` ``")
+	test("```",
+		"```")
+	test("``<`",
+		"``&lt;`")
+}
