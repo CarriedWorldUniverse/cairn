@@ -189,7 +189,7 @@ var (
 // `useMergebase` is specified then the merge base between `base` and `head` is
 // used to compare against `head`.
 func (repo *Repository) GetShortStat(base, head string, useMergebase bool) (numFiles, totalAdditions, totalDeletions int, err error) {
-	cmd := NewCommand(repo.Ctx, "diff-tree", "--shortstat")
+	cmd := NewCommand(repo.Ctx, "diff-tree", "--shortstat", "--find-renames")
 	if useMergebase {
 		cmd = cmd.AddArguments("--merge-base")
 	}
@@ -211,7 +211,7 @@ func (repo *Repository) GetShortStat(base, head string, useMergebase bool) (numF
 
 // GetCommitShortStat returns the number of files, total additions and total deletions the commit has.
 func (repo *Repository) GetCommitShortStat(commitID string) (numFiles, totalAdditions, totalDeletions int, err error) {
-	cmd := NewCommand(repo.Ctx, "diff-tree", "--shortstat", "--no-commit-id", "--root").AddDynamicArguments(commitID)
+	cmd := NewCommand(repo.Ctx, "diff-tree", "--shortstat", "--no-commit-id", "--root", "--find-renames").AddDynamicArguments(commitID)
 	stdout, _, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
 	if err != nil {
 		return 0, 0, 0, err

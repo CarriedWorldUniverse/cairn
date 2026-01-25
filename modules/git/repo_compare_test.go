@@ -242,6 +242,18 @@ func TestGetCommitShortStat(t *testing.T) {
 		assert.Equal(t, 6, totalAddition)
 		assert.Equal(t, 0, totalDeletions)
 	})
+
+	t.Run("Renames", func(t *testing.T) {
+		repo, err := OpenRepository(t.Context(), filepath.Join(testReposDir, "renames"))
+		require.NoError(t, err)
+		defer repo.Close()
+
+		numFiles, totalAddition, totalDeletions, err := repo.GetCommitShortStat("f667f3a24223414e3bfbe01ab6e445c703ab8e25")
+		require.NoError(t, err)
+		assert.Equal(t, 1, numFiles)
+		assert.Zero(t, totalAddition)
+		assert.Zero(t, totalDeletions)
+	})
 }
 
 func TestGetShortStat(t *testing.T) {
@@ -300,6 +312,28 @@ func TestGetShortStat(t *testing.T) {
 		assert.Zero(t, numFiles)
 		assert.Zero(t, totalAdditions)
 		assert.Zero(t, totalDeletions)
+	})
+
+	t.Run("Renames", func(t *testing.T) {
+		repo, err := OpenRepository(t.Context(), filepath.Join(testReposDir, "renames"))
+		require.NoError(t, err)
+		defer repo.Close()
+
+		t.Run("Only rename", func(t *testing.T) {
+			numFiles, totalAdditions, totalDeletions, err := repo.GetShortStat("bc40f00489096a7d4090a609a6572f528e1acb76", "f667f3a24223414e3bfbe01ab6e445c703ab8e25", true)
+			require.NoError(t, err)
+			assert.Equal(t, 1, numFiles)
+			assert.Zero(t, totalAdditions)
+			assert.Zero(t, totalDeletions)
+		})
+
+		t.Run("Too much diverged", func(t *testing.T) {
+			numFiles, totalAdditions, totalDeletions, err := repo.GetShortStat("bc40f00489096a7d4090a609a6572f528e1acb76", "acdee217ada3fea6e503acfb969724cc799fc516", true)
+			require.NoError(t, err)
+			assert.Equal(t, 2, numFiles)
+			assert.Equal(t, 3, totalAdditions)
+			assert.Equal(t, 1, totalDeletions)
+		})
 	})
 }
 
