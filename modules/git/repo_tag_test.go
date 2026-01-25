@@ -4,6 +4,7 @@
 package git
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -150,7 +151,8 @@ func TestRepository_GetAnnotatedTag(t *testing.T) {
 	// Annotated tag's name should fail
 	tag3, err := bareRepo1.GetAnnotatedTag(aTagName)
 	require.Error(t, err)
-	require.Errorf(t, err, "Length must be 40: %d", len(aTagName))
+	require.ErrorContains(t, err,
+		fmt.Sprintf("length %d has no matched object format: %s", len(aTagName), aTagName))
 	assert.Nil(t, tag3)
 
 	// Lightweight Tag should fail
