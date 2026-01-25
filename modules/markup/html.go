@@ -300,7 +300,7 @@ func RenderDescriptionHTML(
 		descriptionLinkProcessor,
 		emojiShortCodeProcessor,
 		emojiProcessor,
-	}, content)
+	}, escapeInlineCodeBlocks(content))
 }
 
 // RenderEmoji for when we want to just process emoji and shortcodes
@@ -1542,4 +1542,10 @@ func optionalRepoSlugAndInstancePath(ctx *RenderContext, text *string, fullURL, 
 			*text = slug + "@" + *text
 		}
 	}
+}
+
+// escapeInlineCodeBlocks escapes HTML symbols in contents of Markdown inline code blocks
+// to prevent clashing with HTML parsing
+func escapeInlineCodeBlocks(input string) string {
+	return InlineCodeBlockRegex.ReplaceAllStringFunc(input, html.EscapeString)
 }
