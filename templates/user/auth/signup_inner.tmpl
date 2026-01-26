@@ -12,7 +12,7 @@
 			{{template "base/alert" .}}
 			{{end}}
 			{{if .DisableRegistration}}
-				<p>{{ctx.Locale.Tr "auth.disable_register_prompt"}}</p>
+				<p>{{.DisableRegistrationReason}}</p>
 			{{else}}
 				<div class="required field {{if and (.Err_UserName) (or (not .LinkAccountMode) (and .LinkAccountMode .LinkAccountModeRegister))}}error{{end}}">
 					<label for="user_name">{{ctx.Locale.Tr "username"}}</label>

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"testing"
 
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/templates"
 	"forgejo.org/modules/test"
 	"forgejo.org/services/contexttest"
 
@@ -40,4 +42,30 @@ func TestUserLogin(t *testing.T) {
 	ctx.IsSigned = true
 	SignIn(ctx)
 	assert.Equal(t, "/", test.RedirectURL(resp))
+}
+
+// NB: Full signup test is in tests/integration/signup_test.go
+// this is to test disabled signup
+func TestSignUpDefault(t *testing.T) {
+	ctx, resp := contexttest.MockContext(t, "/user/sign_up",
+		contexttest.MockContextOption{Render: templates.HTMLRenderer()})
+	SignUp(ctx)
+	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.Contains(t, resp.Body.String(), ctx.Locale.Tr("username"))
+}
+
+func TestSignUpDisabled(t *testing.T) {
+	ctx, resp := contexttest.MockContext(t, "/user/sign_up",
+		contexttest.MockContextOption{Render: templates.HTMLRenderer()})
+	defer test.MockVariableValue(&setting.Service.DisableRegistration, true)()
+	SignUp(ctx)
+	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.Contains(t, resp.Body.String(), ctx.Locale.Tr("auth.disable_register_prompt"))
+}
+
+func TestSignUpPostDisabled(t *testing.T) {
+	ctx, resp := contexttest.MockContext(t, "/user/sign_up")
+	defer test.MockVariableValue(&setting.Service.DisableRegistration, true)()
+	SignUpPost(ctx)
+	assert.Equal(t, http.StatusForbidden, resp.Code)
 }
