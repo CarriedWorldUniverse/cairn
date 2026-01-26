@@ -386,6 +386,16 @@ func SignOut(ctx *context.Context) {
 	ctx.JSONRedirect(setting.AppSubURL + "/")
 }
 
+// check if registration is allowed and set Data for template
+func registrationDisabled(ctx *context.Context) bool {
+	if setting.Service.DisableRegistration || setting.Service.AllowOnlyExternalRegistration {
+		ctx.Data["DisableRegistration"] = true
+		ctx.Data["DisableRegistrationReason"] = ctx.Locale.Tr("auth.disable_register_prompt")
+		return true
+	}
+	return false
+}
+
 // SignUp render the register page
 func SignUp(ctx *context.Context) {
 	ctx.Data["Title"] = ctx.Tr("sign_up")
@@ -403,8 +413,7 @@ func SignUp(ctx *context.Context) {
 
 	ctx.Data["PageIsSignUp"] = true
 
-	// Show Disabled Registration message if DisableRegistration or AllowOnlyExternalRegistration options are true
-	ctx.Data["DisableRegistration"] = setting.Service.DisableRegistration || setting.Service.AllowOnlyExternalRegistration
+	registrationDisabled(ctx)
 
 	redirectTo := ctx.FormString("redirect_to")
 	if len(redirectTo) > 0 {
@@ -416,6 +425,11 @@ func SignUp(ctx *context.Context) {
 
 // SignUpPost response for sign up information submission
 func SignUpPost(ctx *context.Context) {
+	if registrationDisabled(ctx) {
+		ctx.Error(http.StatusForbidden)
+		return
+	}
+
 	form := web.GetForm(ctx).(*forms.RegisterForm)
 	ctx.Data["Title"] = ctx.Tr("sign_up")
 
@@ -431,12 +445,6 @@ func SignUpPost(ctx *context.Context) {
 	context.SetCaptchaData(ctx)
 
 	ctx.Data["PageIsSignUp"] = true
-
-	// Permission denied if DisableRegistration or AllowOnlyExternalRegistration options are true
-	if setting.Service.DisableRegistration || setting.Service.AllowOnlyExternalRegistration {
-		ctx.Error(http.StatusForbidden)
-		return
-	}
 
 	if ctx.HasError() {
 		ctx.HTML(http.StatusOK, tplSignUp)
