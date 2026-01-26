@@ -5,7 +5,7 @@
 // templates/shared/user/actions_menu.tmpl
 // templates/org/header.tmpl
 // templates/explore/search.tmpl
-// templates/devtest/dropdown.tmpl
+// templates/demo/dropdown.tmpl
 // web_src/js/modules/dropdown.ts
 // @watch end
 
@@ -228,12 +228,12 @@ test.describe(`Visual properties`, () => {
     expect(await inactiveItem.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   });
 
-  test('Devtest', async ({browser}) => {
+  test('Demo page', async ({browser}) => {
     const context = await browser.newContext({javaScriptEnabled: false});
     const page = await context.newPage();
 
-    // `/devtest` has dropdowns with various combinations of items
-    await page.goto('/devtest/dropdown');
+    // `/-/demo` has dropdowns with various combinations of items
+    await page.goto('/-/demo/dropdown');
 
     // Dropdown with just 3 items and nothing special
     await page.locator(`#dropdown-1 > summary`).click();

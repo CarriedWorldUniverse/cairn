@@ -171,9 +171,9 @@ func TestGlobalTwoFactorRequirement(t *testing.T) {
 			assert.Greater(t, htmlDoc.Find(".navbar-left > a.item").Length(), 1) // show the Logo, and other links
 			assert.Greater(t, htmlDoc.Find(".navbar-right details.dropdown a").Length(), 1)
 
-			// 500 page
-			reset := enableDevtest()
-			req = NewRequest(t, "GET", "/devtest/error/500")
+			// demo pages are using ignSignIn and are expected to be accessible with loginAllowed
+			reset := enableDemoPages()
+			req = NewRequest(t, "GET", "/-/demo/error/500")
 			req.Header.Add("Accept", "text/html")
 			resp = session.MakeRequest(t, req, http.StatusInternalServerError)
 			htmlDoc = NewHTMLParser(t, resp.Body)
@@ -195,14 +195,12 @@ func TestGlobalTwoFactorRequirement(t *testing.T) {
 			assert.Equal(t, 1, userLinks.Length()) // only logout link
 			assert.Equal(t, "Sign out", strings.TrimSpace(userLinks.Text()))
 
-			// 500 page
-			reset := enableDevtest()
-			req = NewRequest(t, "GET", "/devtest/error/500")
+			// demo pages are using ignSignIn and should redirect like any other pages if 2FA is required but missing
+			reset := enableDemoPages()
+			req = NewRequest(t, "GET", "/-/demo/error/500")
 			req.Header.Add("Accept", "text/html")
-			resp = session.MakeRequest(t, req, http.StatusInternalServerError)
-			htmlDoc = NewHTMLParser(t, resp.Body)
-			assert.Equal(t, 1, htmlDoc.Find(".navbar-left > a.item").Length())
-			htmlDoc.AssertElement(t, ".navbar-right", false)
+			resp = session.MakeRequest(t, req, http.StatusSeeOther)
+			assert.Equal(t, "/user/settings/security", resp.Header().Get("Location"))
 			reset()
 
 			// 2fa page

@@ -194,8 +194,8 @@
 								{{ctx.Locale.Tr "help"}}
 							</a>
 						</li>
-						{{$showDevtest := not .RunModeIsProd}}
-						{{if or .IsAdmin $showDevtest}}
+						{{$showDemo := not .RunModeIsProd}}
+						{{if or .IsAdmin $showDemo}}
 							<hr>
 						{{end}}
 						{{if .IsAdmin}}
@@ -206,11 +206,11 @@
 								</a>
 							</li>
 						{{end}}
-						{{if $showDevtest}}
+						{{if $showDemo}}
 							<li>
-								<a href="{{AppSubUrl}}/devtest">
+								<a href="{{AppSubUrl}}/-/demo">
 									{{svg "octicon-beaker"}}
-									Development pages
+									Demo pages
 								</a>
 							</li>
 						{{end}}

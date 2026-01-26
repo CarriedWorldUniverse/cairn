@@ -49,7 +49,7 @@ test('Button visuals', async ({browser}) => {
 
   const context = await browser.newContext({javaScriptEnabled: false});
   const page = await context.newPage();
-  const response = await page.goto('/devtest/buttons');
+  const response = await page.goto('/-/demo/buttons');
   expect(response?.status()).toBe(200);
 
   const transparent = 'rgba(0, 0, 0, 0)';

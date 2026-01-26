@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// `/devtest/error/{errcode}` provides a convenient way of testing various
+// `/-/demo/error/{errcode}` provides a convenient way of testing various
 // error pages sometimes which can be hard to reach otherwise.
 // This file is a test of various attributes on those pages.
 
-func enableDevtest() func() {
+func enableDemoPages() func() {
 	resetIsProd := test.MockVariableValue(&setting.IsProd, false)
 	resetRoutes := test.MockVariableValue(&testWebRoutes, routers.NormalRoutes())
 	return func() {
@@ -27,13 +27,13 @@ func enableDevtest() func() {
 	}
 }
 
-func TestDevtestErrorpages(t *testing.T) {
-	defer enableDevtest()()
+func TestDemoErrorPages(t *testing.T) {
+	defer enableDemoPages()()
 
 	t.Run("Server error", func(t *testing.T) {
-		// `/devtest/error/x` returns 500 for any x by default.
+		// `/-/demo/error/x` returns 500 for any x by default.
 		// `/500` is simply for good look here
-		req := NewRequest(t, "GET", "/devtest/error/500")
+		req := NewRequest(t, "GET", "/-/demo/error/500")
 		resp := MakeRequest(t, req, http.StatusInternalServerError)
 		doc := NewHTMLParser(t, resp.Body)
 		assert.Equal(t, "500", doc.Find(".error-code").Text())
@@ -42,7 +42,7 @@ func TestDevtestErrorpages(t *testing.T) {
 
 	t.Run("Page not found",
 		func(t *testing.T) {
-			req := NewRequest(t, "GET", "/devtest/error/404").
+			req := NewRequest(t, "GET", "/-/demo/error/404").
 				// Without this header `notFoundInternal` returns plaintext error message
 				SetHeader("Accept", "text/html")
 			resp := MakeRequest(t, req, http.StatusNotFound)
@@ -53,7 +53,7 @@ func TestDevtestErrorpages(t *testing.T) {
 
 	t.Run("Quota exhaustion",
 		func(t *testing.T) {
-			req := NewRequest(t, "GET", "/devtest/error/413")
+			req := NewRequest(t, "GET", "/-/demo/error/413")
 			resp := MakeRequest(t, req, http.StatusRequestEntityTooLarge)
 			doc := NewHTMLParser(t, resp.Body)
 			assert.Equal(t, "413", doc.Find(".error-code").Text())
