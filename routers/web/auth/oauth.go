@@ -674,7 +674,7 @@ func OIDCWellKnown(ctx *context.Context) {
 		return
 	}
 
-	ctx.Data["SigningKey"] = oauth2.DefaultSigningKey
+	ctx.Data["SigningAlg"] = oauth2.DefaultSigningKey.SigningMethod().Alg()
 	ctx.Data["Issuer"] = strings.TrimSuffix(setting.AppURL, "/")
 	ctx.JSONTemplate("user/auth/oidc_wellknown")
 }
