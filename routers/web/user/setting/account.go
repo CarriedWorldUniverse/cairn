@@ -46,6 +46,11 @@ func Account(ctx *context.Context) {
 
 // AccountPost response for change user's password
 func AccountPost(ctx *context.Context) {
+	if user_model.IsFeatureDisabledWithLoginType(ctx.Doer, setting.UserFeatureManagePassword) {
+		ctx.NotFound("Not Found", errors.New("password is not allowed to be changed"))
+		return
+	}
+
 	form := web.GetForm(ctx).(*forms.ChangePasswordForm)
 	ctx.Data["Title"] = ctx.Tr("settings")
 	ctx.Data["PageIsSettingsAccount"] = true

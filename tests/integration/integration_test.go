@@ -708,16 +708,23 @@ func VerifyJSONSchema(t testing.TB, resp *httptest.ResponseRecorder, schemaFile 
 func GetHTMLTitle(t testing.TB, session *TestSession, urlStr string) string {
 	t.Helper()
 
+	doc := getHTMLDoc(t, session, urlStr, http.StatusOK)
+	return doc.Find("head title").Text()
+}
+
+// getHTMLDoc gets HTMLDoc from url with expected status. Use status
+// NoExpectedStatus to ignore status.
+func getHTMLDoc(t testing.TB, session *TestSession, urlStr string, expectedStatus int) *HTMLDoc {
+	t.Helper()
+
 	req := NewRequest(t, "GET", urlStr)
 	var resp *httptest.ResponseRecorder
 	if session == nil {
-		resp = MakeRequest(t, req, http.StatusOK)
+		resp = MakeRequest(t, req, expectedStatus)
 	} else {
-		resp = session.MakeRequest(t, req, http.StatusOK)
+		resp = session.MakeRequest(t, req, expectedStatus)
 	}
-
-	doc := NewHTMLParser(t, resp.Body)
-	return doc.Find("head title").Text()
+	return NewHTMLParser(t, resp.Body)
 }
 
 func SortMailerMessages(msgs []*mailer.Message) {
