@@ -247,7 +247,7 @@ func TestCheckIfDiffDiffers(t *testing.T) {
 		require.NoError(t, NewCommand(t.Context(), "switch", "-c", "e-2").Run(&RunOpts{Dir: tmpDir}))
 		require.NoError(t, NewCommand(t.Context(), "rebase", "main-D-2").Run(&RunOpts{Dir: tmpDir}))
 
-		// The diff changed, because it no longers shows the change made to `README`.
+		// The diff changed, because it no longer shows the change made to `README`.
 		changed, err := gitRepo.CheckIfDiffDiffers("main-D-2", "e-1", "e-2", nil)
 		require.NoError(t, err)
 		assert.False(t, changed) // This should be true.

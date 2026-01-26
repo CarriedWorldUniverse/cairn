@@ -473,7 +473,7 @@ func (repo *Repository) GetCommitsFromIDs(commitIDs []string, ignoreExistence bo
 			// It's entirely possible the commit no longer exists, we only care
 			// about the status and verification. Verification is no longer possible,
 			// but getting the status is still possible with just the ID. We do have
-			// to assumme the commitID is not shortened, we cannot recover the full
+			// to assume the commitID is not shortened, we cannot recover the full
 			// commitID.
 			id, err := NewIDFromString(commitID)
 			if err == nil {

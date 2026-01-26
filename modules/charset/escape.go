@@ -30,7 +30,7 @@ const (
 	WikiContext escapeContext = "wiki"
 	// Rendered content (except markup), source code and blames.
 	FileviewContext escapeContext = "file-view"
-	// Commits or pull requet's diff.
+	// Commits or pull request's diff.
 	DiffContext escapeContext = "diff"
 )
 

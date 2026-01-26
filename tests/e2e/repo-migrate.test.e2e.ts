@@ -8,7 +8,7 @@ import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
-test('Migration type seleciton screen', async ({page}) => {
+test('Migration type selection screen', async ({page}) => {
   await page.goto('/repo/migrate');
 
   // For branding purposes, it is desired that `gitea-` prefixes in SVGs are

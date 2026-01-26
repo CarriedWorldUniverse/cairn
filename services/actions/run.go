@@ -163,7 +163,7 @@ func checkJobWillRevisit(ctx context.Context, job *actions_model.ActionRunJob) (
 }
 
 func checkJobRunsOnStaticMatrixError(ctx context.Context, job *actions_model.ActionRunJob) (bool, error) {
-	// If a job has a `runs-on` field that references a matrix dimension like `runs-on: ${{ matrix.platorm }}`, and
+	// If a job has a `runs-on` field that references a matrix dimension like `runs-on: ${{ matrix.platform }}`, and
 	// `platform` is not part of the job's matrix at all, then it will be tagged as `HasIncompleteRunsOn` and will be
 	// blocked forever.  This only applies if the matrix is static -- that is, the job isn't also tagged
 	// `HasIncompleteMatrix` and the matrix is yet to be fully defined.

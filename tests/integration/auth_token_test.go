@@ -136,8 +136,8 @@ func TestLTAExpiry(t *testing.T) {
 
 	sess := loginUserWithPasswordRemember(t, user.Name, userPassword, true)
 
-	ltaCookieValie := GetLTACookieValue(t, sess)
-	lookupKey, _, found := strings.Cut(ltaCookieValie, ":")
+	ltaCookieValue := GetLTACookieValue(t, sess)
+	lookupKey, _, found := strings.Cut(ltaCookieValue, ":")
 	assert.True(t, found)
 
 	// Ensure it's not expired.

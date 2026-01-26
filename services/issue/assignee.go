@@ -20,10 +20,10 @@ import (
 // DeleteNotPassedAssignee deletes all assignees who aren't passed via the "assignees" array
 func DeleteNotPassedAssignee(ctx context.Context, issue *issues_model.Issue, doer *user_model.User, assignees []*user_model.User) (err error) {
 	var found bool
-	oriAssignes := make([]*user_model.User, len(issue.Assignees))
-	_ = copy(oriAssignes, issue.Assignees)
+	oriAssignees := make([]*user_model.User, len(issue.Assignees))
+	_ = copy(oriAssignees, issue.Assignees)
 
-	for _, assignee := range oriAssignes {
+	for _, assignee := range oriAssignees {
 		found = false
 		for _, alreadyAssignee := range assignees {
 			if assignee.ID == alreadyAssignee.ID {
@@ -230,12 +230,12 @@ func TeamReviewRequest(ctx context.Context, issue *issues_model.Issue, doer *use
 	return comment, teamReviewRequestNotify(ctx, issue, doer, reviewer, isAdd, comment)
 }
 
-func ReviewRequestNotify(ctx context.Context, issue *issues_model.Issue, doer *user_model.User, reviewNotifers []*ReviewRequestNotifier) {
-	for _, reviewNotifer := range reviewNotifers {
-		if reviewNotifer.Reviewer != nil {
-			notify_service.PullRequestReviewRequest(ctx, issue.Poster, issue, reviewNotifer.Reviewer, reviewNotifer.IsAdd, reviewNotifer.Comment)
-		} else if reviewNotifer.ReviewTeam != nil {
-			if err := teamReviewRequestNotify(ctx, issue, issue.Poster, reviewNotifer.ReviewTeam, reviewNotifer.IsAdd, reviewNotifer.Comment); err != nil {
+func ReviewRequestNotify(ctx context.Context, issue *issues_model.Issue, doer *user_model.User, reviewNotifiers []*ReviewRequestNotifier) {
+	for _, reviewNotifier := range reviewNotifiers {
+		if reviewNotifier.Reviewer != nil {
+			notify_service.PullRequestReviewRequest(ctx, issue.Poster, issue, reviewNotifier.Reviewer, reviewNotifier.IsAdd, reviewNotifier.Comment)
+		} else if reviewNotifier.ReviewTeam != nil {
+			if err := teamReviewRequestNotify(ctx, issue, issue.Poster, reviewNotifier.ReviewTeam, reviewNotifier.IsAdd, reviewNotifier.Comment); err != nil {
 				log.Error("teamReviewRequestNotify: %v", err)
 			}
 		}

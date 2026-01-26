@@ -22,8 +22,8 @@ import (
 	shared_automerge "forgejo.org/services/shared/automerge"
 )
 
-func getCacheKey(repoID int64, brancheName string) string {
-	hashBytes := sha256.Sum256([]byte(fmt.Sprintf("%d:%s", repoID, brancheName)))
+func getCacheKey(repoID int64, branchName string) string {
+	hashBytes := sha256.Sum256([]byte(fmt.Sprintf("%d:%s", repoID, branchName)))
 	return fmt.Sprintf("commit_status:%x", hashBytes)
 }
 
@@ -125,8 +125,8 @@ func CreateCommitStatus(ctx context.Context, repo *repo_model.Repository, creato
 	return nil
 }
 
-// FindReposLastestCommitStatuses loading repository default branch latest combined commit status with cache
-func FindReposLastestCommitStatuses(ctx context.Context, repos []*repo_model.Repository) ([]*git_model.CommitStatus, error) {
+// FindReposLatestCommitStatuses loading repository default branch latest combined commit status with cache
+func FindReposLatestCommitStatuses(ctx context.Context, repos []*repo_model.Repository) ([]*git_model.CommitStatus, error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}

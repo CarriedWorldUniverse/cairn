@@ -9,7 +9,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func AddArchivedUnixColumInLabelTable(x *xorm.Engine) error {
+func AddArchivedUnixColumnInLabelTable(x *xorm.Engine) error {
 	type Label struct {
 		ArchivedUnix timeutil.TimeStamp `xorm:"DEFAULT NULL"`
 	}

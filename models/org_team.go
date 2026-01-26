@@ -116,7 +116,7 @@ func removeAllRepositories(ctx context.Context, t *organization.Team) (err error
 			return err
 		}
 
-		// Remove watches from all users and now unaccessible repos
+		// Remove watches from all users and now inaccessible repos
 		for _, user := range t.Members {
 			has, err := access_model.HasAccess(ctx, user.ID, repo)
 			if err != nil {
@@ -480,12 +480,12 @@ func removeTeamMember(ctx context.Context, team *organization.Team, userID int64
 			return err
 		}
 
-		// Remove watches from now unaccessible
+		// Remove watches from now inaccessible
 		if err := ReconsiderWatches(ctx, repo, userID); err != nil {
 			return err
 		}
 
-		// Remove issue assignments from now unaccessible
+		// Remove issue assignments from now inaccessible
 		if err := ReconsiderRepoIssuesAssignee(ctx, repo, userID); err != nil {
 			return err
 		}

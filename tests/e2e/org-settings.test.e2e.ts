@@ -50,7 +50,7 @@ test('org add and remove team repositories', async ({page}) => {
   await page.getByRole('button', {name: 'Add all'}).click();
   await expect(page.locator('#addall-repos-modal')).toBeVisible();
   await screenshot(page, page.locator('#addall-repos-modal'));
-  // Addd all repositories.
+  // Add all repositories.
   await page.getByRole('button', {name: 'Yes'}).click();
 
   // Check that there are three repositories.

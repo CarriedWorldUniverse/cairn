@@ -182,7 +182,7 @@ func DeleteUser(ctx context.Context, u *user_model.User, purge bool) error {
 		return err
 	}
 
-	hasPrincipialSSHKey, err := db.GetEngine(ctx).Where("owner_id = ? AND type = ?", u.ID, asymkey_model.KeyTypePrincipal).Table("public_key").Exist()
+	hasPrincipalSSHKey, err := db.GetEngine(ctx).Where("owner_id = ? AND type = ?", u.ID, asymkey_model.KeyTypePrincipal).Table("public_key").Exist()
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func DeleteUser(ctx context.Context, u *user_model.User, purge bool) error {
 		}
 	}
 
-	if hasPrincipialSSHKey {
+	if hasPrincipalSSHKey {
 		if err = asymkey_model.RewriteAllPrincipalKeys(ctx); err != nil {
 			return err
 		}

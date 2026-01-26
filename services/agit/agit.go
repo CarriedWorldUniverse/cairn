@@ -59,7 +59,7 @@ func ProcReceive(ctx context.Context, repo *repo_model.Repository, gitRepo *git.
 
 		// Get the anything after the refs/for/ prefix.
 		baseBranchName := opts.RefFullNames[i].ForBranchName()
-		curentTopicBranch := topicBranch
+		currentTopicBranch := topicBranch
 
 		// If the reference was given in the format of refs/for/<target-branch>/<topic-branch>,
 		// where <target-branch> and <topic-branch> can contain slashes, we need to iteratively
@@ -67,14 +67,14 @@ func ProcReceive(ctx context.Context, repo *repo_model.Repository, gitRepo *git.
 		if !gitRepo.IsBranchExist(baseBranchName) {
 			for p, v := range baseBranchName {
 				if v == '/' && gitRepo.IsBranchExist(baseBranchName[:p]) && p != len(baseBranchName)-1 {
-					curentTopicBranch = baseBranchName[p+1:]
+					currentTopicBranch = baseBranchName[p+1:]
 					baseBranchName = baseBranchName[:p]
 					break
 				}
 			}
 		}
 
-		if len(curentTopicBranch) == 0 {
+		if len(currentTopicBranch) == 0 {
 			results = append(results, private.HookProcReceiveRefResult{
 				OriginalRef: opts.RefFullNames[i],
 				OldOID:      opts.OldCommitIDs[i],
@@ -86,10 +86,10 @@ func ProcReceive(ctx context.Context, repo *repo_model.Repository, gitRepo *git.
 
 		// Include the user's name in the head branch, to avoid conflicts
 		// with other users.
-		headBranch := curentTopicBranch
+		headBranch := currentTopicBranch
 		userName := strings.ToLower(opts.UserName)
-		if !strings.HasPrefix(curentTopicBranch, userName+"/") {
-			headBranch = userName + "/" + curentTopicBranch
+		if !strings.HasPrefix(currentTopicBranch, userName+"/") {
+			headBranch = userName + "/" + currentTopicBranch
 		}
 
 		// Check if a AGit pull request already exist for this branch.

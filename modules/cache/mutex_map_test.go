@@ -57,7 +57,7 @@ func TestMutexMap_DifferentKeys(t *testing.T) {
 	done := make(chan bool, 1)
 
 	go func() {
-		// If these somehow refered to the same underlying `sync.Mutex`, because `sync.Mutex` is not re-entrant this would
+		// If these somehow referred to the same underlying `sync.Mutex`, because `sync.Mutex` is not re-entrant this would
 		// never complete.
 		unlock1 := mm.Lock("test-key-1")
 		unlock2 := mm.Lock("test-key-2")

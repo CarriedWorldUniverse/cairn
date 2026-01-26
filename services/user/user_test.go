@@ -360,7 +360,7 @@ func TestDeleteInactiveUsers(t *testing.T) {
 	unittest.AssertExistsIf(t, false, oldUser)
 	unittest.AssertExistsIf(t, false, oldEmail)
 
-	// User not older than a minute shouldn't be deleted and their emaill address should still exist.
+	// User not older than a minute shouldn't be deleted and their email address should still exist.
 	unittest.AssertExistsIf(t, true, newUser)
 	unittest.AssertExistsIf(t, true, newEmail)
 }

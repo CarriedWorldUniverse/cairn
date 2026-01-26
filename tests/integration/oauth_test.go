@@ -1479,7 +1479,7 @@ func TestSignUpViaOAuthLinking2FA(t *testing.T) {
 		assert.Equal(t, "/user/webauthn", test.RedirectURL(resp))
 	})
 
-	t.Run("Case-insenstive username", func(t *testing.T) {
+	t.Run("Case-insensitive username", func(t *testing.T) {
 		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
 			return goth.User{
 				Provider: gitlabName,
@@ -1551,7 +1551,7 @@ func TestAccessTokenWithPKCE(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Incorrect code verfifier", func(t *testing.T) {
+	t.Run("Incorrect code verifier", func(t *testing.T) {
 		req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
 			"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
 			"code":          u.Query().Get("code"),

@@ -313,7 +313,7 @@ func NewTeamPost(ctx *context.Context) {
 	unitPerms := getUnitPerms(ctx.Req.Form, p)
 	if p < perm.AccessModeAdmin {
 		// if p is less than admin accessmode, then it should be general accessmode,
-		// so we should calculate the minial accessmode from units accessmodes.
+		// so we should calculate the minimal accessmode from units accessmodes.
 		p = unit_model.MinUnitAccessMode(unitPerms)
 	}
 
@@ -480,7 +480,7 @@ func EditTeamPost(ctx *context.Context) {
 	unitPerms := getUnitPerms(ctx.Req.Form, newAccessMode)
 	if newAccessMode < perm.AccessModeAdmin {
 		// if newAccessMode is less than admin accessmode, then it should be general accessmode,
-		// so we should calculate the minial accessmode from units accessmodes.
+		// so we should calculate the minimal accessmode from units accessmodes.
 		newAccessMode = unit_model.MinUnitAccessMode(unitPerms)
 	}
 	isAuthChanged := false

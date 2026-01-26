@@ -53,7 +53,7 @@ func getUsersByLoginName(ctx context.Context, name string) ([]*user_model.User, 
 // The remote user has:
 //
 //	Type        UserTypeRemoteUser
-//	LogingType  Remote
+//	LoginType   Remote
 //	LoginName   set to the unique identifier of the originating authentication source
 //	LoginSource set to the Remote source that can be matched against an OAuth2 source
 //

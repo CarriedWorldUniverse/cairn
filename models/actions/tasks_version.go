@@ -73,11 +73,11 @@ func increaseTasksVersionByScope(ctx context.Context, ownerID, repoID int64) err
 }
 
 func IncreaseTaskVersion(ctx context.Context, ownerID, repoID int64) error {
-	ctx, commiter, err := db.TxContext(ctx)
+	ctx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return err
 	}
-	defer commiter.Close()
+	defer committer.Close()
 
 	// 1. increase global
 	if err := increaseTasksVersionByScope(ctx, 0, 0); err != nil {
@@ -101,5 +101,5 @@ func IncreaseTaskVersion(ctx context.Context, ownerID, repoID int64) error {
 		}
 	}
 
-	return commiter.Commit()
+	return committer.Commit()
 }

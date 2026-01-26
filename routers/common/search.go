@@ -34,7 +34,7 @@ func InitCodeSearchOptions(ctx *context.Context) (opts CodeSearchOptions) {
 // Also sets the ctx.Data fields "CodeSearchMode" and "CodeSearchOptions"
 //
 // NOTE:
-// This is seperate from `InitCodeSearchOptions`
+// This is separate from `InitCodeSearchOptions`
 // since this is specific the indexer and only used
 // where git-grep is not available.
 func CodeSearchIndexerMode(ctx *context.Context) (mode code_indexer.SearchMode) {

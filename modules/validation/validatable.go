@@ -34,9 +34,9 @@ type Validateable interface {
 }
 
 func IsValid(v Validateable) (bool, error) {
-	if valdationErrors := v.Validate(); len(valdationErrors) > 0 {
+	if validationErrors := v.Validate(); len(validationErrors) > 0 {
 		typeof := reflect.TypeOf(v)
-		errString := strings.Join(valdationErrors, "\n")
+		errString := strings.Join(validationErrors, "\n")
 		return false, ErrNotValid{fmt.Sprint(typeof, ": ", errString)}
 	}
 

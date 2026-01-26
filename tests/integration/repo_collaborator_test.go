@@ -23,14 +23,14 @@ func TestRepoCollaborators(t *testing.T) {
 	response := session.MakeRequest(t, NewRequest(t, "GET", "/user2/repo1/settings/collaboration"), http.StatusOK)
 	page := NewHTMLParser(t, response.Body).Find(".repo-setting-content")
 
-	// Veirfy header
+	// Verify header
 	assert.Equal(t, "Collaborators", strings.TrimSpace(page.Find("h4").Text()))
 
-	// Veirfy button text
+	// Verify button text
 	page = page.Find("#repo-collab-form")
 	assert.Equal(t, "Add collaborator", strings.TrimSpace(page.Find("button.primary").Text()))
 
-	// Veirfy placeholder
+	// Verify placeholder
 	placeholder, exists := page.Find("#search-user-box input").Attr("placeholder")
 	assert.True(t, exists)
 	assert.Equal(t, "Search users…", placeholder)

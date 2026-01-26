@@ -568,7 +568,7 @@ Forgejo or set your environment appropriately.`, "")
 	hookOptions.RefFullNames = make([]git.RefName, 0, hookBatchSize)
 
 	for {
-		// note: pktLineTypeUnknow means pktLineTypeFlush and pktLineTypeData all allowed
+		// note: pktLineTypeUnknown means pktLineTypeFlush and pktLineTypeData all allowed
 		rs, err = readPktLine(ctx, reader, pktLineTypeUnknown)
 		if err != nil {
 			return err

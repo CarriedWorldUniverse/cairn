@@ -51,7 +51,7 @@ func TestRepoCommitsWithTags(t *testing.T) {
 	})
 	assert.True(t, tagFound, "Should find v1.1 tag")
 
-	// 3. tags appear after the commit messsage and status indicators
+	// 3. tags appear after the commit message and status indicators
 	messageHTML, _ := messageCell.Html()
 	messageWrapperPos := strings.Index(messageHTML, "message-wrapper")
 	ellipsisButtonPos := strings.Index(messageHTML, "ellipsis-button")

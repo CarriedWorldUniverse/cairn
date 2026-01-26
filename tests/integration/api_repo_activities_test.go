@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPIRepoActivitiyFeeds(t *testing.T) {
+func TestAPIRepoActivityFeeds(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})

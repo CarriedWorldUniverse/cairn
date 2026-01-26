@@ -336,7 +336,7 @@ func TestAPIPushMirrorSSH(t *testing.T) {
 
 			var apiError api.APIError
 			DecodeJSON(t, resp, &apiError)
-			assert.Equal(t, "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_passoword'", apiError.Message)
+			assert.Equal(t, "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_password'", apiError.Message)
 		})
 
 		t.Run("SSH not available", func(t *testing.T) {

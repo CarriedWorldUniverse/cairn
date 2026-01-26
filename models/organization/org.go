@@ -191,7 +191,7 @@ func (org *Organization) IsGhost() bool {
 	return org.AsUser().IsGhost()
 }
 
-// FindOrgMembersOpts represensts find org members conditions
+// FindOrgMembersOpts represents find org members conditions
 type FindOrgMembersOpts struct {
 	db.ListOptions
 	Doer         *user_model.User

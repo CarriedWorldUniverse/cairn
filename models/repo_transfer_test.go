@@ -17,10 +17,10 @@ import (
 func TestGetPendingTransferIDs(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 3})
-	reciepient := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
-	pendingTransfer := unittest.AssertExistsAndLoadBean(t, &RepoTransfer{RecipientID: reciepient.ID, DoerID: doer.ID})
+	recipient := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	pendingTransfer := unittest.AssertExistsAndLoadBean(t, &RepoTransfer{RecipientID: recipient.ID, DoerID: doer.ID})
 
-	pendingTransferIDs, err := GetPendingTransferIDs(db.DefaultContext, reciepient.ID, doer.ID)
+	pendingTransferIDs, err := GetPendingTransferIDs(db.DefaultContext, recipient.ID, doer.ID)
 	require.NoError(t, err)
 	if assert.Len(t, pendingTransferIDs, 1) {
 		assert.Equal(t, pendingTransfer.ID, pendingTransferIDs[0])
