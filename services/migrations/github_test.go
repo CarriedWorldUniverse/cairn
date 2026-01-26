@@ -5,14 +5,18 @@
 package migrations
 
 import (
+	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/log"
 	base "forgejo.org/modules/migration"
 
-	"github.com/google/go-github/v74/github"
+	"github.com/google/go-github/v81/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -97,6 +101,29 @@ func TestGithubDownloaderFilterComments(t *testing.T) {
 	}
 }
 
+func ratelimitInjectHandler(handler http.Handler, urlpattern *regexp.Regexp, every int) http.HandlerFunc {
+	var requestCount int
+	// because we also count the rate limit response
+	every++
+
+	return (http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		match := urlpattern.MatchString(r.URL.Path)
+		if match {
+			requestCount++
+		}
+
+		if match && requestCount%every == 0 {
+			log.Info("ratelimitInject %s", r.URL)
+			w.Header().Set("X-Ratelimit-Reset",
+				strconv.FormatInt(time.Now().Add(time.Second).Unix(), 10))
+			w.Header().Set("X-Ratelimit-Remaining", "0")
+			w.WriteHeader(http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}))
+}
+
 func TestGitHubDownloadRepo(t *testing.T) {
 	GithubLimitRateRemaining = 3 // Wait at 3 remaining since we could have 3 CI in //
 
@@ -104,6 +131,10 @@ func TestGitHubDownloadRepo(t *testing.T) {
 	fixturePath := "./testdata/github/full_download"
 	server := unittest.NewMockWebServer(t, "https://api.github.com", fixturePath, false)
 	defer server.Close()
+
+	urlpattern := regexp.MustCompile("test_repo/")
+
+	server.Config.Handler = ratelimitInjectHandler(server.Config.Handler, urlpattern, 7)
 
 	downloader := NewGithubDownloaderV3(t.Context(), server.URL, true, true, "", "", token, "forgejo", "test_repo")
 	err := downloader.RefreshRate()
