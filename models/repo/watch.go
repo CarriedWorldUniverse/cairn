@@ -194,6 +194,12 @@ func WatchIfAuto(ctx context.Context, userID, repoID int64) error {
 
 // UnwatchRepos will unwatch the user from all given repositories.
 func UnwatchRepos(ctx context.Context, userID int64, repoIDs []int64) error {
-	_, err := db.GetEngine(ctx).Where("user_id=?", userID).In("repo_id", repoIDs).Delete(&Watch{})
-	return err
+	// Unfortunatly, we can't simply delete the Watch records because we do watcher counting in the repo relation.
+	for _, repoID := range repoIDs {
+		err := WatchRepoMode(ctx, userID, repoID, WatchModeNone)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
