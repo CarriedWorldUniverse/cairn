@@ -28,7 +28,7 @@ import (
 	"forgejo.org/routers/common"
 	"forgejo.org/routers/web/admin"
 	"forgejo.org/routers/web/auth"
-	"forgejo.org/routers/web/devtest"
+	"forgejo.org/routers/web/demo"
 	"forgejo.org/routers/web/events"
 	"forgejo.org/routers/web/explore"
 	"forgejo.org/routers/web/feed"
@@ -1720,10 +1720,12 @@ func registerRoutes(m *web.Route) {
 	}
 
 	if !setting.IsProd {
-		m.Any("/devtest", devtest.List)
-		m.Any("/devtest/fetch-action-test", devtest.FetchActionTest)
-		m.Any("/devtest/{sub}", devtest.Tmpl)
-		m.Get("/devtest/error/{errcode}", devtest.ErrorPage)
+		m.Group("/-", func() {
+			m.Any("/demo", demo.List)
+			m.Any("/demo/fetch-action-test", demo.FetchActionTest)
+			m.Any("/demo/{sub}", demo.Tmpl)
+			m.Get("/demo/error/{errcode}", demo.ErrorPage)
+		}, ignSignIn)
 	}
 
 	m.NotFound(func(w http.ResponseWriter, req *http.Request) {

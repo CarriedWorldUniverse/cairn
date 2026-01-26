@@ -367,7 +367,7 @@ var ignoredErrorMessage = []string{
 	// Test_CmdForgejo_Actions
 	`DB: No dedicated replica host defined; falling back to primary DSN for replica connections`,
 
-	// TestDevtestErrorpages
+	// TestDemoErrorPages
 	`ErrorPage() [E] Example error: Example error`,
 }
 

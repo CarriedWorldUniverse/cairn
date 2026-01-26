@@ -132,9 +132,9 @@ export default {
       fileURLToPath(new URL('web_src/js/features/eventsource.sharedworker.js', import.meta.url)),
     ],
     ...(!isProduction && {
-      devtest: [
-        fileURLToPath(new URL('web_src/js/standalone/devtest.js', import.meta.url)),
-        fileURLToPath(new URL('web_src/css/standalone/devtest.css', import.meta.url)),
+      demo: [
+        fileURLToPath(new URL('web_src/js/standalone/demo.js', import.meta.url)),
+        fileURLToPath(new URL('web_src/css/standalone/demo.css', import.meta.url)),
       ],
     }),
     ...themes,

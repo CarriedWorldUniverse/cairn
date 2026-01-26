@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // @watch start
-// templates/devtest/modal.tmpl
+// templates/demo/modal.tmpl
 // templates/repo/editor/edit.tmpl
 // templates/repo/editor/patch.tmpl
 // web_src/js/features/repo-editor.js
@@ -50,7 +50,7 @@ test('Dialog modal', async ({page}) => {
 
 test('Dialog modal: width', async ({page, isMobile}) => {
   // This test doesn't need JS and runs a little faster without it
-  await page.goto('/devtest/modal');
+  await page.goto('/-/demo/modal');
 
   // Open modal with short content
   const shortModal = page.locator('#short-modal');

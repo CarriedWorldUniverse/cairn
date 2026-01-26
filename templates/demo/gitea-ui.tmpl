@@ -1,6 +1,6 @@
 {{template "base/head" .}}
-<link rel="stylesheet" href="{{AssetUrlPrefix}}/css/devtest.css?v={{AssetVersion}}">
-<div class="page-content devtest ui container">
+<link rel="stylesheet" href="{{AssetUrlPrefix}}/css/demo.css?v={{AssetVersion}}">
+<div class="page-content ui container">
 	<div>
 		<h1>Link</h1>
 		<div>
@@ -21,7 +21,7 @@
 			State:
 			<label><input type="checkbox" name="button-state-disabled" value="disabled">disabled</label>
 		</div>
-		<div id="devtest-button-samples">
+		<div id="demo-button-samples">
 			<ul class="button-sample-groups">
 				<li class="sample-group">
 					<h2>General purpose:</h2>
@@ -65,7 +65,7 @@
 				</li>
 			</ul>
 			<script type="module">
-				const $buttons = $('#devtest-button-samples').find('button.ui');
+				const $buttons = $('#demo-button-samples').find('button.ui');
 
 				const $buttonStyles = $('input[name*="button-style"]');
 				$buttonStyles.on('click', () => $buttonStyles.map((_ ,el) => $buttons.toggleClass(el.value, el.checked)));
@@ -315,6 +315,6 @@
 		<button class="{{if true}}tw-bg-red{{end}} tw-p-5 tw-border tw-rounded hover:tw-bg-blue active:tw-bg-yellow">Button</button>
 	</div>
 
-	<script src="{{AssetUrlPrefix}}/js/devtest.js?v={{AssetVersion}}"></script>
+	<script src="{{AssetUrlPrefix}}/js/demo.js?v={{AssetVersion}}"></script>
 </div>
 {{template "base/footer" .}}

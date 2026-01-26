@@ -76,7 +76,7 @@ func TestNavbarItems(t *testing.T) {
 		defer test.MockVariableValue(&setting.IsProd, false)()
 
 		page := NewHTMLParser(t, regularUser.MakeRequest(t, NewRequest(t, "GET", testPage), http.StatusOK).Body)
-		page.AssertElement(t, `details.dropdown a[href="/devtest"]`, true)
+		page.AssertElement(t, `details.dropdown a[href="/-/demo"]`, true)
 
 		testNavbarUserMenuActiveItem(t, regularUser, "/user/settings")
 		testNavbarUserMenuActiveItem(t, adminUser, "/admin")
@@ -95,7 +95,7 @@ func TestNavbarItems(t *testing.T) {
 			{`details.dropdown a[href="/notifications/subscriptions"]`, true},
 			{`details.dropdown a[href="/user/settings"]`, true},
 			{`details.dropdown a[href="/admin"]`, false},
-			{`details.dropdown a[href="/devtest"]`, false},
+			{`details.dropdown a[href="/-/demo"]`, false},
 			{`details.dropdown a[href="https://forgejo.org/docs/latest/"]`, true},
 			{`details.dropdown a[data-url="/user/logout"]`, true},
 		}
@@ -114,7 +114,7 @@ func TestNavbarItems(t *testing.T) {
 			{`details.dropdown a[href="/notifications/subscriptions"]`, true},
 			{`details.dropdown a[href="/user/settings"]`, true},
 			{`details.dropdown a[href="/admin"]`, true},
-			{`details.dropdown a[href="/devtest"]`, false},
+			{`details.dropdown a[href="/-/demo"]`, false},
 			{`details.dropdown a[href="https://forgejo.org/docs/latest/"]`, true},
 			{`details.dropdown a[data-url="/user/logout"]`, true},
 		}

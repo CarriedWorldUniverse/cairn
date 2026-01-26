@@ -2,7 +2,7 @@
 // Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package devtest
+package demo
 
 import (
 	"errors"
@@ -18,9 +18,9 @@ import (
 	"forgejo.org/services/context"
 )
 
-// List all devtest templates, they will be used for e2e tests for the UI components
+// List all demo templates, they will be used for e2e tests for the UI components
 func List(ctx *context.Context) {
-	templateNames, err := templates.AssetFS().ListFiles("devtest", true)
+	templateNames, err := templates.AssetFS().ListFiles("demo", true)
 	if err != nil {
 		ctx.ServerError("AssetFS().ListFiles", err)
 		return
@@ -33,7 +33,7 @@ func List(ctx *context.Context) {
 		}
 	}
 	ctx.Data["SubNames"] = subNames
-	ctx.HTML(http.StatusOK, "devtest/list")
+	ctx.HTML(http.StatusOK, "demo/list")
 }
 
 func FetchActionTest(ctx *context.Context) {
@@ -90,5 +90,5 @@ func Tmpl(ctx *context.Context) {
 		time.Sleep(2 * time.Second)
 	}
 
-	ctx.HTML(http.StatusOK, base.TplName("devtest"+path.Clean("/"+ctx.Params("sub"))))
+	ctx.HTML(http.StatusOK, base.TplName("demo"+path.Clean("/"+ctx.Params("sub"))))
 }
