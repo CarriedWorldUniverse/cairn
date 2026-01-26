@@ -9,10 +9,6 @@ test('CalculateRelativeTimes', () => {
     'relativetime.1week': 'last week',
     'relativetime.1month': 'last month',
     'relativetime.1year': 'last year',
-    'relativetime.2days': 'two days ago',
-    'relativetime.2weeks': 'two weeks ago',
-    'relativetime.2months': 'two months ago',
-    'relativetime.2years': 'two years ago',
   };
   window.config.pageData.PLURALSTRINGS_LANG = {
     'relativetime.mins': ['%d minute ago', '%d minutes ago'],
@@ -84,7 +80,7 @@ test('CalculateRelativeTimes', () => {
 
   mock.setAttribute('datetime', '2024-10-25T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
-  expect(mock.textContent).toEqual('two days ago');
+  expect(mock.textContent).toEqual('2 days ago');
 
   mock.setAttribute('datetime', '2024-10-21T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
@@ -100,7 +96,7 @@ test('CalculateRelativeTimes', () => {
 
   mock.setAttribute('datetime', '2024-10-13T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
-  expect(mock.textContent).toEqual('two weeks ago');
+  expect(mock.textContent).toEqual('2 weeks ago');
 
   mock.setAttribute('datetime', '2024-10-06T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
@@ -116,7 +112,7 @@ test('CalculateRelativeTimes', () => {
 
   mock.setAttribute('datetime', '2024-07-30T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
-  expect(mock.textContent).toEqual('two months ago');
+  expect(mock.textContent).toEqual('2 months ago');
 
   mock.setAttribute('datetime', '2024-05-30T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
@@ -152,7 +148,7 @@ test('CalculateRelativeTimes', () => {
 
   mock.setAttribute('datetime', '2022-10-20T01:00:00+10:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
-  expect(mock.textContent).toEqual('two years ago');
+  expect(mock.textContent).toEqual('2 years ago');
 
   mock.setAttribute('datetime', '2021-10-20T01:00:00+02:00');
   expect(DoUpdateRelativeTime(mock, now)).toEqual(ONE_DAY);
