@@ -4,15 +4,22 @@
 package auth
 
 import (
+	"net/http"
+	"strings"
 	"testing"
 
 	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/json"
 	"forgejo.org/modules/jwtx"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/templates"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/services/auth/source/oauth2"
+	"forgejo.org/services/contexttest"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -85,4 +92,26 @@ func TestEncodeCodeChallenge(t *testing.T) {
 	codeChallenge, err := encodeCodeChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
 	require.NoError(t, err)
 	assert.Equal(t, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", codeChallenge)
+}
+
+func TestOIDCWellKnownDisabled(t *testing.T) {
+	ctx, resp := contexttest.MockContext(t, "/openid-configuration")
+	defer test.MockVariableValue(&setting.OAuth2.Enabled, false)()
+	OIDCWellKnown(ctx)
+	assert.Equal(t, http.StatusNotFound, resp.Code)
+}
+
+func TestOIDCWellKnownEnabled(t *testing.T) {
+	ctx, resp := contexttest.MockContext(t, "/openid-configuration", contexttest.MockContextOption{Render: templates.HTMLRenderer()})
+	err := oauth2.Init(ctx)
+	require.NoError(t, err)
+
+	OIDCWellKnown(ctx)
+	assert.Equal(t, http.StatusOK, resp.Code)
+
+	oidcjson := make(map[string]any)
+	require.NoError(t, json.Unmarshal([]byte(resp.Body.String()), &oidcjson))
+
+	assert.Equal(t, strings.TrimSuffix(setting.AppURL, "/"), oidcjson["issuer"])
+	assert.Equal(t, []any{oauth2.DefaultSigningKey.SigningMethod().Alg()}, oidcjson["id_token_signing_alg_values_supported"])
 }
