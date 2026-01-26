@@ -91,8 +91,6 @@ func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveM
 		fixture, err := os.ReadFile(fixturePath)
 		require.NoError(t, err, "missing mock HTTP response: "+fixturePath)
 
-		w.WriteHeader(http.StatusOK)
-
 		// replace any mention of the live HTTP service by the mocked host
 		stringFixture := strings.ReplaceAll(string(fixture), liveServerBaseURL, mockServerBaseURL)
 		if isGh {
@@ -104,10 +102,16 @@ func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveM
 		for idx, line := range lines {
 			colonIndex := strings.Index(line, ": ")
 			if colonIndex != -1 {
-				w.Header().Set(line[0:colonIndex], line[colonIndex+2:])
+				// Because we modified the body with ReplaceAll() above, we need to
+				// remove Content-Length. w.Write() should add it back.
+				header := line[0:colonIndex]
+				if !strings.EqualFold(header, "Content-Length") {
+					w.Header().Set(line[0:colonIndex], line[colonIndex+2:])
+				}
 			} else {
 				// we reached the end of the headers (empty line), so what follows is the body
 				responseBody := strings.Join(lines[idx+1:], "\n")
+				w.WriteHeader(http.StatusOK)
 				_, err := w.Write([]byte(responseBody))
 				require.NoError(t, err, "writing the body of the HTTP response failed")
 				break
