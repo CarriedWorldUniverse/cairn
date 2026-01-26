@@ -24,14 +24,14 @@ func TestParseCommitWithSSHSignature(t *testing.T) {
 	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	sshKey := unittest.AssertExistsAndLoadBean(t, &PublicKey{ID: 1000, OwnerID: 2})
 
-	t.Run("No commiter", func(t *testing.T) {
+	t.Run("No committer", func(t *testing.T) {
 		o := commitToGitObject(&git.Commit{})
 		commitVerification := ParseObjectWithSSHSignature(db.DefaultContext, &o, &user_model.User{})
 		assert.False(t, commitVerification.Verified)
 		assert.Equal(t, NoKeyFound, commitVerification.Reason)
 	})
 
-	t.Run("Commiter without keys", func(t *testing.T) {
+	t.Run("Committer without keys", func(t *testing.T) {
 		user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 
 		o := commitToGitObject(&git.Commit{Committer: &git.Signature{Email: user.Email}})

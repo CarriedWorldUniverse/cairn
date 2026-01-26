@@ -742,7 +742,7 @@ func TestPackageWithTwoFactor(t *testing.T) {
 			return passcode
 		}()
 
-		url := fmt.Sprintf("/api/v1/packages/%s", normalUser.Name) // a public packge to test
+		url := fmt.Sprintf("/api/v1/packages/%s", normalUser.Name) // a public package to test
 		req := NewRequest(t, "GET", url)
 		if doer != nil {
 			req.AddBasicAuth(doer.Name)

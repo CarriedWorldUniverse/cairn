@@ -84,10 +84,10 @@ func TestTransformers(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tranform := defaultTransformers[i]
-			assert.Equal(t, tt.name, tranform.Name)
+			transform := defaultTransformers[i]
+			assert.Equal(t, tt.name, transform.Name)
 
-			got := tranform.Transform(input)
+			got := transform.Transform(input)
 			assert.Equal(t, tt.expected, got)
 		})
 	}

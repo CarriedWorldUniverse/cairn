@@ -76,7 +76,7 @@ func TestFeed(t *testing.T) {
 				data := resp.Body.String()
 				assert.Contains(t, data, `<feed xmlns="http://www.w3.org/2005/Atom"`)
 				assert.Contains(t, data, "This is a very long text, so lets scream together: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-				assert.Contains(t, data, "Well, this test is short | succient | distinct.")
+				assert.Contains(t, data, "Well, this test is short | succinct | distinct.")
 			})
 			t.Run("RSS", func(t *testing.T) {
 				defer tests.PrintCurrentTest(t)()
@@ -87,7 +87,7 @@ func TestFeed(t *testing.T) {
 				data := resp.Body.String()
 				assert.Contains(t, data, `<rss version="2.0"`)
 				assert.Contains(t, data, "This is a very long text, so lets scream together: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-				assert.Contains(t, data, "Well, this test is short | succient | distinct.")
+				assert.Contains(t, data, "Well, this test is short | succinct | distinct.")
 			})
 		})
 		t.Run("Branch", func(t *testing.T) {

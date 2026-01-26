@@ -24,7 +24,7 @@ func AddIssueResourceIndexTable(x *xorm.Engine) error {
 		return err
 	}
 
-	// Remove data we're goint to rebuild
+	// Remove data we're going to rebuild
 	if _, err := sess.Table("issue_index").Where("1=1").Delete(&ResourceIndex{}); err != nil {
 		return err
 	}

@@ -52,7 +52,7 @@ func addFederatedUserActivityTables(x *xorm.Engine) {
 		FollowingUserID int64 `xorm:"NOT NULL unique(fuf_rel)"`
 	}
 
-	// Add InboxPath to FederatedUser & add index fo UserID
+	// Add InboxPath to FederatedUser & add index to UserID
 	type FederatedUser struct {
 		ID        int64 `xorm:"pk autoincr"`
 		UserID    int64 `xorm:"NOT NULL INDEX user_id"`

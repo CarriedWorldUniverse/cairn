@@ -15,4 +15,4 @@
   repo_id: 1 # public
   is_private: false
   created_unix: 1680454039
-  content: '["1","Well, this test is short | succient | distinct."]'
+  content: '["1","Well, this test is short | succinct | distinct."]'

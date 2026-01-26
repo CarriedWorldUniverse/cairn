@@ -357,7 +357,7 @@ func CreatePushMirror(ctx *context.APIContext, mirrorOption *api.CreatePushMirro
 	}
 
 	if mirrorOption.UseSSH && (mirrorOption.RemoteUsername != "" || mirrorOption.RemotePassword != "") {
-		ctx.Error(http.StatusBadRequest, "CreatePushMirror", "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_passoword'")
+		ctx.Error(http.StatusBadRequest, "CreatePushMirror", "'use_ssh' is mutually exclusive with 'remote_username' and 'remote_password'")
 		return
 	}
 

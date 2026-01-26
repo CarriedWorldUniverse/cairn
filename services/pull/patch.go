@@ -107,7 +107,7 @@ func (t *testPatchContext) LoadHeadRevision(ctx context.Context, pr *issues_mode
 
 // getTestPatchCtx constructs a new testpatch context for the given pull request.
 // If `onBare` is true, then the context will use the base repository that does
-// not contain a working tree. Otherwise a temprorary repository is created that
+// not contain a working tree. Otherwise a temporary repository is created that
 // contains a working tree.
 func getTestPatchCtx(ctx context.Context, pr *issues_model.PullRequest, onBare bool) (*testPatchContext, error) {
 	testPatchCtx := &testPatchContext{
@@ -419,7 +419,7 @@ func MergeTree(ctx context.Context, gitRepo *git.Repository, base, ours, theirs 
 		return treeOID, git.IsErrorExitCode(gitErr, 1), nil, nil
 	}
 
-	// Remove last NULL-byte from conflicted file info, then split with NULL byte as seperator.
+	// Remove last NULL-byte from conflicted file info, then split with NULL byte as separator.
 	return treeOID, true, strings.Split(conflictedFileInfo[:len(conflictedFileInfo)-1], "\x00"), nil
 }
 

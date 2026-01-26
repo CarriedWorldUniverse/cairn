@@ -65,7 +65,7 @@ func TestServicesActions_transferLingeringLogs(t *testing.T) {
 		unittest.AssertNotExistsBean(t, &dbfs_model.DbfsMeta{ID: lingeringLogID})
 	}
 
-	// third pass is happilly doing nothing
+	// third pass is happily doing nothing
 	require.NoError(t, transferLingeringLogs(t.Context(), transferLingeringLogsOpts(now)))
 
 	// verify the tasks that are not to be garbage collected are still present

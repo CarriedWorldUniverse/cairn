@@ -148,8 +148,8 @@ func TestPatchStatus(t *testing.T) {
 				t.Helper()
 				var found *issues_model.PullRequest
 				assert.Eventually(t, func() bool {
-					examplar := pr
-					found = unittest.AssertExistsAndLoadBean(t, &examplar, flow)
+					exemplar := pr
+					found = unittest.AssertExistsAndLoadBean(t, &exemplar, flow)
 					return found.Status == issues_model.PullRequestStatusConflict
 				}, time.Second*30, time.Millisecond*200)
 				return found
@@ -297,7 +297,7 @@ can buy me/us a Paulaner Spezi in return.        ~sdomi, Project SERVFAIL`), 0o6
 				defer tests.PrintCurrentTest(t)()
 
 				require.NoError(t, git.NewCommand(t.Context(), "push", "fork", "HEAD:protected").Run(&git.RunOpts{Dir: dstPath}))
-				testPullCreateDirectly(t, session, repo.OwnerName, repo.Name, repo.DefaultBranch, forkRepo.OwnerName, forkRepo.Name, "protected", "accros repo protected")
+				testPullCreateDirectly(t, session, repo.OwnerName, repo.Name, repo.DefaultBranch, forkRepo.OwnerName, forkRepo.Name, "protected", "across repo protected")
 
 				test(t, unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "protected"}, "flow = 0"))
 			})
@@ -339,7 +339,7 @@ can buy me/us a Paulaner Spezi in return.        ~sdomi, Project SERVFAIL`), 0o6
 				defer tests.PrintCurrentTest(t)()
 
 				require.NoError(t, git.NewCommand(t.Context(), "push", "fork", "HEAD:ancestor").Run(&git.RunOpts{Dir: dstPath}))
-				testPullCreateDirectly(t, session, repo.OwnerName, repo.Name, "protected", forkRepo.OwnerName, forkRepo.Name, "ancestor", "accros repo ancestor")
+				testPullCreateDirectly(t, session, repo.OwnerName, repo.Name, "protected", forkRepo.OwnerName, forkRepo.Name, "ancestor", "across repo ancestor")
 
 				test(t, unittest.AssertExistsAndLoadBean(t, &issues_model.PullRequest{BaseRepoID: repo.ID, HeadRepoID: forkRepo.ID, HeadBranch: "ancestor"}, "flow = 0"))
 			})

@@ -87,7 +87,7 @@ func NewDiffPatchPost(ctx *context.Context) {
 		message += "\n\n" + form.CommitMessage
 	}
 
-	gitIdenitity := getGitIdentity(ctx, form.CommitMailID, tplPatchFile, &form)
+	gitIdentity := getGitIdentity(ctx, form.CommitMailID, tplPatchFile, &form)
 	if ctx.Written() {
 		return
 	}
@@ -98,8 +98,8 @@ func NewDiffPatchPost(ctx *context.Context) {
 		NewBranch:    branchName,
 		Message:      message,
 		Content:      strings.ReplaceAll(form.Content, "\r", ""),
-		Author:       gitIdenitity,
-		Committer:    gitIdenitity,
+		Author:       gitIdentity,
+		Committer:    gitIdentity,
 	})
 	if err != nil {
 		if git_model.IsErrBranchAlreadyExists(err) {

@@ -53,8 +53,8 @@ func TestQueueUnique(t *testing.T) {
 	})
 
 	// Queue object with the same value multiple times... this test works OK with just 3 items, but with the queue
-	// processing happening in tha background it's possible that multiple invocations of the registered function can
-	// happen.  So we'll test this by queuing a large number and ensuring that recalcs occured less -- usually much
+	// processing happening in the background it's possible that multiple invocations of the registered function can
+	// happen.  So we'll test this by queuing a large number and ensuring that recalcs occurred less -- usually much
 	// less, like once or twice.
 	for range 300 {
 		safePush(t.Context(), recalcRequest{

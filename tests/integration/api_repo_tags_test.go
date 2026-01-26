@@ -174,7 +174,7 @@ func TestAPIRepoTagDeleteProtection(t *testing.T) {
 	require.Equal(t, "v1.1", tags[0].Name)
 
 	// Create a tag protection rule for the repo so that `user2` cannot create/remove tags, even if they have write
-	// perms to the repo... which they do becase they own it.
+	// perms to the repo... which they do because they own it.
 	req = NewRequestWithJSON(t, "POST",
 		fmt.Sprintf("/api/v1/repos/%s/%s/tag_protections", user.Name, repoName),
 		&api.CreateTagProtectionOption{

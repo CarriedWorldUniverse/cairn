@@ -44,7 +44,7 @@ func TestRegisterMigration(t *testing.T) {
 		"v99b_neat_migration.go", // no leading path
 		"vb_neat_migration.go",   // no version number
 		"v12_neat_migration.go",  // no migration group letter
-		"v12a-neat-migration.go", // no undescore
+		"v12a-neat-migration.go", // no underscore
 		"v12a.go",                // no descriptive identifier
 	} {
 		t.Run(fmt.Sprintf("bad name - %s", fn), func(t *testing.T) {

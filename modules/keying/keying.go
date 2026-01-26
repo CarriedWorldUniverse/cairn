@@ -151,7 +151,7 @@ func ColumnAndID(column string, id int64) []byte {
 // it's not bound to a particular table. The table should be part of the context
 // that the key was derived for, in which case it binds through that. Use this
 // over `ColumnAndID` if you're encrypting data that's stored inside JSON.
-// jsonSelector must be a unambigous selector to the JSON field that stores the
+// jsonSelector must be a unambiguous selector to the JSON field that stores the
 // encrypted data.
 func ColumnAndJSONSelectorAndID(column, jsonSelector string, id int64) []byte {
 	return binary.BigEndian.AppendUint64(append(append([]byte(column), ':'), append([]byte(jsonSelector), ':')...), uint64(id))

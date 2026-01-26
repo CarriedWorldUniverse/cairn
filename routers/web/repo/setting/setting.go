@@ -99,7 +99,7 @@ func SettingsCtxData(ctx *context.Context) {
 	ctx.Data["CanUseSSHMirroring"] = git.HasSSHExecutable
 }
 
-// Units show a repositorys unit settings page
+// Units show a repository's unit settings page
 func Units(ctx *context.Context) {
 	ctx.Data["Title"] = ctx.Tr("repo.settings.units.units")
 	ctx.Data["PageIsRepoSettingsUnits"] = true

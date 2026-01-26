@@ -195,12 +195,12 @@ func TestAbbreviatedComment(t *testing.T) {
 			expected: "First line of comment",
 		},
 		{
-			name:     "before clip boundry",
+			name:     "before clip boundary",
 			input:    strings.Repeat("abc ", 50),
 			expected: strings.Repeat("abc ", 50),
 		},
 		{
-			name:     "after clip boundry",
+			name:     "after clip boundary",
 			input:    strings.Repeat("abc ", 51),
 			expected: "abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc abc…",
 		},
