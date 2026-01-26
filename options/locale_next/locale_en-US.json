@@ -49,13 +49,9 @@
 		"other": "%d years ago"
 	},
 	"relativetime.1day": "yesterday",
-	"relativetime.2days": "two days ago",
 	"relativetime.1week": "last week",
-	"relativetime.2weeks": "two weeks ago",
 	"relativetime.1month": "last month",
-	"relativetime.2months": "two months ago",
 	"relativetime.1year": "last year",
-	"relativetime.2years": "two years ago",
 	"repo.issues.filter_poster.hint": "Filter by the author",
 	"repo.issues.filter_assignee.hint": "Filter by assigned user",
 	"repo.issues.filter_reviewers.hint": "Filter by user who reviewed",

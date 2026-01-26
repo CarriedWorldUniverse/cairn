@@ -123,9 +123,6 @@ export function DoUpdateRelativeTime(object, now) {
     if (years === 1 && pageData.DATETIMESTRINGS['relativetime.1year']) {
       // Datetime is one year ago.
       object.textContent = pageData.DATETIMESTRINGS['relativetime.1year'];
-    } else if (years === 2 && pageData.DATETIMESTRINGS['relativetime.2years']) {
-      // Datetime is two year ago.
-      object.textContent = pageData.DATETIMESTRINGS['relativetime.2years'];
     } else {
       // Datetime is more than a year ago.
       object.textContent = GetPluralizedStringOrFallback('relativetime.years', years, 'year');
@@ -139,9 +136,6 @@ export function DoUpdateRelativeTime(object, now) {
     if (months === 1 && pageData.DATETIMESTRINGS['relativetime.1month']) {
       // Datetime is one month ago.
       object.textContent = pageData.DATETIMESTRINGS['relativetime.1month'];
-    } else if (months === 2 && pageData.DATETIMESTRINGS['relativetime.2months']) {
-      // Datetime is two months ago.
-      object.textContent = pageData.DATETIMESTRINGS['relativetime.2months'];
     } else {
       // Datetime is several months ago (but less than a year).
       object.textContent = GetPluralizedStringOrFallback('relativetime.months', months, 'month');
@@ -155,9 +149,6 @@ export function DoUpdateRelativeTime(object, now) {
     if (weeks === 1 && pageData.DATETIMESTRINGS['relativetime.1week']) {
       // Datetime is one week ago.
       object.textContent = pageData.DATETIMESTRINGS['relativetime.1week'];
-    } else if (weeks === 2 && pageData.DATETIMESTRINGS['relativetime.2weeks']) {
-      // Datetime is two week ago.
-      object.textContent = pageData.DATETIMESTRINGS['relativetime.2weeks'];
     } else {
       // Datetime is several weeks ago (but less than a month).
       object.textContent = GetPluralizedStringOrFallback('relativetime.weeks', weeks, 'week');
@@ -170,9 +161,6 @@ export function DoUpdateRelativeTime(object, now) {
     if (days === 1 && pageData.DATETIMESTRINGS['relativetime.1day']) {
       // Datetime is one day ago.
       object.textContent = pageData.DATETIMESTRINGS['relativetime.1day'];
-    } else if (days === 2 && pageData.DATETIMESTRINGS['relativetime.2days']) {
-      // Datetime is two days ago.
-      object.textContent = pageData.DATETIMESTRINGS['relativetime.2days'];
     } else {
       // Datetime is several days but less than a week ago.
       object.textContent = GetPluralizedStringOrFallback('relativetime.days', days, 'day');

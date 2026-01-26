@@ -204,7 +204,7 @@ func Contexter() func(next http.Handler) http.Handler {
 				"FUTURE": ctx.Locale.TrString("relativetime.future"),
 				"NOW":    ctx.Locale.TrString("relativetime.now"),
 			}
-			for _, key := range []string{"relativetime.1day", "relativetime.1week", "relativetime.1month", "relativetime.1year", "relativetime.2days", "relativetime.2weeks", "relativetime.2months", "relativetime.2years"} {
+			for _, key := range []string{"relativetime.1day", "relativetime.1week", "relativetime.1month", "relativetime.1year"} {
 				// These keys are used for special-casing some time words. We only add keys that are actually translated, so that we
 				// can fall back to the generic pluralized time word in the correct language if the special case is untranslated.
 				if ctx.Locale.HasKey(key) {
