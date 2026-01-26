@@ -493,12 +493,14 @@ func TestGithubMultiToken(t *testing.T) {
 func TestGithubIssuePagination(t *testing.T) {
 	GithubLimitRateRemaining = 3 // Wait at 3 remaining since we could have 3 CI in //
 
-	token := os.Getenv("GITHUB_READ_TOKEN")
-	if token == "" {
-		t.Skip()
-	}
+	token := os.Getenv("GITHUB_READ_TOKEN_NIGOROLL")
+	liveMode := token != ""
 
-	downloader := NewGithubDownloaderV3(t.Context(), "https://api.github.com", true, true, "", "", token, "galaxyproject", "galaxy")
+	fixturePath := "./testdata/github/pagination"
+	server := unittest.NewMockWebServer(t, "https://api.github.com", fixturePath, liveMode)
+	defer server.Close()
+
+	downloader := NewGithubDownloaderV3(t.Context(), server.URL, true, true, "", "", token, "nigoroll", "libvmod-dynamic")
 	downloader.SkipReactions = true
 	err := downloader.RefreshRate()
 	require.NoError(t, err)
@@ -507,18 +509,26 @@ func TestGithubIssuePagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assertRepositoryEqual(t, &base.Repository{
-		Name:          "galaxy",
-		Owner:         "galaxyproject",
-		Description:   "Data intensive science for everyone.",
-		CloneURL:      "https://github.com/galaxyproject/galaxy.git",
-		OriginalURL:   "https://github.com/galaxyproject/galaxy",
-		DefaultBranch: "dev",
-		Website:       "https://galaxyproject.org",
+		Name:          "libvmod-dynamic",
+		Owner:         "nigoroll",
+		Description:   "The Varnish dns/named director continued",
+		CloneURL:      server.URL + "/nigoroll/libvmod-dynamic.git",
+		OriginalURL:   server.URL + "/nigoroll/libvmod-dynamic",
+		DefaultBranch: "master",
 	}, repo)
+
+	seen := make(map[int64]bool)
 
 	perPage := 45
 	for page := 1; page <= 250; page++ {
-		_, _, err = downloader.GetIssues(page, perPage)
+		issues, last, err := downloader.GetIssues(page, perPage)
 		require.NoError(t, err)
+		for _, issue := range issues {
+			assert.False(t, seen[issue.Number])
+			seen[issue.Number] = true
+		}
+		if last {
+			break
+		}
 	}
 }
