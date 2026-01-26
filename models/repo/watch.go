@@ -17,12 +17,20 @@ type WatchMode int8
 
 const (
 	// WatchModeNone don't watch
+	// This means there is no Watch record in the db.
+	// We never store this mode in the db and instead remove the record from the db.
+	// Furthermore, this means there is a WatchMode for all combinations of user and repo.
 	WatchModeNone WatchMode = iota // 0
 	// WatchModeNormal watch repository (from other sources)
+	// This means the user explicitly chose to watch the repo.
 	WatchModeNormal // 1
 	// WatchModeDont explicit don't auto-watch
+	// This means the user explicitly removed themselves as a watcher.
+	// Then the AutoWatchOnChanges feature doesn't make the user a watcher when they push to the repo.
 	WatchModeDont // 2
 	// WatchModeAuto watch repository (from AutoWatchOnChanges)
+	// This is used when the user pushed to the repo and setting.Service.AutoWatchOnChanges is true.
+	// That way we can differentiate people explicitly watching the repo and people only watching it because of the AutoWatchOnChanges feature.
 	WatchModeAuto // 3
 )
 
@@ -74,6 +82,7 @@ func watchRepoMode(ctx context.Context, watch Watch, mode WatchMode) (err error)
 	}
 
 	hadrec := watch.Mode != WatchModeNone
+	// WatchModeNone means there is no record in the db.
 	needsrec := mode != WatchModeNone
 	repodiff := 0
 
@@ -169,8 +178,8 @@ func GetRepoWatchers(ctx context.Context, repoID int64, opts db.ListOptions) ([]
 }
 
 // WatchIfAuto subscribes to repo if AutoWatchOnChanges is set
-func WatchIfAuto(ctx context.Context, userID, repoID int64, isWrite bool) error {
-	if !isWrite || !setting.Service.AutoWatchOnChanges {
+func WatchIfAuto(ctx context.Context, userID, repoID int64) error {
+	if !setting.Service.AutoWatchOnChanges {
 		return nil
 	}
 	watch, err := GetWatch(ctx, userID, repoID)
