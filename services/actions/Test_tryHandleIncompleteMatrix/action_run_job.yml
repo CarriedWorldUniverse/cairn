@@ -852,3 +852,44 @@
   task_id: 108
   status: 1 # success
   runs_on: '["fedora"]'
+
+-
+  id: 642
+  run_id: 922
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job2
+  attempt: 0
+  job_id: job2
+  task_id: 0
+  status: 7 # blocked
+  runs_on: '[]'
+  needs: '["job1"]'
+  workflow_payload: |
+    on:
+      push:
+        branches: [main]
+    jobs:
+      job2:
+        runs-on: default
+        strategy:
+          matrix:
+            name: ${{ fromJSON(needs.job1.outputs.empty-list) }}
+        steps:
+        - run: echo "${{ matrix.name }}"
+    incomplete_matrix: true
+-
+  id: 643
+  run_id: 922
+  repo_id: 63
+  owner_id: 2
+  commit_sha: 97f29ee599c373c729132a5c46a046978311e0ee
+  is_fork_pull_request: 0
+  name: job1
+  attempt: 0
+  job_id: job1
+  task_id: 110
+  status: 1 # success
+  runs_on: '["fedora"]'

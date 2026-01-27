@@ -375,3 +375,122 @@ jobs:
 	// Expect job with an incomplete with to be StatusBlocked:
 	assert.Equal(t, StatusBlocked, job.Status)
 }
+
+func TestComputeRunStatus(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	t.Run("no changes", func(t *testing.T) {
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusSuccess, run.Status)
+		assert.NotContains(t, columns, "status")
+		assert.EqualValues(t, 1683636528, run.Started)
+		assert.NotContains(t, columns, "started")
+		assert.EqualValues(t, 1683636626, run.Stopped)
+		assert.NotContains(t, columns, "stopped")
+	})
+
+	t.Run("change status", func(t *testing.T) {
+		job := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+		job.Status = StatusFailure
+		affected, err := db.GetEngine(t.Context()).Cols("status").ID(job.ID).Update(job)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusFailure, run.Status)
+		assert.Contains(t, columns, "status")
+		assert.NotContains(t, columns, "started")
+		assert.NotContains(t, columns, "stopped")
+	})
+
+	t.Run("won't change started if not running", func(t *testing.T) {
+		job := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+		job.Status = StatusBlocked
+		affected, err := db.GetEngine(t.Context()).Cols("status").ID(job.ID).Update(job)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		preRun := unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: 791})
+		preRun.Started = 0
+		affected, err = db.GetEngine(t.Context()).Cols("started").ID(preRun.ID).Update(preRun)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusBlocked, run.Status)
+		assert.EqualValues(t, 0, run.Started)
+		assert.Contains(t, columns, "status")
+		assert.NotContains(t, columns, "started")
+		assert.NotContains(t, columns, "stopped")
+	})
+
+	t.Run("change started", func(t *testing.T) {
+		// Need the job to be "Running" for started to appear to change
+		job := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+		job.Status = StatusRunning
+		affected, err := db.GetEngine(t.Context()).Cols("status").ID(job.ID).Update(job)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		preRun := unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: 791})
+		preRun.Started = 0
+		affected, err = db.GetEngine(t.Context()).Cols("started").ID(preRun.ID).Update(preRun)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusRunning, run.Status)
+		assert.NotEqualValues(t, 0, run.Started)
+		assert.Contains(t, columns, "status")
+		assert.Contains(t, columns, "started")
+		assert.NotContains(t, columns, "stopped")
+	})
+
+	t.Run("won't change stopped if not done", func(t *testing.T) {
+		job := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+		job.Status = StatusRunning
+		affected, err := db.GetEngine(t.Context()).Cols("status").ID(job.ID).Update(job)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		preRun := unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: 791})
+		preRun.Stopped = 0
+		affected, err = db.GetEngine(t.Context()).Cols("stopped").ID(preRun.ID).Update(preRun)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusRunning, run.Status)
+		assert.EqualValues(t, 0, run.Stopped)
+		assert.Contains(t, columns, "status")
+		assert.NotContains(t, columns, "stopped")
+	})
+
+	t.Run("change stopped", func(t *testing.T) {
+		// Need the job to be some version of Done for stopped to appear to change
+		job := unittest.AssertExistsAndLoadBean(t, &ActionRunJob{ID: 192})
+		job.Status = StatusSuccess
+		affected, err := db.GetEngine(t.Context()).Cols("status").ID(job.ID).Update(job)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		preRun := unittest.AssertExistsAndLoadBean(t, &ActionRun{ID: 791})
+		preRun.Stopped = 0
+		affected, err = db.GetEngine(t.Context()).Cols("stopped").ID(preRun.ID).Update(preRun)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, affected)
+
+		run, columns, err := ComputeRunStatus(t.Context(), 791)
+		require.NoError(t, err)
+		assert.Equal(t, StatusSuccess, run.Status)
+		assert.NotEqualValues(t, 0, run.Stopped)
+		assert.NotContains(t, columns, "status")
+		assert.NotContains(t, columns, "started")
+		assert.Contains(t, columns, "stopped")
+	})
+}

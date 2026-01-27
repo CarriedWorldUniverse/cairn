@@ -365,6 +365,19 @@ func tryHandleIncompleteMatrix(ctx context.Context, blockedJob *actions_model.Ac
 			return fmt.Errorf("unexpected record count in delete incomplete_matrix=true job with ID %d; count = %d", blockedJob.ID, count)
 		}
 
+		// If len(newJobWorkflows) is 0, and blockedJob was the last job in this run, then the job will be complete --
+		// ComputeRunStatus will check for that state.
+		run, columns, err := actions_model.ComputeRunStatus(ctx, blockedJob.RunID)
+		if err != nil {
+			return fmt.Errorf("compute run status: %w", err)
+		}
+		if len(columns) != 0 {
+			err := UpdateRun(ctx, run, columns...)
+			if err != nil {
+				return fmt.Errorf("update run: %w", err)
+			}
+		}
+
 		return nil
 	})
 	if err != nil {

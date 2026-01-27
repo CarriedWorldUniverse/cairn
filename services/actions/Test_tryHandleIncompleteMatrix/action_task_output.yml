@@ -58,3 +58,8 @@
   task_id: 109
   output_key: workflow_input
   output_value: my-workflow-input
+-
+  id: 112
+  task_id: 110
+  output_key: empty-list
+  output_value: "[]"
