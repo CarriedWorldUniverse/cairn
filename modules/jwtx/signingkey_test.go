@@ -111,3 +111,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 		assert.NotNil(t, parsedKey.(ed25519.PrivateKey))
 	})
 }
+
+func TestCannotCreatePrivateKey(t *testing.T) {
+	_, err := InitAsymmetricSigningKey("/dev/directory-does-not-exist-and-you-should-not-have-permission-to-create/privatekey.pem", "RS256")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "Error generating private key")
+}
