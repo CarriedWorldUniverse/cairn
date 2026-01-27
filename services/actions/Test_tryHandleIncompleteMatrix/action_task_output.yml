@@ -48,3 +48,8 @@
   task_id: 107
   output_key: run-on-this
   output_value: nixos-25.11
+-
+  id: 112
+  task_id: 110
+  output_key: empty-list
+  output_value: "[]"

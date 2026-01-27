@@ -4,6 +4,7 @@
 package actions
 
 import (
+	"context"
 	"slices"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/test"
+	notify_service "forgejo.org/services/notify"
 
 	"code.forgejo.org/forgejo/runner/v12/act/model"
 	"github.com/stretchr/testify/assert"
@@ -142,6 +144,20 @@ jobs:
 	}
 }
 
+type callArgsActionRunNowDone struct {
+	run         *actions_model.ActionRun
+	priorStatus actions_model.Status
+	lastRun     *actions_model.ActionRun
+}
+type mockNotifier struct {
+	notify_service.NullNotifier
+	calls []*callArgsActionRunNowDone
+}
+
+func (m *mockNotifier) ActionRunNowDone(ctx context.Context, run *actions_model.ActionRun, priorStatus actions_model.Status, lastRun *actions_model.ActionRun) {
+	m.calls = append(m.calls, &callArgsActionRunNowDone{run, priorStatus, lastRun})
+}
+
 func Test_tryHandleIncompleteMatrix(t *testing.T) {
 	// Shouldn't get any decoding errors during this test -- pop them up from a log warning to a test fatal error.
 	defer test.MockVariableValue(&model.OnDecodeNodeError, func(node yaml.Node, out any, err error) {
@@ -157,6 +173,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 		preExecutionError        actions_model.PreExecutionError
 		preExecutionErrorDetails []any
 		runsOn                   map[string][]string
+		actionRunStatusChange    actions_model.Status
 	}{
 		{
 			name:     "not incomplete",
@@ -314,11 +331,25 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			preExecutionError:        actions_model.ErrorCodeIncompleteRunsOnMissingMatrixDimension,
 			preExecutionErrorDetails: []any{"consume-runs-on", "dimension-oops-error"},
 		},
+		{
+			name:     "action run completed after expansion",
+			runJobID: 642,
+			consumed: true,
+			runJobNames: []string{
+				"job1",
+				// job2 which expanded into an empty matrix is gone
+			},
+			actionRunStatusChange: actions_model.StatusSuccess,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer unittest.OverrideFixtures("services/actions/Test_tryHandleIncompleteMatrix")()
 			require.NoError(t, unittest.PrepareTestDatabase())
+
+			notifier := &mockNotifier{}
+			notify_service.RegisterNotifier(notifier)
+			defer notify_service.UnregisterNotifier(notifier)
 
 			blockedJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: tt.runJobID})
 
@@ -340,6 +371,15 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 					// expectations are that the ActionRun has an empty PreExecutionError
 					actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: blockedJob.RunID})
 					assert.EqualValues(t, 0, actionRun.PreExecutionErrorCode)
+					if tt.actionRunStatusChange != 0 {
+						assert.Equal(t, tt.actionRunStatusChange, actionRun.Status)
+						require.Len(t, notifier.calls, 1)
+						call := notifier.calls[0]
+						assert.Equal(t, actionRun.ID, call.run.ID)
+						assert.Nil(t, call.lastRun)
+						assert.Equal(t, actions_model.StatusRunning, call.priorStatus)
+						assert.Equal(t, tt.actionRunStatusChange, call.run.Status)
+					}
 
 					// compare jobs that exist with `runJobNames` to ensure new jobs are inserted:
 					allJobsInRun, err := db.Find[actions_model.ActionRunJob](t.Context(), actions_model.FindRunJobOptions{RunID: blockedJob.RunID})
