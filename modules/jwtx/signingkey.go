@@ -291,7 +291,7 @@ func CreateSigningKey(algorithm string, key any) (SigningKey, error) {
 func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
 	isExist, err := util.IsExist(keyPath)
 	if err != nil {
-		log.Fatal("Unable to check if %s exists. Error: %v", keyPath, err)
+		return nil, fmt.Errorf("Unable to check if %s exists. Error: %v", keyPath, err)
 	}
 	if !isExist {
 		err := func() error {
@@ -352,8 +352,7 @@ func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
 			return pem.Encode(f, privateKeyPEM)
 		}()
 		if err != nil {
-			log.Fatal("Error generating private key: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("Error generating private key %s: %v", keyPath, err)
 		}
 	}
 
