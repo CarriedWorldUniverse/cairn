@@ -15,7 +15,6 @@ import (
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/web"
-	webhook_module "forgejo.org/modules/webhook"
 	"forgejo.org/routers/api/v1/utils"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
@@ -177,7 +176,7 @@ func TestHook(ctx *context.APIContext) {
 	commit := convert.ToPayloadCommit(ctx, ctx.Repo.Repository, ctx.Repo.Commit)
 
 	commitID := ctx.Repo.Commit.ID.String()
-	if err := webhook_service.PrepareWebhook(ctx, hook, webhook_module.HookEventPush, &api.PushPayload{
+	if err := webhook_service.PrepareTestWebhook(ctx, hook, &api.PushPayload{
 		Ref:          ref,
 		Before:       commitID,
 		After:        commitID,

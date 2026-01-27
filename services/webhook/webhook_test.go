@@ -5,6 +5,8 @@ package webhook
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"forgejo.org/models/db"
@@ -110,4 +112,43 @@ func TestWebhookUserMail(t *testing.T) {
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 	assert.Equal(t, user.GetPlaceholderEmail(), convert.ToUser(db.DefaultContext, user, nil).Email)
 	assert.Equal(t, user.Email, convert.ToUser(db.DefaultContext, user, user).Email)
+}
+
+func TestDeliverTestPayloadWithoutPushEvent(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	done := make(chan struct{}, 1)
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/webhook", r.URL.Path)
+		w.WriteHeader(200)
+		done <- struct{}{}
+	}))
+	t.Cleanup(s.Close)
+
+	hookEvent := webhook_module.HookEvent{ChooseEvents: true, HookEvents: webhook_module.HookEvents{Release: true}}
+	hook := &webhook_model.Webhook{
+		RepoID:      3,
+		URL:         s.URL + "/webhook",
+		ContentType: webhook_model.ContentTypeJSON,
+		IsActive:    true,
+		Type:        webhook_module.GITEA,
+		HookEvent:   &hookEvent,
+	}
+	require.NoError(t, webhook_model.CreateWebhook(t.Context(), hook, ""))
+
+	// if we deliver this webhook for a push event, nothing happens because the webhook isn't configured to run on those events
+	require.NoError(t, PrepareWebhook(db.DefaultContext, hook, webhook_module.HookEventPush, &api.ReleasePayload{}))
+	unittest.AssertNotExistsBean(t, &webhook_model.HookTask{
+		HookID: hook.ID,
+	})
+
+	// but if we deliver it as a testing payload, the check on event types is bypassed
+	// (so that webhooks can be tested regardless of the event types they are enabled for)
+	// See https://codeberg.org/forgejo/forgejo/issues/7934
+	require.NoError(t, PrepareTestWebhook(db.DefaultContext, hook, &api.ReleasePayload{}))
+
+	unittest.AssertExistsAndLoadBean(t, &webhook_model.HookTask{
+		HookID:    hook.ID,
+		EventType: webhook_module.HookEventPush,
+	})
 }
