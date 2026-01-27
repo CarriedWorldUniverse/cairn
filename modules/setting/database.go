@@ -87,7 +87,7 @@ func loadDBSetting(rootCfg ConfigProvider) {
 
 	Database.Path = sec.Key("PATH").MustString(filepath.Join(AppDataPath, "forgejo.db"))
 	Database.Timeout = sec.Key("SQLITE_TIMEOUT").MustInt(500)
-	Database.SQLiteJournalMode = sec.Key("SQLITE_JOURNAL_MODE").MustString("")
+	Database.SQLiteJournalMode = sec.Key("SQLITE_JOURNAL_MODE").MustString("WAL")
 
 	Database.MaxIdleConns = sec.Key("MAX_IDLE_CONNS").MustInt(2)
 	if Database.Type.IsMySQL() {
