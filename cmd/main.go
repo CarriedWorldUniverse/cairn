@@ -204,6 +204,9 @@ func innerNewMainApp(version, versionExtra string, subCmdsStandaloneArgs, subCmd
 	for i := range subCmdWithConfig {
 		prepareSubcommandWithConfig(subCmdWithConfig[i], globalFlags)
 	}
+	for i := range subCmdStandalone {
+		subCmdStandalone[i].Flags = append(subCmdStandalone[i].Flags, cli.HelpFlag)
+	}
 	app.Commands = append(app.Commands, subCmdWithConfig...)
 	app.Commands = append(app.Commands, subCmdStandalone...)
 
