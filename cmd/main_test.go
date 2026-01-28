@@ -113,6 +113,16 @@ func TestCliCmd(t *testing.T) {
 			cmd: "./gitea forgejo-cli --help",
 			exp: "(subcommand help template)",
 		},
+		{
+			env: map[string]string{"GITEA_WORK_DIR": "/tmp"},
+			cmd: "./gitea cert --help",
+			exp: "(subcommand help template)",
+		},
+		{
+			env: map[string]string{"GITEA_WORK_DIR": "/tmp"},
+			cmd: "./gitea web --help",
+			exp: "(subcommand help template)",
+		},
 	}
 
 	for _, c := range cases {
