@@ -261,14 +261,31 @@ func testOptionsGitPush(t *testing.T, u *url.URL) {
 			require.False(t, repo.IsTemplate)
 		})
 
-		// create a collaborator with write access
+		// create a collaborator user
 		collaborator := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5})
 		u.User = url.UserPassword(collaborator.LowerName, userPassword)
 		doGitAddRemote(gitPath, "collaborator", u)(t)
+
+		t.Run("User without write access is not allowed to push", func(t *testing.T) {
+			pushLogChecker, cleanup := test.NewLogChecker("ssh", log.ERROR)
+			pushLogChecker.Filter("User 'user5' is not allowed to push to branch 'branch3' in 'user2/repo-to-push'.")
+			pushLogChecker.Filter("If you instead wanted to create a pull request to the branch 'branch3', please use:")
+			pushLogChecker.Filter("git push origin HEAD:refs/for/branch3/choose-a-descriptor")
+			pushLogChecker.Filter("You might want to replace 'origin' with the name of your Git remote if it is different from origin. You can freely choose the descriptor to set it to a topic.")
+			pushLogChecker.Filter("You can learn about creating pull requests with AGit in the docs: https://forgejo.org/docs/latest/user/agit-support/")
+			defer cleanup()
+			branchName := "branch3"
+			doGitCreateBranch(gitPath, branchName)(t)
+			doGitPushTestRepositoryFail(gitPath, "collaborator", branchName)(t)
+			pushLogFiltered, _ := pushLogChecker.Check(5 * time.Second)
+			assert.True(t, pushLogFiltered[0])
+		})
+
+		// give write access to the collaborator
 		repo_module.AddCollaborator(db.DefaultContext, repo, collaborator)
 
 		t.Run("Collaborator with write access is allowed to push", func(t *testing.T) {
-			branchName := "branch3"
+			branchName := "branch4"
 			doGitCreateBranch(gitPath, branchName)(t)
 			doGitPushTestRepository(gitPath, "collaborator", branchName)(t)
 		})
@@ -280,7 +297,7 @@ func testOptionsGitPush(t *testing.T, u *url.URL) {
 			sshLogChecker, cleanup := test.NewLogChecker("ssh", log.ERROR)
 			sshLogChecker.Filter("permission denied for changing repo settings")
 			defer cleanup()
-			branchName := "branch4"
+			branchName := "branch5"
 			doGitCreateBranch(gitPath, branchName)(t)
 			doGitPushTestRepositoryFail(gitPath, "collaborator", branchName, "-o", "repo.private=true", "-o", "repo.template=true")(t)
 			repo, err = repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, user.Name, "repo-to-push")
