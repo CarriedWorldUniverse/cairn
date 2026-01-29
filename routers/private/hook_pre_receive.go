@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"forgejo.org/models"
 	asymkey_model "forgejo.org/models/asymkey"
@@ -72,8 +73,17 @@ func (ctx *preReceiveContext) AssertCanWriteCode() bool {
 		if ctx.Written() {
 			return false
 		}
+		var sb strings.Builder
+		fmt.Fprintf(&sb, "User '%s' is not allowed to push to branch '%s' in '%s/%s'.", ctx.user.Name, ctx.branchName, ctx.Repo.Repository.OwnerName, ctx.Repo.Repository.Name)
+
+		if ctx.CanCreatePullRequest() {
+			fmt.Fprintf(&sb, "\nIf you instead wanted to create a pull request to the branch '%s', please use:", ctx.branchName)
+			fmt.Fprintf(&sb, "\ngit push origin HEAD:refs/for/%s/choose-a-descriptor", ctx.branchName)
+			sb.WriteString("\nYou might want to replace 'origin' with the name of your Git remote if it is different from origin. You can freely choose the descriptor to set it to a topic.")
+			sb.WriteString("\nYou can learn about creating pull requests with AGit in the docs: https://forgejo.org/docs/latest/user/agit-support/")
+		}
 		ctx.JSON(http.StatusForbidden, private.Response{
-			UserMsg: "User permission denied for writing.",
+			UserMsg: sb.String(),
 		})
 		return false
 	}
