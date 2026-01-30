@@ -171,11 +171,11 @@ func TestSourceId(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	testUser23 := &user_model.User{
-		Name:        "ausersourceid23",
-		LoginName:   "ausersourceid23",
+		Name:        "@ausersourceid23@example.net",
+		LoginName:   "@ausersourceid23@example.net",
 		Email:       "ausersourceid23@example.com",
 		Passwd:      "ausersourceid23password",
-		Type:        user_model.UserTypeIndividual,
+		Type:        user_model.UserTypeRemoteUser,
 		LoginType:   auth_model.Plain,
 		LoginSource: 23,
 	}
@@ -184,13 +184,17 @@ func TestSourceId(t *testing.T) {
 	session := loginUser(t, "user1")
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadAdmin)
 
-	// Our new user start with 'a' so it should be the first one
+	// Historic background: The user was previously called "ausersourceid23", but the
+	// test started failing on PostgreSQL specifically because of another federated user
+	// in a fixture called @federated@example.net - this did not apply to other database
+	// engines. Said user's username began with an 'a' so that it comes up on top, so, we
+	// simply made another federated user that starts with '@a' here as an easy way out.
 	req := NewRequest(t, "GET", "/api/v1/admin/users?limit=1").AddTokenAuth(token)
 	resp := session.MakeRequest(t, req, http.StatusOK)
 	var users []api.User
 	DecodeJSON(t, resp, &users)
 	assert.Len(t, users, 1)
-	assert.Equal(t, "ausersourceid23", users[0].UserName)
+	assert.Equal(t, "@ausersourceid23@example.net", users[0].UserName)
 
 	// Now our new user should not be in the list, because we filter by source_id 0
 	req = NewRequest(t, "GET", "/api/v1/admin/users?limit=1&source_id=0").AddTokenAuth(token)
@@ -204,7 +208,7 @@ func TestSourceId(t *testing.T) {
 	resp = session.MakeRequest(t, req, http.StatusOK)
 	DecodeJSON(t, resp, &users)
 	assert.Len(t, users, 1)
-	assert.Equal(t, "ausersourceid23", users[0].UserName)
+	assert.Equal(t, "@ausersourceid23@example.net", users[0].UserName)
 }
 
 func TestAdminViewUsersSorted(t *testing.T) {

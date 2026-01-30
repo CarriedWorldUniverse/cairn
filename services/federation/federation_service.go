@@ -173,7 +173,7 @@ func fetchUserFromAP(ctx context.Context, personID fm.PersonID, federationHostID
 
 	email := fmt.Sprintf("f%v@%v", uuid.New().String(), localFqdn.Hostname())
 	loginName := personID.AsLoginName()
-	name := fmt.Sprintf("%v%v", person.PreferredUsername.String(), personID.HostSuffix())
+	name := fmt.Sprintf("@%v%v", person.PreferredUsername.String(), personID.HostSuffix())
 	fullName := person.Name.String()
 
 	if len(person.Name) == 0 {

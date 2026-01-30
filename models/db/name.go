@@ -80,6 +80,31 @@ func (err ErrNameCharsNotAllowed) Unwrap() error {
 	return util.ErrInvalidArgument
 }
 
+// ErrNameActivityPubInvalid represents an error for usernames which cannot
+// belong to ActivityPub accounts.
+type ErrNameActivityPubInvalid struct {
+	Name string
+}
+
+// Similarly to IsErrNameCharsNotAllowed, IsErrNameActivityPubInvalid checks if
+// an error is an ErrNameActivityPubInvalid.
+func IsErrNameActivityPubInvalid(err error) bool {
+	_, ok := err.(ErrNameActivityPubInvalid)
+	return ok
+}
+
+func (err ErrNameActivityPubInvalid) Error() string {
+	return fmt.Sprintf(
+		"name is invalid [%s]: not acceptable for users from federated activitypub instances (e.g. @username@domain.example)",
+		err.Name,
+	)
+}
+
+// Unwrap unwraps this as a ErrInvalidArgument err
+func (err ErrNameActivityPubInvalid) Unwrap() error {
+	return util.ErrInvalidArgument
+}
+
 // IsUsableName checks if name is reserved or pattern of name is not allowed
 // based on given reserved names and patterns.
 // Names are exact match, patterns can be prefix or suffix match with placeholder '*'.

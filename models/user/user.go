@@ -698,6 +698,14 @@ func IsUsableUsername(name string) error {
 	return db.IsUsableName(reservedUsernames, reservedUserPatterns, name)
 }
 
+// IsActivityPubUsername returns an error if a fediverse handle (referred to as a username) cannot exist
+func IsActivityPubUsername(name string) error {
+	if !validation.IsValidActivityPubUsername(name) {
+		return db.ErrNameActivityPubInvalid{Name: name}
+	}
+	return db.IsUsableName(reservedUsernames, reservedUserPatterns, name)
+}
+
 // CreateUserOverwriteOptions are an optional options who overwrite system defaults on user creation
 type CreateUserOverwriteOptions struct {
 	KeepEmailPrivate             optional.Option[bool]
@@ -708,6 +716,7 @@ type CreateUserOverwriteOptions struct {
 	Theme                        *string
 	IsRestricted                 optional.Option[bool]
 	IsActive                     optional.Option[bool]
+	IsActivityPub                optional.Option[bool]
 }
 
 // CreateUser creates record of a new user.
@@ -722,12 +731,26 @@ func AdminCreateUser(ctx context.Context, u *User, overwriteDefault ...*CreateUs
 
 // createUser creates record of a new user.
 func createUser(ctx context.Context, u *User, createdByAdmin bool, overwriteDefault ...*CreateUserOverwriteOptions) (err error) {
-	if err = IsUsableUsername(u.Name); err != nil {
+	overwriteDefaultPresent := len(overwriteDefault) != 0 && overwriteDefault[0] != nil
+
+	// If a username is invalid as-is, check whether the username is meant
+	// for an ActivityPub account. Username constraints that belong to "foreign"
+	// ActivityPub servers, whose implementations we cannot control, are expected
+	// to be much less restrictive than those of Forgejo itself.
+	if overwriteDefaultPresent && overwriteDefault[0].IsActivityPub.Has() {
+		if err = IsActivityPubUsername(u.Name); err != nil {
+			return err
+		}
+	} else if err := IsUsableUsername(u.Name); err != nil {
 		return err
 	}
 
 	// Check if the new username can be claimed.
 	// Skip this check if done by an admin.
+	//
+	// Note: This skip should not currently cover usernames that could belong to
+	// fediverse accounts. This "defensive programming" is in place to prevent future
+	// breakage until the ActivityPub component matures more.
 	if !createdByAdmin {
 		if ok, expireTime, err := CanClaimUsername(ctx, u.Name, -1); err != nil {
 			return err
@@ -754,7 +777,7 @@ func createUser(ctx context.Context, u *User, createdByAdmin bool, overwriteDefa
 	}
 
 	// overwrite defaults if set
-	if len(overwriteDefault) != 0 && overwriteDefault[0] != nil {
+	if overwriteDefaultPresent {
 		overwrite := overwriteDefault[0]
 		if overwrite.KeepEmailPrivate.Has() {
 			u.KeepEmailPrivate = overwrite.KeepEmailPrivate.Value()

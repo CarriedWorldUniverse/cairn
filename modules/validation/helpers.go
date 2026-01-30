@@ -102,6 +102,21 @@ var (
 
 	// No consecutive or trailing non-alphanumeric chars, catches both cases
 	invalidUsernamePattern = regexp.MustCompile(`[-._]{2,}|[-._]$`)
+
+	// This is intended to accept any character, in any language, with accent symbols,
+	// as well as an arbitrary amount of subdomains and an optional port number defined
+	// through `:12345`.
+	//
+	// This is intended to cover username cases from distant servers in the fediverse, which
+	// can have much laxer requirements than those of Forgejo. It is not intended to check for
+	// invalid, non-standard compliant domains.
+	//
+	// For instance, the following should work:
+	// @user.όνομαß_21__@subdomain1.subdomain2.example.tld:65536
+	// @42@42.example.tld
+	// @user@example.tld:99999 (presumed to be an impossible case)
+	// @-@-.tld (also impossible)
+	validFediverseUsernamePattern = regexp.MustCompile(`^(@[\p{L}\p{M}0-9_\.\-]{1,})(@[\p{L}\p{M}0-9_\.\-]{1,})(:[1-9][0-9]{0,4})?$`)
 )
 
 // IsValidUsername checks if username is valid
@@ -113,4 +128,12 @@ func IsValidUsername(name string) bool {
 	}
 
 	return validUsernamePatternWithoutDots.MatchString(name) && !invalidUsernamePattern.MatchString(name)
+}
+
+// IsValidActivityPubUsername checks whether the username can be a valid ActivityPub handle.
+//
+// Username refers to the Forgejo user account's username for consistency, and not
+// e.g. "username" in @username@example.tld.
+func IsValidActivityPubUsername(name string) bool {
+	return validFediverseUsernamePattern.MatchString(name)
 }

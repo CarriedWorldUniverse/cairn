@@ -23,8 +23,9 @@ func CreateFederatedUser(ctx context.Context, user *User, federatedUser *Federat
 		return err
 	}
 	overwrite := CreateUserOverwriteOptions{
-		IsActive:     optional.Some(false),
-		IsRestricted: optional.Some(false),
+		IsActive:      optional.Some(false),
+		IsRestricted:  optional.Some(false),
+		IsActivityPub: optional.Some(true),
 	}
 
 	// Begin transaction

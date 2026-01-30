@@ -440,6 +440,63 @@ func TestCreateUserClaimingUsername(t *testing.T) {
 	})
 }
 
+// Attempts to create a username with a fediverse-format handle, which should
+// fail (without the override IsActivityPub, which is set by CreateFederatedUser)
+func TestCreateUserPlainWithFediverseHandle(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	_, err := db.GetEngine(db.DefaultContext).NoAutoTime().Insert(&user_model.Redirect{RedirectUserID: 1, LowerName: "redirecting", CreatedUnix: timeutil.TimeStampNow()})
+	require.NoError(t, err)
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+	user.Name = "@example@example.tld"
+	user.LowerName = strings.ToLower(user.Name)
+	user.ID = 0
+	user.Email = "unique@example.com"
+
+	t.Run("Normal creation (without ActivityPub override)", func(t *testing.T) {
+		err = user_model.CreateUser(db.DefaultContext, user)
+		require.Error(t, err)
+		assert.True(t, db.IsErrNameCharsNotAllowed(err))
+	})
+
+	t.Run("Creation as admin (without ActivityPub override)", func(t *testing.T) {
+		err = user_model.AdminCreateUser(db.DefaultContext, user)
+		require.Error(t, err)
+		assert.True(t, db.IsErrNameCharsNotAllowed(err))
+	})
+
+	// Logic borrowed from CreateFederatedUser (which invokes CreateUser), but
+	// we "lend" this here to verify CreateUser's paths.
+	overwrite := user_model.CreateUserOverwriteOptions{
+		IsActive:      optional.Some(false),
+		IsRestricted:  optional.Some(false),
+		IsActivityPub: optional.Some(true),
+	}
+
+	t.Run("Normal creation (with ActivityPub override, invalid format)", func(t *testing.T) {
+		user.Name = "invalid-format-for-an-activitypub-account"
+		user.LowerName = strings.ToLower(user.Name)
+
+		err = user_model.CreateUser(db.DefaultContext, user, &overwrite)
+		require.Error(t, err)
+		assert.True(t, db.IsErrNameActivityPubInvalid(err))
+	})
+
+	t.Run("Normal creation (with ActivityPub override)", func(t *testing.T) {
+		user.Name = "@valid@example.tld"
+		user.LowerName = strings.ToLower(user.Name)
+
+		err = user_model.CreateUser(db.DefaultContext, user, &overwrite)
+		require.NoError(t, err)
+	})
+
+	// Note: We don't expect that admins are able to access any front-facing
+	// function that sets the overwrite (i.e. CreateFederatedUser), hence it
+	// has been omitted for now.
+}
+
 func TestGetUserIDsByNames(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
