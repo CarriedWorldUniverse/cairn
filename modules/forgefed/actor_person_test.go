@@ -246,8 +246,19 @@ func TestForgePersonValidation(t *testing.T) {
 
 func TestAsloginName(t *testing.T) {
 	sut, _ := forgefed.NewPersonID("https://codeberg.org/api/v1/activitypub/user-id/12345", "forgejo")
-	assert.Equal(t, "12345-codeberg.org", sut.AsLoginName())
+	assert.Equal(t, "12345@codeberg.org", sut.AsLoginName())
 
 	sut, _ = forgefed.NewPersonID("https://codeberg.org:443/api/v1/activitypub/user-id/12345", "forgejo")
-	assert.Equal(t, "12345-codeberg.org-443", sut.AsLoginName())
+	assert.Equal(t, "12345@codeberg.org:443", sut.AsLoginName())
+}
+
+func TestHostSuffix(t *testing.T) {
+	sut, _ := forgefed.NewPersonID("https://codeberg.org/api/v1/activitypub/user-id/12345", "forgejo")
+	sut.Host = "forgejo.example.tld"
+	sut.HostPort = 80
+
+	// sut.IsPortSupplemented is true by default at time of writing.
+	assert.Equal(t, "@forgejo.example.tld", sut.HostSuffix())
+	sut.IsPortSupplemented = false
+	assert.Equal(t, "@forgejo.example.tld:80", sut.HostSuffix())
 }

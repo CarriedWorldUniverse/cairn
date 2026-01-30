@@ -71,12 +71,13 @@ func (id PersonID) AsLoginName() string {
 	return result
 }
 
+// HostSuffix returns the host part of a handle, i.e. @host.tld (if port is supplemented) or @host.tld:1234
 func (id PersonID) HostSuffix() string {
 	var result string
 	if !id.IsPortSupplemented {
-		result = fmt.Sprintf("-%s-%d", strings.ToLower(id.Host), id.HostPort)
+		result = fmt.Sprintf("@%s:%d", strings.ToLower(id.Host), id.HostPort)
 	} else {
-		result = fmt.Sprintf("-%s", strings.ToLower(id.Host))
+		result = fmt.Sprintf("@%s", strings.ToLower(id.Host))
 	}
 	return result
 }

@@ -23,6 +23,7 @@ forgejo.org/models/db
 	DumpTables
 	GetTableNames
 	extendBeansForCascade
+	IsErrNameActivityPubInvalid
 
 forgejo.org/models/dbfs
 	file.renameTo

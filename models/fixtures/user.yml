@@ -1566,9 +1566,9 @@
 
 -
   id: 42
-  lower_name: federated-example.net
-  name: federated-example.net
-  full_name: federated
+  lower_name: "@federated@example.net"
+  name: "@federated@example.net"
+  full_name: "@federated@example.net"
   email: f73240e82-c061-41ef-b7d6-4376cb6f2e1c@example.com
   keep_email_private: false
   email_notifications_preference: enabled
@@ -1576,7 +1576,7 @@
   passwd_hash_algo: ""
   must_change_password: false
   login_source: 0
-  login_name: federated-example.net
+  login_name: "@federated@example.net"
   type: 6
   salt: ""
   max_repo_creation: -1
