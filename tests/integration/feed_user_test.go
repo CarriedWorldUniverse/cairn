@@ -61,6 +61,8 @@ func TestFeed(t *testing.T) {
 			err := xml.Unmarshal(resp.Body.Bytes(), &rss)
 			require.NoError(t, err)
 			assert.Contains(t, rss.Channel.Link, "/user2")
+			assert.NotEmpty(t, rss.Channel.Items)
+			assert.Regexp(t, `http://localhost:\d+/user2/repo1/compare/ed4090`, rss.Channel.Items[0].Link)
 			assert.NotEmpty(t, rss.Channel.PubDate)
 		})
 	})
