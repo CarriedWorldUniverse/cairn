@@ -5,6 +5,7 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	actions_model "forgejo.org/models/actions"
@@ -321,6 +322,24 @@ func pullRequestApprove(ctx context.Context, doerID, repoID, pullRequestID int64
 		if err := ApproveRun(ctx, run, doerID); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func cleanupPullRequestUnapprovedRuns(ctx context.Context, repoID, pullRequestID int64) error {
+	runs, err := actions_model.GetRunsThatNeedApprovalByRepoIDAndPullRequestID(ctx, repoID, pullRequestID)
+	if err != nil {
+		return err
+	}
+
+	errorSlice := []error{}
+	for _, run := range runs {
+		if err := CancelRun(ctx, run); err != nil {
+			errorSlice = append(errorSlice, err)
+		}
+	}
+	if len(errorSlice) > 0 {
+		return errors.Join(errorSlice...)
 	}
 	return nil
 }

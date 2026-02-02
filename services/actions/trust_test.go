@@ -227,6 +227,20 @@ jobs:
 			assert.False(t, run.NeedApproval)
 		}
 	})
+
+	t.Run("cleanupPullRequestUnapprovedRuns", func(t *testing.T) {
+		pullRequestID := int64(534)
+		runNotApproved := createPullRequestRun(t, pullRequestID, repoID)
+
+		previousCancelledCount := unittest.GetCount(t, &actions_model.ActionRun{Status: actions_model.StatusCancelled})
+
+		require.NoError(t, cleanupPullRequestUnapprovedRuns(t.Context(), repoID, pullRequestID))
+
+		currentCancelledCount := unittest.GetCount(t, &actions_model.ActionRun{Status: actions_model.StatusCancelled})
+		assert.Equal(t, previousCancelledCount+1, currentCancelledCount)
+		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: runNotApproved.ID})
+		assert.Equal(t, actions_model.StatusCancelled.String(), run.Status.String())
+	})
 }
 
 func TestActionsTrust_GetPullRequestUserIsTrustedWithActions(t *testing.T) {
