@@ -12,6 +12,7 @@ import (
 	"time"
 
 	actions_model "forgejo.org/models/actions"
+	auth_model "forgejo.org/models/auth"
 	issues_model "forgejo.org/models/issues"
 	repo_model "forgejo.org/models/repo"
 	unit_model "forgejo.org/models/unit"
@@ -434,5 +435,39 @@ func TestActionsPullRequestTrustPanelWIPConflicts(t *testing.T) {
 		t.Run("Regular user sees pending approval even though PR is conflicted", func(t *testing.T) {
 			actionsTrustTestAssertTrustPanel(t, regularSession, pullRequestLink)
 		})
+	})
+}
+
+func TestActionsPullRequestTrustCancelOnClose(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		ownerUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		regularUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 5})
+		regularSession := loginUser(t, regularUser.Name)
+		token := getTokenForLoggedInUser(t, regularSession, auth_model.AccessTokenScopeWriteIssue)
+
+		baseRepo, f := actionsTrustTestCreateBaseRepo(t, ownerUser)
+		defer f()
+
+		_, pullRequest, addFileToForkedResp := actionsTrustTestCreatePullRequestFromForkedRepo(t, ownerUser, baseRepo, regularUser)
+		prAPILink := pullRequest.Issue.APIURL(t.Context())
+
+		{
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: addFileToForkedResp.Commit.SHA})
+			assert.True(t, actionRun.NeedApproval)
+			actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+			assert.Equal(t, actions_model.StatusBlocked, actionRunJob.Status)
+		}
+
+		req := NewRequestWithJSON(t, "PATCH", prAPILink, &structs.PullRequest{State: "closed"}).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusCreated)
+
+		{
+			actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID, CommitSHA: addFileToForkedResp.Commit.SHA})
+			assert.False(t, actionRun.NeedApproval)
+			assert.Equal(t, actions_model.StatusCancelled, actionRun.Status)
+			actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{RunID: actionRun.ID, RepoID: baseRepo.ID})
+			assert.Equal(t, actions_model.StatusCancelled, actionRunJob.Status)
+		}
 	})
 }
