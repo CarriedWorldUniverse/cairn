@@ -125,6 +125,34 @@ func TestAPIListIssues(t *testing.T) {
 	})
 }
 
+func TestAPIListIssuesWithLabels(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 3})
+	owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 6, RepoID: repo.ID})
+	orgLabel := unittest.AssertExistsAndLoadBean(t, &issues_model.Label{ID: 4, OrgID: owner.ID})
+
+	session := loginUser(t, "user1")
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadIssue, auth_model.AccessTokenScopeWriteIssue)
+
+	addLabelsURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels", owner.Name, repo.Name, issue.Index)
+	req := NewRequestWithJSON(t, "POST", addLabelsURL, &api.IssueLabelsOption{Labels: []any{orgLabel.Name}}).AddTokenAuth(token)
+	MakeRequest(t, req, http.StatusOK)
+
+	link, _ := url.Parse(fmt.Sprintf("/api/v1/repos/%s/%s/issues", owner.Name, repo.Name))
+	link.RawQuery = url.Values{"state": {"all"}, "labels": {orgLabel.Name}}.Encode()
+
+	req = NewRequest(t, "GET", link.String()).AddTokenAuth(token)
+	resp := MakeRequest(t, req, http.StatusOK)
+
+	var apiIssues []*api.Issue
+	DecodeJSON(t, resp, &apiIssues)
+	if assert.Len(t, apiIssues, 1) {
+		assert.Equal(t, issue.ID, apiIssues[0].ID)
+	}
+}
+
 func TestAPIListIssuesPublicOnly(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 

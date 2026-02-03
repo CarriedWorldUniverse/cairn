@@ -447,6 +447,14 @@ func ListIssues(ctx *context.APIContext) {
 			ctx.Error(http.StatusInternalServerError, "GetLabelIDsInRepoByNames", err)
 			return
 		}
+		if ctx.Repo.Owner.IsOrganization() {
+			orgLabelIDs, err := issues_model.GetLabelIDsInOrgByNames(ctx, ctx.Repo.Owner.ID, split)
+			if err != nil {
+				ctx.Error(http.StatusInternalServerError, "GetLabelIDsInOrgByNames", err)
+				return
+			}
+			labelIDs = append(labelIDs, orgLabelIDs...)
+		}
 	}
 
 	var mileIDs []int64
