@@ -138,6 +138,15 @@ func (n *actionsNotifier) IssueChangeStatus(ctx context.Context, doer *user_mode
 			WithPayload(apiPullRequest).
 			WithPullRequest(issue.PullRequest).
 			Notify(ctx)
+
+		// PR may have left unapproved runs if the author wasn't trusted, and now that it's been closed those should be
+		// cancelled.  Note that this occurs after new events are fired -- even a 'closed' event could generate a pull
+		// request run that needs to be cancelled.
+		if isClosed {
+			if err := cleanupPullRequestUnapprovedRuns(ctx, issue.RepoID, issue.PullRequest.ID); err != nil {
+				log.Error("cleanupPullRequestUnapprovedRuns: %v", err)
+			}
+		}
 		return
 	}
 	apiIssue := &api.IssuePayload{
