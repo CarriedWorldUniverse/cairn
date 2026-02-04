@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/container"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 
 	"xorm.io/builder"
@@ -48,12 +49,13 @@ func (jobs ActionJobList) LoadAttributes(ctx context.Context, withRepo bool) err
 
 type FindRunJobOptions struct {
 	db.ListOptions
-	RunID         int64
-	RepoID        int64
-	OwnerID       int64
-	CommitSHA     string
-	Statuses      []Status
-	UpdatedBefore timeutil.TimeStamp
+	RunID            int64
+	RepoID           int64
+	OwnerID          int64
+	CommitSHA        string
+	Statuses         []Status
+	UpdatedBefore    timeutil.TimeStamp
+	RunNeedsApproval optional.Option[bool]
 }
 
 func (opts FindRunJobOptions) ToConds() builder.Cond {
@@ -75,6 +77,13 @@ func (opts FindRunJobOptions) ToConds() builder.Cond {
 	}
 	if opts.UpdatedBefore > 0 {
 		cond = cond.And(builder.Lt{"updated": opts.UpdatedBefore})
+	}
+	if opts.RunNeedsApproval.Has() {
+		cond = cond.And(builder.Exists(builder.Select("id").From("action_run", "outer_run").
+			Where(builder.Eq{
+				"outer_run.need_approval": opts.RunNeedsApproval.Value(),
+				"outer_run.id":            builder.Expr("run_id"),
+			})))
 	}
 	return cond
 }
