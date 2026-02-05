@@ -228,33 +228,32 @@ func (key ecdsaSigningKey) PreProcessToken(token *jwt.Token) {
 	token.Header["kid"] = key.id
 }
 
+var allowedAlgorithms = map[string]bool{
+	"HS256": true,
+	"HS384": true,
+	"HS512": true,
+
+	"RS256": true,
+	"RS384": true,
+	"RS512": true,
+
+	"ES256": true,
+	"ES384": true,
+	"ES512": true,
+	"EdDSA": true,
+}
+
+func GetSigningMethod(algorithm string) jwt.SigningMethod {
+	if !allowedAlgorithms[algorithm] {
+		return nil
+	}
+	return jwt.GetSigningMethod(algorithm)
+}
+
 // CreateSigningKey creates a signing key from an algorithm / key pair.
 func CreateSigningKey(algorithm string, key any) (SigningKey, error) {
-	var signingMethod jwt.SigningMethod
-	switch algorithm {
-	case "HS256":
-		signingMethod = jwt.SigningMethodHS256
-	case "HS384":
-		signingMethod = jwt.SigningMethodHS384
-	case "HS512":
-		signingMethod = jwt.SigningMethodHS512
-
-	case "RS256":
-		signingMethod = jwt.SigningMethodRS256
-	case "RS384":
-		signingMethod = jwt.SigningMethodRS384
-	case "RS512":
-		signingMethod = jwt.SigningMethodRS512
-
-	case "ES256":
-		signingMethod = jwt.SigningMethodES256
-	case "ES384":
-		signingMethod = jwt.SigningMethodES384
-	case "ES512":
-		signingMethod = jwt.SigningMethodES512
-	case "EdDSA":
-		signingMethod = jwt.SigningMethodEdDSA
-	default:
+	signingMethod := GetSigningMethod(algorithm)
+	if signingMethod == nil {
 		return nil, ErrInvalidAlgorithmType{algorithm}
 	}
 
