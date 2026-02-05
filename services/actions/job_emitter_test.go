@@ -326,6 +326,12 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			runJobID:    601,
 			consumed:    true,
 			runJobNames: []string{"define-matrix", "produce-artifacts (blue)", "produce-artifacts (green)", "produce-artifacts (red)"},
+			needs: map[string][]string{
+				"define-matrix":             nil,
+				"produce-artifacts (blue)":  {"define-matrix"},
+				"produce-artifacts (green)": {"define-matrix"},
+				"produce-artifacts (red)":   {"define-matrix"},
+			},
 		},
 		{
 			name:        "needs an incomplete job",
@@ -490,8 +496,8 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			},
 			needs: map[string][]string{
 				"define-workflow-call":    nil,
-				"inner my-workflow-input": nil,
-				"perform-workflow-call":   {"perform-workflow-call.inner_job"},
+				"inner my-workflow-input": {"define-workflow-call"},
+				"perform-workflow-call":   {"define-workflow-call", "perform-workflow-call.inner_job"},
 			},
 		},
 		// Before reusable workflow expansion, there weren't any cases where evaluating a job in the job emitter could
@@ -515,9 +521,10 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			},
 			needs: map[string][]string{
 				"define-workflow-call":                   nil,
-				"inner define-runs-on my-workflow-input": nil,
-				"inner incomplete-job my-workflow-input": {"perform-workflow-call.define-runs-on"},
+				"inner define-runs-on my-workflow-input": {"define-workflow-call"},
+				"inner incomplete-job my-workflow-input": {"define-workflow-call", "perform-workflow-call.define-runs-on"},
 				"perform-workflow-call": {
+					"define-workflow-call",
 					"perform-workflow-call.define-runs-on",
 					"perform-workflow-call.scalar-job",
 				},
@@ -661,7 +668,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 					if tt.needs != nil {
 						for _, j := range allJobsInRun {
 							expected, ok := tt.needs[j.Name]
-							if assert.Truef(t, ok, "unable to find runsOn[%q] in test case", j.Name) {
+							if assert.Truef(t, ok, "unable to find needs[%q] in test case", j.Name) {
 								slices.Sort(j.Needs)
 								slices.Sort(expected)
 								assert.Equalf(t, expected, j.Needs, "comparing needs expectations for job %q", j.Name)
