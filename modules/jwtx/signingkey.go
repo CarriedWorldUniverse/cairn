@@ -338,7 +338,7 @@ func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
 				return err
 			}
 
-			f, err := os.OpenFile(keyPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
+			f, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 			if err != nil {
 				return err
 			}
