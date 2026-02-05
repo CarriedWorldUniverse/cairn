@@ -285,76 +285,65 @@ func CreateSigningKey(algorithm string, key any) (SigningKey, error) {
 	}
 }
 
-// loadOrCreateAsymmetricKey checks if the configured private key exists.
-// If it does not exist a new random key gets generated and saved on the configured path.
-func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
-	isExist, err := util.IsExist(keyPath)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to check if %s exists. Error: %v", keyPath, err)
-	}
-	if !isExist {
-		err := func() error {
-			key, err := func() (any, error) {
-				switch {
-				case strings.HasPrefix(algorithm, "RS"):
-					var bits int
-					switch algorithm {
-					case "RS256":
-						bits = 2048
-					case "RS384":
-						bits = 3072
-					case "RS512":
-						bits = 4096
-					}
-					return rsa.GenerateKey(rand.Reader, bits)
-				case algorithm == "EdDSA":
-					_, pk, err := ed25519.GenerateKey(rand.Reader)
-					return pk, err
-				default:
-					var curve elliptic.Curve
-					switch algorithm {
-					case "ES256":
-						curve = elliptic.P256()
-					case "ES384":
-						curve = elliptic.P384()
-					case "ES512":
-						curve = elliptic.P521()
-					}
-					return ecdsa.GenerateKey(curve, rand.Reader)
-				}
-			}()
-			if err != nil {
-				return err
+func createAsymmetricKey(keyPath, algorithm string) error {
+	key, err := func() (any, error) {
+		switch {
+		case strings.HasPrefix(algorithm, "RS"):
+			var bits int
+			switch algorithm {
+			case "RS256":
+				bits = 2048
+			case "RS384":
+				bits = 3072
+			case "RS512":
+				bits = 4096
 			}
-
-			bytes, err := x509.MarshalPKCS8PrivateKey(key)
-			if err != nil {
-				return err
+			return rsa.GenerateKey(rand.Reader, bits)
+		case algorithm == "EdDSA":
+			_, pk, err := ed25519.GenerateKey(rand.Reader)
+			return pk, err
+		default:
+			var curve elliptic.Curve
+			switch algorithm {
+			case "ES256":
+				curve = elliptic.P256()
+			case "ES384":
+				curve = elliptic.P384()
+			case "ES512":
+				curve = elliptic.P521()
 			}
-
-			privateKeyPEM := &pem.Block{Type: "PRIVATE KEY", Bytes: bytes}
-
-			if err := os.MkdirAll(filepath.Dir(keyPath), os.ModePerm); err != nil {
-				return err
-			}
-
-			f, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err = f.Close(); err != nil {
-					log.Error("Close: %v", err)
-				}
-			}()
-
-			return pem.Encode(f, privateKeyPEM)
-		}()
-		if err != nil {
-			return nil, fmt.Errorf("Error generating private key %s: %v", keyPath, err)
+			return ecdsa.GenerateKey(curve, rand.Reader)
 		}
+	}()
+	if err != nil {
+		return err
 	}
 
+	bytes, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return err
+	}
+
+	privateKeyPEM := &pem.Block{Type: "PRIVATE KEY", Bytes: bytes}
+
+	if err := os.MkdirAll(filepath.Dir(keyPath), os.ModePerm); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err = f.Close(); err != nil {
+			log.Error("Close: %v", err)
+		}
+	}()
+
+	return pem.Encode(f, privateKeyPEM)
+}
+
+func loadAsymmetricKey(keyPath string) (any, error) {
 	bytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
@@ -368,6 +357,22 @@ func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
 	}
 
 	return x509.ParsePKCS8PrivateKey(block.Bytes)
+}
+
+// loadOrCreateAsymmetricKey checks if the configured private key exists.
+// If it does not exist a new random key gets generated and saved on the configured path.
+func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
+	isExist, err := util.IsExist(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to check if %s exists. Error: %v", keyPath, err)
+	}
+	if !isExist {
+		err := createAsymmetricKey(keyPath, algorithm)
+		if err != nil {
+			return nil, fmt.Errorf("Error generating private key %s: %v", keyPath, err)
+		}
+	}
+	return loadAsymmetricKey(keyPath)
 }
 
 // InitSigningKey creates a signing key from settings or creates a random key.
