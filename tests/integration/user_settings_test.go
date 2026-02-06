@@ -7,10 +7,18 @@ import (
 	"net/http"
 	"testing"
 
+	"forgejo.org/models/auth"
+	"forgejo.org/models/db"
+	"forgejo.org/models/unittest"
+	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
+	"forgejo.org/modules/translation"
 	"forgejo.org/tests"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestUserSettingsAccount tests the contents of a user's account settings
@@ -122,5 +130,52 @@ func TestUserSettingsDelete(t *testing.T) {
 		session := loginUser(t, "user2")
 		req := NewRequest(t, "POST", "/user/settings/account/delete")
 		session.MakeRequest(t, req, http.StatusNotFound)
+	})
+}
+
+func TestUserRename(t *testing.T) {
+	defer unittest.OverrideFixtures("tests/integration/fixtures/TestUserRename")()
+	defer tests.PrepareTestEnv(t)()
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, "user2")
+	trMsg := translation.NewLocale("en-US").Tr("settings.password_username_disabled")
+
+	test := func(t *testing.T, session *TestSession, allowed bool) {
+		t.Helper()
+
+		resp := session.MakeRequest(t, NewRequest(t, "GET", "/user/settings"), http.StatusOK)
+		if allowed {
+			assert.NotContains(t, resp.Body.String(), trMsg)
+		} else {
+			assert.Contains(t, resp.Body.String(), trMsg)
+		}
+	}
+
+	t.Run("Local", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		test(t, session, true)
+	})
+
+	t.Run("OAuth2", func(t *testing.T) {
+		user.LoginSource = 1001
+		user.LoginType = auth.OAuth2
+		_, err := db.GetEngine(t.Context()).Cols("login_source", "login_type").Update(user)
+		require.NoError(t, err)
+
+		t.Run("Not allowed", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			test(t, session, false)
+		})
+
+		user.LoginSource = 1002
+		_, err = db.GetEngine(t.Context()).Cols("login_source", "login_type").Update(user)
+		require.NoError(t, err)
+
+		t.Run("Allowed", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			test(t, session, true)
+		})
 	})
 }
