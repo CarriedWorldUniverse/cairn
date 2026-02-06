@@ -9,8 +9,8 @@
 					<legend>{{ctx.Locale.Tr "settings.profile_desc"}}</legend>
 					<label {{if .Err_Name}}class="field error"{{end}}>
 						{{ctx.Locale.Tr "username"}}
-						<input name="name" value="{{.SignedUser.Name}}" data-name="{{.SignedUser.Name}}" autofocus required {{if or (not .SignedUser.IsLocal) .IsReverseProxy}}disabled{{end}} maxlength="40">
-						{{if or (not .SignedUser.IsLocal) .IsReverseProxy}}
+						<input name="name" value="{{.SignedUser.Name}}" data-name="{{.SignedUser.Name}}" autofocus required {{if or .UserRenameDisabled .IsReverseProxy}}disabled{{end}} maxlength="40">
+						{{if or .UserRenameDisabled .IsReverseProxy}}
 							<span class="help">{{ctx.Locale.Tr "settings.password_username_disabled"}}</span>
 						{{else}}
 							<span class="help">

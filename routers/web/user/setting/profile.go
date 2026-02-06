@@ -43,8 +43,8 @@ const (
 
 var commonPronouns = []string{"he/him", "she/her", "they/them", "it/its", "any pronouns"}
 
-// Profile render user's profile page
-func Profile(ctx *context.Context) {
+// profileContext sets common context for profile settings template.
+func profileContext(ctx *context.Context) {
 	ctx.Data["Title"] = ctx.Tr("settings.profile")
 	ctx.Data["PageIsSettingsProfile"] = true
 	ctx.Data["AllowedUserVisibilityModes"] = setting.Service.AllowedUserVisibilityModesSlice.ToVisibleTypeSlice()
@@ -55,20 +55,24 @@ func Profile(ctx *context.Context) {
 	ctx.Data["MaxAvatarWidth"] = setting.Avatar.MaxWidth
 	ctx.Data["MaxAvatarHeight"] = setting.Avatar.MaxHeight
 
+	canUserRename, err := user_service.CanUserRename(ctx, ctx.Doer)
+	if err != nil {
+		log.Error("CanUserRename for user[%d]: %v", ctx.Doer.ID, err)
+	}
+
+	ctx.Data["UserRenameDisabled"] = !canUserRename
+}
+
+// Profile render user's profile page
+func Profile(ctx *context.Context) {
+	profileContext(ctx)
+
 	ctx.HTML(http.StatusOK, tplSettingsProfile)
 }
 
 // ProfilePost response for change user's profile
 func ProfilePost(ctx *context.Context) {
-	ctx.Data["Title"] = ctx.Tr("settings")
-	ctx.Data["PageIsSettingsProfile"] = true
-	ctx.Data["AllowedUserVisibilityModes"] = setting.Service.AllowedUserVisibilityModesSlice.ToVisibleTypeSlice()
-	ctx.Data["DisableGravatar"] = setting.Config().Picture.DisableGravatar.Value(ctx)
-	ctx.Data["CooldownPeriod"] = setting.Service.UsernameCooldownPeriod
-	ctx.Data["CommonPronouns"] = commonPronouns
-	ctx.Data["MaxAvatarFileSize"] = setting.Avatar.MaxFileSize
-	ctx.Data["MaxAvatarWidth"] = setting.Avatar.MaxWidth
-	ctx.Data["MaxAvatarHeight"] = setting.Avatar.MaxHeight
+	profileContext(ctx)
 
 	if ctx.HasError() {
 		ctx.HTML(http.StatusOK, tplSettingsProfile)
