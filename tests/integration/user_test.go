@@ -1237,3 +1237,21 @@ func TestActivateEmailAddress(t *testing.T) {
 	unittest.AssertNotExistsBean(t, &auth_model.AuthorizationToken{ID: authToken.ID})
 	unittest.AssertExistsAndLoadBean(t, &user_model.EmailAddress{UID: user2.ID, IsActivated: true, Email: "newemail@example.org"})
 }
+
+func TestExportUserSSHKeys(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("No exported keys", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		resp := MakeRequest(t, NewRequest(t, "GET", "/user1.keys"), http.StatusOK)
+
+		assert.Equal(t, "# Note: This user hasn't uploaded any SSH keys.\n", resp.Body.String())
+	})
+
+	t.Run("Exported key", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		resp := MakeRequest(t, NewRequest(t, "GET", "/user2.keys"), http.StatusOK)
+
+		assert.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDWVj0fQ5N8wNc0LVNA41wDLYJ89ZIbejrPfg/avyj3u/ZohAKsQclxG4Ju0VirduBFF9EOiuxoiFBRr3xRpqzpsZtnMPkWVWb+akZwBFAx8p+jKdy4QXR/SZqbVobrGwip2UjSrri1CtBxpJikojRIZfCnDaMOyd9Jp6KkujvniFzUWdLmCPxUE9zhTaPu0JsEP7MW0m6yx7ZUhHyfss+NtqmFTaDO+QlMR7L2QkDliN2Jl3Xa3PhuWnKJfWhdAq1Cw4oraKUOmIgXLkuiuxVQ6mD3AiFupkmfqdHq6h+uHHmyQqv3gU+/sD8GbGAhf6ftqhTsXjnv1Aj4R8NoDf9BS6KRkzkeun5UisSzgtfQzjOMEiJtmrep2ZQrMGahrXa+q4VKr0aKJfm+KlLfwm/JztfsBcqQWNcTURiCFqz+fgZw0Ey/de0eyMzldYTdXXNRYCKjs9bvBK+6SSXRM7AhftfQ0ZuoW5+gtinPrnmoOaSCEJbAiEiTO/BzOHgowiM=\n", resp.Body.String())
+	})
+}

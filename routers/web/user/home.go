@@ -713,6 +713,11 @@ func ShowSSHKeys(ctx *context.Context) {
 		buf.WriteString(keys[i].OmitEmail())
 		buf.WriteString("\n")
 	}
+
+	if buf.Len() == 0 {
+		buf.WriteString("# Note: This user hasn't uploaded any SSH keys.\n")
+	}
+
 	ctx.PlainTextBytes(http.StatusOK, buf.Bytes())
 }
 
