@@ -281,3 +281,23 @@ func TestActionRunJob_HasIncompleteWith(t *testing.T) {
 		})
 	}
 }
+
+func TestRunHasOtherJobs(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	jobs, err := GetRunJobsByRunID(t.Context(), 791)
+	require.NoError(t, err)
+	assert.Len(t, jobs, 1)
+
+	has, err := RunHasOtherJobs(t.Context(), 791, nil)
+	require.NoError(t, err)
+	assert.True(t, has)
+
+	has, err = RunHasOtherJobs(t.Context(), 791, []*ActionRunJob{})
+	require.NoError(t, err)
+	assert.True(t, has)
+
+	has, err = RunHasOtherJobs(t.Context(), 791, jobs)
+	require.NoError(t, err)
+	assert.False(t, has)
+}

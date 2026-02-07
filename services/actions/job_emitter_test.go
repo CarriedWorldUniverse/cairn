@@ -788,3 +788,32 @@ func Test_tryHandleWorkflowCallOuterJob(t *testing.T) {
 		})
 	}
 }
+
+func Test_checkJobsOfRun_ExpandsMatrixWithCorrectOutputJobStatuses(t *testing.T) {
+	defer unittest.OverrideFixtures("services/actions/Test_checkJobsOfRun")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	jobs, err := actions_model.GetRunJobsByRunID(t.Context(), 900)
+	require.NoError(t, err)
+	require.Len(t, jobs, 2)
+
+	require.NoError(t, checkJobsOfRun(t.Context(), 900, 0))
+
+	jobs, err = actions_model.GetRunJobsByRunID(t.Context(), 900)
+	require.NoError(t, err)
+	assert.Len(t, jobs, 4)
+	for _, job := range jobs {
+		switch job.Name {
+		case "define-matrix":
+			assert.Equal(t, actions_model.StatusSuccess, job.Status)
+		case "produce-artifacts (blue)":
+			fallthrough
+		case "produce-artifacts (green)":
+			fallthrough
+		case "produce-artifacts (red)":
+			assert.Equal(t, actions_model.StatusWaiting, job.Status)
+		default:
+			assert.Fail(t, "unexpected job name")
+		}
+	}
+}
