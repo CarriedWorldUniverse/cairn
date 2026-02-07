@@ -21,5 +21,5 @@ func addForgejoMigration(x *xorm.Engine) error {
 		ID          string             `xorm:"pk"`
 		CreatedUnix timeutil.TimeStamp `xorm:"created"`
 	}
-	return x.Sync(new(ForgejoMigration))
+	return x.Sync(new(ForgejoMigration)) // nosemgrep:xorm-sync-missing-ignore-drop-indices
 }
