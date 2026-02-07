@@ -44,7 +44,7 @@ func jobEmitterQueueHandler(items ...*jobUpdate) []*jobUpdate {
 	ctx := graceful.GetManager().ShutdownContext()
 	var ret []*jobUpdate
 	for _, update := range items {
-		if err := checkJobsOfRun(ctx, update.RunID); err != nil {
+		if err := checkJobsOfRun(ctx, update.RunID, 0); err != nil {
 			logger.Error("checkJobsOfRun failed for RunID = %d: %v", update.RunID, err)
 			ret = append(ret, update)
 		}
@@ -52,7 +52,15 @@ func jobEmitterQueueHandler(items ...*jobUpdate) []*jobUpdate {
 	return ret
 }
 
-func checkJobsOfRun(ctx context.Context, runID int64) error {
+func checkJobsOfRun(ctx context.Context, runID int64, recursionCount int) error {
+	// Recursion happens if one job finishing causes another job to be evaluated so that it creates new jobs (eg.
+	// dynamic matrix), those new jobs need to have their 'needs' re-evaluated. Safety check here against infinite
+	// recursion -- no clear reason this should happen more than once in a check since after one recurse there aren't
+	// any actual new jobs completed, but better safe than sorry.
+	if recursionCount > 5 {
+		return fmt.Errorf("checkJobsOfRun for runID %d hit recursion limit %d", runID, recursionCount)
+	}
+
 	jobs, err := db.Find[actions_model.ActionRunJob](ctx, actions_model.FindRunJobOptions{RunID: runID})
 	if err != nil {
 		return err
@@ -107,6 +115,17 @@ func checkJobsOfRun(ctx context.Context, runID int64) error {
 		return err
 	}
 	CreateCommitStatus(ctx, jobs...)
+
+	// tryHandleIncompleteMatrix can create new jobs in this run which may initially be persisted in the DB as blocked
+	// because they have non-empty `needs`. In that case, we need to recursively run the job emitter so that new jobs
+	// are recognized as having their `needs` completed and be set as unblocked. Check if any new jobs were created and
+	// rerun the job emitter if so.
+	if hasNewJobs, err := actions_model.RunHasOtherJobs(ctx, runID, jobs); err != nil {
+		return fmt.Errorf("RunHasOtherJobs error: %w", err)
+	} else if hasNewJobs {
+		return checkJobsOfRun(ctx, runID, recursionCount+1)
+	}
+
 	return nil
 }
 
