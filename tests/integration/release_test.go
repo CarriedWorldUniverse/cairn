@@ -72,9 +72,9 @@ func checkLatestReleaseAndCount(t *testing.T, session *TestSession, repoURL, ver
 	resp := session.MakeRequest(t, req, http.StatusOK)
 
 	htmlDoc := NewHTMLParser(t, resp.Body)
-	labelText := htmlDoc.doc.Find("#release-list > li .detail .label").First().Text()
+	labelText := htmlDoc.doc.Find("#release-list > li > .release-title-wrap .label").First().Text()
 	assert.Equal(t, label, labelText)
-	titleText := htmlDoc.doc.Find("#release-list > li .detail h4 a").First().Text()
+	titleText := htmlDoc.doc.Find("#release-list > li > .release-title-wrap h4 a").First().Text()
 	assert.Equal(t, version, titleText)
 
 	// Check release count in the counter on the Release/Tag switch, as well as that the tab is highlighted
@@ -255,13 +255,13 @@ func TestViewReleaseListNoLogin(t *testing.T) {
 	rsp := MakeRequest(t, req, http.StatusOK)
 
 	htmlDoc := NewHTMLParser(t, rsp.Body)
-	releases := htmlDoc.Find("#release-list li.ui.grid")
+	releases := htmlDoc.Find("ul#release-list > li")
 	assert.Equal(t, 5, releases.Length())
 
 	links := make([]string, 0, 5)
 	commitsToMain := make([]string, 0, 5)
 	releases.Each(func(i int, s *goquery.Selection) {
-		link, exist := s.Find(".release-list-title a").Attr("href")
+		link, exist := s.Find(".release-title-wrap h4 a").Attr("href")
 		if !exist {
 			return
 		}
@@ -311,12 +311,12 @@ func TestViewReleaseListLogin(t *testing.T) {
 	rsp := session.MakeRequest(t, req, http.StatusOK)
 
 	htmlDoc := NewHTMLParser(t, rsp.Body)
-	releases := htmlDoc.Find("#release-list li.ui.grid")
+	releases := htmlDoc.Find("ul#release-list > li")
 	assert.Equal(t, 3, releases.Length())
 
 	links := make([]string, 0, 5)
 	releases.Each(func(i int, s *goquery.Selection) {
-		link, exist := s.Find(".release-list-title a").Attr("href")
+		link, exist := s.Find(".release-title-wrap h4 a").Attr("href")
 		if !exist {
 			return
 		}
@@ -342,12 +342,12 @@ func TestViewReleaseListKeyword(t *testing.T) {
 	rsp := session.MakeRequest(t, req, http.StatusOK)
 
 	htmlDoc := NewHTMLParser(t, rsp.Body)
-	releases := htmlDoc.Find("#release-list li.ui.grid")
+	releases := htmlDoc.Find("ul#release-list > li")
 	assert.Equal(t, 1, releases.Length())
 
 	links := make([]string, 0, 5)
 	releases.Each(func(i int, s *goquery.Selection) {
-		link, exist := s.Find(".release-list-title a").Attr("href")
+		link, exist := s.Find(".release-title-wrap h4 a").Attr("href")
 		if !exist {
 			return
 		}
@@ -370,7 +370,7 @@ func TestViewReleaseListKeywordNoPagination(t *testing.T) {
 	rsp := session.MakeRequest(t, req, http.StatusOK)
 
 	htmlDoc := NewHTMLParser(t, rsp.Body)
-	releases := htmlDoc.Find("#release-list li.ui.grid")
+	releases := htmlDoc.Find("ul#release-list > li")
 	assert.Equal(t, 1, releases.Length())
 
 	pagination := htmlDoc.Find("div.pagination")
