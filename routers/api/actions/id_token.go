@@ -131,10 +131,7 @@ func generateIDToken(ctx *IDTokenContext) {
 	claims["nbf"] = jwt.NewNumericDate(now)
 	claims["iss"] = strings.TrimSuffix(setting.AppURL, "/") + "/api/actions"
 
-	jwtToken := jwt.NewWithClaims(jwtSigningKey.SigningMethod(), claims)
-	jwtSigningKey.PreProcessToken(jwtToken)
-
-	signedToken, err := jwtToken.SignedString(jwtSigningKey.SignKey())
+	signedToken, err := jwtSigningKey.JWT(claims)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "Error signing token")
 	}

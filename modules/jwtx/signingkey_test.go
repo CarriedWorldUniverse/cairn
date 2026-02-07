@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,6 +111,44 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		assert.NotNil(t, parsedKey.(ed25519.PrivateKey))
 	})
+}
+
+type testClaims struct {
+	Foo string `json:"Foo"`
+	jwt.RegisteredClaims
+}
+
+func TestJWTHasKid(t *testing.T) {
+	keyPath := filepath.Join(t.TempDir(), "jwt-rsa-2048.priv")
+	algorithm := "RS256"
+	key, err := InitAsymmetricSigningKey(keyPath, algorithm)
+	require.NoError(t, err)
+
+	claimsIn := testClaims{
+		Foo:              "bar",
+		RegisteredClaims: jwt.RegisteredClaims{},
+	}
+	token, err := key.JWT(&claimsIn)
+	require.NoError(t, err)
+
+	var claimsOut testClaims
+	parsed, err := jwt.ParseWithClaims(token, &claimsOut, func(valToken *jwt.Token) (any, error) {
+		assert.NotNil(t, valToken.Method)
+		assert.Equal(t, key.SigningMethod().Alg(), valToken.Method.Alg())
+		kid, ok := valToken.Header["kid"]
+		assert.True(t, ok)
+		assert.NotNil(t, kid)
+
+		return key.VerifyKey(), nil
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, parsed)
+	assert.Equal(t, "bar", parsed.Claims.(*testClaims).Foo)
+	assert.Equal(t, "bar", claimsOut.Foo)
+	// dup to keyFunc above
+	kid, ok := parsed.Header["kid"]
+	assert.True(t, ok)
+	assert.NotNil(t, kid)
 }
 
 func TestCannotCreatePrivateKey(t *testing.T) {
