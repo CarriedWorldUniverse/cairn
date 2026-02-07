@@ -150,6 +150,7 @@ func (l *Label) LoadSelectedLabelsAfterClick(currentSelectedLabels []int64, curr
 	for i, curSel := range currentSelectedLabels {
 		if curSel == l.ID {
 			labelSelected = true
+			l.IsExcluded = false
 		} else if -curSel == l.ID {
 			labelSelected = true
 			l.IsExcluded = true
@@ -161,9 +162,10 @@ func (l *Label) LoadSelectedLabelsAfterClick(currentSelectedLabels []int64, curr
 		}
 	}
 
-	if !labelSelected {
+	if !labelSelected || l.IsExcluded {
 		labelQuerySlice = append(labelQuerySlice, l.ID)
 	}
+
 	l.IsSelected = labelSelected
 
 	// Sort and deduplicate the ids to avoid the crawlers asking for the

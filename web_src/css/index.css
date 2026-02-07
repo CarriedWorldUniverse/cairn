@@ -84,6 +84,7 @@
 @import "./review.css";
 @import "./actions.css";
 @import "./migrate.css";
+@import "./issues.css";
 
 @tailwind utilities;
 @import "./helpers.css";

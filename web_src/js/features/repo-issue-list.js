@@ -220,13 +220,13 @@ function initArchivedLabelFilter() {
   const archivedElToggle = () => {
     for (const label of archivedLabels) {
       const id = label.getAttribute('data-label-id');
-      toggleElem(label, archivedLabelEl.checked || selectedLabels.includes(id));
+      toggleElem(label.closest('.item'), archivedLabelEl.checked || selectedLabels.includes(id));
     }
   };
 
   archivedElToggle();
+
   archivedLabelEl.addEventListener('change', () => {
-    archivedElToggle();
     if (archivedLabelEl.checked) {
       url.searchParams.set('archived', 'true');
     } else {

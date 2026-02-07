@@ -1,6 +1,7 @@
 interface Window {
   config?: {
     appUrl: string;
+    appSubUrl: string
   }
 }
 
