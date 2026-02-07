@@ -96,7 +96,6 @@ var (
 			DefaultMergeMessageOfficialApproversOnly bool
 			DefaultUpdateStyle                       string
 			PopulateSquashCommentWithCommitMessages  bool
-			AddCoCommitterTrailers                   bool
 			RetargetChildrenOnMerge                  bool
 		} `ini:"repository.pull-request"`
 
@@ -227,7 +226,6 @@ var (
 			DefaultMergeMessageOfficialApproversOnly bool
 			DefaultUpdateStyle                       string
 			PopulateSquashCommentWithCommitMessages  bool
-			AddCoCommitterTrailers                   bool
 			RetargetChildrenOnMerge                  bool
 		}{
 			WorkInProgressPrefixes: []string{"WIP:", "[WIP]"},
@@ -243,7 +241,6 @@ var (
 			DefaultMergeMessageOfficialApproversOnly: true,
 			DefaultUpdateStyle:                       "merge",
 			PopulateSquashCommentWithCommitMessages:  false,
-			AddCoCommitterTrailers:                   true,
 			RetargetChildrenOnMerge:                  true,
 		},
 

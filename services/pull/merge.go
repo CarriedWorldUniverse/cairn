@@ -208,41 +208,6 @@ func GetDefaultMergeMessage(ctx context.Context, baseGitRepo *git.Repository, pr
 	return getMergeMessage(ctx, baseGitRepo, pr, mergeStyle, nil)
 }
 
-func AddCommitMessageTrailer(message, tailerKey, tailerValue string) string {
-	trailerLine := tailerKey + ": " + tailerValue
-	message = strings.ReplaceAll(message, "\r\n", "\n")
-	message = strings.ReplaceAll(message, "\r", "\n")
-	if strings.Contains(message, "\n"+trailerLine+"\n") || strings.HasSuffix(message, "\n"+trailerLine) {
-		return message
-	}
-
-	if !strings.HasSuffix(message, "\n") {
-		message += "\n"
-	}
-	lastNewLine := strings.LastIndexByte(message[:len(message)-1], '\n')
-	keyEnd := -1
-	if lastNewLine != -1 {
-		keyEnd = strings.IndexByte(message[lastNewLine:], ':')
-		if keyEnd != -1 {
-			keyEnd += lastNewLine
-		}
-	}
-	var lastLineKey string
-	if lastNewLine != -1 && keyEnd != -1 {
-		lastLineKey = message[lastNewLine+1 : keyEnd]
-	}
-
-	isLikelyTrailerLine := lastLineKey != "" && unicode.IsUpper(rune(lastLineKey[0])) && strings.Contains(message, "-")
-	for i := 0; isLikelyTrailerLine && i < len(lastLineKey); i++ {
-		r := rune(lastLineKey[i])
-		isLikelyTrailerLine = unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-'
-	}
-	if !strings.HasSuffix(message, "\n\n") && !isLikelyTrailerLine {
-		message += "\n"
-	}
-	return message + trailerLine
-}
-
 // Merge merges pull request to base repository.
 // Caller should check PR is ready to be merged (review and status checks)
 func Merge(ctx context.Context, pr *issues_model.PullRequest, doer *user_model.User, baseGitRepo *git.Repository, mergeStyle repo_model.MergeStyle, expectedHeadCommitID, message string, wasAutoMerged bool) error {

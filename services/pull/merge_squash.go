@@ -11,7 +11,6 @@ import (
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
 )
 
 // doMergeStyleSquash gets a commit author signature for squash commits
@@ -63,11 +62,6 @@ func doMergeStyleSquash(ctx *mergeContext, message string) error {
 		return err
 	}
 
-	if setting.Repository.PullRequest.AddCoCommitterTrailers && ctx.committer.String() != sig.String() {
-		// add trailer
-		message = AddCommitMessageTrailer(message, "Co-authored-by", sig.String())
-		message = AddCommitMessageTrailer(message, "Co-committed-by", sig.String()) // FIXME: this one should be removed, it is not really used or widely used
-	}
 	cmdCommit := git.NewCommand(ctx, "commit").
 		AddOptionFormat("--author='%s <%s>'", sig.Name, sig.Email).
 		AddOptionFormat("--message=%s", message)
