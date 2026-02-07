@@ -23,7 +23,7 @@ import (
 const (
 	issueIndexerAnalyzer      = "issueIndexer"
 	issueIndexerDocType       = "issueIndexerDocType"
-	issueIndexerLatestVersion = 6
+	issueIndexerLatestVersion = 7
 )
 
 const unicodeNormalizeName = "unicodeNormalize"
@@ -82,7 +82,7 @@ func generateIssueIndexMapping() (mapping.IndexMapping, error) {
 	docMapping.AddFieldMappingsAt("project_id", numberFieldMapping)
 	docMapping.AddFieldMappingsAt("project_board_id", numberFieldMapping)
 	docMapping.AddFieldMappingsAt("poster_id", numberFieldMapping)
-	docMapping.AddFieldMappingsAt("assignee_id", numberFieldMapping)
+	docMapping.AddFieldMappingsAt("assignee_ids", numberFieldMapping)
 	docMapping.AddFieldMappingsAt("mention_ids", numberFieldMapping)
 	docMapping.AddFieldMappingsAt("reviewed_ids", numberFieldMapping)
 	docMapping.AddFieldMappingsAt("review_requested_ids", numberFieldMapping)
@@ -245,7 +245,7 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		"project_id":           options.ProjectID,
 		"project_board_id":     options.ProjectColumnID,
 		"poster_id":            options.PosterID,
-		"assignee_id":          options.AssigneeID,
+		"assignee_ids":         options.AssigneeID,
 		"mention_ids":          options.MentionID,
 		"reviewed_ids":         options.ReviewedID,
 		"review_requested_ids": options.ReviewRequestedID,
