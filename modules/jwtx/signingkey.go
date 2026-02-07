@@ -34,6 +34,12 @@ func (err ErrInvalidAlgorithmType) Error() string {
 	return fmt.Sprintf("JWT signing algorithm is not supported: %s", err.Algorithm)
 }
 
+func jwtHelper(key SigningKey, claims jwt.Claims, opts ...jwt.TokenOption) (string, error) {
+	jwt := jwt.NewWithClaims(key.SigningMethod(), claims, opts...)
+	key.PreProcessToken(jwt)
+	return jwt.SignedString(key.SignKey())
+}
+
 // SigningKey represents a algorithm/key pair to sign JWTs
 type SigningKey interface {
 	IsSymmetric() bool
@@ -42,6 +48,8 @@ type SigningKey interface {
 	VerifyKey() any
 	ToJWK() (map[string]string, error)
 	PreProcessToken(*jwt.Token)
+	// convenience: jwt.NewWithClaims + PreProcessToken + SignedString
+	JWT(jwt.Claims, ...jwt.TokenOption) (string, error)
 }
 
 type hmacSigningKey struct {
@@ -73,6 +81,10 @@ func (key hmacSigningKey) ToJWK() (map[string]string, error) {
 }
 
 func (key hmacSigningKey) PreProcessToken(*jwt.Token) {}
+
+func (key hmacSigningKey) JWT(claims jwt.Claims, opts ...jwt.TokenOption) (string, error) {
+	return jwtHelper(key, claims, opts...)
+}
 
 type rsaSigningKey struct {
 	signingMethod jwt.SigningMethod
@@ -123,6 +135,10 @@ func (key rsaSigningKey) ToJWK() (map[string]string, error) {
 
 func (key rsaSigningKey) PreProcessToken(token *jwt.Token) {
 	token.Header["kid"] = key.id
+}
+
+func (key rsaSigningKey) JWT(claims jwt.Claims, opts ...jwt.TokenOption) (string, error) {
+	return jwtHelper(key, claims, opts...)
 }
 
 type eddsaSigningKey struct {
@@ -176,6 +192,10 @@ func (key eddsaSigningKey) PreProcessToken(token *jwt.Token) {
 	token.Header["kid"] = key.id
 }
 
+func (key eddsaSigningKey) JWT(claims jwt.Claims, opts ...jwt.TokenOption) (string, error) {
+	return jwtHelper(key, claims, opts...)
+}
+
 type ecdsaSigningKey struct {
 	signingMethod jwt.SigningMethod
 	key           *ecdsa.PrivateKey
@@ -226,6 +246,10 @@ func (key ecdsaSigningKey) ToJWK() (map[string]string, error) {
 
 func (key ecdsaSigningKey) PreProcessToken(token *jwt.Token) {
 	token.Header["kid"] = key.id
+}
+
+func (key ecdsaSigningKey) JWT(claims jwt.Claims, opts ...jwt.TokenOption) (string, error) {
+	return jwtHelper(key, claims, opts...)
 }
 
 var allowedAlgorithms = map[string]bool{
