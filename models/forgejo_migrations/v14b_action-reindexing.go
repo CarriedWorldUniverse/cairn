@@ -69,5 +69,5 @@ func reworkActionIndexes(x *xorm.Engine) error {
 		return err
 	}
 
-	return x.Sync(new(v14bAction))
+	return x.Sync(new(v14bAction)) // nosemgrep:xorm-sync-missing-ignore-drop-indices
 }

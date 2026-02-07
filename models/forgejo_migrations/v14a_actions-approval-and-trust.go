@@ -41,7 +41,7 @@ func v14ActionsApprovalAndTrustCreateTableActionUser(x *xorm.Engine) error {
 
 		LastAccess timeutil.TimeStamp `xorm:"INDEX"`
 	}
-	return x.Sync(new(ActionUser))
+	return x.Sync(new(ActionUser)) // nosemgrep:xorm-sync-missing-ignore-drop-indices
 }
 
 func v14ActionsApprovalAndTrustAddActionsRunFields(x *xorm.Engine) error {
