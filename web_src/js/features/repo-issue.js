@@ -8,7 +8,6 @@ import {toAbsoluteUrl} from '../utils.js';
 import {initDropzone} from './common-global.js';
 import {POST, GET} from '../modules/fetch.js';
 import {showErrorToast} from '../modules/toast.js';
-import {emojiHTML} from './emoji.js';
 
 const {appSubUrl} = window.config;
 
@@ -107,81 +106,6 @@ export function initRepoIssueDue() {
     updateDeadline($('#deadlineDate').val());
     return false;
   });
-}
-
-/**
- * @param {HTMLElement} item
- */
-function excludeLabel(item) {
-  const href = item.getAttribute('href');
-  const id = item.getAttribute('data-label-id');
-
-  const regStr = `labels=((?:-?[0-9]+%2c)*)(${id})((?:%2c-?[0-9]+)*)&`;
-  const newStr = 'labels=$1-$2$3&';
-
-  window.location.assign(href.replace(new RegExp(regStr), newStr));
-}
-
-export function initRepoIssueSidebarList() {
-  const repolink = $('#repolink').val();
-  const repoId = $('#repoId').val();
-  const crossRepoSearch = $('#crossRepoSearch').val() === 'true';
-  const tp = $('#type').val();
-  $('#new-dependency-drop-list')
-    .dropdown({
-      apiSettings: {
-        beforeSend(settings) {
-          if (!settings.urlData.query.trim()) {
-            settings.url = `${appSubUrl}/${repolink}/issues/search?q={query}&type=${tp}&sort=updated`;
-          } else if (crossRepoSearch) {
-            settings.url = `${appSubUrl}/issues/search?q={query}&priority_repo_id=${repoId}&type=${tp}&sort=relevance`;
-          } else {
-            settings.url = `${appSubUrl}/${repolink}/issues/search?q={query}&type=${tp}&sort=relevance`;
-          }
-          return settings;
-        },
-        onResponse(response) {
-          const filteredResponse = {success: true, results: []};
-          const currIssueId = $('#new-dependency-drop-list').data('issue-id');
-          // Parse the response from the api to work with our dropdown
-          for (const [_, issue] of Object.entries(response)) {
-            // Don't list current issue in the dependency list.
-            if (issue.id === currIssueId) {
-              continue;
-            }
-            filteredResponse.results.push({
-              name: `#${issue.number} ${issueTitleHTML(htmlEscape(issue.title))
-              }<div class="text small tw-break-anywhere">${htmlEscape(issue.repository.full_name)}</div>`,
-              value: issue.id,
-            });
-          }
-          return filteredResponse;
-        },
-        cache: false,
-      },
-
-      fullTextSearch: true,
-    });
-
-  $('.menu a.label-filter-item').each(function () {
-    $(this).on('click', function (e) {
-      if (e.altKey) {
-        e.preventDefault();
-        excludeLabel(this);
-      }
-    });
-  });
-
-  // FIXME: this is broken, see discussion https://codeberg.org/forgejo/forgejo/pulls/8199
-  $('.menu .ui.dropdown.label-filter').on('keydown', (e) => {
-    if (e.altKey && e.keyCode === 13) {
-      const selectedItem = document.querySelector('.menu .ui.dropdown.label-filter .menu .item.selected');
-      if (selectedItem) {
-        excludeLabel(selectedItem);
-      }
-    }
-  });
-  $('.ui.dropdown.label-filter, .ui.dropdown.select-label').dropdown('setting', {'hideDividers': 'empty'}).dropdown('refreshItems');
 }
 
 export function initRepoIssueCommentDelete() {
@@ -800,10 +724,4 @@ export function initArchivedLabelHandler() {
   for (const label of document.querySelectorAll('[data-is-archived]')) {
     toggleElem(label, label.classList.contains('checked'));
   }
-}
-
-// Render the issue's title. It converts emojis and code blocks syntax into their respective HTML equivalent.
-export function issueTitleHTML(title) {
-  return title.replaceAll(/:[-+\w]+:/g, (emoji) => emojiHTML(emoji.substring(1, emoji.length - 1)))
-    .replaceAll(/`[^`]+`/g, (code) => `<code class="inline-code-block">${code.substring(1, code.length - 1)}</code>`);
 }

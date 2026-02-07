@@ -1,6 +1,6 @@
 import {vi} from 'vitest';
 
-import {issueTitleHTML} from './repo-issue.js';
+import {issueTitleHTML, excludeLabel} from './repo-issue-sidebar-list.ts';
 
 vi.mock('./comp/ComboMarkdownEditor.js', () => ({}));
 // jQuery is missing
@@ -20,4 +20,27 @@ test('Convert issue title to html', () => {
   expect(issueTitleHTML('invalid code`')).toEqual('invalid code`');
 
   expect(issueTitleHTML('issue title :+1: `code`')).toEqual(`issue title ${expected_thumbs_up} ${expected_code_block}`);
+});
+
+const getLabelsParam = () => new URLSearchParams(window.location.search).get('labels');
+
+test('Toggles label exclusion from filters', () => {
+  expect(getLabelsParam()).toEqual(null);
+
+  const element = document.createElement('div');
+  element.dataset['label-id'] = '1';
+
+  // excludes it
+  excludeLabel(element);
+  expect(getLabelsParam()).toEqual('-1');
+
+  // since it was excluded above, now it should delete it
+  excludeLabel(element);
+  expect(getLabelsParam()).toEqual('');
+
+  // if we add it manually it should swap it to an exclusion
+  window.location.search = '?labels=1';
+  expect(getLabelsParam()).toEqual('1');
+  excludeLabel(element);
+  expect(getLabelsParam()).toEqual('-1');
 });

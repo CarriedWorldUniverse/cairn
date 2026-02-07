@@ -32,18 +32,27 @@ func TestLabel_LoadSelectedLabelsAfterClick(t *testing.T) {
 
 	// First test : with negative and scope
 	label.LoadSelectedLabelsAfterClick([]int64{1, -8}, []string{"", "scope"})
+	// Flips to positive to include after click
+	assert.Equal(t, "1,8", label.QueryString)
+	assert.True(t, label.IsSelected)
+	assert.True(t, label.IsExcluded)
+
+	// Second test : with positive and scope
+	label.LoadSelectedLabelsAfterClick([]int64{1, 8}, []string{"", "scope"})
 	assert.Equal(t, "1", label.QueryString)
 	assert.True(t, label.IsSelected)
 
-	// Second test : with duplicates
+	// Third test : with duplicates
 	label.LoadSelectedLabelsAfterClick([]int64{1, 7, 1, 7, 7}, []string{"", "scope", "", "scope", "scope"})
 	assert.Equal(t, "1,8", label.QueryString)
 	assert.False(t, label.IsSelected)
+	assert.False(t, label.IsExcluded)
 
-	// Third test : empty set
+	// Fourth test : empty set
 	label.LoadSelectedLabelsAfterClick([]int64{}, []string{})
 	assert.False(t, label.IsSelected)
 	assert.Equal(t, "8", label.QueryString)
+	assert.False(t, label.IsExcluded)
 }
 
 func TestLabel_ExclusiveScope(t *testing.T) {

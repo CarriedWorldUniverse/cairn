@@ -21,7 +21,6 @@
 				</i>
 			</label>
 		</div>
-		<span class="info">{{ctx.Locale.Tr "repo.issues.filter_label_exclude"}}</span>
 		<div class="divider"></div>
 		<a rel="nofollow" class="{{if .AllLabels}}active selected {{end}}item" href="?q={{$.Keyword}}&type={{$.ViewType}}&sort={{$.SortType}}&state={{$.State}}&labels=&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{ctx.Locale.Tr "repo.issues.filter_label_no_select"}}</a>
 		<a rel="nofollow" class="{{if .NoLabel}}active selected {{end}}item" href="?q={{$.Keyword}}&type={{$.ViewType}}&sort={{$.SortType}}&state={{$.State}}&labels=0&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}">{{ctx.Locale.Tr "repo.issues.filter_label_select_no_label"}}</a>
@@ -32,19 +31,22 @@
 				<div class="divider"></div>
 			{{end}}
 			{{$previousExclusiveScope = $exclusiveScope}}
-			<a rel="nofollow" class="item label-filter-item tw-flex tw-items-center" {{if .IsArchived}}data-is-archived{{end}} href="?q={{$.Keyword}}&type={{$.ViewType}}&sort={{$.SortType}}&labels={{.QueryString}}&state={{$.State}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}" data-label-id="{{.ID}}">
-				{{if .IsExcluded}}
-					{{svg "octicon-circle-slash"}}
-				{{else if .IsSelected}}
+			<div class="item tw-flex tw-items-center" {{if and .IsSelected (not .IsExcluded)}}data-selected{{end}}>
+				{{if and .IsSelected  (not .IsExcluded)}}
 					{{if $exclusiveScope}}
 						{{svg "octicon-dot-fill"}}
 					{{else}}
 						{{svg "octicon-check"}}
 					{{end}}
 				{{end}}
-				{{RenderLabel ctx .}}
-				<p class="tw-ml-auto">{{template "repo/issue/labels/label_archived" .}}</p>
-			</a>
+				<a rel="nofollow" class="label-filter-item tw-flex tw-items-center tw-flex-1" {{if .IsArchived}}data-is-archived{{end}} href="?q={{$.Keyword}}&type={{$.ViewType}}&sort={{$.SortType}}&labels={{.QueryString}}&state={{$.State}}&milestone={{$.MilestoneID}}&project={{$.ProjectID}}&assignee={{$.AssigneeID}}&poster={{$.PosterID}}{{if $.ShowArchivedLabels}}&archived=true{{end}}" data-label-id="{{.ID}}">
+					{{RenderLabel ctx .}}
+				</a>
+				{{template "repo/issue/labels/label_archived" .}}
+				<button type="button" data-tooltip-content="{{if .IsExcluded}}Clear exclusion{{else}}Exclude label{{end}}" class="label-exclude-item-btn {{if .IsExcluded}}active{{end}}">
+					{{svg "octicon-no-entry"}}
+				</button>
+			</div>
 		{{end}}
 	</div>
 </div>
