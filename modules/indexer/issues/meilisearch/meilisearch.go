@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	issueIndexerLatestVersion = 3
+	issueIndexerLatestVersion = 4
 
 	// TODO: make this configurable if necessary
 	maxTotalHits = 10000
@@ -67,7 +67,7 @@ func NewIndexer(url, apiKey, indexerName string) *Indexer {
 			"project_id",
 			"project_board_id",
 			"poster_id",
-			"assignee_id",
+			"assignee_ids",
 			"mention_ids",
 			"reviewed_ids",
 			"review_requested_ids",
@@ -183,7 +183,7 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 	}
 
 	if options.AssigneeID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("assignee_id", options.AssigneeID.Value()))
+		query.And(inner_meilisearch.NewFilterEq("assignee_ids", options.AssigneeID.Value()))
 	}
 
 	if options.MentionID.Has() {

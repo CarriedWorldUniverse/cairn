@@ -461,10 +461,10 @@ var cases = []*testIndexerCase{
 		Expected: func(t *testing.T, data map[int64]*internal.IndexerData, result *internal.SearchResult) {
 			assert.Len(t, result.Hits, 5)
 			for _, v := range result.Hits {
-				assert.Equal(t, int64(1), data[v.ID].AssigneeID)
+				assert.Contains(t, data[v.ID].AssigneeIDs, int64(1))
 			}
 			assert.Equal(t, countIndexerData(data, func(v *internal.IndexerData) bool {
-				return v.AssigneeID == 1
+				return slices.Contains(v.AssigneeIDs, 1)
 			}), result.Total)
 		},
 	},
@@ -479,10 +479,10 @@ var cases = []*testIndexerCase{
 		Expected: func(t *testing.T, data map[int64]*internal.IndexerData, result *internal.SearchResult) {
 			assert.Len(t, result.Hits, 5)
 			for _, v := range result.Hits {
-				assert.Equal(t, int64(0), data[v.ID].AssigneeID)
+				assert.Equal(t, []int64{0}, data[v.ID].AssigneeIDs)
 			}
 			assert.Equal(t, countIndexerData(data, func(v *internal.IndexerData) bool {
-				return v.AssigneeID == 0
+				return slices.Contains(v.AssigneeIDs, 0)
 			}), result.Total)
 		},
 	},
@@ -840,6 +840,14 @@ func generateDefaultIndexerData() []*internal.IndexerData {
 				subscriberIDs[i] = int64(i) + 1 // SubscriberID should not be 0
 			}
 
+			assigneeIDs := make([]int64, 0, 2)
+			{
+				if issueIndex%7 == 0 { // If divisible by 7 we insert 1 too to test multiple assignees
+					assigneeIDs = append(assigneeIDs, 1)
+				}
+				assigneeIDs = append(assigneeIDs, issueIndex%10)
+			}
+
 			data = append(data, &internal.IndexerData{
 				ID:                 id,
 				Index:              issueIndex,
@@ -856,7 +864,7 @@ func generateDefaultIndexerData() []*internal.IndexerData {
 				ProjectID:          issueIndex % 5,
 				ProjectColumnID:    issueIndex % 6,
 				PosterID:           id%10 + 1, // PosterID should not be 0
-				AssigneeID:         issueIndex % 10,
+				AssigneeIDs:        assigneeIDs,
 				MentionIDs:         mentionIDs,
 				ReviewedIDs:        reviewedIDs,
 				ReviewRequestedIDs: reviewRequestedIDs,
