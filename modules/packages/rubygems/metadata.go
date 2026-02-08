@@ -128,7 +128,11 @@ func (r requirement) AsVersionRequirement() []VersionRequirement {
 			continue
 		}
 		version, ok := versionInt.(string)
-		if !ok || version == "0" {
+		if !ok {
+			continue
+		}
+
+		if restriction == ">=" && version == "0" {
 			continue
 		}
 
