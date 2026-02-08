@@ -87,3 +87,30 @@ yjAbmt9LsOMp8xMamFkSQ38fP5EFjdz8LA4do2C69VvqWXAJgrPbKZb58/xZXrKoW6ttW13Bhvzi
 	assert.Equal(t, "~>", rp.Metadata.DevelopmentDependencies[0].Version[0].Restriction)
 	assert.Equal(t, "5.2", rp.Metadata.DevelopmentDependencies[0].Version[0].Version)
 }
+
+func TestPessimisticVersioning(t *testing.T) {
+	content, _ := base64.StdEncoding.DecodeString(`H4sIABmkhGkCA+1WTY/TMBC9+1eYvfSU1G1ZkCxRgYTYCwcEEgcQshxnmnrXX9gO2lz2t2MnTdOy
+1YIKYoVEEimZ8WT8/GY8nqIo8BPfVt3cVtcgIr0CTekHB0JupOBRWoMM10CxgxCkliFKUXwDH9KI
+NE0RIUS0k+kJVx+HIYTx3oiUi5Igp3jcWK8pzv8g3sat9YGiAm+yYD18baUHiippaukpTm8kwEcm
+tlwmN5+/oJrHhGxJls8KsizIJSaE9k9Jxgt/QjU4MDUYIaH3fx/k69GiSziH5UrtlBQyjmtNAztE
+Gkw8tdL303AyPjJP02ZNke6L9YuLXsjiQ3QN1560GZklZexcwkZ9a6LUkBTOgwcFPCT1hqsAE9Hs
+CMCjAP5FruH2P9d/nesT+/mP8X63/sd4/w3ANQThpcuVkiLQXKq+hr0MbYxdKax1JfcIbkG0kVcq
+laBcueA2gslO9qLnzNdWsI0cbaavrdXgeJPWv43RBTqfC1tDBb4prW/mqYw2cG33b9cqFeaLxeJy
+hVKw00RD4bt697ZYlaSwRnVIQ+SpfvLMQtU2LAEQN+BZ6+UZ02A8YjzbQbCtF8DyH2f7SEeDaUDZ
+5mwPKQRtzo7+6DvTi7MhMmlC5EoxnfZZDh3qo2v7RBmiustF5njc9vFRshqVNctZyB44WI8z+8e8
+PqomP8/pKaNX5WJ2DKIBHR4BCNnD2G3uzNg9OKtyVS6foyCb3I2wG+goCofdy2T6FIVWa+47il/h
+3LbgFDv8Zogfvltjctjj4KnHQdn4YF9+B8hhV5g0CQAA`)
+	rp, err := parseMetadataFile(bytes.NewReader(content))
+	require.NoError(t, err)
+	assert.NotNil(t, rp)
+
+	assert.Len(t, rp.Metadata.RuntimeDependencies, 3)
+	assert.Equal(t, "implicit-version", rp.Metadata.RuntimeDependencies[0].Name)
+	assert.Empty(t, rp.Metadata.RuntimeDependencies[0].Version)
+	assert.Equal(t, "explicit-version", rp.Metadata.RuntimeDependencies[1].Name)
+	assert.Empty(t, rp.Metadata.RuntimeDependencies[1].Version)
+	assert.Equal(t, "explicit-pessimistic-version", rp.Metadata.RuntimeDependencies[2].Name)
+	assert.Len(t, rp.Metadata.RuntimeDependencies[2].Version, 1)
+	assert.Equal(t, "~>", rp.Metadata.RuntimeDependencies[2].Version[0].Restriction)
+	assert.Equal(t, "0", rp.Metadata.RuntimeDependencies[2].Version[0].Version)
+}
