@@ -340,6 +340,7 @@ test('Emoji suggestions', async ({page}) => {
 
 test.describe('Comment history', () => {
   let issueURL = '';
+
   test('Deleted items in comment history menu', async ({page}) => {
     const response = await page.goto('/user2/repo1/issues/new');
     expect(response?.status()).toBe(200);
