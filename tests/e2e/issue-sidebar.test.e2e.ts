@@ -255,6 +255,7 @@ test('New Issue: Milestone', async ({page}) => {
 
 test.describe('Dependency dropdown', () => {
   test.use({user: 'user11'});
+
   test('Issue: Dependencies', async ({page}) => {
     const response = await page.goto('/user11/dependency-test/issues/3');
     expect(response?.status()).toBe(200);
