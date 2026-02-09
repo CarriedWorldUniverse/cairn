@@ -32,7 +32,7 @@ func CreateOrUpdateSecret(ctx context.Context, ownerID, repoID int64, name, data
 		return s, true, nil
 	}
 
-	s.SetSecret(data)
+	s.SetData(data)
 	if _, err := db.GetEngine(ctx).Cols("data").ID(s.ID).Update(s); err != nil {
 		return nil, false, err
 	}

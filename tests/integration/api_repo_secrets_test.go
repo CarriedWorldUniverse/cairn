@@ -16,7 +16,6 @@ import (
 	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/keying"
 	api "forgejo.org/modules/structs"
 	repo_service "forgejo.org/services/repository"
 	"forgejo.org/tests"
@@ -103,10 +102,22 @@ func TestAPIRepoSecrets(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/repos/%s/actions/secrets/%s", repo.FullName(), c.Name), api.CreateOrUpdateSecretOption{
-				Data: "data",
-			}).AddTokenAuth(token)
+			url := fmt.Sprintf("/api/v1/repos/%s/actions/secrets/%s", repo.FullName(), c.Name)
+			req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
+				Data: "   \r\ndàtä\t   \r\n  ",
+			})
+			req.AddTokenAuth(token)
 			MakeRequest(t, req, c.ExpectedStatus)
+
+			if c.ExpectedStatus < 300 {
+				secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{RepoID: repo.ID, Name: strings.ToUpper(c.Name)})
+
+				assert.Equal(t, strings.ToUpper(c.Name), secret.Name)
+
+				value, err := secret.GetDecryptedData()
+				require.NoError(t, err)
+				assert.Equal(t, "   \ndàtä\t   \n  ", value)
+			}
 		}
 	})
 
@@ -114,20 +125,18 @@ func TestAPIRepoSecrets(t *testing.T) {
 		name := "update_repo_secret_and_test_data"
 		url := fmt.Sprintf("/api/v1/repos/%s/actions/secrets/%s", repo.FullName(), name)
 
-		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
-			Data: "initial",
-		}).AddTokenAuth(token)
+		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{Data: "initial"})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
 
-		req = NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
-			Data: "changed data",
-		}).AddTokenAuth(token)
+		req = NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{Data: "  \r\nchànged data\t\r\n "})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusNoContent)
 
 		secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{Name: strings.ToUpper(name)})
-		data, err := keying.ActionSecret.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
+		data, err := secret.GetDecryptedData()
 		require.NoError(t, err)
-		assert.Equal(t, "changed data", string(data))
+		assert.Equal(t, "  \nchànged data\t\n ", data)
 	})
 
 	t.Run("Delete", func(t *testing.T) {

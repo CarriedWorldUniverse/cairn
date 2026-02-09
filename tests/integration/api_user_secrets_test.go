@@ -13,7 +13,6 @@ import (
 	secret_model "forgejo.org/models/secret"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/keying"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/tests"
 
@@ -72,10 +71,17 @@ func TestAPIUserSecrets(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/user/actions/secrets/%s", c.Name), api.CreateOrUpdateSecretOption{
-				Data: "data",
-			}).AddTokenAuth(token)
+			url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", c.Name)
+			req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{Data: "  \r\ndàtä\t  "})
+			req.AddTokenAuth(token)
 			MakeRequest(t, req, c.ExpectedStatus)
+
+			if c.ExpectedStatus < 300 {
+				secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{OwnerID: user.ID, Name: strings.ToUpper(c.Name)})
+				data, err := secret.GetDecryptedData()
+				require.NoError(t, err)
+				assert.Equal(t, "  \ndàtä\t  ", data)
+			}
 		}
 	})
 
@@ -83,20 +89,18 @@ func TestAPIUserSecrets(t *testing.T) {
 		name := "update_user_secret_and_test_data"
 		url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", name)
 
-		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
-			Data: "initial",
-		}).AddTokenAuth(token)
+		req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{Data: "initial"})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
 
-		req = NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
-			Data: "changed data",
-		}).AddTokenAuth(token)
+		req = NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{Data: "  \r\nchängéd\t  "})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusNoContent)
 
 		secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{Name: strings.ToUpper(name)})
-		data, err := keying.ActionSecret.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
+		data, err := secret.GetDecryptedData()
 		require.NoError(t, err)
-		assert.Equal(t, "changed data", string(data))
+		assert.Equal(t, "  \nchängéd\t  ", data)
 	})
 
 	t.Run("Delete", func(t *testing.T) {

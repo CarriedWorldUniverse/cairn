@@ -62,7 +62,7 @@
 <div class="ui small modal" id="edit-variable-modal">
 	<div class="header"></div>
 	<form class="ui form form-fetch-action" method="post">
-		<div class="content">
+		<fieldset class="content">
 			<div class="field">
 				{{ctx.Locale.Tr "actions.variables.description"}}
 			</div>
@@ -73,18 +73,18 @@
 					id="dialog-variable-name"
 					value="{{.name}}"
 					pattern="^(?!CI$)(?!FORGEJO_|GITEA_|GITHUB_)[a-zA-Z_][a-zA-Z0-9_]*$"
-					placeholder="{{ctx.Locale.Tr "secrets.creation.name_placeholder"}}"
 				>
+				<p id="name-description" class="help">{{ctx.Locale.Tr "actions.variables.mutation.name_description"}}</p>
 			</div>
 			<div class="field">
 				<label for="dialog-variable-data">{{ctx.Locale.Tr "value"}}</label>
 				<textarea required
 					name="data"
 					id="dialog-variable-data"
-					placeholder="{{ctx.Locale.Tr "secrets.creation.value_placeholder"}}"
 				></textarea>
+				<p id="data-description" class="help">{{ctx.Locale.Tr "actions.variables.mutation.value_description"}}</p>
 			</div>
-		</div>
+		</fieldset>
 		{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
 	</form>
 </div>

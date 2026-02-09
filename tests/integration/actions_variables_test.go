@@ -53,7 +53,7 @@ func TestActionsVariablesModification(t *testing.T) {
 
 		req := NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d/edit", id), map[string]string{
 			"name": "glados_quote",
-			"data": "I'm fine. Two plus two is...ten, in base four, I'm fine!",
+			"data": "   \r\n\tI'm fine. Two plus two is...ten, in base four, I'm fine!   \r\n",
 		})
 		if fail {
 			resp := sess.MakeRequest(t, req, http.StatusBadRequest)
@@ -65,6 +65,10 @@ func TestActionsVariablesModification(t *testing.T) {
 			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DThe%2Bvariable%2Bhas%2Bbeen%2Bedited.", flashCookie.Value)
+
+			updatedVariable := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionVariable{ID: id})
+			assert.Equal(t, "GLADOS_QUOTE", updatedVariable.Name)
+			assert.Equal(t, "   \n\tI'm fine. Two plus two is...ten, in base four, I'm fine!   \n", updatedVariable.Data)
 		}
 
 		req = NewRequest(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id))
