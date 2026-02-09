@@ -90,3 +90,36 @@ func TestInsertEncryptedSecret(t *testing.T) {
 		assert.Equal(t, "some repository secret", secrets["REPO_SECRET"])
 	})
 }
+
+func TestSecretDataIsNormalized(t *testing.T) {
+	secret := Secret{ID: 494, OwnerID: 829, RepoID: 0, Name: "A_SECRET"}
+
+	secret.SetData("  \r\ndatà\t  ")
+
+	decryptedData, err := secret.GetDecryptedData()
+	require.NoError(t, err)
+	assert.Equal(t, "  \ndatà\t  ", decryptedData)
+}
+
+func TestSecretGetDecryptedData(t *testing.T) {
+	t.Run("Recovers original data", func(t *testing.T) {
+		secret := Secret{ID: 494, OwnerID: 829, RepoID: 0, Name: "A_SECRET"}
+		secret.SetData("data")
+
+		decryptedData, err := secret.GetDecryptedData()
+		require.NoError(t, err)
+		assert.Equal(t, "data", decryptedData)
+	})
+
+	t.Run("Returns error if data cannot be decrypted", func(t *testing.T) {
+		secret := Secret{ID: 494, OwnerID: 829, RepoID: 0, Name: "A_SECRET"}
+		secret.SetData("data")
+
+		// Changing the ID without updating the secret makes the secret irrecoverable.
+		secret.ID++
+
+		decryptedData, err := secret.GetDecryptedData()
+		assert.Empty(t, decryptedData)
+		assert.ErrorContains(t, err, "unable to decrypt secret[id=495,name=\"A_SECRET\"]")
+	})
+}

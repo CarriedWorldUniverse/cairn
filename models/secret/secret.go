@@ -75,7 +75,7 @@ func InsertEncryptedSecret(ctx context.Context, ownerID, repoID int64, name, dat
 			return err
 		}
 
-		secret.SetSecret(data)
+		secret.SetData(data)
 		_, err := db.GetEngine(ctx).ID(secret.ID).Cols("data").Update(secret)
 		return err
 	})
@@ -114,8 +114,19 @@ func (opts FindSecretsOptions) ToConds() builder.Cond {
 	return cond
 }
 
-func (s *Secret) SetSecret(data string) {
-	s.Data = keying.ActionSecret.Encrypt([]byte(data), keying.ColumnAndID("data", s.ID))
+func (s *Secret) SetData(data string) {
+	normalizedData := util.ReserveLineBreakForTextarea(data)
+	s.Data = keying.ActionSecret.Encrypt([]byte(normalizedData), keying.ColumnAndID("data", s.ID))
+}
+
+func (s *Secret) GetDecryptedData() (string, error) {
+	key := keying.ActionSecret
+	v, err := key.Decrypt(s.Data, keying.ColumnAndID("data", s.ID))
+	if err != nil {
+		return "", fmt.Errorf("unable to decrypt secret[id=%d,name=%q]: %w", s.ID, s.Name, err)
+	}
+
+	return string(v), nil
 }
 
 func FetchActionSecrets(ctx context.Context, ownerID, repoID int64) (map[string]string, error) {
@@ -132,14 +143,13 @@ func FetchActionSecrets(ctx context.Context, ownerID, repoID int64) (map[string]
 		return nil, err
 	}
 
-	key := keying.ActionSecret
 	for _, secret := range append(ownerSecrets, repoSecrets...) {
-		v, err := key.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
+		decryptedData, err := secret.GetDecryptedData()
 		if err != nil {
-			log.Error("unable to decrypt secret[id=%d,name=%q]: %v", secret.ID, secret.Name, err)
+			log.Error("%v", err)
 			return nil, err
 		}
-		secrets[secret.Name] = string(v)
+		secrets[secret.Name] = decryptedData
 	}
 
 	return secrets, nil

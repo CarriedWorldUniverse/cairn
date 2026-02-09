@@ -3,21 +3,24 @@
 
 package structs
 
-// CreateVariableOption the option when creating variable
+// CreateVariableOption defines the properties of the variable to create.
 // swagger:model
 type CreateVariableOption struct {
-	// Value of the variable to create
+	// Value of the variable to create. Special characters will be retained. Line endings will be normalized to LF to
+	// match the behaviour of browsers. Encode the data with Base64 if line endings should be retained.
 	//
 	// required: true
 	Value string `json:"value" binding:"Required"`
 }
 
-// UpdateVariableOption the option when updating variable
+// UpdateVariableOption defines the properties of the variable to update.
 // swagger:model
 type UpdateVariableOption struct {
-	// New name for the variable. If the field is empty, the variable name won't be updated.
+	// New name for the variable. If the field is empty, the variable name won't be updated. Forgejo will convert it to
+	// uppercase.
 	Name string `json:"name"`
-	// Value of the variable to update
+	// Value of the variable to update. Special characters will be retained. Line endings will be normalized to LF to
+	// match the behaviour of browsers. Encode the data with Base64 if line endings should be retained.
 	//
 	// required: true
 	Value string `json:"value" binding:"Required"`

@@ -24044,14 +24044,14 @@
       "x-go-package": "forgejo.org/modules/structs"
     },
     "CreateOrUpdateSecretOption": {
-      "description": "CreateOrUpdateSecretOption options when creating or updating secret",
       "type": "object",
+      "title": "CreateOrUpdateSecretOption defines the properties of the secret to create or update.",
       "required": [
         "data"
       ],
       "properties": {
         "data": {
-          "description": "Data of the secret to update",
+          "description": "Data of the secret. Special characters will be retained. Line endings will be normalized to LF to match the\nbehaviour of browsers. Encode the data with Base64 if line endings should be retained.",
           "type": "string",
           "x-go-name": "Data"
         }
@@ -24605,14 +24605,14 @@
       "x-go-package": "forgejo.org/modules/structs"
     },
     "CreateVariableOption": {
-      "description": "CreateVariableOption the option when creating variable",
       "type": "object",
+      "title": "CreateVariableOption defines the properties of the variable to create.",
       "required": [
         "value"
       ],
       "properties": {
         "value": {
-          "description": "Value of the variable to create",
+          "description": "Value of the variable to create. Special characters will be retained. Line endings will be normalized to LF to\nmatch the behaviour of browsers. Encode the data with Base64 if line endings should be retained.",
           "type": "string",
           "x-go-name": "Value"
         }
@@ -29695,19 +29695,19 @@
       "x-go-package": "forgejo.org/modules/structs"
     },
     "UpdateVariableOption": {
-      "description": "UpdateVariableOption the option when updating variable",
       "type": "object",
+      "title": "UpdateVariableOption defines the properties of the variable to update.",
       "required": [
         "value"
       ],
       "properties": {
         "name": {
-          "description": "New name for the variable. If the field is empty, the variable name won't be updated.",
+          "description": "New name for the variable. If the field is empty, the variable name won't be updated. Forgejo will convert it to\nuppercase.",
           "type": "string",
           "x-go-name": "Name"
         },
         "value": {
-          "description": "Value of the variable to update",
+          "description": "Value of the variable to update. Special characters will be retained. Line endings will be normalized to LF to\nmatch the behaviour of browsers. Encode the data with Base64 if line endings should be retained.",
           "type": "string",
           "x-go-name": "Value"
         }

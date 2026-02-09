@@ -58,7 +58,7 @@ func MigrateActionSecretsToKeying(x *xorm.Engine) error {
 				return nil
 			}
 
-			bean.SetSecret(secretBytes)
+			bean.SetData(secretBytes)
 			_, err = sess.Cols("data").ID(bean.ID).Update(bean)
 			return err
 		})

@@ -78,19 +78,22 @@ func TestAPIRepoVariablesTestCreateRepositoryVariable(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), c.Name), api.CreateVariableOption{
-			Value: "value" + c.Name,
-		}).AddTokenAuth(token)
+		url := fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), c.Name)
+
+		req := NewRequestWithJSON(t, "POST", url, api.CreateVariableOption{Value: "  \tvalüé\r\n" + c.Name + "  \r\n"})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, c.ExpectedStatus)
 
 		if c.ExpectedStatus < 300 {
-			req = NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), c.Name)).
-				AddTokenAuth(token)
+			req = NewRequest(t, "GET", url)
+			req.AddTokenAuth(token)
 			res := MakeRequest(t, req, http.StatusOK)
+
 			variable := api.ActionVariable{}
 			DecodeJSON(t, res, &variable)
+
 			assert.Equal(t, variable.Name, c.Name)
-			assert.Equal(t, variable.Data, "value"+c.Name)
+			assert.Equal(t, variable.Data, "  \tvalüé\n"+c.Name+"  \n")
 		}
 	}
 }
@@ -105,62 +108,92 @@ func TestAPIRepoVariablesUpdateRepositoryVariable(t *testing.T) {
 
 	variableName := "test_update_var"
 	url := fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), variableName)
-	req := NewRequestWithJSON(t, "POST", url, api.CreateVariableOption{
-		Value: "initial_val",
-	}).AddTokenAuth(token)
+	req := NewRequestWithJSON(t, "POST", url, api.CreateVariableOption{Value: "initial_val"})
+	req.AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusNoContent)
 
-	cases := []struct {
-		Name           string
-		UpdateName     string
-		ExpectedStatus int
-	}{
-		{
-			Name:           "not_found_var",
-			ExpectedStatus: http.StatusNotFound,
-		},
-		{
-			Name:           variableName,
-			UpdateName:     "1invalid",
-			ExpectedStatus: http.StatusBadRequest,
-		},
-		{
-			Name:           variableName,
-			UpdateName:     "invalid@name",
-			ExpectedStatus: http.StatusBadRequest,
-		},
-		{
-			Name:           variableName,
-			UpdateName:     "ci",
-			ExpectedStatus: http.StatusBadRequest,
-		},
-		{
-			Name:           variableName,
-			UpdateName:     "forgejo_foo",
-			ExpectedStatus: http.StatusBadRequest,
-		},
-		{
-			Name:           variableName,
-			UpdateName:     "updated_var_name",
-			ExpectedStatus: http.StatusNoContent,
-		},
-		{
-			Name:           variableName,
-			ExpectedStatus: http.StatusNotFound,
-		},
-		{
-			Name:           "updated_var_name",
-			ExpectedStatus: http.StatusNoContent,
-		},
-	}
+	t.Run("Accepts only valid variable names", func(t *testing.T) {
+		cases := []struct {
+			Name           string
+			UpdateName     string
+			ExpectedStatus int
+		}{
+			{
+				Name:           "not_found_var",
+				ExpectedStatus: http.StatusNotFound,
+			},
+			{
+				Name:           variableName,
+				UpdateName:     "1invalid",
+				ExpectedStatus: http.StatusBadRequest,
+			},
+			{
+				Name:           variableName,
+				UpdateName:     "invalid@name",
+				ExpectedStatus: http.StatusBadRequest,
+			},
+			{
+				Name:           variableName,
+				UpdateName:     "ci",
+				ExpectedStatus: http.StatusBadRequest,
+			},
+			{
+				Name:           variableName,
+				UpdateName:     "forgejo_foo",
+				ExpectedStatus: http.StatusBadRequest,
+			},
+			{
+				Name:           variableName,
+				UpdateName:     "updated_var_name",
+				ExpectedStatus: http.StatusNoContent,
+			},
+			{
+				Name:           variableName,
+				ExpectedStatus: http.StatusNotFound,
+			},
+			{
+				Name:           "updated_var_name",
+				ExpectedStatus: http.StatusNoContent,
+			},
+		}
 
-	for _, c := range cases {
-		req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), c.Name), api.UpdateVariableOption{
-			Name:  c.UpdateName,
-			Value: "updated_val",
-		}).AddTokenAuth(token)
-		MakeRequest(t, req, c.ExpectedStatus)
-	}
+		for _, c := range cases {
+			url := fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), c.Name)
+			requestData := api.UpdateVariableOption{
+				Name:  c.UpdateName,
+				Value: "updated_val",
+			}
+			req := NewRequestWithJSON(t, "PUT", url, requestData)
+			req.AddTokenAuth(token)
+			MakeRequest(t, req, c.ExpectedStatus)
+		}
+	})
+
+	t.Run("Retains special characters", func(t *testing.T) {
+		variableName := "special_characters"
+		url := fmt.Sprintf("/api/v1/repos/%s/actions/variables/%s", repo.FullName(), variableName)
+
+		req := NewRequestWithJSON(t, "POST", url, api.CreateVariableOption{Value: "initial_value"})
+		req.AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNoContent)
+
+		requestData := api.UpdateVariableOption{
+			Value: "\r\n    \tüpdåtéd\r\n   \r\n",
+		}
+		req = NewRequestWithJSON(t, "PUT", url, requestData)
+		req.AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNoContent)
+
+		req = NewRequest(t, "GET", url)
+		req.AddTokenAuth(token)
+		res := MakeRequest(t, req, http.StatusOK)
+
+		variable := api.ActionVariable{}
+		DecodeJSON(t, res, &variable)
+
+		assert.Equal(t, "SPECIAL_CHARACTERS", variable.Name)
+		assert.Equal(t, "\n    \tüpdåtéd\n   \n", variable.Data)
+	})
 }
 
 func TestAPIRepoVariablesDeleteRepositoryVariable(t *testing.T) {

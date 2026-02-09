@@ -401,6 +401,10 @@
 	"actions.workflow.incomplete_with_missing_matrix_dimension": "Unable to evaluate `with` of job %[1]s: matrix dimension %[2]s does not exist.",
 	"actions.workflow.incomplete_with_unknown_cause": "Unable to evaluate `with` of job %[1]s: unknown error.",
 	"actions.workflow.pre_execution_error": "Workflow was not executed due to an error that blocked the execution attempt.",
+	"actions.secrets.creation.name_description": "The name of a secret can only contain letters, numbers, and underscores. It cannot start with FORGEJO_, GITEA_, GITHUB_, or a number. Forgejo will automatically convert it to uppercase.",
+	"actions.secrets.creation.value_description": "The value of a secret can be any text. Special characters are retained. CRLF (Windows-style line breaks) is automatically converted to LF. Encode the value with Base64 if linebreaks should be retained.",
+	"actions.variables.mutation.name_description": "The name of a variable can only contain letters, numbers, and underscores. It cannot be named CI or start with FORGEJO_, GITEA_, GITHUB_, or a number. Forgejo will automatically convert it to uppercase.",
+	"actions.variables.mutation.value_description": "A variable's value can be any text. Special characters are retained. CRLF (Windows-style line breaks) is automatically converted to LF. Encode the value with Base64 if linebreaks should be retained.",
 	"pulse.n_active_issues": {
 		"one": "%s active issue",
 		"other": "%s active issues"

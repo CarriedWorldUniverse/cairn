@@ -13,7 +13,6 @@ import (
 	org_model "forgejo.org/models/organization"
 	secret_model "forgejo.org/models/secret"
 	"forgejo.org/models/unittest"
-	"forgejo.org/modules/keying"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/tests"
 
@@ -98,10 +97,23 @@ func TestAPIOrgSecrets(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			req := NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, c.Name), api.CreateOrUpdateSecretOption{
-				Data: "data",
-			}).AddTokenAuth(token)
+			url := fmt.Sprintf("/api/v1/orgs/%s/actions/secrets/%s", org.Name, c.Name)
+
+			req := NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
+				Data: "    \r\n\tdätå   \r\n",
+			})
+			req.AddTokenAuth(token)
 			MakeRequest(t, req, c.ExpectedStatus)
+
+			if c.ExpectedStatus < 300 {
+				secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{OwnerID: org.ID, Name: strings.ToUpper(c.Name)})
+
+				assert.Equal(t, strings.ToUpper(c.Name), secret.Name)
+
+				value, err := secret.GetDecryptedData()
+				require.NoError(t, err)
+				assert.Equal(t, "    \n\tdätå   \n", value)
+			}
 		}
 	})
 
@@ -115,14 +127,15 @@ func TestAPIOrgSecrets(t *testing.T) {
 		MakeRequest(t, req, http.StatusCreated)
 
 		req = NewRequestWithJSON(t, "PUT", url, api.CreateOrUpdateSecretOption{
-			Data: "changed data",
-		}).AddTokenAuth(token)
+			Data: "\r\n    chåñgéd dätå\t   \r\n",
+		})
+		req.AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusNoContent)
 
 		secret := unittest.AssertExistsAndLoadBean(t, &secret_model.Secret{Name: strings.ToUpper(name)})
-		data, err := keying.ActionSecret.Decrypt(secret.Data, keying.ColumnAndID("data", secret.ID))
+		data, err := secret.GetDecryptedData()
 		require.NoError(t, err)
-		assert.Equal(t, "changed data", string(data))
+		assert.Equal(t, "\n    chåñgéd dätå\t   \n", data)
 	})
 
 	t.Run("Delete", func(t *testing.T) {
