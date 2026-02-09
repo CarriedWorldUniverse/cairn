@@ -529,6 +529,10 @@ export function initRepoIssueReferenceIssue() {
   });
 }
 
+export function findWipPrefix(string, wipPrefixes) {
+  return wipPrefixes.find((prefix) => string.toUpperCase().startsWith(prefix.toUpperCase()));
+}
+
 export function initRepoIssueWipToggle() {
   // Toggle WIP
   $('.toggle-wip a, .toggle-wip button').on('click', async (e) => {
@@ -537,7 +541,7 @@ export function initRepoIssueWipToggle() {
     const title = toggleWip.getAttribute('data-title');
     const wipPrefixes = JSON.parse(toggleWip.getAttribute('data-wip-prefixes'));
     const updateUrl = toggleWip.getAttribute('data-update-url');
-    const prefix = wipPrefixes.find((prefix) => title.startsWith(prefix));
+    const prefix = findWipPrefix(title, wipPrefixes);
 
     try {
       const params = new URLSearchParams();

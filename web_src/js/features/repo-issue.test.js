@@ -1,6 +1,7 @@
 import {vi} from 'vitest';
 
 import {issueTitleHTML, excludeLabel} from './repo-issue-sidebar-list.ts';
+import {findWipPrefix} from './repo-issue.js';
 
 vi.mock('./comp/ComboMarkdownEditor.js', () => ({}));
 // jQuery is missing
@@ -43,4 +44,24 @@ test('Toggles label exclusion from filters', () => {
   expect(getLabelsParam()).toEqual('1');
   excludeLabel(element);
   expect(getLabelsParam()).toEqual('-1');
+});
+
+test('Finds wip prefix in string', () => {
+  const wipPrefixes = ['wIp:', '[WIP]'];
+
+  expect(findWipPrefix('[wIP]', wipPrefixes)).toBe('[WIP]');
+  expect(findWipPrefix('[wip]', wipPrefixes)).toBe('[WIP]');
+  expect(findWipPrefix('[WIP]', wipPrefixes)).toBe('[WIP]');
+
+  expect(findWipPrefix('wIP:', wipPrefixes)).toBe('wIp:');
+  expect(findWipPrefix('wip:', wipPrefixes)).toBe('wIp:');
+  expect(findWipPrefix('WIP:', wipPrefixes)).toBe('wIp:');
+
+  expect(findWipPrefix('wIP:', [])).toBe(undefined);
+  expect(findWipPrefix('wIP:', [])).toBe(undefined);
+  expect(findWipPrefix('wip:', [])).toBe(undefined);
+
+  expect(findWipPrefix('wip:', ['[WIP]'])).toBe(undefined);
+  expect(findWipPrefix('WIP:', ['[WIP]'])).toBe(undefined);
+  expect(findWipPrefix('WIP:', ['[WIP]'])).toBe(undefined);
 });

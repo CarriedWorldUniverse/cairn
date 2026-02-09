@@ -15,7 +15,7 @@ test.use({user: 'user2'});
 test.describe('Pull: Toggle WIP', () => {
   const prTitle = 'pull5';
 
-  async function toggle_wip_to({page}, should: boolean) {
+  async function toggle_wip_to({page}: {page: Page}, should: boolean) {
     await page.waitForLoadState('domcontentloaded');
     if (should) {
       await page.getByText('Still in progress?').click();
@@ -24,19 +24,26 @@ test.describe('Pull: Toggle WIP', () => {
     }
   }
 
-  async function check_wip({page}, is: boolean) {
+  async function check_wip({page}: {page: Page}, is: boolean) {
     const elemTitle = 'h1';
     const stateLabel = '.issue-state-label';
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator(elemTitle)).toContainText(prTitle);
     await expect(page.locator(elemTitle)).toContainText('#5');
+    const wipRegex = /(wip|\[WIP\])/i;
     if (is) {
-      await expect(page.locator(elemTitle)).toContainText('WIP');
+      await expect(page.locator(elemTitle)).toContainText(wipRegex);
       await expect(page.locator(stateLabel)).toContainText('Draft');
     } else {
-      await expect(page.locator(elemTitle)).not.toContainText('WIP');
+      await expect(page.locator(elemTitle)).not.toContainText(wipRegex);
       await expect(page.locator(stateLabel)).toContainText('Open');
     }
+  }
+
+  async function setTitle({page}: {page: Page}, title: string) {
+    await page.locator('#issue-title-edit-show').click();
+    await page.locator('#issue-title-editor input').fill(title);
+    await page.getByText('Save').click();
   }
 
   test.beforeEach(async ({page}) => {
@@ -85,6 +92,21 @@ test.describe('Pull: Toggle WIP', () => {
     await toggle_wip_to({page}, false);
     await check_wip({page}, false);
     await expect(page.locator('h1')).toContainText(maxLenStr);
+  });
+
+  test('wip prefix casing', async ({page}) => {
+    await page.goto('/user2/repo1/pulls/5');
+    await setTitle({page}, `wIP:${prTitle}`);
+    await expect(page.locator('h1')).toContainText(`wIP:${prTitle}`);
+    await check_wip({page}, true);
+    await toggle_wip_to({page}, false);
+    await check_wip({page}, false);
+    await setTitle({page}, `[Wip]:${prTitle}`);
+    await expect(page.locator('h1')).toContainText(`[Wip]:${prTitle}`);
+    await check_wip({page}, true);
+    await toggle_wip_to({page}, false);
+    await check_wip({page}, false);
+    await expect(page.locator('h1')).toContainText(prTitle);
   });
 });
 
