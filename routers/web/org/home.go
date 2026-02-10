@@ -148,20 +148,20 @@ func Home(ctx *context.Context) {
 	pager := context.NewPagination(int(count), setting.UI.User.RepoPagingNum, page, 5)
 	pager.SetDefaultParams(ctx)
 	pager.AddParamString("language", language)
-	if archived.Has() {
-		pager.AddParamString("archived", fmt.Sprint(archived.Value()))
+	if has, value := archived.Get(); has {
+		pager.AddParamString("archived", fmt.Sprint(value))
 	}
-	if fork.Has() {
-		pager.AddParamString("fork", fmt.Sprint(fork.Value()))
+	if has, value := fork.Get(); has {
+		pager.AddParamString("fork", fmt.Sprint(value))
 	}
-	if mirror.Has() {
-		pager.AddParamString("mirror", fmt.Sprint(mirror.Value()))
+	if has, value := mirror.Get(); has {
+		pager.AddParamString("mirror", fmt.Sprint(value))
 	}
-	if template.Has() {
-		pager.AddParamString("template", fmt.Sprint(template.Value()))
+	if has, value := template.Get(); has {
+		pager.AddParamString("template", fmt.Sprint(value))
 	}
-	if private.Has() {
-		pager.AddParamString("private", fmt.Sprint(private.Value()))
+	if has, value := private.Get(); has {
+		pager.AddParamString("private", fmt.Sprint(value))
 	}
 	ctx.Data["Page"] = pager
 

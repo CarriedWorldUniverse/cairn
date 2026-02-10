@@ -184,16 +184,16 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		}
 		query.Must(q)
 	}
-	if options.PriorityRepoID.Has() {
-		q := elastic.NewTermQuery("repo_id", options.PriorityRepoID.Value()).Boost(10)
+	if has, value := options.PriorityRepoID.Get(); has {
+		q := elastic.NewTermQuery("repo_id", value).Boost(10)
 		query.Should(q)
 	}
 
-	if options.IsPull.Has() {
-		query.Must(elastic.NewTermQuery("is_pull", options.IsPull.Value()))
+	if has, value := options.IsPull.Get(); has {
+		query.Must(elastic.NewTermQuery("is_pull", value))
 	}
-	if options.IsClosed.Has() {
-		query.Must(elastic.NewTermQuery("is_closed", options.IsClosed.Value()))
+	if has, value := options.IsClosed.Get(); has {
+		query.Must(elastic.NewTermQuery("is_closed", value))
 	}
 
 	if options.NoLabelOnly {
@@ -221,43 +221,43 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		query.Must(elastic.NewTermsQuery("milestone_id", toAnySlice(options.MilestoneIDs)...))
 	}
 
-	if options.ProjectID.Has() {
-		query.Must(elastic.NewTermQuery("project_id", options.ProjectID.Value()))
+	if has, value := options.ProjectID.Get(); has {
+		query.Must(elastic.NewTermQuery("project_id", value))
 	}
-	if options.ProjectColumnID.Has() {
-		query.Must(elastic.NewTermQuery("project_board_id", options.ProjectColumnID.Value()))
-	}
-
-	if options.PosterID.Has() {
-		query.Must(elastic.NewTermQuery("poster_id", options.PosterID.Value()))
+	if has, value := options.ProjectColumnID.Get(); has {
+		query.Must(elastic.NewTermQuery("project_board_id", value))
 	}
 
-	if options.AssigneeID.Has() {
-		query.Must(elastic.NewTermQuery("assignee_ids", options.AssigneeID.Value()))
+	if has, value := options.PosterID.Get(); has {
+		query.Must(elastic.NewTermQuery("poster_id", value))
 	}
 
-	if options.MentionID.Has() {
-		query.Must(elastic.NewTermQuery("mention_ids", options.MentionID.Value()))
+	if has, value := options.AssigneeID.Get(); has {
+		query.Must(elastic.NewTermQuery("assignee_ids", value))
 	}
 
-	if options.ReviewedID.Has() {
-		query.Must(elastic.NewTermQuery("reviewed_ids", options.ReviewedID.Value()))
-	}
-	if options.ReviewRequestedID.Has() {
-		query.Must(elastic.NewTermQuery("review_requested_ids", options.ReviewRequestedID.Value()))
+	if has, value := options.MentionID.Get(); has {
+		query.Must(elastic.NewTermQuery("mention_ids", value))
 	}
 
-	if options.SubscriberID.Has() {
-		query.Must(elastic.NewTermQuery("subscriber_ids", options.SubscriberID.Value()))
+	if has, value := options.ReviewedID.Get(); has {
+		query.Must(elastic.NewTermQuery("reviewed_ids", value))
+	}
+	if has, value := options.ReviewRequestedID.Get(); has {
+		query.Must(elastic.NewTermQuery("review_requested_ids", value))
+	}
+
+	if has, value := options.SubscriberID.Get(); has {
+		query.Must(elastic.NewTermQuery("subscriber_ids", value))
 	}
 
 	if options.UpdatedAfterUnix.Has() || options.UpdatedBeforeUnix.Has() {
 		q := elastic.NewRangeQuery("updated_unix")
-		if options.UpdatedAfterUnix.Has() {
-			q.Gte(options.UpdatedAfterUnix.Value())
+		if has, value := options.UpdatedAfterUnix.Get(); has {
+			q.Gte(value)
 		}
-		if options.UpdatedBeforeUnix.Has() {
-			q.Lte(options.UpdatedBeforeUnix.Value())
+		if has, value := options.UpdatedBeforeUnix.Get(); has {
+			q.Lte(value)
 		}
 		query.Must(q)
 	}

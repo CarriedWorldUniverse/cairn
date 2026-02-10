@@ -190,7 +190,7 @@ func lockablesGitAttributes(gitRepo *git.Repository, lfsLocks []*git_model.LFSLo
 		if err != nil {
 			return nil, fmt.Errorf("could not CheckPath(%s): %w", lock.Path, err)
 		}
-		lockables[i] = attrs["lockable"].Bool().Value()
+		lockables[i] = attrs["lockable"].Bool().ValueOrZeroValue()
 	}
 	return lockables, nil
 }

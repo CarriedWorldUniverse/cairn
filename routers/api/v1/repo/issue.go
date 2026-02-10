@@ -497,7 +497,7 @@ func ListIssues(ctx *context.APIContext) {
 		isPull = optional.Some(false)
 	}
 
-	if isPull.Has() && !ctx.Repo.CanReadIssuesOrPulls(isPull.Value()) {
+	if has, value := isPull.Get(); has && !ctx.Repo.CanReadIssuesOrPulls(value) {
 		ctx.NotFound()
 		return
 	}

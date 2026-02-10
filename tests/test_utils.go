@@ -404,15 +404,15 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 	// Not using opts.Name.ValueOrDefault() here to avoid unnecessarily
 	// generating an UUID when a name is specified.
 	var repoName string
-	if opts.Name.Has() {
-		repoName = opts.Name.Value()
+	if has, value := opts.Name.Get(); has {
+		repoName = value
 	} else {
 		repoName = uuid.NewString()
 	}
 
 	var autoInit bool
-	if opts.AutoInit.Has() {
-		autoInit = opts.AutoInit.Value()
+	if has, value := opts.AutoInit.Get(); has {
+		autoInit = value
 	} else {
 		autoInit = true
 	}
@@ -426,22 +426,21 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 		License:          "WTFPL",
 		Readme:           "Default",
 		DefaultBranch:    "main",
-		IsTemplate:       opts.IsTemplate.Value(),
-		ObjectFormatName: opts.ObjectFormat.Value(),
-		IsPrivate:        opts.IsPrivate.Value(),
+		IsTemplate:       opts.IsTemplate.ValueOrZeroValue(),
+		ObjectFormatName: opts.ObjectFormat.ValueOrZeroValue(),
+		IsPrivate:        opts.IsPrivate.ValueOrZeroValue(),
 	})
 	require.NoError(t, err)
 	assert.NotEmpty(t, repo)
 
 	// Populate `enabledUnits` if we have any enabled.
 	var enabledUnits []repo_model.RepoUnit
-	if opts.EnabledUnits.Has() {
-		units := opts.EnabledUnits.Value()
+	if has, units := opts.EnabledUnits.Get(); has {
 		enabledUnits = make([]repo_model.RepoUnit, len(units))
 
 		for i, unitType := range units {
 			var config convert.Conversion
-			if cfg, ok := opts.UnitConfig.Value()[unitType]; ok {
+			if cfg, ok := opts.UnitConfig.ValueOrZeroValue()[unitType]; ok {
 				config = cfg
 			}
 			enabledUnits[i] = repo_model.RepoUnit{
@@ -460,9 +459,8 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 
 	// Add files, if any.
 	var sha string
-	if opts.Files.Has() {
+	if has, files := opts.Files.Get(); has {
 		assert.True(t, autoInit, "Files cannot be specified if AutoInit is disabled")
-		files := opts.Files.Value()
 
 		commitID, err := gitrepo.GetBranchCommitID(git.DefaultContext, repo, "main")
 		require.NoError(t, err)
@@ -493,9 +491,9 @@ func CreateDeclarativeRepoWithOptions(t *testing.T, owner *user_model.User, opts
 	}
 
 	// If there's a Wiki branch specified, create a wiki, and a default wiki page.
-	if opts.WikiBranch.Has() {
+	if has, value := opts.WikiBranch.Get(); has {
 		// Set the wiki branch in the database first
-		repo.WikiBranch = opts.WikiBranch.Value()
+		repo.WikiBranch = value
 		err := repo_model.UpdateRepositoryCols(db.DefaultContext, repo, "wiki_branch")
 		require.NoError(t, err)
 

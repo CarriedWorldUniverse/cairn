@@ -139,11 +139,11 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		query.And(q)
 	}
 
-	if options.IsPull.Has() {
-		query.And(inner_meilisearch.NewFilterEq("is_pull", options.IsPull.Value()))
+	if has, value := options.IsPull.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("is_pull", value))
 	}
-	if options.IsClosed.Has() {
-		query.And(inner_meilisearch.NewFilterEq("is_closed", options.IsClosed.Value()))
+	if has, value := options.IsClosed.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("is_closed", value))
 	}
 
 	if options.NoLabelOnly {
@@ -171,41 +171,41 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		query.And(inner_meilisearch.NewFilterIn("milestone_id", options.MilestoneIDs...))
 	}
 
-	if options.ProjectID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("project_id", options.ProjectID.Value()))
+	if has, value := options.ProjectID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("project_id", value))
 	}
-	if options.ProjectColumnID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("project_board_id", options.ProjectColumnID.Value()))
-	}
-
-	if options.PosterID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("poster_id", options.PosterID.Value()))
+	if has, value := options.ProjectColumnID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("project_board_id", value))
 	}
 
-	if options.AssigneeID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("assignee_ids", options.AssigneeID.Value()))
+	if has, value := options.PosterID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("poster_id", value))
 	}
 
-	if options.MentionID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("mention_ids", options.MentionID.Value()))
+	if has, value := options.AssigneeID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("assignee_ids", value))
 	}
 
-	if options.ReviewedID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("reviewed_ids", options.ReviewedID.Value()))
-	}
-	if options.ReviewRequestedID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("review_requested_ids", options.ReviewRequestedID.Value()))
+	if has, value := options.MentionID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("mention_ids", value))
 	}
 
-	if options.SubscriberID.Has() {
-		query.And(inner_meilisearch.NewFilterEq("subscriber_ids", options.SubscriberID.Value()))
+	if has, value := options.ReviewedID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("reviewed_ids", value))
+	}
+	if has, value := options.ReviewRequestedID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("review_requested_ids", value))
 	}
 
-	if options.UpdatedAfterUnix.Has() {
-		query.And(inner_meilisearch.NewFilterGte("updated_unix", options.UpdatedAfterUnix.Value()))
+	if has, value := options.SubscriberID.Get(); has {
+		query.And(inner_meilisearch.NewFilterEq("subscriber_ids", value))
 	}
-	if options.UpdatedBeforeUnix.Has() {
-		query.And(inner_meilisearch.NewFilterLte("updated_unix", options.UpdatedBeforeUnix.Value()))
+
+	if has, value := options.UpdatedAfterUnix.Get(); has {
+		query.And(inner_meilisearch.NewFilterGte("updated_unix", value))
+	}
+	if has, value := options.UpdatedBeforeUnix.Get(); has {
+		query.And(inner_meilisearch.NewFilterLte("updated_unix", value))
 	}
 
 	var sortBy []string

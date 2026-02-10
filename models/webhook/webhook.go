@@ -487,8 +487,8 @@ func (opts ListWebhookOptions) ToConds() builder.Cond {
 	if opts.OwnerID != 0 {
 		cond = cond.And(builder.Eq{"webhook.owner_id": opts.OwnerID})
 	}
-	if opts.IsActive.Has() {
-		cond = cond.And(builder.Eq{"webhook.is_active": opts.IsActive.Value()})
+	if has, value := opts.IsActive.Get(); has {
+		cond = cond.And(builder.Eq{"webhook.is_active": value})
 	}
 	return cond
 }

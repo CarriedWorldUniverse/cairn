@@ -78,10 +78,10 @@ func (opts FindRunJobOptions) ToConds() builder.Cond {
 	if opts.UpdatedBefore > 0 {
 		cond = cond.And(builder.Lt{"updated": opts.UpdatedBefore})
 	}
-	if opts.RunNeedsApproval.Has() {
+	if has, value := opts.RunNeedsApproval.Get(); has {
 		cond = cond.And(builder.Exists(builder.Select("id").From("action_run", "outer_run").
 			Where(builder.Eq{
-				"outer_run.need_approval": opts.RunNeedsApproval.Value(),
+				"outer_run.need_approval": value,
 				"outer_run.id":            builder.Expr("run_id"),
 			})))
 	}

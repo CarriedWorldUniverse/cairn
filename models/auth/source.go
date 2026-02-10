@@ -250,8 +250,8 @@ type FindSourcesOptions struct {
 
 func (opts FindSourcesOptions) ToConds() builder.Cond {
 	conds := builder.NewCond()
-	if opts.IsActive.Has() {
-		conds = conds.And(builder.Eq{"is_active": opts.IsActive.Value()})
+	if has, value := opts.IsActive.Get(); has {
+		conds = conds.And(builder.Eq{"is_active": value})
 	}
 	if opts.LoginType != NoType {
 		conds = conds.And(builder.Eq{"`type`": opts.LoginType})

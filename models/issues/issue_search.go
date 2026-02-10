@@ -226,8 +226,8 @@ func applyConditions(sess *xorm.Session, opts *IssuesOptions) {
 
 	applyRepoConditions(sess, opts)
 
-	if opts.IsClosed.Has() {
-		sess.And("issue.is_closed=?", opts.IsClosed.Value())
+	if has, value := opts.IsClosed.Get(); has {
+		sess.And("issue.is_closed=?", value)
 	}
 
 	if opts.AssigneeID > 0 {
@@ -269,18 +269,18 @@ func applyConditions(sess *xorm.Session, opts *IssuesOptions) {
 
 	applyProjectColumnCondition(sess, opts)
 
-	if opts.IsPull.Has() {
-		sess.And("issue.is_pull=?", opts.IsPull.Value())
+	if has, value := opts.IsPull.Get(); has {
+		sess.And("issue.is_pull=?", value)
 	}
 
-	if opts.IsArchived.Has() {
-		sess.And(builder.Eq{"repository.is_archived": opts.IsArchived.Value()})
+	if has, value := opts.IsArchived.Get(); has {
+		sess.And(builder.Eq{"repository.is_archived": value})
 	}
 
 	applyLabelsCondition(sess, opts)
 
 	if opts.User != nil {
-		cond := issuePullAccessibleRepoCond("issue.repo_id", opts.User.ID, opts.Org, opts.Team, opts.IsPull.Value())
+		cond := issuePullAccessibleRepoCond("issue.repo_id", opts.User.ID, opts.Org, opts.Team, opts.IsPull.ValueOrZeroValue())
 		// If AllPublic was set, then also consider all issues in public
 		// repositories in addition to the private repositories the user has access
 		// to.

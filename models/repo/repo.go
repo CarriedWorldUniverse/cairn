@@ -895,8 +895,8 @@ func CountRepositories(ctx context.Context, opts CountRepositoryOptions) (int64,
 	if opts.OwnerID > 0 {
 		sess.And("owner_id = ?", opts.OwnerID)
 	}
-	if opts.Private.Has() {
-		sess.And("is_private=?", opts.Private.Value())
+	if has, value := opts.Private.Get(); has {
+		sess.And("is_private=?", value)
 	}
 
 	count, err := sess.Count(new(Repository))

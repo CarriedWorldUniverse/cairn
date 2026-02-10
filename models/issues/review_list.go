@@ -113,8 +113,8 @@ func (opts *FindReviewOptions) toCond() builder.Cond {
 	if opts.OfficialOnly {
 		cond = cond.And(builder.Eq{"official": true})
 	}
-	if opts.Dismissed.Has() {
-		cond = cond.And(builder.Eq{"dismissed": opts.Dismissed.Value()})
+	if has, value := opts.Dismissed.Get(); has {
+		cond = cond.And(builder.Eq{"dismissed": value})
 	}
 	return cond
 }

@@ -82,11 +82,11 @@ func (opts FindTaskOptions) ToConds() builder.Cond {
 	if opts.RunnerID > 0 {
 		cond = cond.And(builder.Eq{"runner_id": opts.RunnerID})
 	}
-	if opts.LogExpired.Has() {
-		cond = cond.And(builder.Eq{"log_expired": opts.LogExpired.Value()})
+	if has, value := opts.LogExpired.Get(); has {
+		cond = cond.And(builder.Eq{"log_expired": value})
 	}
-	if opts.LogInStorage.Has() {
-		cond = cond.And(builder.Eq{"log_in_storage": opts.LogInStorage.Value()})
+	if has, value := opts.LogInStorage.Get(); has {
+		cond = cond.And(builder.Eq{"log_in_storage": value})
 	}
 	return cond
 }

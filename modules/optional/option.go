@@ -34,9 +34,17 @@ func (o Option[T]) Has() bool {
 	return o != nil
 }
 
-func (o Option[T]) Value() T {
-	var zero T
-	return o.ValueOrDefault(zero)
+func (o Option[T]) Get() (has bool, value T) {
+	if o != nil {
+		has = true
+		value = o[0]
+	}
+	return has, value
+}
+
+func (o Option[T]) ValueOrZeroValue() T {
+	var zeroValue T
+	return o.ValueOrDefault(zeroValue)
 }
 
 func (o Option[T]) ValueOrDefault(v T) T {

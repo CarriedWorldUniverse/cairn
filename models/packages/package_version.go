@@ -192,9 +192,9 @@ type PackageSearchOptions struct {
 
 func (opts *PackageSearchOptions) ToConds() builder.Cond {
 	cond := builder.NewCond()
-	if opts.IsInternal.Has() {
+	if has, value := opts.IsInternal.Get(); has {
 		cond = builder.Eq{
-			"package_version.is_internal": opts.IsInternal.Value(),
+			"package_version.is_internal": value,
 		}
 	}
 
@@ -254,10 +254,10 @@ func (opts *PackageSearchOptions) ToConds() builder.Cond {
 		cond = cond.And(builder.Exists(builder.Select("package_file.id").From("package_file").Where(fileCond)))
 	}
 
-	if opts.HasFiles.Has() {
+	if has, value := opts.HasFiles.Get(); has {
 		filesCond := builder.Exists(builder.Select("package_file.id").From("package_file").Where(builder.Expr("package_file.version_id = package_version.id")))
 
-		if !opts.HasFiles.Value() {
+		if !value {
 			filesCond = builder.Not{filesCond}
 		}
 

@@ -217,8 +217,8 @@ func (opts SearchOptions) ToConds() builder.Cond {
 	if opts.RepoID > 0 {
 		cond = cond.And(builder.Eq{"repo_id": opts.RepoID})
 	}
-	if opts.IsClosed.Has() {
-		cond = cond.And(builder.Eq{"is_closed": opts.IsClosed.Value()})
+	if has, value := opts.IsClosed.Get(); has {
+		cond = cond.And(builder.Eq{"is_closed": value})
 	}
 
 	if opts.Type > 0 {
