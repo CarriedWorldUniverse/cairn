@@ -378,8 +378,8 @@ func doRecalcMilestone(ctx context.Context, cond builder.Cond, updateTimestamp o
 					}),
 			).
 			Where(cond)
-		if updateTimestamp.Has() {
-			sess.SetExpr("updated_unix", updateTimestamp.Value()).NoAutoTime()
+		if has, value := updateTimestamp.Get(); has {
+			sess.SetExpr("updated_unix", value).NoAutoTime()
 		}
 		_, err := sess.Update(&Milestone{})
 		if err != nil {

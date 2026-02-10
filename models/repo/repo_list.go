@@ -354,12 +354,12 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 			)))
 	}
 
-	if opts.IsPrivate.Has() {
-		cond = cond.And(builder.Eq{"is_private": opts.IsPrivate.Value()})
+	if has, value := opts.IsPrivate.Get(); has {
+		cond = cond.And(builder.Eq{"is_private": value})
 	}
 
-	if opts.Template.Has() {
-		cond = cond.And(builder.Eq{"is_template": opts.Template.Value()})
+	if has, value := opts.Template.Get(); has {
+		cond = cond.And(builder.Eq{"is_template": value})
 	}
 
 	// Restrict to starred repositories
@@ -375,7 +375,7 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 	// Restrict repositories to those the OwnerID owns or contributes to as per opts.Collaborate
 	if opts.OwnerID > 0 {
 		accessCond := builder.NewCond()
-		if !opts.Collaborate.Value() {
+		if !opts.Collaborate.ValueOrZeroValue() {
 			accessCond = builder.Eq{"owner_id": opts.OwnerID}
 		}
 
@@ -467,28 +467,28 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 			Where(builder.Eq{"language": opts.Language}).And(builder.Eq{"is_primary": true})))
 	}
 
-	if opts.Fork.Has() || opts.OnlyShowRelevant {
-		if opts.OnlyShowRelevant && !opts.Fork.Has() {
+	if has, value := opts.Fork.Get(); has || opts.OnlyShowRelevant {
+		if opts.OnlyShowRelevant && !has {
 			cond = cond.And(builder.Eq{"is_fork": false})
 		} else {
-			cond = cond.And(builder.Eq{"is_fork": opts.Fork.Value()})
+			cond = cond.And(builder.Eq{"is_fork": value})
 		}
 	}
 
-	if opts.Mirror.Has() {
-		cond = cond.And(builder.Eq{"is_mirror": opts.Mirror.Value()})
+	if has, value := opts.Mirror.Get(); has {
+		cond = cond.And(builder.Eq{"is_mirror": value})
 	}
 
 	if opts.Actor != nil && opts.Actor.IsRestricted {
 		cond = cond.And(AccessibleRepositoryCondition(opts.Actor, unit.TypeInvalid))
 	}
 
-	if opts.Archived.Has() {
-		cond = cond.And(builder.Eq{"is_archived": opts.Archived.Value()})
+	if has, value := opts.Archived.Get(); has {
+		cond = cond.And(builder.Eq{"is_archived": value})
 	}
 
-	if opts.HasMilestones.Has() {
-		if opts.HasMilestones.Value() {
+	if has, value := opts.HasMilestones.Get(); has {
+		if value {
 			cond = cond.And(builder.Gt{"num_milestones": 0})
 		} else {
 			cond = cond.And(builder.Eq{"num_milestones": 0}.Or(builder.IsNull{"num_milestones"}))

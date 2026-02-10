@@ -312,14 +312,14 @@ func (opts FindReleasesOptions) ToConds() builder.Cond {
 	if len(opts.TagNames) > 0 {
 		cond = cond.And(builder.In("tag_name", opts.TagNames))
 	}
-	if opts.IsPreRelease.Has() {
-		cond = cond.And(builder.Eq{"is_prerelease": opts.IsPreRelease.Value()})
+	if has, value := opts.IsPreRelease.Get(); has {
+		cond = cond.And(builder.Eq{"is_prerelease": value})
 	}
-	if opts.IsDraft.Has() {
-		cond = cond.And(builder.Eq{"is_draft": opts.IsDraft.Value()})
+	if has, value := opts.IsDraft.Get(); has {
+		cond = cond.And(builder.Eq{"is_draft": value})
 	}
-	if opts.HasSha1.Has() {
-		if opts.HasSha1.Value() {
+	if has, value := opts.HasSha1.Get(); has {
+		if value {
 			cond = cond.And(builder.Neq{"sha1": ""})
 		} else {
 			cond = cond.And(builder.Eq{"sha1": ""})

@@ -323,12 +323,12 @@ func SearchEmails(ctx context.Context, opts *SearchEmailOptions) ([]*SearchEmail
 		))
 	}
 
-	if opts.IsPrimary.Has() {
-		cond = cond.And(builder.Eq{"email_address.is_primary": opts.IsPrimary.Value()})
+	if has, value := opts.IsPrimary.Get(); has {
+		cond = cond.And(builder.Eq{"email_address.is_primary": value})
 	}
 
-	if opts.IsActivated.Has() {
-		cond = cond.And(builder.Eq{"email_address.is_activated": opts.IsActivated.Value()})
+	if has, value := opts.IsActivated.Get(); has {
+		cond = cond.And(builder.Eq{"email_address.is_activated": value})
 	}
 
 	count, err := db.GetEngine(ctx).Join("INNER", "`user`", "`user`.id = email_address.uid").

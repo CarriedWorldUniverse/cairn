@@ -46,135 +46,102 @@ type UpdateOptions struct {
 func UpdateUser(ctx context.Context, u *user_model.User, opts *UpdateOptions) error {
 	cols := make([]string, 0, 20)
 
-	if opts.KeepEmailPrivate.Has() {
-		u.KeepEmailPrivate = opts.KeepEmailPrivate.Value()
-
+	if has, value := opts.KeepEmailPrivate.Get(); has {
+		u.KeepEmailPrivate = value
 		cols = append(cols, "keep_email_private")
 	}
-
-	if opts.FullName.Has() {
-		u.FullName = opts.FullName.Value()
-
+	if has, value := opts.FullName.Get(); has {
+		u.FullName = value
 		cols = append(cols, "full_name")
 	}
-	if opts.Pronouns.Has() {
-		u.Pronouns = opts.Pronouns.Value()
-
+	if has, value := opts.Pronouns.Get(); has {
+		u.Pronouns = value
 		cols = append(cols, "pronouns")
 	}
-	if opts.Website.Has() {
-		u.Website = opts.Website.Value()
-
+	if has, value := opts.Website.Get(); has {
+		u.Website = value
 		cols = append(cols, "website")
 	}
-	if opts.Location.Has() {
-		u.Location = opts.Location.Value()
-
+	if has, value := opts.Location.Get(); has {
+		u.Location = value
 		cols = append(cols, "location")
 	}
-	if opts.Description.Has() {
-		u.Description = opts.Description.Value()
-
+	if has, value := opts.Description.Get(); has {
+		u.Description = value
 		cols = append(cols, "description")
 	}
-	if opts.Language.Has() {
-		u.Language = opts.Language.Value()
-
+	if has, value := opts.Language.Get(); has {
+		u.Language = value
 		cols = append(cols, "language")
 	}
-	if opts.Theme.Has() {
-		u.Theme = opts.Theme.Value()
-
+	if has, value := opts.Theme.Get(); has {
+		u.Theme = value
 		cols = append(cols, "theme")
 	}
-	if opts.DiffViewStyle.Has() {
-		u.DiffViewStyle = opts.DiffViewStyle.Value()
-
+	if has, value := opts.DiffViewStyle.Get(); has {
+		u.DiffViewStyle = value
 		cols = append(cols, "diff_view_style")
 	}
-	if opts.EnableRepoUnitHints.Has() {
-		u.EnableRepoUnitHints = opts.EnableRepoUnitHints.Value()
-
+	if has, value := opts.EnableRepoUnitHints.Get(); has {
+		u.EnableRepoUnitHints = value
 		cols = append(cols, "enable_repo_unit_hints")
 	}
-
-	if opts.KeepPronounsPrivate.Has() {
-		u.KeepPronounsPrivate = opts.KeepPronounsPrivate.Value()
-
+	if has, value := opts.KeepPronounsPrivate.Get(); has {
+		u.KeepPronounsPrivate = value
 		cols = append(cols, "keep_pronouns_private")
 	}
-
-	if opts.AllowGitHook.Has() {
-		u.AllowGitHook = opts.AllowGitHook.Value()
-
+	if has, value := opts.AllowGitHook.Get(); has {
+		u.AllowGitHook = value
 		cols = append(cols, "allow_git_hook")
 	}
-	if opts.AllowImportLocal.Has() {
-		u.AllowImportLocal = opts.AllowImportLocal.Value()
-
+	if has, value := opts.AllowImportLocal.Get(); has {
+		u.AllowImportLocal = value
 		cols = append(cols, "allow_import_local")
 	}
-
-	if opts.MaxRepoCreation.Has() {
-		u.MaxRepoCreation = opts.MaxRepoCreation.Value()
-
+	if has, value := opts.MaxRepoCreation.Get(); has {
+		u.MaxRepoCreation = value
 		cols = append(cols, "max_repo_creation")
 	}
-
-	if opts.IsActive.Has() {
-		u.IsActive = opts.IsActive.Value()
-
+	if has, value := opts.IsActive.Get(); has {
+		u.IsActive = value
 		cols = append(cols, "is_active")
 	}
-	if opts.IsRestricted.Has() {
-		u.IsRestricted = opts.IsRestricted.Value()
-
+	if has, value := opts.IsRestricted.Get(); has {
+		u.IsRestricted = value
 		cols = append(cols, "is_restricted")
 	}
-	if opts.IsAdmin.Has() {
-		if !opts.IsAdmin.Value() && user_model.IsLastAdminUser(ctx, u) {
+	if has, value := opts.IsAdmin.Get(); has {
+		if !value && user_model.IsLastAdminUser(ctx, u) {
 			return models.ErrDeleteLastAdminUser{UID: u.ID}
 		}
-
-		u.IsAdmin = opts.IsAdmin.Value()
-
+		u.IsAdmin = value
 		cols = append(cols, "is_admin")
 	}
-
-	if opts.Visibility.Has() {
-		if !u.IsOrganization() && !setting.Service.AllowedUserVisibilityModesSlice.IsAllowedVisibility(opts.Visibility.Value()) {
-			return fmt.Errorf("visibility mode not allowed: %s", opts.Visibility.Value().String())
+	if has, value := opts.Visibility.Get(); has {
+		if !u.IsOrganization() && !setting.Service.AllowedUserVisibilityModesSlice.IsAllowedVisibility(value) {
+			return fmt.Errorf("visibility mode not allowed: %s", value.String())
 		}
-		u.Visibility = opts.Visibility.Value()
-
+		u.Visibility = value
 		cols = append(cols, "visibility")
 	}
-	if opts.KeepActivityPrivate.Has() {
-		u.KeepActivityPrivate = opts.KeepActivityPrivate.Value()
-
+	if has, value := opts.KeepActivityPrivate.Get(); has {
+		u.KeepActivityPrivate = value
 		cols = append(cols, "keep_activity_private")
 	}
-
-	if opts.AllowCreateOrganization.Has() {
-		u.AllowCreateOrganization = opts.AllowCreateOrganization.Value()
-
+	if has, value := opts.AllowCreateOrganization.Get(); has {
+		u.AllowCreateOrganization = value
 		cols = append(cols, "allow_create_organization")
 	}
-	if opts.RepoAdminChangeTeamAccess.Has() {
-		u.RepoAdminChangeTeamAccess = opts.RepoAdminChangeTeamAccess.Value()
-
+	if has, value := opts.RepoAdminChangeTeamAccess.Get(); has {
+		u.RepoAdminChangeTeamAccess = value
 		cols = append(cols, "repo_admin_change_team_access")
 	}
-
-	if opts.EmailNotificationsPreference.Has() {
-		u.EmailNotificationsPreference = opts.EmailNotificationsPreference.Value()
-
+	if has, value := opts.EmailNotificationsPreference.Get(); has {
+		u.EmailNotificationsPreference = value
 		cols = append(cols, "email_notifications_preference")
 	}
-
 	if opts.SetLastLogin {
 		u.SetLastLogin()
-
 		cols = append(cols, "last_login_unix")
 	}
 
@@ -190,8 +157,8 @@ type UpdateAuthOptions struct {
 }
 
 func UpdateAuth(ctx context.Context, u *user_model.User, opts *UpdateAuthOptions) error {
-	if opts.LoginSource.Has() {
-		source, err := auth_model.GetSourceByID(ctx, opts.LoginSource.Value())
+	if has, value := opts.LoginSource.Get(); has {
+		source, err := auth_model.GetSourceByID(ctx, value)
 		if err != nil {
 			return err
 		}
@@ -199,12 +166,12 @@ func UpdateAuth(ctx context.Context, u *user_model.User, opts *UpdateAuthOptions
 		u.LoginType = source.Type
 		u.LoginSource = source.ID
 	}
-	if opts.LoginName.Has() {
-		u.LoginName = opts.LoginName.Value()
+	if has, value := opts.LoginName.Get(); has {
+		u.LoginName = value
 	}
 
-	if opts.Password.Has() && (u.IsLocal() || u.IsOAuth2()) {
-		password := opts.Password.Value()
+	if has, value := opts.Password.Get(); has && (u.IsLocal() || u.IsOAuth2()) {
+		password := value
 
 		if len(password) < setting.MinPasswordLength {
 			return password_module.ErrMinLength
@@ -221,11 +188,11 @@ func UpdateAuth(ctx context.Context, u *user_model.User, opts *UpdateAuthOptions
 		}
 	}
 
-	if opts.MustChangePassword.Has() {
-		u.MustChangePassword = opts.MustChangePassword.Value()
+	if has, value := opts.MustChangePassword.Get(); has {
+		u.MustChangePassword = value
 	}
-	if opts.ProhibitLogin.Has() {
-		u.ProhibitLogin = opts.ProhibitLogin.Value()
+	if has, value := opts.ProhibitLogin.Get(); has {
+		u.ProhibitLogin = value
 	}
 
 	if err := user_model.UpdateUserCols(ctx, u, "login_type", "login_source", "login_name", "passwd", "passwd_hash_algo", "salt", "must_change_password", "prohibit_login"); err != nil {

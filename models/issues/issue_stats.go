@@ -180,8 +180,8 @@ func applyIssuesOptions(sess *xorm.Session, opts *IssuesOptions, issueIDs []int6
 		applyReviewedCondition(sess, opts.ReviewedID)
 	}
 
-	if opts.IsPull.Has() {
-		sess.And("issue.is_pull=?", opts.IsPull.Value())
+	if has, value := opts.IsPull.Get(); has {
+		sess.And("issue.is_pull=?", value)
 	}
 
 	return sess

@@ -680,8 +680,8 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	ctx.Data["State"] = state
 
 	ctx.SetFormString("state", state)
-	if searchOpts.AssigneeID.Has() {
-		id := strconv.FormatInt(searchOpts.AssigneeID.Value(), 10)
+	if has, value := searchOpts.AssigneeID.Get(); has {
+		id := strconv.FormatInt(value, 10)
 		ctx.SetFormString("assignee", id)
 	}
 

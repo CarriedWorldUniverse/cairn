@@ -679,8 +679,8 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 		if err != nil {
 			log.Error("GitAttributes(%s, %s) failed: %v", ctx.Repo.CommitID, ctx.Repo.TreePath, err)
 		} else {
-			ctx.Data["IsVendored"] = attrs["linguist-vendored"].Bool().Value()
-			ctx.Data["IsGenerated"] = attrs["linguist-generated"].Bool().Value()
+			ctx.Data["IsVendored"] = attrs["linguist-vendored"].Bool().ValueOrZeroValue()
+			ctx.Data["IsGenerated"] = attrs["linguist-generated"].Bool().ValueOrZeroValue()
 		}
 	}
 

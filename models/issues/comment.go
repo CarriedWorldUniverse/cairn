@@ -1102,11 +1102,11 @@ func (opts FindCommentsOptions) ToConds() builder.Cond {
 	if len(opts.TreePath) > 0 {
 		cond = cond.And(builder.Eq{"comment.tree_path": opts.TreePath})
 	}
-	if opts.Invalidated.Has() {
-		cond = cond.And(builder.Eq{"comment.invalidated": opts.Invalidated.Value()})
+	if has, value := opts.Invalidated.Get(); has {
+		cond = cond.And(builder.Eq{"comment.invalidated": value})
 	}
-	if opts.IsPull.Has() {
-		cond = cond.And(builder.Eq{"issue.is_pull": opts.IsPull.Value()})
+	if has, value := opts.IsPull.Get(); has {
+		cond = cond.And(builder.Eq{"issue.is_pull": value})
 	}
 	return cond
 }

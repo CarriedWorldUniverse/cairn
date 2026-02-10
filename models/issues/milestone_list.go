@@ -40,8 +40,8 @@ func (opts FindMilestoneOptions) ToConds() builder.Cond {
 	if opts.RepoID != 0 {
 		cond = cond.And(builder.Eq{"repo_id": opts.RepoID})
 	}
-	if opts.IsClosed.Has() {
-		cond = cond.And(builder.Eq{"is_closed": opts.IsClosed.Value()})
+	if has, value := opts.IsClosed.Get(); has {
+		cond = cond.And(builder.Eq{"is_closed": value})
 	}
 	if opts.RepoCond != nil && opts.RepoCond.IsValid() {
 		cond = cond.And(builder.In("repo_id", builder.Select("id").From("repository").Where(opts.RepoCond)))

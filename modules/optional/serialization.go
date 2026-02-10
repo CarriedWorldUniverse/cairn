@@ -19,11 +19,11 @@ func (o *Option[T]) UnmarshalJSON(data []byte) error {
 }
 
 func (o Option[T]) MarshalJSON() ([]byte, error) {
-	if !o.Has() {
+	has, v := o.Get()
+	if !has {
 		return []byte("null"), nil
 	}
-
-	return json.Marshal(o.Value())
+	return json.Marshal(v)
 }
 
 func (o *Option[T]) UnmarshalYAML(value *yaml.Node) error {
@@ -36,11 +36,12 @@ func (o *Option[T]) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (o Option[T]) MarshalYAML() (any, error) {
-	if !o.Has() {
+	has, v := o.Get()
+	if !has {
 		return nil, nil
 	}
 
 	value := new(yaml.Node)
-	err := value.Encode(o.Value())
+	err := value.Encode(v)
 	return value, err
 }

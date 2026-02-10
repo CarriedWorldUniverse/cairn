@@ -195,19 +195,19 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		filters = append(filters, bleve.NewDisjunctionQuery(repoQueries...))
 	}
 
-	if options.PriorityRepoID.Has() {
-		eq := inner_bleve.NumericEqualityQuery(options.PriorityRepoID.Value(), "repo_id")
+	if has, value := options.PriorityRepoID.Get(); has {
+		eq := inner_bleve.NumericEqualityQuery(value, "repo_id")
 		eq.SetBoost(10.0)
 		meh := bleve.NewMatchAllQuery()
 		meh.SetBoost(0)
 		q.AddShould(bleve.NewDisjunctionQuery(eq, meh))
 	}
 
-	if options.IsPull.Has() {
-		filters = append(filters, inner_bleve.BoolFieldQuery(options.IsPull.Value(), "is_pull"))
+	if has, value := options.IsPull.Get(); has {
+		filters = append(filters, inner_bleve.BoolFieldQuery(value, "is_pull"))
 	}
-	if options.IsClosed.Has() {
-		filters = append(filters, inner_bleve.BoolFieldQuery(options.IsClosed.Value(), "is_closed"))
+	if has, value := options.IsClosed.Get(); has {
+		filters = append(filters, inner_bleve.BoolFieldQuery(value, "is_closed"))
 	}
 
 	if options.NoLabelOnly {
@@ -251,8 +251,8 @@ func (b *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 		"review_requested_ids": options.ReviewRequestedID,
 		"subscriber_ids":       options.SubscriberID,
 	} {
-		if val.Has() {
-			filters = append(filters, inner_bleve.NumericEqualityQuery(val.Value(), key))
+		if has, value := val.Get(); has {
+			filters = append(filters, inner_bleve.NumericEqualityQuery(value, key))
 		}
 	}
 

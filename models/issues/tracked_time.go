@@ -379,8 +379,8 @@ func getIssueTotalTrackedTimeChunk(ctx context.Context, opts *IssuesOptions, isC
 	}
 
 	session := sumSession(opts, issueIDs)
-	if isClosed.Has() {
-		session = session.And("issue.is_closed = ?", isClosed.Value())
+	if has, value := isClosed.Get(); has {
+		session = session.And("issue.is_closed = ?", value)
 	}
 	return session.SumInt(new(trackedTime), "tracked_time.time")
 }

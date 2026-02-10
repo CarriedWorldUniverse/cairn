@@ -77,8 +77,8 @@ func (opts FindBranchOptions) ToConds() builder.Cond {
 	if len(opts.ExcludeBranchNames) > 0 {
 		cond = cond.And(builder.NotIn("name", opts.ExcludeBranchNames))
 	}
-	if opts.IsDeletedBranch.Has() {
-		cond = cond.And(builder.Eq{"is_deleted": opts.IsDeletedBranch.Value()})
+	if has, value := opts.IsDeletedBranch.Get(); has {
+		cond = cond.And(builder.Eq{"is_deleted": value})
 	}
 	if opts.Keyword != "" {
 		cond = cond.And(builder.Like{"name", opts.Keyword})
