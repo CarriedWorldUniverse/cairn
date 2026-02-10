@@ -92,6 +92,58 @@
   margin-top: 0;
 }
 
+.page-content.organization.members .list {
+  display: grid;
+  grid-template-columns: minmax(min-content, auto) 1fr fit-content(100%) fit-content(100%);
+  color: var(--color-text-light-2);
+
+  .divider {
+    grid-column: 1 / -1;
+  }
+
+  /* Username (+display name) use header */
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+  .actions {
+    display: contents;
+  }
+
+  .link-action, .delete-button {
+    align-self: start;
+  }
+
+  a:has(img) {
+    margin-inline-end: 0.5rem;
+  }
+
+  .delete-button {
+    margin-inline-start: var(--button-spacing);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .page-content.organization.members .list {
+    /* Place both buttons in one column */
+    grid-template-columns: minmax(min-content, auto) 1fr fit-content(100%);
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--button-spacing);
+    }
+
+    .link-action, .delete-button {
+      width: 100%;
+      margin: 0;
+    }
+  }
+}
+
 .page-content.organization .teams .item {
   padding: 10px 15px;
 }
