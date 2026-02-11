@@ -234,18 +234,18 @@ func AddDeletePRBranchComment(ctx context.Context, doer *user_model.User, repo *
 }
 
 // UpdateIssueAttachments update attachments by UUIDs for the issue
-func UpdateIssueAttachments(ctx context.Context, issueID int64, uuids []string) (err error) {
+func UpdateIssueAttachments(ctx context.Context, issue *Issue, uuids []string) (err error) {
 	ctx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer committer.Close()
-	attachments, err := repo_model.GetAttachmentsByUUIDs(ctx, uuids)
+	attachments, err := repo_model.FindRepoAttachmentsByUUID(ctx, issue.RepoID, uuids, repo_model.FindAttachmentOptions{})
 	if err != nil {
-		return fmt.Errorf("getAttachmentsByUUIDs [uuids: %v]: %w", uuids, err)
+		return fmt.Errorf("FindRepoAttachmentsByUUID[uuids=%q,repoID=%d]: %w", uuids, issue.RepoID, err)
 	}
 	for i := 0; i < len(attachments); i++ {
-		attachments[i].IssueID = issueID
+		attachments[i].IssueID = issue.ID
 		if err := repo_model.UpdateAttachment(ctx, attachments[i]); err != nil {
 			return fmt.Errorf("update attachment [id: %d]: %w", attachments[i].ID, err)
 		}
@@ -394,18 +394,8 @@ func NewIssueWithIndex(ctx context.Context, doer *user_model.User, opts NewIssue
 		return err
 	}
 
-	if len(opts.Attachments) > 0 {
-		attachments, err := repo_model.GetAttachmentsByUUIDs(ctx, opts.Attachments)
-		if err != nil {
-			return fmt.Errorf("getAttachmentsByUUIDs [uuids: %v]: %w", opts.Attachments, err)
-		}
-
-		for i := 0; i < len(attachments); i++ {
-			attachments[i].IssueID = opts.Issue.ID
-			if _, err = e.ID(attachments[i].ID).Update(attachments[i]); err != nil {
-				return fmt.Errorf("update attachment [id: %d]: %w", attachments[i].ID, err)
-			}
-		}
+	if err := UpdateIssueAttachments(ctx, opts.Issue, opts.Attachments); err != nil {
+		return fmt.Errorf("UpdateIssueAttachments: %w", err)
 	}
 	if err = opts.Issue.LoadAttributes(ctx); err != nil {
 		return err

@@ -224,18 +224,14 @@ func UpdateRelease(ctx context.Context, rel *Release) error {
 }
 
 // AddReleaseAttachments adds a release attachments
-func AddReleaseAttachments(ctx context.Context, releaseID int64, attachmentUUIDs []string) (err error) {
-	// Check attachments
-	attachments, err := GetAttachmentsByUUIDs(ctx, attachmentUUIDs)
+func AddReleaseAttachments(ctx context.Context, release *Release, attachmentUUIDs []string) (err error) {
+	attachments, err := FindRepoAttachmentsByUUID(ctx, release.RepoID, attachmentUUIDs, FindAttachmentOptions{})
 	if err != nil {
-		return fmt.Errorf("GetAttachmentsByUUIDs [uuids: %v]: %w", attachmentUUIDs, err)
+		return fmt.Errorf("FindRepoAttachmentsByUUID[uuids=%q,repoID=%d]: %w", attachmentUUIDs, release.RepoID, err)
 	}
 
 	for i := range attachments {
-		if attachments[i].ReleaseID != 0 {
-			return util.NewPermissionDeniedErrorf("release permission denied")
-		}
-		attachments[i].ReleaseID = releaseID
+		attachments[i].ReleaseID = release.ID
 		// No assign value could be 0, so ignore AllCols().
 		if _, err = db.GetEngine(ctx).ID(attachments[i].ID).Update(attachments[i]); err != nil {
 			return fmt.Errorf("update attachment [%d]: %w", attachments[i].ID, err)
