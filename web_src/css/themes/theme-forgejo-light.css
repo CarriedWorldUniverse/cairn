@@ -274,6 +274,8 @@
   --color-highlight-fg: var(--color-primary-light-4);
   --color-highlight-bg: var(--color-primary-light-6);
   --color-overlay-backdrop: #080808c0;
+  --color-selection-bg: var(--steel-450);
+  --color-selection-fg: var(--color-white);
   /* pattern colors for gradient */
   --checkerboard-color-1: #ffffff;
   --checkerboard-color-2: #e5e5e5;
@@ -308,8 +310,4 @@
 .ui.yellow.label.pending-label {
   background: var(--color-warning-bg) !important;
   color: var(--color-text-dark) !important;
-}
-::selection {
-  background: var(--steel-450) !important;
-  color: var(--color-white) !important;
 }

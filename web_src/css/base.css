@@ -242,9 +242,10 @@ h1.error-code {
   background: var(--color-hover);
 }
 
-::selection {
-  background: var(--color-primary-light-1);
-  color: var(--color-white);
+::selection,
+relative-time::part(relative-time)::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-selection-fg);
 }
 
 ::placeholder,

@@ -276,6 +276,8 @@
   --color-highlight-fg: var(--color-primary-light-4);
   --color-highlight-bg: var(--color-primary-alpha-20);
   --color-overlay-backdrop: #080808c0;
+  --color-selection-bg: var(--steel-100);
+  --color-selection-fg: var(--color-pure-black);
   /* pattern colors for image diff */
   --checkerboard-color-1: #474747;
   --checkerboard-color-2: #313131;
@@ -337,10 +339,6 @@ i.grey.icon.icon.icon.icon {
 }
 .ui.yellow.label.pending-label {
   color: var(--color-warning-text) !important;
-}
-::selection {
-  background: var(--steel-100) !important;
-  color: var(--color-pure-black) !important;
 }
 strong.attention-important, svg.attention-important {
   color: var(--color-violet-light);
