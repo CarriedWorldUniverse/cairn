@@ -14,6 +14,7 @@ import (
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
+	"forgejo.org/modules/setting"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,6 +58,12 @@ func TestPullRequest_GetDefaultMergeMessage_InternalTracker(t *testing.T) {
 	mergeMessage, _, err = GetDefaultMergeMessage(db.DefaultContext, gitRepo, pr, "")
 	require.NoError(t, err)
 	assert.Equal(t, "Merge pull request 'issue3' (#3) from user2/repo1:branch2 into master", mergeMessage)
+
+	setting.AppURL = "https://example.org/suburl/"
+	setting.AppSubURL = "/suburl"
+	_, body, err = GetDefaultMergeMessage(db.DefaultContext, gitRepo, pr, "")
+	require.NoError(t, err)
+	assert.Equal(t, "Reviewed-on: https://example.org/suburl/user2/repo1/pulls/3\n", body)
 }
 
 func TestPullRequest_GetDefaultMergeMessage_ExternalTracker(t *testing.T) {
