@@ -146,6 +146,12 @@
       "enabled": false
     },
     {
+      "description": "Disable major updates for stable branches",
+      "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "Require approval for stable branches (must be last rule to override all others)",
       "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
       "dependencyDashboardApproval": true,
