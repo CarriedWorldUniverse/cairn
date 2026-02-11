@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package repo
@@ -16,17 +17,30 @@ import (
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/validation"
+
+	"xorm.io/builder"
 )
 
 // Attachment represent a attachment of issue/comment/release.
 type Attachment struct {
-	ID                int64  `xorm:"pk autoincr"`
-	UUID              string `xorm:"uuid UNIQUE"`
-	RepoID            int64  `xorm:"INDEX"`           // this should not be zero
-	IssueID           int64  `xorm:"INDEX"`           // maybe zero when creating
-	ReleaseID         int64  `xorm:"INDEX"`           // maybe zero when creating
-	UploaderID        int64  `xorm:"INDEX DEFAULT 0"` // Notice: will be zero before this column added
-	CommentID         int64  `xorm:"INDEX"`
+	ID int64 `xorm:"pk autoincr"`
+	// UUID is the public identifier of the attachment, and is used during HTTP
+	// requests to refer to a specific attachment.
+	UUID string `xorm:"uuid UNIQUE"`
+	// UploaderID is always set and non-zero and refers to the user that has
+	// uploaded this attachment.
+	UploaderID int64 `xorm:"INDEX DEFAULT 0"`
+	// RepoID is always set and non-zero and refers to the repository where this
+	// attachment was uploaded to.
+	RepoID int64 `xorm:"INDEX"`
+	// IssueID, ReleaseID and CommentID have multiple possible states:
+	//  - ReleaseID != 0 && IssueID == 0 && CommentID == 0: attached to release with id `ReleaseID`.
+	//  - ReleaseID == 0 && IssueID != 0 && CommentID == 0: attached to the issue with id `IssueID`.
+	//  - ReleaseID == 0 && IssueID != 0 && CommentID != 0: attached to comment with id `CommentID` that is in issue with id `IssueID`.
+	//  All other states should be considered invalid.
+	IssueID           int64 `xorm:"INDEX"`
+	ReleaseID         int64 `xorm:"INDEX"`
+	CommentID         int64 `xorm:"INDEX"`
 	Name              string
 	DownloadCount     int64              `xorm:"DEFAULT 0"`
 	Size              int64              `xorm:"DEFAULT 0"`
@@ -71,6 +85,12 @@ func (a *Attachment) DownloadURL() string {
 	}
 
 	return setting.AppURL + "attachments/" + url.PathEscape(a.UUID)
+}
+
+// IsAttachedToResource returns true if this attachment is attached to a release,
+// issue or comment.
+func (a *Attachment) IsAttachedToResource() bool {
+	return a.ReleaseID != 0 || a.IssueID != 0 || a.CommentID != 0
 }
 
 // ErrAttachmentNotExist represents a "AttachmentNotExist" kind of error.
@@ -133,15 +153,37 @@ func GetAttachmentByUUID(ctx context.Context, uuid string) (*Attachment, error) 
 	return attach, nil
 }
 
-// GetAttachmentsByUUIDs returns attachment by given UUID list.
-func GetAttachmentsByUUIDs(ctx context.Context, uuids []string) ([]*Attachment, error) {
+type FindAttachmentOptions struct {
+	ReleaseID int64
+	IssueID   int64
+	CommentID int64
+}
+
+func (opts FindAttachmentOptions) ToConds() builder.Cond {
+	return builder.Eq{"release_id": opts.ReleaseID, "issue_id": opts.IssueID, "comment_id": opts.CommentID}
+}
+
+// FindRepoAttachmentsByUUID always returns attachment that has a UUID that is
+// in the given `uuids` argument and is attached to the repository.
+//
+// The values in `opts` are always as a condition even if they are zero, this
+// allows to search for attachments that are not yet attached to any resource by
+// specifying a empty struct.
+func FindRepoAttachmentsByUUID(ctx context.Context, repoID int64, uuids []string, opts FindAttachmentOptions) ([]*Attachment, error) {
+	// Nothing to match anyway.
 	if len(uuids) == 0 {
 		return []*Attachment{}, nil
 	}
 
-	// Silently drop invalid uuids.
+	// At maximum nothing is filtered and we get all attachments via the UUID.
 	attachments := make([]*Attachment, 0, len(uuids))
-	return attachments, db.GetEngine(ctx).In("uuid", uuids).Find(&attachments)
+
+	err := db.GetEngine(ctx).
+		Where("repo_id = ?", repoID).
+		In("uuid", uuids).
+		And(opts.ToConds()).
+		Find(&attachments)
+	return attachments, err
 }
 
 // ExistAttachmentsByUUID returns true if attachment exists with the given UUID
