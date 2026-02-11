@@ -25,6 +25,7 @@ linters:
     - unused
     - usetesting
     - wastedassign
+    - nilnil
   settings:
     depguard:
       rules:
@@ -113,6 +114,8 @@ linters:
       disable:
         - error-is-as
         - go-require
+    nilnil:
+      only-two: false
   exclusions:
     generated: lax
     presets:
@@ -163,6 +166,239 @@ linters:
       - linters:
           - staticcheck
         text: "(ST1005|ST1003|QF1001):"
+
+      # TODO: eventually remove this section entirely
+      - path: cmd/admin_auth_ldap_test.go
+        linters:
+          - nilnil
+      - path: cmd/admin_auth_oauth_test.go
+        linters:
+          - nilnil
+      - path: cmd/admin_auth_pam_test.go
+        linters:
+          - nilnil
+      - path: cmd/cmd.go
+        linters:
+          - nilnil
+      - path: cmd/forgejo/actions.go
+        linters:
+          - nilnil
+      - path: models/actions/run.go
+        linters:
+          - nilnil
+      - path: models/actions/task.go
+        linters:
+          - nilnil
+      - path: models/activities/action_list.go
+        linters:
+          - nilnil
+      - path: models/asymkey/gpg_key_object_verification.go
+        linters:
+          - nilnil
+      - path: models/auth/oauth2.go
+        linters:
+          - nilnil
+      - path: models/db/collation.go
+        linters:
+          - nilnil
+      - path: models/dbfs/dbfile.go
+        linters:
+          - nilnil
+      - path: models/forgefed/federationhost_repository.go
+        linters:
+          - nilnil
+      - path: models/forgejo_migrations_legacy/v32.go
+        linters:
+          - nilnil
+      - path: models/forgejo_migrations_legacy/v32_test.go
+        linters:
+          - nilnil
+      - path: models/db/context.go
+        linters:
+          - nilnil
+      - path: models/git/branch_list.go
+        linters:
+          - nilnil
+      - path: models/git/lfs_lock.go
+        linters:
+          - nilnil
+      - path: models/git/protected_branch.go
+        linters:
+          - nilnil
+      - path: models/git/protected_tag.go
+        linters:
+          - nilnil
+      - path: models/issues/issue.go
+        linters:
+          - nilnil
+      - path: models/issues/issue_xref.go
+        linters:
+          - nilnil
+      - path: models/issues/review.go
+        linters:
+          - nilnil
+      - path: models/organization/org_user.go
+        linters:
+          - nilnil
+      - path: models/quota/rule.go
+        linters:
+          - nilnil
+      - path: models/repo/archiver.go
+        linters:
+          - nilnil
+      - path: models/repo/fork.go
+        linters:
+          - nilnil
+      - path: models/repo/topic.go
+        linters:
+          - nilnil
+      - path: models/user/email_address.go
+        linters:
+          - nilnil
+      - path: models/user/list.go
+        linters:
+          - nilnil
+      - path: models/user/user.go
+        linters:
+          - nilnil
+      - path: models/repo/repo.go
+        linters:
+          - nilnil
+      - path: models/user/user_repository.go
+        linters:
+          - nilnil
+      - path: modules/git/commit.go
+        linters:
+          - nilnil
+      - path: modules/git/foreachref/parser.go
+        linters:
+          - nilnil
+      - path: modules/git/last_commit_cache.go
+        linters:
+          - nilnil
+      - path: modules/git/log_name_status.go
+        linters:
+          - nilnil
+      - path: modules/graceful/net_unix.go
+        linters:
+          - nilnil
+      - path: modules/indexer/internal/bleve/util.go
+        linters:
+          - nilnil
+      - path: modules/indexer/issues/util.go
+        linters:
+          - nilnil
+      - path: modules/optional/serialization.go
+        linters:
+          - nilnil
+      - path: modules/setting/storage.go
+        linters:
+          - nilnil
+      - path: routers/api/packages/chef/auth.go
+        linters:
+          - nilnil
+      - path: routers/api/packages/container/auth.go
+        linters:
+          - nilnil
+      - path: routers/api/packages/nuget/auth.go
+        linters:
+          - nilnil
+      - path: routers/api/packages/swift/swift.go
+        linters:
+          - nilnil
+      - path: routers/web/auth/oauth.go
+        linters:
+          - nilnil
+      - path: routers/web/repo/compare.go
+        linters:
+          - nilnil
+      - path: routers/web/repo/release.go
+        linters:
+          - nilnil
+      - path: routers/web/repo/setting/runners.go
+        linters:
+          - nilnil
+      - path: routers/web/repo/setting/secrets.go
+        linters:
+          - nilnil
+      - path: routers/web/repo/setting/variables.go
+        linters:
+          - nilnil
+      - path: services/actions/context.go
+        linters:
+          - nilnil
+      - path: services/actions/task.go
+        linters:
+          - nilnil
+      - path: services/actions/trust.go
+        linters:
+          - nilnil
+      - path: services/auth/basic.go
+        linters:
+          - nilnil
+      - path: services/auth/httpsign.go
+        linters:
+          - nilnil
+      - path: services/auth/oauth2.go
+        linters:
+          - nilnil
+      - path: services/auth/reverseproxy.go
+        linters:
+          - nilnil
+      - path: services/auth/session.go
+        linters:
+          - nilnil
+      - path: services/contexttest/context_tests.go
+        linters:
+          - nilnil
+      - path: services/gitdiff/csv.go
+        linters:
+          - nilnil
+      - path: services/issue/assignee.go
+        linters:
+          - nilnil
+      - path: routers/api/packages/conan/auth.go
+        linters:
+          - nilnil
+      - path: services/federation/signature_service.go
+        linters:
+          - nilnil
+      - path: services/issue/commit.go
+        linters:
+          - nilnil
+      - path: services/issue/issue.go
+        linters:
+          - nilnil
+      - path: services/migrations/onedev.go
+        linters:
+          - nilnil
+      - path: services/packages/cargo/index.go
+        linters:
+          - nilnil
+      - path: services/pull/check.go
+        linters:
+          - nilnil
+      - path: services/pull/comment.go
+        linters:
+          - nilnil
+      - path: services/pull/merge.go
+        linters:
+          - nilnil
+      - path: services/pull/review.go
+        linters:
+          - nilnil
+      - path: services/remote/promote.go
+        linters:
+          - nilnil
+      - path: services/repository/archiver/archiver.go
+        linters:
+          - nilnil
+      - path: services/repository/generate_repo_commit.go
+        linters:
+          - nilnil
+      - path: services/repository/repository.go
+        linters:
+          - nilnil
     paths:
       - node_modules
       - public
