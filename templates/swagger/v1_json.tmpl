@@ -31592,12 +31592,6 @@
     }
   },
   "securityDefinitions": {
-    "AccessToken": {
-      "description": "This authentication option is deprecated for removal in Forgejo v13.0.0. Please use AuthorizationHeaderToken instead.",
-      "type": "apiKey",
-      "name": "access_token",
-      "in": "query"
-    },
     "AuthorizationHeaderToken": {
       "description": "API tokens must be prepended with \"token\" followed by a space.",
       "type": "apiKey",
@@ -31624,23 +31618,11 @@
       "type": "apiKey",
       "name": "X-FORGEJO-OTP",
       "in": "header"
-    },
-    "Token": {
-      "description": "This authentication option is deprecated for removal in Forgejo v13.0.0. Please use AuthorizationHeaderToken instead.",
-      "type": "apiKey",
-      "name": "token",
-      "in": "query"
     }
   },
   "security": [
     {
       "BasicAuth": []
-    },
-    {
-      "Token": []
-    },
-    {
-      "AccessToken": []
     },
     {
       "AuthorizationHeaderToken": []
