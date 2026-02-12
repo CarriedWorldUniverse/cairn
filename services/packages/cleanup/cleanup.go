@@ -136,13 +136,20 @@ func GetCleanupTargets(ctx context.Context, pcr *packages_model.PackageCleanupRu
 		if err != nil {
 			return nil, fmt.Errorf("failure to SearchVersions for package cleanup rule: %w", err)
 		}
-		keep := min(len(pvs), pcr.KeepCount)
-		for _, pv := range pvs[keep:] {
+
+		var keep int
+		for _, pv := range pvs {
 			if pcr.Type == packages_model.TypeContainer {
 				if skip := container_service.ShouldBeSkipped(pv); skip {
 					log.Debug("Rule[%d]: keep '%s/%s' (container)", pcr.ID, p.Name, pv.Version)
 					continue
 				}
+			}
+
+			keep++
+			if pcr.KeepCount > 0 && keep <= pcr.KeepCount {
+				log.Debug("Rule[%d]: keep '%s/%s' (count)", pcr.ID, p.Name, pv.Version)
+				continue
 			}
 
 			toMatch := pv.LowerVersion
