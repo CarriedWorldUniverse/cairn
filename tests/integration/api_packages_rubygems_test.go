@@ -369,6 +369,15 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==`)
 		assert.Equal(t, "ruby", pd.Metadata.(*rubygems.Metadata).Platform)
 	})
 
+	t.Run("UploadBadRequest", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequestWithBody(t, "POST", fmt.Sprintf("%s/api/v1/gems", root), bytes.NewReader(gemContent)).
+			AddBasicAuth(user.Name).
+			SetHeader("content-type", "multipart/form-data")
+		MakeRequest(t, req, http.StatusBadRequest)
+	})
+
 	t.Run("UploadExists", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 

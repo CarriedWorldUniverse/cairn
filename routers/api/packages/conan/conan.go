@@ -316,7 +316,11 @@ func uploadFile(ctx *context.Context, fileFilter container.Set[string], fileKey 
 
 	upload, needToClose, err := ctx.UploadStream()
 	if err != nil {
-		apiError(ctx, http.StatusBadRequest, err)
+		if context.IsFormError(err) {
+			apiError(ctx, http.StatusBadRequest, err)
+		} else {
+			apiError(ctx, http.StatusInternalServerError, err)
+		}
 		return
 	}
 	if needToClose {

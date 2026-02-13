@@ -95,6 +95,11 @@ dependencies:
 		assert.Equal(t, int64(len(content)), pb.Size)
 
 		req = NewRequestWithBody(t, "POST", uploadURL, bytes.NewReader(content)).
+			AddBasicAuth(user.Name).
+			SetHeader("content-type", "multipart/form-data")
+		MakeRequest(t, req, http.StatusBadRequest)
+
+		req = NewRequestWithBody(t, "POST", uploadURL, bytes.NewReader(content)).
 			AddBasicAuth(user.Name)
 		MakeRequest(t, req, http.StatusCreated)
 	})

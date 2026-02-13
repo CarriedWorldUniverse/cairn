@@ -81,6 +81,12 @@ func TestPackageCran(t *testing.T) {
 			req = NewRequestWithBody(t, "PUT", uploadURL, createArchive(
 				"package/DESCRIPTION",
 				createDescription(packageName, packageVersion),
+			)).AddBasicAuth(user.Name).SetHeader("content-type", "multipart/form-data")
+			MakeRequest(t, req, http.StatusBadRequest)
+
+			req = NewRequestWithBody(t, "PUT", uploadURL, createArchive(
+				"package/DESCRIPTION",
+				createDescription(packageName, packageVersion),
 			)).AddBasicAuth(user.Name)
 			MakeRequest(t, req, http.StatusCreated)
 

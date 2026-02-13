@@ -276,6 +276,11 @@ func TestPackageNuGet(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequestWithBody(t, "PUT", url, bytes.NewReader(content)).
+				AddBasicAuth(user.Name).
+				SetHeader("content-type", "multipart/form-data")
+			MakeRequest(t, req, http.StatusBadRequest)
+
+			req = NewRequestWithBody(t, "PUT", url, bytes.NewReader(content)).
 				AddBasicAuth(user.Name)
 			MakeRequest(t, req, http.StatusCreated)
 

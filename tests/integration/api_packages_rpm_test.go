@@ -125,6 +125,11 @@ gpgkey=%sapi/packages/%s/rpm/repository.key`,
 				MakeRequest(t, req, http.StatusUnauthorized)
 
 				req = NewRequestWithBody(t, "PUT", url, bytes.NewReader(content)).
+					AddBasicAuth(user.Name).
+					SetHeader("content-type", "multipart/form-data")
+				MakeRequest(t, req, http.StatusBadRequest)
+
+				req = NewRequestWithBody(t, "PUT", url, bytes.NewReader(content)).
 					AddBasicAuth(user.Name)
 				MakeRequest(t, req, http.StatusCreated)
 

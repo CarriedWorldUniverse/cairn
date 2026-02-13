@@ -62,6 +62,11 @@ func TestPackageGo(t *testing.T) {
 		})
 
 		req = NewRequestWithBody(t, "PUT", url+"/upload", bytes.NewReader(content)).
+			AddBasicAuth(user.Name).
+			SetHeader("content-type", "multipart/form-data")
+		MakeRequest(t, req, http.StatusBadRequest)
+
+		req = NewRequestWithBody(t, "PUT", url+"/upload", bytes.NewReader(content)).
 			AddBasicAuth(user.Name)
 		MakeRequest(t, req, http.StatusCreated)
 

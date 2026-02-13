@@ -151,7 +151,11 @@ func UploadPackageFile(ctx *context.Context) {
 
 	upload, needsClose, err := ctx.UploadStream()
 	if err != nil {
-		apiError(ctx, http.StatusInternalServerError, err)
+		if context.IsFormError(err) {
+			apiError(ctx, http.StatusBadRequest, err)
+		} else {
+			apiError(ctx, http.StatusInternalServerError, err)
+		}
 		return
 	}
 	if needsClose {
