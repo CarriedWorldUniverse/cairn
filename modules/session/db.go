@@ -84,6 +84,11 @@ func (s *DBStore) Flush() error {
 	return nil
 }
 
+// True if no keys have been set
+func (s *DBStore) Empty() bool {
+	return len(s.data) == 0
+}
+
 // DBProvider represents a DB session provider implementation.
 type DBProvider struct {
 	maxLifetime int64

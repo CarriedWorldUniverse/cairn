@@ -195,3 +195,8 @@ func (s *VirtualStore) Flush() error {
 	s.data = make(map[any]any)
 	return nil
 }
+
+// True if no keys have been set
+func (s *VirtualStore) Empty() bool {
+	return len(s.data) == 0
+}
