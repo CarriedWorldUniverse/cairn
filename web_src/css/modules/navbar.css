@@ -78,6 +78,7 @@
   /* show items if the navbar is open */
   #navbar.navbar-menu-open {
     padding-bottom: 8px;
+    gap: .35714286em;
   }
   #navbar.navbar-menu-open,
   #navbar.navbar-menu-open .navbar-right {
