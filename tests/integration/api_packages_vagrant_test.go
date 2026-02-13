@@ -84,6 +84,11 @@ func TestPackageVagrant(t *testing.T) {
 		MakeRequest(t, req, http.StatusUnauthorized)
 
 		req = NewRequestWithBody(t, "PUT", uploadURL, bytes.NewReader(content)).
+			AddBasicAuth(user.Name).
+			SetHeader("content-type", "multipart/form-data")
+		MakeRequest(t, req, http.StatusBadRequest)
+
+		req = NewRequestWithBody(t, "PUT", uploadURL, bytes.NewReader(content)).
 			AddTokenAuth(token)
 		MakeRequest(t, req, http.StatusCreated)
 

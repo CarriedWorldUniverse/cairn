@@ -142,6 +142,10 @@ HMhNSS1IzUsBcpJAPFAwwUXSM0u4BjoaR8EoGAWjgGQAAILFeyQADAAA
 
 			req := NewRequestWithBody(t, "PUT", groupURL, bytes.NewReader(pkgs["any"]))
 			MakeRequest(t, req, http.StatusUnauthorized)
+			req = NewRequestWithBody(t, "PUT", groupURL, bytes.NewReader(pkgs["any"])).
+				AddBasicAuth(user.Name).
+				SetHeader("content-type", "multipart/form-data")
+			MakeRequest(t, req, http.StatusBadRequest)
 
 			req = NewRequestWithBody(t, "PUT", groupURL, bytes.NewReader(pkgs["any"])).
 				AddBasicAuth(user.Name)

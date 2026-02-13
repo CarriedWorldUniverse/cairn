@@ -92,6 +92,11 @@ Djfa/2q5bH4699v++uMAAAAAAAAAAAAAAAAAAAAAAHbgA/eXQh8AKAAA`
 					MakeRequest(t, req, http.StatusBadRequest)
 
 					req = NewRequestWithBody(t, "PUT", uploadURL, bytes.NewReader(content)).
+						AddBasicAuth(user.Name).
+						SetHeader("content-type", "multipart/form-data")
+					MakeRequest(t, req, http.StatusBadRequest)
+
+					req = NewRequestWithBody(t, "PUT", uploadURL, bytes.NewReader(content)).
 						AddBasicAuth(user.Name)
 					MakeRequest(t, req, http.StatusCreated)
 

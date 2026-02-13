@@ -30,3 +30,7 @@ func (ctx *Context) UploadStream() (rd io.ReadCloser, needToClose bool, err erro
 	}
 	return ctx.Req.Body, false, nil
 }
+
+func IsFormError(err error) bool {
+	return err == http.ErrMissingFile || err == http.ErrMissingBoundary
+}

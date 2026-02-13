@@ -68,6 +68,11 @@ func TestPackageConda(t *testing.T) {
 			MakeRequest(t, req, http.StatusUnauthorized)
 
 			req = NewRequestWithBody(t, "PUT", root+"/"+filename, bytes.NewReader(buf.Bytes())).
+				AddBasicAuth(user.Name).
+				SetHeader("content-type", "multipart/form-data")
+			MakeRequest(t, req, http.StatusBadRequest)
+
+			req = NewRequestWithBody(t, "PUT", root+"/"+filename, bytes.NewReader(buf.Bytes())).
 				AddBasicAuth(user.Name)
 			MakeRequest(t, req, http.StatusCreated)
 
@@ -107,6 +112,11 @@ func TestPackageConda(t *testing.T) {
 
 			req := NewRequestWithBody(t, "PUT", root+"/"+channel+"/"+filename, bytes.NewReader(buf.Bytes()))
 			MakeRequest(t, req, http.StatusUnauthorized)
+
+			req = NewRequestWithBody(t, "PUT", root+"/"+channel+"/"+filename, bytes.NewReader(buf.Bytes())).
+				AddBasicAuth(user.Name).
+				SetHeader("content-type", "multipart/form-data")
+			MakeRequest(t, req, http.StatusBadRequest)
 
 			req = NewRequestWithBody(t, "PUT", root+"/"+channel+"/"+filename, bytes.NewReader(buf.Bytes())).
 				AddBasicAuth(user.Name)

@@ -64,7 +64,11 @@ func PushPackage(ctx *context.Context) {
 	defer releaser()
 	upload, needToClose, err := ctx.UploadStream()
 	if err != nil {
-		apiError(ctx, http.StatusInternalServerError, err)
+		if context.IsFormError(err) {
+			apiError(ctx, http.StatusBadRequest, err)
+		} else {
+			apiError(ctx, http.StatusInternalServerError, err)
+		}
 		return
 	}
 	if needToClose {

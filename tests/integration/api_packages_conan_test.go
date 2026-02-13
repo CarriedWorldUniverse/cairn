@@ -118,6 +118,11 @@ func uploadConanPackageV1(t *testing.T, baseURL, token, name, version, user, cha
 	assert.NotEmpty(t, uploadURL)
 
 	req = NewRequestWithBody(t, "PUT", uploadURL, strings.NewReader(contentConanfile)).
+		AddTokenAuth(token).
+		SetHeader("content-type", "multipart/form-data")
+	MakeRequest(t, req, http.StatusBadRequest)
+
+	req = NewRequestWithBody(t, "PUT", uploadURL, strings.NewReader(contentConanfile)).
 		AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusCreated)
 
