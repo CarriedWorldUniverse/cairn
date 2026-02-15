@@ -20,6 +20,7 @@ import (
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/actions"
 	"forgejo.org/services/auth/source/oauth2"
+	"forgejo.org/services/authz"
 )
 
 // Ensure the struct implements the interface.
@@ -200,6 +201,14 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string, store Dat
 	}
 	store.GetData()["IsApiToken"] = true
 	store.GetData()["ApiTokenScope"] = t.Scope
+
+	reducer, err := authz.GetAuthorizationReducerForAccessToken(ctx, t)
+	if err != nil {
+		log.Error("authz.GetAuthorizationReducerForAccessToken: %v", err)
+		return 0, err
+	}
+	store.GetData()["ApiTokenReducer"] = reducer
+
 	return t.UID, nil
 }
 
