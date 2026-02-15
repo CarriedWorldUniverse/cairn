@@ -205,7 +205,15 @@ func runCreateUser(ctx context.Context, c *cli.Command) error {
 
 	// create the access token
 	if accessTokenScope != "" {
-		t := &auth_model.AccessToken{Name: accessTokenName, UID: u.ID, Scope: accessTokenScope}
+		t := &auth_model.AccessToken{
+			Name:  accessTokenName,
+			UID:   u.ID,
+			Scope: accessTokenScope,
+
+			// maintain legacy behaviour until new CLI options are added -- token has access to all resources, is not
+			// fine-grained
+			ResourceAllRepos: true,
+		}
 		if err := auth_model.NewAccessToken(ctx, t); err != nil {
 			return err
 		}

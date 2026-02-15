@@ -86,6 +86,10 @@ func runGenerateAccessToken(ctx context.Context, c *cli.Command) error {
 	}
 	t.Scope = accessTokenScope
 
+	// maintain legacy behaviour until new CLI options are added -- token has access to all resources, is not
+	// fine-grained
+	t.ResourceAllRepos = true
+
 	// create the token
 	if err := auth_model.NewAccessToken(ctx, t); err != nil {
 		return err
