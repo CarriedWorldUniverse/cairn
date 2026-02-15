@@ -15,6 +15,7 @@ import (
 	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
+	"forgejo.org/services/authz"
 )
 
 // Permission contains all the permissions related variables to a repository for a user
@@ -164,7 +165,28 @@ func GetActionRepoPermission(ctx context.Context, repo *repo_model.Repository, t
 	return GetUserRepoPermission(ctx, repo, user_model.NewActionsUser())
 }
 
-// GetUserRepoPermission returns the user permissions to the repository
+// GetUserRepoPermission returns the user permissions to the repository, where the user's permissions may be
+// artificially restricted by a an authorization reducer.
+func GetUserRepoPermissionWithReducer(ctx context.Context, repo *repo_model.Repository, user *user_model.User, reducer authz.AuthorizationReducer) (Permission, error) {
+	perm, err := GetUserRepoPermission(ctx, repo, user)
+	if err != nil {
+		return perm, err
+	}
+	perm.AccessMode, err = reducer.ReduceRepoAccess(ctx, repo, perm.AccessMode)
+	if err != nil {
+		return perm, fmt.Errorf("failure in ReduceRepoAccess: %w", err)
+	}
+	for unit, currentAccessMode := range perm.UnitsMode {
+		reduced, err := reducer.ReduceRepoAccess(ctx, repo, currentAccessMode)
+		if err != nil {
+			return perm, fmt.Errorf("failure in ReduceRepoAccess: %w", err)
+		}
+		perm.UnitsMode[unit] = reduced
+	}
+	return perm, nil
+}
+
+// GetUserRepoPermission returns the user permissions to the repository.
 func GetUserRepoPermission(ctx context.Context, repo *repo_model.Repository, user *user_model.User) (Permission, error) {
 	var perm Permission
 	if log.IsTrace() {

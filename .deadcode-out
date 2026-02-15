@@ -49,6 +49,7 @@ forgejo.org/models/organization
 	SearchMembersOptions.ToConds
 
 forgejo.org/models/perm/access
+	GetUserRepoPermissionWithReducer
 	GetRepoWriters
 
 forgejo.org/models/user
