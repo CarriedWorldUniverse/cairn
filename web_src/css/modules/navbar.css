@@ -44,6 +44,12 @@
   margin-right: 0;
 }
 
+/* icon with notification counter - positioned relative container */
+#navbar .notification-icon-relative {
+  position: relative;
+  display: flex;
+}
+
 @media (max-width: 767.98px) {
   #navbar {
     align-items: stretch;
@@ -121,6 +127,10 @@
   padding-inline-start: 0.75rem;
   /* The min height is dictated by the largest dropdown, which is the one that has an avatar in the opener */
   min-height: 38px;
+}
+
+#navbar details.dropdown .dropdown-icon {
+  display: contents;
 }
 
 #navbar a.item .notification_count {
