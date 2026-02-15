@@ -137,6 +137,22 @@ func GetRunJobsByRunID(ctx context.Context, runID int64) ([]*ActionRunJob, error
 	return jobs, nil
 }
 
+// Check if the ActionRun has any jobs other than those included in the jobs parameter.
+func RunHasOtherJobs(ctx context.Context, runID int64, jobs []*ActionRunJob) (bool, error) {
+	jobIDs := make([]int64, len(jobs))
+	for i, job := range jobs {
+		jobIDs[i] = job.ID
+	}
+	otherJobs, err := db.GetEngine(ctx).
+		Where("run_id = ?", runID).
+		Where(builder.NotIn("id", jobIDs)).
+		Count(&ActionRunJob{})
+	if err != nil {
+		return false, err
+	}
+	return otherJobs > 0, nil
+}
+
 // All calls to UpdateRunJobWithoutNotification that change run.Status for any run from a not done status to a done status must call the ActionRunNowDone notification channel.
 // Use the wrapper function UpdateRunJob instead.
 func UpdateRunJobWithoutNotification(ctx context.Context, job *ActionRunJob, cond builder.Cond, cols ...string) (int64, error) {

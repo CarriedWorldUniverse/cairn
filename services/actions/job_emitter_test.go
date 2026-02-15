@@ -173,6 +173,7 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 		preExecutionError        actions_model.PreExecutionError
 		preExecutionErrorDetails []any
 		runsOn                   map[string][]string
+		needs                    map[string][]string
 		actionRunStatusChange    actions_model.Status
 	}{
 		{
@@ -184,6 +185,12 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 			runJobID:    601,
 			consumed:    true,
 			runJobNames: []string{"define-matrix", "produce-artifacts (blue)", "produce-artifacts (green)", "produce-artifacts (red)"},
+			needs: map[string][]string{
+				"define-matrix":             nil,
+				"produce-artifacts (blue)":  {"define-matrix"},
+				"produce-artifacts (green)": {"define-matrix"},
+				"produce-artifacts (red)":   {"define-matrix"},
+			},
 		},
 		{
 			name:        "needs an incomplete job",
@@ -402,6 +409,17 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 							}
 						}
 					}
+
+					if tt.needs != nil {
+						for _, j := range allJobsInRun {
+							expected, ok := tt.needs[j.Name]
+							if assert.Truef(t, ok, "unable to find needs[%q] in test case", j.Name) {
+								slices.Sort(j.Needs)
+								slices.Sort(expected)
+								assert.Equalf(t, expected, j.Needs, "comparing needs expectations for job %q", j.Name)
+							}
+						}
+					}
 				} else if tt.preExecutionError != 0 {
 					// expectations are that the ActionRun has a populated PreExecutionError, is marked as failed
 					actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: blockedJob.RunID})
@@ -420,5 +438,34 @@ func Test_tryHandleIncompleteMatrix(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func Test_checkJobsOfRun_ExpandsMatrixWithCorrectOutputJobStatuses(t *testing.T) {
+	defer unittest.OverrideFixtures("services/actions/Test_checkJobsOfRun")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	jobs, err := actions_model.GetRunJobsByRunID(t.Context(), 900)
+	require.NoError(t, err)
+	require.Len(t, jobs, 2)
+
+	require.NoError(t, checkJobsOfRun(t.Context(), 900, 0))
+
+	jobs, err = actions_model.GetRunJobsByRunID(t.Context(), 900)
+	require.NoError(t, err)
+	assert.Len(t, jobs, 4)
+	for _, job := range jobs {
+		switch job.Name {
+		case "define-matrix":
+			assert.Equal(t, actions_model.StatusSuccess, job.Status)
+		case "produce-artifacts (blue)":
+			fallthrough
+		case "produce-artifacts (green)":
+			fallthrough
+		case "produce-artifacts (red)":
+			assert.Equal(t, actions_model.StatusWaiting, job.Status)
+		default:
+			assert.Fail(t, "unexpected job name")
+		}
 	}
 }
