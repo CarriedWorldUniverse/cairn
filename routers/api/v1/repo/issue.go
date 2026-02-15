@@ -166,6 +166,8 @@ func SearchIssues(ctx *context.APIContext) {
 			// MySQL will return different results when sorting by null in some cases
 			OrderBy: db.SearchOrderByAlphabetically,
 			Actor:   ctx.Doer,
+
+			AuthorizationReducer: ctx.Reducer,
 		}
 		if ctx.IsSigned {
 			opts.Private = !ctx.PublicOnly
