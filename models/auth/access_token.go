@@ -73,6 +73,8 @@ type AccessToken struct {
 	UpdatedUnix       timeutil.TimeStamp `xorm:"INDEX updated"`
 	HasRecentActivity bool               `xorm:"-"`
 	HasUsed           bool               `xorm:"-"`
+
+	ResourceAllRepos bool `xorm:"NOT NULL DEFAULT TRUE"` // flag for whether AccessTokenResourceRepo instances will limit the resources this access token can access (false) or won't limit them (true).
 }
 
 // AfterLoad is invoked from XORM after setting the values of all fields of this object.

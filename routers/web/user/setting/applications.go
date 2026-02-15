@@ -56,6 +56,10 @@ func ApplicationsPost(ctx *context.Context) {
 		UID:   ctx.Doer.ID,
 		Name:  form.Name,
 		Scope: scope,
+
+		// maintain legacy behaviour until new UI options are added -- token has access to all resources, is not
+		// fine-grained
+		ResourceAllRepos: true,
 	}
 
 	exist, err := auth_model.AccessTokenByNameExists(ctx, t)

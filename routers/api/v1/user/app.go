@@ -128,6 +128,10 @@ func CreateAccessToken(ctx *context.APIContext) {
 	}
 	t.Scope = scope
 
+	// maintain legacy behaviour until new API options are added -- token has access to all resources, is not
+	// fine-grained
+	t.ResourceAllRepos = true
+
 	if err := auth_model.NewAccessToken(ctx, t); err != nil {
 		ctx.Error(http.StatusInternalServerError, "NewAccessToken", err)
 		return

@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"forgejo.org/models/unittest"
+
+	_ "forgejo.org/modules/testimport"
 )
 
 func TestMain(m *testing.M) {
