@@ -17,6 +17,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
+	"forgejo.org/services/authz"
 )
 
 // Ensure the struct implements the interface.
@@ -102,6 +103,14 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 
 		store.GetData()["IsApiToken"] = true
 		store.GetData()["ApiTokenScope"] = token.Scope
+
+		reducer, err := authz.GetAuthorizationReducerForAccessToken(req.Context(), token)
+		if err != nil {
+			log.Error("authz.GetAuthorizationReducerForAccessToken: %v", err)
+			return nil, err
+		}
+		store.GetData()["ApiTokenReducer"] = reducer
+
 		return u, nil
 	} else if !auth_model.IsErrAccessTokenNotExist(err) && !auth_model.IsErrAccessTokenEmpty(err) {
 		log.Error("GetAccessTokenBySha: %v", err)

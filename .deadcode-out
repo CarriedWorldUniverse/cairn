@@ -14,7 +14,6 @@ forgejo.org/models
 	IsErrMergeDivergingFastForwardOnly
 
 forgejo.org/models/auth
-	GetRepositoriesAccessibleWithToken
 	WebAuthnCredentials
 
 forgejo.org/models/db

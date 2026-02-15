@@ -12,6 +12,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/routers/common"
 	"forgejo.org/services/auth"
+	"forgejo.org/services/authz"
 	"forgejo.org/services/context"
 
 	"github.com/go-chi/cors"
@@ -64,6 +65,10 @@ func apiAuth(authMethod auth.Method) func(*context.APIContext) {
 		ctx.Doer = ar.Doer
 		ctx.IsSigned = ar.Doer != nil
 		ctx.IsBasicAuth = ar.IsBasicAuth
+		if ctx.Reducer == nil {
+			// Ensure ctx.Reducer isn't nil, but has no impact:
+			ctx.Reducer = &authz.AllAccessAuthorizationReducer{}
+		}
 	}
 }
 
