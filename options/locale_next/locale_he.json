@@ -58,13 +58,9 @@
 		"other": "לפני %d שנים"
 	},
 	"relativetime.1day": "אתמול",
-	"relativetime.2days": "לפני יומיים",
 	"relativetime.1week": "בשבוע שעבר",
-	"relativetime.2weeks": "לפני שבועיים",
 	"relativetime.1month": "בחודש שעבר",
-	"relativetime.2months": "לפני חודשיים",
 	"relativetime.1year": "בשנה שעברה",
-	"relativetime.2years": "לפני שנתיים",
 	"repo.issues.filter_poster.hint": "סנן לפי המחבר",
 	"repo.issues.filter_assignee.hint": "סנן לפי המשתמש האחראי",
 	"repo.issues.filter_reviewers.hint": "סנן לפי המשתמש שערך ביקורת",

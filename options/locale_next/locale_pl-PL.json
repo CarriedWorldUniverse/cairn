@@ -251,13 +251,9 @@
 		"many": "%d lat temu"
 	},
 	"relativetime.1day": "wczoraj",
-	"relativetime.2days": "2 dni temu",
 	"relativetime.1week": "w zeszłym tygodniu",
-	"relativetime.2weeks": "2 tygodnie temu",
 	"relativetime.1month": "w zeszłym miesiącu",
-	"relativetime.2months": "2 miesiące temu",
 	"relativetime.1year": "w zeszłym roku",
-	"relativetime.2years": "2 lata temu",
 	"repo.pulls.already_merged": "Merge zawiódł: Ten pull request został już scalony.",
 	"repo.form.cannot_create": "Wszystkie miejsca gdzie możesz tworzyć repozytoria osiągnęły limit repozytoriów.",
 	"keys.gpg.link": "klucze GPG",

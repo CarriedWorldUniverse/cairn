@@ -219,7 +219,6 @@
 		"many": "%d ore fa",
 		"other": "%d ore fa"
 	},
-	"relativetime.2years": "due anni fa",
 	"relativetime.now": "adesso",
 	"relativetime.weeks": {
 		"one": "una settimana fa",
@@ -258,11 +257,8 @@
 	"followers.incoming.list.none": "Nessuno sta seguendo questo utente.",
 	"followers.outgoing.list.self.none": "Non segui nessuno.",
 	"followers.outgoing.list.none": "%s non sta seguendo nessuno.",
-	"relativetime.2days": "due giorni fa",
-	"relativetime.2weeks": "due settimane fa",
 	"relativetime.1week": "la settimana scorsa",
 	"relativetime.1month": "il mese scorso",
-	"relativetime.2months": "due mesi fa",
 	"relativetime.1year": "l'anno scorso",
 	"moderation.report_abuse_form.header": "Segnala abuso all'amministratore",
 	"moderation.report_abuse_form.details": "Questo modulo dovrebbe essere utilizzato per segnalare utenti che creano profili, repositori, segnalazioni o commenti spam o che si comportano in modo non adeguato.",

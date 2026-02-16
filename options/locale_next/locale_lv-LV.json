@@ -6,7 +6,7 @@
 	"packages.registry.documentation": "Vairāk informācijas par %s reģistru ir <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"%s\">dokumentācijā</a>.",
 	"packages.filter.type": "Veids",
 	"packages.filter.type.all": "Visas",
-	"packages.filter.no_result": "Norādītajām atlasīšanas vērtībām nekas neatbilst.",
+	"packages.filter.no_result": "Atsijātājs neko neatrada.",
 	"packages.filter.container.tagged": "Ar birku",
 	"packages.filter.container.untagged": "Bez birkas",
 	"packages.published_by": "Laida klajā <a href=\"%[2]s\">%[3]s</a> %[1]s",
@@ -17,7 +17,7 @@
 	"packages.requirements": "Prasības",
 	"packages.dependencies": "Atkarības",
 	"packages.keywords": "Atslēgvārdi",
-	"packages.details": "Papildu informācija",
+	"packages.details": "Informācija",
 	"packages.details.author": "Autors",
 	"packages.details.project_site": "Projekta tīmekļvietne",
 	"packages.details.repository_site": "Glabātavas tīmekļvietne",
@@ -46,7 +46,7 @@
 	"packages.arch.version.description": "Apraksts",
 	"packages.arch.version.provides": "Nodrošina",
 	"packages.arch.version.groups": "Kopa",
-	"packages.arch.version.depends": "Atkarības",
+	"packages.arch.version.depends": "Atkarīga no",
 	"packages.arch.version.optdepends": "Izvēles atkarības",
 	"packages.arch.version.makedepends": "Izveidot atkarības",
 	"packages.arch.version.checkdepends": "Pārbaudīt atkarības",
@@ -236,12 +236,8 @@
 		"other": "pirms %d mēnešiem"
 	},
 	"relativetime.1day": "vakar",
-	"relativetime.2days": "pirms divām dienām",
 	"relativetime.1week": "iepriekšējā nedēļā",
-	"relativetime.2weeks": "pirms divām nedēļām",
-	"relativetime.2months": "pirms diviem mēnešiem",
 	"relativetime.1year": "iepriekšējā gadā",
-	"relativetime.2years": "pirms diviem gadiem",
 	"relativetime.years": {
 		"zero": "pirms %d gadiem",
 		"one": "pirms %d gada",
@@ -444,5 +440,7 @@
 	"editor.toggle_case": "Pārslēgt reģistrjutīgumu",
 	"editor.toggle_regex": "Pārslēgt regulāro izteiksmju izmantošanu",
 	"editor.toggle_whole_word": "Pārslēgt atbilstību veseliem vārdiem",
-	"repo.view.gitmodules_too_large": "Datne .gitmodules ir pārāk liela un netiks ņemta vērā (piemēram, API izsaukumos)"
+	"repo.view.gitmodules_too_large": "Datne .gitmodules ir pārāk liela un netiks ņemta vērā (piemēram, API izsaukumos)",
+	"install.ssh_authorized_keys_inspection_error": "Neizdevās pārbaudīt esošu authorized_keys datni: %v",
+	"install.ssh_authorized_keys_unexpected_key": "SSH iespējošana Forgejo nesader ar datni, kas atrodas %s, kas satur esošas SSH atslēgas. Ieteikumi: Forgejo vajadzībām izmantot atsevišķu sistēmas lietotāju vai atspējot SSH."
 }
