@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/setting"
 )
 
 var (
@@ -46,6 +47,7 @@ func NewConn(conn net.Conn, timeout time.Duration) *Conn {
 		bufReader:          bufio.NewReader(conn),
 		conn:               conn,
 		proxyHeaderTimeout: timeout,
+		acceptUnknown:      setting.ProxyProtocolAcceptUnknown,
 	}
 	return pConn
 }
@@ -456,7 +458,7 @@ func (p *Conn) readV1ProxyHeader() error {
 	// Verify the type is known
 	switch parts[1] {
 	case "UNKNOWN":
-		if !p.acceptUnknown || len(parts) != 2 {
+		if !p.acceptUnknown {
 			p.conn.Close()
 			return &ErrBadHeader{[]byte(header)}
 		}
