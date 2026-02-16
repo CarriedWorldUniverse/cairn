@@ -2675,16 +2675,8 @@ tbody.commit-list {
   gap: 8px;
 }
 
-@media (max-width: 767.98px) {
-  .commit-status-item .status-details {
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-  }
-}
-
 .commit-status-item .status-details > span {
-  padding-right: 0.5em; /* To match the alignment with the "required" label */
+  padding-right: 0.5em; /* To avoid scrollbar occlusion */
 }
 
 .search-fullname {
