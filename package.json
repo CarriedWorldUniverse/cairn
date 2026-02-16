@@ -101,7 +101,7 @@
     "eslint-plugin-regexp": "3.0.0",
     "eslint-plugin-sonarjs": "3.0.6",
     "eslint-plugin-toml": "0.13.1",
-    "eslint-plugin-unicorn": "62.0.0",
+    "eslint-plugin-unicorn": "63.0.0",
     "eslint-plugin-vitest-globals": "1.5.0",
     "eslint-plugin-vue": "10.7.0",
     "eslint-plugin-vue-scoped-css": "2.12.0",
