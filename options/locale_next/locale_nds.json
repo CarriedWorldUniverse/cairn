@@ -238,16 +238,12 @@
 	},
 	"relativetime.1day": "güstern",
 	"relativetime.1week": "leste Week",
-	"relativetime.2weeks": "vörleste Week",
 	"relativetime.1month": "lesten Maant",
-	"relativetime.2months": "vörlesten Maant",
 	"relativetime.1year": "lestes Jahr",
-	"relativetime.2years": "vörlestes Jahr",
 	"relativetime.days": {
 		"one": "vör %d Dag",
 		"other": "vör %d Dagen"
 	},
-	"relativetime.2days": "vörgüstern",
 	"moderation.report_abuse": "Missbruuk mellen",
 	"moderation.report_content": "Inholl mellen",
 	"moderation.report_abuse_form.invalid": "Ungültige Argumenten",
@@ -429,5 +425,11 @@
 	"editor.toggle_case": "Grot- un Kleenschrievens minnachten an- of utknipsen",
 	"editor.toggle_regex": "Regel-Utdrücken bruken an- of utknipsen",
 	"editor.toggle_whole_word": "Hele Woorden söken an- of utknipsen",
-	"repo.view.gitmodules_too_large": "De .gitmodules-Datei is to grot un word minnacht (to’n Bispööl för API-Upropen)"
+	"repo.view.gitmodules_too_large": "De .gitmodules-Datei is to grot un word minnacht (to’n Bispööl för API-Upropen)",
+	"install.ssh_authorized_keys_inspection_error": "Kunn bestahn authorized_keys-Datei nich nakieken: %v",
+	"install.ssh_authorized_keys_unexpected_key": "SSH för Forgejo antoknipsen is nich verdragelk mit de Datei unner %s, waar bestahn SSH-Slötels drinstahn. Vörslaag: Bruuk eenen Systeem-Bruker blots för Forgejo, of knips SSH ut.",
+	"actions.secrets.creation.name_description": "De Naam vun eenem Geheemst kann blots Bookstaven, Tahlen un Unnerstreken enthollen. ’t kann nich mit FORGEJO_, GITEA_, GITHUB_ of eener Tahl begünnen. Forgejo word de Naam automatisk in Grotbookstavens umwanneln.",
+	"actions.variables.mutation.name_description": "De Naam vun eener Variaabel kann blots Bookstaven, Tahlen un Unnerstreken enthollen. ’t kann nich CI heten of mit FORGEJO_, GITEA_, GITHUB_ of eener Tahl begünnen. Forgejo word de Naam automatisk in Grotbookstavens umwanneln.",
+	"actions.secrets.creation.value_description": "De Weert vun eenem Geheemst kann elkeen Text wesen. Besünnere Tekens worden behollen. CRLF (Riegenennen na Windows-Aard) worden automatisk in LF umwannelt. Kodeer de Weert mit Base64, wenn Riegenennen behollen worden sallen.",
+	"actions.variables.mutation.value_description": "De Weert vun eener Variaabel kann elkeen Text wesen. Besünnere Tekens worden behollen. CRLF (Riegenennen na Windows-Aard) worden automatisk in LF umwannelt. Kodeer de Weert mit Base64, wenn Riegenennen behollen worden sallen."
 }

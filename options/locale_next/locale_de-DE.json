@@ -233,20 +233,16 @@
 	},
 	"relativetime.1week": "letzte Woche",
 	"relativetime.1month": "letzten Monat",
-	"relativetime.2months": "vor zwei Monaten",
 	"relativetime.1year": "letztes Jahr",
-	"relativetime.2years": "vor zwei Jahren",
 	"relativetime.1day": "gestern",
 	"relativetime.weeks": {
 		"one": "vor %d Woche",
 		"other": "vor %d Wochen"
 	},
-	"relativetime.2weeks": "vor zwei Wochen",
 	"relativetime.mins": {
 		"one": "vor %d Minute",
 		"other": "vor %d Minuten"
 	},
-	"relativetime.2days": "vorgestern",
 	"relativetime.future": "in der Zukunft",
 	"admin.config.moderation_config": "Moderations-Konfiguration",
 	"moderation.report_abuse": "Missbrauch melden",
@@ -429,5 +425,11 @@
 	"editor.find_previous": "Vorheriger Treffer",
 	"editor.find_next": "Nächster Treffer",
 	"editor.toggle_whole_word": "Treffer auf ganze Wörter umschalten",
-	"repo.view.gitmodules_too_large": "Die .gitmodules-Datei ist zu groß und wird ignoriert (zum Beispiel für API-Aufrufe)"
+	"repo.view.gitmodules_too_large": "Die .gitmodules-Datei ist zu groß und wird ignoriert (zum Beispiel für API-Aufrufe)",
+	"install.ssh_authorized_keys_inspection_error": "Existierende authorized_keys-Datei konnte nicht untersucht werden: %v",
+	"install.ssh_authorized_keys_unexpected_key": "Die Aktivierung von SSH für Forgejo steht im Konflikt mit der Datei, die sich bei %s befindet und existierende SSH-Keys enthält. Vorschlag: Benutzen Sie einen eigenen Systembenutzer für Forgejo oder deaktivieren Sie SSH.",
+	"actions.secrets.creation.name_description": "Der Name eines Geheimnisses darf nur Buchstaben, Ziffern und Unterstriche enthalten. Es darf nicht mit „FORGEJO_“, „GITEA_“, „GITHUB_“ oder einer Zahl anfangen. Forgejo wird es automatisch in Großbuchstaben umwandeln.",
+	"actions.secrets.creation.value_description": "Der Wert eines Geheimnisses kann jeder Text sein. Sonderzeichen werden beibehalten. CRLF (Zeilenumbrüche im Windows-Stil) werden automatisch zu LF konvertiert. Kodieren Sie den Wert mit Base64, falls Zeilenumbrüche beibehalten werden sollen.",
+	"actions.variables.mutation.name_description": "Der Name einer Variable kann nur Buchstaben, Ziffern und Unterstriche enthalten. Er darf nicht „CI“ lauten oder mit „FORGEJO_“, „GITEA_“, „GITHUB_“ oder einer Zahl beginnen. Forgejo wird ihn automatisch zu Großbuchstaben umwandeln.",
+	"actions.variables.mutation.value_description": "Der Wert einer Variablen kann jeder Text sein. Sonderzeichen werden beibehalten. CRLF (Zeilenumbrüche im Windows-Stil) werden automatisch zu LF konvertiert. Kodieren Sie den Wert mit Base64, falls Zeilenumbrüche beibehalten werden sollen."
 }
