@@ -138,7 +138,7 @@ func List(ctx *context.Context) {
 						continue
 					}
 					if !allRunnerLabels.Contains(ro) {
-						workflow.ErrMsg = ctx.Locale.TrString("actions.runs.no_matching_online_runner_helper", ro)
+						workflow.ErrMsg = ctx.Locale.TrString("actions.runs.no_matching_online_runner.helper", ro)
 						break
 					}
 				}

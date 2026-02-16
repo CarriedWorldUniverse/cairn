@@ -117,14 +117,14 @@ func RunnerDetailsEditPost(ctx *context.Context, runnerID, ownerID, repoID int64
 	err = actions_model.UpdateRunner(ctx, runner, "description")
 	if err != nil {
 		log.Warn("RunnerDetailsEditPost.UpdateRunner failed: %v, url: %s", err, ctx.Req.URL)
-		ctx.Flash.Warning(ctx.Tr("actions.runners.update_runner_failed"))
+		ctx.Flash.Warning(ctx.Tr("actions.runners.update_runner.failed"))
 		ctx.Redirect(redirectTo)
 		return
 	}
 
 	log.Debug("RunnerDetailsEditPost success: %s", ctx.Req.URL)
 
-	ctx.Flash.Success(ctx.Tr("actions.runners.update_runner_success"))
+	ctx.Flash.Success(ctx.Tr("actions.runners.update_runner.success"))
 	ctx.Redirect(redirectTo)
 }
 
@@ -136,7 +136,7 @@ func RunnerResetRegistrationToken(ctx *context.Context, ownerID, repoID int64, r
 		return
 	}
 
-	ctx.Flash.Success(ctx.Tr("actions.runners.reset_registration_token_success"))
+	ctx.Flash.Success(ctx.Tr("actions.runners.reset_registration_token.success"))
 	ctx.Redirect(redirectTo)
 }
 
@@ -157,7 +157,7 @@ func RunnerDeletePost(ctx *context.Context, runnerID, ownerID, repoID int64,
 
 	if err := actions_model.DeleteRunner(ctx, runner); err != nil {
 		log.Warn("DeleteRunnerPost.UpdateRunner failed: %v, url: %s", err, ctx.Req.URL)
-		ctx.Flash.Warning(ctx.Tr("actions.runners.delete_runner_failed"))
+		ctx.Flash.Warning(ctx.Tr("actions.runners.delete_runner.failed"))
 
 		ctx.JSONRedirect(failedRedirectTo)
 		return
@@ -165,7 +165,7 @@ func RunnerDeletePost(ctx *context.Context, runnerID, ownerID, repoID int64,
 
 	log.Info("DeleteRunnerPost success: %s", ctx.Req.URL)
 
-	ctx.Flash.Success(ctx.Tr("actions.runners.delete_runner_success"))
+	ctx.Flash.Success(ctx.Tr("actions.runners.delete_runner.success"))
 
 	ctx.JSONRedirect(successRedirectTo)
 }
