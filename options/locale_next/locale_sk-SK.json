@@ -28,7 +28,6 @@
 	"relativetime.now": "teraz",
 	"relativetime.future": "v budúcnosti",
 	"relativetime.1week": "posledný týždeň",
-	"relativetime.2months": "pred dvoma mesiacmi",
 	"relativetime.days": {
 		"one": "pred %d dňom",
 		"few": "pred %d dňami",
@@ -40,7 +39,6 @@
 	"followers.incoming.list.none": "Nikto nesleduje tohoto užívateľa.",
 	"followers.outgoing.list.self.none": "Nikoho nesledujete.",
 	"followers.outgoing.list.none": "%s nesleduje nikoho.",
-	"relativetime.2weeks": "pred dvoma týždňami",
 	"relativetime.1month": "posledný mesiac",
 	"relativetime.months": {
 		"one": "pred %d mesiacom",
@@ -57,7 +55,6 @@
 		"few": "pred %d týždňami",
 		"other": "pred %d týždňami"
 	},
-	"relativetime.2days": "pred dvoma dňami",
 	"relativetime.1day": "včera",
 	"relativetime.mins": {
 		"one": "pred %d minútou",
@@ -70,7 +67,6 @@
 		"other": "pred %d hodinami"
 	},
 	"relativetime.1year": "minulý rok",
-	"relativetime.2years": "pred dvoma rokmi",
 	"repo.form.cannot_create": "Všetky priestory, v ktorých môžete vytvárať repozitáre, dosiahli svoj limit.",
 	"repo.issue_indexer.title": "Indexovanie problémov",
 	"editor.textarea.shift_tab_hint": "V tomto riadku nie je žiadne odsadenie. Pre opustenie editoru stlačte znovu <kbd>Shift</kbd> + <kbd>Tab</kbd> alebo <kbd>Escape</kbd>.",
@@ -158,5 +154,15 @@
 	"migrate.pagure.description": "Migrujte dáta z pagure.io alebo iných inštancií Pagure.",
 	"migrate.pagure.incorrect_url": "Bola zadaná nesprávna URL adresa zdrojového repozitáru",
 	"migrate.pagure.project_url": "URL adresa projektu Pagure",
-	"migrate.pagure.token_label": "Token"
+	"migrate.pagure.token_label": "Token",
+	"watch.n_watchers": {
+		"one": "sledovateľ",
+		"few": "sledovatelia",
+		"other": "sledovateľov"
+	},
+	"repo.issues.filter_poster.hint": "Filtrovať podľa autora",
+	"repo.issues.filter_mention.hint": "Filtrovať podľa spomenutého použivateľa",
+	"repo.issues.filter_modified.hint": "Filtrovať podľa dátumu poslednej úpravy",
+	"repo.issues.filter_assignee.hint": "Filtrovať podľa priradeného používateľa",
+	"issues.updated": "aktualizované %s"
 }

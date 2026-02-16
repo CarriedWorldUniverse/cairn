@@ -206,14 +206,10 @@
 	"relativetime.months": "%d 个月前",
 	"relativetime.years": "%d 年前",
 	"relativetime.1day": "昨天",
-	"relativetime.2days": "两天前",
 	"relativetime.1week": "上周",
 	"relativetime.1month": "上个月",
-	"relativetime.2months": "两个月前",
 	"relativetime.1year": "去年",
-	"relativetime.2years": "两年前",
 	"relativetime.now": "现在",
-	"relativetime.2weeks": "两周前",
 	"relativetime.days": "%d 天前",
 	"moderation.report_abuse_form.details": "此表单用于举报创建垃圾个人信息、仓库、议题、评论或行为不当的用户。",
 	"admin.config.moderation_config": "审核配置",
@@ -384,5 +380,7 @@
 	"editor.toggle_case": "切换大小写敏感",
 	"editor.toggle_regex": "切换正则表达式",
 	"editor.toggle_whole_word": "切换全词匹配",
-	"repo.view.gitmodules_too_large": ".gitmodules 因太大而被（API等）忽略"
+	"repo.view.gitmodules_too_large": ".gitmodules 因太大而被（API等）忽略",
+	"install.ssh_authorized_keys_inspection_error": "无法检查已存在的 authorized_keys 文件：%v",
+	"install.ssh_authorized_keys_unexpected_key": "为 Forgejo 启用 SSH 与位于 %s 的文件冲突，该文件包含已存在的 SSH 密钥。建议：为 Forgejo 使用独立的系统用户或禁用 SSH。"
 }

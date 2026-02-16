@@ -59,13 +59,9 @@
 		"many": "%d месяцаў таму"
 	},
 	"relativetime.1day": "учора",
-	"relativetime.2days": "два дні таму",
 	"relativetime.1week": "на мінулай тыдні",
-	"relativetime.2weeks": "два тыдні таму",
 	"relativetime.1month": "у мінулым месяцы",
-	"relativetime.2months": "два месяцы таму",
 	"relativetime.1year": "у мінулым годзе",
-	"relativetime.2years": "два гады таму",
 	"repo.issues.filter_poster.hint": "Фільтраваць па аўтары",
 	"repo.issues.filter_assignee.hint": "Фільтраваць па прызначаным карыстальніку",
 	"repo.issues.filter_reviewers.hint": "Фільтраваць па карыстальніку, які праверыў",

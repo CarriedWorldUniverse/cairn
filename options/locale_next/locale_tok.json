@@ -1,3 +1,8 @@
 {
-	"meta.last_line": " "
+	"meta.last_line": " ",
+	"home.welcome.no_activity": "ijo sin ala li lon",
+	"home.welcome.activity_hint": "sina pali la sona pali li lon ni.",
+	"home.explore_repos": "o alasa e poki",
+	"home.explore_users": "o alasa e jan",
+	"home.explore_orgs": "o alasa e kulupu"
 }

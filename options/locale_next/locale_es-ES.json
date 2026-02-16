@@ -218,9 +218,7 @@
 	"home.explore_orgs": "Explorar organizaciones",
 	"moderation.abuse_category.malware": "Malware",
 	"relativetime.1day": "ayer",
-	"relativetime.2months": "hace dos meses",
 	"relativetime.1year": "el año pasado",
-	"relativetime.2years": "hace dos años",
 	"repo.form.cannot_create": "Todos los espacios en los que puedes crear repositorios llegaron al límite de repositorios.",
 	"stars.list.none": "Nadie le ha dado una estrella a este repo.",
 	"watch.list.none": "Nadie está observando este repo.",
@@ -229,7 +227,6 @@
 	"followers.outgoing.list.self.none": "No estás siguiendo a nadie.",
 	"followers.outgoing.list.none": "%s no sigue a nadie.",
 	"relativetime.1week": "la semana pasada",
-	"relativetime.2weeks": "hace dos semanas",
 	"relativetime.1month": "el mes pasado",
 	"alert.asset_load_failed": "Error al cargar recursos desde {path}. Por favor, asegúrate de que se puede acceder a los recursos.",
 	"install.invalid_lfs_path": "Imposible crear la raíz LFS en la ruta indicada: %[1]s",
@@ -274,7 +271,6 @@
 	"moderation.report_abuse_form.already_reported": "Ya has reportado este contenido",
 	"moderation.abuse_category": "Categoría",
 	"repo.issue_indexer.title": "Índice de incidencias",
-	"relativetime.2days": "hace dos días",
 	"moderation.abuse_category.illegal_content": "Contenido ilegal",
 	"repo.settings.push_mirror.branch_filter.description": "Ramas a seguir. Deje en blanco para seguir todas las ramas. Consulte la <a href=\"%[1]s\">%[2]s documentation</a> de la sintaxis. Ejemplos: <code>main, release/*</code>",
 	"moderation.reporting_failed": "No fue posible enviar el nuevo reporte de abuso: %v",
@@ -310,5 +306,12 @@
 		"one": "%s pull request activa",
 		"many": "%s pull requests activas",
 		"other": ""
-	}
+	},
+	"repo.issues.filter_assignee.hint": "Filtrar por usuario asignado",
+	"repo.issues.filter_reviewers.hint": "Filtrar por usuario revisor",
+	"repo.issues.filter_mention.hint": "Filtrar por usuario mencionado",
+	"repo.issues.filter_modified.hint": "Filtrar por fecha de última modificación",
+	"repo.issues.filter_poster.hint": "Filtrar por autor",
+	"repo.issues.filter_sort.hint": "Ordenar por: creación/comentarios/actualización/fecha límite",
+	"issues.updated": "actualizado %s"
 }

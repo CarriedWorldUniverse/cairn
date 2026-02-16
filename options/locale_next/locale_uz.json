@@ -35,13 +35,9 @@
 		"other": "%d yil oldin."
 	},
 	"relativetime.1day": "kecha",
-	"relativetime.2days": "2 kun oldin",
 	"relativetime.1week": "oxirgi hafta",
-	"relativetime.2weeks": "ikki hafta oldin",
 	"relativetime.1month": "oxirgi oy",
-	"relativetime.2months": "ikki oy oldin",
 	"relativetime.1year": "oxirgi yil",
-	"relativetime.2years": "ikki yil oldin",
 	"search.syntax": "Qidiruv sintaksisi",
 	"repo.settings.push_mirror.branch_filter.label": "Branch filteri (ixtiyoriy)",
 	"meta.last_line": " "

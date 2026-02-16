@@ -240,13 +240,9 @@
 		"other": "%d blianta ó shin"
 	},
 	"relativetime.1day": "inné",
-	"relativetime.2days": "dhá lá ó shin",
 	"relativetime.1week": "an tseachtain seo caite",
-	"relativetime.2weeks": "coicís ó shin",
 	"relativetime.1month": "an mhí seo caite",
-	"relativetime.2months": "dhá mhí ó shin",
 	"relativetime.1year": "anuraidh",
-	"relativetime.2years": "dhá bhliain ó shin",
 	"repo.issues.filter_poster.hint": "Scag de réir an údair",
 	"repo.issues.filter_assignee.hint": "Scag de réir úsáideora sannta",
 	"repo.issues.filter_reviewers.hint": "Scag de réir úsáideora a rinne athbhreithniú",

@@ -168,7 +168,7 @@
 	"packages.owner.settings.cleanuprules.remove.pattern": "Tanggalin ang mga bersyon na tumutugma sa",
 	"packages.owner.settings.cleanuprules.success.update": "Na-update na cleanup rule.",
 	"packages.owner.settings.cleanuprules.success.delete": "Nabura na ang cleanup rule.",
-	"packages.owner.settings.chef.title": "Chef registry",
+	"packages.owner.settings.chef.title": "Registry ng Chef",
 	"packages.owner.settings.chef.keypair": "Gumawa ng key pair",
 	"packages.owner.settings.chef.keypair.description": "Ang mga hiling na pinapadala sa Chef registry ay dapat na cryptographically na nakalagda bilang paraan ng authentication. Kapag nag-ge-generate ng isang keypair, ang pampublikong key lamang ang iniimbak ng Forgejo. Ang pribadong key ay binibigay sa iyo na gagamitin sa knife. Ang pag-generate ng bagong keypair i io-overwrite ang luma.",
 	"fork.n_forks": {
@@ -230,12 +230,8 @@
 		"one": "%d taon ang nakalipas",
 		"other": "%d (na) taon ang nakalipas"
 	},
-	"relativetime.2days": "2 araw ang nakalipas",
-	"relativetime.2weeks": "2 linggo ang nakalipas",
-	"relativetime.2months": "2 buwan ang nakalipas",
 	"relativetime.1week": "nakaraang linggo",
 	"relativetime.future": "sa kinabukasan",
-	"relativetime.2years": "2 taon ang nakalipas",
 	"relativetime.1day": "kahapon",
 	"relativetime.hours": {
 		"one": "%d oras ang nakalipas",
@@ -420,5 +416,20 @@
 	"pulls.manual_merge.helpder.description": "Gamitin ang mensahe na ito kapag kukumpletuhin nang manwal ang pagsasama.",
 	"pulls.manual_merge.commit.title": "Title ng merge commit",
 	"pulls.manual_merge.commit.body": "Nilalaman ng merge commit",
-	"pulls.manual_merge.copy.button": "Kopyahin ang mensahe ng merge commit"
+	"pulls.manual_merge.copy.button": "Kopyahin ang mensahe ng merge commit",
+	"repo.view.gitmodules_too_large": "Masyadong malaki ang .gitmodules file at hindi ito papansinin (hal. para sa API call)",
+	"install.ssh_authorized_keys_inspection_error": "Nabigong suriin ang umiiral na authroized_keys file: %v",
+	"install.ssh_authorized_keys_unexpected_key": "Sumasalungat sa file na nakalagay sa %s ng mga umiiral na SSH key ang pag-enable ng SSH para sa Forgejo. Mga mungkahi: gumamit ng dedikadong system user para sa Forgejo, o I-disable ang SSH.",
+	"actions.secrets.creation.name_description": "Maaari lamang maglaman ng mga letra, numero, at underscore ang pangalan. Hindi maaaring magsimula sa FORGEJO_, GITEA_, GITHUB_, o isang numero. Awtomatikong iko-convert ng Forgejo sa uppercase.",
+	"actions.secrets.creation.value_description": "Maaaring anumang teksto ang value ng sikreto. Pinapanatili ang mga espesyal na karakter. Awtomatikong kino-convert ang mga CRLF (Windows-style na line break) sa LF. I-encode ang value sa Base64 kung dapat panatilihin ang mga line break.",
+	"actions.variables.mutation.name_description": "Maaari lamang maglaman ng mga letra, numero, at underscore ang pangalan ng variable. Hindi maaaring magsimula sa FORGEJO_, GITEA_, GITHUB_, o isang numero. Awtomatikong iko-convert ng Forgejo sa uppercase.",
+	"actions.variables.mutation.value_description": "Maaaring anumang teksto ang value ng variable. Pinapanatili ang mga espesyal na karakter. Awtomatikong kino-convert ang mga CRLF (Windows-style na line break) sa LF. I-encode ang value sa Base64 kung dapat panatilihin ang mga line break.",
+	"editor.search": "Maghanap",
+	"editor.find_previous": "Nakaraang hanap",
+	"editor.find_next": "Susunod na hanap",
+	"editor.replace": "Palitan",
+	"editor.replace_all": "Palitan lahat",
+	"editor.toggle_case": "I-toggle ang case sensitivity",
+	"editor.toggle_regex": "I-toggle ang paggamit ng mga regular na ekspresyon",
+	"editor.toggle_whole_word": "I-toggle ang pagtugma ng mga buong salita"
 }

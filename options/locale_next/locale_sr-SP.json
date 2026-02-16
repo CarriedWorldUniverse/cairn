@@ -59,13 +59,9 @@
 		"other": "пре %d година"
 	},
 	"relativetime.1day": "јуче",
-	"relativetime.2days": "пре два дана",
 	"relativetime.1week": "прошле седмице",
-	"relativetime.2weeks": "пре две седмице",
 	"relativetime.1month": "прошлог месеца",
-	"relativetime.2months": "пре два месеца",
 	"relativetime.1year": "прошле године",
-	"relativetime.2years": "шре две године",
 	"repo.form.cannot_create": "Сви простори у којима можете створити репозиторијум су достигли ограничење броја репозиторијума.",
 	"migrate.form.error.url_credentials": "УРЛ садржава податке за пријаву, молимо да унесете корисничко име и лозинку у одговарајућа поља",
 	"migrate.github.description": "Пренесите податке са \"github.com\" или \"GitHub Enterprise\" сервера.",

@@ -234,19 +234,15 @@
 	},
 	"relativetime.1day": "i går",
 	"relativetime.1week": "sidste uge",
-	"relativetime.2weeks": "2 uger siden",
-	"relativetime.2months": "2 måneder siden",
 	"relativetime.1year": "sidste år",
 	"relativetime.weeks": {
 		"one": "%d uge siden",
 		"other": "%d uger siden"
 	},
-	"relativetime.2years": "2 år siden",
 	"relativetime.years": {
 		"one": "%d år siden",
 		"other": "%d år siden"
 	},
-	"relativetime.2days": "2 dage siden",
 	"relativetime.1month": "sidste måned",
 	"repo.form.cannot_create": "Alle områder, hvor du kan oprette depoter, har nået grænsen for antal depoter.",
 	"repo.issue_indexer.title": "Problemindekser",

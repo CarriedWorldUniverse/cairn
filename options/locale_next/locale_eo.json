@@ -40,13 +40,9 @@
 		"other": "antaŭ %d jaroj"
 	},
 	"relativetime.1day": "hieraŭ",
-	"relativetime.2days": "antaŭ du tagoj",
 	"relativetime.1week": "je lasta semajno",
-	"relativetime.2weeks": "antaŭ du semajnoj",
 	"relativetime.1month": "je lasta monato",
-	"relativetime.2months": "antaŭ du monatoj",
 	"relativetime.1year": "je lasta jaro",
-	"relativetime.2years": "antaŭ du jaroj",
 	"migrate.github.description": "Migrigi datumojn el github.com aŭ Github Enterprise server.",
 	"migrate.git.description": "Migrigi nur deponejon el ajna Git servilo.",
 	"migrate.gitea.description": "Migrigi datumojn el gitea.com aŭ aliaj Gitea instancoj.",
