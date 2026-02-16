@@ -5,16 +5,12 @@
 		"other": "%s tärni"
 	},
 	"search.milestone_kind": "Otsi verstaposte…",
-	"relativetime.2years": "kaks aastat tagasi",
 	"error.not_found.title": "Lehte ei leidu",
 	"themes.names.forgejo-light": "Forgejo hele kujundus",
 	"themes.names.forgejo-dark": "Forgejo tume kujundus",
 	"themes.names.forgejo-auto": "Forgejo (süsteemi kujundus)",
-	"relativetime.2days": "kaks päeva tagasi",
 	"relativetime.1week": "eelmisel nädalal",
-	"relativetime.2weeks": "kaks nädalat tagasi",
 	"relativetime.1month": "eelmisel kuul",
-	"relativetime.2months": "kaks kuud tagasi",
 	"relativetime.months": {
 		"one": "%d kuu tagasi",
 		"other": "%d kuud tagasi"

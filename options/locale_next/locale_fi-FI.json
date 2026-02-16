@@ -202,11 +202,8 @@
 		"other": "%d vuotta sitten"
 	},
 	"relativetime.1day": "eilen",
-	"relativetime.2days": "kaksi päivää sitten",
 	"relativetime.1week": "viime viikolla",
-	"relativetime.2weeks": "kaksi viikkoa sitten",
 	"relativetime.1year": "viime vuonna",
-	"relativetime.2years": "kaksi vuotta sitten",
 	"relativetime.hours": {
 		"one": "%d tunti sitten",
 		"other": "%d tuntia sitten"
@@ -222,7 +219,6 @@
 		"other": "%d viikkoa sitten"
 	},
 	"meta.last_line": "Thank you for translating Forgejo! Päivitä tämä käännös, jos luet tämän viestin.",
-	"relativetime.2months": "kaksi kuukautta sitten",
 	"mail.actions.successful_run_after_failure_subject": "Työnkulku %[1]s palautettu tietovarastoon %[2]s",
 	"mail.actions.successful_run_after_failure": "Työnkulku %[1]s palautettu tietovarastoon %[2]s",
 	"mail.actions.run_info_cur_status": "Tämän juoksun tila: %[1]s (juuri päivitetty %[2]s:sta)",

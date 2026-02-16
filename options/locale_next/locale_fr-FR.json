@@ -226,12 +226,8 @@
 		"other": "il y a %d ans"
 	},
 	"relativetime.1day": "hier",
-	"relativetime.2days": "il y a 2 jours",
 	"relativetime.1week": "la semaine dernière",
-	"relativetime.2weeks": "il y a 2 semaines",
-	"relativetime.2months": "il y a 2 mois",
 	"relativetime.1year": "l'année dernière",
-	"relativetime.2years": "il y a 2 ans",
 	"themes.names.forgejo-light": "Forgejo clair",
 	"themes.names.forgejo-dark": "Forgejo sombre",
 	"themes.names.forgejo-auto": "Forgejo (suivre le thème du système)",
@@ -431,5 +427,12 @@
 	"repo.view.gitmodules_too_large": "Le fichier .gitmodules est trop volumineux et sera ignoré (lors des appels API par exemple)",
 	"search.fuzzy": "Approximative",
 	"pulls.manual_merge.commit.title": "Titre de la fusion de commit",
-	"pulls.manual_merge.commit.body": "Contenue de la fusion de commit"
+	"pulls.manual_merge.commit.body": "Contenue de la fusion de commit",
+	"install.ssh_authorized_keys_inspection_error": "Échec de l'inspection du fichier authorized_keys existant : %v",
+	"install.ssh_authorized_keys_unexpected_key": "Activer SSH pour Forgejo est en conflit avec le fichier situé à %s qui contient les clés SSH existantes. Suggestions : utilisez un utilisateur dédié du système pour Forgejo ou désactivez SSH.",
+	"admin.dashboard.actions_action_user": "Révoquer les Actions Forgejo autorisé pour les utilisateurs inactifs",
+	"actions.secrets.creation.name_description": "Le nom d'un secret ne peut contenir que des lettres, nombres, ou `_`. Il ne peut pas commencer par FORGEJO_, GITEA_, GITHUB_, ou un nombre. Forgejo le convertira automatiquement en majuscules.",
+	"actions.secrets.creation.value_description": "La valeur d'un secret peut être n'importe quel texte. Les caractères spéciaux sont conservés. Les CRLF (saut de ligne au format Microsoft) sont automatiquement convertis en LF. Encodez la valeur en Base64 si les sauts de ligne doivent être conservés.",
+	"actions.variables.mutation.name_description": "Le nom d'une variable ne peut contenir que des lettres, nombres, ou `_`. Il ne peut pas être nommé CI ou commencer par FORGEJO_, GITEA_, GITHUB_, ou un nombre. Forgejo le convertira automatiquement en majuscules.",
+	"actions.variables.mutation.value_description": "La valeur d'une variable peut être n'importe quel texte. Les caractères spéciaux sont conservés. Les CRLF (saut de ligne au format Microsoft) sont automatiquement convertis en LF. Encodez la valeur en Base64 si les sauts de ligne doivent être conservés."
 }
