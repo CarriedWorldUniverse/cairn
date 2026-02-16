@@ -24540,7 +24540,18 @@
             "type": "string"
           },
           "x-go-name": "UnitsMap",
-          "example": "{\"repo.actions\",\"repo.packages\",\"repo.code\":\"read\",\"repo.issues\":\"write\",\"repo.ext_issues\":\"none\",\"repo.wiki\":\"admin\",\"repo.pulls\":\"owner\",\"repo.releases\":\"none\",\"repo.projects\":\"none\",\"repo.ext_wiki\":\"none\"}"
+          "example": {
+            "repo.actions": "none",
+            "repo.code": "read",
+            "repo.ext_issues": "none",
+            "repo.ext_wiki": "none",
+            "repo.issues": "write",
+            "repo.packages": "none",
+            "repo.projects": "none",
+            "repo.pulls": "owner",
+            "repo.releases": "none",
+            "repo.wiki": "admin"
+          }
         }
       },
       "x-go-package": "forgejo.org/modules/structs"
@@ -25608,10 +25619,12 @@
           },
           "x-go-name": "UnitsMap",
           "example": {
+            "repo.actions": "none",
             "repo.code": "read",
             "repo.ext_issues": "none",
             "repo.ext_wiki": "none",
             "repo.issues": "write",
+            "repo.packages": "none",
             "repo.projects": "none",
             "repo.pulls": "owner",
             "repo.releases": "none",
@@ -29350,10 +29363,12 @@
           },
           "x-go-name": "UnitsMap",
           "example": {
+            "repo.actions": "none",
             "repo.code": "read",
             "repo.ext_issues": "none",
             "repo.ext_wiki": "none",
             "repo.issues": "write",
+            "repo.packages": "none",
             "repo.projects": "none",
             "repo.pulls": "owner",
             "repo.releases": "none",
