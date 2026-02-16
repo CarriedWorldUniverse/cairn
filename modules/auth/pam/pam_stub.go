@@ -9,6 +9,10 @@ import (
 	"errors"
 )
 
+// ErrInvalidCredentials is returned when PAM reports an authentication
+// or account error (wrong password, unknown user, expired account, etc.).
+var ErrInvalidCredentials = errors.New("invalid PAM credentials")
+
 // Supported is false when built without PAM
 var Supported = false
 

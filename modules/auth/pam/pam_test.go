@@ -15,6 +15,6 @@ import (
 func TestPamAuth(t *testing.T) {
 	result, err := Auth("gitea", "user1", "false-pwd")
 	require.Error(t, err)
-	assert.EqualError(t, err, "Authentication failure")
+	assert.ErrorIs(t, err, ErrInvalidCredentials)
 	assert.Len(t, result, 0)
 }
