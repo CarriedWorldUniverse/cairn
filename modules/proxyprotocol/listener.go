@@ -18,7 +18,6 @@ import (
 type Listener struct {
 	Listener           net.Listener
 	ProxyHeaderTimeout time.Duration
-	AcceptUnknown      bool // allow PROXY UNKNOWN
 }
 
 // Accept implements the Accept method in the Listener interface
@@ -31,7 +30,6 @@ func (p *Listener) Accept() (net.Conn, error) {
 	}
 
 	newConn := NewConn(conn, p.ProxyHeaderTimeout)
-	newConn.acceptUnknown = p.AcceptUnknown
 	return newConn, nil
 }
 
