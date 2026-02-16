@@ -72,10 +72,24 @@ func (r *mockRunner) doPing(t *testing.T) {
 func (r *mockRunner) doRegister(t *testing.T, name, token string, labels []string) {
 	r.doPing(t)
 	resp, err := r.client.runnerServiceClient.Register(t.Context(), connect.NewRequest(&runnerv1.RegisterRequest{
-		Name:    name,
-		Token:   token,
-		Version: "mock-runner-version",
-		Labels:  labels,
+		Name:      name,
+		Token:     token,
+		Version:   "mock-runner-version",
+		Labels:    labels,
+		Ephemeral: false,
+	}))
+	require.NoError(t, err)
+	r.client = newMockRunnerClient(resp.Msg.Runner.Uuid, resp.Msg.Runner.Token)
+}
+
+func (r *mockRunner) doRegisterEphemeral(t *testing.T, name, token string, labels []string) {
+	r.doPing(t)
+	resp, err := r.client.runnerServiceClient.Register(t.Context(), connect.NewRequest(&runnerv1.RegisterRequest{
+		Name:      name,
+		Token:     token,
+		Version:   "mock-runner-version",
+		Labels:    labels,
+		Ephemeral: true,
 	}))
 	require.NoError(t, err)
 	r.client = newMockRunnerClient(resp.Msg.Runner.Uuid, resp.Msg.Runner.Token)
@@ -94,6 +108,21 @@ func (r *mockRunner) registerAsRepoRunner(t *testing.T, ownerName, repoName, run
 	}
 	DecodeJSON(t, resp, &registrationToken)
 	r.doRegister(t, runnerName, registrationToken.Token, labels)
+}
+
+func (r *mockRunner) registerAsEphemeralRepoRunner(t *testing.T, ownerName, repoName, runnerName string, labels []string) {
+	if !setting.Database.Type.IsSQLite3() {
+		assert.FailNow(t, "registering a mock runner when using a database other than SQLite leaves leftovers")
+	}
+	session := loginUser(t, ownerName)
+	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+	req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/%s/actions/runners/registration-token", ownerName, repoName)).AddTokenAuth(token)
+	resp := MakeRequest(t, req, http.StatusOK)
+	var registrationToken struct {
+		Token string `json:"token"`
+	}
+	DecodeJSON(t, resp, &registrationToken)
+	r.doRegisterEphemeral(t, runnerName, registrationToken.Token, labels)
 }
 
 func (r *mockRunner) maybeFetchTask(t *testing.T) *runnerv1.Task {

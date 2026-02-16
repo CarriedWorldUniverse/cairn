@@ -15,12 +15,18 @@ type RegisterRunnerOptions struct {
 	//
 	// required: false
 	Description string `json:"description"`
+
+	// Register as ephemeral runner https://forgejo.org/docs/latest/admin/actions/security/#ephemeral-runner
+	//
+	// required: false
+	Ephemeral bool `json:"ephemeral"`
 }
 
 // RegisterRunnerResponse contains the details of the just registered runner.
 // swagger:model
 type RegisterRunnerResponse struct {
-	ID    int64  `json:"id" binding:"Required"`
-	UUID  string `json:"uuid" binding:"Required"`
-	Token string `json:"token" binding:"Required"`
+	ID        int64  `json:"id" binding:"Required"`
+	UUID      string `json:"uuid" binding:"Required"`
+	Token     string `json:"token" binding:"Required"`
+	Ephemeral bool   `json:"ephemeral" binding:"Required"`
 }

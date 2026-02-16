@@ -398,7 +398,7 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		request.AddTokenAuth(readToken)
 		response := MakeRequest(t, request, http.StatusOK)
 
-		assert.Equal(t, "2", response.Header().Get("X-Total-Count"))
+		assert.Equal(t, "3", response.Header().Get("X-Total-Count"))
 
 		var runners []*api.ActionRunner
 		DecodeJSON(t, response, &runners)
@@ -425,8 +425,20 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 			Labels:      []string{"fedora"},
 			Status:      "offline",
 		}
+		runnerFive := &api.ActionRunner{
+			ID:          899255,
+			UUID:        "96639646-67b2-4bcb-9142-fde1ab8498cf",
+			Name:        "runner-5-repository-ephemeral",
+			Version:     "1.0.0",
+			OwnerID:     0,
+			RepoID:      62,
+			Description: "An ephemeral runner",
+			Labels:      []string{"ephemeral-label"},
+			Status:      "offline",
+			Ephemeral:   true,
+		}
 
-		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree}, runners)
+		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree, runnerFive}, runners)
 	})
 
 	t.Run("Get runners paginated", func(t *testing.T) {
@@ -465,6 +477,30 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		assert.Equal(t, runnerOne, runner)
 	})
 
+	t.Run("Get ephemeral runner", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/899255")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		var runner *api.ActionRunner
+		DecodeJSON(t, response, &runner)
+
+		expectedRunner := &api.ActionRunner{
+			ID:          899255,
+			UUID:        "96639646-67b2-4bcb-9142-fde1ab8498cf",
+			Name:        "runner-5-repository-ephemeral",
+			Version:     "1.0.0",
+			OwnerID:     0,
+			RepoID:      62,
+			Description: "An ephemeral runner",
+			Labels:      []string{"ephemeral-label"},
+			Status:      "offline",
+			Ephemeral:   true,
+		}
+
+		assert.Equal(t, expectedRunner, runner)
+	})
+
 	t.Run("Delete runner", func(t *testing.T) {
 		url := "/api/v1/repos/user2/test_workflows/actions/runners/899253"
 
@@ -496,6 +532,7 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		assert.Positive(t, registerRunnerResponse.ID)
 		assert.Equal(t, gouuid.Version(4), gouuid.MustParse(registerRunnerResponse.UUID).Version())
 		assert.Regexp(t, "(?i)^[0-9a-f]{40}$", registerRunnerResponse.Token)
+		assert.False(t, registerRunnerResponse.Ephemeral)
 
 		registeredRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
 		assert.Equal(t, registerRunnerResponse.ID, registeredRunner.ID)
@@ -508,6 +545,25 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		assert.Empty(t, registeredRunner.Version)
 		assert.NotEmpty(t, registeredRunner.TokenHash)
 		assert.NotEmpty(t, registeredRunner.TokenSalt)
+		assert.False(t, registeredRunner.Ephemeral)
+	})
+
+	t.Run("Register ephemeral runner", func(t *testing.T) {
+		options := api.RegisterRunnerOptions{Name: "ephemeral-runner", Description: "Ephemeral runner", Ephemeral: true}
+
+		requestURL := fmt.Sprintf("/api/v1/repos/%s/%s/actions/runners", repo1.OwnerName, repo1.Name)
+		request := NewRequestWithJSON(t, "POST", requestURL, options)
+		request.AddTokenAuth(writeToken)
+		response := MakeRequest(t, request, http.StatusCreated)
+
+		var registerRunnerResponse *api.RegisterRunnerResponse
+		DecodeJSON(t, response, &registerRunnerResponse)
+
+		assert.True(t, registerRunnerResponse.Ephemeral)
+
+		registeredRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
+		assert.Equal(t, registerRunnerResponse.UUID, registeredRunner.UUID)
+		assert.True(t, registeredRunner.Ephemeral)
 	})
 
 	t.Run("Runner registration does not update runner with identical name", func(t *testing.T) {

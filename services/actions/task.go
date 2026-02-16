@@ -26,6 +26,19 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv
 		job  *actions_model.ActionRunJob
 	)
 
+	if runner.Ephemeral {
+		hasRunnerAssignedTask, err := actions_model.HasTaskForRunner(ctx, runner.ID)
+		// Let the runner retry the request, do not allow to proceed
+		if err != nil {
+			return nil, false, err
+		}
+
+		// if runner has task, dont assign new task
+		if hasRunnerAssignedTask {
+			return nil, false, nil
+		}
+	}
+
 	if err := db.WithTx(ctx, func(ctx context.Context) error {
 		t, ok, err := actions_model.CreateTaskForRunner(ctx, runner)
 		if err != nil {
@@ -164,6 +177,18 @@ func StopTask(ctx context.Context, taskID int64, status actions_model.Status) er
 
 	if err := actions_model.UpdateTask(ctx, task, "status", "stopped"); err != nil {
 		return err
+	}
+
+	runner := &actions_model.ActionRunner{}
+	if _, err := e.ID(task.RunnerID).Get(runner); err != nil {
+		return fmt.Errorf("failed to find runner assigned to task")
+	}
+
+	if runner.Ephemeral {
+		err := actions_model.DeleteRunner(ctx, runner)
+		if err != nil {
+			return fmt.Errorf("failed to remove ephemeral runner from stopped task: %w", err)
+		}
 	}
 
 	if err := task.LoadAttributes(ctx); err != nil {

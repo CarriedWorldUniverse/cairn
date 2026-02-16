@@ -22,8 +22,10 @@ import (
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
+	actions_service "forgejo.org/services/actions"
 
 	runnerv1 "code.forgejo.org/forgejo/actions-proto/runner/v1"
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -603,6 +605,128 @@ jobs:
 		run := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
 
 		assert.Equal(t, "Test runs-on with vars", run.Title)
+	})
+}
+
+func TestActionsEphemeral(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		t.Skip()
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+		user2Session := loginUser(t, user2.Name)
+		user2Token := getTokenForLoggedInUser(t, user2Session, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
+
+		apiBaseRepo := createActionsTestRepo(t, user2Token, "actions-gitea-context", false)
+		baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: apiBaseRepo.ID})
+		user2APICtx := NewAPITestContext(t, baseRepo.OwnerName, baseRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+
+		runner := newMockRunner()
+		runner.registerAsEphemeralRepoRunner(t, baseRepo.OwnerName, baseRepo.Name, "mock-runner", []string{"ubuntu-latest"})
+
+		// verify CleanupEphemeralRunners does not remove this runner
+		err := actions_service.CleanupEphemeralRunners(t.Context())
+		require.NoError(t, err)
+
+		// init the workflow
+		wfTreePath := ".gitea/workflows/pull.yml"
+		wfFileContent := `name: Pull Request
+on: pull_request
+jobs:
+  wf1-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'test the pull'
+  wf2-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'test the pull'
+`
+		opts := getWorkflowCreateFileOptions(user2, baseRepo.DefaultBranch, fmt.Sprintf("create %s", wfTreePath), wfFileContent)
+		createWorkflowFile(t, user2Token, baseRepo.OwnerName, baseRepo.Name, wfTreePath, opts)
+		// user2 creates a pull request
+		doAPICreateFile(user2APICtx, "user2-patch.txt", &api.CreateFileOptions{
+			FileOptions: api.FileOptions{
+				NewBranchName: "user2/patch-1",
+				Message:       "create user2-patch.txt",
+				Author: api.Identity{
+					Name:  user2.Name,
+					Email: user2.Email,
+				},
+				Committer: api.Identity{
+					Name:  user2.Name,
+					Email: user2.Email,
+				},
+				Dates: api.CommitDateOptions{
+					Author:    time.Now(),
+					Committer: time.Now(),
+				},
+			},
+			ContentBase64: base64.StdEncoding.EncodeToString([]byte("user2-fix")),
+		})(t)
+		_, err = doAPICreatePullRequest(user2APICtx, baseRepo.OwnerName, baseRepo.Name, baseRepo.DefaultBranch, "user2/patch-1")(t)
+		require.NoError(t, err)
+		task := runner.fetchTask(t)
+		actionTask := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: task.Id})
+		actionRunJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: actionTask.JobID})
+		actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
+		require.NoError(t, actionRun.LoadAttributes(t.Context()))
+
+		runEvent := map[string]any{}
+		require.NoError(t, json.Unmarshal([]byte(actionRun.EventPayload), &runEvent))
+
+		// verify CleanupEphemeralRunners does not remove this runner
+		err = actions_service.CleanupEphemeralRunners(t.Context())
+		require.NoError(t, err)
+
+		resp, err := runner.client.runnerServiceClient.FetchTask(t.Context(), connect.NewRequest(&runnerv1.FetchTaskRequest{
+			TasksVersion: 0,
+		}))
+		require.NoError(t, err)
+		assert.Nil(t, resp.Msg.Task)
+
+		// verify CleanupEphemeralRunners does not remove this runner
+		err = actions_service.CleanupEphemeralRunners(t.Context())
+		require.NoError(t, err)
+
+		runner.client.runnerServiceClient.UpdateTask(t.Context(), connect.NewRequest(&runnerv1.UpdateTaskRequest{
+			State: &runnerv1.TaskState{
+				Id:     actionTask.ID,
+				Result: runnerv1.Result_RESULT_SUCCESS,
+			},
+		}))
+		resp, err = runner.client.runnerServiceClient.FetchTask(t.Context(), connect.NewRequest(&runnerv1.FetchTaskRequest{
+			TasksVersion: 0,
+		}))
+		require.Error(t, err)
+		assert.Nil(t, resp)
+
+		// create an runner that picks a job and get force cancelled
+		runnerToBeRemoved := newMockRunner()
+		runnerToBeRemoved.registerAsEphemeralRepoRunner(t, baseRepo.OwnerName, baseRepo.Name, "mock-runner-to-be-removed", []string{"ubuntu-latest"})
+
+		taskToStopAPIObj := runnerToBeRemoved.fetchTask(t)
+
+		taskToStop := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: taskToStopAPIObj.Id})
+
+		// verify CleanupEphemeralRunners does not remove the custom crafted runner
+		err = actions_service.CleanupEphemeralRunners(t.Context())
+		require.NoError(t, err)
+
+		runnerToRemove := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{ID: taskToStop.RunnerID})
+
+		err = actions_service.StopTask(t.Context(), taskToStop.ID, actions_model.StatusFailure)
+		require.NoError(t, err)
+
+		// verify CleanupEphemeralRunners does remove the custom crafted runner
+		err = actions_service.CleanupEphemeralRunners(t.Context())
+		require.NoError(t, err)
+
+		unittest.AssertNotExistsBean(t, &actions_model.ActionRunner{ID: runnerToRemove.ID})
+
+		// this cleanup is required to allow further tests to pass
+		doAPIDeleteRepository(user2APICtx)(t)
 	})
 }
 

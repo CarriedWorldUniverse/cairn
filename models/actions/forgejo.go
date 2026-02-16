@@ -14,7 +14,7 @@ import (
 	gouuid "github.com/google/uuid"
 )
 
-func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, labels *[]string, name, version string) (*ActionRunner, error) {
+func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, labels *[]string, name, version string, ephemeral bool) (*ActionRunner, error) {
 	uuid, err := gouuid.FromBytes([]byte(token[:16]))
 	if err != nil {
 		return nil, fmt.Errorf("gouuid.FromBytes %v", err)
@@ -60,11 +60,12 @@ func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, la
 	//
 	name, _ = util.SplitStringAtByteN(name, 255)
 
-	cols := []string{"name", "owner_id", "repo_id", "version"}
+	cols := []string{"name", "owner_id", "repo_id", "version", "ephemeral"}
 	runner.Name = name
 	runner.OwnerID = ownerID
 	runner.RepoID = repoID
 	runner.Version = version
+	runner.Ephemeral = ephemeral
 	if labels != nil {
 		runner.AgentLabels = *labels
 		cols = append(cols, "agent_labels")

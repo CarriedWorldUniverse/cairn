@@ -79,6 +79,7 @@ func (s *Service) Register(
 		RepoID:      runnerToken.RepoID,
 		Version:     req.Msg.Version,
 		AgentLabels: labels,
+		Ephemeral:   req.Msg.Ephemeral,
 	}
 	runner.GenerateToken()
 
@@ -95,12 +96,13 @@ func (s *Service) Register(
 
 	res := connect.NewResponse(&runnerv1.RegisterResponse{
 		Runner: &runnerv1.Runner{
-			Id:      runner.ID,
-			Uuid:    runner.UUID,
-			Token:   runner.Token,
-			Name:    runner.Name,
-			Version: runner.Version,
-			Labels:  runner.AgentLabels,
+			Id:        runner.ID,
+			Uuid:      runner.UUID,
+			Token:     runner.Token,
+			Name:      runner.Name,
+			Version:   runner.Version,
+			Labels:    runner.AgentLabels,
+			Ephemeral: runner.Ephemeral,
 		},
 	})
 
@@ -120,12 +122,13 @@ func (s *Service) Declare(
 
 	return connect.NewResponse(&runnerv1.DeclareResponse{
 		Runner: &runnerv1.Runner{
-			Id:      runner.ID,
-			Uuid:    runner.UUID,
-			Token:   runner.Token,
-			Name:    runner.Name,
-			Version: runner.Version,
-			Labels:  runner.AgentLabels,
+			Id:        runner.ID,
+			Uuid:      runner.UUID,
+			Token:     runner.Token,
+			Name:      runner.Name,
+			Version:   runner.Version,
+			Labels:    runner.AgentLabels,
+			Ephemeral: runner.Ephemeral,
 		},
 	}), nil
 }
@@ -249,6 +252,14 @@ func (s *Service) UpdateTask(
 		if setting.Actions.ConcurrencyGroupQueueEnabled {
 			if err := actions_model.IncreaseTaskVersion(ctx, runner.OwnerID, runner.RepoID); err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("fail to increase task version: %w", err))
+			}
+		}
+
+		if runner.Ephemeral {
+			err := actions_model.DeleteRunner(ctx, runner)
+			if err != nil {
+				log.Error("failed to delete ephemeral runner %v, %w", task.RunnerID, err)
+				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to delete ephemeral runner %v, %w", task.RunnerID, err))
 			}
 		}
 	}

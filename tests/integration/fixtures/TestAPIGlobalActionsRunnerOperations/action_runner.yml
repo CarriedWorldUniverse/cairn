@@ -34,3 +34,13 @@
   description: ""
   agent_labels: ["nixos"]
   deleted: 0
+- id: 130795
+  uuid: "16ca1a5c-8024-41f1-be31-e55830263cc6"
+  name: "runner-5-ephemeral"
+  version: "1.0.0"
+  owner_id: 0
+  repo_id: 0
+  description: "An ephemeral runner"
+  agent_labels: ["ephemeral-label"]
+  ephemeral: true
+  deleted: 0

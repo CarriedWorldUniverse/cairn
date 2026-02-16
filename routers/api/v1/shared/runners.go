@@ -162,6 +162,7 @@ func RegisterRunner(ctx *context.APIContext, ownerID, repoID int64) {
 		OwnerID:     ownerID,
 		RepoID:      repoID,
 		Description: options.Description,
+		Ephemeral:   options.Ephemeral,
 	}
 	runner.GenerateToken()
 	if err := actions_model.CreateRunner(ctx, runner); err != nil {
@@ -169,9 +170,10 @@ func RegisterRunner(ctx *context.APIContext, ownerID, repoID int64) {
 	}
 
 	response := &structs.RegisterRunnerResponse{
-		ID:    runner.ID,
-		UUID:  runner.UUID,
-		Token: runner.Token,
+		ID:        runner.ID,
+		UUID:      runner.UUID,
+		Token:     runner.Token,
+		Ephemeral: runner.Ephemeral,
 	}
 	ctx.JSON(http.StatusCreated, response)
 }

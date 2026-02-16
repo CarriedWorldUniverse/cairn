@@ -547,6 +547,7 @@ func ToActionRunner(runner *actions_model.ActionRunner) (api.ActionRunner, error
 		Version:     runner.Version,
 		Status:      status.String(),
 		Labels:      runner.AgentLabels,
+		Ephemeral:   runner.Ephemeral,
 	}
 
 	return actionRunner, nil
