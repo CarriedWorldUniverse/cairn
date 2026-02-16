@@ -34,3 +34,13 @@
   description: ""
   agent_labels: []
   deleted: 0
+- id: 899255
+  uuid: "96639646-67b2-4bcb-9142-fde1ab8498cf"
+  name: "runner-5-repository-ephemeral"
+  version: "1.0.0"
+  owner_id: 0
+  repo_id: 62
+  description: "An ephemeral runner"
+  agent_labels: ["ephemeral-label"]
+  ephemeral: true
+  deleted: 0

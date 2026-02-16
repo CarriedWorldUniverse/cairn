@@ -80,4 +80,6 @@ type ActionRunner struct {
 	Labels []string `json:"labels"`
 	// Description provides optional details about this runner.
 	Description string `json:"description"`
+	// Indicates if runner is ephemeral runner
+	Ephemeral bool `json:"ephemeral"`
 }

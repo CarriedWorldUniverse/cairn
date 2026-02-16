@@ -22371,6 +22371,11 @@
           "type": "string",
           "x-go-name": "Description"
         },
+        "ephemeral": {
+          "description": "Indicates if runner is ephemeral runner",
+          "type": "boolean",
+          "x-go-name": "Ephemeral"
+        },
         "id": {
           "description": "ID uniquely identifies this runner.",
           "type": "integer",
@@ -28516,6 +28521,11 @@
           "type": "string",
           "x-go-name": "Description"
         },
+        "ephemeral": {
+          "description": "Register as ephemeral runner https://forgejo.org/docs/latest/admin/actions/security/#ephemeral-runner",
+          "type": "boolean",
+          "x-go-name": "Ephemeral"
+        },
         "name": {
           "description": "Name of the runner to register. The name of the runner does not have to be unique.",
           "type": "string",
@@ -28528,6 +28538,10 @@
       "type": "object",
       "title": "RegisterRunnerResponse contains the details of the just registered runner.",
       "properties": {
+        "ephemeral": {
+          "type": "boolean",
+          "x-go-name": "Ephemeral"
+        },
         "id": {
           "type": "integer",
           "format": "int64",

@@ -102,6 +102,11 @@ func SubcmdActionsRegister(ctx context.Context) *cli.Command {
 				Value: "",
 				Usage: "version of the runner (not required since v1.21)",
 			},
+			&cli.BoolFlag{
+				Name:  "ephemeral",
+				Value: false,
+				Usage: "instruct Forgejo to permanently unregister this runner after it has run one job",
+			},
 		},
 	}
 }
@@ -172,6 +177,7 @@ func RunRegister(ctx context.Context, cli *cli.Command) error {
 	scope := cli.String("scope")
 	name := cli.String("name")
 	version := cli.String("version")
+	ephemeral := cli.Bool("ephemeral")
 	labels, err := getLabels(cli)
 	if err != nil {
 		return err
@@ -199,7 +205,7 @@ func RunRegister(ctx context.Context, cli *cli.Command) error {
 		return err
 	}
 
-	runner, err := actions_model.RegisterRunner(ctx, owner, repo, secret, labels, name, version)
+	runner, err := actions_model.RegisterRunner(ctx, owner, repo, secret, labels, name, version, ephemeral)
 	if err != nil {
 		return fmt.Errorf("error while registering runner: %v", err)
 	}
