@@ -10,6 +10,13 @@ export function languages(codemirrorLanguage: CodeMirrorLanguage): LanguageDescr
       },
     }),
     codemirrorLanguage.LanguageDescription.of({
+      name: 'C3',
+      extensions: ['c3'],
+      async load() {
+        return (await import('@codemirror/lang-cpp')).cpp();
+      },
+    }),
+    codemirrorLanguage.LanguageDescription.of({
       name: 'C++',
       alias: ['cpp'],
       extensions: ['cpp', 'c++', 'cc', 'cxx', 'hpp', 'h++', 'hh', 'hxx'],
