@@ -5,6 +5,7 @@ package pam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -23,7 +24,7 @@ import (
 func (source *Source) Authenticate(ctx context.Context, user *user_model.User, userName, password string) (*user_model.User, error) {
 	pamLogin, err := pam.Auth(source.ServiceName, userName, password)
 	if err != nil {
-		if strings.Contains(err.Error(), "Authentication failure") {
+		if errors.Is(err, pam.ErrInvalidCredentials) {
 			return nil, user_model.ErrUserNotExist{Name: userName}
 		}
 		return nil, err
