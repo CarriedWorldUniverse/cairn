@@ -1,4 +1,8 @@
 {
+	"actions.runners.name": "Isem",
+	"actions.runners.description": "Aglam",
+	"actions.runners.task_list.repository": "Akufi",
+	"dropzone.remove_file": "Kkes afaylu",
 	"packages.installation": "Asebded",
 	"packages.details.project_site": "Asmel Web n usenfar",
 	"packages.details.repository_site": "Asmel Web n ukufi",
