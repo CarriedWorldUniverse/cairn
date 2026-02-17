@@ -43,7 +43,12 @@
 					{{RenderLabel ctx .}}
 				</a>
 				{{template "repo/issue/labels/label_archived" .}}
-				<button type="button" data-tooltip-content="{{if .IsExcluded}}Clear exclusion{{else}}Exclude label{{end}}" class="label-exclude-item-btn {{if .IsExcluded}}active{{end}}">
+
+				{{$exclusionTooltip := ctx.Locale.TrString "issues.filters.labels.exclude"}}
+				{{if .IsExcluded}}
+					{{$exclusionTooltip = ctx.Locale.TrString "issues.filters.labels.unexclude"}}
+				{{end}}
+				<button type="button" data-tooltip-content="{{$exclusionTooltip}}" class="label-exclude-item-btn {{if .IsExcluded}}active{{end}}">
 					{{svg "octicon-no-entry"}}
 				</button>
 			</div>
