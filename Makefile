@@ -520,6 +520,11 @@ security-check:
 tsc: node_modules
 	npx tsc --noEmit
 
+# target for PRs to be pushed. Mandatory to succeed in CI
+.PHONY: pr-go
+pr-go: deps-backend deps-tools lint-backend tidy-check swagger-check lint-swagger fmt-check swagger-validate
+	TAGS=bindata $(MAKE) backend
+
 ###
 # Development and testing targets
 ###
