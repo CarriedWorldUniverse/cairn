@@ -510,10 +510,10 @@ func ChangeOrgUserStatus(ctx context.Context, orgID, uid int64, public bool) err
 
 // AddOrgUser adds new user to given organization.
 func AddOrgUser(ctx context.Context, orgID, uid int64) error {
-	isUser, err := user_model.IsUserByID(ctx, uid)
+	eligible, err := IsAnEligibleTeamMemberByID(ctx, uid)
 	if err != nil {
 		return err
-	} else if !isUser {
+	} else if !eligible {
 		return user_model.ErrUserWrongType{UID: uid}
 	}
 

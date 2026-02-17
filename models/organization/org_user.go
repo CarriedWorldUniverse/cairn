@@ -112,6 +112,15 @@ func IsUserOrgOwner(ctx context.Context, users user_model.UserList, orgID int64)
 	return results
 }
 
+// Returns true if the given user ID is allowed to be a team member
+func IsAnEligibleTeamMemberByID(ctx context.Context, uid int64) (bool, error) {
+	return db.GetEngine(ctx).
+		Where("id=?", uid).
+		In("type", user_model.UserTypeIndividual, user_model.UserTypeBot, user_model.UserTypeRemoteUser).
+		Table("user").
+		Exist()
+}
+
 func loadOrganizationOwners(ctx context.Context, users user_model.UserList, orgID int64) (map[int64]*TeamUser, error) {
 	if len(users) == 0 {
 		return nil, nil

@@ -162,3 +162,41 @@ func TestAddOrgUser(t *testing.T) {
 
 	unittest.CheckConsistencyFor(t, &user_model.User{}, &organization.Team{})
 }
+
+func TestIsAnEligibleTeamMemberByID(t *testing.T) {
+	defer unittest.OverrideFixtures("models/user/fixtures/")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	for _, testCase := range []struct {
+		name     string
+		id       int64
+		eligible bool
+	}{
+		{
+			name:     "Regular user",
+			id:       1,
+			eligible: true,
+		},
+		{
+			name:     "Bot user",
+			id:       1042,
+			eligible: true,
+		},
+		{
+			name:     "Organization",
+			id:       3,
+			eligible: false,
+		},
+		{
+			name:     "F3 Remote user",
+			id:       1041,
+			eligible: true,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			eligible, err := organization.IsAnEligibleTeamMemberByID(t.Context(), testCase.id)
+			require.NoError(t, err)
+			assert.Equal(t, testCase.eligible, eligible)
+		})
+	}
+}
