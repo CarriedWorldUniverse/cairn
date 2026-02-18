@@ -76,6 +76,8 @@ body {
   flex-direction: column;
   overflow-x: visible;
   overflow-wrap: break-word;
+  text-autospace: normal;
+  text-spacing-trim: normal;
 }
 
 textarea {
@@ -87,6 +89,16 @@ code,
 kbd,
 samp {
   font-family: var(--fonts-monospace);
+}
+
+pre,
+code,
+kbd,
+samp,
+tt {
+  text-spacing: none;
+  text-autospace: initial;
+  text-spacing-trim: initial;
 }
 
 pre,
