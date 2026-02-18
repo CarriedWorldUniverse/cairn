@@ -56,7 +56,7 @@ func TestRunnerModification(t *testing.T) {
 			sess.MakeRequest(t, req, http.StatusSeeOther)
 			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
-			assert.Equal(t, "success%3DRunner%2Bupdated%2Bsuccessfully", flashCookie.Value)
+			assert.Equal(t, "success%3DRunner%2Bedited%2Bsuccessfully", flashCookie.Value)
 		}
 
 		req = NewRequest(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id))
