@@ -532,7 +532,6 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		assert.Positive(t, registerRunnerResponse.ID)
 		assert.Equal(t, gouuid.Version(4), gouuid.MustParse(registerRunnerResponse.UUID).Version())
 		assert.Regexp(t, "(?i)^[0-9a-f]{40}$", registerRunnerResponse.Token)
-		assert.False(t, registerRunnerResponse.Ephemeral)
 
 		registeredRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
 		assert.Equal(t, registerRunnerResponse.ID, registeredRunner.ID)
@@ -558,8 +557,6 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 
 		var registerRunnerResponse *api.RegisterRunnerResponse
 		DecodeJSON(t, response, &registerRunnerResponse)
-
-		assert.True(t, registerRunnerResponse.Ephemeral)
 
 		registeredRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{UUID: registerRunnerResponse.UUID})
 		assert.Equal(t, registerRunnerResponse.UUID, registeredRunner.UUID)

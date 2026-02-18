@@ -170,10 +170,9 @@ func RegisterRunner(ctx *context.APIContext, ownerID, repoID int64) {
 	}
 
 	response := &structs.RegisterRunnerResponse{
-		ID:        runner.ID,
-		UUID:      runner.UUID,
-		Token:     runner.Token,
-		Ephemeral: runner.Ephemeral,
+		ID:    runner.ID,
+		UUID:  runner.UUID,
+		Token: runner.Token,
 	}
 	ctx.JSON(http.StatusCreated, response)
 }
