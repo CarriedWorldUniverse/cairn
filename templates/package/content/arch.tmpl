@@ -77,7 +77,7 @@ Server = <origin-url data-url="{{AppSubUrl}}/api/packages/{{$.PackageDescriptor.
 			{{if .PackageDescriptor.Metadata.Depends}}
 			<tr>
 				<td class="collapsing">
-					<h5>{{ctx.Locale.Tr "packages.arch.version.depends"}}</h5>
+					<h5>{{ctx.Locale.Tr "packages.dependencies"}}</h5>
 				</td>
 				<td>{{StringUtils.Join $.PackageDescriptor.Metadata.Depends ", "}}</td>
 			</tr>

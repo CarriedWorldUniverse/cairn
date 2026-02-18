@@ -12,7 +12,7 @@
 				<div class="markup"><pre class="code-block"><code>curl -JO <origin-url data-url="{{AppSubUrl}}/api/packages/{{$.PackageDescriptor.Owner.Name}}/alpine/key"></origin-url></code></pre></div>
 			</div>
 			<div class="field">
-				<label>{{svg "octicon-terminal"}} {{ctx.Locale.Tr "packages.alpine.install"}}</label>
+				<label>{{svg "octicon-terminal"}} {{ctx.Locale.Tr "packages.common.install"}}</label>
 				<div class="markup">
 					<pre class="code-block"><code>sudo apk add {{$.PackageDescriptor.Package.Name}}={{$.PackageDescriptor.Version.Version}}</code></pre>
 				</div>
@@ -23,7 +23,7 @@
 		</div>
 	</div>
 
-	<h4 class="ui top attached header">{{ctx.Locale.Tr "packages.alpine.repository"}}</h4>
+	<h4 class="ui top attached header">{{ctx.Locale.Tr "packages.common.repository"}}</h4>
 	<div class="ui attached segment">
 		<table class="ui single line very basic table">
 			<tbody>
