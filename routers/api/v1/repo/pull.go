@@ -14,6 +14,7 @@ import (
 
 	"forgejo.org/models"
 	activities_model "forgejo.org/models/activities"
+	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	issues_model "forgejo.org/models/issues"
 	access_model "forgejo.org/models/perm/access"
@@ -1373,33 +1374,18 @@ func CancelScheduledAutoMerge(ctx *context.APIContext) {
 		return
 	}
 
-	exist, autoMerge, err := pull_model.GetScheduledMergeByPullID(ctx, pull.ID)
-	if err != nil {
-		ctx.InternalServerError(err)
-		return
-	}
-	if !exist {
-		ctx.NotFound()
-		return
-	}
-
-	if ctx.Doer.ID != autoMerge.DoerID {
-		allowed, err := access_model.IsUserRepoAdmin(ctx, ctx.Repo.Repository, ctx.Doer)
-		if err != nil {
-			ctx.InternalServerError(err)
-			return
-		}
-		if !allowed {
+	if err := automerge.RemoveScheduledAutoMerge(ctx, ctx.Doer, pull, ctx.Repo.Permission); err != nil {
+		switch {
+		case errors.Is(err, util.ErrPermissionDenied):
 			ctx.Error(http.StatusForbidden, "No permission to cancel", "user has no permission to cancel the scheduled auto merge")
-			return
+		case db.IsErrNotExist(err):
+			ctx.NotFound()
+		default:
+			ctx.InternalServerError(err)
 		}
+		return
 	}
-
-	if err := automerge.RemoveScheduledAutoMerge(ctx, ctx.Doer, pull); err != nil {
-		ctx.InternalServerError(err)
-	} else {
-		ctx.Status(http.StatusNoContent)
-	}
+	ctx.Status(http.StatusNoContent)
 }
 
 // GetPullRequestCommits gets all commits associated with a given PR
