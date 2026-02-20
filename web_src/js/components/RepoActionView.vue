@@ -49,6 +49,10 @@ export default {
       type: String,
       required: true,
     },
+    workflowSourceURL: {
+      type: String,
+      required: true,
+    },
     locale: {
       type: Object,
       required: true,
@@ -96,6 +100,7 @@ export default {
           localeCommit: '',
           localePushedBy: '',
           localeWorkflow: '',
+          localeAllRuns: '',
           shortSHA: '',
           link: '',
           pusher: {
@@ -488,7 +493,7 @@ export default {
       </div>
       <div class="action-summary">
         {{ run.commit.localeWorkflow }}
-        <a class="muted" :href="workflowURL">{{ workflowName }}</a>
+        <a class="muted" :href="workflowSourceURL">{{ workflowName }}</a> <span>(<a class="muted" :href="workflowURL">{{ run.commit.localeAllRuns }}</a>)</span>
       </div>
       <div class="ui error message pre-execution-error" v-if="run.preExecutionError">
         <div class="header">

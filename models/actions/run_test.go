@@ -45,6 +45,14 @@ func TestSetDefaultConcurrencyGroup(t *testing.T) {
 	assert.Equal(t, "refs/heads/main_testing_pull_request__auto", run.ConcurrencyGroup)
 }
 
+func TestGetWorkflowPath(t *testing.T) {
+	run := ActionRun{
+		WorkflowID:        "ci.yml",
+		WorkflowDirectory: ".some/path/to/workflows",
+	}
+	assert.Equal(t, ".some/path/to/workflows/ci.yml", run.WorkflowPath())
+}
+
 func TestRepoNumOpenActions(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	err := cache.Init()

@@ -104,6 +104,14 @@ func (run *ActionRun) Link() string {
 	return fmt.Sprintf("%s/actions/runs/%d", run.Repo.Link(), run.Index)
 }
 
+// WorkflowPath returns the path in the git repo to the workflow file that this run was based on
+func (run *ActionRun) WorkflowPath() string {
+	if run.WorkflowDirectory == "" {
+		return run.WorkflowID
+	}
+	return run.WorkflowDirectory + "/" + run.WorkflowID
+}
+
 // RefLink return the url of run's ref
 func (run *ActionRun) RefLink() string {
 	refName := git.RefName(run.Ref)

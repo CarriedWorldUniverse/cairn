@@ -126,6 +126,14 @@ test('workflow dispatch box not available for unauthenticated users', async ({pa
   await screenshot(page, page.locator('div.ui.container').filter({hasText: 'All workflows'}));
 });
 
+test('job run links to its defining file and all other runs from the same file', async ({page}) => {
+  await page.goto('/user2/test_workflows/actions/runs/1');
+  await expect(page.locator('.action-summary a').getByText('test-dispatch.yml', {exact: true}))
+    .toHaveAttribute('href', '/user2/test_workflows/src/commit/774f93df12d14931ea93259ae93418da4482fcc1/.forgejo/workflows/test-dispatch.yml');
+  await expect(page.locator('.action-summary a').getByText('all runs', {exact: true}))
+    .toHaveAttribute('href', '/user2/test_workflows/actions?workflow=test-dispatch.yml');
+});
+
 async function completeDynamicRefresh(page: Page) {
   // Ensure that the reloading indicator isn't active, indicating that dynamic refresh is done.
   await expect(page.locator('#reloading-indicator')).not.toHaveClass(/(^|\s)is-loading(\s|$)/);

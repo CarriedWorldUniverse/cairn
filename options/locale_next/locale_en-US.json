@@ -462,6 +462,7 @@
 	"actions.runs.status_no_select": "All status",
 	"actions.runs.no_results": "No results matched.",
 	"actions.runs.no_workflows": "There are no workflows yet.",
+	"actions.runs.all_runs_link": "all runs",
 	"actions.workflow.job_parsing_error": "Unable to parse jobs in workflow: %v",
 	"actions.workflow.event_detection_error": "Unable to parse supported events in workflow: %v",
 	"actions.workflow.persistent_incomplete_matrix": "Unable to evaluate `strategy.matrix` of job %[1]s due to a `needs` expression that was invalid. It may reference a job that is not in it's 'needs' list (%[2]s), or an output that doesn't exist on one of those jobs.",
