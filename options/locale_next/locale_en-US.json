@@ -61,6 +61,7 @@
 	"issues.updated": "updated %s",
 	"issues.filters.labels.exclude": "Exclude label",
 	"issues.filters.labels.unexclude": "Clear exclusion",
+	"repo.pulls.auto_merge.no_permission": "You do not have permission to cancel this pull request's auto merge.",
 	"repo.pulls.poster_manage_approval": "Manage approval",
 	"repo.pulls.poster_requires_approval": "Some workflows are <a href=\"%[1]s\">waiting to be reviewed</a>.",
 	"repo.pulls.poster_requires_approval.tooltip": "The author of this pull request is not trusted to run workflows triggered by a pull request created from a forked repository or with AGit. The workflows triggered by a `pull_request` event will not run until they are approved.",
