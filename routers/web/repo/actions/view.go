@@ -82,6 +82,7 @@ func View(ctx *app_context.Context) {
 	ctx.Data["AttemptNumber"] = attemptNumber
 	ctx.Data["WorkflowName"] = workflowName
 	ctx.Data["WorkflowURL"] = ctx.Repo.RepoLink + "/actions?workflow=" + workflowName
+	ctx.Data["WorkflowSourceURL"] = ctx.Repo.RepoLink + "/src/commit/" + job.Run.CommitSHA + "/" + job.Run.WorkflowPath()
 
 	viewResponse := getViewResponse(ctx, &ViewRequest{}, runIndex, jobIndex, attemptNumber)
 	if ctx.Written() {
@@ -205,6 +206,7 @@ type ViewCommit struct {
 	LocaleCommit   string     `json:"localeCommit"`
 	LocalePushedBy string     `json:"localePushedBy"`
 	LocaleWorkflow string     `json:"localeWorkflow"`
+	LocaleAllRuns  string     `json:"localeAllRuns"`
 	ShortSha       string     `json:"shortSHA"`
 	Link           string     `json:"link"`
 	Pusher         ViewUser   `json:"pusher"`
@@ -333,6 +335,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 		LocaleCommit:   ctx.Locale.TrString("actions.runs.commit"),
 		LocalePushedBy: ctx.Locale.TrString("actions.runs.pushed_by"),
 		LocaleWorkflow: ctx.Locale.TrString("actions.runs.workflow"),
+		LocaleAllRuns:  ctx.Locale.TrString("actions.runs.all_runs_link"),
 		ShortSha:       base.ShortSha(run.CommitSHA),
 		Link:           fmt.Sprintf("%s/commit/%s", run.Repo.Link(), run.CommitSHA),
 		Pusher:         pusher,

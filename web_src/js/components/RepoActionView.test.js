@@ -65,6 +65,7 @@ const defaultTestProps = {
   locale: testLocale,
   workflowName: 'workflow name',
   workflowURL: 'https://example.com/example-org/example-repo/actions?workflow=test.yml',
+  workflowSourceURL: 'https://example.com/example-org/example-repo/src/commit/023babec384/.forgejo/workflows/test.yml',
 };
 
 test('load multiple steps on a finished action', async () => {

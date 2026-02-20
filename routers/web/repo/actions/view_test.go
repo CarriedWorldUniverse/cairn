@@ -168,6 +168,7 @@ func baseExpectedViewResponse() *ViewResponse {
 					LocaleCommit:   "actions.runs.commit",
 					LocalePushedBy: "actions.runs.pushed_by",
 					LocaleWorkflow: "actions.runs.workflow",
+					LocaleAllRuns:  "actions.runs.all_runs_link",
 					ShortSha:       "c2d72f5484",
 					Link:           "/user5/repo4/commit/c2d72f548424103f01ee1dc02889c1e2bff816b0",
 					Pusher: ViewUser{

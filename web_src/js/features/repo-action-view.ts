@@ -24,6 +24,7 @@ export async function initRepositoryActionView() {
     actionsURL: el.getAttribute('data-actions-url'),
     workflowName: el.getAttribute('data-workflow-name'),
     workflowURL: el.getAttribute('data-workflow-url'),
+    workflowSourceURL: el.getAttribute('data-workflow-source-url'),
     locale: {
       approve: el.getAttribute('data-locale-approve'),
       cancel: el.getAttribute('data-locale-cancel'),
