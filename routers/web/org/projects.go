@@ -218,8 +218,13 @@ func ChangeProjectStatus(ctx *context.Context) {
 	}
 	id := ctx.ParamsInt64(":id")
 
-	if err := project_model.ChangeProjectStatusByRepoIDAndID(ctx, 0, id, toClose); err != nil {
-		ctx.NotFoundOrServerError("ChangeProjectStatusByRepoIDAndID", project_model.IsErrProjectNotExist, err)
+	project, err := project_model.GetProjectForUserByID(ctx, ctx.ContextUser.ID, id)
+	if err != nil {
+		ctx.NotFoundOrServerError("GetProjectForUserByID", project_model.IsErrProjectNotExist, err)
+		return
+	}
+	if err := project_model.ChangeProjectStatus(ctx, project, toClose); err != nil {
+		ctx.ServerError("ChangeProjectStatus", err)
 		return
 	}
 	ctx.JSONRedirect(project_model.ProjectLinkForOrg(ctx.ContextUser, id))

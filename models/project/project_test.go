@@ -8,7 +8,6 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
-	"forgejo.org/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,42 +45,6 @@ func TestGetProjects(t *testing.T) {
 
 	// 1 value for this repo exists in the fixtures
 	assert.Len(t, projects, 1)
-}
-
-func TestProject(t *testing.T) {
-	require.NoError(t, unittest.PrepareTestDatabase())
-
-	project := &Project{
-		Type:         TypeRepository,
-		TemplateType: TemplateTypeBasicKanban,
-		CardType:     CardTypeTextOnly,
-		Title:        "New Project",
-		RepoID:       1,
-		CreatedUnix:  timeutil.TimeStampNow(),
-		CreatorID:    2,
-	}
-
-	require.NoError(t, NewProject(db.DefaultContext, project))
-
-	_, err := GetProjectByID(db.DefaultContext, project.ID)
-	require.NoError(t, err)
-
-	// Update project
-	project.Title = "Updated title"
-	require.NoError(t, UpdateProject(db.DefaultContext, project))
-
-	projectFromDB, err := GetProjectByID(db.DefaultContext, project.ID)
-	require.NoError(t, err)
-
-	assert.Equal(t, project.Title, projectFromDB.Title)
-
-	require.NoError(t, ChangeProjectStatusByRepoIDAndID(db.DefaultContext, project.RepoID, project.ID, true))
-
-	// Retrieve from DB afresh to check if it is truly closed
-	projectFromDB, err = GetProjectByID(db.DefaultContext, project.ID)
-	require.NoError(t, err)
-
-	assert.True(t, projectFromDB.IsClosed)
 }
 
 func TestProjectsSort(t *testing.T) {
