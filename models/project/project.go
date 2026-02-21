@@ -309,6 +309,18 @@ func GetProjectForRepoByID(ctx context.Context, repoID, id int64) (*Project, err
 	return p, nil
 }
 
+// GetProjectForUserByID returns the project by id that belongs to the specified user.
+func GetProjectForUserByID(ctx context.Context, uid, id int64) (*Project, error) {
+	p := new(Project)
+	has, err := db.GetEngine(ctx).Where("id=? AND owner_id=?", id, uid).Get(p)
+	if err != nil {
+		return nil, err
+	} else if !has {
+		return nil, ErrProjectNotExist{ID: id}
+	}
+	return p, nil
+}
+
 // UpdateProject updates project properties
 func UpdateProject(ctx context.Context, p *Project) error {
 	if !IsCardTypeValid(p.CardType) {
@@ -346,42 +358,26 @@ func updateRepositoryProjectCount(ctx context.Context, repoID int64) error {
 	return nil
 }
 
-// ChangeProjectStatusByRepoIDAndID toggles a project between opened and closed
-func ChangeProjectStatusByRepoIDAndID(ctx context.Context, repoID, projectID int64, isClosed bool) error {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer committer.Close()
-
-	p := new(Project)
-
-	has, err := db.GetEngine(ctx).ID(projectID).Where("repo_id = ?", repoID).Get(p)
-	if err != nil {
-		return err
-	} else if !has {
-		return ErrProjectNotExist{ID: projectID, RepoID: repoID}
-	}
-
-	if err := changeProjectStatus(ctx, p, isClosed); err != nil {
-		return err
-	}
-
-	return committer.Commit()
-}
-
-func changeProjectStatus(ctx context.Context, p *Project, isClosed bool) error {
-	p.IsClosed = isClosed
-	p.ClosedDateUnix = timeutil.TimeStampNow()
-	count, err := db.GetEngine(ctx).ID(p.ID).Where("repo_id = ? AND is_closed = ?", p.RepoID, !isClosed).Cols("is_closed", "closed_date_unix").Update(p)
-	if err != nil {
-		return err
-	}
-	if count < 1 {
+// ChangeProjectStatus changes the status of the specified project to the state
+// specified via the `isClosed` argument.
+func ChangeProjectStatus(ctx context.Context, p *Project, isClosed bool) error {
+	if p.IsClosed == isClosed {
 		return nil
 	}
 
-	return updateRepositoryProjectCount(ctx, p.RepoID)
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		p.IsClosed = isClosed
+		p.ClosedDateUnix = timeutil.TimeStampNow()
+		count, err := db.GetEngine(ctx).ID(p.ID).Cols("is_closed", "closed_date_unix").Update(p)
+		if err != nil {
+			return err
+		}
+		if count < 1 {
+			return nil
+		}
+
+		return updateRepositoryProjectCount(ctx, p.RepoID)
+	})
 }
 
 // DeleteProjectByID deletes a project from a repository. if it's not in a database
