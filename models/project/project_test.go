@@ -1,4 +1,5 @@
 // Copyright 2020 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package project
@@ -7,6 +8,7 @@ import (
 	"testing"
 
 	"forgejo.org/models/db"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 
 	"github.com/stretchr/testify/assert"
@@ -84,4 +86,75 @@ func TestProjectsSort(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestGetProjectForUserByID(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	found := func(t *testing.T, uid, id int64) {
+		t.Helper()
+
+		p, err := GetProjectForUserByID(t.Context(), uid, id)
+		require.NoError(t, err)
+		if assert.NotNil(t, p) {
+			assert.Equal(t, id, p.ID)
+		}
+	}
+
+	notFound := func(t *testing.T, uid, id int64) {
+		t.Helper()
+
+		p, err := GetProjectForUserByID(t.Context(), uid, id)
+		require.ErrorIs(t, err, ErrProjectNotExist{ID: id})
+		assert.Nil(t, p)
+	}
+
+	found(t, 2, 4)
+	found(t, 2, 5)
+	found(t, 2, 6)
+	found(t, 3, 7)
+	notFound(t, 1, 4)
+	notFound(t, 1, 5)
+	notFound(t, 1, 6)
+	notFound(t, 1, 7)
+}
+
+func TestChangeProjectStatus(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	t.Run("Unchanged", func(t *testing.T) {
+		project := unittest.AssertExistsAndLoadBean(t, &Project{ID: 1})
+
+		require.NoError(t, ChangeProjectStatus(t.Context(), project, project.IsClosed))
+
+		projectAfter := unittest.AssertExistsAndLoadBean(t, &Project{ID: 1})
+		assert.Equal(t, project.IsClosed, projectAfter.IsClosed)
+	})
+
+	t.Run("Normal", func(t *testing.T) {
+		project := unittest.AssertExistsAndLoadBean(t, &Project{ID: 1})
+		isClosed := !project.IsClosed
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: project.RepoID})
+
+		require.NoError(t, ChangeProjectStatus(t.Context(), project, isClosed))
+
+		projectAfter := unittest.AssertExistsAndLoadBean(t, &Project{ID: 1})
+		repoAfter := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: project.RepoID})
+		assert.Equal(t, isClosed, projectAfter.IsClosed)
+		assert.Equal(t, repo.NumProjects, repoAfter.NumProjects)
+		assert.Equal(t, repo.NumOpenProjects-1, repoAfter.NumOpenProjects)
+		assert.Equal(t, repo.NumClosedProjects+1, repoAfter.NumClosedProjects)
+	})
+
+	t.Run("Invalid ID", func(t *testing.T) {
+		project := &Project{ID: 1001, RepoID: 1}
+		repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: project.RepoID})
+
+		require.NoError(t, ChangeProjectStatus(t.Context(), project, true))
+
+		repoAfter := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: project.RepoID})
+		assert.Equal(t, repo.NumProjects, repoAfter.NumProjects)
+		assert.Equal(t, repo.NumOpenProjects, repoAfter.NumOpenProjects)
+		assert.Equal(t, repo.NumClosedProjects, repoAfter.NumClosedProjects)
+	})
 }
