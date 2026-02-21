@@ -6,8 +6,11 @@ package mailer
 import (
 	"bytes"
 	"context"
+	"slices"
 
+	access_model "forgejo.org/models/perm/access"
 	repo_model "forgejo.org/models/repo"
+	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
@@ -39,6 +42,12 @@ func MailNewRelease(ctx context.Context, rel *repo_model.Release) {
 		log.Error("user_model.GetMaileableUsersByIDs: %v", err)
 		return
 	}
+
+	// Users are not eligible to receive this mail if they are not active or
+	// they don't have permissions to read releases.
+	recipients = slices.DeleteFunc(recipients, func(u *user_model.User) bool {
+		return !u.IsActive || !access_model.CheckRepoUnitUser(ctx, rel.Repo, u, unit.TypeReleases)
+	})
 
 	langMap := make(map[string][]*user_model.User)
 	for _, user := range recipients {
