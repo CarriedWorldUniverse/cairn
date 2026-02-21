@@ -31,7 +31,7 @@ jobs:
     if: vars.ROLE == 'forgejo-integration'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/node:24-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v6
@@ -50,7 +50,7 @@ jobs:
     if: vars.ROLE == 'forgejo-integration'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/node:24-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v6
@@ -75,7 +75,7 @@ jobs:
       matrix:
         version: ['10.6', '11.8']
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/node:24-trixie'
       options: --tmpfs /tmp:exec,noatime
     services:
       mysql:
