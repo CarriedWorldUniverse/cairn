@@ -17,7 +17,7 @@ jobs:
       vars.ROLE == 'forgejo-coding' && forge.event.pull_request.head.repo.full_name != 'forgejo-cascading-pr/forgejo'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/node:24-trixie'
     steps:
       - name: Debug output
         run: |

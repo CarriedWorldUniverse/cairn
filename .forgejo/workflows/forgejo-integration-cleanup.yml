@@ -9,7 +9,7 @@ jobs:
     if: vars.ROLE == 'forgejo-integration'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:24-bookworm'
+      image: 'data.forgejo.org/oci/node:24-trixie'
     steps:
 
       - name: apt install curl jq
