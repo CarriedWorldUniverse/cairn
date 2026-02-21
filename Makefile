@@ -465,7 +465,7 @@ lint-swagger: node_modules
 
 .PHONY: lint-renovate
 lint-renovate: node_modules
-	npx --yes --package $(RENOVATE_NPM_PACKAGE) -- renovate-config-validator > .lint-renovate 2>&1 || true
+	npx --yes --package $(RENOVATE_NPM_PACKAGE) -- renovate-config-validator --no-global .forgejo/renovate.json > .lint-renovate 2>&1 || true
 	@if grep --quiet --extended-regexp -e '^( ERROR:)' .lint-renovate ; then cat .lint-renovate ; rm .lint-renovate ; exit 1 ; fi
 	@rm .lint-renovate
 
