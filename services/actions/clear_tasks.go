@@ -10,7 +10,6 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
-	"forgejo.org/modules/actions"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
@@ -54,18 +53,6 @@ func stopTasks(ctx context.Context, opts actions_model.FindTaskOptions) error {
 			log.Warn("Cannot stop task %v: %v", task.ID, err)
 			continue
 		}
-
-		remove, err := actions.TransferLogs(ctx, task.LogFilename)
-		if err != nil {
-			log.Warn("Cannot transfer logs of task %v: %v", task.ID, err)
-			continue
-		}
-		task.LogInStorage = true
-		if err := actions_model.UpdateTask(ctx, task, "log_in_storage"); err != nil {
-			log.Warn("Cannot update task %v: %v", task.ID, err)
-			continue
-		}
-		remove()
 	}
 
 	CreateCommitStatus(ctx, jobs...)
