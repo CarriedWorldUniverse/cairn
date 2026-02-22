@@ -29,7 +29,7 @@ type ActionTask struct {
 	Job      *ActionRunJob     `xorm:"-"`
 	Steps    []*ActionTaskStep `xorm:"-"`
 	Attempt  int64
-	RunnerID int64              `xorm:"index"`
+	RunnerID int64              `xorm:"index index(request_key)"`
 	Status   Status             `xorm:"index"`
 	Started  timeutil.TimeStamp `xorm:"index"`
 	Stopped  timeutil.TimeStamp `xorm:"index(stopped_log_expired)"`
@@ -50,6 +50,15 @@ type ActionTask struct {
 	LogSize      int64      // blob size
 	LogIndexes   LogIndexes `xorm:"LONGBLOB"`                   // line number to offset
 	LogExpired   bool       `xorm:"index(stopped_log_expired)"` // files that are too old will be deleted
+
+	// When the FetchTask() API is invoked to create a task, unpreventable environmental errors may occur; for example,
+	// network disconnects and timeouts. If that API call has a unique identifier associated with it, it is stored in
+	// RunnerRequestKey. This allows the API call to be implemented idempotently using this state: if one API call
+	// assigns a task to a runner and a second API call is received from the same runner with the same request key, the
+	// existing assigned tasks can be returned.
+	//
+	// Indexed for an efficient search on runner_id=? AND runner_request_key=?.
+	RunnerRequestKey string `xorm:"index(request_key)"`
 
 	Created timeutil.TimeStamp `xorm:"created"`
 	Updated timeutil.TimeStamp `xorm:"updated index"`
@@ -147,6 +156,11 @@ func (task *ActionTask) GenerateToken() {
 	task.Token, task.TokenSalt, task.TokenHash, task.TokenLastEight = generateSaltedToken()
 }
 
+// After using GenerateToken, UpdateToken can be used to update the database record affecting the same columns.
+func (task *ActionTask) UpdateToken(ctx context.Context) error {
+	return UpdateTask(ctx, task, "token_hash", "token_salt", "token_last_eight")
+}
+
 // Retrieve all the attempts from the same job as the target `ActionTask`.  Limited fields are queried to avoid loading
 // the LogIndexes blob when not needed.
 func (task *ActionTask) GetAllAttempts(ctx context.Context) ([]*ActionTask, error) {
@@ -242,6 +256,15 @@ func GetRunningTaskByToken(ctx context.Context, token string) (*ActionTask, erro
 	return nil, errNotExist
 }
 
+func GetTasksByRunnerRequestKey(ctx context.Context, runner *ActionRunner, requestKey string) ([]*ActionTask, error) {
+	var tasks []*ActionTask
+	err := db.GetEngine(ctx).Where("runner_id = ? AND runner_request_key = ?", runner.ID, requestKey).Find(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
 func getConcurrencyCondition() builder.Cond {
 	concurrencyCond := builder.NewCond()
 
@@ -324,7 +347,7 @@ func GetAvailableJobsForRunner(e db.Engine, runner *ActionRunner) ([]*ActionRunJ
 	return jobs, nil
 }
 
-func CreateTaskForRunner(ctx context.Context, runner *ActionRunner) (*ActionTask, bool, error) {
+func CreateTaskForRunner(ctx context.Context, runner *ActionRunner, requestKey *string) (*ActionTask, bool, error) {
 	ctx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return nil, false, err
@@ -369,6 +392,9 @@ func CreateTaskForRunner(ctx context.Context, runner *ActionRunner) (*ActionTask
 		OwnerID:           job.OwnerID,
 		CommitSHA:         job.CommitSHA,
 		IsForkPullRequest: job.IsForkPullRequest,
+	}
+	if requestKey != nil {
+		task.RunnerRequestKey = *requestKey
 	}
 	task.GenerateToken()
 

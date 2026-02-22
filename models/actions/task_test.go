@@ -76,3 +76,26 @@ func TestActionTask_CreatePlaceholderTask(t *testing.T) {
 	}
 	assert.Equal(t, map[string]string{"output1": "value1", "output2": "value2"}, finalOutputs)
 }
+
+func TestActionTask_GetTasksByRunnerRequestKey(t *testing.T) {
+	defer unittest.OverrideFixtures("models/actions/TestActionTask_GetTasksByRunnerRequestKey")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	runner := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 12345678})
+
+	// not matching runner_request_key
+	tasks, err := GetTasksByRunnerRequestKey(t.Context(), runner, "22288392-2c70-4125-bb01-c7da79fa280c")
+	require.NoError(t, err)
+	assert.Empty(t, tasks)
+
+	// matching both runner_id and runner_request_key
+	tasks, err = GetTasksByRunnerRequestKey(t.Context(), runner, "0a7e017d-4201-4b34-8cf4-de0f431893a4")
+	require.NoError(t, err)
+	assert.Len(t, tasks, 2)
+
+	// not matching runner_id
+	runner = unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 10000001})
+	tasks, err = GetTasksByRunnerRequestKey(t.Context(), runner, "0a7e017d-4201-4b34-8cf4-de0f431893a4")
+	require.NoError(t, err)
+	assert.Empty(t, tasks)
+}
