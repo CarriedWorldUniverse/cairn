@@ -208,7 +208,7 @@ func StopTask(ctx context.Context, taskID int64, status actions_model.Status) er
 		}
 	}
 
-	return nil
+	return TransferLogsAndUpdateLogInStorage(ctx, task)
 }
 
 // UpdateTaskByState updates the task by the state.
@@ -260,6 +260,12 @@ func UpdateTaskByState(ctx context.Context, runnerID int64, state *runnerv1.Task
 		// Force update ActionTask.Updated to avoid the task being judged as a zombie task
 		task.Updated = timeutil.TimeStampNow()
 		if err := actions_model.UpdateTask(ctx, task, "updated"); err != nil {
+			return nil, err
+		}
+	}
+
+	if task.Status.IsDone() {
+		if err := TransferLogsAndUpdateLogInStorage(ctx, task); err != nil {
 			return nil, err
 		}
 	}

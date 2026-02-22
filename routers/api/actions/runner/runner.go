@@ -312,20 +312,8 @@ func (s *Service) UpdateLog(
 
 	res.Msg.AckIndex = task.LogLength
 
-	var remove func()
-	if req.Msg.NoMore {
-		task.LogInStorage = true
-		remove, err = actions.TransferLogs(ctx, task.LogFilename)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transfer logs: %w", err))
-		}
-	}
-
-	if err := actions_model.UpdateTask(ctx, task, "log_indexes", "log_length", "log_size", "log_in_storage"); err != nil {
+	if err := actions_model.UpdateTask(ctx, task, "log_indexes", "log_length", "log_size"); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("update task: %w", err))
-	}
-	if remove != nil {
-		remove()
 	}
 
 	return res, nil
