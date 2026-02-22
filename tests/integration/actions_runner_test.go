@@ -25,6 +25,7 @@ import (
 
 type mockRunner struct {
 	client           *mockRunnerClient
+	uuid, token      string
 	lastTasksVersion int64
 }
 
@@ -38,7 +39,7 @@ func newMockRunner() *mockRunner {
 	return &mockRunner{client: client}
 }
 
-func newMockRunnerClient(uuid, token string) *mockRunnerClient {
+func newMockRunnerClientWithRequestKey(uuid, token, requestKey string) *mockRunnerClient {
 	baseURL := fmt.Sprintf("%sapi/actions", setting.AppURL)
 
 	opt := connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
@@ -48,6 +49,9 @@ func newMockRunnerClient(uuid, token string) *mockRunnerClient {
 			}
 			if token != "" {
 				req.Header().Set("x-runner-token", token)
+			}
+			if requestKey != "" {
+				req.Header().Set("x-runner-request-key", requestKey)
 			}
 			return next(ctx, req)
 		}
@@ -59,6 +63,10 @@ func newMockRunnerClient(uuid, token string) *mockRunnerClient {
 	}
 
 	return client
+}
+
+func newMockRunnerClient(uuid, token string) *mockRunnerClient {
+	return newMockRunnerClientWithRequestKey(uuid, token, "")
 }
 
 func (r *mockRunner) doPing(t *testing.T) {
@@ -79,7 +87,9 @@ func (r *mockRunner) doRegister(t *testing.T, name, token string, labels []strin
 		Ephemeral: false,
 	}))
 	require.NoError(t, err)
-	r.client = newMockRunnerClient(resp.Msg.Runner.Uuid, resp.Msg.Runner.Token)
+	r.uuid = resp.Msg.Runner.Uuid
+	r.token = resp.Msg.Runner.Token
+	r.client = newMockRunnerClient(r.uuid, r.token)
 }
 
 func (r *mockRunner) doRegisterEphemeral(t *testing.T, name, token string, labels []string) {
@@ -92,7 +102,13 @@ func (r *mockRunner) doRegisterEphemeral(t *testing.T, name, token string, label
 		Ephemeral: true,
 	}))
 	require.NoError(t, err)
-	r.client = newMockRunnerClient(resp.Msg.Runner.Uuid, resp.Msg.Runner.Token)
+	r.uuid = resp.Msg.Runner.Uuid
+	r.token = resp.Msg.Runner.Token
+	r.client = newMockRunnerClient(r.uuid, r.token)
+}
+
+func (r *mockRunner) setRequestKey(requestKey string) {
+	r.client = newMockRunnerClientWithRequestKey(r.uuid, r.token, requestKey)
 }
 
 func (r *mockRunner) registerAsRepoRunner(t *testing.T, ownerName, repoName, runnerName string, labels []string) {

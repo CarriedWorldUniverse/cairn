@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	uuidHeaderKey  = "x-runner-uuid"
-	tokenHeaderKey = "x-runner-token"
+	uuidHeaderKey       = "x-runner-uuid"
+	tokenHeaderKey      = "x-runner-token"
+	requestKeyHeaderKey = "x-runner-request-key"
 )
 
 var withRunner = connect.WithInterceptors(connect.UnaryInterceptorFunc(func(unaryFunc connect.UnaryFunc) connect.UnaryFunc {
@@ -54,6 +55,12 @@ var withRunner = connect.WithInterceptors(connect.UnaryInterceptorFunc(func(unar
 		}
 
 		ctx = context.WithValue(ctx, runnerCtxKey{}, runner)
+
+		requestKey := request.Header().Get(requestKeyHeaderKey)
+		if requestKey != "" {
+			ctx = context.WithValue(ctx, runnerRequestKeyCtxKey{}, requestKey)
+		}
+
 		return unaryFunc(ctx, request)
 	}
 }))
@@ -72,6 +79,17 @@ func GetRunner(ctx context.Context) *actions_model.ActionRunner {
 	if v := ctx.Value(runnerCtxKey{}); v != nil {
 		if r, ok := v.(*actions_model.ActionRunner); ok {
 			return r
+		}
+	}
+	return nil
+}
+
+type runnerRequestKeyCtxKey struct{}
+
+func getRequestKey(ctx context.Context) *string {
+	if v := ctx.Value(runnerRequestKeyCtxKey{}); v != nil {
+		if r, ok := v.(string); ok {
+			return &r
 		}
 	}
 	return nil

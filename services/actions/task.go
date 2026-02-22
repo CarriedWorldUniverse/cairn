@@ -20,7 +20,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv1.Task, bool, error) {
+func PickTask(ctx context.Context, runner *actions_model.ActionRunner, requestKey *string) (*runnerv1.Task, bool, error) {
 	var (
 		task *runnerv1.Task
 		job  *actions_model.ActionRunJob
@@ -40,7 +40,7 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv
 	}
 
 	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		t, ok, err := actions_model.CreateTaskForRunner(ctx, runner)
+		t, ok, err := actions_model.CreateTaskForRunner(ctx, runner, requestKey)
 		if err != nil {
 			return fmt.Errorf("CreateTaskForRunner: %w", err)
 		}
@@ -94,6 +94,61 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner) (*runnerv
 	CreateCommitStatus(ctx, job)
 
 	return task, true, nil
+}
+
+func RecoverTasks(ctx context.Context, tasks []*actions_model.ActionTask) ([]*runnerv1.Task, error) {
+	retval := make([]*runnerv1.Task, len(tasks))
+
+	err := db.WithTx(ctx, func(ctx context.Context) error {
+		for i, t := range tasks {
+			// `Token` is stored in the database w/ a one-way hash, so we can't recover it from the original.  Instead
+			// we generate a new token to create usable runnerv1.Task objects.
+			t.GenerateToken()
+			if err := t.UpdateToken(ctx); err != nil {
+				return fmt.Errorf("UpdateTask failed: %w", err)
+			}
+
+			if err := t.LoadAttributes(ctx); err != nil {
+				return fmt.Errorf("task LoadAttributes: %w", err)
+			}
+			job := t.Job
+
+			secrets, err := getSecretsOfTask(ctx, t)
+			if err != nil {
+				return fmt.Errorf("GetSecretsOfTask: %w", err)
+			}
+
+			vars, err := actions_model.GetVariablesOfRun(ctx, t.Job.Run)
+			if err != nil {
+				return fmt.Errorf("GetVariablesOfRun: %w", err)
+			}
+
+			needs, err := findTaskNeeds(ctx, job)
+			if err != nil {
+				return fmt.Errorf("findTaskNeeds: %w", err)
+			}
+
+			taskContext, err := generateTaskContext(t)
+			if err != nil {
+				return fmt.Errorf("generateTaskContext: %w", err)
+			}
+
+			retval[i] = &runnerv1.Task{
+				Id:              t.ID,
+				WorkflowPayload: t.Job.WorkflowPayload,
+				Context:         taskContext,
+				Secrets:         secrets,
+				Vars:            vars,
+				Needs:           needs,
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return retval, nil
 }
 
 func generateTaskContext(t *actions_model.ActionTask) (*structpb.Struct, error) {
