@@ -41,8 +41,8 @@
 				<div class="list-header ui dropdown type jump item">
 					<span class="text tw-whitespace-nowrap">
 						{{ctx.Locale.Tr "repo.issues.filter_type"}}
-						{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 					</span>
+					{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 					<div class="ui menu">
 						<a class="{{if eq .ViewType "created_by"}}active{{end}} item" href="?type=created_by&sort={{$.SortType}}&state={{.State}}&q={{$.Keyword}}">
 							<div class="ui circular mini label tw-ml-0">{{CountFmt .IssueStats.CreateCount}}</div>
@@ -76,8 +76,8 @@
 				<div class="list-header-sort ui dropdown type jump item">
 					<span class="text tw-whitespace-nowrap">
 						{{ctx.Locale.Tr "repo.issues.filter_sort"}}
-						{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 					</span>
+					{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 					<div class="menu">
 						{{$keyword := StringUtils.RemoveAllPrefix $.Keyword "sort:"}}
 						{{$o := .}}

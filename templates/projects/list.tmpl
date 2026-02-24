@@ -23,7 +23,8 @@
 		{{template "shared/search/combo" dict "Value" .Keyword "Placeholder" (ctx.Locale.Tr "search.project_kind")}}
 	</form>
 	<!-- Sort -->
-	<div class="list-header-sort ui dropdown type jump item">
+	<div class="ui secondary menu tw-mt-0">
+		<div class="list-header-sort ui dropdown type jump item">
 		<span class="text">
 			{{ctx.Locale.Tr "repo.issues.filter_sort"}}
 		</span>
@@ -33,6 +34,7 @@
 			<a class="{{if eq .SortType "recentupdate"}}active {{end}}item" href="?q={{$.Keyword}}&sort=recentupdate&state={{$.State}}">{{ctx.Locale.Tr "repo.issues.filter_sort.recentupdate"}}</a>
 			<a class="{{if eq .SortType "leastupdate"}}active {{end}}item" href="?q={{$.Keyword}}&sort=leastupdate&state={{$.State}}">{{ctx.Locale.Tr "repo.issues.filter_sort.leastupdate"}}</a>
 		</div>
+	</div>
 	</div>
 </div>
 
