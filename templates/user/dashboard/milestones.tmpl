@@ -53,11 +53,12 @@
 						{{template "shared/search/combo" dict "Value" $.Keyword}}
 					</form>
 					<!-- Sort -->
-					<div class="list-header-sort ui dropdown type jump item">
-						<span class="text">
-							{{ctx.Locale.Tr "repo.issues.filter_sort"}}
-						</span>
-						{{svg "octicon-triangle-down" 14 "dropdown icon"}}
+					<div class="ui secondary menu tw-mt-0">
+						<div class="list-header-sort ui dropdown type jump item">
+							<span class="text">
+								{{ctx.Locale.Tr "repo.issues.filter_sort"}}
+							</span>
+							{{svg "octicon-triangle-down" 14 "dropdown icon"}}
 						<div class="menu">
 							<a class="{{if or (eq .SortType "closestduedate") (not .SortType)}}active {{end}}item" href="?repos=[{{range $.RepoIDs}}{{.}}%2C{{end}}]&sort=closestduedate&state={{$.State}}&q={{$.Keyword}}">{{ctx.Locale.Tr "repo.milestones.filter_sort.earliest_due_data"}}</a>
 							<a class="{{if eq .SortType "furthestduedate"}}active {{end}}item" href="?repos=[{{range $.RepoIDs}}{{.}}%2C{{end}}]&sort=furthestduedate&state={{$.State}}&q={{$.Keyword}}">{{ctx.Locale.Tr "repo.milestones.filter_sort.latest_due_date"}}</a>
@@ -67,6 +68,7 @@
 							<a class="{{if eq .SortType "leastissues"}}active {{end}}item" href="?repos=[{{range $.RepoIDs}}{{.}}%2C{{end}}]&sort=leastissues&state={{$.State}}&q={{$.Keyword}}">{{ctx.Locale.Tr "repo.milestones.filter_sort.least_issues"}}</a>
 							<a class="{{if eq .SortType "name"}}active {{end}}item" href="?repos=[{{range $.RepoIDs}}{{.}}%2C{{end}}]&sort=name&state={{$.State}}&q={{$.Keyword}}">{{ctx.Locale.Tr "repo.milestones.filter_sort.name"}}</a>
 						</div>
+					</div>
 					</div>
 				</div>
 				<div class="milestone-list">
