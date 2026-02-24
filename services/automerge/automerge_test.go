@@ -15,6 +15,7 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/util"
+
 	"github.com/stretchr/testify/require"
 )
 
