@@ -1110,3 +1110,100 @@ func TestAPIIssueBlocksAccessTokenResources(t *testing.T) {
 		assert.False(t, foundRepo3) // private org3/repo3, denied outside fine-grain
 	})
 }
+
+func TestAPIIssueBlocksModificationAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue, auth_model.AccessTokenScopeWriteRepository)
+
+	// Create an issue on a repo, repo1 -- call it issue1.  repo256 is used because it's configured with
+	// EnableDependencies:true in its issue unit.
+	req := NewRequestWithJSON(t, "POST", "/api/v1/repos/user2/repo256/issues", &api.CreateIssueOption{
+		Body:  "issue body",
+		Title: "issue title",
+	}).AddTokenAuth(writeToken)
+	resp := MakeRequest(t, req, http.StatusCreated)
+	var issue1 api.Issue
+	DecodeJSON(t, resp, &issue1)
+
+	// For our three target repos, we'll need to enable issue dependencies for this test case.
+	for _, repo := range []string{"user2/repo1", "user2/repo2", "org3/repo3"} {
+		req = NewRequestWithJSON(t, "PATCH", fmt.Sprintf("/api/v1/repos/%s", repo), &api.EditRepoOption{
+			InternalTracker: &api.InternalTracker{
+				EnableIssueDependencies: true,
+			},
+		}).AddTokenAuth(writeToken)
+		MakeRequest(t, req, http.StatusOK)
+	}
+
+	// On three other repos, on a public repo (repo1), on two private repos (repo2, org3/repo3), create new issues.
+	var repo1Issue, repo2Issue, repo3Issue api.Issue
+	createIssue := func(repoFullname string, issue *api.Issue) {
+		req = NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/issues", repoFullname), &api.CreateIssueOption{
+			Body:  "repo1 issue dependency",
+			Title: "important dependency",
+		}).AddTokenAuth(writeToken)
+		resp = MakeRequest(t, req, http.StatusCreated)
+		DecodeJSON(t, resp, issue)
+	}
+	createIssue("user2/repo1", &repo1Issue)
+	createIssue("user2/repo2", &repo2Issue)
+	createIssue("org3/repo3", &repo3Issue)
+
+	// The remainder of this test attempts to create dependencies between the issues on repo1/repo2/repo3, and the
+	// target issue on repo256, with various levels of access tokens.  `makeDep` is a nice helper function to make those
+	// test case shorter.
+	makeDep := func(t *testing.T, dependency *api.Issue, token string, expectedStatus int) {
+		req = NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index), api.IssueMeta{
+			Owner: dependency.Repo.Owner,
+			Name:  dependency.Repo.Name,
+			Index: dependency.Index,
+		}).AddTokenAuth(token)
+		MakeRequest(t, req, expectedStatus)
+		if expectedStatus == http.StatusCreated {
+			// Delete the dependency created at the end of this test, to allow a clean environment for next test cases.
+			t.Cleanup(func() {
+				req = NewRequestWithJSON(t, "DELETE", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index), api.IssueMeta{
+					Owner: dependency.Repo.Owner,
+					Name:  dependency.Repo.Name,
+					Index: dependency.Index,
+				}).AddTokenAuth(token)
+				MakeRequest(t, req, http.StatusCreated)
+			})
+		}
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue)
+
+		makeDep(t, &repo1Issue, allToken, http.StatusCreated) // public repo1
+		makeDep(t, &repo2Issue, allToken, http.StatusCreated) // private repo2
+		makeDep(t, &repo3Issue, allToken, http.StatusCreated) // private org3/repo3
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeWriteIssue)
+
+		makeDep(t, &repo1Issue, publicOnlyToken, http.StatusCreated)  // public repo1
+		makeDep(t, &repo2Issue, publicOnlyToken, http.StatusNotFound) // private repo2
+		makeDep(t, &repo3Issue, publicOnlyToken, http.StatusNotFound) // private org3/repo3
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteIssue},
+			[]int64{2},
+		)
+
+		makeDep(t, &repo1Issue, repo2OnlyToken, http.StatusNotFound) // public repo1 -- fails because fine-grained token has read only access
+		makeDep(t, &repo2Issue, repo2OnlyToken, http.StatusCreated)  // private repo2
+		makeDep(t, &repo3Issue, repo2OnlyToken, http.StatusNotFound) // private org3/repo3
+	})
+}

@@ -557,9 +557,9 @@ func getPermissionForRepo(ctx *context.APIContext, repo *repo_model.Repository) 
 		return &ctx.Repo.Permission
 	}
 
-	perm, err := access_model.GetUserRepoPermission(ctx, repo, ctx.Doer)
+	perm, err := access_model.GetUserRepoPermissionWithReducer(ctx, repo, ctx.Doer, ctx.Reducer)
 	if err != nil {
-		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 		return nil
 	}
 
