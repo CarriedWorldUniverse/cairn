@@ -18,6 +18,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -267,5 +268,51 @@ func testAPICompareCommits(t *testing.T, objectFormat git.ObjectFormat) {
 				requireErrorContains(t, resp, fmt.Sprintf("could not find 'notexists' to be a commit, branch or tag in the %s", testCase.what))
 			})
 		}
+	})
+}
+
+func TestAPICompareCommitsAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+
+	// Using the compare API, will be testing that the base repo's security checks implement fine-grained access
+	// controls (and baselines with all and public-only).
+	testCase := func(t *testing.T, repo, token string, expectedStatus int) {
+		req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/%s/compare/master...master", repo)).AddTokenAuth(token)
+		MakeRequest(t, req, expectedStatus)
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+
+		testCase(t, "user2/repo1", allToken, http.StatusOK)  // public user2/repo1
+		testCase(t, "org3/repo3", allToken, http.StatusOK)   // private org3/repo3
+		testCase(t, "user2/repo20", allToken, http.StatusOK) // private user2/repo20
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadRepository)
+
+		testCase(t, "user2/repo1", publicOnlyToken, http.StatusOK)        // public user2/repo1
+		testCase(t, "org3/repo3", publicOnlyToken, http.StatusNotFound)   // private org3/repo3
+		testCase(t, "user2/repo20", publicOnlyToken, http.StatusNotFound) // private user2/repo20
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadRepository},
+			[]int64{3},
+		)
+
+		testCase(t, "user2/repo1", repo2OnlyToken, http.StatusOK)        // public user2/repo1
+		testCase(t, "org3/repo3", repo2OnlyToken, http.StatusOK)         // private org3/repo3
+		testCase(t, "user2/repo20", repo2OnlyToken, http.StatusNotFound) // private user2/repo20, outside of fine-grain
 	})
 }
