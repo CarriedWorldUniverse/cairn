@@ -115,11 +115,12 @@ func ListMyRepos(ctx *context.APIContext) {
 	//     "$ref": "#/responses/validationError"
 
 	opts := &repo_model.SearchRepoOptions{
-		ListOptions:        utils.GetListOptions(ctx),
-		Actor:              ctx.Doer,
-		OwnerID:            ctx.Doer.ID,
-		Private:            ctx.IsSigned,
-		IncludeDescription: true,
+		ListOptions:          utils.GetListOptions(ctx),
+		Actor:                ctx.Doer,
+		OwnerID:              ctx.Doer.ID,
+		Private:              ctx.IsSigned,
+		IncludeDescription:   true,
+		AuthorizationReducer: ctx.Reducer,
 	}
 	orderBy := ctx.FormTrim("order_by")
 	switch orderBy {
@@ -148,9 +149,14 @@ func ListMyRepos(ctx *context.APIContext) {
 			ctx.Error(http.StatusInternalServerError, "LoadOwner", err)
 			return
 		}
-		permission, err := access_model.GetUserRepoPermission(ctx, repo, ctx.Doer)
+		permission, err := access_model.GetUserRepoPermissionWithReducer(ctx, repo, ctx.Doer, ctx.Reducer)
 		if err != nil {
-			ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+			ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
+		} else if !permission.HasAccess() {
+			// It shouldn't happen that a repo is returned from SearchRepository which we have no access to at all. Due
+			// to the pagination of the API it doesn't make sense to skip it, as we wouldn't be giving the right number
+			// of results back to the API consumer.
+			ctx.Error(http.StatusInternalServerError, "InvalidAuthorizationReducer", "Repository was available from SearchRepository, but not readable.")
 		}
 		results[i] = convert.ToRepo(ctx, repo, permission)
 	}
