@@ -11,7 +11,7 @@ import (
 
 	issues_model "forgejo.org/models/issues"
 	"forgejo.org/models/organization"
-	access_model "forgejo.org/models/perm/access"
+	"forgejo.org/models/perm"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/gitrepo"
 	api "forgejo.org/modules/structs"
@@ -746,6 +746,8 @@ func CreateReviewRequests(ctx *context.APIContext) {
 	//     "$ref": "#/responses/PullReviewListWithoutPagination"
 	//   "422":
 	//     "$ref": "#/responses/validationError"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 
@@ -813,9 +815,18 @@ func apiReviewRequest(ctx *context.APIContext, opts api.PullReviewRequestOptions
 
 	reviewers := make([]*user_model.User, 0, len(opts.Reviewers))
 
-	permDoer, err := access_model.GetUserRepoPermission(ctx, pr.Issue.Repo, ctx.Doer)
+	// Ability to add review requests is relatively complex logic that will be in `CanDoerChangeReviewRequests`.  But on
+	// the API side, it's possible that an auth reducer may want to interfere with this logic -- so we'll run a write
+	// AccessMode through the reducer and if we don't get write back, then the reducer is preventing us from adding this
+	// review request. (eg. a repo-scoped access token, when accessing a public repo, can't write review requests)
+	reducerAccessMode, err := ctx.Reducer.ReduceRepoAccess(ctx, ctx.Repo.Repository, perm.AccessModeWrite)
 	if err != nil {
-		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+		ctx.Error(http.StatusInternalServerError, "ReduceRepoAccess", err)
+		return
+	} else if reducerAccessMode != perm.AccessModeWrite {
+		// Forbidden (rather than NotFound) is used for this perm check because the middleware on the APIs already
+		// guarantees we have read access to this repo, so this doesn't leak any existence information.
+		ctx.Error(http.StatusForbidden, "apiReviewRequest", "permission reduction prevented review request change")
 		return
 	}
 
@@ -836,7 +847,7 @@ func apiReviewRequest(ctx *context.APIContext, opts api.PullReviewRequestOptions
 			return
 		}
 
-		err = issue_service.IsValidReviewRequest(ctx, reviewer, ctx.Doer, isAdd, pr.Issue, &permDoer)
+		err = issue_service.IsValidReviewRequest(ctx, reviewer, ctx.Doer, isAdd, pr.Issue)
 		if err != nil {
 			if issues_model.IsErrNotValidReviewRequest(err) {
 				ctx.Error(http.StatusUnprocessableEntity, "NotValidReviewRequest", err)

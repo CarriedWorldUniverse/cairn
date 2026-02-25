@@ -6,6 +6,7 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
@@ -484,6 +485,101 @@ func TestAPIPullReviewRequest(t *testing.T) {
 	req = NewRequestWithJSON(t, http.MethodDelete, fmt.Sprintf("/api/v1/repos/%s/%s/pulls/%d/requested_reviewers", repo3.OwnerName, repo3.Name, pullIssue12.Index), &api.PullReviewRequestOptions{}).
 		AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusNoContent)
+}
+
+func TestAPIPullReviewRequestAccessTokenResources(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		session := loginUser(t, "user2")
+		writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue, auth_model.AccessTokenScopeWriteRepository)
+
+		for _, repo := range []string{"user2/repo1", "user2/repo2", "org3/repo3"} {
+			// For our three target repos, we'll need to enable pull requests for this test case.
+			trueBool := true
+			req := NewRequestWithJSON(t, "PATCH", fmt.Sprintf("/api/v1/repos/%s", repo), &api.EditRepoOption{
+				HasPullRequests: &trueBool,
+			}).AddTokenAuth(writeToken)
+			MakeRequest(t, req, http.StatusOK)
+
+			// Add user `user5` as a collaborator on all the target repos as well, so that we can successfully request
+			// review from them.
+			write := "write"
+			req = NewRequestWithJSON(t, "PUT", fmt.Sprintf("/api/v1/repos/%s/collaborators/user5", repo), &api.AddCollaboratorOption{
+				Permission: &write,
+			}).AddTokenAuth(writeToken)
+			MakeRequest(t, req, http.StatusNoContent)
+		}
+
+		// Create a pull request on each of the target test repos.
+		var repo1PullRequest, repo2PullRequest, repo3PullRequest api.PullRequest
+		createPullRequest := func(repoFullname string, pullRequest *api.PullRequest) {
+			req := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/contents", repoFullname),
+				&api.ChangeFilesOptions{
+					FileOptions: api.FileOptions{
+						NewBranchName: "prtest",
+					},
+					Files: []*api.ChangeFileOperation{},
+				}).AddTokenAuth(writeToken)
+			MakeRequest(t, req, http.StatusCreated)
+
+			req = NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/pulls", repoFullname), &api.CreatePullRequestOption{
+				Body:  "repo1 issue dependency",
+				Title: "important dependency",
+				Base:  "master",
+				Head:  "prtest",
+			}).AddTokenAuth(writeToken)
+			resp := MakeRequest(t, req, http.StatusCreated)
+			DecodeJSON(t, resp, pullRequest)
+		}
+		createPullRequest("user2/repo1", &repo1PullRequest)
+		createPullRequest("user2/repo2", &repo2PullRequest)
+		createPullRequest("org3/repo3", &repo3PullRequest)
+
+		// The core of the test is to see whether we can add pull request reviewers to the repos, using access tokens
+		// with different permission scopes (all, public-only, fine-grained access tokens).  Define the test:
+		testCase := func(t *testing.T, repo string, pullRequest *api.PullRequest, token string, expectedStatus int) {
+			req := NewRequestWithJSON(t,
+				"POST",
+				fmt.Sprintf("/api/v1/repos/%s/pulls/%d/requested_reviewers", repo, pullRequest.Index),
+				&api.PullReviewRequestOptions{
+					Reviewers: []string{"user5"},
+				}).
+				AddTokenAuth(token)
+			MakeRequest(t, req, expectedStatus)
+		}
+
+		t.Run("all access token", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+
+			testCase(t, "user2/repo1", &repo1PullRequest, allToken, http.StatusCreated) // public user2/repo1
+			testCase(t, "user2/repo2", &repo2PullRequest, allToken, http.StatusCreated) // private user2/repo2
+			testCase(t, "org3/repo3", &repo3PullRequest, allToken, http.StatusCreated)  // private org3/repo3
+		})
+
+		t.Run("public-only access token", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeWriteRepository)
+
+			testCase(t, "user2/repo1", &repo1PullRequest, publicOnlyToken, http.StatusCreated)  // public user2/repo1
+			testCase(t, "user2/repo2", &repo2PullRequest, publicOnlyToken, http.StatusNotFound) // private user2/repo2
+			testCase(t, "org3/repo3", &repo3PullRequest, publicOnlyToken, http.StatusNotFound)  // private org3/repo3
+		})
+
+		t.Run("specific repo access token", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+				[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteRepository},
+				[]int64{3},
+			)
+
+			testCase(t, "user2/repo1", &repo1PullRequest, repo2OnlyToken, http.StatusForbidden) // public user2/repo1, read-only outside of the auth'd repos
+			testCase(t, "user2/repo2", &repo2PullRequest, repo2OnlyToken, http.StatusNotFound)  // private user2/repo2, outside of fine-grain
+			testCase(t, "org3/repo3", &repo3PullRequest, repo2OnlyToken, http.StatusCreated)    // private org3/repo3
+		})
+	})
 }
 
 func TestAPIPullReviewStayDismissed(t *testing.T) {
