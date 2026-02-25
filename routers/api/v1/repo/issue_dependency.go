@@ -115,9 +115,9 @@ func GetIssueDependencies(ctx *context.APIContext) {
 			perm = existPerm
 		} else {
 			var err error
-			perm, err = access_model.GetUserRepoPermission(ctx, &blocker.Repository, ctx.Doer)
+			perm, err = access_model.GetUserRepoPermissionWithReducer(ctx, &blocker.Repository, ctx.Doer, ctx.Reducer)
 			if err != nil {
-				ctx.ServerError("GetUserRepoPermission", err)
+				ctx.ServerError("GetUserRepoPermissionWithReducer", err)
 				return
 			}
 			repoPerms[blocker.RepoID] = perm
