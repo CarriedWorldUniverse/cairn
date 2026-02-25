@@ -81,7 +81,7 @@ func ReviewRequest(ctx context.Context, issue *issues_model.Issue, doer, reviewe
 }
 
 // IsValidReviewRequest Check permission for ReviewRequest
-func IsValidReviewRequest(ctx context.Context, reviewer, doer *user_model.User, isAdd bool, issue *issues_model.Issue, permDoer *access_model.Permission) error {
+func IsValidReviewRequest(ctx context.Context, reviewer, doer *user_model.User, isAdd bool, issue *issues_model.Issue) error {
 	if reviewer.IsOrganization() {
 		return issues_model.ErrNotValidReviewRequest{
 			Reason: "Organization can't be added as reviewer",
@@ -100,14 +100,6 @@ func IsValidReviewRequest(ctx context.Context, reviewer, doer *user_model.User, 
 	permReviewer, err := access_model.GetUserRepoPermission(ctx, issue.Repo, reviewer)
 	if err != nil {
 		return err
-	}
-
-	if permDoer == nil {
-		permDoer = new(access_model.Permission)
-		*permDoer, err = access_model.GetUserRepoPermission(ctx, issue.Repo, doer)
-		if err != nil {
-			return err
-		}
 	}
 
 	lastreview, err := issues_model.GetReviewByIssueIDAndUserID(ctx, issue.ID, reviewer.ID)
