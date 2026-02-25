@@ -1150,10 +1150,10 @@ func parseCompareInfo(ctx *context.APIContext, form api.CreatePullRequestOption)
 	}
 
 	// user should have permission to read baseRepo's codes and pulls, NOT headRepo's
-	permBase, err := access_model.GetUserRepoPermission(ctx, baseRepo, ctx.Doer)
+	permBase, err := access_model.GetUserRepoPermissionWithReducer(ctx, baseRepo, ctx.Doer, ctx.Reducer)
 	if err != nil {
 		headGitRepo.Close()
-		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 		return nil, nil, nil, "", ""
 	}
 	if !permBase.CanReadIssuesOrPulls(true) || !permBase.CanRead(unit.TypeCode) {
@@ -1169,10 +1169,10 @@ func parseCompareInfo(ctx *context.APIContext, form api.CreatePullRequestOption)
 	}
 
 	// user should have permission to read headrepo's codes
-	permHead, err := access_model.GetUserRepoPermission(ctx, headRepo, ctx.Doer)
+	permHead, err := access_model.GetUserRepoPermissionWithReducer(ctx, headRepo, ctx.Doer, ctx.Reducer)
 	if err != nil {
 		headGitRepo.Close()
-		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 		return nil, nil, nil, "", ""
 	}
 	if !permHead.CanRead(unit.TypeCode) {
