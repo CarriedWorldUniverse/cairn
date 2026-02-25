@@ -34,6 +34,8 @@ func HasTeamRepo(ctx context.Context, orgID, teamID, repoID int64) bool {
 type SearchTeamRepoOptions struct {
 	db.ListOptions
 	TeamID int64
+	// Filters repositories based upon optional authorization restrictions.
+	AuthorizationReducer repo_model.RepositoryAuthorizationReducer
 }
 
 // GetRepositories returns paginated repositories in team of organization.
@@ -45,6 +47,9 @@ func GetTeamRepositories(ctx context.Context, opts *SearchTeamRepoOptions) (repo
 				From("team_repo").
 				Where(builder.Eq{"team_id": opts.TeamID}),
 		)
+	}
+	if opts.AuthorizationReducer != nil {
+		sess = sess.Where(opts.AuthorizationReducer.RepoReadAccessFilter())
 	}
 	if opts.PageSize > 0 {
 		sess.Limit(opts.PageSize, (opts.Page-1)*opts.PageSize)
