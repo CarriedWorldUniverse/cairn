@@ -480,6 +480,57 @@ func TestAPIGetRepoByIDUnauthorized(t *testing.T) {
 	MakeRequest(t, req, http.StatusNotFound)
 }
 
+func TestAPIGetRepoByIDAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+
+	// Test targets:
+	// id 1 - user2/repo1 - public repo
+	// id 2 - user2/repo2 - private repo
+	// id 16 - user2/repo16 - private repo
+	testCase := func(t *testing.T, repoID int, token string, expectedStatus int) {
+		req := NewRequest(t,
+			"GET",
+			fmt.Sprintf("/api/v1/repositories/%d", repoID)).
+			AddTokenAuth(token)
+		MakeRequest(t, req, expectedStatus)
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+
+		testCase(t, 1, allToken, http.StatusOK)  // public user2/repo1
+		testCase(t, 2, allToken, http.StatusOK)  // private user2/repo2
+		testCase(t, 16, allToken, http.StatusOK) // private org3/repo3
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadRepository)
+
+		testCase(t, 1, publicOnlyToken, http.StatusOK)        // public user2/repo1
+		testCase(t, 2, publicOnlyToken, http.StatusNotFound)  // private user2/repo2
+		testCase(t, 16, publicOnlyToken, http.StatusNotFound) // private org3/repo3
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadRepository},
+			[]int64{2},
+		)
+
+		testCase(t, 1, repo2OnlyToken, http.StatusOK)        // public user2/repo1, read-only outside of the auth'd repos
+		testCase(t, 2, repo2OnlyToken, http.StatusOK)        // private org3/repo3
+		testCase(t, 16, repo2OnlyToken, http.StatusNotFound) // private user2/repo20, outside of fine-grain
+	})
+}
+
 func TestAPIRepoMigrate(t *testing.T) {
 	testCases := []struct {
 		ctxUserID, userID  int64

@@ -599,9 +599,9 @@ func GetByID(ctx *context.APIContext) {
 		return
 	}
 
-	permission, err := access_model.GetUserRepoPermission(ctx, repo, ctx.Doer)
+	permission, err := access_model.GetUserRepoPermissionWithReducer(ctx, repo, ctx.Doer, ctx.Reducer)
 	if err != nil {
-		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 		return
 	} else if !permission.HasAccess() {
 		ctx.NotFound()
