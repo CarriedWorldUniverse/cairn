@@ -20,10 +20,11 @@ func listUserRepos(ctx *context.APIContext, u *user_model.User, private bool) {
 	opts := utils.GetListOptions(ctx)
 
 	repos, count, err := repo_model.GetUserRepositories(ctx, &repo_model.SearchRepoOptions{
-		Actor:       u,
-		Private:     private,
-		ListOptions: opts,
-		OrderBy:     "id ASC",
+		Actor:                u,
+		Private:              private,
+		ListOptions:          opts,
+		OrderBy:              "id ASC",
+		AuthorizationReducer: ctx.Reducer,
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "GetUserRepositories", err)
@@ -37,9 +38,9 @@ func listUserRepos(ctx *context.APIContext, u *user_model.User, private bool) {
 
 	apiRepos := make([]*api.Repository, 0, len(repos))
 	for i := range repos {
-		permission, err := access_model.GetUserRepoPermission(ctx, repos[i], ctx.Doer)
+		permission, err := access_model.GetUserRepoPermissionWithReducer(ctx, repos[i], ctx.Doer, ctx.Reducer)
 		if err != nil {
-			ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+			ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 			return
 		}
 		if ctx.IsSigned && ctx.Doer.IsAdmin || permission.HasAccess() {
