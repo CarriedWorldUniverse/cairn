@@ -993,3 +993,120 @@ func TestAPIIssueDependencyAccessTokenResources(t *testing.T) {
 		assert.False(t, foundRepo3) // private org3/repo3, denied outside fine-grain
 	})
 }
+
+func TestAPIIssueBlocksAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue, auth_model.AccessTokenScopeWriteRepository)
+
+	// Create an issue on a repo, repo1 -- call it issue1.  repo256 is used because it's configured with
+	// EnableDependencies:true in its issue unit.
+	req := NewRequestWithJSON(t, "POST", "/api/v1/repos/user2/repo256/issues", &api.CreateIssueOption{
+		Body:  "issue body",
+		Title: "issue title",
+	}).AddTokenAuth(writeToken)
+	resp := MakeRequest(t, req, http.StatusCreated)
+	var issue1 api.Issue
+	DecodeJSON(t, resp, &issue1)
+
+	// For our three target repos, we'll need to enable issue dependencies for this test to succeed.
+	for _, repo := range []string{"user2/repo1", "user2/repo2", "org3/repo3"} {
+		req = NewRequestWithJSON(t, "PATCH", fmt.Sprintf("/api/v1/repos/%s", repo), &api.EditRepoOption{
+			InternalTracker: &api.InternalTracker{
+				EnableIssueDependencies: true,
+			},
+		}).AddTokenAuth(writeToken)
+		MakeRequest(t, req, http.StatusOK)
+	}
+
+	// On three other repos (one public repo (repo1), two private repos (repo2, org3/repo3)), create new issues. Block
+	// each issue by issue1. (typically repo16 is used in similar tests for a second private repo, but can't be used
+	// here because it doesn't have the issue unit enabled)
+	for _, repo := range []string{"user2/repo1", "user2/repo2", "org3/repo3"} {
+		var dependency api.Issue
+		req = NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/issues", repo), &api.CreateIssueOption{
+			Body:  "repo1 issue dependency",
+			Title: "important dependency",
+		}).AddTokenAuth(writeToken)
+		resp = MakeRequest(t, req, http.StatusCreated)
+		DecodeJSON(t, resp, &dependency)
+
+		req = NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index), api.IssueMeta{
+			Owner: dependency.Repo.Owner,
+			Name:  dependency.Repo.Name,
+			Index: dependency.Index,
+		}).AddTokenAuth(writeToken)
+		MakeRequest(t, req, http.StatusCreated)
+	}
+
+	// The remainder of this test reads the dependencies on issue1 with different access token resources and see if the
+	// dependencies are visible or hidden.
+	var issues []*api.Issue
+	find := func() (bool, bool, bool) {
+		foundRepo1 := false // public repo1
+		foundRepo2 := false // private repo2
+		foundRepo3 := false // second public repo used in fine-grain testing, included as baseline
+		for _, issue := range issues {
+			if issue.Repo != nil {
+				switch issue.Repo.Name {
+				case "repo1":
+					foundRepo1 = true
+				case "repo2":
+					foundRepo2 = true
+				case "repo3":
+					foundRepo3 = true
+				}
+			}
+		}
+		return foundRepo1, foundRepo2, foundRepo3
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadIssue)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index)).AddTokenAuth(allToken)
+		resp := MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &issues)
+		foundRepo1, foundRepo2, foundRepo3 := find()
+
+		assert.True(t, foundRepo1) // public repo1
+		assert.True(t, foundRepo2) // private repo2
+		assert.True(t, foundRepo3) // private org3/repo3, used in fine-grain testing, included as baseline
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadIssue)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index)).AddTokenAuth(publicOnlyToken)
+		resp := MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &issues)
+		foundRepo1, foundRepo2, foundRepo3 := find()
+
+		assert.True(t, foundRepo1)  // public repo1
+		assert.False(t, foundRepo2) // private repo2
+		assert.False(t, foundRepo3) // private org3/repo3
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadIssue},
+			[]int64{2},
+		)
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/repos/user2/repo256/issues/%d/blocks", issue1.Index)).AddTokenAuth(repo2OnlyToken)
+		resp := MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &issues)
+		foundRepo1, foundRepo2, foundRepo3 := find()
+
+		assert.True(t, foundRepo1)  // public repo1, allowed as it's public and read-access only
+		assert.True(t, foundRepo2)  // private repo2, allowed inside fine-grain
+		assert.False(t, foundRepo3) // private org3/repo3, denied outside fine-grain
+	})
+}

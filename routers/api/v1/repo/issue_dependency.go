@@ -369,9 +369,9 @@ func GetIssueBlocks(ctx *context.APIContext) {
 			perm = existPerm
 		} else {
 			var err error
-			perm, err = access_model.GetUserRepoPermission(ctx, &depMeta.Repository, ctx.Doer)
+			perm, err = access_model.GetUserRepoPermissionWithReducer(ctx, &depMeta.Repository, ctx.Doer, ctx.Reducer)
 			if err != nil {
-				ctx.ServerError("GetUserRepoPermission", err)
+				ctx.ServerError("GetUserRepoPermissionWithReducer", err)
 				return
 			}
 			repoPerms[depMeta.RepoID] = perm
