@@ -6,7 +6,6 @@
 package user
 
 import (
-	std_context "context"
 	"net/http"
 
 	"forgejo.org/models/db"
@@ -22,14 +21,18 @@ import (
 
 // getStarredRepos returns the repos that the user with the specified userID has
 // starred
-func getStarredRepos(ctx std_context.Context, user *user_model.User, private bool, listOptions db.ListOptions) ([]*api.Repository, error) {
-	starredRepos, err := repo_model.GetStarredRepos(ctx, user.ID, private, listOptions)
+func getStarredRepos(ctx *context.APIContext, user *user_model.User, private bool, listOptions db.ListOptions) ([]*api.Repository, error) {
+	starredRepos, err := repo_model.GetStarredRepos(ctx, user.ID, private, listOptions, ctx.Reducer)
 	if err != nil {
 		return nil, err
 	}
 
 	repos := make([]*api.Repository, len(starredRepos))
 	for i, starred := range starredRepos {
+		// Resource filtering is implemented above in the call to GetStarredRepos, and doesn't need to be taken into
+		// account here:
+		//
+		// nosemgrep: forgejo-api-use-resource-GetUserRepoPermission
 		permission, err := access_model.GetUserRepoPermission(ctx, starred, user)
 		if err != nil {
 			return nil, err
