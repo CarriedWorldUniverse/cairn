@@ -10,6 +10,7 @@ import (
 	"regexp"
 
 	"forgejo.org/models/db"
+	"forgejo.org/modules/container"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
@@ -42,10 +43,10 @@ type Column struct {
 	ID      int64 `xorm:"pk autoincr"`
 	Title   string
 	Default bool   `xorm:"NOT NULL DEFAULT false"` // issues not assigned to a specific column will be assigned to this column
-	Sorting int8   `xorm:"NOT NULL DEFAULT 0"`
+	Sorting int8   `xorm:"NOT NULL DEFAULT 0 unique(project_sorting)"`
 	Color   string `xorm:"VARCHAR(7)"`
 
-	ProjectID int64 `xorm:"INDEX NOT NULL"`
+	ProjectID int64 `xorm:"INDEX NOT NULL unique(project_sorting)"`
 	CreatorID int64 `xorm:"NOT NULL"`
 
 	CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
@@ -103,8 +104,9 @@ func createDefaultColumnsForProject(ctx context.Context, project *Project) error
 			Title:       "Backlog",
 			ProjectID:   project.ID,
 			Default:     true,
+			Sorting:     0,
 		}
-		if err := db.Insert(ctx, column); err != nil {
+		if err := db.Insert(ctx, &column); err != nil {
 			return err
 		}
 
@@ -113,12 +115,13 @@ func createDefaultColumnsForProject(ctx context.Context, project *Project) error
 		}
 
 		columns := make([]Column, 0, len(items))
-		for _, v := range items {
+		for i, v := range items {
 			columns = append(columns, Column{
 				CreatedUnix: timeutil.TimeStampNow(),
 				CreatorID:   project.CreatorID,
 				Title:       v,
 				ProjectID:   project.ID,
+				Sorting:     int8(i + 1),
 			})
 		}
 
@@ -215,9 +218,7 @@ func GetColumn(ctx context.Context, columnID int64) (*Column, error) {
 func UpdateColumn(ctx context.Context, column *Column) error {
 	var fieldToUpdate []string
 
-	if column.Sorting != 0 {
-		fieldToUpdate = append(fieldToUpdate, "sorting")
-	}
+	fieldToUpdate = append(fieldToUpdate, "sorting")
 
 	if column.Title != "" {
 		fieldToUpdate = append(fieldToUpdate, "title")
@@ -257,12 +258,22 @@ func (p *Project) GetDefaultColumn(ctx context.Context) (*Column, error) {
 		return &column, nil
 	}
 
-	// create a default column if none is found
+	// create a default column if none is found, using the next available sorting value
+	res := struct {
+		MaxSorting  int64
+		ColumnCount int64
+	}{}
+	if _, err := db.GetEngine(ctx).Select("max(sorting) as max_sorting, count(*) as column_count").
+		Table("project_board").Where("project_id=?", p.ID).Get(&res); err != nil {
+		return nil, err
+	}
+
 	column = Column{
 		ProjectID: p.ID,
 		Default:   true,
 		Title:     "Uncategorized",
 		CreatorID: p.CreatorID,
+		Sorting:   int8(util.Iif(res.ColumnCount > 0, res.MaxSorting+1, 0)),
 	}
 	if _, err := db.GetEngine(ctx).Insert(&column); err != nil {
 		return nil, err
@@ -305,27 +316,59 @@ func GetColumnsByIDs(ctx context.Context, projectID int64, columnsIDs []int64) (
 	return columns, nil
 }
 
-// MoveColumnsOnProject sorts columns in a project
+// MoveColumnsOnProject sorts columns in a project using a two-phase approach
+// to avoid unique constraint collisions during swap operations.
+// All columns in the project must be included in the sortedColumnIDs map.
 func MoveColumnsOnProject(ctx context.Context, project *Project, sortedColumnIDs map[int64]int64) error {
 	return db.WithTx(ctx, func(ctx context.Context) error {
 		sess := db.GetEngine(ctx)
+
+		// Validate no duplicate column IDs in map values
+		columnIDSet := make(container.Set[int64], len(sortedColumnIDs))
+		for _, columnID := range sortedColumnIDs {
+			if !columnIDSet.Add(columnID) {
+				return errors.New("duplicate column ID in reorder request")
+			}
+		}
+
+		// Validate all columns exist and belong to this project
+		allColumns, err := project.GetColumns(ctx)
+		if err != nil {
+			return err
+		}
+		if len(allColumns) != len(sortedColumnIDs) {
+			return errors.New("all columns in the project must be included in the reorder request")
+		}
+
 		columnIDs := util.ValuesOfMap(sortedColumnIDs)
 		movedColumns, err := GetColumnsByIDs(ctx, project.ID, columnIDs)
 		if err != nil {
 			return err
 		}
 		if len(movedColumns) != len(sortedColumnIDs) {
-			return errors.New("some columns do not exist")
+			return errors.New("some columns do not exist in this project")
 		}
 
+		// Build reverse map: columnID → target sorting
+		targetSortingByColumn := make(map[int64]int64, len(sortedColumnIDs))
+		for sorting, columnID := range sortedColumnIDs {
+			targetSortingByColumn[columnID] = sorting
+		}
+
+		// Phase 1: negate using target sorting values (guaranteed unique since
+		// they are map keys) to avoid unique constraint collisions during swap
 		for _, column := range movedColumns {
-			if column.ProjectID != project.ID {
-				return fmt.Errorf("column[%d]'s projectID is not equal to project's ID [%d]", column.ProjectID, project.ID)
+			targetSorting := targetSortingByColumn[column.ID]
+			if _, err := sess.Exec("UPDATE `project_board` SET sorting=? WHERE id=?",
+				-(targetSorting + 1), column.ID); err != nil {
+				return err
 			}
 		}
 
+		// Phase 2: set final values
 		for sorting, columnID := range sortedColumnIDs {
-			if _, err := sess.Exec("UPDATE `project_board` SET sorting=? WHERE id=?", sorting, columnID); err != nil {
+			if _, err := sess.Exec("UPDATE `project_board` SET sorting=? WHERE id=?",
+				sorting, columnID); err != nil {
 				return err
 			}
 		}

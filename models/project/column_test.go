@@ -84,9 +84,9 @@ func Test_MoveColumnsOnProject(t *testing.T) {
 	columns, err := project1.GetColumns(db.DefaultContext)
 	require.NoError(t, err)
 	assert.Len(t, columns, 3)
-	assert.EqualValues(t, 0, columns[0].Sorting) // even if there is no default sorting, the code should also work
-	assert.EqualValues(t, 0, columns[1].Sorting)
-	assert.EqualValues(t, 0, columns[2].Sorting)
+	assert.EqualValues(t, 0, columns[0].Sorting)
+	assert.EqualValues(t, 1, columns[1].Sorting)
+	assert.EqualValues(t, 2, columns[2].Sorting)
 
 	err = MoveColumnsOnProject(db.DefaultContext, project1, map[int64]int64{
 		0: columns[1].ID,
@@ -101,6 +101,59 @@ func Test_MoveColumnsOnProject(t *testing.T) {
 	assert.Equal(t, columns[1].ID, columnsAfter[0].ID)
 	assert.Equal(t, columns[2].ID, columnsAfter[1].ID)
 	assert.Equal(t, columns[0].ID, columnsAfter[2].ID)
+}
+
+func TestMoveColumnsOnProjectSwap(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	project1 := unittest.AssertExistsAndLoadBean(t, &Project{ID: 1})
+	columns, err := project1.GetColumns(db.DefaultContext)
+	require.NoError(t, err)
+	require.Len(t, columns, 3)
+
+	// First give them distinct positions
+	err = MoveColumnsOnProject(db.DefaultContext, project1, map[int64]int64{
+		0: columns[0].ID,
+		1: columns[1].ID,
+		2: columns[2].ID,
+	})
+	require.NoError(t, err)
+
+	// Now swap columns 0 and 1 (would collide under single-phase update)
+	err = MoveColumnsOnProject(db.DefaultContext, project1, map[int64]int64{
+		0: columns[1].ID,
+		1: columns[0].ID,
+		2: columns[2].ID,
+	})
+	require.NoError(t, err)
+
+	columnsAfter, err := project1.GetColumns(db.DefaultContext)
+	require.NoError(t, err)
+	assert.Len(t, columnsAfter, 3)
+	assert.Equal(t, columns[1].ID, columnsAfter[0].ID)
+	assert.Equal(t, columns[0].ID, columnsAfter[1].ID)
+	assert.Equal(t, columns[2].ID, columnsAfter[2].ID)
+}
+
+func TestUpdateColumnSortingZero(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	column := unittest.AssertExistsAndLoadBean(t, &Column{ID: 1})
+	column.Sorting = 5
+	require.NoError(t, UpdateColumn(db.DefaultContext, column))
+
+	// Verify it was set to 5
+	updated, err := GetColumn(db.DefaultContext, column.ID)
+	require.NoError(t, err)
+	assert.Equal(t, int8(5), updated.Sorting)
+
+	// Now set it back to 0
+	column.Sorting = 0
+	require.NoError(t, UpdateColumn(db.DefaultContext, column))
+
+	updated, err = GetColumn(db.DefaultContext, column.ID)
+	require.NoError(t, err)
+	assert.Equal(t, int8(0), updated.Sorting)
 }
 
 func Test_NewColumn(t *testing.T) {

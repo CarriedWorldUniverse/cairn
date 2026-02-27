@@ -3,9 +3,11 @@
   issue_id: 6
   project_id: 1001
   project_board_id: 1001
+  sorting: 1
 
 -
   id: 1002
   issue_id: 15
   project_id: 1001
   project_board_id: 1001
+  sorting: 0
