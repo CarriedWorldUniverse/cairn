@@ -1265,3 +1265,69 @@ func doTestPushMessages(ctx APITestContext, u *url.URL, objectFormat git.ObjectF
 		doAPIDeleteRepository(ctx)(t)
 	}
 }
+
+// Cloning a git repo uses CheckRepoScopedToken to validate a PAT; here we run that through all variations of access
+// token resource access.
+func TestCloneAccessTokenResources(t *testing.T) {
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		t.Run("all access token", func(t *testing.T) {
+			session := loginUser(t, "user2")
+			allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+			u.User = url.UserPassword("token", allToken)
+
+			t.Run("allowed public repo1", func(t *testing.T) {
+				u.Path = "/user2/repo1.git"
+				doGitClone(t.TempDir(), u)(t)
+			})
+			t.Run("allowed private repo2", func(t *testing.T) {
+				u.Path = "/user2/repo2.git"
+				require.NoError(t, git.CloneWithArgs(t.Context(), git.AllowLFSFiltersArgs(), u.String(), t.TempDir(), git.CloneRepoOptions{}))
+			})
+			// repo16 is a second repo used in fine-grain testing below, so we include it in other tests as a baseline
+			t.Run("allowed private repo16", func(t *testing.T) {
+				u.Path = "/user2/repo16.git"
+				require.NoError(t, git.CloneWithArgs(t.Context(), git.AllowLFSFiltersArgs(), u.String(), t.TempDir(), git.CloneRepoOptions{}))
+			})
+		})
+
+		t.Run("public-only access token", func(t *testing.T) {
+			session := loginUser(t, "user2")
+			publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadRepository)
+			u.User = url.UserPassword("token", publicOnlyToken)
+
+			t.Run("allowed public repo1", func(t *testing.T) {
+				u.Path = "/user2/repo1.git"
+				doGitClone(t.TempDir(), u)(t)
+			})
+			t.Run("denied private repo2", func(t *testing.T) {
+				u.Path = "/user2/repo2.git"
+				doGitCloneFail(u)(t)
+			})
+			t.Run("denied private repo16", func(t *testing.T) {
+				u.Path = "/user2/repo16.git"
+				doGitCloneFail(u)(t)
+			})
+		})
+
+		t.Run("specific repo access token", func(t *testing.T) {
+			repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+				[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadRepository},
+				[]int64{2},
+			)
+			u.User = url.UserPassword("token", repo2OnlyToken)
+
+			t.Run("allowed public repo1", func(t *testing.T) {
+				u.Path = "/user2/repo1.git"
+				doGitClone(t.TempDir(), u)(t)
+			})
+			t.Run("allowed inside fine-grain repo2", func(t *testing.T) {
+				u.Path = "/user2/repo2.git"
+				require.NoError(t, git.CloneWithArgs(t.Context(), git.AllowLFSFiltersArgs(), u.String(), t.TempDir(), git.CloneRepoOptions{}))
+			})
+			t.Run("denied private outside fine-grain repo16", func(t *testing.T) {
+				u.Path = "/user2/repo16.git"
+				doGitCloneFail(u)(t)
+			})
+		})
+	})
+}
