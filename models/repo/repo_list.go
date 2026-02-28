@@ -186,6 +186,8 @@ type SearchRepoOptions struct {
 	// - Don't show forks, when opts.Fork is OptionalBoolNone.
 	// - Do not display repositories that don't have a description, an icon and topics.
 	OnlyShowRelevant bool
+	// Filters repositories based upon optional authorization restrictions.
+	AuthorizationReducer RepositoryAuthorizationReducer
 }
 
 // UserOwnedRepoCond returns user ownered repositories
@@ -516,6 +518,10 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 		subQueryCond = subQueryCond.And(builder.Eq{"is_empty": false})
 
 		cond = cond.And(subQueryCond)
+	}
+
+	if opts.AuthorizationReducer != nil {
+		cond = cond.And(opts.AuthorizationReducer.RepoReadAccessFilter())
 	}
 
 	return cond
