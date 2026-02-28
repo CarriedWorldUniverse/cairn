@@ -209,9 +209,9 @@ func repoAssignment() func(ctx *context.APIContext) {
 				ctx.Repo.UnitsMode[u.Type] = ctx.Repo.AccessMode
 			}
 		} else {
-			ctx.Repo.Permission, err = access_model.GetUserRepoPermission(ctx, repo, ctx.Doer)
+			ctx.Repo.Permission, err = access_model.GetUserRepoPermissionWithReducer(ctx, repo, ctx.Doer, ctx.Reducer)
 			if err != nil {
-				ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
+				ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 				return
 			}
 		}
