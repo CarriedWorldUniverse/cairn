@@ -512,8 +512,6 @@ func createApplicationSettingsToken(t testing.TB, session *TestSession, name str
 // TODO: currently this is implemented with direct DB access, which is somewhat against the grain for the integration
 // tests.  But fine-grained repo access tokens don't currently have an API or Web UI to create or manage them.  This
 // should be reimplemented when one of those alternatives lands.
-//
-//nolint:unused // Will be used in the near future.
 func createFineGrainedRepoAccessToken(t testing.TB, username string, scopes []auth.AccessTokenScope, repoIDs []int64) string {
 	user, err := user_model.GetUserByName(t.Context(), username)
 	require.NoError(t, err)
