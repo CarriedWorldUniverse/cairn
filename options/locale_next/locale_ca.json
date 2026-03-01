@@ -208,7 +208,6 @@
 	"repo.issues.filter_modified.hint": "Filtra per la darrera data de modificació",
 	"repo.pulls.poster_manage_approval": "Gestiona l'aprovació",
 	"repo.pulls.poster_requires_approval": "Alguns fluxos de treball encara estan <a href=\"%[1]s\">pendents de revisió.</a>",
-	"repo.issues.filter_sort.hint": "Ordena per: creació/comentaris/actualització/termini",
 	"repo.pulls.poster_is_trusted": "L'autor d'aquesta «pull request» <a href=\"%[1]s\">sempre podrà executar fluxos de treball.</a>",
 	"repo.pulls.poster_is_trusted.tooltip": "L'autor d'aquesta «pull request» està explícitament autoritzat per a executar fluxos de treball a partir d'esdeveniments `pull_request`.",
 	"repo.pulls.poster_trust_deny": "Denega",

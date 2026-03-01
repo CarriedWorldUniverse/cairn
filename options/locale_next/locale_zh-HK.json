@@ -1,7 +1,7 @@
 {
-	"actions.runners.name": "組織名稱",
+	"actions.runners.name": "名稱",
 	"actions.runners.owner_type": "認證類型",
-	"actions.runners.description": "組織描述",
+	"actions.runners.description": "描述",
 	"actions.runners.labels": "標籤",
 	"actions.runners.task_list.run": "執行",
 	"actions.runners.task_list.repository": "儲存庫",
