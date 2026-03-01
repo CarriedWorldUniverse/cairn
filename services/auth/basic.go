@@ -73,7 +73,7 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 	}
 
 	// check oauth2 token
-	uid, _ := CheckOAuthAccessToken(req.Context(), authToken)
+	uid, grantScopes := CheckOAuthAccessToken(req.Context(), authToken)
 	if uid != 0 {
 		log.Trace("Basic Authorization: Valid OAuthAccessToken for user[%d]", uid)
 
@@ -84,6 +84,11 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 		}
 
 		store.GetData()["IsApiToken"] = true
+		if grantScopes != "" {
+			store.GetData()["ApiTokenScope"] = auth_model.AccessTokenScope(grantScopes)
+		} else {
+			store.GetData()["ApiTokenScope"] = auth_model.AccessTokenScopeAll // fallback to all
+		}
 		return u, nil
 	}
 
