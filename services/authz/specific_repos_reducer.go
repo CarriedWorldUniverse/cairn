@@ -44,21 +44,14 @@ func (r *SpecificReposAuthorizationReducer) ReduceRepoAccess(ctx context.Context
 	return min(accessMode, perm.AccessModeRead), nil
 }
 
-func (r *SpecificReposAuthorizationReducer) RepoFilter(accessMode perm.AccessMode) builder.Cond {
+func (r *SpecificReposAuthorizationReducer) RepoReadAccessFilter() builder.Cond {
 	repoIDs := make([]int64, len(r.resourceRepos))
 	for i, tokenRepo := range r.resourceRepos {
 		repoIDs[i] = tokenRepo.RepoID
 	}
 	targetRepos := builder.In("repository.id", repoIDs)
 
-	// If requesting anything higher than read access, it will only be available for repos within the scope of the
-	// access token.
-	if accessMode > perm.AccessModeRead {
-		return targetRepos
-	}
-
-	// For read access, we should be able to see all non-private repositories that aren't in a private or limited
-	// organisation.
+	// We should also be able to see all non-private repositories that aren't in a private or limited organization.
 	return builder.Or(
 		targetRepos,
 		builder.And(

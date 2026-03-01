@@ -77,22 +77,8 @@ func TestSpecificReposAuthorizationReducer(t *testing.T) {
 		assert.Equal(t, perm.AccessModeNone, p3)
 	})
 
-	t.Run("RepoFilter >write access only permitted to targeted repos", func(t *testing.T) {
-		for _, am := range []perm.AccessMode{perm.AccessModeOwner, perm.AccessModeAdmin, perm.AccessModeWrite} {
-			cond := reducer.RepoFilter(am)
-
-			var repoIDs []int64
-			err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id").Find(&repoIDs)
-			require.NoError(t, err)
-
-			assert.Len(t, repoIDs, 2)
-			assert.EqualValues(t, 1, repoIDs[0])
-			assert.EqualValues(t, 2, repoIDs[1])
-		}
-	})
-
 	t.Run("RepoFilter read access only permitted to target repos & public repos", func(t *testing.T) {
-		cond := reducer.RepoFilter(perm.AccessModeRead)
+		cond := reducer.RepoReadAccessFilter()
 
 		var rows []*repo.Repository
 		err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id", "owner_id", "is_private").Find(&rows)

@@ -20,7 +20,7 @@ func (*AllAccessAuthorizationReducer) ReduceRepoAccess(ctx context.Context, repo
 	return accessMode, nil
 }
 
-func (*AllAccessAuthorizationReducer) RepoFilter(accessMode perm.AccessMode) builder.Cond {
+func (*AllAccessAuthorizationReducer) RepoReadAccessFilter() builder.Cond {
 	return builder.NewCond() // invalid cond should be excluded and cause no filtering
 }
 

@@ -52,18 +52,16 @@ func TestPublicReposAuthorizationReducer(t *testing.T) {
 	})
 
 	t.Run("RepoFilter unrestricted access only permitted to public repos", func(t *testing.T) {
-		for _, am := range []perm.AccessMode{perm.AccessModeOwner, perm.AccessModeAdmin, perm.AccessModeWrite, perm.AccessModeRead} {
-			cond := reducer.RepoFilter(am)
+		cond := reducer.RepoReadAccessFilter()
 
-			var rows []*repo.Repository
-			err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id", "owner_id", "is_private").Find(&rows)
-			require.NoError(t, err)
-			assert.NotEmpty(t, rows)
-			for _, repo := range rows {
-				assert.False(t, repo.IsPrivate)
-				require.NoError(t, repo.LoadOwner(t.Context()))
-				assert.True(t, repo.Owner.Visibility.IsPublic())
-			}
+		var rows []*repo.Repository
+		err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id", "owner_id", "is_private").Find(&rows)
+		require.NoError(t, err)
+		assert.NotEmpty(t, rows)
+		for _, repo := range rows {
+			assert.False(t, repo.IsPrivate)
+			require.NoError(t, repo.LoadOwner(t.Context()))
+			assert.True(t, repo.Owner.Visibility.IsPublic())
 		}
 	})
 
