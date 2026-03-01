@@ -84,7 +84,6 @@
 	"packages.dependency.version": "الاصدار",
 	"packages.alpine.registry.key": "نزّل مفتاح RSA العام للتسجيل في المجلد <code>/etc/apk/keys/</code> للتحقق من توقيع الفهرس:",
 	"packages.generic.download": "نزّل الحزمة عبر سطر الأوامر:",
-	"packages.rpm.repository": "معلومات المستودع",
 	"packages.rpm.repository.architectures": "بنيات",
 	"packages.rpm.repository.multiple_groups": "هذه الحزمة متوفرة في مجموعات متعددة.",
 	"packages.swift.install": "اضف الحزمة إلى ملف <code>Package.swift</code>:",
