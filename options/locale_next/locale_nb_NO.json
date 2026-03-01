@@ -116,7 +116,6 @@
 	"repo.issues.filter_reviewers.hint": "Filtrer etter bruker som anmelder",
 	"repo.issues.filter_mention.hint": "Filtrer etter nevnt bruker",
 	"repo.issues.filter_modified.hint": "Filtrer etter sist endret dato",
-	"repo.issues.filter_sort.hint": "Sorter etter: skapt/kommentarer/oppdatert/deadline",
 	"repo.pulls.poster_manage_approval": "Endre godkjenning",
 	"repo.pulls.poster_requires_approval": "Noen workflow <a href=\"%[1]s\">venter på å blir anmeldt.</a>",
 	"repo.pulls.poster_requires_approval.tooltip": "Skaperen av denne pull requesten er ikke verifisert til å kjøre workflow som blei kjørt av en pull request skapt i fra en forket repositorie eller med AGit. Workflowene som blei kjørt av `pull_request` event vil ikke kjøre inntil de blir godkjent.",
