@@ -33,14 +33,12 @@ func TestAllAccessAuthorizationReducer(t *testing.T) {
 		numRepos, err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Count()
 		require.NoError(t, err)
 
-		for _, am := range []perm.AccessMode{perm.AccessModeOwner, perm.AccessModeAdmin, perm.AccessModeWrite, perm.AccessModeRead} {
-			cond := reducer.RepoFilter(am)
+		cond := reducer.RepoReadAccessFilter()
 
-			var rows []*repo.Repository
-			err := db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id", "owner_id", "is_private").Find(&rows)
-			require.NoError(t, err)
-			assert.Len(t, rows, int(numRepos))
-		}
+		var rows []*repo.Repository
+		err = db.GetEngine(t.Context()).Table(&repo.Repository{}).Where(cond).OrderBy("id").Cols("id", "owner_id", "is_private").Find(&rows)
+		require.NoError(t, err)
+		assert.Len(t, rows, int(numRepos))
 	})
 
 	t.Run("AllowAdminOverride is true", func(t *testing.T) {

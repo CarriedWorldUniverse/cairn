@@ -64,20 +64,18 @@ func (_m *MockAuthorizationReducer) ReduceRepoAccess(ctx context.Context, repo *
 }
 
 // RepoFilter provides a mock function with given fields: accessMode
-func (_m *MockAuthorizationReducer) RepoFilter(accessMode perm.AccessMode) builder.Cond {
-	ret := _m.Called(accessMode)
+func (_m *MockAuthorizationReducer) RepoReadAccessFilter() builder.Cond {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for RepoFilter")
+		panic("no return value specified for AllowAdminOverride")
 	}
 
 	var r0 builder.Cond
-	if rf, ok := ret.Get(0).(func(perm.AccessMode) builder.Cond); ok {
-		r0 = rf(accessMode)
+	if rf, ok := ret.Get(0).(func() builder.Cond); ok {
+		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(builder.Cond)
-		}
+		r0 = ret.Get(0).(builder.Cond)
 	}
 
 	return r0
