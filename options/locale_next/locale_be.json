@@ -67,7 +67,6 @@
 	"repo.issues.filter_reviewers.hint": "Фільтраваць па карыстальніку, які праверыў",
 	"repo.issues.filter_mention.hint": "Фільтраваць па згаданым карыстальніку",
 	"repo.issues.filter_modified.hint": "Фільтраваць па дате апошняй змены",
-	"repo.issues.filter_sort.hint": "Сартаваць па: створаны/каментары/абноўлены/дэдлайн",
 	"repo.pulls.poster_manage_approval": "Кіраваць зацвярджэннем",
 	"repo.pulls.poster_requires_approval": "Некаторыя працэсы <a href=\"%[1]s\">чакаюць рэвізіі.</a>",
 	"repo.pulls.poster_requires_approval.tooltip": "Аўтар гэтага запыту на зліццё не з’яўляецца надзейным для запуску працэсаў, якія запускаюцца запытам на зліццё, створаным з фаркаванага рэпазіторыя або з AGit. Працэсы, якія запускаюцца падзеяй `pull_request`, не будуць выконвацца, пакуль іх не зацвердзяць.",
