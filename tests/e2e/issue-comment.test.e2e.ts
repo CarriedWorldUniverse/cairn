@@ -1,3 +1,6 @@
+// Copyright 2024 The Forgejo Authors. All rights reserved.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // @watch start
 // web_src/js/features/comp/**
 // web_src/js/features/repo-**
@@ -108,17 +111,18 @@ test.describe('Button text replaced by JS', () => {
     await commentField.fill('Blah blah');
     await expect(statusButton.getByText('Reopen with comment')).toBeVisible();
     await expect(statusButtonIcon).toBeVisible();
-
-    return true;
   }
 
   test('Issue', async ({page}) => {
-    // All actual expect() are happening in the helper
-    expect(await testPage(page, '/user2/repo2/issues/2', 'Close issue')).toBeTruthy();
+    await expect(async () => {
+      await testPage(page, '/user2/repo2/issues/2', 'Close issue');
+    }).toPass();
   });
 
   test('PR', async ({page}) => {
-    expect(await testPage(page, '/user2/repo1/pulls/5', 'Close pull request')).toBeTruthy();
+    await expect(async () => {
+      await testPage(page, '/user2/repo1/pulls/5', 'Close pull request');
+    }).toPass();
   });
 });
 

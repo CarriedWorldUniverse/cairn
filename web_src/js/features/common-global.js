@@ -206,10 +206,10 @@ export function initGlobalCommon() {
 }
 
 // Sometimes unrelated inputs are stored in forms for convenience, for example,
-// modal inputs. To prevent them from breaking the forms they are in they are
-// disabled by default
-export function initDisabledInputs() {
-  for (const el of document.querySelectorAll('input.js-enable[disabled]')) {
+// modal inputs. To prevent them from blocking the forms for noJS clients they
+// are disabled by default. TypeScript: root is HTMLElement
+export function initDisabledInputs(root) {
+  for (const el of root.querySelectorAll('input.js-enable[disabled]')) {
     el.removeAttribute('disabled');
   }
 }

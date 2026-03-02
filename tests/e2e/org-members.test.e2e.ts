@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // @watch start
-
+// web_src/css/org.css
+// templates/org/member/members.tmpl
 // @watch end
 
 import {expect} from '@playwright/test';
