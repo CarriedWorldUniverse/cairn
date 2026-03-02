@@ -86,8 +86,8 @@ RUN addgroup \
     -G git \
     git
 
-RUN mkdir -p /var/lib/gitea /etc/gitea
-RUN chown git:git /var/lib/gitea /etc/gitea
+RUN mkdir -p /var/lib/gitea
+RUN chown git:git /var/lib/gitea
 
 COPY --from=build-env /tmp/local /
 RUN cd /usr/local/bin ; ln -s gitea forgejo
@@ -103,13 +103,9 @@ ENV GITEA_CUSTOM=/var/lib/gitea/custom
 ENV GITEA_TEMP=/tmp/gitea
 ENV TMPDIR=/tmp/gitea
 
-# Legacy config file for backwards compatibility
-# TODO: remove on next major version release
-ENV GITEA_APP_INI_LEGACY=/etc/gitea/app.ini
-
 ENV GITEA_APP_INI=${GITEA_CUSTOM}/conf/app.ini
 ENV HOME="/var/lib/gitea/git"
-VOLUME ["/var/lib/gitea", "/etc/gitea"]
+VOLUME ["/var/lib/gitea"]
 WORKDIR /var/lib/gitea
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]

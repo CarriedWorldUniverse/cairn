@@ -11,22 +11,10 @@ mkdir -p ${GITEA_CUSTOM} && chmod 0700 ${GITEA_CUSTOM}
 mkdir -p ${GITEA_TEMP} && chmod 0700 ${GITEA_TEMP}
 if [ ! -w ${GITEA_TEMP} ]; then echo "${GITEA_TEMP} is not writable"; exit 1; fi
 
-# TODO: remove on next major version release
-# Honour legacy config file if existing, but inform the user
-if [ -f ${GITEA_APP_INI_LEGACY} ] && [ ${GITEA_APP_INI} != ${GITEA_APP_INI_LEGACY} ]; then
-    GITEA_APP_INI_DEFAULT=/var/lib/gitea/custom/conf/app.ini
-    echo -e \
-      "\033[33mWARNING\033[0m: detected configuration file in deprecated default path ${GITEA_APP_INI_LEGACY}." \
-      "The new default is ${GITEA_APP_INI_DEFAULT}. To remove this warning, choose one of the options:\n" \
-      "* Move ${GITEA_APP_INI_LEGACY} to ${GITEA_APP_INI_DEFAULT} (or to \$GITEA_APP_INI if you want to override this variable)\n" \
-      "* Explicitly override GITEA_APP_INI=${GITEA_APP_INI_LEGACY} in the container environment"
-    GITEA_APP_INI=${GITEA_APP_INI_LEGACY}
-fi
-
-#Prepare config file
+# Prepare config file
 if [ ! -f ${GITEA_APP_INI} ]; then
 
-    #Prepare config file folder
+    # Prepare config file folder
     GITEA_APP_INI_DIR=$(dirname ${GITEA_APP_INI})
     mkdir -p ${GITEA_APP_INI_DIR} && chmod 0700 ${GITEA_APP_INI_DIR}
     if [ ! -w ${GITEA_APP_INI_DIR} ]; then echo "${GITEA_APP_INI_DIR} is not writable"; exit 1; fi
