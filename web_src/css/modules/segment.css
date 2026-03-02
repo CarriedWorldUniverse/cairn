@@ -165,6 +165,11 @@
   margin-top: 1rem;
   border-radius: 0.28571429rem 0.28571429rem 0 0;
 }
+
+.ui.top.attached.segment:only-child {
+  border-radius: var(--border-radius);
+}
+
 .ui.segment[class*="top attached"]:first-child {
   margin-top: 0;
 }
