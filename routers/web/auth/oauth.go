@@ -998,6 +998,16 @@ func SignInOAuthCallback(ctx *context.Context) {
 	}
 
 	u, gothUser, err := oAuth2UserLoginCallback(ctx, authSource, ctx.Req, ctx.Resp)
+
+	log.Trace("OAuth2 Provider %s returned gothUser: UserID=%q, Email=%q, NickName=%q, Name=%q, FirstName=%q, LastName=%q, AvatarURL=%q",
+		authSource.Name, gothUser.UserID, gothUser.Email, gothUser.NickName, gothUser.Name, gothUser.FirstName, gothUser.LastName, gothUser.AvatarURL)
+	if gothUser.RawData != nil {
+		log.Trace("OAuth2 Provider %s RawData: %+v", authSource.Name, gothUser.RawData)
+	}
+	if gothUser.IDToken != "" {
+		log.Trace("OAuth2 Provider %s IDToken (decode at jwt.ms): %s", authSource.Name, gothUser.IDToken)
+	}
+
 	if err != nil {
 		if user_model.IsErrUserProhibitLogin(err) {
 			uplerr := err.(user_model.ErrUserProhibitLogin)

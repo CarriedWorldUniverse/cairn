@@ -14,12 +14,14 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
@@ -1589,5 +1591,159 @@ func TestAccessTokenWithPKCE(t *testing.T) {
 			assert.NotEmpty(t, respBody["expires_in"])
 			assert.NotEmpty(t, respBody["refresh_token"])
 		}
+	})
+}
+
+func TestSignInOAuthCallbackGothUserFields(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	// OAuth2 authentication source GitLab
+	gitlabName := "gitlab"
+	gitlab := addAuthSource(t, authSourcePayloadGitLabCustom(gitlabName))
+
+	// Create a user as if it had been previously created by the GitLab
+	// authentication source.
+	userGitLabUserID := "5678"
+	userGitLab := &user_model.User{
+		Name:        "gitlabuser",
+		Email:       "gitlabuser@example.com",
+		Passwd:      "gitlabuserpassword",
+		Type:        user_model.UserTypeIndividual,
+		LoginType:   auth_model.OAuth2,
+		LoginSource: gitlab.ID,
+		LoginName:   userGitLabUserID,
+	}
+	defer createUser(t.Context(), t, userGitLab)()
+
+	t.Run("Callback with all gothUser fields", func(t *testing.T) {
+		// Set up log checker to verify trace logs
+		logChecker, cleanup := test.NewLogChecker(log.DEFAULT, log.TRACE)
+		defer cleanup()
+		logChecker.Filter(
+			"OAuth2 Provider gitlab returned gothUser",
+			"OAuth2 Provider gitlab RawData:",
+			"OAuth2 Provider gitlab IDToken",
+		)
+
+		// Return a goth.User with all fields populated including RawData and IDToken
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider:  gitlabName,
+				UserID:    userGitLabUserID,
+				Email:     userGitLab.Email,
+				NickName:  "gitlabnick",
+				Name:      "GitLab User",
+				FirstName: "GitLab",
+				LastName:  "User",
+				AvatarURL: "https://example.com/avatar.png",
+				RawData: map[string]any{
+					"sub":             userGitLabUserID,
+					"groups":          []string{"group1", "group2"},
+					"custom_claim":    "custom_value",
+					"nested_claim":    map[string]any{"key": "value"},
+					"array_of_values": []any{"val1", "val2", "val3"},
+				},
+				IDToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.test",
+			}, nil
+		})()
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+		assert.Equal(t, "/", test.RedirectURL(resp))
+
+		// Verify the user was logged in successfully
+		userAfterLogin := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: userGitLab.ID})
+		assert.Greater(t, userAfterLogin.LastLoginUnix, userGitLab.LastLoginUnix)
+
+		// Verify all trace logs were outputted
+		logFiltered, _ := logChecker.Check(5 * time.Second)
+		assert.True(t, logFiltered[0], "Expected trace log with gothUser fields")
+		assert.True(t, logFiltered[1], "Expected trace log with RawData")
+		assert.True(t, logFiltered[2], "Expected trace log with IDToken")
+	})
+
+	t.Run("Callback with minimal gothUser fields", func(t *testing.T) {
+		// Set up log checker to verify trace logs
+		logChecker, cleanup := test.NewLogChecker(log.DEFAULT, log.TRACE)
+		defer cleanup()
+		logChecker.Filter(
+			"OAuth2 Provider gitlab returned gothUser",
+		)
+
+		// Return a goth.User with only required fields (no RawData or IDToken)
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider: gitlabName,
+				UserID:   userGitLabUserID,
+				Email:    userGitLab.Email,
+			}, nil
+		})()
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+		assert.Equal(t, "/", test.RedirectURL(resp))
+
+		// Verify basic trace log was outputted (but not RawData or IDToken logs)
+		logFiltered, _ := logChecker.Check(5 * time.Second)
+		assert.True(t, logFiltered[0], "Expected trace log with gothUser fields")
+	})
+
+	t.Run("Callback with RawData but no IDToken", func(t *testing.T) {
+		// Set up log checker to verify trace logs
+		logChecker, cleanup := test.NewLogChecker(log.DEFAULT, log.TRACE)
+		defer cleanup()
+		logChecker.Filter(
+			"OAuth2 Provider gitlab returned gothUser",
+			"OAuth2 Provider gitlab RawData:",
+		)
+
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider: gitlabName,
+				UserID:   userGitLabUserID,
+				Email:    userGitLab.Email,
+				RawData: map[string]any{
+					"sub":    userGitLabUserID,
+					"groups": []string{"developers", "admins"},
+				},
+			}, nil
+		})()
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+		assert.Equal(t, "/", test.RedirectURL(resp))
+
+		// Verify gothUser and RawData logs were outputted (but not IDToken log)
+		logFiltered, _ := logChecker.Check(5 * time.Second)
+		assert.True(t, logFiltered[0], "Expected trace log with gothUser fields")
+		assert.True(t, logFiltered[1], "Expected trace log with RawData")
+	})
+
+	t.Run("Callback with IDToken but no RawData", func(t *testing.T) {
+		// Set up log checker to verify trace logs
+		logChecker, cleanup := test.NewLogChecker(log.DEFAULT, log.TRACE)
+		defer cleanup()
+		logChecker.Filter(
+			"OAuth2 Provider gitlab returned gothUser",
+			"OAuth2 Provider gitlab IDToken",
+		)
+
+		defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+			return goth.User{
+				Provider: gitlabName,
+				UserID:   userGitLabUserID,
+				Email:    userGitLab.Email,
+				IDToken:  "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.test",
+			}, nil
+		})()
+
+		req := NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName))
+		resp := MakeRequest(t, req, http.StatusSeeOther)
+		assert.Equal(t, "/", test.RedirectURL(resp))
+
+		// Verify gothUser and IDToken logs were outputted (but not RawData log)
+		logFiltered, _ := logChecker.Check(5 * time.Second)
+		assert.True(t, logFiltered[0], "Expected trace log with gothUser fields")
+		assert.True(t, logFiltered[1], "Expected trace log with IDToken")
 	})
 }
