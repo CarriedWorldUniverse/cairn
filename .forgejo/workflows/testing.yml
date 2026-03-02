@@ -35,6 +35,9 @@ jobs:
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v5
+      - uses: https://data.forgejo.org/actions/setup-node@v6
+        with:
+          node-version-file: .node-version
       - run: make deps-frontend
       - run: make lint-frontend
       - run: make checks-frontend
