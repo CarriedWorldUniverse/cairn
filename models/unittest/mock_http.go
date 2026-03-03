@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -29,7 +30,7 @@ import (
 //     test data files
 func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveMode bool) *httptest.Server {
 	mockServerBaseURL := ""
-	ignoredHeaders := []string{"cf-ray", "server", "date", "report-to", "nel", "x-request-id"}
+	ignoredHeaders := []string{"cf-ray", "server", "date", "report-to", "nel", "x-request-id", "set-cookie", "x-gitlab-meta"}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := NormalizedFullPath(r.URL)
@@ -46,6 +47,7 @@ func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveM
 			fixturePath = fmt.Sprintf("%s/%s", testDataDir, strings.TrimLeft(r.URL.Path, "/"))
 		}
 		if liveMode {
+			require.NoError(t, os.MkdirAll(testDataDir, 0o755))
 			liveURL := fmt.Sprintf("%s%s", liveServerBaseURL, path)
 
 			request, err := http.NewRequest(r.Method, liveURL, nil)
@@ -68,8 +70,8 @@ func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveM
 			defer fixture.Close()
 			fixtureWriter := bufio.NewWriter(fixture)
 
-			for headerName, headerValues := range response.Header {
-				for _, headerValue := range headerValues {
+			for _, headerName := range slices.Sorted(maps.Keys(response.Header)) {
+				for _, headerValue := range response.Header[headerName] {
 					if !slices.Contains(ignoredHeaders, strings.ToLower(headerName)) {
 						_, err := fmt.Fprintf(fixtureWriter, "%s: %s\n", headerName, headerValue)
 						require.NoError(t, err, "writing the header of the HTTP response to the fixture file failed")
