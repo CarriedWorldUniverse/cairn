@@ -10,9 +10,9 @@ import (
 
 // ReleaseAsset represents a release asset
 type ReleaseAsset struct {
-	ID            int64
-	Name          string
-	ContentType   *string `yaml:"content_type"`
+	ID   int64
+	Name string
+
 	Size          *int
 	DownloadCount *int `yaml:"download_count"`
 	Created       time.Time

@@ -236,7 +236,6 @@ func TestGitHubDownloadRepo(t *testing.T) {
 	}, labels)
 
 	id := int64(280443629)
-	ct := "application/pdf"
 	size := 550175
 	dc := 0
 
@@ -256,7 +255,6 @@ func TestGitHubDownloadRepo(t *testing.T) {
 				{
 					ID:            id,
 					Name:          "wireguard.pdf",
-					ContentType:   &ct,
 					Size:          &size,
 					DownloadCount: &dc,
 					Created:       time.Date(2025, time.August, 7, 23, 39, 27, 0, time.UTC),
