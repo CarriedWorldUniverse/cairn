@@ -1,4 +1,5 @@
 // Copyright 2018 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 // Package cmd provides subcommands to the gitea binary - such as "web" or
@@ -89,26 +90,9 @@ If this is the intended configuration file complete the [database] section.`, se
 	return nil
 }
 
+// installSignals returns a context that's cancelled on the SIGINT and SIGTERM signals or if the passed ctx is cancelled.
 func installSignals(ctx context.Context) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		// install notify
-		signalChannel := make(chan os.Signal, 1)
-
-		signal.Notify(
-			signalChannel,
-			syscall.SIGINT,
-			syscall.SIGTERM,
-		)
-		select {
-		case <-signalChannel:
-		case <-ctx.Done():
-		}
-		cancel()
-		signal.Reset()
-	}()
-
-	return ctx, cancel
+	return signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 }
 
 func setupConsoleLogger(level log.Level, colorize bool, out io.Writer) {
