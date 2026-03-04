@@ -104,7 +104,7 @@ func ListDeployKeys(ctx *context.APIContext) {
 			return
 		}
 		apiKeys[i] = convert.ToDeployKey(apiLink, keys[i])
-		if ctx.Doer.IsAdmin || ((ctx.Repo.Repository.ID == keys[i].RepoID) && (ctx.Doer.ID == ctx.Repo.Owner.ID)) {
+		if ctx.IsUserSiteAdmin() || ((ctx.Repo.Repository.ID == keys[i].RepoID) && (ctx.Doer.ID == ctx.Repo.Owner.ID)) {
 			apiKeys[i], _ = appendPrivateInformation(ctx, apiKeys[i], keys[i], ctx.Repo.Repository)
 		}
 	}
@@ -166,7 +166,7 @@ func GetDeployKey(ctx *context.APIContext) {
 
 	apiLink := composeDeployKeysAPILink(ctx.Repo.Owner.Name, ctx.Repo.Repository.Name)
 	apiKey := convert.ToDeployKey(apiLink, key)
-	if ctx.Doer.IsAdmin || ((ctx.Repo.Repository.ID == key.RepoID) && (ctx.Doer.ID == ctx.Repo.Owner.ID)) {
+	if ctx.IsUserSiteAdmin() || ((ctx.Repo.Repository.ID == key.RepoID) && (ctx.Doer.ID == ctx.Repo.Owner.ID)) {
 		apiKey, _ = appendPrivateInformation(ctx, apiKey, key, ctx.Repo.Repository)
 	}
 	ctx.JSON(http.StatusOK, apiKey)

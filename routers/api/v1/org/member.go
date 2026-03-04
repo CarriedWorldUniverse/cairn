@@ -152,7 +152,7 @@ func IsMember(ctx *context.APIContext) {
 		if err != nil {
 			ctx.Error(http.StatusInternalServerError, "IsOrgMember", err)
 			return
-		} else if userIsMember || ctx.Doer.IsAdmin {
+		} else if userIsMember || ctx.IsUserSiteAdmin() {
 			userToCheckIsMember, err := ctx.Org.Organization.IsOrgMember(ctx, userToCheck.ID)
 			if err != nil {
 				ctx.Error(http.StatusInternalServerError, "IsOrgMember", err)

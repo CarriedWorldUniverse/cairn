@@ -28,7 +28,7 @@ func LogAndProcessError(ctx *context.Context, status int, obj any, cb func(strin
 		// LogAndProcessError is always wrapped in a `apiError` call, so we need to skip two frames
 		log.ErrorWithSkip(2, message)
 
-		if setting.IsProd && (ctx.Doer == nil || !ctx.Doer.IsAdmin) {
+		if setting.IsProd && (ctx.Doer == nil || !ctx.IsUserSiteAdmin()) {
 			message = ""
 		}
 	} else {

@@ -418,7 +418,7 @@ func CreateIssueComment(ctx *context.APIContext) {
 		return
 	}
 
-	if issue.IsLocked && !ctx.Repo.CanWriteIssuesOrPulls(issue.IsPull) && !ctx.Doer.IsAdmin {
+	if issue.IsLocked && !ctx.Repo.CanWriteIssuesOrPulls(issue.IsPull) && !ctx.IsUserSiteAdmin() {
 		ctx.Error(http.StatusForbidden, "CreateIssueComment", errors.New(ctx.Locale.TrString("repo.issues.comment_on_locked")))
 		return
 	}
