@@ -405,7 +405,7 @@ func GetTeamMembers(ctx *context.APIContext) {
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "IsOrganizationMember", err)
 		return
-	} else if !isMember && !ctx.Doer.IsAdmin {
+	} else if !isMember && !ctx.IsUserSiteAdmin() {
 		ctx.NotFound()
 		return
 	}
@@ -822,7 +822,7 @@ func SearchTeam(ctx *context.APIContext) {
 	}
 
 	// Only admin is allowed to search for all teams
-	if !ctx.Doer.IsAdmin {
+	if !ctx.IsUserSiteAdmin() {
 		opts.UserID = ctx.Doer.ID
 	}
 

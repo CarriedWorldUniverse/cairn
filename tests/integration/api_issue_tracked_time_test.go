@@ -142,3 +142,53 @@ func TestAPIAddTrackedTimes(t *testing.T) {
 	assert.Equal(t, user2.ID, apiNewTime.UserID)
 	assert.EqualValues(t, 947688818, apiNewTime.Created.Unix())
 }
+
+// Listing tracked times w/ `/repos/{owner}/{repo}/times/{user}` requires repository admin or site admin permissions (or
+// to just list yourself).  This test is a variation of [TestAPIGetTrackedTimes] which uses the `/{user}` endpoint with
+// various access token restrictions, validating this API's implementation, but also validating that public-only and
+// repo-scoped access tokens don't have admin access.
+func TestAPIGetTrackedTimesAuthorizationReducer(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	adminUsername := "user1"
+	normalUsername := "user2"
+	session := loginUser(t, adminUsername)
+
+	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	issue2 := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: 2})
+	require.NoError(t, issue2.LoadRepo(db.DefaultContext))
+
+	test := func(t *testing.T, token string, expectedStatus int) {
+		req := NewRequest(t, "GET",
+			fmt.Sprintf("/api/v1/repos/%s/%s/times/%s", user2.Name, issue2.Repo.Name, normalUsername)).
+			AddTokenAuth(token)
+		resp := MakeRequest(t, req, expectedStatus)
+		if expectedStatus == http.StatusOK {
+			var apiTimes api.TrackedTimeList
+			DecodeJSON(t, resp, &apiTimes)
+			assert.Len(t, apiTimes, 3)
+		}
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
+		test(t, allToken, http.StatusOK)
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadRepository)
+		test(t, publicOnlyToken, http.StatusForbidden)
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, adminUsername,
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadRepository},
+			[]int64{issue2.RepoID},
+		)
+		test(t, repo2OnlyToken, http.StatusForbidden)
+	})
+}

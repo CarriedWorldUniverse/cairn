@@ -97,6 +97,43 @@ func TestAPISudoUser(t *testing.T) {
 	assert.Equal(t, normalUsername, user.UserName)
 }
 
+// Variation of TestAPISudoUser which verifies the usability of `sudo` with various access token restrictions.
+func TestAPISudoUserAuthorizationReducer(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	adminUsername := "user1"
+	normalUsername := "user2"
+	session := loginUser(t, adminUsername)
+
+	test := func(t *testing.T, token string, expectedStatus int) {
+		req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/user?sudo=%s", normalUsername)).
+			AddTokenAuth(token)
+		resp := MakeRequest(t, req, expectedStatus)
+		if expectedStatus == http.StatusOK {
+			var user api.User
+			DecodeJSON(t, resp, &user)
+			assert.Equal(t, normalUsername, user.UserName)
+		}
+	}
+
+	t.Run("all access token", func(t *testing.T) {
+		allToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadUser)
+		test(t, allToken, http.StatusOK)
+	})
+
+	t.Run("public-only access token", func(t *testing.T) {
+		publicOnlyToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopePublicOnly, auth_model.AccessTokenScopeReadUser)
+		test(t, publicOnlyToken, http.StatusForbidden)
+	})
+
+	t.Run("specific repo access token", func(t *testing.T) {
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, adminUsername,
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadUser},
+			[]int64{2},
+		)
+		test(t, repo2OnlyToken, http.StatusForbidden)
+	})
+}
+
 func TestAPISudoUserForbidden(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	adminUsername := "user1"

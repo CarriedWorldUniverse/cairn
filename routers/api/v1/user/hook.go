@@ -70,7 +70,7 @@ func GetHook(ctx *context.APIContext) {
 		return
 	}
 
-	if !ctx.Doer.IsAdmin && hook.OwnerID != ctx.Doer.ID {
+	if !ctx.IsUserSiteAdmin() && hook.OwnerID != ctx.Doer.ID {
 		ctx.NotFound()
 		return
 	}

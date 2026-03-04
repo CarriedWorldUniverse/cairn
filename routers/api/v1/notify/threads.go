@@ -112,7 +112,7 @@ func getThread(ctx *context.APIContext) *activities_model.Notification {
 		}
 		return nil
 	}
-	if n.UserID != ctx.Doer.ID && !ctx.Doer.IsAdmin {
+	if n.UserID != ctx.Doer.ID && !ctx.IsUserSiteAdmin() {
 		ctx.Error(http.StatusForbidden, "GetNotificationByID", fmt.Errorf("only user itself and admin are allowed to read/change this thread %d", n.ID))
 		return nil
 	}

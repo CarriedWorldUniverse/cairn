@@ -91,7 +91,7 @@ func Migrate(ctx *context.APIContext) {
 		return
 	}
 
-	if !ctx.Doer.IsAdmin {
+	if !ctx.IsUserSiteAdmin() {
 		if !repoOwner.IsOrganization() && ctx.Doer.ID != repoOwner.ID {
 			ctx.Error(http.StatusForbidden, "", "Given user is not an organization.")
 			return

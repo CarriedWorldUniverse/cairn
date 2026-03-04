@@ -419,12 +419,12 @@ func Generate(ctx *context.APIContext) {
 			return
 		}
 
-		if !ctx.Doer.IsAdmin && !ctxUser.IsOrganization() {
+		if !ctx.IsUserSiteAdmin() && !ctxUser.IsOrganization() {
 			ctx.Error(http.StatusForbidden, "", "Only admin can generate repository for other user.")
 			return
 		}
 
-		if !ctx.Doer.IsAdmin {
+		if !ctx.IsUserSiteAdmin() {
 			canCreate, err := organization.OrgFromUser(ctxUser).CanCreateOrgRepo(ctx, ctx.Doer.ID)
 			if err != nil {
 				ctx.ServerError("CanCreateOrgRepo", err)
@@ -534,7 +534,7 @@ func CreateOrgRepo(ctx *context.APIContext) {
 		return
 	}
 
-	if !ctx.Doer.IsAdmin {
+	if !ctx.IsUserSiteAdmin() {
 		canCreate, err := org.CanCreateOrgRepo(ctx, ctx.Doer.ID)
 		if err != nil {
 			ctx.Error(http.StatusInternalServerError, "CanCreateOrgRepo", err)
@@ -776,7 +776,7 @@ func updateBasicProperties(ctx *context.APIContext, opts api.EditRepoOption) err
 
 		visibilityChanged = repo.IsPrivate != *opts.Private
 		// when ForcePrivate enabled, you could change public repo to private, but only admin users can change private to public
-		if visibilityChanged && setting.Repository.ForcePrivate && !*opts.Private && !ctx.Doer.IsAdmin {
+		if visibilityChanged && setting.Repository.ForcePrivate && !*opts.Private && !ctx.IsUserSiteAdmin() {
 			err := errors.New("cannot change private repository to public")
 			ctx.Error(http.StatusUnprocessableEntity, "Force Private enabled", err)
 			return err

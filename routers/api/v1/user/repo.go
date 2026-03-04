@@ -43,7 +43,7 @@ func listUserRepos(ctx *context.APIContext, u *user_model.User, private bool) {
 			ctx.Error(http.StatusInternalServerError, "GetUserRepoPermissionWithReducer", err)
 			return
 		}
-		if ctx.IsSigned && ctx.Doer.IsAdmin || permission.HasAccess() {
+		if ctx.IsSigned && ctx.IsUserSiteAdmin() || permission.HasAccess() {
 			apiRepos = append(apiRepos, convert.ToRepo(ctx, repos[i], permission))
 		}
 	}

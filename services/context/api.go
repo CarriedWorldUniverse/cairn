@@ -450,11 +450,17 @@ func (ctx *APIContext) NotFoundOrServerError(logMsg string, errCheck func(error)
 
 // IsUserSiteAdmin returns true if current user is a site admin
 func (ctx *APIContext) IsUserSiteAdmin() bool {
+	if !ctx.Reducer.AllowAdminOverride() {
+		return false
+	}
 	return ctx.IsSigned && ctx.Doer.IsAdmin
 }
 
 // IsUserRepoAdmin returns true if current user is admin in current repo
 func (ctx *APIContext) IsUserRepoAdmin() bool {
+	if !ctx.Reducer.AllowAdminOverride() {
+		return false
+	}
 	return ctx.Repo.IsAdmin()
 }
 

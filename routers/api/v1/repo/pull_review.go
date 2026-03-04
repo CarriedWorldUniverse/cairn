@@ -402,7 +402,7 @@ func DeletePullReview(ctx *context.APIContext) {
 		ctx.NotFound()
 		return
 	}
-	if !ctx.Doer.IsAdmin && ctx.Doer.ID != review.ReviewerID {
+	if !ctx.IsUserSiteAdmin() && ctx.Doer.ID != review.ReviewerID {
 		ctx.Error(http.StatusForbidden, "only admin and user itself can delete a review", nil)
 		return
 	}
@@ -699,7 +699,7 @@ func prepareSingleReview(ctx *context.APIContext) (*issues_model.Review, *issues
 	}
 
 	// make sure that the user has access to this review if it is pending
-	if review.Type == issues_model.ReviewTypePending && review.ReviewerID != ctx.Doer.ID && !ctx.Doer.IsAdmin {
+	if review.Type == issues_model.ReviewTypePending && review.ReviewerID != ctx.Doer.ID && !ctx.IsUserSiteAdmin() {
 		ctx.NotFound("GetReviewByID")
 		return nil, nil, true
 	}
@@ -1080,7 +1080,7 @@ func DeletePullReviewComment(ctx *context.APIContext) {
 }
 
 func dismissReview(ctx *context.APIContext, msg string, isDismiss, dismissPriors bool) {
-	if !ctx.Repo.IsAdmin() {
+	if !ctx.IsUserRepoAdmin() {
 		ctx.Error(http.StatusForbidden, "", "Must be repo admin")
 		return
 	}

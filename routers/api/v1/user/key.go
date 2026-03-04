@@ -90,7 +90,7 @@ func listPublicKeys(ctx *context.APIContext, user *user_model.User) {
 	apiKeys := make([]*api.PublicKey, len(keys))
 	for i := range keys {
 		apiKeys[i] = convert.ToPublicKey(apiLink, keys[i])
-		if ctx.Doer.IsAdmin || ctx.Doer.ID == keys[i].OwnerID {
+		if ctx.IsUserSiteAdmin() || ctx.Doer.ID == keys[i].OwnerID {
 			apiKeys[i], _ = appendPrivateInformation(ctx, apiKeys[i], keys[i], user)
 		}
 	}
@@ -200,7 +200,7 @@ func GetPublicKey(ctx *context.APIContext) {
 
 	apiLink := composePublicKeysAPILink()
 	apiKey := convert.ToPublicKey(apiLink, key)
-	if ctx.Doer.IsAdmin || ctx.Doer.ID == key.OwnerID {
+	if ctx.IsUserSiteAdmin() || ctx.Doer.ID == key.OwnerID {
 		apiKey, _ = appendPrivateInformation(ctx, apiKey, key, ctx.Doer)
 	}
 	ctx.JSON(http.StatusOK, apiKey)
@@ -226,7 +226,7 @@ func CreateUserPublicKey(ctx *context.APIContext, form api.CreateKeyOption, uid 
 	}
 	apiLink := composePublicKeysAPILink()
 	apiKey := convert.ToPublicKey(apiLink, key)
-	if ctx.Doer.IsAdmin || ctx.Doer.ID == key.OwnerID {
+	if ctx.IsUserSiteAdmin() || ctx.Doer.ID == key.OwnerID {
 		apiKey, _ = appendPrivateInformation(ctx, apiKey, key, ctx.Doer)
 	}
 	ctx.JSON(http.StatusCreated, apiKey)
