@@ -73,7 +73,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.18.4
 	github.com/klauspost/cpuid/v2 v2.2.11
-	github.com/markbates/goth v1.80.0
+	github.com/markbates/goth v1.82.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-sqlite3 v1.14.34
 	github.com/meilisearch/meilisearch-go v0.36.0
