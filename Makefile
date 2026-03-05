@@ -46,6 +46,7 @@ XGO_PACKAGE ?= src.techknowlogick.com/xgo@latest
 GO_LICENSES_PACKAGE ?= github.com/google/go-licenses@v1.6.0 # renovate: datasource=go
 GOVULNCHECK_PACKAGE ?= golang.org/x/vuln/cmd/govulncheck@v1 # renovate: datasource=go
 DEADCODE_PACKAGE ?= golang.org/x/tools/cmd/deadcode@v0.42.0 # renovate: datasource=go
+ERRORTYPE_PACKAGE ?= fillmore-labs.com/errortype@v0.0.10 # renovate: datasource=go
 GOMOCK_PACKAGE ?= go.uber.org/mock/mockgen@v0.6.0 # renovate: datasource=go
 RENOVATE_NPM_PACKAGE ?= renovate@43.31.1 # renovate: datasource=docker packageName=data.forgejo.org/renovate/renovate
 
@@ -486,6 +487,7 @@ RUN_DEADCODE = $(GO) run $(DEADCODE_PACKAGE) -generated=false -f='{{println .Pat
 .PHONY: lint-go
 lint-go:
 	$(GO) run $(GOLANGCI_LINT_PACKAGE) run $(GOLANGCI_LINT_ARGS)
+	$(GO) run $(ERRORTYPE_PACKAGE) ./...
 	$(RUN_DEADCODE) > .cur-deadcode-out
 	@$(DIFF) .deadcode-out .cur-deadcode-out \
 	|| (code=$$?; echo "Please run 'make lint-go-fix' and commit the result"; exit $${code})
@@ -955,6 +957,7 @@ deps-tools:
 	$(GO) install $(GO_LICENSES_PACKAGE)
 	$(GO) install $(GOVULNCHECK_PACKAGE)
 	$(GO) install $(GOMOCK_PACKAGE)
+	$(GO) install $(ERRORTYPE_PACKAGE)
 
 node_modules: package-lock.json
 	npm install --no-save

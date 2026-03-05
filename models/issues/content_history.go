@@ -222,7 +222,7 @@ func GetIssueContentHistoryAndPrev(dbCtx context.Context, issueID, id int64) (hi
 		return nil, nil, err
 	} else if !has {
 		log.Error("issue content history does not exist. id=%v. err=%v", id, err)
-		return nil, nil, &ErrIssueContentHistoryNotExist{id}
+		return nil, nil, ErrIssueContentHistoryNotExist{id}
 	}
 
 	prevHistory = &ContentHistory{}

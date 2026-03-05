@@ -273,7 +273,7 @@ func ParseTreeLine(objectFormat ObjectFormat, rd *bufio.Reader, modeBuf, fnameBu
 	idx := bytes.IndexByte(readBytes, ' ')
 	if idx < 0 {
 		log.Debug("missing space in readBytes ParseTreeLine: %s", readBytes)
-		return mode, fname, sha, n, &ErrNotExist{}
+		return mode, fname, sha, n, ErrNotExist{}
 	}
 
 	n += idx + 1
