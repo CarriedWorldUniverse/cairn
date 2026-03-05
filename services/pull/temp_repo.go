@@ -53,7 +53,7 @@ func createTemporaryRepoForPR(ctx context.Context, pr *issues_model.PullRequest)
 		return nil, nil, fmt.Errorf("%v LoadHeadRepo: %w", pr, err)
 	} else if pr.HeadRepo == nil {
 		log.Error("%-v HeadRepo %d does not exist", pr, pr.HeadRepoID)
-		return nil, nil, &repo_model.ErrRepoNotExist{
+		return nil, nil, repo_model.ErrRepoNotExist{
 			ID: pr.HeadRepoID,
 		}
 	} else if err := pr.LoadBaseRepo(ctx); err != nil {
@@ -61,7 +61,7 @@ func createTemporaryRepoForPR(ctx context.Context, pr *issues_model.PullRequest)
 		return nil, nil, fmt.Errorf("%v LoadBaseRepo: %w", pr, err)
 	} else if pr.BaseRepo == nil {
 		log.Error("%-v BaseRepo %d does not exist", pr, pr.BaseRepoID)
-		return nil, nil, &repo_model.ErrRepoNotExist{
+		return nil, nil, repo_model.ErrRepoNotExist{
 			ID: pr.BaseRepoID,
 		}
 	} else if err := pr.HeadRepo.LoadOwner(ctx); err != nil {

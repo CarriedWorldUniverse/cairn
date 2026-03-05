@@ -39,7 +39,7 @@ func fileStatDevIno(file *os.File) (uint64, uint64, bool) {
 
 	// Do a type conversion to uint64, because Dev isn't always uint64
 	// on every operating system + architecture combination.
-	return uint64(stat.Dev), stat.Ino, true //nolint:unconvert
+	return uint64(stat.Dev), stat.Ino, true //nolint:unconvert,nolintlint
 }
 
 func fileIsDevIno(file *os.File, dev, ino uint64) bool {
