@@ -96,7 +96,7 @@ initDirAuto();
 onDomReady(() => {
   initGlobalCommon();
 
-  initDisabledInputs();
+  initDisabledInputs(document);
   initGlobalTooltips();
   initGlobalButtonClickOnEnter();
   initGlobalButtons();
