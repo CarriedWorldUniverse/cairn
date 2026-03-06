@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"forgejo.org/models/db"
@@ -30,6 +31,67 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+// maximum size of a container manifest
+// https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pushing-manifests
+const MaxManifestSize = 10 * 1024 * 1024
+
+var (
+	ReferencePattern = regexp.MustCompile(`\A[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}\z`)
+	ErrTagInvalid    = util.NewInvalidArgumentErrorf("Tag is invalid")
+)
+
+// ManifestCreationInfo describes a manifest to create
+type ManifestCreationInfo struct {
+	MediaType  string
+	Owner      *user_model.User
+	Creator    *user_model.User
+	Image      string
+	Reference  string
+	IsTagged   bool
+	Properties map[string]string
+}
+
+func GetLocalManifest(ctx context.Context, ownerID int64, imageName, reference string) (*packages_model.PackageFileDescriptor, error) {
+	opts, err := GetManifestSearchOptions(
+		ownerID,
+		imageName,
+		reference,
+	)
+	if err != nil {
+		return nil, err
+	}
+	// Get blob or err
+	log.Debug("Trying to find manifest with %s locally", reference)
+	pdf, err := WorkaroundGetContainerBlob(ctx, opts)
+	if err != nil {
+		if errors.Is(err, container_model.ErrContainerBlobNotExist) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("could not get container blob: %s", err.Error())
+	}
+
+	return pdf, nil
+}
+
+func NewManifestCreationInfo(owner, creator *user_model.User, mediaType, image, reference string) (*ManifestCreationInfo, error) {
+	isTagged := digest.Digest(reference).Validate() != nil
+
+	mci := &ManifestCreationInfo{
+		MediaType: mediaType,
+		Owner:     owner,
+		Creator:   creator,
+		Image:     image,
+		Reference: reference,
+		IsTagged:  isTagged,
+	}
+
+	if mci.IsTagged && !ReferencePattern.MatchString(reference) {
+		return &ManifestCreationInfo{}, ErrTagInvalid
+	}
+
+	return mci, nil
+}
+
 func isValidMediaType(mt string) bool {
 	return strings.HasPrefix(mt, "application/vnd.docker.") || strings.HasPrefix(mt, "application/vnd.oci.")
 }
@@ -42,25 +104,32 @@ func isImageIndexMediaType(mt string) bool {
 	return strings.EqualFold(mt, oci.MediaTypeImageIndex) || strings.EqualFold(mt, "application/vnd.docker.distribution.manifest.list.v2+json")
 }
 
-// manifestCreationInfo describes a manifest to create
-type manifestCreationInfo struct {
-	MediaType  string
-	Owner      *user_model.User
-	Creator    *user_model.User
-	Image      string
-	Reference  string
-	IsTagged   bool
-	Properties map[string]string
+func GetManifestSearchOptions(ownerID int64, image, reference string) (*container_model.BlobSearchOptions, error) {
+	opts := &container_model.BlobSearchOptions{
+		OwnerID:    ownerID,
+		Image:      image,
+		IsManifest: true,
+	}
+
+	if digest.Digest(reference).Validate() == nil {
+		opts.Digest = reference
+	} else if ReferencePattern.MatchString(reference) {
+		opts.Tag = reference
+	} else {
+		return nil, container_model.ErrContainerBlobNotExist
+	}
+
+	return opts, nil
 }
 
-func processManifest(ctx context.Context, mci *manifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
+func ProcessManifest(ctx context.Context, mci ManifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
 	var index oci.Index
 	if err := json.NewDecoder(buf).Decode(&index); err != nil {
 		return "", err
 	}
 
 	if index.SchemaVersion != 2 {
-		return "", errUnsupported.WithMessage("Schema version is not supported")
+		return "", ErrUnsupported.WithMessage("Schema version is not supported")
 	}
 
 	if _, err := buf.Seek(0, io.SeekStart); err != nil {
@@ -70,7 +139,7 @@ func processManifest(ctx context.Context, mci *manifestCreationInfo, buf *packag
 	if !isValidMediaType(mci.MediaType) {
 		mci.MediaType = index.MediaType
 		if !isValidMediaType(mci.MediaType) {
-			return "", errManifestInvalid.WithMessage("MediaType not recognized")
+			return "", ErrManifestInvalid.WithMessage("MediaType not recognized")
 		}
 	}
 
@@ -79,10 +148,10 @@ func processManifest(ctx context.Context, mci *manifestCreationInfo, buf *packag
 	} else if isImageIndexMediaType(mci.MediaType) {
 		return processImageManifestIndex(ctx, mci, buf)
 	}
-	return "", errManifestInvalid
+	return "", ErrManifestInvalid
 }
 
-func processImageManifest(ctx context.Context, mci *manifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
+func processImageManifest(ctx context.Context, mci ManifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
 	manifestDigest := ""
 
 	err := func() error {
@@ -120,6 +189,7 @@ func processImageManifest(ctx context.Context, mci *manifestCreationInfo, buf *p
 		if err != nil {
 			return err
 		}
+
 		metadata.Annotations = manifest.Annotations
 
 		blobReferences := make([]*blobReference, 0, 1+len(manifest.Layers))
@@ -200,7 +270,7 @@ func processImageManifest(ctx context.Context, mci *manifestCreationInfo, buf *p
 	return manifestDigest, nil
 }
 
-func processImageManifestIndex(ctx context.Context, mci *manifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
+func processImageManifestIndex(ctx context.Context, mci ManifestCreationInfo, buf *packages_module.HashedBuffer) (string, error) {
 	manifestDigest := ""
 
 	err := func() error {
@@ -226,7 +296,7 @@ func processImageManifestIndex(ctx context.Context, mci *manifestCreationInfo, b
 
 		for _, manifest := range index.Manifests {
 			if !isImageManifestMediaType(manifest.MediaType) {
-				return errManifestInvalid
+				return ErrManifestInvalid
 			}
 
 			platform := container_module.DefaultPlatform
@@ -245,7 +315,7 @@ func processImageManifestIndex(ctx context.Context, mci *manifestCreationInfo, b
 			})
 			if err != nil {
 				if err == container_model.ErrContainerBlobNotExist {
-					return errManifestBlobUnknown
+					return ErrManifestBlobUnknown
 				}
 				return err
 			}
@@ -315,7 +385,7 @@ func notifyPackageCreate(ctx context.Context, doer *user_model.User, pv *package
 	return nil
 }
 
-func createPackageAndVersion(ctx context.Context, mci *manifestCreationInfo, metadata *container_module.Metadata) (*packages_model.PackageVersion, error) {
+func createPackageAndVersion(ctx context.Context, mci ManifestCreationInfo, metadata *container_module.Metadata) (*packages_model.PackageVersion, error) {
 	created := true
 	p := &packages_model.Package{
 		OwnerID:   mci.Owner.ID,
@@ -429,7 +499,7 @@ type blobReference struct {
 
 func createFileFromBlobReference(ctx context.Context, pv, uploadVersion *packages_model.PackageVersion, ref *blobReference) error {
 	if ref.File.Blob.Size != ref.ExpectedSize {
-		return errSizeInvalid
+		return ErrSizeInvalid
 	}
 
 	if ref.Name == "" {
@@ -474,7 +544,7 @@ func createFileFromBlobReference(ctx context.Context, pv, uploadVersion *package
 	return nil
 }
 
-func createManifestBlob(ctx context.Context, mci *manifestCreationInfo, pv *packages_model.PackageVersion, buf *packages_module.HashedBuffer) (*packages_model.PackageBlob, bool, string, error) {
+func createManifestBlob(ctx context.Context, mci ManifestCreationInfo, pv *packages_model.PackageVersion, buf *packages_module.HashedBuffer) (*packages_model.PackageBlob, bool, string, error) {
 	pb, exists, err := packages_model.GetOrInsertBlob(ctx, packages_service.NewPackageBlob(buf))
 	if err != nil {
 		log.Error("Error inserting package blob: %v", err)
@@ -497,7 +567,7 @@ func createManifestBlob(ctx context.Context, mci *manifestCreationInfo, pv *pack
 		}
 	}
 
-	manifestDigest := digestFromHashSummer(buf)
+	manifestDigest := DigestFromHashSummer(buf)
 	err = createFileFromBlobReference(ctx, pv, nil, &blobReference{
 		Digest:       digest.Digest(manifestDigest),
 		MediaType:    mci.MediaType,
