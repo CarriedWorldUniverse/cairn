@@ -135,5 +135,12 @@
     "pulse.n_active_prs": {
         "one": "%s pull request activa",
         "other": "%s pull requests activas"
-    }
+    },
+    "repo.issues.filter_poster.hint": "Filtrar por autor",
+    "repo.issues.filter_assignee.hint": "Filtrar por usuario asignado",
+    "repo.issues.filter_reviewers.hint": "Filtrar por usuario revisor",
+    "repo.issues.filter_mention.hint": "Filtrar por usuario mencionado",
+    "repo.issues.filter_modified.hint": "Filtrar por fecha de última modificación",
+    "repo.issues.filter_sort.hint": "Ordenar por: creación/comentarios/actualización/fecha límite",
+    "issues.updated": "actualizado %s"
 }

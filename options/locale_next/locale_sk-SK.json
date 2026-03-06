@@ -154,5 +154,10 @@
     "migrate.pagure.description": "Migrujte dáta z pagure.io alebo iných inštancií Pagure.",
     "migrate.pagure.incorrect_url": "Bola zadaná nesprávna URL adresa zdrojového repozitáru",
     "migrate.pagure.project_url": "URL adresa projektu Pagure",
-    "migrate.pagure.token_label": "Token"
+    "migrate.pagure.token_label": "Token",
+    "repo.issues.filter_poster.hint": "Filtrovať podľa autora",
+    "repo.issues.filter_assignee.hint": "Filtrovať podľa priradeného používateľa",
+    "repo.issues.filter_mention.hint": "Filtrovať podľa spomenutého použivateľa",
+    "repo.issues.filter_modified.hint": "Filtrovať podľa dátumu poslednej úpravy",
+    "issues.updated": "aktualizované %s"
 }

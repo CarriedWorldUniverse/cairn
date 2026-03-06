@@ -30,5 +30,14 @@
     "moderation.abuse_category.placeholder": "Fren taggayt",
     "migrate.pagure.project_url": "Tansa URL n usenfar Pagure",
     "themes.names.forgejo-auto": "Forgejo (akken i yella usentel n unagraw)",
-    "meta.last_line": " "
+    "meta.last_line": " ",
+    "moderation.action.account.delete": "Kkes amiḍan",
+    "moderation.action.comment.delete": "Kkes awennit",
+    "moderation.unknown_action": "Tigawt tarussint",
+    "moderation.submit_report": "Ceyyeɛ aneqqis",
+    "teams.add_all_repos.modal.header": "Rnu ikufiyen akk-nsen",
+    "teams.remove_all_repos.modal.header": "Kkes akk ikufan",
+    "editor.search": "Nadi",
+    "editor.replace": "Semselsi",
+    "editor.replace_all": "Semselsi-iten akk"
 }

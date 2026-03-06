@@ -248,5 +248,7 @@
     "editor.replace_all": "All utwesseln",
     "editor.toggle_case": "Grot- un Kleenschrievens minnachten an- of utknipsen",
     "editor.toggle_regex": "Regel-Utdrücken bruken an- of utknipsen",
-    "editor.toggle_whole_word": "Hele Woorden söken an- of utknipsen"
+    "editor.toggle_whole_word": "Hele Woorden söken an- of utknipsen",
+    "install.ssh_authorized_keys_inspection_error": "Kunn bestahn authorized_keys-Datei nich nakieken: %v",
+    "install.ssh_authorized_keys_unexpected_key": "SSH för Forgejo antoknipsen is nich verdragelk mit de Datei unner %s, waar bestahn SSH-Slötels drinstahn. Vörslaag: Bruuk eenen Systeem-Bruker blots för Forgejo, of knips SSH ut."
 }

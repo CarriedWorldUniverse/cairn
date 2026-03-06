@@ -251,5 +251,11 @@
     "actions.workflow.incomplete_runson_missing_job": "Não foi possível avaliar `runs-on` do trabalho %[1]s: o trabalho %[2]s não está na lista `needs` do trabalho %[1]s (%[3]s).",
     "actions.workflow.incomplete_runson_missing_output": "Não é possível avaliar `runs-on` do trabalho %[1]s: o trabalho %[2]s não tem uma saída %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "Não é possível avaliar `runs-on` do trabalho %[1]s: a dimensão da matriz %[2]s não existe.",
-    "actions.workflow.incomplete_runson_unknown_cause": "Não é possível avaliar `runs-on` do trabalho %[1]s: erro desconhecido."
+    "actions.workflow.incomplete_runson_unknown_cause": "Não é possível avaliar `runs-on` do trabalho %[1]s: erro desconhecido.",
+    "issues.updated": "%s atualizado",
+    "repo.view.gitmodules_too_large": "O arquivo .gitmodules é muito grande e portanto será ignorado (em chamadas de API nesta instância)",
+    "search.fuzzy": "Difusa",
+    "search.fuzzy_tooltip": "Incluir resultados que sejam uma correspondência aproximada ao termo de busca",
+    "install.ssh_authorized_keys_inspection_error": "Falha ao inspecionar o arquivo authorized_keys existente: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Habilitar SSH para o Forgejo conflita com o arquivo localizado em %s que contém chaves SSH existentes. Sugestões: use um usuário de sistema dedicado para o Forgejo ou desabilite o SSH."
 }

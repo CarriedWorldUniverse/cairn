@@ -203,5 +203,7 @@
     "editor.replace_all": "替换全部",
     "editor.toggle_case": "切换大小写敏感",
     "editor.toggle_regex": "切换正则表达式",
-    "editor.toggle_whole_word": "切换全词匹配"
+    "editor.toggle_whole_word": "切换全词匹配",
+    "install.ssh_authorized_keys_inspection_error": "无法检查已存在的 authorized_keys 文件：%v",
+    "install.ssh_authorized_keys_unexpected_key": "为 Forgejo 启用 SSH 与位于 %s 的文件冲突，该文件包含已存在的 SSH 密钥。建议：为 Forgejo 使用独立的系统用户或禁用 SSH。"
 }
