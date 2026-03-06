@@ -61,7 +61,7 @@ func WriteLogs(ctx context.Context, filename string, offset int64, rows []*runne
 
 	stat, err := f.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("dbfs Stat %q: %w", name, err)
+		return nil, fmt.Errorf("WriteLogs(name=%q, offset=%d, len(rows)=%d): dbfs Stat: %w", name, offset, len(rows), err)
 	}
 	if stat.Size() < offset {
 		// If the size is less than offset, refuse to write, or it could result in content holes.
