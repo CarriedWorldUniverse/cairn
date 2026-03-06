@@ -90,7 +90,7 @@
     "moderation.abuse_category.illegal_content": "Ilegal na nilalaman",
     "moderation.abuse_category.other_violations": "Mga ibang paglabag sa mga patakaran ng platform",
     "moderation.report_remarks": "Mga pahayag",
-    "moderation.report_remarks.placeholder": "Mangyaring magbigay ng mga detalye tungkol sa pang aabuso na inuulat mo.",
+    "moderation.report_remarks.placeholder": "Pakibigay ang mga detalye tungkol sa pang aabuso na inuulat mo.",
     "moderation.submit_report": "I-submit ang ulat",
     "moderation.reporting_failed": "Hindi ma-submit ang bagong ulat sa pang aabuso: %v",
     "moderation.reported_thank_you": "Salamat sa iyong ulat. Naipaalam na ito sa administrasyon.",

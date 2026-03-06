@@ -211,5 +211,6 @@
     "editor.find_previous": "Προηγούμενη εύρεση",
     "editor.find_next": "Επόμενη εύρεση",
     "editor.replace": "Αντικατάσταση",
-    "editor.replace_all": "Αντικατάσταση όλων"
+    "editor.replace_all": "Αντικατάσταση όλων",
+    "migrate.pagure.token.placeholder": "Μόνο για δημιουργία ιδιωτικού αρχείου ζητημάτων"
 }
