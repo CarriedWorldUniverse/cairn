@@ -342,13 +342,13 @@ func SetIssueUpdateDate(ctx context.Context, issue *issues_model.Issue, updated 
 		return err
 	}
 	if !perm.IsAdmin() && !perm.IsOwner() {
-		return errors.New("user needs to have admin or owner right")
+		return errors.New("user needs to have admin or repository owner right to set an update date")
 	}
 
 	// A simple guard against potential inconsistent calls
 	updatedUnix := timeutil.TimeStamp(updated.Unix())
 	if updatedUnix < issue.CreatedUnix || updatedUnix > timeutil.TimeStampNow() {
-		return errors.New("unallowed update date")
+		return errors.New("unallowed update date, because given date must be between issue creation date and now")
 	}
 
 	issue.UpdatedUnix = updatedUnix
