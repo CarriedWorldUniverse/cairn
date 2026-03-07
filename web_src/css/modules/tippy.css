@@ -97,6 +97,10 @@
   background: var(--color-active);
 }
 
+.tippy-box[data-theme="menu"] .tippy-target > .item.active {
+  background: var(--color-active);
+}
+
 /* box-with-header theme to look like .ui.attached.segment. can contain .ui.attached.header */
 
 .tippy-box[data-theme="box-with-header"] {
