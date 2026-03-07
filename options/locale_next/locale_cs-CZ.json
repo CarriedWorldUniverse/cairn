@@ -263,5 +263,7 @@
     "editor.replace_all": "Nahradit vše",
     "editor.toggle_case": "Přepnout rozlišování velikosti písmen",
     "editor.toggle_regex": "Přepnout používání regulárních výrazů",
-    "editor.toggle_whole_word": "Přepnout shodu s celými slovy"
+    "editor.toggle_whole_word": "Přepnout shodu s celými slovy",
+    "install.ssh_authorized_keys_inspection_error": "Nepodařilo se projít existující soubor authorized_keys: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Povolení SSH pro Forgejo je v konfliktu se souborem umístěným v %s, který obsahuje existující klíče SSH. Návrhy: použijte pro Forgejo vyhrazeného systémového uživatele nebo SSH deaktivujte."
 }

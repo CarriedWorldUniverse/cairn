@@ -199,5 +199,8 @@
     "teams.remove_all_repos.modal.header": "Rimuovi tutti i repositori",
     "moderation.action.account.delete": "Elimina profilo",
     "moderation.action.account.suspend": "Sospendi profilo",
-    "moderation.action.comment.delete": "Elimina commento"
+    "moderation.action.comment.delete": "Elimina commento",
+    "repo.issues.filter_reviewers.hint": "Filtra per utente che ha recensito",
+    "repo.issues.filter_mention.hint": "Filtra per utente menzionato",
+    "repo.issues.filter_modified.hint": "Filtra per ultima data modificata"
 }

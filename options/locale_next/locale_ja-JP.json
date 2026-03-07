@@ -32,5 +32,13 @@
         "one": "%s件のアクティブなプルリクエスト",
         "other": "%s件のアクティブなプルリクエスト"
     },
-    "meta.last_line": " "
+    "meta.last_line": " ",
+    "home.welcome.no_activity": "活動はありません",
+    "home.welcome.activity_hint": "あなたのフィードにはまだ何もありません。行動と見ているリポジトリの活動がここに見えます。",
+    "home.explore_repos": "リポジトリを探索する",
+    "home.explore_users": "ユーザーを探索する",
+    "home.explore_orgs": "組織を探索する",
+    "stars.list.none": "このリポを誰もスターしなかった。",
+    "watch.list.none": "このリポを誰も見ていない。",
+    "watch.n_watchers": "%s人のウォッチャー"
 }

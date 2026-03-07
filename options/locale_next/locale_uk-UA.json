@@ -263,5 +263,7 @@
     "editor.replace_all": "Замінити все",
     "editor.toggle_case": "Перемкнути врахування регістру",
     "editor.toggle_regex": "Перемкнути регулярні вирази",
-    "editor.toggle_whole_word": "Перемкнути пошук цілих слів"
+    "editor.toggle_whole_word": "Перемкнути пошук цілих слів",
+    "install.ssh_authorized_keys_inspection_error": "Не вдалося перевірити наявний файл authorized_keys: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Увімкнення SSH для Forgejo конфліктує з файлом, розташованим за адресою %s, який містить існуючі ключі SSH. Підказка: використовуйте для Forgejo спеціального системного користувача або вимкніть SSH."
 }

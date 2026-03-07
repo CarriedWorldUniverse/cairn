@@ -90,7 +90,7 @@
     "moderation.abuse_category.illegal_content": "Ilegal na nilalaman",
     "moderation.abuse_category.other_violations": "Mga ibang paglabag sa mga patakaran ng platform",
     "moderation.report_remarks": "Mga pahayag",
-    "moderation.report_remarks.placeholder": "Mangyaring magbigay ng mga detalye tungkol sa pang aabuso na inuulat mo.",
+    "moderation.report_remarks.placeholder": "Pakibigay ang mga detalye tungkol sa pang aabuso na inuulat mo.",
     "moderation.submit_report": "I-submit ang ulat",
     "moderation.reporting_failed": "Hindi ma-submit ang bagong ulat sa pang aabuso: %v",
     "moderation.reported_thank_you": "Salamat sa iyong ulat. Naipaalam na ito sa administrasyon.",
@@ -239,5 +239,16 @@
     "actions.workflow.incomplete_runson_unknown_cause": "Hindi masuri ang `runs-on` ng trabahong %[1]s: hindi alam na error.",
     "admin.auths.oauth2_quota_group_claim_name": "Claim name na nagbibigay ng mga pangalan ng grupo para sa pinagmulan na ito na gagamitin sa pamamahala ng quota. (Opsyonal)",
     "admin.auths.oauth2_quota_group_map": "I-map ang mga claimed group sa mga quota group. (Opsyonal - kinakailangan ang claim name sa itaas)",
-    "admin.auths.oauth2_quota_group_map_removal": "Tanggalin ang mga user mula sa mga naka-sync na quota group kung hindi nabibilang sa katumbas na grupo ang user."
+    "admin.auths.oauth2_quota_group_map_removal": "Tanggalin ang mga user mula sa mga naka-sync na quota group kung hindi nabibilang sa katumbas na grupo ang user.",
+    "repo.view.gitmodules_too_large": "Masyadong malaki ang .gitmodules file at hindi ito papansinin (hal. para sa API call)",
+    "install.ssh_authorized_keys_inspection_error": "Nabigong suriin ang umiiral na authroized_keys file: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Sumasalungat sa file na nakalagay sa %s ng mga umiiral na SSH key ang pag-enable ng SSH para sa Forgejo. Mga mungkahi: gumamit ng dedikadong system user para sa Forgejo, o I-disable ang SSH.",
+    "editor.search": "Maghanap",
+    "editor.find_previous": "Nakaraang hanap",
+    "editor.find_next": "Susunod na hanap",
+    "editor.replace": "Palitan",
+    "editor.replace_all": "Palitan lahat",
+    "editor.toggle_case": "I-toggle ang case sensitivity",
+    "editor.toggle_regex": "I-toggle ang paggamit ng mga regular na ekspresyon",
+    "editor.toggle_whole_word": "I-toggle ang pagtugma ng mga buong salita"
 }

@@ -248,5 +248,7 @@
     "editor.replace_all": "Alle ersetzen",
     "editor.toggle_case": "Beachtung der Groß-/Kleinschreibung umschalten",
     "editor.toggle_regex": "Mit regulären Ausdrücken umschalten",
-    "editor.toggle_whole_word": "Treffer auf ganze Wörter umschalten"
+    "editor.toggle_whole_word": "Treffer auf ganze Wörter umschalten",
+    "install.ssh_authorized_keys_inspection_error": "Existierende authorized_keys-Datei konnte nicht untersucht werden: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Die Aktivierung von SSH für Forgejo steht im Konflikt mit der Datei, die sich bei %s befindet und existierende SSH-Keys enthält. Vorschlag: Benutzen Sie einen eigenen Systembenutzer für Forgejo oder deaktivieren Sie SSH."
 }
