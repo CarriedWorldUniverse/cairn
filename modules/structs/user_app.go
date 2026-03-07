@@ -16,6 +16,9 @@ type AccessToken struct {
 	Token          string   `json:"sha1"`
 	TokenLastEight string   `json:"token_last_eight"`
 	Scopes         []string `json:"scopes"`
+	// Indicates that an access token only has access to the specified repositories.  Will be null if the access token
+	// is not limited to a set of specified repositories.
+	Repositories []*RepositoryMeta `json:"repositories"`
 }
 
 // AccessTokenList represents a list of API access token.
@@ -28,6 +31,8 @@ type CreateAccessTokenOption struct {
 	Name string `json:"name" binding:"Required"`
 	// example: ["all", "read:activitypub","read:issue", "write:misc", "read:notification", "read:organization", "read:package", "read:repository", "read:user"]
 	Scopes []string `json:"scopes"`
+	// If provided and not-empty, creates an access token with access only to specified repositories.
+	Repositories []*RepoTargetOption `json:"repositories"`
 }
 
 // CreateOAuth2ApplicationOptions holds options to create an oauth2 application

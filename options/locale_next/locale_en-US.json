@@ -395,6 +395,9 @@
 	"packages.owner.settings.chef.title": "Chef registry",
 	"packages.owner.settings.chef.keypair": "Generate key pair",
 	"packages.owner.settings.chef.keypair.description": "Requests sent to the Chef registry must be cryptographically signed as a means of authentication. When generating a keypair, only the public key is stored on Forgejo. The private key is provided to you to be used with knife. Generating a new keypair will overwrite the previous one.",
+	"access_token.error.specified_repos_none": "Access tokens with specified repositories must have at least one repository.",
+	"access_token.error.specified_repos_and_public_only": "Access tokens with specified repositories cannot be combined with the public-only scope.",
+	"access_token.error.specified_repos_and_invalid_scope": "Access tokens with specified repositories can only be used with the read:issue, write:issue, read:repository, and write:repository scopes.",
 	"actions.status.diagnostics.waiting": {
 		"one": "Waiting for a runner with the following label: %s",
 		"other": "Waiting for a runner with the following labels: %s"

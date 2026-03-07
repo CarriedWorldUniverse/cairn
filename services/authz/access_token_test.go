@@ -4,6 +4,7 @@
 package authz
 
 import (
+	"strings"
 	"testing"
 
 	"forgejo.org/models/auth"
@@ -42,5 +43,57 @@ func TestGetAuthorizationReducerForAccessToken(t *testing.T) {
 
 		require.Len(t, specific.resourceRepos, 1)
 		assert.EqualValues(t, 1, specific.resourceRepos[0].RepoID)
+	})
+}
+
+func TestValidateAccessToken(t *testing.T) {
+	t.Run("valid - all access", func(t *testing.T) {
+		token := &auth.AccessToken{
+			ResourceAllRepos: true,
+			Scope:            auth.AccessTokenScopeReadRepository,
+		}
+		err := ValidateAccessToken(token, nil)
+		require.NoError(t, err)
+	})
+
+	t.Run("valid - specified repos", func(t *testing.T) {
+		token := &auth.AccessToken{
+			ResourceAllRepos: false,
+			Scope:            auth.AccessTokenScopeReadRepository,
+		}
+		resources := []*auth.AccessTokenResourceRepo{{RepoID: 12}}
+		err := ValidateAccessToken(token, resources)
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid - no specified repos", func(t *testing.T) {
+		token := &auth.AccessToken{
+			ResourceAllRepos: false,
+			Scope:            auth.AccessTokenScopeReadRepository,
+		}
+		resources := []*auth.AccessTokenResourceRepo{}
+		err := ValidateAccessToken(token, resources)
+		require.ErrorIs(t, err, ErrSpecifiedReposNone)
+	})
+
+	t.Run("invalid - specified repos & public-only", func(t *testing.T) {
+		token := &auth.AccessToken{
+			ResourceAllRepos: false,
+			Scope:            auth.AccessTokenScope(strings.Join([]string{string(auth.AccessTokenScopePublicOnly), string(auth.AccessTokenScopeReadRepository)}, ",")),
+		}
+		resources := []*auth.AccessTokenResourceRepo{{RepoID: 12}}
+		err := ValidateAccessToken(token, resources)
+		require.ErrorIs(t, err, ErrSpecifiedReposNoPublicOnly)
+	})
+
+	t.Run("invalid - specified repos unsupported scopes", func(t *testing.T) {
+		token := &auth.AccessToken{
+			ResourceAllRepos: false,
+			Scope:            auth.AccessTokenScopeReadAdmin,
+		}
+		resources := []*auth.AccessTokenResourceRepo{{RepoID: 12}}
+		err := ValidateAccessToken(token, resources)
+		require.ErrorIs(t, err, ErrSpecifiedReposInvalidScope)
+		require.ErrorContains(t, err, string(auth.AccessTokenScopeReadAdmin))
 	})
 }

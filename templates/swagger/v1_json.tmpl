@@ -22167,6 +22167,14 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "repositories": {
+          "description": "Indicates that an access token only has access to the specified repositories.  Will be null if the access token\nis not limited to a set of specified repositories.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RepositoryMeta"
+          },
+          "x-go-name": "Repositories"
+        },
         "scopes": {
           "type": "array",
           "items": {
@@ -23527,6 +23535,14 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "repositories": {
+          "description": "If provided and not-empty, creates an access token with access only to specified repositories.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RepoTargetOption"
+          },
+          "x-go-name": "Repositories"
         },
         "scopes": {
           "type": "array",
@@ -28738,6 +28754,26 @@
         },
         "verification": {
           "$ref": "#/definitions/PayloadCommitVerification"
+        }
+      },
+      "x-go-package": "forgejo.org/modules/structs"
+    },
+    "RepoTargetOption": {
+      "type": "object",
+      "required": [
+        "owner",
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name of repository",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "owner": {
+          "description": "Name of user or organisation that owns the repository",
+          "type": "string",
+          "x-go-name": "Owner"
         }
       },
       "x-go-package": "forgejo.org/modules/structs"

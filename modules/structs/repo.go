@@ -436,3 +436,12 @@ type UpdateRepoAvatarOption struct {
 	// image must be base64 encoded
 	Image string `json:"image" binding:"Required"`
 }
+
+type RepoTargetOption struct {
+	// Name of user or organisation that owns the repository
+	// required: true
+	Owner string `json:"owner"`
+	// Name of repository
+	// required: true
+	Name string `json:"name"`
+}
