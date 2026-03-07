@@ -439,12 +439,51 @@ test('Markdown insert link', async ({page}) => {
     await screenshot(page);
   }
 
+  async function evaluateLinkInsertionShortcut(page: Page, selector: string) {
+    const url = 'https://example.com';
+    const description = 'Where does this lead?';
+
+    const expectedContent = `[${description}](${url})`;
+
+    const area = page.locator(selector);
+
+    const textarea = area.locator('textarea[name=content]');
+
+    await textarea.fill(description);
+    await textarea.focus();
+    await textarea.evaluate((it:HTMLTextAreaElement) => it.setSelectionRange(0, it.value.length));
+
+    await textarea.press('ControlOrMeta+KeyK');
+
+    const newLinkModal = page.locator('[data-modal-name="new-markdown-link"].active');
+    await expect(newLinkModal).toBeVisible();
+    await accessibilityCheck({page}, ['[data-modal-name="new-markdown-link"].active'], [], []);
+    await screenshot(page);
+
+    const urlInput = newLinkModal.locator('input[name="link-url"]');
+
+    await expect(urlInput).not.toHaveAttribute('disabled');
+
+    await urlInput.fill(url);
+
+    await newLinkModal.locator('button[data-selector-name="ok-button"]').click();
+    await expect(newLinkModal).toBeHidden();
+
+    await expect(textarea).toHaveValue(expectedContent);
+    await screenshot(page);
+  }
+
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 
   await expect(async () => {
     await evaluateLinkInsertion(page, '#comment-form', false);
     await evaluateLinkInsertion(page, '#issuecomment-2', true);
+  }).toPass();
+
+  await expect(async () => {
+    await evaluateLinkInsertionShortcut(page, '#comment-form');
+    await evaluateLinkInsertionShortcut(page, '#issuecomment-2');
   }).toPass();
 });
 
