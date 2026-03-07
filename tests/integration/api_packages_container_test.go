@@ -91,7 +91,8 @@ func TestPackageContainer(t *testing.T) {
 			Token string `json:"token"`
 		}
 
-		authenticate := []string{`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*"`}
+		authenticate := []string{`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*",` +
+			`Basic realm="` + setting.AppURL + `v2",service="container_registry",scope="*"`}
 
 		t.Run("Anonymous", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
@@ -170,6 +171,33 @@ func TestPackageContainer(t *testing.T) {
 					AddTokenAuth(readUserToken)
 				MakeRequest(t, req, http.StatusOK)
 			})
+		})
+
+		t.Run("No token issued if credentials are invalid", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", fmt.Sprintf("%sv2/token", setting.AppURL))
+			// Setting the header explicitly instead of using AddBasicAuth to supply an invalid password.
+			req.Request.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("user2:very-invalid")))
+			resp := MakeRequest(t, req, http.StatusUnauthorized)
+
+			assert.Equal(t, authenticate, resp.Header().Values("WWW-Authenticate"))
+		})
+
+		t.Run("Basic authentication", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL))
+			req.AddBasicAuth("does-not-exist")
+			resp := MakeRequest(t, req, http.StatusUnauthorized)
+
+			assert.Equal(t, authenticate, resp.Header().Values("WWW-Authenticate"))
+
+			req = NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL))
+			req.AddBasicAuth(user.Name)
+			resp = MakeRequest(t, req, http.StatusOK)
+
+			assert.Empty(t, resp.Header().Get("WWW-Authenticate"))
 		})
 	})
 
