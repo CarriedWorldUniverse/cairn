@@ -5,9 +5,7 @@
 package setting
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"net/http"
 	"os"
@@ -25,7 +23,6 @@ import (
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/translation"
-	"forgejo.org/modules/typesniffer"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/modules/web/middleware"
@@ -138,27 +135,12 @@ func UpdateAvatarSetting(ctx *context.Context, form *forms.AvatarForm, ctxUser *
 		ctxUser.AvatarEmail = form.Gravatar
 	}
 
-	if form.Avatar != nil && form.Avatar.Filename != "" {
-		fr, err := form.Avatar.Open()
-		if err != nil {
-			return fmt.Errorf("Avatar.Open: %w", err)
-		}
-		defer fr.Close()
-
-		if form.Avatar.Size > setting.Avatar.MaxFileSize {
-			return errors.New(ctx.Locale.TrString("settings.uploaded_avatar_is_too_big", form.Avatar.Size/1024, setting.Avatar.MaxFileSize/1024))
-		}
-
-		data, err := io.ReadAll(fr)
-		if err != nil {
-			return fmt.Errorf("io.ReadAll: %w", err)
-		}
-
-		st := typesniffer.DetectContentType(data, "")
-		if !st.IsImage() || st.IsSvgImage() {
-			return errors.New(ctx.Locale.TrString("settings.uploaded_avatar_not_a_image"))
-		}
-		if err = user_service.UploadAvatar(ctx, ctxUser, data); err != nil {
+	data, err := forms.ReadAvatar(form.Avatar, ctx.Locale)
+	if err != nil {
+		return err
+	}
+	if data != nil {
+		if err := user_service.UploadAvatar(ctx, ctxUser, data); err != nil {
 			return fmt.Errorf("UploadAvatar: %w", err)
 		}
 	} else if ctxUser.UseCustomAvatar && ctxUser.Avatar == "" {

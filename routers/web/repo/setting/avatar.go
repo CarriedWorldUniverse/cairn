@@ -4,13 +4,8 @@
 package setting
 
 import (
-	"errors"
 	"fmt"
-	"io"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/typesniffer"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
 	"forgejo.org/services/forms"
@@ -19,37 +14,14 @@ import (
 
 // UpdateAvatarSetting update repo's avatar
 func UpdateAvatarSetting(ctx *context.Context, form forms.AvatarForm) error {
-	ctxRepo := ctx.Repo.Repository
-
-	if form.Avatar == nil {
-		// No avatar is uploaded and we not removing it here.
-		// No random avatar generated here.
-		// Just exit, no action.
-		if ctxRepo.CustomAvatarRelativePath() == "" {
-			log.Trace("No avatar was uploaded for repo: %d. Default icon will appear instead.", ctxRepo.ID)
-		}
+	data, err := forms.ReadAvatar(form.Avatar, ctx.Locale)
+	if err != nil {
+		return err
+	}
+	if data == nil {
 		return nil
 	}
-
-	r, err := form.Avatar.Open()
-	if err != nil {
-		return fmt.Errorf("Avatar.Open: %w", err)
-	}
-	defer r.Close()
-
-	if form.Avatar.Size > setting.Avatar.MaxFileSize {
-		return errors.New(ctx.Locale.TrString("settings.uploaded_avatar_is_too_big", form.Avatar.Size/1024, setting.Avatar.MaxFileSize/1024))
-	}
-
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return fmt.Errorf("io.ReadAll: %w", err)
-	}
-	st := typesniffer.DetectContentType(data, "")
-	if !st.IsImage() || st.IsSvgImage() {
-		return errors.New(ctx.Locale.TrString("settings.uploaded_avatar_not_a_image"))
-	}
-	if err = repo_service.UploadAvatar(ctx, ctxRepo, data); err != nil {
+	if err := repo_service.UploadAvatar(ctx, ctx.Repo.Repository, data); err != nil {
 		return fmt.Errorf("UploadAvatar: %w", err)
 	}
 	return nil
