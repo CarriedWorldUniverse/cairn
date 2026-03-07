@@ -9,6 +9,7 @@ import (
 	"path"
 	"testing"
 
+	"forgejo.org/modules/git"
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
@@ -161,6 +162,10 @@ func testLinksAsUser(userName string, t *testing.T) {
 	}
 
 	for _, repo := range apiRepos {
+		if repo.ObjectFormatName == "sha256" && !git.SupportHashSha256 {
+			continue
+		}
+
 		for _, link := range repoLinks {
 			req := NewRequest(t, "GET", fmt.Sprintf("/%s/%s%s", userName, repo.Name, link))
 			session.MakeRequest(t, req, http.StatusOK)
