@@ -9,33 +9,48 @@ import (
 
 // Comment represents a comment on a commit or issue
 type Comment struct {
-	ID               int64         `json:"id"`
-	HTMLURL          string        `json:"html_url"`
-	PRURL            string        `json:"pull_request_url"`
-	IssueURL         string        `json:"issue_url"`
-	Poster           *User         `json:"user"`
-	OriginalAuthor   string        `json:"original_author"`
-	OriginalAuthorID int64         `json:"original_author_id"`
-	Body             string        `json:"body"`
-	Attachments      []*Attachment `json:"assets"`
+	// The identifier of the comment
+	ID int64 `json:"id"`
+	// The HTML URL of the comment
+	HTMLURL string `json:"html_url"`
+	// The HTML URL of the pull request if the comment is posted on a pull request, else empty string
+	PRURL string `json:"pull_request_url"`
+	// The HTML URL of the issue if the comment is posted on an issue, else empty string
+	IssueURL string `json:"issue_url"`
+	// The user that posted the comment if it was posted locally
+	Poster *User `json:"user"`
+	// The original author that posted the comment if it was not posted locally, else empty string
+	OriginalAuthor string `json:"original_author"`
+	// The ID of the original author that posted the comment if it was not posted locally, else 0
+	OriginalAuthorID int64 `json:"original_author_id"`
+	// The body of the comment
+	Body string `json:"body"`
+	// The attachments to the comment
+	Attachments []*Attachment `json:"assets"`
+	// The time of the comment's creation
 	// swagger:strfmt date-time
 	Created time.Time `json:"created_at"`
+	// The time of the comment's update
 	// swagger:strfmt date-time
 	Updated time.Time `json:"updated_at"`
 }
 
 // CreateIssueCommentOption options for creating a comment on an issue
 type CreateIssueCommentOption struct {
+	// The body of the comment
 	// required:true
 	Body string `json:"body" binding:"Required"`
+	// The time of the comment's update, needs admin or repository owner permission
 	// swagger:strfmt date-time
 	Updated *time.Time `json:"updated_at"`
 }
 
 // EditIssueCommentOption options for editing a comment
 type EditIssueCommentOption struct {
+	// The body of the comment
 	// required: true
 	Body string `json:"body" binding:"Required"`
+	// The time of the comment's update, needs admin or repository owner permission
 	// swagger:strfmt date-time
 	Updated *time.Time `json:"updated_at"`
 }
