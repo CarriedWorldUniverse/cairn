@@ -7,6 +7,7 @@ package unit
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync/atomic"
 
@@ -141,7 +142,7 @@ func DisabledRepoUnitsSet(v []Type) {
 
 // Get valid set of default repository units from settings
 func validateDefaultRepoUnits(defaultUnits, settingDefaultUnits []Type) []Type {
-	units := defaultUnits
+	units := slices.Clone(defaultUnits)
 
 	// Use setting if not empty
 	if len(settingDefaultUnits) > 0 {

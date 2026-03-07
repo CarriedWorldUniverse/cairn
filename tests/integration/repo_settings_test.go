@@ -12,6 +12,7 @@ import (
 	git_model "forgejo.org/models/git"
 	repo_model "forgejo.org/models/repo"
 	unit_model "forgejo.org/models/unit"
+	unit_tests "forgejo.org/models/unit/tests"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/optional"
@@ -222,13 +223,12 @@ func TestRepoAddMoreUnits(t *testing.T) {
 
 	t.Run("no add more if unit is globally disabled", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
+		defer unit_tests.SaveUnits()()
 		defer func() {
 			repo_service.UpdateRepositoryUnits(db.DefaultContext, repo, []repo_model.RepoUnit{{
 				RepoID: repo.ID,
 				Type:   unit_model.TypePackages,
 			}}, nil)
-			setting.Repository.DisabledRepoUnits = []string{}
-			unit_model.LoadUnitConfig()
 		}()
 
 		// Disable the Packages unit globally
@@ -245,13 +245,12 @@ func TestRepoAddMoreUnits(t *testing.T) {
 
 	t.Run("issues & ext tracker globally disabled", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
+		defer unit_tests.SaveUnits()()
 		defer func() {
 			repo_service.UpdateRepositoryUnits(db.DefaultContext, repo, []repo_model.RepoUnit{{
 				RepoID: repo.ID,
 				Type:   unit_model.TypeIssues,
 			}}, nil)
-			setting.Repository.DisabledRepoUnits = []string{}
-			unit_model.LoadUnitConfig()
 		}()
 
 		// Disable both Issues and ExternalTracker units globally
