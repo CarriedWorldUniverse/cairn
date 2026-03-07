@@ -34,3 +34,35 @@ func GetRepositoriesAccessibleWithToken(ctx context.Context, accessTokenID int64
 	}
 	return resources, nil
 }
+
+func GetRepositoriesAccessibleWithTokens(ctx context.Context, accessTokens []*AccessToken) (map[int64][]*AccessTokenResourceRepo, error) {
+	accessTokenIDs := make([]int64, len(accessTokens))
+	for i, at := range accessTokens {
+		accessTokenIDs[i] = at.ID
+	}
+
+	var resources []*AccessTokenResourceRepo
+	err := db.GetEngine(ctx).
+		In("token_id", accessTokenIDs).
+		Find(&resources)
+	if err != nil {
+		return nil, err
+	}
+	retval := make(map[int64][]*AccessTokenResourceRepo)
+	for _, resource := range resources {
+		retval[resource.TokenID] = append(retval[resource.TokenID], resource)
+	}
+	return retval, nil
+}
+
+func InsertAccessTokenResourceRepos(ctx context.Context, accessTokenID int64, resources []*AccessTokenResourceRepo) error {
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		for _, resourceRepo := range resources {
+			resourceRepo.TokenID = accessTokenID
+			if err := db.Insert(ctx, resourceRepo); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}

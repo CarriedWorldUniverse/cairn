@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
@@ -38,17 +39,78 @@ func TestAPIGetTokens(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
 
-	// with basic auth...
-	req := NewRequest(t, "GET", "/api/v1/users/user2/tokens").
-		AddBasicAuth(user.Name)
-	MakeRequest(t, req, http.StatusOK)
+	t.Run("GET w/ basic auth", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
 
-	// ... or with a token.
-	newAccessToken := createAPIAccessTokenWithoutCleanUp(t, "test-key-1", user, []auth_model.AccessTokenScope{auth_model.AccessTokenScopeAll})
-	req = NewRequest(t, "GET", "/api/v1/users/user2/tokens").
-		AddTokenAuth(newAccessToken.Token)
-	MakeRequest(t, req, http.StatusOK)
-	deleteAPIAccessToken(t, newAccessToken, user)
+		// with basic auth...
+		req := NewRequest(t, "GET", "/api/v1/users/user2/tokens").
+			AddBasicAuth(user.Name)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var accessTokens api.AccessTokenList
+		DecodeJSON(t, resp, &accessTokens)
+
+		require.Len(t, accessTokens, 1)
+		at := accessTokens[0]
+		assert.EqualValues(t, 3, at.ID)
+		assert.Equal(t, "Token A", at.Name)
+		assert.Equal(t, []string{""}, at.Scopes)
+		assert.Empty(t, at.Token)
+		assert.Equal(t, "69d28c91", at.TokenLastEight)
+		assert.Nil(t, at.Repositories)
+	})
+
+	t.Run("GET w/ token auth", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		// ... or with a token.
+		newAccessToken := createAPIAccessTokenWithoutCleanUp(t, "test-key-1", user, []auth_model.AccessTokenScope{auth_model.AccessTokenScopeAll})
+		req := NewRequest(t, "GET", "/api/v1/users/user2/tokens").
+			AddTokenAuth(newAccessToken.Token)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var accessTokens api.AccessTokenList
+		DecodeJSON(t, resp, &accessTokens)
+		deleteAPIAccessToken(t, newAccessToken, user)
+	})
+
+	t.Run("GET fine-grained token", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+			[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadUser},
+			[]int64{2, 3},
+		)
+
+		req := NewRequest(t, "GET", "/api/v1/users/user2/tokens").
+			AddBasicAuth(user.Name)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var accessTokens api.AccessTokenList
+		DecodeJSON(t, resp, &accessTokens)
+
+		found := false
+		for _, token := range accessTokens {
+			if strings.HasSuffix(repo2OnlyToken, token.TokenLastEight) {
+				found = true
+				assert.Len(t, token.Repositories, 2)
+
+				repo2 := token.Repositories[0]
+				assert.Equal(t, &api.RepositoryMeta{
+					ID:       2,
+					Name:     "repo2",
+					Owner:    "user2",
+					FullName: "user2/repo2",
+				}, repo2)
+
+				repo3 := token.Repositories[1]
+				assert.Equal(t, &api.RepositoryMeta{
+					ID:       3,
+					Name:     "repo3",
+					Owner:    "org3",
+					FullName: "org3/repo3",
+				}, repo3)
+			}
+		}
+		assert.True(t, found)
+	})
 }
 
 // TestAPIDeleteMissingToken ensures that error is thrown when token not found
@@ -658,8 +720,111 @@ func TestAPITokenCreation(t *testing.T) {
 			"name":   "new-new-token",
 			"scopes": []auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteUser},
 		})
-		req.Request.Header.Set("Authorization", "basic "+base64.StdEncoding.EncodeToString([]byte("user4:"+userPassword)))
+		req.AddBasicAuth("user4")
 
-		MakeRequest(t, req, http.StatusCreated)
+		resp := MakeRequest(t, req, http.StatusCreated)
+		var token api.AccessToken
+		DecodeJSON(t, resp, &token)
 	})
+
+	t.Run("repo-specific", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		t.Run("valid", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+				Name:   "even-newer-token",
+				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
+				Repositories: []*api.RepoTargetOption{
+					{
+						Owner: "user2",
+						Name:  "repo2",
+					},
+				},
+			})
+			req.AddBasicAuth("user2")
+
+			resp := MakeRequest(t, req, http.StatusCreated)
+			var token api.AccessToken
+			DecodeJSON(t, resp, &token)
+			assert.NotEmpty(t, token.Repositories)
+		})
+
+		t.Run("target other user's private repo", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+				Name:   "not-a-valid-token",
+				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
+				Repositories: []*api.RepoTargetOption{
+					{
+						Owner: "user10",
+						Name:  "repo7", // private repo owned by another user
+					},
+				},
+			})
+			req.AddBasicAuth("user2")
+			MakeRequest(t, req, http.StatusBadRequest)
+		})
+
+		t.Run("target invalid repo", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+				Name:   "not-a-valid-token",
+				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
+				Repositories: []*api.RepoTargetOption{
+					{
+						// doesn't exist:
+						Owner: "user10000",
+						Name:  "repo70000",
+					},
+				},
+			})
+			req.AddBasicAuth("user2")
+			MakeRequest(t, req, http.StatusBadRequest)
+		})
+
+		t.Run("invalid scopes", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+				Name:   "not-a-valid-token",
+				Scopes: []string{string(auth_model.AccessTokenScopeReadAdmin)},
+				Repositories: []*api.RepoTargetOption{
+					{
+						Owner: "user2",
+						Name:  "repo2",
+					},
+				},
+			})
+			req.AddBasicAuth("user2")
+			MakeRequest(t, req, http.StatusBadRequest)
+		})
+	})
+}
+
+func TestAPITokenDelete(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+		Name:   "delete-this-token",
+		Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
+		Repositories: []*api.RepoTargetOption{
+			{
+				Owner: "user2",
+				Name:  "repo2",
+			},
+		},
+	})
+	req.AddBasicAuth("user2")
+
+	resp := MakeRequest(t, req, http.StatusCreated)
+	var token api.AccessToken
+	DecodeJSON(t, resp, &token)
+
+	unittest.AssertExistsAndLoadBean(t, &auth_model.AccessToken{ID: token.ID})
+
+	req = NewRequestf(t, "DELETE", "/api/v1/users/user2/tokens/%d", token.ID)
+	req.AddBasicAuth("user2")
+	MakeRequest(t, req, http.StatusNoContent)
+
+	unittest.AssertNotExistsBean(t, &auth_model.AccessToken{ID: token.ID})
 }

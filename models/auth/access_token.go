@@ -224,15 +224,23 @@ func (opts ListAccessTokensOptions) ToOrders() string {
 
 // DeleteAccessTokenByID deletes access token by given ID.
 func DeleteAccessTokenByID(ctx context.Context, id, userID int64) error {
-	cnt, err := db.GetEngine(ctx).ID(id).Delete(&AccessToken{
-		UID: userID,
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		if err := db.DeleteBeans(ctx,
+			&AccessTokenResourceRepo{TokenID: id},
+		); err != nil {
+			return fmt.Errorf("DeleteBeans: %w", err)
+		}
+
+		cnt, err := db.GetEngine(ctx).ID(id).Delete(&AccessToken{
+			UID: userID,
+		})
+		if err != nil {
+			return err
+		} else if cnt != 1 {
+			return ErrAccessTokenNotExist{}
+		}
+		return nil
 	})
-	if err != nil {
-		return err
-	} else if cnt != 1 {
-		return ErrAccessTokenNotExist{}
-	}
-	return nil
 }
 
 // RegenerateAccessTokenByID regenerates access token by given ID.
