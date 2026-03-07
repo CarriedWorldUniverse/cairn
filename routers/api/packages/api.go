@@ -354,11 +354,16 @@ func CommonRoutes() *web.Route {
 			})
 		}, reqPackageAccess(perm.AccessModeRead))
 		r.Group("/debian", func() {
-			r.Get("/repository.key", debian.GetRepositoryKey)
+			r.Group("/repository.key", func() {
+				r.Head("", debian.GetRepositoryKey)
+				r.Get("", debian.GetRepositoryKey)
+			})
 			r.Group("/dists/{distribution}", func() {
 				r.Get("/{filename}", debian.GetRepositoryFile)
+				r.Head("/{filename}", debian.CheckRepositoryFileExistence)
 				r.Get("/by-hash/{algorithm}/{hash}", debian.GetRepositoryFileByHash)
 				r.Group("/{component}/{architecture}", func() {
+					r.Head("/{filename}", debian.CheckRepositoryFileExistence)
 					r.Get("/{filename}", debian.GetRepositoryFile)
 					r.Get("/by-hash/{algorithm}/{hash}", debian.GetRepositoryFileByHash)
 				})

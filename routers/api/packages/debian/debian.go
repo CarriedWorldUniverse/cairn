@@ -29,6 +29,38 @@ func apiError(ctx *context.Context, status int, obj any) {
 	})
 }
 
+func CheckRepositoryFileExistence(ctx *context.Context) {
+	pv, err := debian_service.GetOrCreateRepositoryVersion(ctx, ctx.Package.Owner.ID)
+	if err != nil {
+		apiError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	key := ctx.Params("distribution")
+
+	component := ctx.Params("component")
+	architecture := strings.TrimPrefix(ctx.Params("architecture"), "binary-")
+	if component != "" && architecture != "" {
+		key += "|" + component + "|" + architecture
+	}
+
+	pf, err := packages_model.GetFileForVersionByName(ctx, pv.ID, ctx.Params("filename"), key)
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Status(http.StatusNotFound)
+		} else {
+			apiError(ctx, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	ctx.SetServeHeaders(&context.ServeHeaderOptions{
+		Filename:     pf.Name,
+		LastModified: pf.CreatedUnix.AsLocalTime(),
+	})
+	ctx.Status(http.StatusOK)
+}
+
 func GetRepositoryKey(ctx *context.Context) {
 	_, pub, err := debian_service.GetOrCreateKeyPair(ctx, ctx.Package.Owner.ID)
 	if err != nil {
