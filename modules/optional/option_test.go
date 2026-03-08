@@ -9,6 +9,7 @@ import (
 	"forgejo.org/modules/optional"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOption(t *testing.T) {
@@ -72,4 +73,53 @@ func Test_ParseBool(t *testing.T) {
 	assert.Equal(t, optional.Some(true), optional.ParseBool("1"))
 	assert.Equal(t, optional.Some(true), optional.ParseBool("t"))
 	assert.Equal(t, optional.Some(true), optional.ParseBool("True"))
+}
+
+func roundtrip[T any](t *testing.T, orig optional.Option[T]) {
+	// invoke (driver.Valuer).Value to get a DB value
+	dbValue, err := orig.Value()
+	require.NoError(t, err)
+
+	// invoke (sql.Scanner).Scan to read the DB value
+	var scanned optional.Option[T]
+	err = scanned.Scan(dbValue)
+	require.NoError(t, err)
+
+	hasOrig, origValue := orig.Get()
+	hasScanned, scannedValue := scanned.Get()
+
+	if hasOrig {
+		require.True(t, hasScanned, "must hasScanned")
+		assert.Equal(t, origValue, scannedValue)
+	} else {
+		assert.False(t, hasScanned, "must not hasScanned")
+	}
+}
+
+func TestOptionValueScan(t *testing.T) {
+	t.Run("string roundtrip", func(t *testing.T) {
+		roundtrip(t, optional.Some("hello world"))
+	})
+	t.Run("string null", func(t *testing.T) {
+		roundtrip(t, optional.None[string]())
+	})
+	t.Run("int64 roundtrip", func(t *testing.T) {
+		roundtrip(t, optional.Some(int64(1234)))
+	})
+	t.Run("int64 null", func(t *testing.T) {
+		roundtrip(t, optional.None[int64]())
+	})
+	t.Run("bool roundtrip", func(t *testing.T) {
+		roundtrip(t, optional.Some(false))
+	})
+	t.Run("bool null", func(t *testing.T) {
+		roundtrip(t, optional.None[bool]())
+	})
+}
+
+func TestDelegateSQLType(t *testing.T) {
+	assert.Equal(t, "string", optional.Some("hello world").DelegateSQLType().Name())
+	assert.Equal(t, "string", optional.None[string]().DelegateSQLType().Name())
+	assert.Equal(t, "int64", optional.Some(int64(123)).DelegateSQLType().Name())
+	assert.Equal(t, "int64", optional.None[int64]().DelegateSQLType().Name())
 }

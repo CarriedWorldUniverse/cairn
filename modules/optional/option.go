@@ -3,7 +3,14 @@
 
 package optional
 
-import "strconv"
+import (
+	"database/sql"
+	"database/sql/driver"
+	"reflect"
+	"strconv"
+
+	"xorm.io/xorm/schemas"
+)
 
 type Option[T any] []T
 
@@ -61,4 +68,46 @@ func ParseBool(s string) Option[bool] {
 		return None[bool]()
 	}
 	return Some(v)
+}
+
+// Option[T] can be used in an xorm bean as a field type for a nullable column. Multiple interfaces must be implemented
+// for this to work correctly and won't be checked at compile-time of the bean struct, so they're asserted here in case
+// the interface definitions change:
+var (
+	_ sql.Scanner              = (*Option[bool])(nil) // read data from DB
+	_ driver.Valuer            = None[bool]()         // write data to DB
+	_ schemas.SQLTypeDelegator = None[bool]()         // represent column field type correctly
+)
+
+// Convert database data into an Option[T]. sql.Null[T] has all the necessary logic to perform Value(), so it is used as
+// an implementation.
+func (o *Option[T]) Scan(value any) error {
+	var n sql.Null[T]
+	if err := n.Scan(value); err != nil {
+		return err
+	}
+	if n.Valid {
+		*o = Some(n.V)
+	} else {
+		*o = None[T]()
+	}
+	return nil
+}
+
+// Convert Option[T] into the necessary database data to represent it. sql.Null[T] has all the necessary logic to
+// perform Value(), so it is used as an implementation.
+func (o Option[T]) Value() (driver.Value, error) {
+	var n sql.Null[T]
+	if o.Has() {
+		n.V = o[0]
+		n.Valid = true
+	} else {
+		n.Valid = false
+	}
+	return n.Value()
+}
+
+// Make xorm use whatever SQLType is appropriate for T to represent Option[T] in the database table
+func (o Option[T]) DelegateSQLType() reflect.Type {
+	return reflect.TypeFor[T]()
 }
