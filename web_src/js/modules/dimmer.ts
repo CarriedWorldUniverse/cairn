@@ -38,6 +38,7 @@ class Dimmer {
   }
   removeClass() {}
   hasClass() {}
+  addClass() {}
 }
 
 export function initDimmer() {
