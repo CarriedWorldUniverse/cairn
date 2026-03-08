@@ -5,7 +5,7 @@
 			<div class="switch">
 				<a class="{{if eq .Status 1}}active {{end}}item" href="{{AppSubUrl}}/notifications?q=unread">
 					{{ctx.Locale.Tr "notification.unread"}}
-					<div class="notifications-unread-count ui label {{if not $notificationUnreadCount}}tw-hidden{{end}}">{{$notificationUnreadCount}}</div>
+					<div class="notifications-unread-count ui label{{if not $notificationUnreadCount}} tw-hidden{{end}}">{{$notificationUnreadCount}}</div>
 				</a>
 				<a class="{{if eq .Status 2}}active {{end}}item" href="{{AppSubUrl}}/notifications?q=read">
 					{{ctx.Locale.Tr "notification.read"}}
