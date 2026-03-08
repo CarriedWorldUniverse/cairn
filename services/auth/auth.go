@@ -33,7 +33,9 @@ func isAttachmentDownload(req *http.Request) bool {
 
 // isContainerPath checks if the request targets the container endpoint
 func isContainerPath(req *http.Request) bool {
-	return strings.HasPrefix(req.URL.Path, "/v2/")
+	// Go's URL omits trailing slashes from `Path`. That means that `/v2/`, the top-level endpoint, appears as `/v2`.
+	// strings.HasPrefix(req.URL.Path, "/v2") would be inappropriate because it would match paths like `/v2-abcd`, too.
+	return req.URL.Path == "/v2" || strings.HasPrefix(req.URL.Path, "/v2/")
 }
 
 var (

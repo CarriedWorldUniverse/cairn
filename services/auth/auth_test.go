@@ -6,9 +6,13 @@ package auth
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 
 	"forgejo.org/modules/setting"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_isGitRawOrLFSPath(t *testing.T) {
@@ -131,4 +135,64 @@ func Test_isGitRawOrLFSPath(t *testing.T) {
 		})
 	}
 	setting.LFS.StartServer = origLFSStartServer
+}
+
+func TestAuth_isContainerPath(t *testing.T) {
+	testCases := []struct {
+		name            string
+		input           string
+		isContainerPath bool
+	}{
+		{
+			name:            "without trailing slash",
+			input:           "https://example.com/v2",
+			isContainerPath: true,
+		},
+		{
+			name:            "with trailing slash",
+			input:           "https://example.com/v2/",
+			isContainerPath: true,
+		},
+		{
+			name:            "with additional path components",
+			input:           "https://example.com/v2/example/blobs/uploads/",
+			isContainerPath: true,
+		},
+		{
+			name:            "without v2",
+			input:           "https://example.com/",
+			isContainerPath: false,
+		},
+		{
+			name:            "v2 not at the beginning",
+			input:           "https://example.com/something/v2/",
+			isContainerPath: false,
+		},
+		{
+			name:            "v2 with prefix",
+			input:           "https://example.com/abcd-v2/",
+			isContainerPath: false,
+		},
+		{
+			name:            "v2 with suffix",
+			input:           "https://example.com/v2-abcd/",
+			isContainerPath: false,
+		},
+		{
+			name:            "v1",
+			input:           "https://example.com/v1/",
+			isContainerPath: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			inputURL, err := url.Parse(testCase.input)
+			require.NoError(t, err)
+
+			request := http.Request{URL: inputURL}
+
+			assert.Equal(t, testCase.isContainerPath, isContainerPath(&request))
+		})
+	}
 }
