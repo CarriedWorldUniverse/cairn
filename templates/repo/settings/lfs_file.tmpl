@@ -15,9 +15,9 @@
 				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .EscapeStatus "root" $}}
 				<div class="file-view{{if .IsMarkup}} markup {{.MarkupType}}{{else if .IsPlainText}} plain-text{{else if .IsTextFile}} code-view{{end}}">
 					{{if .IsMarkup}}
-						{{if .FileContent}}{{.FileContent | SafeHTML}}{{end}}
+						{{if .FileContent}}{{.FileContent | TrustHTML}}{{end}}
 					{{else if .IsPlainText}}
-						<pre>{{if .FileContent}}{{.FileContent | SafeHTML}}{{end}}</pre>
+						<pre>{{if .FileContent}}{{.FileContent | TrustHTML}}{{end}}</pre>
 					{{else if not .IsTextFile}}
 						<div class="view-raw">
 							{{if .IsImageFile}}

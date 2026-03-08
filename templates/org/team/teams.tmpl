@@ -48,7 +48,7 @@
 		{{ctx.Locale.Tr "org.teams.leave"}}
 	</div>
 	<div class="content">
-		<p>{{ctx.Locale.Tr "org.teams.leave.detail" (`<span class="name"></span>`|SafeHTML)}}</p>
+		<p>{{ctx.Locale.Tr "org.teams.leave.detail" (`<span class="name"></span>`|TrustHTML)}}</p>
 	</div>
 	{{template "base/modal_actions_confirm" .}}
 </div>
