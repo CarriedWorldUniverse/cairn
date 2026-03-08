@@ -110,5 +110,6 @@
     "repo.issues.filter_modified.hint": "按最後修改時間過濾",
     "issues.updated": "更新與 %s",
     "repo.pulls.poster_manage_approval": "管理批准",
-    "repo.pulls.poster_requires_approval.tooltip": "此合併請求的提交者,不信任執行由衍生儲存庫或 AGit 所建立的 PR 所觸發的工作流程。由 `pull_request` 事件觸發的工作流程,將不會持續執行,直到核准為止。"
+    "repo.pulls.poster_requires_approval.tooltip": "此合併請求的提交者,不信任執行由衍生儲存庫或 AGit 所建立的 PR 所觸發的工作流程。由 `pull_request` 事件觸發的工作流程,將不會持續執行,直到核准為止。",
+    "repo.issues.filter_sort.hint_with_placeholder": "排序依據：%s"
 }

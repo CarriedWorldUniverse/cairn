@@ -250,5 +250,6 @@
     "editor.replace_all": "அனைத்தையும் மாற்றவும்",
     "editor.toggle_case": "கேச் உணர்திறனை நிலைமாற்று",
     "editor.toggle_regex": "வழக்கமான வெளிப்பாடுகளைப் பயன்படுத்தி மாறவும்",
-    "editor.toggle_whole_word": "முழு வார்த்தைகளையும் பொருத்த நிலைமாற்று"
+    "editor.toggle_whole_word": "முழு வார்த்தைகளையும் பொருத்த நிலைமாற்று",
+    "repo.issues.filter_sort.hint_with_placeholder": "இதன்படி வரிசைப்படுத்து: %s"
 }

@@ -265,5 +265,6 @@
     "editor.toggle_regex": "Изменить использование рег. выражений",
     "editor.toggle_whole_word": "Изменить поиск целых слов",
     "install.ssh_authorized_keys_inspection_error": "Не удалось проверить файл authorized_keys: %v",
-    "install.ssh_authorized_keys_unexpected_key": "Использование SSH конфликтует с файлом %s, уже содержащим ключи SSH. Возможные действия: добавьте в системе отдельного пользователя для Forgejo или выключите SSH в Forgejo."
+    "install.ssh_authorized_keys_unexpected_key": "Использование SSH конфликтует с файлом %s, уже содержащим ключи SSH. Возможные действия: добавьте в системе отдельного пользователя для Forgejo или выключите SSH в Forgejo.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Сортировать по: %s"
 }

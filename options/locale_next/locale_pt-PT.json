@@ -265,5 +265,6 @@
     "editor.toggle_regex": "Ativar/desativar o uso de expressões regulares",
     "editor.toggle_whole_word": "Ativar/desativar correspondência de palavras inteiras",
     "install.ssh_authorized_keys_inspection_error": "Falha ao inspecionar o ficheiro authorized_keys existente: %v",
-    "install.ssh_authorized_keys_unexpected_key": "A ativação do SSH para o Forgejo entra em conflito com o ficheiro localizado em %s que contém chaves SSH existentes. Sugestões: use um utilizador de sistema dedicado para o Forgejo ou desative o SSH."
+    "install.ssh_authorized_keys_unexpected_key": "A ativação do SSH para o Forgejo entra em conflito com o ficheiro localizado em %s que contém chaves SSH existentes. Sugestões: use um utilizador de sistema dedicado para o Forgejo ou desative o SSH.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s"
 }

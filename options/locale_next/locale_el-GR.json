@@ -212,5 +212,6 @@
     "editor.find_next": "Επόμενη εύρεση",
     "editor.replace": "Αντικατάσταση",
     "editor.replace_all": "Αντικατάσταση όλων",
-    "migrate.pagure.token.placeholder": "Μόνο για δημιουργία ιδιωτικού αρχείου ζητημάτων"
+    "migrate.pagure.token.placeholder": "Μόνο για δημιουργία ιδιωτικού αρχείου ζητημάτων",
+    "repo.issues.filter_sort.hint_with_placeholder": "Ταξινόμηση κατά: %s"
 }

@@ -250,5 +250,6 @@
     "editor.toggle_regex": "Regel-Utdrücken bruken an- of utknipsen",
     "editor.toggle_whole_word": "Hele Woorden söken an- of utknipsen",
     "install.ssh_authorized_keys_inspection_error": "Kunn bestahn authorized_keys-Datei nich nakieken: %v",
-    "install.ssh_authorized_keys_unexpected_key": "SSH för Forgejo antoknipsen is nich verdragelk mit de Datei unner %s, waar bestahn SSH-Slötels drinstahn. Vörslaag: Bruuk eenen Systeem-Bruker blots för Forgejo, of knips SSH ut."
+    "install.ssh_authorized_keys_unexpected_key": "SSH för Forgejo antoknipsen is nich verdragelk mit de Datei unner %s, waar bestahn SSH-Slötels drinstahn. Vörslaag: Bruuk eenen Systeem-Bruker blots för Forgejo, of knips SSH ut.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sorteren na: %s"
 }

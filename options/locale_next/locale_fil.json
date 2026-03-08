@@ -250,5 +250,6 @@
     "editor.replace_all": "Palitan lahat",
     "editor.toggle_case": "I-toggle ang case sensitivity",
     "editor.toggle_regex": "I-toggle ang paggamit ng mga regular na ekspresyon",
-    "editor.toggle_whole_word": "I-toggle ang pagtugma ng mga buong salita"
+    "editor.toggle_whole_word": "I-toggle ang pagtugma ng mga buong salita",
+    "repo.issues.filter_sort.hint_with_placeholder": "Isaayos ayon sa: %s"
 }

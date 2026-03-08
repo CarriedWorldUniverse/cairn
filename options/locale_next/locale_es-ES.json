@@ -172,5 +172,6 @@
     "mail.actions.run_info_sha": "Confirmación: %[1]s",
     "mail.actions.run_info_trigger": "Desencadenado por: %[1]s by: %[2]s",
     "mail.issue.action.close_by_commit": "%[1]s cerró %[2]s en la confirmación %[3]s.",
-    "repo.diff.commit.next-short": "Siguiente"
+    "repo.diff.commit.next-short": "Siguiente",
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s"
 }

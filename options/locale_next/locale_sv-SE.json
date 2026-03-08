@@ -236,5 +236,6 @@
     "editor.replace_all": "Ersätta alla",
     "editor.toggle_case": "Växla skiftlägeskänslighet",
     "editor.toggle_regex": "Använd reguljära uttryck",
-    "editor.toggle_whole_word": "Matcha hela ord"
+    "editor.toggle_whole_word": "Matcha hela ord",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sortera efter: %s"
 }
