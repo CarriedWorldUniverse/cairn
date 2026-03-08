@@ -13,7 +13,7 @@
 	<div class="required field {{if .Err_Room}}error{{end}}">
 		<label for="room_id">{{ctx.Locale.Tr "repo.settings.matrix.room_id"}}</label>
 		<input id="room_id" name="room_id" type="text" value="{{.HookMetadata.Room}}" placeholder="!opaque_id" pattern="!.+" maxlength="255" required>
-		<span class="help">{{ctx.Locale.Tr "repo.settings.matrix.room_id_helper" ("<code>!opaque_id:example.org</code>"|SafeHTML)}}</span>
+		<span class="help">{{ctx.Locale.Tr "repo.settings.matrix.room_id_helper" ("<code>!opaque_id:example.org</code>"|TrustHTML)}}</span>
 	</div>
 	<div class="field">
 		<label>{{ctx.Locale.Tr "repo.settings.matrix.message_type"}}</label>

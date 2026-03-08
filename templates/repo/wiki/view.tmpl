@@ -76,13 +76,13 @@
 		<div class="wiki-content-parts">
 			{{if .sidebarTocContent}}
 			<div class="markup wiki-content-sidebar wiki-content-toc">
-				{{.sidebarTocContent | SafeHTML}}
+				{{.sidebarTocContent | TrustHTML}}
 			</div>
 			{{end}}
 
 			<div class="file-view markup wiki-content-main {{if or .sidebarTocContent .sidebarPresent}}with-sidebar{{end}}">
 				{{template "repo/unicode_escape_prompt" dict "EscapeStatus" .EscapeStatus "root" $}}
-				{{.content | SafeHTML}}
+				{{.content | TrustHTML}}
 			</div>
 
 			{{if .sidebarPresent}}
@@ -91,7 +91,7 @@
 				{{if and .CanWriteWiki (not .Repository.IsMirror)}}
 					<a class="tw-float-right muted" href="{{.RepoLink}}/wiki/_Sidebar?action=_edit" aria-label="{{ctx.Locale.Tr "repo.wiki.edit_page_button"}}">{{svg "octicon-pencil"}}</a>
 				{{end}}
-				{{.sidebarContent | SafeHTML}}
+				{{.sidebarContent | TrustHTML}}
 			</div>
 			{{end}}
 
@@ -103,7 +103,7 @@
 				{{if and .CanWriteWiki (not .Repository.IsMirror)}}
 					<a class="tw-float-right muted" href="{{.RepoLink}}/wiki/_Footer?action=_edit" aria-label="{{ctx.Locale.Tr "repo.wiki.edit_page_button"}}">{{svg "octicon-pencil"}}</a>
 				{{end}}
-				{{.footerContent | SafeHTML}}
+				{{.footerContent | TrustHTML}}
 			</div>
 			{{end}}
 		</div>
