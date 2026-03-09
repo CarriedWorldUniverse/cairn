@@ -963,10 +963,6 @@ node_modules: package-lock.json
 	npm install --no-save
 	@touch node_modules
 
-.venv: poetry.lock
-	poetry install
-	@touch .venv
-
 .PHONY: fomantic
 fomantic:
 	rm -rf $(FOMANTIC_WORK_DIR)/build
