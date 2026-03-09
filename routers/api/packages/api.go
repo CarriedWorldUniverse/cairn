@@ -94,7 +94,14 @@ func reqPackageAccess(accessMode perm.AccessMode) func(ctx *context.Context) {
 
 func enforcePackagesQuota() func(ctx *context.Context) {
 	return func(ctx *context.Context) {
-		ok, err := quota_model.EvaluateForUser(ctx, ctx.Doer.ID, quota_model.LimitSubjectSizeAssetsPackagesAll)
+		// Evaluate quota against the package owner (org or user the package is pushed to),
+		// not the uploader (ctx.Doer). This enables org-level quota: all members uploading
+		// to an org consume from the org's quota group, not their own personal quota.
+		ownerID := ctx.Doer.ID
+		if ctx.Package != nil {
+			ownerID = ctx.Package.Owner.ID
+		}
+		ok, err := quota_model.EvaluateForUser(ctx, ownerID, quota_model.LimitSubjectSizeAssetsPackagesAll)
 		if err != nil {
 			log.Error("quota_model.EvaluateForUser: %v", err)
 			ctx.Error(http.StatusInternalServerError, "Error checking quota")
@@ -793,11 +800,11 @@ func ContainerRoutes() *web.Route {
 	r.Group("/{username}", func() {
 		r.Group("/{image}", func() {
 			r.Group("/blobs/uploads", func() {
-				r.Post("", container.InitiateUploadBlob)
+				r.Post("", enforcePackagesQuota(), container.InitiateUploadBlob)
 				r.Group("/{uuid}", func() {
 					r.Get("", container.GetUploadBlob)
-					r.Patch("", container.UploadBlob)
-					r.Put("", container.EndUploadBlob)
+					r.Patch("", enforcePackagesQuota(), container.UploadBlob)
+					r.Put("", enforcePackagesQuota(), container.EndUploadBlob)
 					r.Delete("", container.CancelUploadBlob)
 				})
 			}, reqPackageAccess(perm.AccessModeWrite))
@@ -807,7 +814,7 @@ func ContainerRoutes() *web.Route {
 				r.Delete("", reqPackageAccess(perm.AccessModeWrite), container.DeleteBlob)
 			})
 			r.Group("/manifests/{reference}", func() {
-				r.Put("", reqPackageAccess(perm.AccessModeWrite), container.UploadManifest)
+				r.Put("", reqPackageAccess(perm.AccessModeWrite), enforcePackagesQuota(), container.UploadManifest)
 				r.Head("", container.HeadManifest)
 				r.Get("", container.GetManifest)
 				r.Delete("", reqPackageAccess(perm.AccessModeWrite), container.DeleteManifest)
@@ -843,6 +850,10 @@ func ContainerRoutes() *web.Route {
 					return
 				}
 
+				enforcePackagesQuota()(ctx)
+				if ctx.Written() {
+					return
+				}
 				container.InitiateUploadBlob(ctx)
 				return
 			}
@@ -875,8 +886,16 @@ func ContainerRoutes() *web.Route {
 				if isGet {
 					container.GetUploadBlob(ctx)
 				} else if isPatch {
+					enforcePackagesQuota()(ctx)
+					if ctx.Written() {
+						return
+					}
 					container.UploadBlob(ctx)
 				} else if isPut {
+					enforcePackagesQuota()(ctx)
+					if ctx.Written() {
+						return
+					}
 					container.EndUploadBlob(ctx)
 				} else {
 					container.CancelUploadBlob(ctx)
@@ -926,6 +945,10 @@ func ContainerRoutes() *web.Route {
 						return
 					}
 					if isPut {
+						enforcePackagesQuota()(ctx)
+						if ctx.Written() {
+							return
+						}
 						container.UploadManifest(ctx)
 					} else {
 						container.DeleteManifest(ctx)
