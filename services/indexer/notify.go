@@ -74,6 +74,10 @@ func (r *indexerNotifier) DeleteRepository(ctx context.Context, doer *user_model
 	}
 }
 
+func (r indexerNotifier) DeleteIssue(ctx context.Context, doer *user_model.User, issue *issues_model.Issue) {
+	issue_indexer.DeleteIssueIndexer(ctx, issue.ID)
+}
+
 func (r *indexerNotifier) MigrateRepository(ctx context.Context, doer, u *user_model.User, repo *repo_model.Repository) {
 	issue_indexer.UpdateRepoIndexer(ctx, repo.ID)
 	if setting.Indexer.RepoIndexerEnabled && !repo.IsEmpty {
