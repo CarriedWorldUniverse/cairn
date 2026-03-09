@@ -4,7 +4,11 @@
 package issues
 
 import (
+	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/issues"
@@ -12,6 +16,7 @@ import (
 	"forgejo.org/modules/indexer/issues/internal"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +29,7 @@ func TestMain(m *testing.M) {
 func TestDBSearchIssues(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
-	setting.Indexer.IssueType = "db"
+	defer test.MockVariableValue(&setting.Indexer.IssueType, "db")()
 	InitIssueIndexer(true)
 
 	t.Run("search issues with keyword", searchIssueWithKeyword)
@@ -413,4 +418,40 @@ func searchIssueWithPaginator(t *testing.T) {
 		assert.Equal(t, test.expectedIDs, issueIDs)
 		assert.Equal(t, test.expectedTotal, total)
 	}
+}
+
+func TestBleveDeleteIssue(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	tmp := t.TempDir()
+	defer test.MockVariableValue(&setting.Indexer.IssuePath, filepath.Join(tmp, "indexers/issues.bleve"))()
+	defer test.MockVariableValue(&setting.Indexer.IssueType, "bleve")()
+	InitIssueIndexer(false)
+
+	ctx := t.Context()
+	issue := unittest.AssertExistsAndLoadBean(t, &issues.Issue{ID: 1})
+	UpdateIssueIndexer(ctx, issue.ID)
+
+	opts := &internal.SearchOptions{
+		RepoIDs: []int64{issue.RepoID},
+	}
+	opts.WithKeyword(ctx, "first")
+
+	assert.Eventually(t, func() bool {
+		ids, _, err := SearchIssues(ctx, opts)
+		if err != nil && strings.Contains(err.Error(), "not ready") {
+			return false
+		}
+		assert.NoError(t, err)
+
+		assert.NoError(t, err)
+		return slices.Contains(ids, issue.ID)
+	}, time.Second*5, time.Millisecond*100, "failed to update issue")
+
+	DeleteIssueIndexer(ctx, issue.ID)
+	assert.Eventually(t, func() bool {
+		ids, _, err := SearchIssues(ctx, opts)
+		assert.NoError(t, err)
+		return !slices.Contains(ids, issue.ID)
+	}, time.Second*5, time.Millisecond*100, "failed to delete issue")
 }
