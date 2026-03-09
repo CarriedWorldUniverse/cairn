@@ -603,13 +603,29 @@ func runTestCase(t *testing.T, testCase *requiredScopeTestCase, user *user_model
 			unauthorizedScopes = append(unauthorizedScopes, categoryUnauthorizedScopes...)
 		}
 
-		accessToken := createAPIAccessTokenWithoutCleanUp(t, "test-token", user, unauthorizedScopes)
-		defer deleteAPIAccessToken(t, accessToken, user)
-
 		// Request the endpoint.  Verify that permission is denied.
-		req := NewRequest(t, testCase.method, testCase.url).
-			AddTokenAuth(accessToken.Token)
-		MakeRequest(t, req, http.StatusForbidden)
+
+		t.Run("Bearer", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			accessToken := createAPIAccessTokenWithoutCleanUp(t, "test-token", user, unauthorizedScopes)
+			defer deleteAPIAccessToken(t, accessToken, user)
+
+			req := NewRequest(t, testCase.method, testCase.url).
+				AddTokenAuth(accessToken.Token)
+			MakeRequest(t, req, http.StatusForbidden)
+		})
+
+		t.Run("Basic", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			oauth2Token := createOAuth2Token(t, loginUser(t, user.Name), unauthorizedScopes)
+			defer unittest.AssertSuccessfulDelete(t, &auth_model.OAuth2Grant{ApplicationID: 2, UserID: user.ID})
+
+			req := NewRequest(t, testCase.method, testCase.url)
+			req.SetBasicAuth("x-oauth-basic", oauth2Token)
+			MakeRequest(t, req, http.StatusForbidden)
+		})
 	})
 }
 
@@ -647,6 +663,51 @@ func deleteAPIAccessToken(t *testing.T, accessToken api.AccessToken, user *user_
 	unittest.AssertNotExistsBean(t, &auth_model.AccessToken{ID: accessToken.ID})
 }
 
+func createOAuth2Token(t *testing.T, session *TestSession, scopes []auth_model.AccessTokenScope) string {
+	// Make a call to `/login/oauth/authorize` to get some session data.
+	session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"), http.StatusOK)
+
+	var b strings.Builder
+	switch len(scopes) {
+	case 0:
+		break
+	case 1:
+		b.WriteString(string(scopes[0]))
+	default:
+		b.WriteString(string(scopes[0]))
+		for _, s := range scopes[1:] {
+			b.WriteString(" ")
+			b.WriteString(string(s))
+		}
+	}
+
+	req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
+		"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
+		"redirect_uri": "b",
+		"state":        "thestate",
+		"granted":      "true",
+		"scope":        b.String(),
+	})
+	resp := session.MakeRequest(t, req, http.StatusSeeOther)
+
+	u, err := url.Parse(test.RedirectURL(resp))
+	require.NoError(t, err)
+
+	req = NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+		"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
+		"code":          u.Query().Get("code"),
+		"code_verifier": "CODE",
+		"grant_type":    "authorization_code",
+		"redirect_uri":  "b",
+	})
+	resp = MakeRequest(t, req, http.StatusOK)
+
+	var respBody map[string]any
+	DecodeJSON(t, resp, &respBody)
+
+	return respBody["access_token"].(string)
+}
+
 func TestAPITokenCreation(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
@@ -673,39 +734,15 @@ func TestAPITokenCreation(t *testing.T) {
 	t.Run("Via OAuth2", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
-		// Make a call to `/login/oauth/authorize` to get some session data.
-		session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"), http.StatusOK)
+		accessToken := createOAuth2Token(t, session, nil)
 
-		req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
-			"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
-			"redirect_uri": "b",
-			"state":        "thestate",
-			"granted":      "true",
-		})
-		resp := session.MakeRequest(t, req, http.StatusSeeOther)
-
-		u, err := url.Parse(test.RedirectURL(resp))
-		require.NoError(t, err)
-
-		req = NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
-			"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
-			"code":          u.Query().Get("code"),
-			"code_verifier": "CODE",
-			"grant_type":    "authorization_code",
-			"redirect_uri":  "b",
-		})
-		resp = MakeRequest(t, req, http.StatusOK)
-
-		var respBody map[string]any
-		DecodeJSON(t, resp, &respBody)
-
-		req = NewRequestWithJSON(t, "POST", "/api/v1/users/user4/tokens", map[string]any{
+		req := NewRequestWithJSON(t, "POST", "/api/v1/users/user4/tokens", map[string]any{
 			"name":   "new-new-token",
 			"scopes": []auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteUser},
 		})
-		req.Request.Header.Set("Authorization", "basic "+base64.StdEncoding.EncodeToString([]byte("user4:"+respBody["access_token"].(string))))
+		req.SetBasicAuth("user4", accessToken)
 
-		resp = MakeRequest(t, req, http.StatusUnauthorized)
+		resp := MakeRequest(t, req, http.StatusUnauthorized)
 
 		respMsg := map[string]any{}
 		DecodeJSON(t, resp, &respMsg)

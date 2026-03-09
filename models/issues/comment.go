@@ -611,9 +611,13 @@ func (c *Comment) UpdateAttachments(ctx context.Context, uuids []string) error {
 	}
 	defer committer.Close()
 
-	attachments, err := repo_model.GetAttachmentsByUUIDs(ctx, uuids)
+	if err := c.LoadIssue(ctx); err != nil {
+		return fmt.Errorf("LoadIssue: %w", err)
+	}
+
+	attachments, err := repo_model.FindRepoAttachmentsByUUID(ctx, c.Issue.RepoID, uuids, repo_model.FindAttachmentOptions{})
 	if err != nil {
-		return fmt.Errorf("getAttachmentsByUUIDs [uuids: %v]: %w", uuids, err)
+		return fmt.Errorf("FindRepoAttachmentsByUUID[uuids=%q,repoID=%d]: %w", uuids, c.Issue.RepoID, err)
 	}
 	for i := 0; i < len(attachments); i++ {
 		attachments[i].IssueID = c.IssueID
@@ -889,7 +893,7 @@ func updateCommentInfos(ctx context.Context, opts *CreateCommentOptions, comment
 	// Check comment type.
 	switch opts.Type {
 	case CommentTypeCode:
-		if err = updateAttachments(ctx, opts, comment); err != nil {
+		if err := comment.UpdateAttachments(ctx, opts.Attachments); err != nil {
 			return err
 		}
 		if comment.ReviewID != 0 {
@@ -909,7 +913,7 @@ func updateCommentInfos(ctx context.Context, opts *CreateCommentOptions, comment
 		}
 		fallthrough
 	case CommentTypeReview:
-		if err = updateAttachments(ctx, opts, comment); err != nil {
+		if err := comment.UpdateAttachments(ctx, opts.Attachments); err != nil {
 			return err
 		}
 	case CommentTypeReopen, CommentTypeClose:
@@ -919,23 +923,6 @@ func updateCommentInfos(ctx context.Context, opts *CreateCommentOptions, comment
 	}
 	// update the issue's updated_unix column
 	return UpdateIssueCols(ctx, opts.Issue, "updated_unix")
-}
-
-func updateAttachments(ctx context.Context, opts *CreateCommentOptions, comment *Comment) error {
-	attachments, err := repo_model.GetAttachmentsByUUIDs(ctx, opts.Attachments)
-	if err != nil {
-		return fmt.Errorf("getAttachmentsByUUIDs [uuids: %v]: %w", opts.Attachments, err)
-	}
-	for i := range attachments {
-		attachments[i].IssueID = opts.Issue.ID
-		attachments[i].CommentID = comment.ID
-		// No assign value could be 0, so ignore AllCols().
-		if _, err = db.GetEngine(ctx).ID(attachments[i].ID).Update(attachments[i]); err != nil {
-			return fmt.Errorf("update attachment [%d]: %w", attachments[i].ID, err)
-		}
-	}
-	comment.Attachments = attachments
-	return nil
 }
 
 func createDeadlineComment(ctx context.Context, doer *user_model.User, issue *Issue, newDeadlineUnix timeutil.TimeStamp) (*Comment, error) {

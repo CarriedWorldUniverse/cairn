@@ -29,7 +29,6 @@ func TestIsRiskyRedirectURL(t *testing.T) {
 		{"/sub/foo", false},
 		{"http://localhost:3000/sub/foo", false},
 		{"http://localhost:3000/sub/test?param=false", false},
-		// FIXME: should probably be true (would requires resolving references using setting.appURL.ResolveReference(u))
 		{"/sub/../", false},
 		{"http://localhost:3000/sub/../", false},
 		{"/sUb/", false},
@@ -58,10 +57,12 @@ func TestIsRiskyRedirectURL(t *testing.T) {
 		{"://missing protocol scheme", true},
 		// FIXME: should probably be false
 		{"//localhost:3000/sub/test?param=false", true},
+		{"/a/../\\example.com", true},
+		{"/a/%2e%2e/\\example.com", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			assert.Equal(t, tt.want, IsRiskyRedirectURL(tt.input))
+			assert.Equal(t, tt.want, IsRiskyRedirectURL(tt.input), tt.input)
 		})
 	}
 }
@@ -114,6 +115,8 @@ func TestIsRiskyRedirectURLWithoutSubURL(t *testing.T) {
 		{"https://next.forgejo.org", true},
 		{"//next.forgejo.org/test?param=false", true},
 		{"//next.forgejo.org/sub/test?param=false", true},
+		{"/a/../\\example.com", true},
+		{"/a/%2e%2e/\\example.com", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
