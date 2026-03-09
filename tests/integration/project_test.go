@@ -1,4 +1,5 @@
 // Copyright 2023 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package integration
@@ -77,4 +78,85 @@ func TestMoveRepoProjectColumns(t *testing.T) {
 	assert.Equal(t, columns[0].ID, columnsAfter[2].ID)
 
 	require.NoError(t, project_model.DeleteProjectByID(db.DefaultContext, project1.ID))
+}
+
+func TestChangeStatusProject(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user5 := loginUser(t, "user5")
+	user2 := loginUser(t, "user2")
+
+	t.Run("User", func(t *testing.T) {
+		project4CloseURL := "/user2/-/projects/4/close"
+
+		t.Run("Doer is not context user", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequest(t, "POST", project4CloseURL), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = false")
+		})
+
+		t.Run("Wrong ID", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequest(t, "POST", "/user5/-/projects/4/close"), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = false")
+
+			user5.MakeRequest(t, NewRequest(t, "POST", "/user5/-/projects/1/close"), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+
+			user5.MakeRequest(t, NewRequest(t, "POST", "/user5/-/projects/7/close"), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = false")
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequest(t, "POST", project4CloseURL), http.StatusOK)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = true")
+		})
+	})
+
+	t.Run("Organization", func(t *testing.T) {
+		project7CloseURL := "/org3/-/projects/7/close"
+
+		t.Run("Doer does not have permission", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequest(t, "POST", project7CloseURL), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = false")
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequest(t, "POST", project7CloseURL), http.StatusOK)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = true")
+		})
+	})
+
+	t.Run("Repository", func(t *testing.T) {
+		project1CloseURL := "/user2/repo1/projects/1/close"
+
+		t.Run("Doer does not have permission", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequest(t, "POST", project1CloseURL), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+		})
+
+		t.Run("Wrong ID", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequest(t, "POST", "/user5/repo4/projects/1/close"), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequest(t, "POST", project1CloseURL), http.StatusOK)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = true")
+		})
+	})
 }

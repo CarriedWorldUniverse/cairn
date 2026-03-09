@@ -1538,17 +1538,22 @@ func CancelAutoMergePullRequest(ctx *context.Context) {
 		return
 	}
 
-	if err := automerge.RemoveScheduledAutoMerge(ctx, ctx.Doer, issue.PullRequest); err != nil {
-		if db.IsErrNotExist(err) {
+	if err := automerge.RemoveScheduledAutoMerge(ctx, ctx.Doer, issue.PullRequest, ctx.Repo.Permission); err != nil {
+		switch {
+		case errors.Is(err, util.ErrPermissionDenied):
+			ctx.Flash.Error(ctx.Tr("repo.pulls.auto_merge.no_permission"))
+			ctx.Redirect(issue.HTMLURL())
+		case db.IsErrNotExist(err):
 			ctx.Flash.Error(ctx.Tr("repo.pulls.auto_merge_not_scheduled"))
-			ctx.Redirect(fmt.Sprintf("%s/pulls/%d", ctx.Repo.RepoLink, issue.Index))
-			return
+			ctx.Redirect(issue.HTMLURL())
+		default:
+			ctx.ServerError("RemoveScheduledAutoMerge", err)
 		}
-		ctx.ServerError("RemoveScheduledAutoMerge", err)
 		return
 	}
+
 	ctx.Flash.Success(ctx.Tr("repo.pulls.auto_merge_canceled_schedule"))
-	ctx.Redirect(fmt.Sprintf("%s/pulls/%d", ctx.Repo.RepoLink, issue.Index))
+	ctx.Redirect(issue.HTMLURL())
 }
 
 func stopTimerIfAvailable(ctx *context.Context, user *user_model.User, issue *issues_model.Issue) error {
