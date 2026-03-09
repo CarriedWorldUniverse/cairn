@@ -1,6 +1,11 @@
 // Copyright 2025 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+// Due to a mistake during code review, this code was merged with the prefix 14a
+// but this code was merged for the v15 cycle, the correct prefix would be 15a.
+// As it would lead to breakage for instance who already ran with the old prefix
+// the incorrect prefix is kept.
+
 package forgejo_migrations
 
 import (
