@@ -3682,7 +3682,7 @@ func updateAttachments(ctx *context.Context, item any, files []string) error {
 	if len(files) > 0 {
 		switch content := item.(type) {
 		case *issues_model.Issue:
-			err = issues_model.UpdateIssueAttachments(ctx, content.ID, files)
+			err = issues_model.UpdateIssueAttachments(ctx, content, files)
 		case *issues_model.Comment:
 			err = content.UpdateAttachments(ctx, files)
 		default:

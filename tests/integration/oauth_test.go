@@ -1535,62 +1535,127 @@ func TestSignUpViaOAuth2FA(t *testing.T) {
 func TestAccessTokenWithPKCE(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
-	var u *url.URL
-	t.Run("Grant", func(t *testing.T) {
-		session := loginUser(t, "user4")
+	session := loginUser(t, "user4")
 
-		session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"), http.StatusOK)
-		req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
-			"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
-			"redirect_uri": "b",
-			"state":        "thestate",
-			"granted":      "true",
+	t.Run("Plain method", func(t *testing.T) {
+		defer unittest.AssertSuccessfulDelete(t, &auth_model.OAuth2Grant{UserID: 4, ApplicationID: 2})
+
+		var u *url.URL
+		t.Run("Grant", func(t *testing.T) {
+			session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=plain&code_challenge=CODE&state=thestate"), http.StatusOK)
+			req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
+				"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"redirect_uri": "b",
+				"state":        "thestate",
+				"granted":      "true",
+			})
+			resp := session.MakeRequest(t, req, http.StatusSeeOther)
+
+			var err error
+			u, err = url.Parse(test.RedirectURL(resp))
+			require.NoError(t, err)
 		})
-		resp := session.MakeRequest(t, req, http.StatusSeeOther)
 
-		var err error
-		u, err = url.Parse(test.RedirectURL(resp))
-		require.NoError(t, err)
+		t.Run("Incorrect code verifier", func(t *testing.T) {
+			req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+				"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"code":          u.Query().Get("code"),
+				"code_verifier": "just a guess",
+				"grant_type":    "authorization_code",
+				"redirect_uri":  "b",
+			})
+			resp := MakeRequest(t, req, http.StatusBadRequest)
+
+			var respBody map[string]any
+			DecodeJSON(t, resp, &respBody)
+
+			if assert.Len(t, respBody, 2) {
+				assert.Equal(t, "unauthorized_client", respBody["error"])
+				assert.Equal(t, "failed PKCE code challenge", respBody["error_description"])
+			}
+		})
+
+		t.Run("Get access token", func(t *testing.T) {
+			req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+				"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"code":          u.Query().Get("code"),
+				"code_verifier": "CODE",
+				"grant_type":    "authorization_code",
+				"redirect_uri":  "b",
+			})
+			resp := MakeRequest(t, req, http.StatusOK)
+
+			var respBody map[string]any
+			DecodeJSON(t, resp, &respBody)
+
+			if assert.Len(t, respBody, 4) {
+				assert.NotEmpty(t, respBody["access_token"])
+				assert.NotEmpty(t, respBody["token_type"])
+				assert.NotEmpty(t, respBody["expires_in"])
+				assert.NotEmpty(t, respBody["refresh_token"])
+			}
+		})
 	})
 
-	t.Run("Incorrect code verifier", func(t *testing.T) {
-		req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
-			"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
-			"code":          u.Query().Get("code"),
-			"code_verifier": "just a guess",
-			"grant_type":    "authorization_code",
-			"redirect_uri":  "b",
+	t.Run("S256 method", func(t *testing.T) {
+		var u *url.URL
+		t.Run("Grant", func(t *testing.T) {
+			h := sha256.Sum256([]byte("CODE"))
+			hashedVerifier := base64.RawURLEncoding.EncodeToString(h[:])
+
+			session.MakeRequest(t, NewRequest(t, "GET", "/login/oauth/authorize?client_id=ce5a1322-42a7-11ed-b878-0242ac120002&redirect_uri=b&response_type=code&code_challenge_method=S256&code_challenge="+hashedVerifier+"&state=thestate"), http.StatusOK)
+			req := NewRequestWithValues(t, "POST", "/login/oauth/grant", map[string]string{
+				"client_id":    "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"redirect_uri": "b",
+				"state":        "thestate",
+				"granted":      "true",
+			})
+			resp := session.MakeRequest(t, req, http.StatusSeeOther)
+
+			var err error
+			u, err = url.Parse(test.RedirectURL(resp))
+			require.NoError(t, err)
 		})
-		resp := MakeRequest(t, req, http.StatusBadRequest)
 
-		var respBody map[string]any
-		DecodeJSON(t, resp, &respBody)
+		t.Run("Incorrect code verifier", func(t *testing.T) {
+			req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+				"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"code":          u.Query().Get("code"),
+				"code_verifier": "just a guess",
+				"grant_type":    "authorization_code",
+				"redirect_uri":  "b",
+			})
+			resp := MakeRequest(t, req, http.StatusBadRequest)
 
-		if assert.Len(t, respBody, 2) {
-			assert.Equal(t, "unauthorized_client", respBody["error"])
-			assert.Equal(t, "failed PKCE code challenge", respBody["error_description"])
-		}
-	})
+			var respBody map[string]any
+			DecodeJSON(t, resp, &respBody)
 
-	t.Run("Get access token", func(t *testing.T) {
-		req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
-			"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
-			"code":          u.Query().Get("code"),
-			"code_verifier": "CODE",
-			"grant_type":    "authorization_code",
-			"redirect_uri":  "b",
+			if assert.Len(t, respBody, 2) {
+				assert.Equal(t, "unauthorized_client", respBody["error"])
+				assert.Equal(t, "failed PKCE code challenge", respBody["error_description"])
+			}
 		})
-		resp := MakeRequest(t, req, http.StatusOK)
 
-		var respBody map[string]any
-		DecodeJSON(t, resp, &respBody)
+		t.Run("Get access token", func(t *testing.T) {
+			req := NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+				"client_id":     "ce5a1322-42a7-11ed-b878-0242ac120002",
+				"code":          u.Query().Get("code"),
+				"code_verifier": "CODE",
+				"grant_type":    "authorization_code",
+				"redirect_uri":  "b",
+			})
+			resp := MakeRequest(t, req, http.StatusOK)
 
-		if assert.Len(t, respBody, 4) {
-			assert.NotEmpty(t, respBody["access_token"])
-			assert.NotEmpty(t, respBody["token_type"])
-			assert.NotEmpty(t, respBody["expires_in"])
-			assert.NotEmpty(t, respBody["refresh_token"])
-		}
+			var respBody map[string]any
+			DecodeJSON(t, resp, &respBody)
+
+			if assert.Len(t, respBody, 4) {
+				assert.NotEmpty(t, respBody["access_token"])
+				assert.NotEmpty(t, respBody["token_type"])
+				assert.NotEmpty(t, respBody["expires_in"])
+				assert.NotEmpty(t, respBody["refresh_token"])
+			}
+		})
 	})
 }
 
