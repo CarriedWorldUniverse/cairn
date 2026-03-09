@@ -12,6 +12,7 @@ import (
 	"forgejo.org/modules/templates"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/translation"
+	notify_service "forgejo.org/services/notify"
 
 	_ "forgejo.org/models/actions"
 
@@ -35,6 +36,7 @@ func MockMailSettings(send func(msgs ...*Message)) func() {
 	mailService := setting.Mailer{
 		From: "test@gitea.com",
 	}
+	notify_service.RegisterNotifier(NewNotifier())
 	cleanups := []func(){
 		test.MockVariableValue(&setting.MailService, &mailService),
 		test.MockVariableValue(&setting.Domain, "localhost"),

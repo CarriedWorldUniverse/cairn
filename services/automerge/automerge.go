@@ -20,6 +20,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/process"
 	"forgejo.org/modules/queue"
+	"forgejo.org/modules/util"
 	notify_service "forgejo.org/services/notify"
 	pull_service "forgejo.org/services/pull"
 	repo_service "forgejo.org/services/repository"
@@ -67,7 +68,25 @@ func ScheduleAutoMerge(ctx context.Context, doer *user_model.User, pull *issues_
 }
 
 // RemoveScheduledAutoMerge cancels a previously scheduled pull request
-func RemoveScheduledAutoMerge(ctx context.Context, doer *user_model.User, pull *issues_model.PullRequest) error {
+func RemoveScheduledAutoMerge(ctx context.Context, doer *user_model.User, pull *issues_model.PullRequest, repoPerms access_model.Permission) error {
+	exist, autoMerge, err := pull_model.GetScheduledMergeByPullID(ctx, pull.ID)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return db.ErrNotExist{Resource: "auto_merge", ID: pull.ID}
+	}
+
+	if doer.ID != autoMerge.DoerID {
+		allowed, err := pull_service.IsUserAllowedToMerge(ctx, pull, repoPerms, doer)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return util.ErrPermissionDenied
+		}
+	}
+
 	return db.WithTx(ctx, func(ctx context.Context) error {
 		if err := pull_model.DeleteScheduledAutoMerge(ctx, pull.ID); err != nil {
 			return err

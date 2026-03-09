@@ -1,4 +1,5 @@
 // Copyright 2023 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package integration
@@ -81,4 +82,111 @@ func TestMoveRepoProjectColumns(t *testing.T) {
 	assert.EqualValues(t, columns[0].ID, columnsAfter[2].ID)
 
 	require.NoError(t, project_model.DeleteProjectByID(db.DefaultContext, project1.ID))
+}
+
+func TestChangeStatusProject(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	user5 := loginUser(t, "user5")
+	user2 := loginUser(t, "user2")
+
+	t.Run("User", func(t *testing.T) {
+		project4URL := "/user2/-/projects/4"
+		project4CloseURL := "/user2/-/projects/4/close"
+
+		t.Run("Doer is not context user", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", project4CloseURL, map[string]string{
+				"_csrf": GetCSRF(t, user5, project4URL),
+			}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = false")
+		})
+
+		t.Run("Wrong ID", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", "/user5/-/projects/4/close", map[string]string{
+				"_csrf": GetCSRF(t, user5, project4URL),
+			}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = false")
+
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", "/user5/-/projects/1/close", map[string]string{
+				"_csrf": GetCSRF(t, user5, project4URL),
+			}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", "/user5/-/projects/7/close", map[string]string{
+				"_csrf": GetCSRF(t, user5, project4URL),
+			}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = false")
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequestWithValues(t, "POST", project4CloseURL, map[string]string{
+				"_csrf": GetCSRF(t, user2, project4URL),
+			}), http.StatusOK)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 4}, "is_closed = true")
+		})
+	})
+
+	t.Run("Organization", func(t *testing.T) {
+		project7URL := "/org3/-/projects/7"
+		project7CloseURL := "/org3/-/projects/7/close"
+
+		t.Run("Doer does not have permission", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", project7CloseURL, map[string]string{
+				"_csrf": GetCSRF(t, user5, project7URL),
+			}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = false")
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequestWithValues(t, "POST", project7CloseURL, map[string]string{
+				"_csrf": GetCSRF(t, user2, project7URL),
+			}), http.StatusOK)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 7}, "is_closed = true")
+		})
+	})
+
+	t.Run("Repository", func(t *testing.T) {
+		project1URL := "/user2/repo1/projects/1"
+		project1CloseURL := "/user2/repo1/projects/1/close"
+
+		t.Run("Doer does not have permission", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			user5.MakeRequest(t, NewRequestWithValues(t, "POST", project1CloseURL,
+				map[string]string{
+					"_csrf": GetCSRF(t, user5, project1URL),
+				}), http.StatusNotFound)
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+		})
+
+		// v11 backport -- not possible to get CSRF without a 404:
+		// t.Run("Wrong ID", func(t *testing.T) {
+		// 	defer tests.PrintCurrentTest(t)()
+		// 	user5.MakeRequest(t, NewRequestWithValues(t, "POST", "/user5/repo4/projects/1/close",
+		// 		map[string]string{
+		// 			"_csrf": GetCSRF(t, user5, "/user5/repo4/projects/1"),
+		// 		}), http.StatusNotFound)
+		// 	unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = false")
+		// })
+
+		t.Run("Normal", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			user2.MakeRequest(t, NewRequestWithValues(t, "POST", project1CloseURL,
+				map[string]string{
+					"_csrf": GetCSRF(t, user2, project1URL),
+				}), http.StatusOK)
+
+			unittest.AssertExistsIf(t, true, &project_model.Project{ID: 1}, "is_closed = true")
+		})
+	})
 }

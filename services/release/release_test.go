@@ -14,6 +14,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
+	"forgejo.org/modules/util"
 	"forgejo.org/services/attachment"
 
 	_ "forgejo.org/models/actions"
@@ -382,6 +383,39 @@ func TestRelease_Update(t *testing.T) {
 	assert.EqualValues(t, release.ID, release.Attachments[0].ReleaseID)
 	assert.EqualValues(t, "test2", release.Attachments[0].Name)
 	assert.EqualValues(t, "https://about.gitea.com/", release.Attachments[0].ExternalURL)
+
+	// delete the attachment
+	require.NoError(t, UpdateRelease(db.DefaultContext, user, gitRepo, release, false, []*AttachmentChange{
+		{
+			Action: "delete",
+			UUID:   externalAttachmentUUID,
+		},
+	}))
+	release.Attachments = nil
+	require.NoError(t, repo_model.GetReleaseAttachments(db.DefaultContext, release))
+	assert.Empty(t, release.Attachments)
+
+	t.Run("Permission denied", func(t *testing.T) {
+		require.NoError(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
+			{
+				Action: "add",
+				Type:   "attachment",
+				UUID:   "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+			},
+		}))
+		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
+		assert.Empty(t, release.Attachments)
+
+		require.ErrorIs(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
+			{
+				Action: "update",
+				Name:   "test2.txt",
+				UUID:   "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+			},
+		}), util.ErrPermissionDenied)
+		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
+		assert.Empty(t, release.Attachments)
+	})
 }
 
 func TestRelease_createTag(t *testing.T) {
