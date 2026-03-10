@@ -77,7 +77,7 @@ func (discordHandler) UnmarshalForm(bind func(any)) forms.WebhookForm {
 type (
 	// DiscordEmbedFooter for Embed Footer Structure.
 	DiscordEmbedFooter struct {
-		Text string `json:"text,omitempty"`
+		Text string `json:"text"`
 	}
 
 	// DiscordEmbedAuthor for Embed Author Structure
@@ -99,7 +99,7 @@ type (
 		Description string              `json:"description"`
 		URL         string              `json:"url"`
 		Color       int                 `json:"color"`
-		Footer      DiscordEmbedFooter  `json:"footer"`
+		Footer      *DiscordEmbedFooter `json:"footer,omitempty"`
 		Author      DiscordEmbedAuthor  `json:"author"`
 		Fields      []DiscordEmbedField `json:"fields,omitempty"`
 	}
