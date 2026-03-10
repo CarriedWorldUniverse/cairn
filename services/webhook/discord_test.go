@@ -4,6 +4,8 @@
 package webhook
 
 import (
+	"bytes"
+	"io"
 	"testing"
 
 	webhook_model "forgejo.org/models/webhook"
@@ -354,8 +356,15 @@ func TestDiscordJSONPayload(t *testing.T) {
 	assert.Equal(t, "https://discord.example.com/", req.URL.String())
 	assert.Equal(t, "sha256=", req.Header.Get("X-Hub-Signature-256"))
 	assert.Equal(t, "application/json", req.Header.Get("Content-Type"))
+
+	buf, err := io.ReadAll(req.Body)
+	require.NoError(t, err)
+
+	// https://codeberg.org/forgejo/forgejo/issues/11573
+	assert.NotContains(t, string(buf), `"footer":`)
+
 	var body DiscordPayload
-	err = json.NewDecoder(req.Body).Decode(&body)
+	err = json.NewDecoder(bytes.NewReader(buf)).Decode(&body)
 	require.NoError(t, err)
 	assert.Equal(t, "[`2020558`](http://localhost:3000/test/repo/commit/2020558fe2e34debb818a514715839cabd25e778) commit message \\- user1\n[`2020558`](http://localhost:3000/test/repo/commit/2020558fe2e34debb818a514715839cabd25e778) commit message \\- user1", body.Embeds[0].Description)
 }
