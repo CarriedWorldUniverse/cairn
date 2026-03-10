@@ -9,6 +9,7 @@ import (
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
@@ -29,10 +30,19 @@ func RunnersList(ctx *context.Context, opts actions_model.FindRunnerOptions) {
 	}
 
 	// ownid=0,repo_id=0,means this token is used for global
+	ownerID := optional.None[int64]()
+	if opts.OwnerID != 0 {
+		ownerID = optional.Some(opts.OwnerID)
+	}
+	repoID := optional.None[int64]()
+	if opts.RepoID != 0 {
+		repoID = optional.Some(opts.RepoID)
+	}
+
 	var token *actions_model.ActionRunnerToken
-	token, err = actions_model.GetLatestRunnerToken(ctx, opts.OwnerID, opts.RepoID)
+	token, err = actions_model.GetLatestRunnerToken(ctx, ownerID, repoID)
 	if errors.Is(err, util.ErrNotExist) || (token != nil && !token.IsActive) {
-		token, err = actions_model.NewRunnerToken(ctx, opts.OwnerID, opts.RepoID)
+		token, err = actions_model.NewRunnerToken(ctx, ownerID, repoID)
 		if err != nil {
 			ctx.ServerError("CreateRunnerToken", err)
 			return
@@ -130,7 +140,16 @@ func RunnerDetailsEditPost(ctx *context.Context, runnerID, ownerID, repoID int64
 
 // RunnerResetRegistrationToken reset registration token
 func RunnerResetRegistrationToken(ctx *context.Context, ownerID, repoID int64, redirectTo string) {
-	_, err := actions_model.NewRunnerToken(ctx, ownerID, repoID)
+	optOwnerID := optional.None[int64]()
+	if ownerID != 0 {
+		optOwnerID = optional.Some(ownerID)
+	}
+	optRepoID := optional.None[int64]()
+	if repoID != 0 {
+		optRepoID = optional.Some(repoID)
+	}
+
+	_, err := actions_model.NewRunnerToken(ctx, optOwnerID, optRepoID)
 	if err != nil {
 		ctx.ServerError("ResetRunnerRegistrationToken", err)
 		return

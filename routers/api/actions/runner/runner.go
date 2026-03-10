@@ -56,14 +56,14 @@ func (s *Service) Register(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("runner registration token has been invalidated, please use the latest one"))
 	}
 
-	if runnerToken.OwnerID != 0 {
-		if _, err := user_model.GetUserByID(ctx, runnerToken.OwnerID); err != nil {
+	if has, ownerID := runnerToken.OwnerID.Get(); has {
+		if _, err := user_model.GetUserByID(ctx, ownerID); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, errors.New("owner of the token not found"))
 		}
 	}
 
-	if runnerToken.RepoID != 0 {
-		if _, err := repo_model.GetRepositoryByID(ctx, runnerToken.RepoID); err != nil {
+	if has, repoID := runnerToken.RepoID.Get(); has {
+		if _, err := repo_model.GetRepositoryByID(ctx, repoID); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, errors.New("repository of the token not found"))
 		}
 	}
@@ -75,8 +75,8 @@ func (s *Service) Register(
 	runner := &actions_model.ActionRunner{
 		UUID:        gouuid.New().String(),
 		Name:        name,
-		OwnerID:     runnerToken.OwnerID,
-		RepoID:      runnerToken.RepoID,
+		OwnerID:     runnerToken.OwnerID.ValueOrDefault(0),
+		RepoID:      runnerToken.RepoID.ValueOrDefault(0),
 		Version:     req.Msg.Version,
 		AgentLabels: labels,
 		Ephemeral:   req.Msg.Ephemeral,

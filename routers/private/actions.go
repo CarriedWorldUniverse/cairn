@@ -15,6 +15,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/private"
 	"forgejo.org/modules/util"
 	"forgejo.org/services/context"
@@ -42,9 +43,18 @@ func GenerateActionsRunnerToken(ctx *context.PrivateContext) {
 		})
 	}
 
-	token, err := actions_model.GetLatestRunnerToken(ctx, owner, repo)
+	ownerID := optional.None[int64]()
+	if owner != 0 {
+		ownerID = optional.Some(owner)
+	}
+	repoID := optional.None[int64]()
+	if repo != 0 {
+		repoID = optional.Some(repo)
+	}
+
+	token, err := actions_model.GetLatestRunnerToken(ctx, ownerID, repoID)
 	if errors.Is(err, util.ErrNotExist) || (token != nil && !token.IsActive) {
-		token, err = actions_model.NewRunnerToken(ctx, owner, repo)
+		token, err = actions_model.NewRunnerToken(ctx, ownerID, repoID)
 		if err != nil {
 			errMsg := fmt.Sprintf("error while creating runner token: %v", err)
 			log.Error("NewRunnerToken failed: %v", errMsg)

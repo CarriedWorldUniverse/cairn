@@ -11,6 +11,7 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
@@ -27,9 +28,18 @@ type RegistrationToken struct {
 }
 
 func GetRegistrationToken(ctx *context.APIContext, ownerID, repoID int64) {
-	token, err := actions_model.GetLatestRunnerToken(ctx, ownerID, repoID)
+	optOwnerID := optional.None[int64]()
+	if ownerID != 0 {
+		optOwnerID = optional.Some(ownerID)
+	}
+	optRepoID := optional.None[int64]()
+	if repoID != 0 {
+		optRepoID = optional.Some(repoID)
+	}
+
+	token, err := actions_model.GetLatestRunnerToken(ctx, optOwnerID, optRepoID)
 	if errors.Is(err, util.ErrNotExist) || (token != nil && !token.IsActive) {
-		token, err = actions_model.NewRunnerToken(ctx, ownerID, repoID)
+		token, err = actions_model.NewRunnerToken(ctx, optOwnerID, optRepoID)
 	}
 	if err != nil {
 		ctx.InternalServerError(err)
