@@ -62,7 +62,9 @@ func (m *Messenger) SendMessage(message *Event) {
 		channel := m.channels[i]
 		select {
 		case channel <- message:
+			break
 		default:
+			break
 		}
 	}
 }

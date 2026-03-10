@@ -1418,6 +1418,7 @@ func generateCodeChallenge(ctx *context.Context, provider string) (codeChallenge
 	case *openidConnect.Provider, *fitbit.Provider, *zoom.Provider:
 		// those providers forward the `code_verifier`
 		// a code_challenge can be generated
+		break
 	}
 
 	codeVerifier := util.CryptoRandomString(util.RandomStringHigh)

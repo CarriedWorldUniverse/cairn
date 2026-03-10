@@ -108,6 +108,7 @@ func runMigrateTask(ctx context.Context, t *admin_model.Task) (err error) {
 		for {
 			select {
 			case <-time.After(2 * time.Second):
+				break
 			case <-ctx.Done():
 				return
 			}

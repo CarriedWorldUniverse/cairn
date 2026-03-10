@@ -182,6 +182,7 @@ func (g *GithubDownloaderV3) waitAndPickClient() {
 			timer.Stop()
 			return
 		case <-timer.C:
+			break
 		}
 
 		err := g.RefreshRate()

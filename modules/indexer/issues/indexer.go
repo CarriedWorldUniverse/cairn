@@ -141,7 +141,9 @@ func InitIssueIndexer(syncReindex bool) {
 	if syncReindex {
 		select {
 		case <-indexerInitWaitChannel:
+			break
 		case <-graceful.GetManager().IsShutdown():
+			break
 		}
 	} else if setting.Indexer.StartupTimeout > 0 {
 		go func() {

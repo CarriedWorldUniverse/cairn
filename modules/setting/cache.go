@@ -53,6 +53,7 @@ func loadCacheFrom(rootCfg ConfigProvider) {
 	CacheService.Adapter = sec.Key("ADAPTER").In("memory", []string{"memory", "redis", "memcache", "twoqueue"})
 	switch CacheService.Adapter {
 	case "memory":
+		break
 	case "redis", "memcache":
 		CacheService.Conn = strings.Trim(sec.Key("HOST").String(), "\" ")
 	case "twoqueue":

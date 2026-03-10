@@ -215,7 +215,9 @@ func Init() {
 		}
 		select {
 		case waitChannel <- time.Since(start):
+			break
 		case <-graceful.GetManager().IsShutdown():
+			break
 		}
 
 		close(waitChannel)

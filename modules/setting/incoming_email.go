@@ -82,6 +82,7 @@ func checkReplyToAddress() error {
 	case 0:
 		return fmt.Errorf("%s must appear in the user part of the address (before the @)", IncomingEmail.TokenPlaceholder)
 	case 1:
+		break
 	default:
 		return fmt.Errorf("%s must appear only once", IncomingEmail.TokenPlaceholder)
 	}

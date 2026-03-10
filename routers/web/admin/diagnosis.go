@@ -54,7 +54,9 @@ func MonitorDiagnosis(ctx *context.Context) {
 
 	select {
 	case <-time.After(time.Duration(seconds) * time.Second):
+		break
 	case <-ctx.Done():
+		break
 	}
 	pprof.StopCPUProfile()
 	trace.Stop()

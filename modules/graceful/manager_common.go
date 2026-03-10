@@ -86,6 +86,7 @@ func (g *Manager) DoGracefulShutdown() {
 	g.lock.Lock()
 	select {
 	case <-g.shutdownRequested:
+		break
 	default:
 		close(g.shutdownRequested)
 	}

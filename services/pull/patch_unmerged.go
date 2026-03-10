@@ -170,6 +170,7 @@ func unmergedFiles(ctx context.Context, tmpBasePath string, unmerged chan *unmer
 		switch line.stage {
 		case 0:
 			// Should not happen as this represents successfully merged file - we will tolerate and ignore though
+			break
 		case 1:
 			if next.stage1 != nil || next.stage2 != nil || next.stage3 != nil {
 				// We need to handle the unstaged file stage1,stage2,stage3

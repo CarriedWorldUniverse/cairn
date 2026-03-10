@@ -34,7 +34,9 @@ func initTestQueueOnce() {
 			for range t {
 				select {
 				case <-graceful.GetManager().ShutdownContext().Done():
+					break
 				case <-time.After(5 * time.Second):
+					break
 				}
 			}
 			return nil
@@ -56,6 +58,7 @@ func initTestQueueOnce() {
 			for {
 				select {
 				case <-ctx.Done():
+					break
 				case <-time.After(500 * time.Millisecond):
 					if adding {
 						if testQueue.GetQueueItemNumber() == qs.Length {

@@ -58,6 +58,7 @@ func (l *LoggerImpl) SendLogEvent(event *Event) {
 		}
 		select {
 		case w.Base().Queue <- formatted:
+			break
 		default:
 			bs, _ := json.Marshal(event)
 			FallbackErrorf("log writer %q queue is full, event: %v", w.GetWriterName(), string(bs))

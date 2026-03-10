@@ -56,6 +56,7 @@ func (q *WorkerPoolQueue[T]) doDispatchBatchToWorker(wg *workerGroup[T], flushCh
 	full := false
 	select {
 	case q.batchChan <- batch:
+		break
 	default:
 		full = true
 	}
@@ -76,6 +77,7 @@ func (q *WorkerPoolQueue[T]) doDispatchBatchToWorker(wg *workerGroup[T], flushCh
 	if full {
 		select {
 		case q.batchChan <- batch:
+			break
 		case flush := <-flushChan:
 			q.doWorkerHandle(batch)
 			q.doFlush(wg, flush)
@@ -105,7 +107,9 @@ func (q *WorkerPoolQueue[T]) doWorkerHandle(batch []T) {
 		log.Error("Queue %q failed to handle batch of %d items, backoff for a few seconds", q.GetName(), len(batch))
 		select {
 		case <-q.ctxRun.Done():
+			break
 		case <-time.After(time.Duration(unhandledItemRequeueDuration.Load())):
+			break
 		}
 	}
 	for _, item := range unhandled {
@@ -170,7 +174,9 @@ func (q *WorkerPoolQueue[T]) doStartNewWorker(wp *workerGroup[T]) {
 				t.Reset(workerIdleDuration)
 				select {
 				case <-t.C:
+					break
 				default:
+					break
 				}
 			case <-t.C:
 				q.workerNumMu.Lock()
@@ -296,6 +302,7 @@ func (q *WorkerPoolQueue[T]) doRun() {
 			go func() { wg.wg.Wait(); close(workerDone) }()
 			select {
 			case <-workerDone:
+				break
 			case <-time.After(shutdownTimeout):
 				log.Error("Queue %q is shutting down, but workers are still running after timeout", q.GetName())
 			}

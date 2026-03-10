@@ -184,7 +184,7 @@ func (parser *Parser) ParseGlyphs(glyphs []byte) {
 		case '-':
 			parser.setLeftFlow(i)
 		case ' ':
-			// no-op
+			break
 		default:
 			parser.newFlow(i)
 		}

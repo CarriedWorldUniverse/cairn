@@ -47,7 +47,9 @@ loop:
 				// empty the connection channel
 				select {
 				case <-m.connection:
+					break
 				default:
+					break
 				}
 			}
 			m.mutex.Unlock()
@@ -63,7 +65,9 @@ loop:
 					// We won't change the "then" time because there could be concurrency issues
 					select {
 					case <-timer.C:
+						break
 					default:
+						break
 					}
 					continue
 				}

@@ -65,12 +65,8 @@ func (o *gitPushOptions) Parse(data string) bool {
 		value = "true"
 	}
 	switch Key(key) {
-	case RepoPrivate:
-	case RepoTemplate:
-	case AgitTopic:
-	case AgitForcePush:
-	case AgitTitle:
-	case AgitDescription:
+	case RepoPrivate, RepoTemplate, AgitTopic, AgitForcePush, AgitTitle, AgitDescription:
+		break
 	default:
 		return false
 	}

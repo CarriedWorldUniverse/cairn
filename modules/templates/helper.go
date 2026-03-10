@@ -229,6 +229,7 @@ func HTMLFormat(s string, rawArgs ...any) template.HTML {
 		switch v := v.(type) {
 		case nil, bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, template.HTML:
 			// for most basic types (including template.HTML which is safe), just do nothing and use it
+			break
 		case string:
 			args[i] = template.HTMLEscapeString(v)
 		case fmt.Stringer:

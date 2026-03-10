@@ -44,6 +44,7 @@ func (d *RetryDownloader) retry(work func() error) error {
 		case <-d.ctx.Done():
 			return d.ctx.Err()
 		case <-time.After(time.Second * time.Duration(d.RetryDelay)):
+			break
 		}
 	}
 	return err

@@ -85,6 +85,7 @@ func checkJobsOfRun(ctx context.Context, runID int64, recursionCount int) error 
 
 					case behaviourExecuteJob:
 						// Intentional blank case -- proceed with updating the status of the job to waiting.
+						break
 
 					case behaviourIgnoreJob:
 						// Skip updating this job's status to waiting, continue with other jobs in the run.

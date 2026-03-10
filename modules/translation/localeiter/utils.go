@@ -56,6 +56,7 @@ func iterateMessagesNextInner(onMsgid func(string, string, string) error, data m
 				pluralSuffix = key
 			case "other":
 				// do nothing
+				break
 			default:
 				realKey = fullKey
 			}
@@ -71,6 +72,7 @@ func iterateMessagesNextInner(onMsgid func(string, string, string) error, data m
 
 		case nil:
 			// do nothing
+			break
 
 		default:
 			return fmt.Errorf("Unexpected JSON type: %s - %T", fullKey, value)

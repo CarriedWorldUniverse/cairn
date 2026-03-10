@@ -145,6 +145,7 @@ func (l *locale) LookupPluralByForm(trKey string, pluralForm PluralFormIndex) st
 		suffix = PluralFormSeparator + "many"
 	case PluralFormOther:
 		// No suffix for the "other" string.
+		break
 	default:
 		log.Error("Invalid plural form index %d", pluralForm)
 		return ""
@@ -248,6 +249,7 @@ func PrepareArgsForHTML(trArgs ...any) []any {
 		switch v := v.(type) {
 		case nil, bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, template.HTML:
 			// for most basic types (including template.HTML which is safe), just do nothing and use it
+			break
 		case string:
 			args[i] = template.HTMLEscapeString(v)
 		case fmt.Stringer:

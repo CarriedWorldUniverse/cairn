@@ -164,13 +164,6 @@ func ActionToForgeUserActivity(ctx context.Context, action *activities_model.Act
 			renderIssue(action.Comment.Issue),
 			renderedComment,
 		)
-	case activities_model.ActionMirrorSyncPush:
-	case activities_model.ActionMirrorSyncCreate:
-	case activities_model.ActionMirrorSyncDelete:
-	case activities_model.ActionPublishRelease:
-	case activities_model.ActionPullReviewDismissed:
-	case activities_model.ActionPullRequestReadyForReview:
-	case activities_model.ActionAutoMergePullRequest:
 	}
 
 	return makeUserActivity("performed an unrecognised action: %s", action.OpType.String())

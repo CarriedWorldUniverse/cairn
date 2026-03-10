@@ -126,7 +126,9 @@ func installSignals(ctx context.Context) (context.Context, context.CancelFunc) {
 		)
 		select {
 		case <-signalChannel:
+			break
 		case <-ctx.Done():
+			break
 		}
 		cancel()
 		signal.Reset()
