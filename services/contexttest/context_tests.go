@@ -1,4 +1,5 @@
 // Copyright 2017 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 // Package contexttest provides utilities for testing Web/API contexts with models.
@@ -21,6 +22,7 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/gitrepo"
+	"forgejo.org/modules/json"
 	"forgejo.org/modules/templates"
 	"forgejo.org/modules/translation"
 	"forgejo.org/modules/web/middleware"
@@ -205,4 +207,11 @@ func (tr *MockRender) HTML(w io.Writer, status int, _ string, _ any, _ gocontext
 		resp.WriteHeader(status)
 	}
 	return nil
+}
+
+func DecodeJSON(t testing.TB, resp *httptest.ResponseRecorder, v any) {
+	t.Helper()
+
+	decoder := json.NewDecoder(resp.Body)
+	require.NoError(t, decoder.Decode(v))
 }
