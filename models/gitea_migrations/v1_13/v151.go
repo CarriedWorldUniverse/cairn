@@ -25,6 +25,7 @@ func SetDefaultPasswordToArgon2(x *xorm.Engine) error {
 		return err
 	case setting.Database.Type.IsSQLite3():
 		// drop through
+		break
 	default:
 		log.Fatal("Unrecognized DB")
 	}

@@ -98,6 +98,7 @@ func (repo *Repository) GetCodeActivityStats(fromTime time.Time, branch string) 
 				}
 				switch p {
 				case 1: // Separator
+					break
 				case 2: // Commit sha-1
 					stats.CommitCount++
 				case 3: // Author

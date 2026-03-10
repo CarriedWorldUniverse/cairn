@@ -634,6 +634,7 @@ func SearchRepo(ctx *context.Context) {
 		opts.Mirror = optional.Some(false)
 		opts.Collaborate = optional.Some(true)
 	case "":
+		break
 	default:
 		ctx.Error(http.StatusUnprocessableEntity, fmt.Sprintf("Invalid search mode: \"%s\"", mode))
 		return

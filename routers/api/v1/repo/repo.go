@@ -176,6 +176,7 @@ func Search(ctx *context.APIContext) {
 		opts.Mirror = optional.Some(false)
 		opts.Collaborate = optional.Some(true)
 	case "":
+		break
 	default:
 		ctx.Error(http.StatusUnprocessableEntity, "", fmt.Errorf("Invalid search mode: \"%s\"", mode))
 		return

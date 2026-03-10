@@ -180,8 +180,6 @@ func ViewPackageVersion(ctx *context.Context) {
 	ctx.Data["PackageRegistryHost"] = setting.Packages.RegistryHost
 
 	switch pd.Package.Type {
-	case packages_model.TypeContainer:
-
 	case packages_model.TypeAlpine:
 		branches := make(container.Set[string])
 		repositories := make(container.Set[string])

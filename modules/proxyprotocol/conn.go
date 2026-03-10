@@ -259,9 +259,10 @@ func (p *Conn) readV2ProxyHeader() error {
 		p.localAddr = p.conn.RemoteAddr()
 		return nil
 	case 0x1:
-	// - \x1 : PROXY : the connection was established on behalf of another node,
-	//   and reflects the original connection endpoints. The receiver must then use
-	//   the information provided in the protocol block to get original the address.
+		// - \x1 : PROXY : the connection was established on behalf of another node,
+		//   and reflects the original connection endpoints. The receiver must then use
+		//   the information provided in the protocol block to get original the address.
+		break
 	default:
 		// - other values are unassigned and must not be emitted by senders. Receivers
 		//   must drop connections presenting unexpected values here.
@@ -466,7 +467,9 @@ func (p *Conn) readV1ProxyHeader() error {
 		p.localAddr = p.conn.RemoteAddr()
 		return nil
 	case "TCP4":
+		break
 	case "TCP6":
+		break
 	default:
 		p.conn.Close()
 		return &ErrBadAddressType{parts[1]}

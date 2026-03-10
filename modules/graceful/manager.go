@@ -164,6 +164,7 @@ func (g *Manager) doHammerTime(d time.Duration) {
 	g.lock.Lock()
 	select {
 	case <-g.hammerCtx.Done():
+		break
 	default:
 		log.Warn("Setting Hammer condition")
 		g.hammerCtxCancel()
@@ -180,6 +181,7 @@ func (g *Manager) doTerminate() {
 	g.lock.Lock()
 	select {
 	case <-g.terminateCtx.Done():
+		break
 	default:
 		log.Warn("Terminating")
 		g.terminateCtxCancel()

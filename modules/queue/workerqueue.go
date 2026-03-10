@@ -110,6 +110,7 @@ func (q *WorkerPoolQueue[T]) FlushWithContext(ctx context.Context, timeout time.
 	// if it blocks, it means that there is a flush in progress or the queue hasn't been started yet
 	select {
 	case q.flushChan <- c:
+		break
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-q.ctxRun.Done():

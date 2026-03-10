@@ -511,8 +511,6 @@ func buildIssueOverview(ctx *context.Context, unitType unit.Type) {
 	}
 
 	switch filterMode {
-	case issues_model.FilterModeAll:
-	case issues_model.FilterModeYourRepositories:
 	case issues_model.FilterModeAssign:
 		opts.AssigneeID = ctx.Doer.ID
 	case issues_model.FilterModeCreate:
@@ -846,7 +844,7 @@ func getUserIssueStats(ctx *context.Context, ctxUser *user_model.User, filterMod
 		openClosedOpts := opts.Copy()
 		switch filterMode {
 		case issues_model.FilterModeAll:
-			// no-op
+			break
 		case issues_model.FilterModeYourRepositories:
 			openClosedOpts.AllPublic = false
 		case issues_model.FilterModeAssign:

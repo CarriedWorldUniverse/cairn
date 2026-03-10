@@ -742,6 +742,7 @@ func shortLinkProcessor(ctx *RenderContext, node *html.Node) {
 		// fast path: empty string, ignore
 		case "":
 			// leave image as false
+			break
 		case ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp", ".gif", ".bmp", ".ico", ".svg":
 			image = true
 		}

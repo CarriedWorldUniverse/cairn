@@ -141,6 +141,7 @@ func getSignVersion(req *http.Request) (string, error) {
 
 	switch m[1] {
 	case "1.0", "1.1", "1.2", "1.3":
+		break
 	default:
 		return "", util.NewInvalidArgumentErrorf("unsupported version")
 	}

@@ -80,7 +80,9 @@ func (b *EventWriterBaseImpl) Run(ctx context.Context) {
 		if pause := b.GetPauseChan(); pause != nil {
 			select {
 			case <-pause:
+				break
 			case <-ctx.Done():
+				break
 			}
 		}
 	}
@@ -178,6 +180,7 @@ func eventWriterStopWait(w EventWriter) {
 	close(w.Base().Queue)
 	select {
 	case <-w.Base().stopped:
+		break
 	case <-time.After(2 * time.Second):
 		FallbackErrorf("unable to stop log writer %q in time, skip", w.GetWriterName())
 	}

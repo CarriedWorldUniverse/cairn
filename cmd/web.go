@@ -278,8 +278,11 @@ func setPort(port string) error {
 
 	switch setting.Protocol {
 	case setting.HTTPUnix:
+		break
 	case setting.FCGI:
+		break
 	case setting.FCGIUnix:
+		break
 	default:
 		defaultLocalURL := string(setting.Protocol) + "://"
 		if setting.HTTPAddr == "0.0.0.0" {

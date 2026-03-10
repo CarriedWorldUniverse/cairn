@@ -235,6 +235,7 @@ func loadMailerFrom(rootCfg ConfigProvider) {
 			}
 		}
 	case "dummy": // just mention and do nothing
+		break
 	}
 
 	if MailService.From != "" {

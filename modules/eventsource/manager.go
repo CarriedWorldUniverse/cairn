@@ -39,7 +39,9 @@ func (m *Manager) Register(uid int64) <-chan *Event {
 	}
 	select {
 	case m.connection <- struct{}{}:
+		break
 	default:
+		break
 	}
 	m.mutex.Unlock()
 	return messenger.Register()

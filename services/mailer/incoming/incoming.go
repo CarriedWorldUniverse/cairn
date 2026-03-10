@@ -69,6 +69,7 @@ func Init(ctx context.Context) error {
 				case <-ctx.Done():
 					return
 				case <-time.NewTimer(10 * time.Second).C:
+					break
 				}
 			}
 		}
@@ -123,6 +124,7 @@ func processIncomingEmails(ctx context.Context) error {
 			case <-ctx.Done():
 				return nil
 			case <-time.NewTimer(time.Second).C:
+				break
 			}
 		}
 	}

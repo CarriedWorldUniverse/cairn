@@ -75,6 +75,7 @@ func anyToTime(any any) (t time.Time, isZero bool) {
 	switch v := any.(type) {
 	case nil:
 		// it is zero
+		break
 	case *time.Time:
 		if v != nil {
 			t = *v
