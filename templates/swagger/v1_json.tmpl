@@ -5787,6 +5787,12 @@
             "description": "Only return workflow runs that involve the given Git reference, for example, `refs/heads/main`.",
             "name": "ref",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Only return workflow runs that involve the given workflow ID.",
+            "name": "workflow_id",
+            "in": "query"
           }
         ],
         "responses": {
@@ -6041,6 +6047,25 @@
             "type": "integer",
             "description": "page size of results, default maximum page size is 50",
             "name": "limit",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "unknown",
+                "waiting",
+                "running",
+                "success",
+                "failure",
+                "cancelled",
+                "skipped",
+                "blocked"
+              ],
+              "type": "string"
+            },
+            "description": "Returns workflow tasks with the check run status or conclusion that is specified.\n For example, a conclusion can be success or a status can be in_progress.\n",
+            "name": "status",
             "in": "query"
           }
         ],

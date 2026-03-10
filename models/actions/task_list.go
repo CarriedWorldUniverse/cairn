@@ -1,4 +1,5 @@
 // Copyright 2022 The Gitea Authors. All rights reserved.
+// Copyright 2026 The Forgejo Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package actions
@@ -70,7 +71,7 @@ func (opts FindTaskOptions) ToConds() builder.Cond {
 	if opts.CommitSHA != "" {
 		cond = cond.And(builder.Eq{"commit_sha": opts.CommitSHA})
 	}
-	if opts.Status != nil {
+	if len(opts.Status) > 0 {
 		cond = cond.And(builder.In("status", opts.Status))
 	}
 	if opts.UpdatedBefore > 0 {
