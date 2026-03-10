@@ -28,18 +28,18 @@ export function initCommitStatuses() {
 }
 
 export function initCommitNotes() {
-  const notesEditButton = document.getElementById('commit-notes-edit-button');
-  if (notesEditButton !== null) {
-    notesEditButton.addEventListener('click', () => {
-      document.getElementById('commit-notes-display-area').classList.add('tw-hidden');
-      document.getElementById('commit-notes-edit-area').classList.remove('tw-hidden');
-    });
-  }
+  document.getElementById('commit-notes-edit-button')?.addEventListener('click', () => {
+    document.getElementById('commit-notes-display-area').classList.add('tw-hidden');
+    document.getElementById('commit-notes-edit-area').classList.remove('tw-hidden');
+  });
 
-  const notesAddButton = document.getElementById('commit-notes-add-button');
-  if (notesAddButton !== null) {
-    notesAddButton.addEventListener('click', () => {
-      document.getElementById('commit-notes-add-area').classList.remove('tw-hidden');
-    });
-  }
+  document.getElementById('commit-notes-add-button')?.addEventListener('click', () => {
+    document.getElementById('commit-notes-edit-area').classList.remove('tw-hidden');
+  });
+
+  document.getElementById('commit-notes-cancel-button')?.addEventListener('click', () => {
+    document.getElementById('commit-notes-edit-form').reset();
+    document.getElementById('commit-notes-display-area')?.classList.remove('tw-hidden');
+    document.getElementById('commit-notes-edit-area').classList.add('tw-hidden');
+  });
 }
