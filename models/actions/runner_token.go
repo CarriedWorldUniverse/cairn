@@ -10,6 +10,7 @@ import (
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
@@ -31,9 +32,9 @@ import (
 type ActionRunnerToken struct {
 	ID       int64
 	Token    string                 `xorm:"UNIQUE"`
-	OwnerID  int64                  `xorm:"index REFERENCES(user, id)"`
+	OwnerID  optional.Option[int64] `xorm:"index REFERENCES(user, id)"`
 	Owner    *user_model.User       `xorm:"-"`
-	RepoID   int64                  `xorm:"index REFERENCES(repository, id)"`
+	RepoID   optional.Option[int64] `xorm:"index REFERENCES(repository, id)"`
 	Repo     *repo_model.Repository `xorm:"-"`
 	IsActive bool                   // true means it can be used
 
@@ -71,21 +72,11 @@ func UpdateRunnerToken(ctx context.Context, r *ActionRunnerToken, cols ...string
 
 // NewRunnerToken creates a new active runner token and invalidate all old tokens
 // ownerID will be ignored and treated as 0 if repoID is non-zero.
-func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerToken, error) {
-	if ownerID != 0 && repoID != 0 {
+func NewRunnerToken(ctx context.Context, ownerID, repoID optional.Option[int64]) (*ActionRunnerToken, error) {
+	if ownerID.Has() && repoID.Has() {
 		// It's trying to create a runner token that belongs to a repository, but OwnerID has been set accidentally.
 		// Remove OwnerID to avoid confusion; it's not worth returning an error here.
-		ownerID = 0
-	}
-
-	// To ensure that NULL values are used for the unused columns, rather than attempting to insert 0 values which will
-	// cause FK violation, manage the list of columns that xorm will insert.
-	cols := []string{"is_active", "token"}
-	if ownerID != 0 {
-		cols = append(cols, "owner_id")
-	}
-	if repoID != 0 {
-		cols = append(cols, "repo_id")
+		ownerID = optional.None[int64]()
 	}
 
 	token := util.CryptoRandomString(util.RandomStringHigh)
@@ -103,33 +94,33 @@ func NewRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerTo
 			return err
 		}
 
-		_, err := db.GetEngine(ctx).Cols(cols...).Insert(runnerToken)
+		_, err := db.GetEngine(ctx).Insert(runnerToken)
 		return err
 	})
 }
 
-func runnerTokenCond(ownerID, repoID int64) builder.Cond {
+func runnerTokenCond(ownerID, repoID optional.Option[int64]) builder.Cond {
 	var condOwnerID builder.Cond
-	if ownerID == 0 {
+	if has, value := ownerID.Get(); !has {
 		condOwnerID = builder.IsNull{"owner_id"}
 	} else {
-		condOwnerID = builder.Eq{"owner_id": ownerID}
+		condOwnerID = builder.Eq{"owner_id": value}
 	}
 	var condRepoID builder.Cond
-	if repoID == 0 {
+	if has, value := repoID.Get(); !has {
 		condRepoID = builder.IsNull{"repo_id"}
 	} else {
-		condRepoID = builder.Eq{"repo_id": repoID}
+		condRepoID = builder.Eq{"repo_id": value}
 	}
 	return builder.And(condOwnerID, condRepoID)
 }
 
 // GetLatestRunnerToken returns the latest runner token
-func GetLatestRunnerToken(ctx context.Context, ownerID, repoID int64) (*ActionRunnerToken, error) {
-	if ownerID != 0 && repoID != 0 {
-		// It's trying to get a runner token that belongs to a repository, but OwnerID has been set accidentally.
+func GetLatestRunnerToken(ctx context.Context, ownerID, repoID optional.Option[int64]) (*ActionRunnerToken, error) {
+	if ownerID.Has() && repoID.Has() {
+		// It's trying to create a runner token that belongs to a repository, but OwnerID has been set accidentally.
 		// Remove OwnerID to avoid confusion; it's not worth returning an error here.
-		ownerID = 0
+		ownerID = optional.None[int64]()
 	}
 
 	var runnerToken ActionRunnerToken

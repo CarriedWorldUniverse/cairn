@@ -17,6 +17,7 @@ import (
 	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
@@ -404,7 +405,7 @@ func DeleteOrganization(ctx context.Context, org *Organization) error {
 		&TeamInvite{OrgID: org.ID},
 		&secret_model.Secret{OwnerID: org.ID},
 		&actions_model.ActionRunner{OwnerID: org.ID},
-		&actions_model.ActionRunnerToken{OwnerID: org.ID},
+		&actions_model.ActionRunnerToken{OwnerID: optional.Some(org.ID)},
 	); err != nil {
 		return fmt.Errorf("DeleteBeans: %w", err)
 	}

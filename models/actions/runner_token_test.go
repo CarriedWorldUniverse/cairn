@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/optional"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,16 +17,16 @@ import (
 func TestGetLatestRunnerToken(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	token := unittest.AssertExistsAndLoadBean(t, &ActionRunnerToken{ID: 3})
-	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, 1, 0)
+	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, optional.Some[int64](1), optional.None[int64]())
 	require.NoError(t, err)
 	assert.Equal(t, expectedToken, token)
 }
 
 func TestNewRunnerToken(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
-	token, err := NewRunnerToken(db.DefaultContext, 1, 0)
+	token, err := NewRunnerToken(db.DefaultContext, optional.Some[int64](1), optional.None[int64]())
 	require.NoError(t, err)
-	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, 1, 0)
+	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, optional.Some[int64](1), optional.None[int64]())
 	require.NoError(t, err)
 	assert.Equal(t, expectedToken, token)
 }
@@ -35,7 +36,7 @@ func TestUpdateRunnerToken(t *testing.T) {
 	token := unittest.AssertExistsAndLoadBean(t, &ActionRunnerToken{ID: 3})
 	token.IsActive = true
 	require.NoError(t, UpdateRunnerToken(db.DefaultContext, token, "is_active"))
-	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, 1, 0)
+	expectedToken, err := GetLatestRunnerToken(db.DefaultContext, optional.Some[int64](1), optional.None[int64]())
 	require.NoError(t, err)
 	assert.Equal(t, expectedToken, token)
 }

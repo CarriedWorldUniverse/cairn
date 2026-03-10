@@ -12,6 +12,7 @@ import (
 	"forgejo.org/models/organization"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/optional"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,8 +31,7 @@ func TestDeleteOrganization(t *testing.T) {
 	unittest.AssertNotExistsBean(t, &organization.Organization{ID: 6})
 	unittest.AssertNotExistsBean(t, &organization.OrgUser{OrgID: 6})
 	unittest.AssertNotExistsBean(t, &organization.Team{OrgID: 6})
-	orgID := int64(6)
-	unittest.AssertNotExistsBean(t, &actions.ActionRunnerToken{OwnerID: orgID})
+	unittest.AssertNotExistsBean(t, &actions.ActionRunnerToken{OwnerID: optional.Some[int64](6)})
 
 	org = unittest.AssertExistsAndLoadBean(t, &organization.Organization{ID: 3})
 	err := DeleteOrganization(db.DefaultContext, org, false)
