@@ -293,7 +293,7 @@
 					<div class="text right actions">
 						<form action="{{.Link}}/notes/remove" method="post">
 							<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
-							<button type="submit" class="ui red button" href="{{.Link}}/notes/remove">{{ctx.Locale.Tr "remove"}}</button>
+							<button type="submit" class="ui red button">{{ctx.Locale.Tr "remove"}}</button>
 						</form>
 					</div>
 				</div>
@@ -303,32 +303,19 @@
 	<div id="commit-notes-display-area" class="ui bottom attached info segment git-notes">
 		<pre class="commit-body">{{.NoteRendered | SanitizeHTML}}</pre>
 	</div>
-	{{if and ($.Permission.CanWrite $.UnitTypeCode) (not $.Repository.IsArchived) (not .IsDeleted)}}
-		<div id="commit-notes-edit-area" class="ui bottom attached info segment git-notes tw-hidden">
-			<form class="ui form" action="{{.Link}}/notes" method="post">
-
-				<div class="field">
-					<textarea name="notes">{{.NoteRendered | SanitizeHTML}}</textarea>
-				</div>
-
-				<div class="field">
-					<button id="notes-save-button" class="ui primary button">{{ctx.Locale.Tr "save"}}</button>
-				</div>
-			</form>
-		</div>
-	{{end}}
-{{else if and ($.Permission.CanWrite $.UnitTypeCode) (not $.Repository.IsArchived) (not .IsDeleted)}}
-	<div id="commit-notes-add-area" class="ui tw-mt-3 segment tw-hidden">
-		<form class="ui form" action="{{.Link}}/notes" method="post">
-
+{{end}}
+{{if and ($.Permission.CanWrite $.UnitTypeCode) (not $.Repository.IsArchived) (not .IsDeleted)}}
+	<div id="commit-notes-edit-area" class="ui bottom attached info segment git-notes tw-hidden">
+		<form id="commit-notes-edit-form" class="ui form" action="{{.Link}}/notes" method="post">
 			<div class="field">
-				<textarea name="notes"></textarea>
+				<textarea name="notes">{{.NoteRaw}}</textarea>
 			</div>
-
 			<div class="field">
-				<button class="ui primary button">{{ctx.Locale.Tr "add"}}</button>
+				<div class="text right edit">
+					<button id="commit-notes-cancel-button" type="button" class="ui cancel button">{{ctx.Locale.Tr "cancel"}}</button>
+					<button id="commit-notes-save-button" type="submit" class="ui primary button">{{if .NoteRaw}}{{ctx.Locale.Tr "save"}}{{else}}{{ctx.Locale.Tr "add"}}{{end}}</button>
+				</div>
 			</div>
 		</form>
 	</div>
 {{end}}
-
