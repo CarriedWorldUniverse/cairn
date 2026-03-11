@@ -59,16 +59,6 @@ func GetTeamRepositories(ctx context.Context, opts *SearchTeamRepoOptions) (repo
 		Find(&repos)
 }
 
-// AddTeamRepo adds a repo for an organization's team
-func AddTeamRepo(ctx context.Context, orgID, teamID, repoID int64) error {
-	_, err := db.GetEngine(ctx).Insert(&TeamRepo{
-		OrgID:  orgID,
-		TeamID: teamID,
-		RepoID: repoID,
-	})
-	return err
-}
-
 // RemoveTeamRepo remove repository from team
 func RemoveTeamRepo(ctx context.Context, teamID, repoID int64) error {
 	_, err := db.DeleteByBean(ctx, &TeamRepo{

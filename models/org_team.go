@@ -23,34 +23,44 @@ import (
 	"xorm.io/builder"
 )
 
-func AddRepository(ctx context.Context, t *organization.Team, repo *repo_model.Repository) (err error) {
-	if err = organization.AddTeamRepo(ctx, t.OrgID, t.ID, repo.ID); err != nil {
-		return err
+func AddRepository(ctx context.Context, t *organization.Team, repo *repo_model.Repository) error {
+	_, err := InsertTeamRepository(ctx, t, repo)
+	return err
+}
+
+func InsertTeamRepository(ctx context.Context, t *organization.Team, repo *repo_model.Repository) (teamRepo *organization.TeamRepo, err error) {
+	teamRepo = &organization.TeamRepo{
+		OrgID:  t.OrgID,
+		TeamID: t.ID,
+		RepoID: repo.ID,
+	}
+	if _, err = db.GetEngine(ctx).Insert(teamRepo); err != nil {
+		return nil, err
 	}
 
 	if err = organization.IncrTeamRepoNum(ctx, t.ID); err != nil {
-		return fmt.Errorf("update team: %w", err)
+		return nil, fmt.Errorf("update team: %w", err)
 	}
 
 	t.NumRepos++
 
 	if err = access_model.RecalculateTeamAccesses(ctx, repo, 0); err != nil {
-		return fmt.Errorf("recalculateAccesses: %w", err)
+		return nil, fmt.Errorf("recalculateAccesses: %w", err)
 	}
 
 	// Make all team members watch this repo if enabled in global settings
 	if setting.Service.AutoWatchNewRepos {
 		if err = t.LoadMembers(ctx); err != nil {
-			return fmt.Errorf("getMembers: %w", err)
+			return nil, fmt.Errorf("getMembers: %w", err)
 		}
 		for _, u := range t.Members {
 			if err = repo_model.WatchRepo(ctx, u.ID, repo.ID, true); err != nil {
-				return fmt.Errorf("watchRepo: %w", err)
+				return nil, fmt.Errorf("watchRepo: %w", err)
 			}
 		}
 	}
 
-	return nil
+	return teamRepo, nil
 }
 
 // addAllRepositories adds all repositories to the team.
@@ -354,16 +364,27 @@ func DeleteTeam(ctx context.Context, t *organization.Team) error {
 	return committer.Commit()
 }
 
+func AddTeamMember(ctx context.Context, team *organization.Team, userID int64) error {
+	_, err := InsertTeamMember(ctx, team, userID)
+	return err
+}
+
 // AddTeamMember adds new membership of given team to given organization,
 // the user will have membership to given organization automatically when needed.
-func AddTeamMember(ctx context.Context, team *organization.Team, userID int64) error {
+func InsertTeamMember(ctx context.Context, team *organization.Team, userID int64) (*organization.TeamUser, error) {
 	isAlreadyMember, err := organization.IsTeamMember(ctx, team.OrgID, team.ID, userID)
 	if err != nil || isAlreadyMember {
-		return err
+		return nil, err
 	}
 
 	if err := organization.AddOrgUser(ctx, team.OrgID, userID); err != nil {
-		return err
+		return nil, err
+	}
+
+	teamUser := &organization.TeamUser{
+		UID:    userID,
+		OrgID:  team.OrgID,
+		TeamID: team.ID,
 	}
 
 	err = db.WithTx(ctx, func(ctx context.Context) error {
@@ -375,11 +396,7 @@ func AddTeamMember(ctx context.Context, team *organization.Team, userID int64) e
 
 		sess := db.GetEngine(ctx)
 
-		if err := db.Insert(ctx, &organization.TeamUser{
-			UID:    userID,
-			OrgID:  team.OrgID,
-			TeamID: team.ID,
-		}); err != nil {
+		if err := db.Insert(ctx, teamUser); err != nil {
 			return err
 		} else if _, err := sess.Incr("num_members").ID(team.ID).Update(new(organization.Team)); err != nil {
 			return err
@@ -420,7 +437,7 @@ func AddTeamMember(ctx context.Context, team *organization.Team, userID int64) e
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// this behaviour may spend much time so run it in a goroutine
@@ -440,7 +457,7 @@ func AddTeamMember(ctx context.Context, team *organization.Team, userID int64) e
 		}(team.Repos)
 	}
 
-	return nil
+	return teamUser, nil
 }
 
 func removeTeamMember(ctx context.Context, team *organization.Team, userID int64) error {
