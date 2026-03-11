@@ -19,20 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTeam_AddMember(t *testing.T) {
-	require.NoError(t, unittest.PrepareTestDatabase())
-
-	test := func(teamID, userID int64) {
-		team := unittest.AssertExistsAndLoadBean(t, &organization.Team{ID: teamID})
-		require.NoError(t, AddTeamMember(db.DefaultContext, team, userID))
-		unittest.AssertExistsAndLoadBean(t, &organization.TeamUser{UID: userID, TeamID: teamID})
-		unittest.CheckConsistencyFor(t, &organization.Team{ID: teamID}, &user_model.User{ID: team.OrgID})
-	}
-	test(1, 2)
-	test(1, 4)
-	test(3, 2)
-}
-
 func TestTeam_RemoveMember(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
@@ -130,6 +116,96 @@ func TestAddTeamMember(t *testing.T) {
 	test(1, 2)
 	test(1, 4)
 	test(3, 2)
+}
+
+func TestTeam_AddAndReturnTeamMember(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	for _, testCase := range []struct {
+		name          string
+		alreadyMember bool
+		teamID        int64
+		userID        int64
+	}{
+		{
+			name:          "Already member of a team with repositories",
+			alreadyMember: true,
+			teamID:        1,
+			userID:        2,
+		},
+		{
+			name:   "New member of a team with repositories",
+			teamID: 1,
+			userID: 4,
+		},
+		{
+			name:   "New member of a team with no repositories",
+			teamID: 3,
+			userID: 2,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			team := unittest.AssertExistsAndLoadBean(t, &organization.Team{ID: testCase.teamID})
+			teamUser, err := InsertTeamMember(db.DefaultContext, team, testCase.userID)
+			require.NoError(t, err)
+			if testCase.alreadyMember {
+				assert.Nil(t, teamUser)
+			} else {
+				require.NotNil(t, teamUser)
+				assert.Equal(t, testCase.teamID, teamUser.TeamID)
+				assert.Equal(t, testCase.userID, teamUser.UID)
+			}
+			unittest.AssertExistsAndLoadBean(t, &organization.TeamUser{UID: testCase.userID, TeamID: testCase.teamID})
+			unittest.CheckConsistencyFor(t, &organization.Team{ID: testCase.teamID}, &user_model.User{ID: team.OrgID})
+		})
+	}
+}
+
+func TestTeam_AddTeamRepository(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	for _, testCase := range []struct {
+		name   string
+		teamID int64
+		repoID int64
+	}{
+		{
+			name:   "AddAndReturnTeamRepository",
+			teamID: 8,
+			repoID: 23,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			team := unittest.AssertExistsAndLoadBean(t, &organization.Team{ID: testCase.teamID})
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: testCase.repoID})
+			teamRepo, err := InsertTeamRepository(t.Context(), team, repo)
+			require.NoError(t, err)
+			require.NotNil(t, teamRepo)
+			assert.Equal(t, testCase.teamID, teamRepo.TeamID)
+			assert.Equal(t, testCase.repoID, teamRepo.RepoID)
+			unittest.AssertExistsAndLoadBean(t, &organization.TeamRepo{RepoID: testCase.repoID, TeamID: testCase.teamID})
+		})
+	}
+
+	for _, testCase := range []struct {
+		name   string
+		teamID int64
+		repoID int64
+	}{
+		{
+			name:   "AddTeamRepository",
+			teamID: 9,
+			repoID: 23,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			team := unittest.AssertExistsAndLoadBean(t, &organization.Team{ID: testCase.teamID})
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: testCase.repoID})
+			err := AddRepository(t.Context(), team, repo)
+			require.NoError(t, err)
+			unittest.AssertExistsAndLoadBean(t, &organization.TeamRepo{RepoID: testCase.repoID, TeamID: testCase.teamID})
+		})
+	}
 }
 
 func TestRemoveTeamMember(t *testing.T) {
