@@ -126,8 +126,9 @@ func apiErrorDefined(ctx *context.Context, err *namedError) {
 }
 
 func APIUnauthorizedError(ctx *context.Context) {
-	ctx.Resp.Header().Set("WWW-Authenticate", `Bearer realm="`+setting.AppURL+`v2/token",service="container_registry",scope="*",`+
-		`Basic realm="`+setting.AppURL+`v2",service="container_registry",scope="*"`)
+	// Do not include more than one challenge in the same header field. That breaks clients even though the HTTP RFC
+	// allows it.
+	ctx.Resp.Header().Set("WWW-Authenticate", `Bearer realm="`+setting.AppURL+`v2/token",service="container_registry",scope="*"`)
 	apiErrorDefined(ctx, errUnauthorized)
 }
 
