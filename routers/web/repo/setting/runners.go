@@ -5,7 +5,7 @@ package setting
 
 import (
 	"errors"
-	"net/http"
+	"fmt"
 	"net/url"
 
 	actions_model "forgejo.org/models/actions"
@@ -18,88 +18,109 @@ import (
 )
 
 const (
-	// TODO: Separate secrets from runners when layout is ready
-	tplRepoRunners     base.TplName = "repo/settings/actions"
-	tplOrgRunners      base.TplName = "org/settings/actions"
-	tplAdminRunners    base.TplName = "admin/actions"
-	tplUserRunners     base.TplName = "user/settings/actions"
-	tplRepoRunnerEdit  base.TplName = "repo/settings/runner_edit"
-	tplOrgRunnerEdit   base.TplName = "org/settings/runners_edit"
-	tplAdminRunnerEdit base.TplName = "admin/runners/edit"
-	tplUserRunnerEdit  base.TplName = "user/settings/runner_edit"
+	tplAdminRunnerCreate  base.TplName = "admin/runners/create"
+	tplAdminRunnerDetails base.TplName = "admin/runners/details"
+	tplAdminRunnerEdit    base.TplName = "admin/runners/edit"
+	tplAdminRunnerSetup   base.TplName = "admin/runners/setup"
+	tplAdminRunners       base.TplName = "admin/actions"
+	tplOrgRunnerCreate    base.TplName = "org/settings/runners_create"
+	tplOrgRunnerDetails   base.TplName = "org/settings/runners_details"
+	tplOrgRunnerEdit      base.TplName = "org/settings/runners_edit"
+	tplOrgRunnerSetup     base.TplName = "org/settings/runners_setup"
+	tplOrgRunners         base.TplName = "org/settings/actions"
+	tplRepoRunnerCreate   base.TplName = "repo/settings/runner_create"
+	tplRepoRunnerDetails  base.TplName = "repo/settings/runner_details"
+	tplRepoRunnerEdit     base.TplName = "repo/settings/runner_edit"
+	tplRepoRunnerSetup    base.TplName = "repo/settings/runner_setup"
+	tplRepoRunners        base.TplName = "repo/settings/actions"
+	tplUserRunnerCreate   base.TplName = "user/settings/runner_create"
+	tplUserRunnerDetails  base.TplName = "user/settings/runner_details"
+	tplUserRunnerEdit     base.TplName = "user/settings/runner_edit"
+	tplUserRunnerSetup    base.TplName = "user/settings/runner_setup"
+	tplUserRunners        base.TplName = "user/settings/actions"
 )
 
 type runnersCtx struct {
-	OwnerID            int64
-	RepoID             int64
-	IsRepo             bool
-	IsOrg              bool
-	IsAdmin            bool
-	IsUser             bool
-	RunnersTemplate    base.TplName
-	RunnerEditTemplate base.TplName
-	RedirectLink       string
+	OwnerID               int64
+	RepoID                int64
+	IsRepo                bool
+	IsOrg                 bool
+	IsAdmin               bool
+	IsUser                bool
+	RunnerCreateTemplate  base.TplName
+	RunnerDetailsTemplate base.TplName
+	RunnerEditTemplate    base.TplName
+	RunnerSetupTemplate   base.TplName
+	RunnersTemplate       base.TplName
+	RedirectLink          string
 }
 
 func getRunnersCtx(ctx *context.Context) (*runnersCtx, error) {
 	if ctx.Data["PageIsRepoSettings"] == true {
 		return &runnersCtx{
-			RepoID:             ctx.Repo.Repository.ID,
-			OwnerID:            0,
-			IsRepo:             true,
-			RunnersTemplate:    tplRepoRunners,
-			RunnerEditTemplate: tplRepoRunnerEdit,
-			RedirectLink:       ctx.Repo.RepoLink + "/settings/actions/runners/",
+			RepoID:                ctx.Repo.Repository.ID,
+			OwnerID:               0,
+			IsRepo:                true,
+			RunnerCreateTemplate:  tplRepoRunnerCreate,
+			RunnerDetailsTemplate: tplRepoRunnerDetails,
+			RunnerEditTemplate:    tplRepoRunnerEdit,
+			RunnerSetupTemplate:   tplRepoRunnerSetup,
+			RunnersTemplate:       tplRepoRunners,
+			RedirectLink:          ctx.Repo.RepoLink + "/settings/actions/runners/",
 		}, nil
 	}
 
 	if ctx.Data["PageIsOrgSettings"] == true {
 		err := shared_user.LoadHeaderCount(ctx)
 		if err != nil {
-			ctx.ServerError("LoadHeaderCount", err)
-			return nil, nil
+			return nil, fmt.Errorf("could not load project and package counts: %w", err)
 		}
 		return &runnersCtx{
-			RepoID:             0,
-			OwnerID:            ctx.Org.Organization.ID,
-			IsOrg:              true,
-			RunnersTemplate:    tplOrgRunners,
-			RunnerEditTemplate: tplOrgRunnerEdit,
-			RedirectLink:       ctx.Org.OrgLink + "/settings/actions/runners/",
+			RepoID:                0,
+			OwnerID:               ctx.Org.Organization.ID,
+			IsOrg:                 true,
+			RunnerCreateTemplate:  tplOrgRunnerCreate,
+			RunnerDetailsTemplate: tplOrgRunnerDetails,
+			RunnerEditTemplate:    tplOrgRunnerEdit,
+			RunnerSetupTemplate:   tplOrgRunnerSetup,
+			RunnersTemplate:       tplOrgRunners,
+			RedirectLink:          ctx.Org.OrgLink + "/settings/actions/runners/",
 		}, nil
 	}
 
 	if ctx.Data["PageIsAdmin"] == true {
 		return &runnersCtx{
-			RepoID:             0,
-			OwnerID:            0,
-			IsAdmin:            true,
-			RunnersTemplate:    tplAdminRunners,
-			RunnerEditTemplate: tplAdminRunnerEdit,
-			RedirectLink:       setting.AppSubURL + "/admin/actions/runners/",
+			RepoID:                0,
+			OwnerID:               0,
+			IsAdmin:               true,
+			RunnerCreateTemplate:  tplAdminRunnerCreate,
+			RunnerDetailsTemplate: tplAdminRunnerDetails,
+			RunnerEditTemplate:    tplAdminRunnerEdit,
+			RunnerSetupTemplate:   tplAdminRunnerSetup,
+			RunnersTemplate:       tplAdminRunners,
+			RedirectLink:          setting.AppSubURL + "/admin/actions/runners/",
 		}, nil
 	}
 
 	if ctx.Data["PageIsUserSettings"] == true {
 		return &runnersCtx{
-			OwnerID:            ctx.Doer.ID,
-			RepoID:             0,
-			IsUser:             true,
-			RunnersTemplate:    tplUserRunners,
-			RunnerEditTemplate: tplUserRunnerEdit,
-			RedirectLink:       setting.AppSubURL + "/user/settings/actions/runners/",
+			OwnerID:               ctx.Doer.ID,
+			RepoID:                0,
+			IsUser:                true,
+			RunnerCreateTemplate:  tplUserRunnerCreate,
+			RunnerDetailsTemplate: tplUserRunnerDetails,
+			RunnerEditTemplate:    tplUserRunnerEdit,
+			RunnerSetupTemplate:   tplUserRunnerSetup,
+			RunnersTemplate:       tplUserRunners,
+			RedirectLink:          setting.AppSubURL + "/user/settings/actions/runners/",
 		}, nil
 	}
 
 	return nil, errors.New("unable to set Runners context")
 }
 
-// Runners render settings/actions/runners page for repo level
+// Runners renders the list of all available runners.
 func Runners(ctx *context.Context) {
-	ctx.Data["PageIsSharedSettingsRunners"] = true
-	ctx.Data["Title"] = ctx.Tr("actions.actions")
-	ctx.Data["PageType"] = "runners"
-
 	rCtx, err := getRunnersCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getRunnersCtx", err)
@@ -126,60 +147,114 @@ func Runners(ctx *context.Context) {
 		opts.OwnerID = rCtx.OwnerID
 		opts.WithAvailable = true
 	}
-	actions_shared.RunnersList(ctx, opts)
 
-	ctx.HTML(http.StatusOK, rCtx.RunnersTemplate)
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	actions_shared.RunnersList(ctx, rCtx.RunnersTemplate, opts)
 }
 
-// RunnersEdit renders runner edit page for repository level
-func RunnersEdit(ctx *context.Context) {
-	ctx.Data["PageIsSharedSettingsRunners"] = true
-	ctx.Data["Title"] = ctx.Tr("actions.runners.edit_runner")
+// RunnersDetails renders a read-only view of the most important properties of a runner. It is accessible to every user
+// that can use that particular runner.
+func RunnersDetails(ctx *context.Context) {
 	rCtx, err := getRunnersCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getRunnersCtx", err)
 		return
 	}
 
+	runnerID := ctx.ParamsInt64(":runnerid")
 	page := ctx.FormInt("page")
 	if page <= 1 {
 		page = 1
 	}
 
-	actions_shared.RunnerDetails(ctx, page,
-		ctx.ParamsInt64(":runnerid"), rCtx.OwnerID, rCtx.RepoID,
-	)
-	ctx.HTML(http.StatusOK, rCtx.RunnerEditTemplate)
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	actions_shared.RunnerDetails(ctx, runnerID, rCtx.OwnerID, rCtx.RepoID, rCtx.RunnerDetailsTemplate, page)
 }
 
+// RunnersCreate renders the form for creating a new runner.
+func RunnersCreate(ctx *context.Context) {
+	rCtx, err := getRunnersCtx(ctx)
+	if err != nil {
+		ctx.ServerError("getRunnersCtx", err)
+		return
+	}
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	actions_shared.RunnerCreate(ctx, rCtx.RunnerCreateTemplate)
+}
+
+// RunnersCreatePost handles the form submitted by RunnersCreate.
+func RunnersCreatePost(ctx *context.Context) {
+	rCtx, err := getRunnersCtx(ctx)
+	if err != nil {
+		ctx.ServerError("getRunnersCtx", err)
+		return
+	}
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	actions_shared.RunnerCreatePost(ctx, rCtx.OwnerID, rCtx.RepoID, rCtx.RunnerCreateTemplate, rCtx.RunnerSetupTemplate)
+}
+
+// RunnersEdit renders the form for changing an existing runner.
+func RunnersEdit(ctx *context.Context) {
+	rCtx, err := getRunnersCtx(ctx)
+	if err != nil {
+		ctx.ServerError("getRunnersCtx", err)
+		return
+	}
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	actions_shared.RunnerEdit(ctx, ctx.ParamsInt64(":runnerid"), rCtx.OwnerID, rCtx.RepoID, rCtx.RunnerEditTemplate)
+}
+
+// RunnersEditPost handles the form submitted by RunnersEdit.
 func RunnersEditPost(ctx *context.Context) {
 	rCtx, err := getRunnersCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getRunnersCtx", err)
 		return
 	}
-	actions_shared.RunnerDetailsEditPost(ctx, ctx.ParamsInt64(":runnerid"),
-		rCtx.OwnerID, rCtx.RepoID,
-		rCtx.RedirectLink+url.PathEscape(ctx.Params(":runnerid")))
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	runnerID := ctx.ParamsInt64(":runnerid")
+	redirectURL := rCtx.RedirectLink + url.PathEscape(ctx.Params(":runnerid"))
+	actions_shared.RunnerEditPost(ctx, runnerID, rCtx.OwnerID, rCtx.RepoID, rCtx.RunnerEditTemplate,
+		rCtx.RunnerSetupTemplate, redirectURL)
 }
 
+// ResetRunnerRegistrationToken handles the request to reset the runner registration token.
 func ResetRunnerRegistrationToken(ctx *context.Context) {
 	rCtx, err := getRunnersCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getRunnersCtx", err)
 		return
 	}
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
 	actions_shared.RunnerResetRegistrationToken(ctx, rCtx.OwnerID, rCtx.RepoID, rCtx.RedirectLink)
 }
 
-// RunnerDeletePost response for deleting runner
+// RunnerDeletePost handles the request to delete a runner.
 func RunnerDeletePost(ctx *context.Context) {
 	rCtx, err := getRunnersCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getRunnersCtx", err)
 		return
 	}
-	actions_shared.RunnerDeletePost(ctx, ctx.ParamsInt64(":runnerid"), rCtx.OwnerID, rCtx.RepoID, rCtx.RedirectLink, rCtx.RedirectLink+url.PathEscape(ctx.Params(":runnerid")))
+
+	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+
+	runnerID := ctx.ParamsInt64(":runnerid")
+	successRedirectURL := rCtx.RedirectLink
+	failureRedirectURL := rCtx.RedirectLink
+	actions_shared.RunnerDeletePost(ctx, runnerID, rCtx.OwnerID, rCtx.RepoID, successRedirectURL, failureRedirectURL)
 }
 
 func RedirectToDefaultSetting(ctx *context.Context) {

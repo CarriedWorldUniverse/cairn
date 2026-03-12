@@ -25,14 +25,15 @@ func TestRunnerDetails(t *testing.T) {
 
 	t.Run("permission denied", func(t *testing.T) {
 		ctx, resp := contexttest.MockContext(t, "/admin/actions/runners")
-		RunnerDetails(ctx, 1, runner.ID, user.ID, 0)
-		assert.Equal(t, http.StatusNotFound, resp.Code)
+		RunnerDetails(ctx, runner.ID, user.ID, 0, "admin/runners/details", 1)
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Empty(t, ctx.GetData()["Tasks"])
 	})
 
 	t.Run("first page", func(t *testing.T) {
 		ctx, resp := contexttest.MockContext(t, "/admin/actions/runners")
 		page := 1
-		RunnerDetails(ctx, page, runner.ID, 0, 0)
+		RunnerDetails(ctx, runner.ID, 0, 0, "admin/runners/details", page)
 		require.Equal(t, http.StatusOK, resp.Code)
 		assert.Len(t, ctx.GetData()["Tasks"], 30)
 	})
@@ -40,7 +41,7 @@ func TestRunnerDetails(t *testing.T) {
 	t.Run("second and last page", func(t *testing.T) {
 		ctx, resp := contexttest.MockContext(t, "/admin/actions/runners")
 		page := 2
-		RunnerDetails(ctx, page, runner.ID, 0, 0)
+		RunnerDetails(ctx, runner.ID, 0, 0, "admin/runners/details", page)
 		require.Equal(t, http.StatusOK, resp.Code)
 		assert.Len(t, ctx.GetData()["Tasks"], 10)
 	})

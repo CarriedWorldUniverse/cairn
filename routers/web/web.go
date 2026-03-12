@@ -461,7 +461,12 @@ func registerRoutes(m *web.Route) {
 	addSettingsRunnersRoutes := func() {
 		m.Group("/runners", func() {
 			m.Get("", repo_setting.Runners)
-			m.Combo("/{runnerid}").Get(repo_setting.RunnersEdit).
+			m.Combo("/new").
+				Get(repo_setting.RunnersCreate).
+				Post(web.Bind(forms.CreateRunnerForm{}), repo_setting.RunnersCreatePost)
+			m.Get("/{runnerid}", repo_setting.RunnersDetails)
+			m.Combo("/{runnerid}/edit").
+				Get(repo_setting.RunnersEdit).
 				Post(web.Bind(forms.EditRunnerForm{}), repo_setting.RunnersEditPost)
 			m.Post("/{runnerid}/delete", repo_setting.RunnerDeletePost)
 			m.Get("/reset_registration_token", repo_setting.ResetRunnerRegistrationToken)
