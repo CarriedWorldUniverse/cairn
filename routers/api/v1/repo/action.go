@@ -482,10 +482,16 @@ func (Action) ListVariables(ctx *context.APIContext) {
 }
 
 // GetRegistrationToken returns the runner registration token to register runners for the repository
+//
+// Deprecated: This operation has been deprecated in Forgejo 15. Use the web UI or RegisterRunner instead.
 func (Action) GetRegistrationToken(ctx *context.APIContext) {
 	// swagger:operation GET /repos/{owner}/{repo}/actions/runners/registration-token repository repoGetRunnerRegistrationToken
 	// ---
 	// summary: Get a repository's runner registration token
+	// description: >
+	//   This operation has been deprecated in Forgejo 15.
+	//   Use the web UI or [`/repos/{owner}/{repo}/actions/runners`](#/repository/registerRepoRunner) instead.
+	// deprecated: true
 	// produces:
 	// - application/json
 	// parameters:
