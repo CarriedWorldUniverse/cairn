@@ -191,6 +191,7 @@
 	"settings.twofa_reenroll": "Re-enroll two-factor authentication",
 	"settings.twofa_reenroll.description": "Re-enroll your two-factor authentication",
 	"settings.must_enable_2fa": "This Forgejo instance requires users to enable two-factor authentication before they can access their accounts.",
+	"settings.specific_repo_access": "Repository Access",
 	"error.must_enable_2fa": "This Forgejo instance requires users to enable two-factor authentication before they can access their accounts. Enable it at: %s",
 	"avatar.constraints_hint": "Custom avatar may not exceed %[1]s in size or be larger than %[2]dx%[3]d pixels",
 	"user.ghost.tooltip": "This user has been deleted, or cannot be matched.",

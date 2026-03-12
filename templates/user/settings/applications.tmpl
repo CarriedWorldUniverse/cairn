@@ -8,27 +8,34 @@
 				<div class="flex-item">
 					{{ctx.Locale.Tr "settings.tokens_desc"}}
 				</div>
-				{{range .Tokens}}
+				{{range .TokensWithResources}}
 					<div class="flex-item">
 						<div class="flex-item-leading">
-							<span class="text {{if .HasRecentActivity}}green{{end}}" {{if .HasRecentActivity}}data-tooltip-content="{{ctx.Locale.Tr "settings.token_state_desc"}}"{{end}}>
+							<span class="text {{if .Token.HasRecentActivity}}green{{end}}" {{if .Token.HasRecentActivity}}data-tooltip-content="{{ctx.Locale.Tr "settings.token_state_desc"}}"{{end}}>
 								{{svg "fontawesome-send" 32}}
 							</span>
 						</div>
 						<div class="flex-item-main">
 							<details>
-								<summary><span class="flex-item-title">{{.Name}}</span></summary>
-								<p class="tw-my-1">
-									{{ctx.Locale.Tr "settings.repo_and_org_access"}}:
-									{{if .DisplayPublicOnly}}
+								<summary><span class="flex-item-title">{{.Token.Name}}</span></summary>
+								{{if .Token.ResourceAllRepos}}
+									<p class="tw-my-1">{{ctx.Locale.Tr "settings.repo_and_org_access"}}:</p>
+									{{if .Token.DisplayPublicOnly}}
 										{{ctx.Locale.Tr "settings.permissions_public_only"}}
 									{{else}}
 										{{ctx.Locale.Tr "settings.permissions_access_all"}}
 									{{end}}
-								</p>
+								{{else}}
+									<p class="tw-my-1">{{ctx.Locale.Tr "settings.specific_repo_access"}}:</p>
+									<ul class="tw-my-1">
+										{{range .Repositories}}
+											<li><a href="{{.HTMLURL}}">{{.FullName}}</a></li>
+										{{end}}
+									</ul>
+								{{end}}
 								<p class="tw-my-1">{{ctx.Locale.Tr "settings.permissions_list"}}</p>
 								<ul class="tw-my-1">
-								{{range .Scope.StringSlice}}
+								{{range .Token.Scope.StringSlice}}
 									{{if (ne . $.AccessTokenScopePublicOnly)}}
 										<li>{{.}}</li>
 									{{end}}
@@ -36,15 +43,15 @@
 								</ul>
 							</details>
 							<div class="flex-item-body">
-								<p>{{ctx.Locale.Tr "settings.added_on" (DateUtils.AbsoluteShort .CreatedUnix)}} — {{svg "octicon-info"}} {{if .HasUsed}}{{ctx.Locale.Tr "settings.last_used"}} <span {{if .HasRecentActivity}}class="text green"{{end}}>{{DateUtils.AbsoluteShort .UpdatedUnix}}</span>{{else}}{{ctx.Locale.Tr "settings.no_activity"}}{{end}}</p>
+								<p>{{ctx.Locale.Tr "settings.added_on" (DateUtils.AbsoluteShort .Token.CreatedUnix)}} — {{svg "octicon-info"}} {{if .Token.HasUsed}}{{ctx.Locale.Tr "settings.last_used"}} <span {{if .Token.HasRecentActivity}}class="text green"{{end}}>{{DateUtils.AbsoluteShort .Token.UpdatedUnix}}</span>{{else}}{{ctx.Locale.Tr "settings.no_activity"}}{{end}}</p>
 							</div>
 						</div>
 						<div class="flex-item-trailing">
-								<button class="ui primary tiny button delete-button" data-modal-id="regenerate-token" data-url="{{$.Link}}/regenerate" data-id="{{.ID}}">
+								<button class="ui primary tiny button delete-button" data-modal-id="regenerate-token" data-url="{{$.Link}}/regenerate" data-id="{{.Token.ID}}">
 									{{svg "octicon-issue-reopened" 16 "tw-mr-1"}}
 									{{ctx.Locale.Tr "settings.regenerate_token"}}
 								</button>
-								<button class="ui red tiny button delete-button" data-modal-id="delete-token" data-url="{{$.Link}}/delete" data-id="{{.ID}}">
+								<button class="ui red tiny button delete-button" data-modal-id="delete-token" data-url="{{$.Link}}/delete" data-id="{{.Token.ID}}">
 									{{svg "octicon-trash" 16 "tw-mr-1"}}
 									{{ctx.Locale.Tr "settings.delete_token"}}
 								</button>
