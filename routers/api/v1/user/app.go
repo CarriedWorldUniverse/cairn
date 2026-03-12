@@ -18,7 +18,6 @@ import (
 	"forgejo.org/models/db"
 	access_model "forgejo.org/models/perm/access"
 	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/container"
 	"forgejo.org/modules/optional"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/web"
@@ -66,42 +65,34 @@ func ListAccessTokens(ctx *context.APIContext) {
 	}
 
 	// Load all the AccessTokenResourceRepo for the tokens that we're returning:
-	allRepoIDs := container.Set[int64]{}
-	repoResourcesByTokenID, err := auth_model.GetRepositoriesAccessibleWithTokens(ctx, tokens)
-	if err != nil {
-		ctx.InternalServerError(err)
-		return
-	}
-
-	// Load all the Repository models that are referenced by the AccessTokenResourceRepo's:
-	for _, repoResources := range repoResourcesByTokenID {
-		for _, repoResource := range repoResources {
-			allRepoIDs.Add(repoResource.RepoID)
-		}
-	}
-	reposByID, err := repo_model.GetRepositoriesMapByIDs(ctx, allRepoIDs.Slice())
-	if err != nil {
-		ctx.InternalServerError(err)
-		return
-	}
-
-	// Prepare a lookup map to access the repositories by token ID:
-	reposByTokenID := make(map[int64][]*api.RepositoryMeta)
-	for tokenID, repoResources := range repoResourcesByTokenID {
-		for _, repoResource := range repoResources {
-			repo, ok := reposByID[repoResource.RepoID]
-			if !ok {
-				// Shouldn't be possible with the foreign key on `AccessTokenResourceRepo` to the repository table.
-				ctx.Error(http.StatusInternalServerError, "reposById", "missing repository")
-				return
+	repoModelsByTokenID, err := repo_model.BulkGetRepositoriesForAccessTokens(ctx, tokens,
+		func(repo *repo_model.Repository) (bool, error) {
+			// Repos associated with a repo-specific access token should already be visible to the token owner, but it's
+			// possible that access has changed, such as a removed collaborator on a repo -- don't provide info on that
+			// repo if so.
+			permission, err := access_model.GetUserRepoPermissionWithReducer(ctx, repo, ctx.Doer, ctx.Reducer)
+			if err != nil {
+				return false, err
 			}
-			reposByTokenID[tokenID] = append(reposByTokenID[tokenID], &api.RepositoryMeta{
+			return permission.HasAccess(), nil
+		})
+	if err != nil {
+		ctx.InternalServerError(err)
+		return
+	}
+	// Convert map[int64]*Repository -> map[int64]*RepositoryMeta...
+	reposByTokenID := make(map[int64][]*api.RepositoryMeta)
+	for tokenID, repoModels := range repoModelsByTokenID {
+		repos := make([]*api.RepositoryMeta, len(repoModels))
+		for i, repo := range repoModels {
+			repos[i] = &api.RepositoryMeta{
 				ID:       repo.ID,
 				Name:     repo.Name,
 				Owner:    repo.OwnerName,
 				FullName: repo.FullName(),
-			})
+			}
 		}
+		reposByTokenID[tokenID] = repos
 	}
 
 	apiTokens := make([]*api.AccessToken, len(tokens))

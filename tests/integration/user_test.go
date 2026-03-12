@@ -281,6 +281,35 @@ func TestAccessTokenRegenerate(t *testing.T) {
 	assert.NotEqual(t, "TestAccessToken", latestTokenName)
 }
 
+func TestAccessTokenResourceRepos(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	session := loginUser(t, "user2")
+
+	// Before creating a repo-specific access token, we shouldn't have the "Repository Access:" list in the personal
+	// access token page:
+	req := NewRequest(t, "GET", "/user/settings/applications")
+	resp := session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertSelection(t, htmlDoc.FindByText(".user-setting-content p", "Repository Access:"), false)
+
+	// Then we create a repo-specific access token.  We give it access to two repos, user2/repo2, but also user30/empty,
+	// a private repo owned by someone else...  We'll pretend user2 used to be a collaborator on this repo and
+	// previously had access to view it, but doesn't anymore.
+	createFineGrainedRepoAccessToken(t, "user2",
+		[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeReadUser},
+		[]int64{2, 52},
+	)
+
+	// Now we have "Repository Access:"...
+	req = NewRequest(t, "GET", "/user/settings/applications")
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	htmlDoc = NewHTMLParser(t, resp.Body)
+	htmlDoc.AssertSelection(t, htmlDoc.FindByText(".user-setting-content p", "Repository Access:"), true)
+	htmlDoc.AssertSelection(t, htmlDoc.FindByText(".user-setting-content a", "user2/repo2"), true)   // link to repo
+	htmlDoc.AssertSelection(t, htmlDoc.FindByText(".user-setting-content a", "user30/empty"), false) // missing - user2 has no visibility
+}
+
 func findLatestTokenID(t *testing.T, session *TestSession) (string, int) {
 	req := NewRequest(t, "GET", "/user/settings/applications")
 	resp := session.MakeRequest(t, req, http.StatusOK)
