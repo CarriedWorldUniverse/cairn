@@ -6,6 +6,7 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
@@ -15,6 +16,7 @@ import (
 	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,8 +49,11 @@ func TestRunnerModification(t *testing.T) {
 			sess = adminSess
 		}
 
-		req := NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d", id), map[string]string{
-			"description": "New Description",
+		originalRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{ID: id})
+
+		req := NewRequestWithValues(t, "POST", baseURL+fmt.Sprintf("/%d/edit", id), map[string]string{
+			"runner_name":        "New Name",
+			"runner_description": "New Description",
 		})
 		if fail {
 			sess.MakeRequest(t, req, http.StatusNotFound)
@@ -57,6 +62,12 @@ func TestRunnerModification(t *testing.T) {
 			flashCookie := sess.GetCookie(app_context.CookieNameFlash)
 			assert.NotNil(t, flashCookie)
 			assert.Equal(t, "success%3DRunner%2Bedited%2Bsuccessfully", flashCookie.Value)
+
+			// Verify that the runner's token isn't changed during a normal update when token regeneration is not
+			// requested.
+			updatedRunner := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{ID: id})
+			assert.Equal(t, originalRunner.TokenHash, updatedRunner.TokenHash, "token was changed unexpectedly")
+			assert.Equal(t, originalRunner.TokenSalt, updatedRunner.TokenSalt, "token was changed unexpectedly")
 		}
 
 		req = NewRequest(t, "POST", baseURL+fmt.Sprintf("/%d/delete", id))
@@ -136,58 +147,132 @@ func TestRunnerVisibility(t *testing.T) {
 	runnerFive := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{ID: 719935})
 	runnerSix := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunner{ID: 719936})
 
-	testCases := []struct {
-		name              string
-		user              *user_model.User
-		url               string
-		expectedRunners   []*actions_model.ActionRunner
-		unexpectedRunners []*actions_model.ActionRunner
-	}{
-		{
-			name:              "admin-sees-all",
-			user:              admin,
-			url:               "/admin/actions/runners",
-			expectedRunners:   []*actions_model.ActionRunner{runnerOne, runnerTwo, runnerThree, runnerFour, runnerFive, runnerSix},
-			unexpectedRunners: []*actions_model.ActionRunner{},
-		},
-		{
-			name:              "user-sees-own-and-global",
-			user:              user2,
-			url:               "user/settings/actions/runners",
-			expectedRunners:   []*actions_model.ActionRunner{runnerTwo, runnerFour},
-			unexpectedRunners: []*actions_model.ActionRunner{runnerOne, runnerThree, runnerFive, runnerSix},
-		},
-		{
-			name:              "org-sees-own-and-global",
-			user:              user2,
-			url:               "/org/org3/settings/actions/runners",
-			expectedRunners:   []*actions_model.ActionRunner{runnerOne, runnerFour},
-			unexpectedRunners: []*actions_model.ActionRunner{runnerTwo, runnerThree, runnerFive, runnerSix},
-		},
-		{
-			name:              "user-repo-sees-own-and-users-and-global",
-			user:              user2,
-			url:               "/user2/test_workflows/settings/actions/runners",
-			expectedRunners:   []*actions_model.ActionRunner{runnerTwo, runnerFour, runnerSix},
-			unexpectedRunners: []*actions_model.ActionRunner{runnerOne, runnerThree, runnerFive},
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			session := loginUser(t, testCase.user.Name)
-
-			request := NewRequest(t, "GET", testCase.url)
-			response := session.MakeRequest(t, request, http.StatusOK)
-
-			htmlDoc := NewHTMLParser(t, response.Body)
-			for _, expectedRunner := range testCase.expectedRunners {
-				selector := fmt.Sprintf("td:contains('%s')", expectedRunner.Name)
-				assert.Equal(t, 1, htmlDoc.Find(selector).Length(), "runner '%s' could not be found", expectedRunner.Name)
-			}
-			for _, unexpectedRunner := range testCase.unexpectedRunners {
-				selector := fmt.Sprintf("td:contains('%s')", unexpectedRunner.Name)
-				assert.Zero(t, htmlDoc.Find(selector).Length(), "runner '%s' is unexpectedly present", unexpectedRunner.Name)
-			}
+	containsText := func(selection *goquery.Selection, text string) bool {
+		filtered := selection.FilterFunction(func(i int, s *goquery.Selection) bool {
+			return strings.Contains(strings.TrimSpace(s.Text()), text)
 		})
+		return filtered.Length() == 1
 	}
+
+	t.Run("runner list", func(t *testing.T) {
+		testCases := []struct {
+			name              string
+			user              *user_model.User
+			url               string
+			expectedRunners   []*actions_model.ActionRunner
+			unexpectedRunners []*actions_model.ActionRunner
+		}{
+			{
+				name:              "Admin sees all",
+				user:              admin,
+				url:               "/admin/actions/runners",
+				expectedRunners:   []*actions_model.ActionRunner{runnerOne, runnerTwo, runnerThree, runnerFour, runnerFive, runnerSix},
+				unexpectedRunners: []*actions_model.ActionRunner{},
+			},
+			{
+				name:              "User sees own and global",
+				user:              user2,
+				url:               "/user/settings/actions/runners",
+				expectedRunners:   []*actions_model.ActionRunner{runnerTwo, runnerFour},
+				unexpectedRunners: []*actions_model.ActionRunner{runnerOne, runnerThree, runnerFive, runnerSix},
+			},
+			{
+				name:              "Org sees own and global",
+				user:              user2,
+				url:               "/org/org3/settings/actions/runners",
+				expectedRunners:   []*actions_model.ActionRunner{runnerOne, runnerFour},
+				unexpectedRunners: []*actions_model.ActionRunner{runnerTwo, runnerThree, runnerFive, runnerSix},
+			},
+			{
+				name:              "User repo sees own and user's and global",
+				user:              user2,
+				url:               "/user2/test_workflows/settings/actions/runners",
+				expectedRunners:   []*actions_model.ActionRunner{runnerTwo, runnerFour, runnerSix},
+				unexpectedRunners: []*actions_model.ActionRunner{runnerOne, runnerThree, runnerFive},
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				session := loginUser(t, testCase.user.Name)
+
+				request := NewRequest(t, "GET", testCase.url)
+				response := session.MakeRequest(t, request, http.StatusOK)
+
+				htmlDoc := NewHTMLParser(t, response.Body)
+				for _, expectedRunner := range testCase.expectedRunners {
+					selector := fmt.Sprintf("td:contains('%s')", expectedRunner.Name)
+					assert.Equal(t, 1, htmlDoc.Find(selector).Length(), "runner '%s' could not be found", expectedRunner.Name)
+				}
+				for _, unexpectedRunner := range testCase.unexpectedRunners {
+					selector := fmt.Sprintf("td:contains('%s')", unexpectedRunner.Name)
+					assert.Zero(t, htmlDoc.Find(selector).Length(), "runner '%s' is unexpectedly present", unexpectedRunner.Name)
+				}
+			})
+		}
+	})
+
+	t.Run("runner details", func(t *testing.T) {
+		testCases := []struct {
+			name             string
+			user             *user_model.User
+			runner           *actions_model.ActionRunner
+			accessibleURLs   []string
+			inaccessibleURLs []string
+		}{
+			{
+				name:   "Organization runner",
+				user:   user2,
+				runner: runnerOne,
+				// Actions are disabled on all repositories of org3. That's why runnerOne isn't accessible in any
+				// repository.
+				accessibleURLs:   []string{"/org/org3/settings/actions/runners"},
+				inaccessibleURLs: []string{"/user/settings/actions/runners", "/user2/test_workflows/settings/actions/runners"},
+			},
+			{
+				name:             "User runner",
+				user:             user2,
+				runner:           runnerTwo,
+				accessibleURLs:   []string{"/user/settings/actions/runners", "/user2/test_workflows/settings/actions/runners"},
+				inaccessibleURLs: []string{"/org/org3/settings/actions/runners"},
+			},
+			{
+				name:   "Global runner",
+				user:   user2,
+				runner: runnerFour,
+				accessibleURLs: []string{
+					"/user/settings/actions/runners",
+					"/user2/test_workflows/settings/actions/runners",
+					"/org/org3/settings/actions/runners",
+				},
+				inaccessibleURLs: []string{},
+			},
+			{
+				name:             "Repository runner",
+				user:             user2,
+				runner:           runnerSix,
+				accessibleURLs:   []string{"/user2/test_workflows/settings/actions/runners"},
+				inaccessibleURLs: []string{"/user/settings/actions/runners", "/org/org3/settings/actions/runners"},
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				session := loginUser(t, testCase.user.Name)
+
+				for _, accessibleURL := range testCase.accessibleURLs {
+					request := NewRequest(t, "GET", fmt.Sprintf("%s/%d", accessibleURL, testCase.runner.ID))
+					response := session.MakeRequest(t, request, http.StatusOK)
+
+					htmlDoc := NewHTMLParser(t, response.Body)
+					assert.True(t, containsText(htmlDoc.Find("dd"), testCase.runner.UUID))
+				}
+				for _, inaccessibleURL := range testCase.inaccessibleURLs {
+					request := NewRequest(t, "GET", fmt.Sprintf("%s/%d", inaccessibleURL, testCase.runner.ID))
+					response := session.MakeRequest(t, request, http.StatusNotFound)
+
+					htmlDoc := NewHTMLParser(t, response.Body)
+					assert.False(t, containsText(htmlDoc.Find("body"), testCase.runner.UUID))
+				}
+			})
+		}
+	})
 }

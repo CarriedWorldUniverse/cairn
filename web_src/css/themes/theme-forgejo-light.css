@@ -279,6 +279,12 @@
   /* pattern colors for gradient */
   --checkerboard-color-1: #ffffff;
   --checkerboard-color-2: #e5e5e5;
+  --color-indicator-offline: #52525b;
+  --color-indicator-offline-20: #52525b33;
+  --color-indicator-idle: #16a34a;
+  --color-indicator-idle-20: #16a34a33;
+  --color-indicator-active: #2185d0;
+  --color-indicator-active-20: #2185d033;
   accent-color: var(--color-accent);
   color-scheme: light;
 }

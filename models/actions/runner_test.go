@@ -10,6 +10,7 @@ import (
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/timeutil"
 
@@ -232,6 +233,144 @@ func TestRunnerEditable(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			result := testCase.runner.Editable(testCase.ownerID, testCase.repoID)
 			assert.Equal(t, testCase.editable, result)
+		})
+	}
+}
+
+func TestRunner_GetAvailableRunnerByID(t *testing.T) {
+	defer unittest.OverrideFixtures("models/actions/TestRunner_GetAvailableRunnerByID")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	repository32 := unittest.AssertExistsAndLoadBean(t, &repo.Repository{ID: 32, OwnerID: 3})
+	repository1 := unittest.AssertExistsAndLoadBean(t, &repo.Repository{ID: 1, OwnerID: 2})
+
+	runner1 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719931, OwnerID: 3, RepoID: 0}) // Owned by org3
+	runner2 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719932, OwnerID: 2, RepoID: 0}) // Owned by user2
+	runner3 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719933, OwnerID: 0, RepoID: 0})
+	runner4 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719934, OwnerID: 0, RepoID: repository32.ID})
+
+	testCases := []struct {
+		name          string
+		runner        *ActionRunner
+		ownerID       int64
+		repoID        int64
+		expectedError string
+	}{
+		{
+			name:          "Organization runner",
+			runner:        runner1,
+			ownerID:       3,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "Organization runner visible to admins",
+			runner:        runner1,
+			ownerID:       0,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "Organization runner invisible to different owner",
+			runner:        runner1,
+			ownerID:       2,
+			repoID:        0,
+			expectedError: fmt.Sprintf("runner with ID %d: resource does not exist", runner1.ID),
+		},
+		{
+			name:          "Organization runner visible to its repositories",
+			runner:        runner1,
+			ownerID:       0,
+			repoID:        repository32.ID,
+			expectedError: "",
+		},
+		{
+			name:          "Organization runner invisible to repositories owned by somebody else",
+			runner:        runner1,
+			ownerID:       0,
+			repoID:        repository1.ID,
+			expectedError: fmt.Sprintf("runner with ID %d: resource does not exist", runner1.ID),
+		},
+		{
+			name:          "User runner",
+			runner:        runner2,
+			ownerID:       2,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "User runner invisible to different user",
+			runner:        runner2,
+			ownerID:       1,
+			repoID:        0,
+			expectedError: fmt.Sprintf("runner with ID %d: resource does not exist", runner2.ID),
+		},
+		{
+			name:          "User runner visible to repository owned by user",
+			runner:        runner2,
+			ownerID:       0,
+			repoID:        repository1.ID,
+			expectedError: "",
+		},
+		{
+			name:          "User runner invisible to repository owned by different user",
+			runner:        runner2,
+			ownerID:       0,
+			repoID:        repository32.ID,
+			expectedError: fmt.Sprintf("runner with ID %d: resource does not exist", runner2.ID),
+		},
+		{
+			name:          "Global runner",
+			runner:        runner3,
+			ownerID:       0,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "Global runner is visible to any user",
+			runner:        runner3,
+			ownerID:       2,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "Global runner is visible to any repository",
+			runner:        runner3,
+			ownerID:       0,
+			repoID:        repository32.ID,
+			expectedError: "",
+		},
+		{
+			name:          "Repository runner",
+			runner:        runner4,
+			ownerID:       0,
+			repoID:        repository32.ID,
+			expectedError: "",
+		},
+		{
+			name:          "Repository runner is visible to admins",
+			runner:        runner4,
+			ownerID:       0,
+			repoID:        0,
+			expectedError: "",
+		},
+		{
+			name:          "Repository runner is invisible to repository owner",
+			runner:        runner4,
+			ownerID:       repository32.OwnerID,
+			repoID:        0,
+			expectedError: fmt.Sprintf("runner with ID %d: resource does not exist", runner4.ID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := GetAvailableRunnerByID(t.Context(), testCase.runner.ID, testCase.ownerID, testCase.repoID)
+			if testCase.expectedError == "" {
+				require.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, testCase.expectedError)
+			}
 		})
 	}
 }

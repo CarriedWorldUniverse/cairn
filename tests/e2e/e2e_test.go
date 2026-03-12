@@ -114,6 +114,9 @@ func TestE2e(t *testing.T) {
 				defer test.MockVariableValue(&setting.Quota.Enabled, true)()
 				defer test.MockVariableValue(&testE2eWebRoutes, routers.NormalRoutes())()
 			}
+			if testname == "runner-management.test.e2e" {
+				defer unittest.OverrideFixtures("tests/e2e/fixtures/runner-management")()
+			}
 
 			// Default 2 minute timeout
 			onForgejoRun(t, func(*testing.T, *url.URL) {
