@@ -18,6 +18,16 @@ import {validate_form} from './shared/forms.ts';
 
 test.use({user: 'user2'});
 
+test.afterEach(async ({page}) => {
+  // Delete release
+  const response = await page.goto('/user2/repo2/releases/edit/2.0');
+  test.skip(response.status() === 404, 'No release to delete');
+
+  await page.locator('.delete-button').dispatchEvent('click');
+  await page.locator('.button.ok').click();
+  await expect(page).toHaveURL('/user2/repo2/releases');
+});
+
 test.describe('Releases', () => {
   test('External release attachments', async ({page, isMobile}) => {
     test.skip(isMobile);
@@ -141,15 +151,5 @@ test.describe('Releases', () => {
       expect((await release.locator('.release-title-wrap').boundingBox()).width).toBeLessThan(viewport.width * 0.75);
       expect((await release.locator('.detail').boundingBox()).width).toBeLessThan(viewport.width * 0.75);
     }
-  });
-
-  test.afterEach(async ({page}) => {
-    // Delete release
-    const response = await page.goto('/user2/repo2/releases/edit/2.0');
-    test.skip(response.status() === 404, 'No release to delete');
-
-    await page.locator('.delete-button').dispatchEvent('click');
-    await page.locator('.button.ok').click();
-    await expect(page).toHaveURL('/user2/repo2/releases');
   });
 });
