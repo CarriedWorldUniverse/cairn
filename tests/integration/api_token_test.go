@@ -17,6 +17,7 @@ import (
 	"forgejo.org/modules/log"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
+	"forgejo.org/modules/util"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func TestAPIGetTokens(t *testing.T) {
 		assert.Equal(t, []string{""}, at.Scopes)
 		assert.Empty(t, at.Token)
 		assert.Equal(t, "69d28c91", at.TokenLastEight)
-		assert.Nil(t, at.Repositories)
+		assert.Nil(t, at.Repositories) // not repo-specific access token - nil expected, not an empty array
 	})
 
 	t.Run("GET w/ token auth", func(t *testing.T) {
@@ -770,7 +771,7 @@ func TestAPITokenCreation(t *testing.T) {
 		t.Run("valid", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
-				Name:   "even-newer-token",
+				Name:   util.CryptoRandomString(util.RandomStringLow), // avoid false test failures from conflicting names
 				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
 				Repositories: []*api.RepoTargetOption{
 					{
@@ -790,7 +791,7 @@ func TestAPITokenCreation(t *testing.T) {
 		t.Run("target other user's private repo", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
-				Name:   "not-a-valid-token",
+				Name:   util.CryptoRandomString(util.RandomStringLow), // avoid unexpected test impact from conflicting names
 				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
 				Repositories: []*api.RepoTargetOption{
 					{
@@ -806,7 +807,7 @@ func TestAPITokenCreation(t *testing.T) {
 		t.Run("target invalid repo", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
-				Name:   "not-a-valid-token",
+				Name:   util.CryptoRandomString(util.RandomStringLow), // avoid unexpected test impact from conflicting names
 				Scopes: []string{string(auth_model.AccessTokenScopeReadRepository)},
 				Repositories: []*api.RepoTargetOption{
 					{
@@ -823,7 +824,7 @@ func TestAPITokenCreation(t *testing.T) {
 		t.Run("invalid scopes", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
-				Name:   "not-a-valid-token",
+				Name:   util.CryptoRandomString(util.RandomStringLow), // avoid unexpected test impact from conflicting names
 				Scopes: []string{string(auth_model.AccessTokenScopeReadAdmin)},
 				Repositories: []*api.RepoTargetOption{
 					{
@@ -831,6 +832,17 @@ func TestAPITokenCreation(t *testing.T) {
 						Name:  "repo2",
 					},
 				},
+			})
+			req.AddBasicAuth("user2")
+			MakeRequest(t, req, http.StatusBadRequest)
+		})
+
+		t.Run("invalid zero repositories", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			req := NewRequestWithJSON(t, "POST", "/api/v1/users/user2/tokens", &api.CreateAccessTokenOption{
+				Name:         util.CryptoRandomString(util.RandomStringLow), // avoid unexpected test impact from conflicting names
+				Scopes:       []string{string(auth_model.AccessTokenScopeReadRepository)},
+				Repositories: []*api.RepoTargetOption{}, // not nil, but not populated
 			})
 			req.AddBasicAuth("user2")
 			MakeRequest(t, req, http.StatusBadRequest)
