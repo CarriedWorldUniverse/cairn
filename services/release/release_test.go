@@ -14,7 +14,6 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/test"
-	"forgejo.org/modules/util"
 	"forgejo.org/services/attachment"
 
 	"github.com/stretchr/testify/assert"
@@ -403,13 +402,48 @@ func TestRelease_Update(t *testing.T) {
 		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
 		assert.Empty(t, release.Attachments)
 
-		require.ErrorIs(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
+		require.NoError(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
 			{
 				Action: "update",
 				Name:   "test2.txt",
 				UUID:   "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
 			},
-		}), util.ErrPermissionDenied)
+		}))
+		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
+		assert.Empty(t, release.Attachments)
+	})
+
+	t.Run("Delete and edit", func(t *testing.T) {
+		// Add a attachment.
+		attach, err := attachment.NewAttachment(t.Context(), &repo_model.Attachment{
+			RepoID:     repo.ID,
+			UploaderID: user.ID,
+			Name:       "test.txt",
+		}, strings.NewReader("beep"), 4)
+		require.NoError(t, err)
+
+		require.NoError(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
+			{
+				Action: "add",
+				Type:   "attachment",
+				UUID:   attach.UUID,
+			},
+		}))
+		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
+		assert.Len(t, release.Attachments, 1)
+
+		// Delete and edit at the same time, this is identical how the browser would delete a attachment.
+		require.NoError(t, UpdateRelease(t.Context(), user, gitRepo, release, false, []*AttachmentChange{
+			{
+				Action: "update",
+				Name:   "test.txt",
+				UUID:   attach.UUID,
+			},
+			{
+				Action: "delete",
+				UUID:   attach.UUID,
+			},
+		}))
 		require.NoError(t, repo_model.GetReleaseAttachments(t.Context(), release))
 		assert.Empty(t, release.Attachments)
 	})
