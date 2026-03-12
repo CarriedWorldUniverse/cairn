@@ -73,12 +73,12 @@ test.describe('small viewport', () => {
     await expect(page.locator('.tippy-target>#settings-btn')).toBeVisible();
 
     // Verify that we have no duplicated items
-    const shownItems = await page.locator('.overflow-menu-items>a').all();
-    expect(shownItems).not.toHaveLength(0);
-    const overflowItems = await page.locator('.tippy-target>a').all();
-    expect(overflowItems).not.toHaveLength(0);
+    const shownItems = page.locator('.overflow-menu-items>a');
+    await expect(shownItems).not.toHaveCount(0);
+    const overflowItems = page.locator('.tippy-target>a');
+    await expect(overflowItems).not.toHaveCount(0);
 
-    const items = shownItems.concat(overflowItems);
+    const items = (await shownItems.all()).concat(overflowItems);
     expect(Array.from(new Set(items))).toHaveLength(items.length);
     await screenshot(page);
   });
@@ -94,12 +94,12 @@ test.describe('small viewport', () => {
     await expect(page.locator('.tippy-target>#settings-btn')).toBeVisible();
 
     // Verify that we have no duplicated items
-    const shownItems = await page.locator('.overflow-menu-items>a').all();
-    expect(shownItems).not.toHaveLength(0);
-    const overflowItems = await page.locator('.tippy-target>a').all();
-    expect(overflowItems).not.toHaveLength(0);
+    const shownItems = page.locator('.overflow-menu-items>a');
+    await expect(shownItems).not.toHaveCount(0);
+    const overflowItems = page.locator('.tippy-target>a');
+    await expect(overflowItems).not.toHaveCount(0);
 
-    const items = shownItems.concat(overflowItems);
+    const items = (await shownItems.all()).concat(overflowItems);
     expect(Array.from(new Set(items))).toHaveLength(items.length);
   });
 });
@@ -117,12 +117,12 @@ test.describe('small viewport, unauthenticated', () => {
     await expect(page.locator('.tippy-target>#settings-btn')).toHaveCount(0);
 
     // Verify that we have no duplicated items
-    const shownItems = await page.locator('.overflow-menu-items>a').all();
-    expect(shownItems).not.toHaveLength(0);
-    const overflowItems = await page.locator('.tippy-target>a').all();
-    expect(overflowItems).not.toHaveLength(0);
+    const shownItems = page.locator('.overflow-menu-items>a');
+    await expect(shownItems).not.toHaveCount(0);
+    const overflowItems = page.locator('.tippy-target>a');
+    await expect(overflowItems).not.toHaveCount(0);
 
-    const items = shownItems.concat(overflowItems);
+    const items = (await shownItems.all()).concat(overflowItems);
     expect(Array.from(new Set(items))).toHaveLength(items.length);
     await screenshot(page);
   });

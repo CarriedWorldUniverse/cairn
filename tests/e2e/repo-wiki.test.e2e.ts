@@ -44,7 +44,7 @@ test('Wiki unicode-escape', async ({page}) => {
   await page.goto('/user2/unicode-escaping/wiki');
   await screenshot(page);
 
-  expect(await page.locator('.ui.message.unicode-escape-prompt').count()).toEqual(3);
+  await expect(page.locator('.ui.message.unicode-escape-prompt')).toHaveCount(3);
 
   const unescapedElements = page.locator('.ambiguous-code-point');
   for (let i = 0; i < await unescapedElements.count(); i++) {
