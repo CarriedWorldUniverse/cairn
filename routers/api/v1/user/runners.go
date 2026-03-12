@@ -9,10 +9,16 @@ import (
 )
 
 // GetRegistrationToken returns a token to register user-level runners
+//
+// Deprecated: This operation has been deprecated in Forgejo 15. Use the web UI or RegisterRunner instead.
 func GetRegistrationToken(ctx *context.APIContext) {
 	// swagger:operation GET /user/actions/runners/registration-token user userGetRunnerRegistrationToken
 	// ---
 	// summary: Get the user's runner registration token
+	// description: >
+	//   This operation has been deprecated in Forgejo 15.
+	//   Use the web UI or [`/user/actions/runners`](#/user/registerUserRunner) instead.
+	// deprecated: true
 	// produces:
 	// - application/json
 	// parameters:

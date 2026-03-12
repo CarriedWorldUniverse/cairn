@@ -1010,7 +1010,7 @@ func Routes() *web.Route {
 					m.Combo("").
 						Get(reqToken(), user.ListRunners).
 						Post(bind(api.RegisterRunnerOptions{}), user.RegisterRunner)
-					m.Get("/registration-token", reqToken(), user.GetRegistrationToken)
+					m.Get("/registration-token", reqToken(), user.GetRegistrationToken) //nolint:staticcheck
 					m.Get("/{runner_id}", reqToken(), user.GetRunner)
 					m.Delete("/{runner_id}", reqToken(), user.DeleteRunner)
 					m.Get("/jobs", reqToken(), user.SearchActionRunJobs)
@@ -1694,7 +1694,7 @@ func Routes() *web.Route {
 				m.Combo("").
 					Get(admin.ListRunners).
 					Post(bind(api.RegisterRunnerOptions{}), admin.RegisterRunner)
-				m.Get("/registration-token", admin.GetRunnerRegistrationToken)
+				m.Get("/registration-token", admin.GetRunnerRegistrationToken) //nolint:staticcheck
 				m.Get("/{runner_id}", admin.GetRunner)
 				m.Delete("/{runner_id}", admin.DeleteRunner)
 				m.Get("/jobs", admin.GetActionRunJobs)
