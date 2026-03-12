@@ -188,7 +188,7 @@ func CreateAccessToken(ctx *context.APIContext) {
 	var resourceRepos []*auth_model.AccessTokenResourceRepo
 	var tokenRepositories []*api.RepositoryMeta
 
-	if len(form.Repositories) != 0 {
+	if form.Repositories != nil {
 		repos := make([]*repo_model.Repository, len(form.Repositories))
 		for i, repoTarget := range form.Repositories {
 			repo, err := repo_model.GetRepositoryByOwnerAndName(ctx, repoTarget.Owner, repoTarget.Name)
