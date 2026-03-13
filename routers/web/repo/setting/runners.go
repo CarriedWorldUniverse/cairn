@@ -137,15 +137,14 @@ func Runners(ctx *context.Context) {
 			Page:     page,
 			PageSize: 100,
 		},
-		Sort:   ctx.Req.URL.Query().Get("sort"),
-		Filter: ctx.Req.URL.Query().Get("q"),
+		WithVisible: true,
+		Sort:        ctx.Req.URL.Query().Get("sort"),
+		Filter:      ctx.Req.URL.Query().Get("q"),
 	}
 	if rCtx.IsRepo {
 		opts.RepoID = rCtx.RepoID
-		opts.WithAvailable = true
 	} else if rCtx.IsOrg || rCtx.IsUser {
 		opts.OwnerID = rCtx.OwnerID
-		opts.WithAvailable = true
 	}
 
 	ctx.Data["RunnersListLink"] = rCtx.RedirectLink

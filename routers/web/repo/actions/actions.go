@@ -88,9 +88,9 @@ func List(ctx *context.Context) {
 
 		// Get all runner labels
 		runners, err := db.Find[actions_model.ActionRunner](ctx, actions_model.FindRunnerOptions{
-			RepoID:        ctx.Repo.Repository.ID,
-			IsOnline:      optional.Some(true),
-			WithAvailable: true,
+			RepoID:      ctx.Repo.Repository.ID,
+			IsOnline:    optional.Some(true),
+			WithVisible: true,
 		})
 		if err != nil {
 			ctx.ServerError("FindRunners", err)

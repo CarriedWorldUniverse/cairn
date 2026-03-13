@@ -106,6 +106,7 @@ func ListRunners(ctx *context.APIContext, ownerID, repoID int64) {
 		OwnerID:     ownerID,
 		RepoID:      repoID,
 		ListOptions: listOptions,
+		WithVisible: ownerID == 0 && repoID == 0,
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "FindCountRunners", map[string]string{})
