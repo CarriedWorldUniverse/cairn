@@ -237,8 +237,8 @@ func TestRunnerEditable(t *testing.T) {
 	}
 }
 
-func TestRunner_GetAvailableRunnerByID(t *testing.T) {
-	defer unittest.OverrideFixtures("models/actions/TestRunner_GetAvailableRunnerByID")()
+func TestRunner_GetVisibleRunnerByID(t *testing.T) {
+	defer unittest.OverrideFixtures("models/actions/TestRunner_GetVisibleRunnerByID")()
 	require.NoError(t, unittest.PrepareTestDatabase())
 
 	repository32 := unittest.AssertExistsAndLoadBean(t, &repo.Repository{ID: 32, OwnerID: 3})
@@ -365,11 +365,104 @@ func TestRunner_GetAvailableRunnerByID(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			_, err := GetAvailableRunnerByID(t.Context(), testCase.runner.ID, testCase.ownerID, testCase.repoID)
+			_, err := GetVisibleRunnerByID(t.Context(), testCase.runner.ID, testCase.ownerID, testCase.repoID)
 			if testCase.expectedError == "" {
 				require.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, testCase.expectedError)
+			}
+		})
+	}
+}
+
+func TestRunner_FindRunnerOptionsToConds(t *testing.T) {
+	defer unittest.OverrideFixtures("models/actions/TestRunner_FindRunnerOptionsToConds")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	runner1 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719931, OwnerID: 3, RepoID: 0}) // Owned by org3
+	runner2 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719932, OwnerID: 2, RepoID: 0}) // Owned by user2
+	runner3 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719933, OwnerID: 0, RepoID: 0})
+	runner4 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719934, OwnerID: 0, RepoID: 32})
+	runner5 := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 719935, OwnerID: 0, RepoID: 36})
+
+	testCases := []struct {
+		name              string
+		opts              FindRunnerOptions
+		expectedRunners   RunnerList
+		unexpectedRunners RunnerList
+	}{
+		{
+			name:              "Only runners owned by instance",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 0, WithVisible: false},
+			expectedRunners:   RunnerList{runner3},
+			unexpectedRunners: RunnerList{runner1, runner2, runner4, runner5},
+		},
+		{
+			name:              "All runners on instance",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 0, WithVisible: true},
+			expectedRunners:   RunnerList{runner1, runner2, runner3, runner4, runner5},
+			unexpectedRunners: RunnerList{},
+		},
+		{
+			name:              "Only runners owned by organization",
+			opts:              FindRunnerOptions{OwnerID: 3, RepoID: 0, WithVisible: false},
+			expectedRunners:   RunnerList{runner1},
+			unexpectedRunners: RunnerList{runner2, runner3, runner4, runner5},
+		},
+		{
+			name:              "Runners available to organization",
+			opts:              FindRunnerOptions{OwnerID: 3, RepoID: 0, WithVisible: true},
+			expectedRunners:   RunnerList{runner1, runner3},
+			unexpectedRunners: RunnerList{runner2, runner4, runner5},
+		},
+		{
+			name:              "Only runners owned by user",
+			opts:              FindRunnerOptions{OwnerID: 2, RepoID: 0, WithVisible: false},
+			expectedRunners:   RunnerList{runner2},
+			unexpectedRunners: RunnerList{runner1, runner3, runner4, runner5},
+		},
+		{
+			name:              "Runners available to user",
+			opts:              FindRunnerOptions{OwnerID: 2, RepoID: 0, WithVisible: true},
+			expectedRunners:   RunnerList{runner2, runner3},
+			unexpectedRunners: RunnerList{runner1, runner4, runner5},
+		},
+		{
+			name:              "Only runners owned by organization repository",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 32, WithVisible: false},
+			expectedRunners:   RunnerList{runner4},
+			unexpectedRunners: RunnerList{runner1, runner2, runner3, runner5},
+		},
+		{
+			name:              "Runners available to organization repository",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 32, WithVisible: true},
+			expectedRunners:   RunnerList{runner1, runner3, runner4},
+			unexpectedRunners: RunnerList{runner2, runner5},
+		},
+		{
+			name:              "Only runners owned by user repository",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 36, WithVisible: false},
+			expectedRunners:   RunnerList{runner5},
+			unexpectedRunners: RunnerList{runner1, runner2, runner3, runner4},
+		},
+		{
+			name:              "Runners available to user repository",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 36, WithVisible: true},
+			expectedRunners:   RunnerList{runner2, runner3, runner5},
+			unexpectedRunners: RunnerList{runner1, runner4},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			runners, err := db.Find[ActionRunner](t.Context(), testCase.opts)
+			require.NoError(t, err)
+
+			for _, expectedRunner := range testCase.expectedRunners {
+				assert.Contains(t, runners, expectedRunner)
+			}
+			for _, unexpectedRunner := range testCase.unexpectedRunners {
+				assert.NotContains(t, runners, unexpectedRunner)
 			}
 		})
 	}

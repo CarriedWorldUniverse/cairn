@@ -196,12 +196,12 @@ func init() {
 
 type FindRunnerOptions struct {
 	db.ListOptions
-	RepoID        int64
-	OwnerID       int64 // it will be ignored if RepoID is set
-	Sort          string
-	Filter        string
-	IsOnline      optional.Option[bool]
-	WithAvailable bool // not only runners belong to, but also runners can be used
+	RepoID      int64
+	OwnerID     int64 // it will be ignored if RepoID is set
+	Sort        string
+	Filter      string
+	IsOnline    optional.Option[bool]
+	WithVisible bool // include all runners that are visible to the repository, owner, or instance
 }
 
 func (opts FindRunnerOptions) ToConds() builder.Cond {
@@ -209,17 +209,19 @@ func (opts FindRunnerOptions) ToConds() builder.Cond {
 
 	if opts.RepoID > 0 {
 		c := builder.NewCond().And(builder.Eq{"repo_id": opts.RepoID})
-		if opts.WithAvailable {
+		if opts.WithVisible {
 			c = c.Or(builder.Eq{"owner_id": builder.Select("owner_id").From("repository").Where(builder.Eq{"id": opts.RepoID})})
 			c = c.Or(builder.Eq{"repo_id": 0, "owner_id": 0})
 		}
 		cond = cond.And(c)
 	} else if opts.OwnerID > 0 { // OwnerID is ignored if RepoID is set
 		c := builder.NewCond().And(builder.Eq{"owner_id": opts.OwnerID})
-		if opts.WithAvailable {
+		if opts.WithVisible {
 			c = c.Or(builder.Eq{"repo_id": 0, "owner_id": 0})
 		}
 		cond = cond.And(c)
+	} else if !opts.WithVisible {
+		cond = cond.And(builder.Eq{"repo_id": 0, "owner_id": 0})
 	}
 
 	if opts.Filter != "" {
@@ -278,9 +280,9 @@ func GetRunnerByID(ctx context.Context, id int64) (*ActionRunner, error) {
 	return &runner, nil
 }
 
-// GetAvailableRunnerByID is like GetRunnerByID, but it only finds the runner if it is accessible to the given owner or
+// GetVisibleRunnerByID is like GetRunnerByID, but it only finds the runner if it is visible to the given owner or
 // repository. If it is not, util.ErrNotExist will be returned even if the runner exists.
-func GetAvailableRunnerByID(ctx context.Context, id, ownerID, repoID int64) (*ActionRunner, error) {
+func GetVisibleRunnerByID(ctx context.Context, id, ownerID, repoID int64) (*ActionRunner, error) {
 	query := db.GetEngine(ctx).Where("id=?", id)
 
 	if repoID > 0 {

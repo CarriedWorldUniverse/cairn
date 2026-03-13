@@ -77,12 +77,12 @@ func RunnersList(ctx *context.Context, template base.TplName, opts actions_model
 // RunnerDetails displays detail information about each runner. The page is purely informational and visible to everyone
 // who is allowed to use a runner.
 func RunnerDetails(ctx *context.Context, runnerID, ownerID, repoID int64, template base.TplName, page int) {
-	runner, err := actions_model.GetAvailableRunnerByID(ctx, runnerID, ownerID, repoID)
+	runner, err := actions_model.GetVisibleRunnerByID(ctx, runnerID, ownerID, repoID)
 	if errors.Is(err, util.ErrNotExist) {
-		ctx.NotFound("GetAvailableRunnerByID", err)
+		ctx.NotFound("GetVisibleRunnerByID", err)
 		return
 	} else if err != nil {
-		ctx.ServerError("GetAvailableRunnerByID", err)
+		ctx.ServerError("GetVisibleRunnerByID", err)
 		return
 	}
 	if err := runner.LoadAttributes(ctx); err != nil {
@@ -166,12 +166,12 @@ func RunnerCreatePost(ctx *context.Context, ownerID, repoID int64, template, suc
 
 // RunnerEdit displays a form to modify the given runner.
 func RunnerEdit(ctx *context.Context, runnerID, ownerID, repoID int64, template base.TplName) {
-	runner, err := actions_model.GetAvailableRunnerByID(ctx, runnerID, ownerID, repoID)
+	runner, err := actions_model.GetVisibleRunnerByID(ctx, runnerID, ownerID, repoID)
 	if errors.Is(err, util.ErrNotExist) {
-		ctx.NotFound("GetAvailableRunnerByID", err)
+		ctx.NotFound("GetVisibleRunnerByID", err)
 		return
 	} else if err != nil {
-		ctx.ServerError("GetAvailableRunnerByID", err)
+		ctx.ServerError("GetVisibleRunnerByID", err)
 		return
 	}
 	if err := runner.LoadAttributes(ctx); err != nil {
@@ -194,12 +194,12 @@ func RunnerEdit(ctx *context.Context, runnerID, ownerID, repoID int64, template 
 
 // RunnerEditPost handles the form submitted by RunnerEdit.
 func RunnerEditPost(ctx *context.Context, runnerID, ownerID, repoID int64, template, successTemplate base.TplName, redirectTo string) {
-	runner, err := actions_model.GetAvailableRunnerByID(ctx, runnerID, ownerID, repoID)
+	runner, err := actions_model.GetVisibleRunnerByID(ctx, runnerID, ownerID, repoID)
 	if errors.Is(err, util.ErrNotExist) {
-		ctx.NotFound("GetAvailableRunnerByID", err)
+		ctx.NotFound("GetVisibleRunnerByID", err)
 		return
 	} else if err != nil {
-		ctx.ServerError("GetAvailableRunnerByID", err)
+		ctx.ServerError("GetVisibleRunnerByID", err)
 		return
 	}
 	if !runner.Editable(ownerID, repoID) {
