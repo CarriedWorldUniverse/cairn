@@ -63,6 +63,10 @@ func ListRunners(ctx *context.APIContext) {
 	// produces:
 	// - application/json
 	// parameters:
+	// - name: visible
+	//   in: query
+	//   description: whether to include all visible runners (true) or only those that are directly owned by the user (false)
+	//   type: boolean
 	// - name: page
 	//   in: query
 	//   description: page number of results to return (1-based)

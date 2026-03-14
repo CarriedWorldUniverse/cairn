@@ -112,6 +112,63 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadOrganization)
 	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteOrganization)
 
+	runnerOne := &api.ActionRunner{
+		ID:          655691,
+		UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
+		Name:        "runner-1-organization",
+		Version:     "dev",
+		OwnerID:     3,
+		RepoID:      0,
+		Description: "A superb runner",
+		Labels:      []string{"debian", "gpu"},
+		Status:      "offline",
+	}
+	runnerTwo := &api.ActionRunner{
+		ID:          655692,
+		UUID:        "6d2d13ef-b19f-47a8-85ad-e82e51f606c5",
+		Name:        "runner-2-user",
+		Version:     "11.3.1",
+		OwnerID:     1,
+		RepoID:      0,
+		Description: "A splendid runner",
+		Labels:      []string{"docker"},
+		Status:      "offline",
+	}
+	runnerThree := &api.ActionRunner{
+		ID:          655693,
+		UUID:        "0a7e5e05-2da4-44d5-a72a-615da120cef6",
+		Name:        "runner-3-organization",
+		Version:     "11.3.1",
+		OwnerID:     3,
+		RepoID:      0,
+		Description: "Another fine runner",
+		Labels:      []string{"fedora"},
+		Status:      "offline",
+	}
+	runnerFour := &api.ActionRunner{
+		ID:          655694,
+		UUID:        "166c596c-5016-488d-bd55-b84e5a0460ea",
+		Name:        "runner-4-global",
+		Version:     "11.3.1",
+		OwnerID:     0,
+		RepoID:      0,
+		Description: "",
+		Labels:      []string{},
+		Status:      "offline",
+	}
+	runnerFive := &api.ActionRunner{
+		ID:          655695,
+		UUID:        "0851ed0a-f0af-4a01-9b98-fc9bf9c1d332",
+		Name:        "runner-5-ephemeral",
+		Version:     "1.0.0",
+		OwnerID:     3,
+		RepoID:      0,
+		Description: "An ephemeral runner",
+		Labels:      []string{"ephemeral-label"},
+		Status:      "offline",
+		Ephemeral:   true,
+	}
+
 	t.Run("Get runners", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners")
 		request.AddTokenAuth(readToken)
@@ -121,41 +178,6 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 
 		var runners []*api.ActionRunner
 		DecodeJSON(t, response, &runners)
-
-		runnerOne := &api.ActionRunner{
-			ID:          655691,
-			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
-			Name:        "runner-1-organization",
-			Version:     "dev",
-			OwnerID:     3,
-			RepoID:      0,
-			Description: "A superb runner",
-			Labels:      []string{"debian", "gpu"},
-			Status:      "offline",
-		}
-		runnerThree := &api.ActionRunner{
-			ID:          655693,
-			UUID:        "0a7e5e05-2da4-44d5-a72a-615da120cef6",
-			Name:        "runner-3-organization",
-			Version:     "11.3.1",
-			OwnerID:     3,
-			RepoID:      0,
-			Description: "Another fine runner",
-			Labels:      []string{"fedora"},
-			Status:      "offline",
-		}
-		runnerFive := &api.ActionRunner{
-			ID:          655695,
-			UUID:        "0851ed0a-f0af-4a01-9b98-fc9bf9c1d332",
-			Name:        "runner-5-ephemeral",
-			Version:     "1.0.0",
-			OwnerID:     3,
-			RepoID:      0,
-			Description: "An ephemeral runner",
-			Labels:      []string{"ephemeral-label"},
-			Status:      "offline",
-			Ephemeral:   true,
-		}
 
 		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree, runnerFive}, runners)
 	})
@@ -173,6 +195,25 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		assert.Len(t, runners, 1)
 	})
 
+	t.Run("Get visible runners", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners?visible=true")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		assert.NotEmpty(t, response.Header().Get("X-Total-Count"))
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		// There are more runners in the result that originate from the global fixtures. The test ignores them to limit
+		// the impact of unrelated changes.
+		assert.Contains(t, runners, runnerOne)
+		assert.NotContains(t, runners, runnerTwo)
+		assert.Contains(t, runners, runnerThree)
+		assert.Contains(t, runners, runnerFour)
+		assert.Contains(t, runners, runnerFive)
+	})
+
 	t.Run("Get runner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners/655691")
 		request.AddTokenAuth(readToken)
@@ -181,19 +222,21 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
 
-		runnerOne := &api.ActionRunner{
-			ID:          655691,
-			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
-			Name:        "runner-1-organization",
-			Version:     "dev",
-			OwnerID:     3,
-			RepoID:      0,
-			Description: "A superb runner",
-			Labels:      []string{"debian", "gpu"},
-			Status:      "offline",
-		}
-
 		assert.Equal(t, runnerOne, runner)
+
+		// Instance runner is visible to any organization.
+		request = NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners/655694")
+		request.AddTokenAuth(readToken)
+		response = MakeRequest(t, request, http.StatusOK)
+
+		DecodeJSON(t, response, &runner)
+
+		assert.Equal(t, runnerFour, runner)
+
+		// Runner owned by a user is invisible.
+		request = NewRequest(t, "GET", "/api/v1/orgs/org3/actions/runners/655692")
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusNotFound)
 	})
 
 	t.Run("Get ephemeral runner", func(t *testing.T) {
@@ -204,20 +247,7 @@ func TestAPIOrgActionsRunnerOperations(t *testing.T) {
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
 
-		expectedRunner := &api.ActionRunner{
-			ID:          655695,
-			UUID:        "0851ed0a-f0af-4a01-9b98-fc9bf9c1d332",
-			Name:        "runner-5-ephemeral",
-			Version:     "1.0.0",
-			OwnerID:     3,
-			RepoID:      0,
-			Description: "An ephemeral runner",
-			Labels:      []string{"ephemeral-label"},
-			Status:      "offline",
-			Ephemeral:   true,
-		}
-
-		assert.Equal(t, expectedRunner, runner)
+		assert.Equal(t, runnerFive, runner)
 	})
 
 	t.Run("Delete runner", func(t *testing.T) {

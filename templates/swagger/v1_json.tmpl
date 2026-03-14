@@ -323,6 +323,12 @@
         "operationId": "getAdminRunners",
         "parameters": [
           {
+            "type": "boolean",
+            "description": "whether to include all visible runners (true) or only those that are directly owned by the instance (false)",
+            "name": "visible",
+            "in": "query"
+          },
+          {
             "type": "integer",
             "description": "page number of results to return (1-based)",
             "name": "page",
@@ -2728,6 +2734,12 @@
             "name": "org",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "whether to include all visible runners (true) or only those that are directly owned by the organization (false)",
+            "name": "visible",
+            "in": "query"
           },
           {
             "type": "integer",
@@ -5466,6 +5478,12 @@
             "name": "repo",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "whether to include all visible runners (true) or only those that are directly owned by the repository (false)",
+            "name": "visible",
+            "in": "query"
           },
           {
             "type": "integer",
@@ -18994,6 +19012,12 @@
         "summary": "Get the user's runners",
         "operationId": "getUserRunners",
         "parameters": [
+          {
+            "type": "boolean",
+            "description": "whether to include all visible runners (true) or only those that are directly owned by the user (false)",
+            "name": "visible",
+            "in": "query"
+          },
           {
             "type": "integer",
             "description": "page number of results to return (1-based)",

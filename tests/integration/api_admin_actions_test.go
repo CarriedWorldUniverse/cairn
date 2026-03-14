@@ -183,6 +183,63 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadAdmin)
 	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteAdmin)
 
+	runnerOne := &api.ActionRunner{
+		ID:          130791,
+		UUID:        "8b0f6b98-fef8-430e-bfdc-dcbeeb58f3c8",
+		Name:        "runner-1-global",
+		Version:     "dev",
+		OwnerID:     0,
+		RepoID:      0,
+		Description: "A superb runner",
+		Labels:      []string{"debian", "gpu"},
+		Status:      "offline",
+	}
+	runnerTwo := &api.ActionRunner{
+		ID:          130792,
+		UUID:        "61c48447-6e7d-42da-9dbe-d659ade77a56",
+		Name:        "runner-2-user",
+		Version:     "11.3.1",
+		OwnerID:     1,
+		RepoID:      0,
+		Description: "A splendid runner",
+		Labels:      []string{"docker"},
+		Status:      "offline",
+	}
+	runnerThree := &api.ActionRunner{
+		ID:          130793,
+		UUID:        "9b92be13-b002-4fc0-b182-5e7cdbef0b8d",
+		Name:        "runner-3-global",
+		Version:     "11.3.1",
+		OwnerID:     0,
+		RepoID:      0,
+		Description: "Another fine runner",
+		Labels:      []string{"fedora"},
+		Status:      "offline",
+	}
+	runnerFour := &api.ActionRunner{
+		ID:          130794,
+		UUID:        "44d595e9-b47d-42ef-b1b9-5869f8b8d501",
+		Name:        "runner-4-repository",
+		Version:     "12.2.0",
+		OwnerID:     0,
+		RepoID:      62,
+		Description: "",
+		Labels:      []string{"nixos"},
+		Status:      "offline",
+	}
+	runnerFive := &api.ActionRunner{
+		ID:          130795,
+		UUID:        "16ca1a5c-8024-41f1-be31-e55830263cc6",
+		Name:        "runner-5-ephemeral",
+		Version:     "1.0.0",
+		OwnerID:     0,
+		RepoID:      0,
+		Description: "An ephemeral runner",
+		Labels:      []string{"ephemeral-label"},
+		Status:      "offline",
+		Ephemeral:   true,
+	}
+
 	t.Run("Get runners", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/admin/actions/runners")
 		request.AddTokenAuth(readToken)
@@ -193,57 +250,12 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 		var runners []*api.ActionRunner
 		DecodeJSON(t, response, &runners)
 
-		runnerOne := &api.ActionRunner{
-			ID:          130791,
-			UUID:        "8b0f6b98-fef8-430e-bfdc-dcbeeb58f3c8",
-			Name:        "runner-1-global",
-			Version:     "dev",
-			OwnerID:     0,
-			RepoID:      0,
-			Description: "A superb runner",
-			Labels:      []string{"debian", "gpu"},
-			Status:      "offline",
-		}
-		runnerTwo := &api.ActionRunner{
-			ID:          130792,
-			UUID:        "61c48447-6e7d-42da-9dbe-d659ade77a56",
-			Name:        "runner-2-user",
-			Version:     "11.3.1",
-			OwnerID:     1,
-			RepoID:      0,
-			Description: "A splendid runner",
-			Labels:      []string{"docker"},
-			Status:      "offline",
-		}
-		runnerThree := &api.ActionRunner{
-			ID:          130793,
-			UUID:        "9b92be13-b002-4fc0-b182-5e7cdbef0b8d",
-			Name:        "runner-3-global",
-			Version:     "11.3.1",
-			OwnerID:     0,
-			RepoID:      0,
-			Description: "Another fine runner",
-			Labels:      []string{"fedora"},
-			Status:      "offline",
-		}
-		runnerFive := &api.ActionRunner{
-			ID:          130795,
-			UUID:        "16ca1a5c-8024-41f1-be31-e55830263cc6",
-			Name:        "runner-5-ephemeral",
-			Version:     "1.0.0",
-			OwnerID:     0,
-			RepoID:      0,
-			Description: "An ephemeral runner",
-			Labels:      []string{"ephemeral-label"},
-			Status:      "offline",
-			Ephemeral:   true,
-		}
-
 		// There are more runners in the result that originate from the global fixtures. The test ignores them to limit
 		// the impact of unrelated changes.
 		assert.Contains(t, runners, runnerOne)
-		assert.Contains(t, runners, runnerTwo)
+		assert.NotContains(t, runners, runnerTwo)
 		assert.Contains(t, runners, runnerThree)
+		assert.NotContains(t, runners, runnerFour)
 		assert.Contains(t, runners, runnerFive)
 	})
 
@@ -260,6 +272,25 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 		assert.Len(t, runners, 5)
 	})
 
+	t.Run("Get visible runners", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/admin/actions/runners?visible=true")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		assert.NotEmpty(t, response.Header().Get("X-Total-Count"))
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		// There are more runners in the result that originate from the global fixtures. The test ignores them to limit
+		// the impact of unrelated changes.
+		assert.Contains(t, runners, runnerOne)
+		assert.Contains(t, runners, runnerTwo)
+		assert.Contains(t, runners, runnerThree)
+		assert.Contains(t, runners, runnerFour)
+		assert.Contains(t, runners, runnerFive)
+	})
+
 	t.Run("Get global runner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/admin/actions/runners/130793")
 		request.AddTokenAuth(readToken)
@@ -268,19 +299,7 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
 
-		runnerOne := &api.ActionRunner{
-			ID:          130793,
-			UUID:        "9b92be13-b002-4fc0-b182-5e7cdbef0b8d",
-			Name:        "runner-3-global",
-			Version:     "11.3.1",
-			OwnerID:     0,
-			RepoID:      0,
-			Description: "Another fine runner",
-			Labels:      []string{"fedora"},
-			Status:      "offline",
-		}
-
-		assert.Equal(t, runnerOne, runner)
+		assert.Equal(t, runnerThree, runner)
 	})
 
 	t.Run("Get repository-scoped runner", func(t *testing.T) {
@@ -290,18 +309,6 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
-
-		runnerFour := &api.ActionRunner{
-			ID:          130794,
-			UUID:        "44d595e9-b47d-42ef-b1b9-5869f8b8d501",
-			Name:        "runner-4-repository",
-			Version:     "12.2.0",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "",
-			Labels:      []string{"nixos"},
-			Status:      "offline",
-		}
 
 		assert.Equal(t, runnerFour, runner)
 	})
