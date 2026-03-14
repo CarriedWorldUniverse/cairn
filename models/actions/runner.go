@@ -225,7 +225,7 @@ func (opts FindRunnerOptions) ToConds() builder.Cond {
 	}
 
 	if opts.Filter != "" {
-		cond = cond.And(builder.Like{"name", opts.Filter})
+		cond = cond.And(builder.Like{"name", opts.Filter}).Or(builder.Like{"uuid", opts.Filter})
 	}
 
 	if has, value := opts.IsOnline.Get(); has {

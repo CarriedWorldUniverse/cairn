@@ -451,6 +451,18 @@ func TestRunner_FindRunnerOptionsToConds(t *testing.T) {
 			expectedRunners:   RunnerList{runner2, runner3, runner5},
 			unexpectedRunners: RunnerList{runner1, runner4},
 		},
+		{
+			name:              "Runners with partially matching name",
+			opts:              FindRunnerOptions{Filter: "er-3"},
+			expectedRunners:   RunnerList{runner3},
+			unexpectedRunners: RunnerList{runner1, runner2, runner4, runner5},
+		},
+		{
+			name:              "Runners with partially matching UUID",
+			opts:              FindRunnerOptions{Filter: "21f75233798b"},
+			expectedRunners:   RunnerList{runner4},
+			unexpectedRunners: RunnerList{runner1, runner2, runner3, runner5},
+		},
 	}
 
 	for _, testCase := range testCases {
