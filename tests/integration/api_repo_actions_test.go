@@ -393,6 +393,63 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 	readToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeReadRepository)
 	writeToken := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
 
+	runnerOne := &api.ActionRunner{
+		ID:          899251,
+		UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
+		Name:        "runner-1-repository",
+		Version:     "dev",
+		OwnerID:     0,
+		RepoID:      62,
+		Description: "A superb runner",
+		Labels:      []string{"debian", "gpu"},
+		Status:      "offline",
+	}
+	runnerTwo := &api.ActionRunner{
+		ID:          899252,
+		UUID:        "6d2d13ef-b19f-47a8-85ad-e82e51f606c5",
+		Name:        "runner-2-user",
+		Version:     "11.3.1",
+		OwnerID:     1,
+		RepoID:      0,
+		Description: "A splendid runner",
+		Labels:      []string{"docker"},
+		Status:      "offline",
+	}
+	runnerThree := &api.ActionRunner{
+		ID:          899253,
+		UUID:        "0a7e5e05-2da4-44d5-a72a-615da120cef6",
+		Name:        "runner-3-repository",
+		Version:     "11.3.1",
+		OwnerID:     0,
+		RepoID:      62,
+		Description: "Another fine runner",
+		Labels:      []string{"fedora"},
+		Status:      "offline",
+	}
+	runnerFour := &api.ActionRunner{
+		ID:          899254,
+		UUID:        "6456ac1f-70ec-4e8f-9ab7-bf117ee23d47",
+		Name:        "runner-4-global",
+		Version:     "11.3.1",
+		OwnerID:     0,
+		RepoID:      0,
+		Description: "",
+		Labels:      []string{},
+		Status:      "offline",
+	}
+	runnerFive := &api.ActionRunner{
+		ID:          899255,
+		UUID:        "96639646-67b2-4bcb-9142-fde1ab8498cf",
+		Name:        "runner-5-repository-ephemeral",
+		Version:     "1.0.0",
+		OwnerID:     0,
+		RepoID:      62,
+		Description: "An ephemeral runner",
+		Labels:      []string{"ephemeral-label"},
+		Status:      "offline",
+		Ephemeral:   true,
+	}
+
 	t.Run("Get runners", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners")
 		request.AddTokenAuth(readToken)
@@ -402,41 +459,6 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 
 		var runners []*api.ActionRunner
 		DecodeJSON(t, response, &runners)
-
-		runnerOne := &api.ActionRunner{
-			ID:          899251,
-			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
-			Name:        "runner-1-repository",
-			Version:     "dev",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "A superb runner",
-			Labels:      []string{"debian", "gpu"},
-			Status:      "offline",
-		}
-		runnerThree := &api.ActionRunner{
-			ID:          899253,
-			UUID:        "0a7e5e05-2da4-44d5-a72a-615da120cef6",
-			Name:        "runner-3-repository",
-			Version:     "11.3.1",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "Another fine runner",
-			Labels:      []string{"fedora"},
-			Status:      "offline",
-		}
-		runnerFive := &api.ActionRunner{
-			ID:          899255,
-			UUID:        "96639646-67b2-4bcb-9142-fde1ab8498cf",
-			Name:        "runner-5-repository-ephemeral",
-			Version:     "1.0.0",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "An ephemeral runner",
-			Labels:      []string{"ephemeral-label"},
-			Status:      "offline",
-			Ephemeral:   true,
-		}
 
 		assert.ElementsMatch(t, []*api.ActionRunner{runnerOne, runnerThree, runnerFive}, runners)
 	})
@@ -454,6 +476,25 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		assert.Len(t, runners, 1)
 	})
 
+	t.Run("Get visible runners", func(t *testing.T) {
+		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners?visible=true")
+		request.AddTokenAuth(readToken)
+		response := MakeRequest(t, request, http.StatusOK)
+
+		assert.NotEmpty(t, response.Header().Get("X-Total-Count"))
+
+		var runners []*api.ActionRunner
+		DecodeJSON(t, response, &runners)
+
+		// There are more runners in the result that originate from the global fixtures. The test ignores them to limit
+		// the impact of unrelated changes.
+		assert.Contains(t, runners, runnerOne)
+		assert.NotContains(t, runners, runnerTwo)
+		assert.Contains(t, runners, runnerThree)
+		assert.Contains(t, runners, runnerFour)
+		assert.Contains(t, runners, runnerFive)
+	})
+
 	t.Run("Get runner", func(t *testing.T) {
 		request := NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/899251")
 		request.AddTokenAuth(readToken)
@@ -462,19 +503,21 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
 
-		runnerOne := &api.ActionRunner{
-			ID:          899251,
-			UUID:        "a3297f3a-ba5c-4a0f-878e-6cc8b8ac79ec",
-			Name:        "runner-1-repository",
-			Version:     "dev",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "A superb runner",
-			Labels:      []string{"debian", "gpu"},
-			Status:      "offline",
-		}
-
 		assert.Equal(t, runnerOne, runner)
+
+		// Runner of instance is visible
+		request = NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/899254")
+		request.AddTokenAuth(readToken)
+		response = MakeRequest(t, request, http.StatusOK)
+
+		DecodeJSON(t, response, &runner)
+
+		assert.Equal(t, runnerFour, runner)
+
+		// Runner of user that does not own the repository is invisible
+		request = NewRequest(t, "GET", "/api/v1/repos/user2/test_workflows/actions/runners/899252")
+		request.AddTokenAuth(readToken)
+		MakeRequest(t, request, http.StatusNotFound)
 	})
 
 	t.Run("Get ephemeral runner", func(t *testing.T) {
@@ -485,20 +528,7 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		var runner *api.ActionRunner
 		DecodeJSON(t, response, &runner)
 
-		expectedRunner := &api.ActionRunner{
-			ID:          899255,
-			UUID:        "96639646-67b2-4bcb-9142-fde1ab8498cf",
-			Name:        "runner-5-repository-ephemeral",
-			Version:     "1.0.0",
-			OwnerID:     0,
-			RepoID:      62,
-			Description: "An ephemeral runner",
-			Labels:      []string{"ephemeral-label"},
-			Status:      "offline",
-			Ephemeral:   true,
-		}
-
-		assert.Equal(t, expectedRunner, runner)
+		assert.Equal(t, runnerFive, runner)
 	})
 
 	t.Run("Delete runner", func(t *testing.T) {
