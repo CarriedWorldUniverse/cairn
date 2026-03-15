@@ -105,12 +105,6 @@
   margin-block: 1rem !important;
 }
 
-.runner-container form .form-buttons {
-  display: flex;
-  justify-content: flex-end;
-  column-gap: 1.5rem;
-}
-
 .runner-container pre {
   color: var(--color-console-fg);
   background-color: var(--color-console-bg);
