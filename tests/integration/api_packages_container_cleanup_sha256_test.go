@@ -63,7 +63,10 @@ func TestPackageContainerCleanupSHA256(t *testing.T) {
 			Token string `json:"token"`
 		}
 
-		authenticate := []string{`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*"`}
+		authenticate := []string{
+			`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*"`,
+			`Basic realm="Forgejo Container Registry"`,
+		}
 
 		t.Run("User", func(t *testing.T) {
 			req := NewRequest(t, "GET", fmt.Sprintf("%sv2", setting.AppURL))
