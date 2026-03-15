@@ -91,7 +91,10 @@ func TestPackageContainer(t *testing.T) {
 			Token string `json:"token"`
 		}
 
-		authenticate := []string{`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*"`}
+		authenticate := []string{
+			`Bearer realm="` + setting.AppURL + `v2/token",service="container_registry",scope="*"`,
+			`Basic realm="Forgejo Container Registry"`,
+		}
 
 		t.Run("Anonymous", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
