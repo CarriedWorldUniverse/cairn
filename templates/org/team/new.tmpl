@@ -25,7 +25,7 @@
 						</div>
 						{{if not (eq .Team.LowerName "owners")}}
 							<fieldset>
-								<legend>{{ctx.Locale.Tr "org.team_access_desc"}}</legend>
+								<legend>{{ctx.Locale.Tr "settings.specific_repo_access"}}</legend>
 								<label>
 									<input type="radio" name="repo_access" value="specific" {{if not .Team.IncludesAllRepositories}}checked{{end}}>
 									{{ctx.Locale.Tr "org.teams.specific_repositories"}}
