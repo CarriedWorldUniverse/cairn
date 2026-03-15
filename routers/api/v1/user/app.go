@@ -239,12 +239,9 @@ func CreateAccessToken(ctx *context.APIContext) {
 
 	err = db.WithTx(ctx, func(ctx stdCtx.Context) error {
 		if err := auth_model.NewAccessToken(ctx, t); err != nil {
-			return nil
+			return err
 		}
-		if err := auth_model.InsertAccessTokenResourceRepos(ctx, t.ID, resourceRepos); err != nil {
-			return nil
-		}
-		return nil
+		return auth_model.InsertAccessTokenResourceRepos(ctx, t.ID, resourceRepos)
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "NewAccessToken", err)
