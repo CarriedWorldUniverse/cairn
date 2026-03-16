@@ -61,10 +61,12 @@ func init() {
 
 // InitIssueIndexer initialize issue indexer, syncReindex is true then reindex until
 // all issue index done.
-func InitIssueIndexer(syncReindex bool) {
+// The return value is a done channel that signals that the indexer can be safely used.
+func InitIssueIndexer(syncReindex bool) <-chan struct{} {
 	ctx, _, finished := process.GetManager().AddTypedContext(context.Background(), "Service: IssueIndexer", process.SystemProcessType, false)
 
 	indexerInitWaitChannel := make(chan time.Duration, 1)
+	done := make(chan struct{}, 1)
 
 	// Create the Queue
 	issueIndexerQueue = queue.CreateUniqueQueue(ctx, "issue_indexer", getIssueIndexerQueueHandler(ctx))
@@ -136,6 +138,7 @@ func InitIssueIndexer(syncReindex bool) {
 
 		indexerInitWaitChannel <- time.Since(start)
 		close(indexerInitWaitChannel)
+		close(done)
 	}()
 
 	if syncReindex {
@@ -163,6 +166,8 @@ func InitIssueIndexer(syncReindex bool) {
 			}
 		}()
 	}
+
+	return done
 }
 
 func getIssueIndexerQueueHandler(ctx context.Context) func(items ...*IndexerMetadata) []*IndexerMetadata {

@@ -30,7 +30,7 @@ func TestDBSearchIssues(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 
 	defer test.MockVariableValue(&setting.Indexer.IssueType, "db")()
-	InitIssueIndexer(true)
+	<-InitIssueIndexer(true)
 
 	t.Run("search issues with keyword", searchIssueWithKeyword)
 	t.Run("search issues in repo", searchIssueInRepo)
@@ -426,7 +426,7 @@ func TestBleveDeleteIssue(t *testing.T) {
 	tmp := t.TempDir()
 	defer test.MockVariableValue(&setting.Indexer.IssuePath, filepath.Join(tmp, "indexers/issues.bleve"))()
 	defer test.MockVariableValue(&setting.Indexer.IssueType, "bleve")()
-	InitIssueIndexer(false)
+	<-InitIssueIndexer(false)
 
 	ctx := t.Context()
 	issue := unittest.AssertExistsAndLoadBean(t, &issues.Issue{ID: 1})
