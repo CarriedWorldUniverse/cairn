@@ -69,10 +69,6 @@
   }
 }
 
-.user.profile .ui.secondary.stackable.pointing.menu {
-  flex-wrap: wrap;
-}
-
 .user.link-account:not(.icon) {
   padding-top: 15px;
   padding-bottom: 5px;
