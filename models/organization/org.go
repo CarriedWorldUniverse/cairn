@@ -397,6 +397,14 @@ func DeleteOrganization(ctx context.Context, org *Organization) error {
 		return fmt.Errorf("%s is a user not an organization", org.Name)
 	}
 
+	// Decrease following count of users that follow the organisation.
+	followerIDs, err := db.FindIDs(ctx, "follow", "follow.user_id", builder.Eq{"follow.follow_id": org.ID})
+	if err != nil {
+		return fmt.Errorf("get all followers: %w", err)
+	} else if err = db.DecrByIDs(ctx, followerIDs, "num_following", new(user_model.User)); err != nil {
+		return fmt.Errorf("decrease user num_following: %w", err)
+	}
+
 	if err := db.DeleteBeans(ctx,
 		&Team{OrgID: org.ID},
 		&OrgUser{OrgID: org.ID},
@@ -406,6 +414,8 @@ func DeleteOrganization(ctx context.Context, org *Organization) error {
 		&secret_model.Secret{OwnerID: org.ID},
 		&actions_model.ActionRunner{OwnerID: org.ID},
 		&actions_model.ActionRunnerToken{OwnerID: optional.Some(org.ID)},
+		&user_model.BlockedUser{UserID: org.ID},
+		&user_model.Follow{FollowID: org.ID},
 	); err != nil {
 		return fmt.Errorf("DeleteBeans: %w", err)
 	}
