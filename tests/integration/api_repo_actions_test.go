@@ -36,7 +36,6 @@ func TestActionsAPISearchActionJobs_RepoRunner(t *testing.T) {
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 	user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
 	token := getUserToken(t, user2.LowerName, auth_model.AccessTokenScopeWriteRepository)
-	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 393})
 
 	req := NewRequestf(
 		t,
@@ -50,8 +49,19 @@ func TestActionsAPISearchActionJobs_RepoRunner(t *testing.T) {
 	var jobs []*api.ActionRunJob
 	DecodeJSON(t, res, &jobs)
 
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, job.ID, jobs[0].ID)
+	job393 := api.ActionRunJob{
+		ID:      393,
+		Attempt: 1,
+		RepoID:  1,
+		OwnerID: 1,
+		Name:    "job_2",
+		Needs:   nil,
+		RunsOn:  []string{"ubuntu-latest"},
+		TaskID:  47,
+		Status:  "waiting",
+	}
+
+	assert.ElementsMatch(t, []*api.ActionRunJob{&job393}, jobs)
 }
 
 func TestActionsAPISearchActionJobs_RepoRunnerAllPendingJobsWithoutLabels(t *testing.T) {

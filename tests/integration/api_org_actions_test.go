@@ -27,8 +27,6 @@ func TestActionsAPISearchActionJobs_OrgRunner(t *testing.T) {
 	session := loginUser(t, "user1")
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteOrganization)
 
-	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 395})
-
 	req := NewRequest(t, "GET",
 		fmt.Sprintf("/api/v1/orgs/org3/actions/runners/jobs?labels=%s", "fedora")).
 		AddTokenAuth(token)
@@ -37,8 +35,19 @@ func TestActionsAPISearchActionJobs_OrgRunner(t *testing.T) {
 	var jobs []*api.ActionRunJob
 	DecodeJSON(t, res, &jobs)
 
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, job.ID, jobs[0].ID)
+	job395 := api.ActionRunJob{
+		ID:      395,
+		Attempt: 1,
+		RepoID:  1,
+		OwnerID: 3,
+		Name:    "job_2",
+		Needs:   nil,
+		RunsOn:  []string{"fedora"},
+		TaskID:  47,
+		Status:  "waiting",
+	}
+
+	assert.ElementsMatch(t, []*api.ActionRunJob{&job395}, jobs)
 }
 
 func TestActionsAPISearchActionJobs_OrgRunnerAllPendingJobsWithoutLabels(t *testing.T) {

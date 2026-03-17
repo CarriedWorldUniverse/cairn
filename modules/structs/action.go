@@ -10,8 +10,10 @@ import (
 // ActionRunJob represents a job of a run
 // swagger:model
 type ActionRunJob struct {
-	// the action run job id
+	// Identifier of this job.
 	ID int64 `json:"id"`
+	// How many times the job has been attempted including the current attempt.
+	Attempt int64 `json:"attempt"`
 	// the repository id
 	RepoID int64 `json:"repo_id"`
 	// the owner id

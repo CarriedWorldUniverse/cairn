@@ -27,7 +27,6 @@ func TestActionsAPISearchActionJobs_UserRunner(t *testing.T) {
 	normalUsername := "user2"
 	session := loginUser(t, normalUsername)
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteUser)
-	job := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{ID: 394})
 
 	req := NewRequest(t, "GET",
 		fmt.Sprintf("/api/v1/user/actions/runners/jobs?labels=%s", "debian-latest")).
@@ -37,8 +36,19 @@ func TestActionsAPISearchActionJobs_UserRunner(t *testing.T) {
 	var jobs []*api.ActionRunJob
 	DecodeJSON(t, res, &jobs)
 
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, job.ID, jobs[0].ID)
+	job394 := api.ActionRunJob{
+		ID:      394,
+		Attempt: 2,
+		RepoID:  1,
+		OwnerID: 2,
+		Name:    "job_2",
+		Needs:   nil,
+		RunsOn:  []string{"debian-latest"},
+		TaskID:  47,
+		Status:  "waiting",
+	}
+
+	assert.ElementsMatch(t, []*api.ActionRunJob{&job394}, jobs)
 }
 
 func TestActionsAPISearchActionJobs_UserRunnerAllPendingJobsWithoutLabels(t *testing.T) {

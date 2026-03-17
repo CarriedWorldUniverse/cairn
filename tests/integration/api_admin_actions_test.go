@@ -44,8 +44,19 @@ func TestAPIAdminActionsGetJobs(t *testing.T) {
 		var jobs []*api.ActionRunJob
 		DecodeJSON(t, res, &jobs)
 
-		assert.Len(t, jobs, 1)
-		assert.Equal(t, job393.ID, jobs[0].ID)
+		expected := api.ActionRunJob{
+			ID:      393,
+			Attempt: 1,
+			RepoID:  1,
+			OwnerID: 1,
+			Name:    "job_2",
+			Needs:   nil,
+			RunsOn:  []string{"ubuntu-latest"},
+			TaskID:  47,
+			Status:  "waiting",
+		}
+
+		assert.ElementsMatch(t, []*api.ActionRunJob{&expected}, jobs)
 	})
 
 	t.Run("jobs-without-labels", func(t *testing.T) {

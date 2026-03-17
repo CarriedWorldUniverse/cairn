@@ -22377,8 +22377,14 @@
       "description": "ActionRunJob represents a job of a run",
       "type": "object",
       "properties": {
+        "attempt": {
+          "description": "How many times the job has been attempted including the current attempt.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Attempt"
+        },
         "id": {
-          "description": "the action run job id",
+          "description": "Identifier of this job.",
           "type": "integer",
           "format": "int64",
           "x-go-name": "ID"
