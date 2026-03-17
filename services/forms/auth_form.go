@@ -57,8 +57,8 @@ type AuthenticationForm struct {
 	PAMServiceName                string
 	PAMEmailDomain                string
 	Oauth2Provider                string
-	Oauth2Key                     string
-	Oauth2Secret                  string
+	Oauth2Key                     string `preprocess:"TrimSpace"`
+	Oauth2Secret                  string `preprocess:"TrimSpace"`
 	OpenIDConnectAutoDiscoveryURL string
 	Oauth2UseCustomURL            bool
 	Oauth2TokenURL                string

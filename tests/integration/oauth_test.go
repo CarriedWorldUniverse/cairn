@@ -26,11 +26,13 @@ import (
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/test"
 	"forgejo.org/routers/web/auth"
+	app_context "forgejo.org/services/context"
 	"forgejo.org/tests"
 
 	"github.com/markbates/goth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	go_oauth2 "golang.org/x/oauth2"
 )
 
 func TestAuthorizeNoClientID(t *testing.T) {
@@ -1802,4 +1804,39 @@ func TestSignInOAuthCallbackGothUserFields(t *testing.T) {
 		assert.True(t, logFiltered[0], "Expected trace log with gothUser fields")
 		assert.True(t, logFiltered[1], "Expected trace log with IDToken")
 	})
+}
+
+func TestSignInOAuthCallbackSignInRetrieveError(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	gitlabName := "gitlab"
+	gitlab := addAuthSource(t, authSourcePayloadGitLabCustom(gitlabName))
+
+	userGitLabUserID := "5678"
+	userGitLab := &user_model.User{
+		Name:        "gitlabuser",
+		Email:       "gitlabuser@example.com",
+		Passwd:      "gitlabuserpassword",
+		Type:        user_model.UserTypeIndividual,
+		LoginType:   auth_model.OAuth2,
+		LoginSource: gitlab.ID,
+		LoginName:   userGitLabUserID,
+	}
+	defer createUser(t.Context(), t, userGitLab)()
+
+	defer mockCompleteUserAuth(func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+		return goth.User{}, &go_oauth2.RetrieveError{
+			Response: &http.Response{
+				Status: "404 Not Found",
+			},
+			Body: []byte("cooked"),
+		}
+	})()
+	sess := emptyTestSession(t)
+	resp := sess.MakeRequest(t, NewRequest(t, "GET", fmt.Sprintf("/user/oauth2/%s/callback?code=XYZ&state=XYZ", gitlabName)), http.StatusSeeOther)
+
+	assert.Equal(t, "/user/login", test.RedirectURL(resp))
+	flashCookie := sess.GetCookie(app_context.CookieNameFlash)
+	assert.NotNil(t, flashCookie)
+	assert.Equal(t, "error%3DOAuth2%2BRetrieveError%253A%2Boauth2%253A%2Bcannot%2Bfetch%2Btoken%253A%2B404%2BNot%2BFound%250AResponse%253A%2Bcooked", flashCookie.Value)
 }
