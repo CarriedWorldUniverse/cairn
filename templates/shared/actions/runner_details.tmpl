@@ -93,7 +93,15 @@
 	</div>
 
 	<h4 class="ui top attached header">
-		{{ctx.Locale.Tr "actions.runners.task_list"}}
+		{{if .IsRepo}}
+			{{ctx.Locale.Tr "actions.runners.task_list_repo"}}
+		{{else if .IsOrg}}
+			{{ctx.Locale.Tr "actions.runners.task_list_org"}}
+		{{else if .IsAdmin}}
+			{{ctx.Locale.Tr "actions.runners.task_list_admin"}}
+		{{else if .IsUser}}
+			{{ctx.Locale.Tr "actions.runners.task_list_user"}}
+		{{end}}
 	</h4>
 	<div class="ui attached segment">
 		<table class="ui very basic striped table unstackable">
