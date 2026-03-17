@@ -42,6 +42,7 @@ import (
 	"forgejo.org/routers/web/repo/badges"
 	repo_flags "forgejo.org/routers/web/repo/flags"
 	repo_setting "forgejo.org/routers/web/repo/setting"
+	shared_actions "forgejo.org/routers/web/shared/actions"
 	"forgejo.org/routers/web/shared/project"
 	"forgejo.org/routers/web/user"
 	user_setting "forgejo.org/routers/web/user/setting"
@@ -460,16 +461,16 @@ func registerRoutes(m *web.Route) {
 
 	addSettingsRunnersRoutes := func() {
 		m.Group("/runners", func() {
-			m.Get("", repo_setting.Runners)
+			m.Get("", shared_actions.RunnersList)
 			m.Combo("/new").
-				Get(repo_setting.RunnersCreate).
-				Post(web.Bind(forms.CreateRunnerForm{}), repo_setting.RunnersCreatePost)
-			m.Get("/{runnerid}", repo_setting.RunnersDetails)
+				Get(shared_actions.RunnerCreate).
+				Post(web.Bind(forms.CreateRunnerForm{}), shared_actions.RunnerCreatePost)
+			m.Get("/{runnerid}", shared_actions.RunnerDetails)
 			m.Combo("/{runnerid}/edit").
-				Get(repo_setting.RunnersEdit).
-				Post(web.Bind(forms.EditRunnerForm{}), repo_setting.RunnersEditPost)
-			m.Post("/{runnerid}/delete", repo_setting.RunnerDeletePost)
-			m.Get("/reset_registration_token", repo_setting.ResetRunnerRegistrationToken)
+				Get(shared_actions.RunnerEdit).
+				Post(web.Bind(forms.EditRunnerForm{}), shared_actions.RunnerEditPost)
+			m.Post("/{runnerid}/delete", shared_actions.RunnerDeletePost)
+			m.Get("/reset_registration_token", shared_actions.RunnerResetRegistrationToken)
 		})
 	}
 
@@ -1158,7 +1159,7 @@ func registerRoutes(m *web.Route) {
 				})
 			})
 			m.Group("/actions", func() {
-				m.Get("", repo_setting.RedirectToDefaultSetting)
+				m.Get("", shared_actions.RedirectToDefaultSetting)
 				addSettingsRunnersRoutes()
 				addSettingsSecretsRoutes()
 				addSettingsVariablesRoutes()

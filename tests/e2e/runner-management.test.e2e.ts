@@ -84,7 +84,7 @@ test.describe('Runners of user2', () => {
       - definition: A runner for everyone
     `);
 
-    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner '})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Recent tasks of this user on this runner'})).toBeVisible();
 
     const rows = page.getByRole('row');
 
@@ -374,7 +374,7 @@ test.describe('Global runners', () => {
       - definition: A runner for everyone
     `);
 
-    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner '})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner'})).toBeVisible();
 
     const rows = page.getByRole('row');
 
@@ -598,7 +598,7 @@ test.describe('Organization runners', () => {
       - definition: A runner for everyone
     `);
 
-    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner '})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner within this organization'})).toBeVisible();
 
     const rows = page.getByRole('row');
 
@@ -606,6 +606,38 @@ test.describe('Organization runners', () => {
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(0)).toHaveAccessibleName('Run Status Repository Commit Done at');
     await expect(rows.nth(1)).toHaveAccessibleName('88931 Running ed38c5a46c -');
+  });
+
+  test('runner details with multiple pages of tasks', async ({page}) => {
+    await page.goto('/org/org3/settings/actions/runners');
+
+    await page.getByRole('link', {name: 'Show details of runner-1', exact: true}).click();
+
+    await expect(page).toHaveTitle(/^Runner runner-1 .*/);
+    await expect(page.getByRole('heading', {name: 'Runner runner-1'})).toBeVisible();
+
+    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner within this organization'})).toBeVisible();
+
+    const rows = page.getByRole('row');
+
+    await expect(rows).toHaveCount(31); // 30 runners plus table header
+    await expect(rows.nth(0)).toHaveAccessibleName('Run Status Repository Commit Done at');
+    await expect(rows.nth(1)).toHaveAccessibleName('88930 Canceled ed4df76f86 -');
+    await expect(rows.nth(30)).toHaveAccessibleName('88900 Success aa06c3e960 -');
+
+    await page.getByRole('link', {name: 'Next', exact: true}).click();
+
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toHaveAccessibleName('Run Status Repository Commit Done at');
+    await expect(rows.nth(1)).toHaveAccessibleName('88899 Success d553d4419a -');
+
+    // Go back to the first page and verify that nothing has changed.
+    await page.getByRole('link', {name: 'Previous', exact: true}).click();
+
+    await expect(rows).toHaveCount(31); // 30 runners plus table header
+    await expect(rows.nth(0)).toHaveAccessibleName('Run Status Repository Commit Done at');
+    await expect(rows.nth(1)).toHaveAccessibleName('88930 Canceled ed4df76f86 -');
+    await expect(rows.nth(30)).toHaveAccessibleName('88900 Success aa06c3e960 -');
   });
 });
 
@@ -694,7 +726,7 @@ test.describe('Repository runners', () => {
       - definition: A runner for everyone
     `);
 
-    await expect(page.getByRole('heading', {name: 'Recent tasks on this runner '})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Recent tasks of this repository on this runner'})).toBeVisible();
 
     const rows = page.getByRole('row');
 
