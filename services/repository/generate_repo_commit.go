@@ -54,19 +54,19 @@ func generateRepoCommit(ctx context.Context, repo, templateRepo, generateRepo *r
 	}
 
 	if gt != nil {
-		if err := util.Remove(gt.Path); err != nil {
+		// All file access should be done through `root` to avoid file traversal attacks, especially with symlinks
+		root, err := os.OpenRoot(tmpDir)
+		if err != nil {
+			return fmt.Errorf("open root: %w", err)
+		}
+		defer root.Close()
+
+		if err := root.Remove(gt.Path); err != nil {
 			return fmt.Errorf("remove .giteatemplate: %w", err)
 		}
 
 		// Avoid walking tree if there are no globs
 		if len(gt.Globs()) > 0 {
-			// All file access should be done through `root` to avoid file traversal attacks, especially with symlinks
-			root, err := os.OpenRoot(tmpDir)
-			if err != nil {
-				return fmt.Errorf("open root: %w", err)
-			}
-			defer root.Close()
-
 			tmpDirSlash := strings.TrimSuffix(filepath.ToSlash(tmpDir), "/") + "/"
 			if err := filepath.WalkDir(tmpDirSlash, func(path string, d os.DirEntry, walkErr error) error {
 				if walkErr != nil {
