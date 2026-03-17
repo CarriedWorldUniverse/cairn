@@ -108,7 +108,7 @@ test.describe('Runners of user2', () => {
     await expect(page.getByRole('paragraph')).toHaveText('Name cannot be empty.');
 
     // Submit a valid form to create a runner.
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-991301');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-991301');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-991301');
 
     await page.getByRole('button', {name: 'Create'}).click();
@@ -155,7 +155,7 @@ test.describe('Runners of user2', () => {
 
     // We have to create a new runner because changes to fixtures would affect the remainder of the tests in this file.
     await page.getByRole('link', {name: 'Create new runner'}).click();
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-46635');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-46635');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-46635');
     await page.getByRole('button', {name: 'Create'}).click();
 
@@ -169,15 +169,15 @@ test.describe('Runners of user2', () => {
     await expect(page.getByRole('heading', {name: 'Edit runner runner-46635'})).toBeVisible();
 
     // Make the form invalid to test validation.
-    await page.getByRole('textbox', {name: 'Name*'}).clear();
+    await page.getByRole('textbox', {name: 'Name *'}).clear();
     await page.getByRole('button', {name: 'Save'}).click();
 
     await expect(page.locator('#flash-message')).toHaveText('Name cannot be empty.');
-    await expect(page.getByRole('textbox', {name: 'Name*'})).toBeEmpty();
+    await expect(page.getByRole('textbox', {name: 'Name *'})).toBeEmpty();
     await expect(page.getByRole('textbox', {name: 'Description'})).toHaveValue('Description of runner-46635');
 
     // Submit a valid form.
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-46636');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-46636');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-46636');
 
     await page.getByRole('button', {name: 'Save'}).click();
@@ -246,7 +246,7 @@ test.describe('Runners of user2', () => {
 
     // We have to create a new runner because changes to fixtures affect the remainder of the tests in this file.
     await page.getByRole('link', {name: 'Create new runner'}).click();
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-660332');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-660332');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-660332');
     await page.getByRole('button', {name: 'Create'}).click();
 
@@ -399,7 +399,7 @@ test.describe('Global runners', () => {
     await expect(page.getByRole('paragraph')).toHaveText('Name cannot be empty.');
 
     // Submit a valid form to create a runner.
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-473465');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-473465');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-473465');
 
     await page.getByRole('button', {name: 'Create'}).click();
@@ -446,7 +446,7 @@ test.describe('Global runners', () => {
 
     // We have to create a new runner because changes to fixtures would affect the remainder of the tests in this file.
     await page.getByRole('link', {name: 'Create new runner'}).click();
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-956857');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-956857');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-956857');
     await page.getByRole('button', {name: 'Create'}).click();
 
@@ -460,15 +460,15 @@ test.describe('Global runners', () => {
     await expect(page.getByRole('heading', {name: 'Edit runner runner-956857'})).toBeVisible();
 
     // Make the form invalid to test validation.
-    await page.getByRole('textbox', {name: 'Name*'}).clear();
+    await page.getByRole('textbox', {name: 'Name *'}).clear();
     await page.getByRole('button', {name: 'Save'}).click();
 
     await expect(page.locator('#flash-message')).toHaveText('Name cannot be empty.');
-    await expect(page.getByRole('textbox', {name: 'Name*'})).toBeEmpty();
+    await expect(page.getByRole('textbox', {name: 'Name *'})).toBeEmpty();
     await expect(page.getByRole('textbox', {name: 'Description'})).toHaveValue('Description of runner-956857');
 
     // Submit a valid form.
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-956858');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-956858');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-956858');
 
     await page.getByRole('button', {name: 'Save'}).click();
@@ -501,7 +501,7 @@ test.describe('Global runners', () => {
 
     // We have to create a new runner because changes to fixtures affect the remainder of the tests in this file.
     await page.getByRole('link', {name: 'Create new runner'}).click();
-    await page.getByRole('textbox', {name: 'Name*'}).fill('runner-650332');
+    await page.getByRole('textbox', {name: 'Name *'}).fill('runner-650332');
     await page.getByRole('textbox', {name: 'Description'}).fill('Description of runner-650332');
     await page.getByRole('button', {name: 'Create'}).click();
 
