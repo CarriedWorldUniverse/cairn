@@ -985,6 +985,7 @@ strong.attention-caution, svg.attention-caution {
 overflow-menu {
   border-bottom: 1px solid var(--color-secondary) !important;
   display: flex;
+  overflow-x: auto;
 }
 
 overflow-menu .overflow-menu-items {
