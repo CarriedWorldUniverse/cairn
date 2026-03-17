@@ -50,11 +50,6 @@
   }
 }
 
-.dashboard.feeds .right.stackable.menu > .item.active,
-.dashboard.issues .right.stackable.menu > .item.active {
-  color: var(--color-red);
-}
-
 .dashboard .dashboard-repos,
 .dashboard .dashboard-orgs {
   margin-bottom: 0;
