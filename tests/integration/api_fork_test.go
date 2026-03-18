@@ -102,7 +102,7 @@ func TestAPIDisabledForkRepo(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		session := loginUser(t, "user5")
-		token := getTokenForLoggedInUser(t, session)
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
 
 		req := NewRequestWithJSON(t, "POST", "/api/v1/repos/user2/repo1/forks", &api.CreateForkOption{}).AddTokenAuth(token)
 		session.MakeRequest(t, req, http.StatusNotFound)

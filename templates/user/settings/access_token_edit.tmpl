@@ -1,0 +1,63 @@
+{{template "user/settings/layout_head" (dict "ctxData" . "pageClass" "user settings applications")}}
+	<div class="user-setting-content">
+		<h4 class="ui top attached header">
+			{{ctx.Locale.Tr "settings.manage_access_token"}}
+		</h4>
+
+		<div class="ui attached bottom segment">
+			<form id="scoped-access-form" class="ui form" action="{{.Link}}" method="post">
+				<h5 class="ui top header">
+					{{ctx.Locale.Tr "settings.generate_new_token"}}
+				</h5>
+				<div class="required field {{if .Err_Name}}error{{end}}">
+					<label for="name">{{ctx.Locale.Tr "settings.token_name"}}</label>
+					<input id="name" name="name" value="{{.name}}" autofocus required maxlength="255">
+				</div>
+				<div class="field">
+					<label>{{ctx.Locale.Tr "settings.repo_and_org_access"}}</label>
+					<label class="tw-cursor-pointer">
+						<input class="enable-system tw-mt-1 tw-mr-1" type="radio" name="scope" value="{{$.AccessTokenScopePublicOnly}}" {{if (SliceUtils.Contains .scope $.AccessTokenScopePublicOnly)}} checked {{end}}>
+						{{ctx.Locale.Tr "settings.permissions_public_only"}}
+					</label>
+					<label class="tw-cursor-pointer">
+						<input class="enable-system tw-mt-1 tw-mr-1" type="radio" name="scope" value="" {{if (not (SliceUtils.Contains .scope $.AccessTokenScopePublicOnly))}} checked {{end}}>
+						{{ctx.Locale.Tr "settings.permissions_access_all"}}
+					</label>
+				</div>
+				<div class="field">
+					<h5>
+						{{ctx.Locale.Tr "settings.select_permissions"}}
+					</h5>
+					<p class="activity meta">
+						<p>{{ctx.Locale.Tr "settings.access_token_desc" (printf "%s/api/swagger" AppSubUrl) "https://forgejo.org/docs/latest/user/token-scope/"}}</p>
+					</p>
+
+					{{range .Categories}}
+						<div class="field tw-pl-1 tw-pb-1 access-token-category">
+							<label class="category-label" for="access-token-scope-{{.}}">
+								{{.}}
+							</label>
+							<div class="gitea-select">
+								<select class="ui selection access-token-select" name="scope" id="access-token-scope-{{.}}">
+									<option value="">
+										{{ctx.Locale.Tr "settings.permission_no_access"}}
+									</option>
+									<option value="read:{{.}}" {{if (SliceUtils.Contains $.scope (printf "read:%s" .))}} selected {{end}}>
+										{{ctx.Locale.Tr "settings.permission_read"}}
+									</option>
+									<option value="write:{{.}}" {{if (SliceUtils.Contains $.scope (printf "write:%s" .))}} selected {{end}}>
+										{{ctx.Locale.Tr "settings.permission_write"}}
+									</option>
+								</select>
+							</div>
+						</div>
+					{{end}}
+				</div>
+				<button id="scoped-access-submit" class="ui primary button">
+					{{ctx.Locale.Tr "settings.generate_token"}}
+				</button>
+			</form>
+		</div>
+
+	</div>
+{{template "user/settings/layout_footer" .}}

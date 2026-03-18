@@ -2,7 +2,6 @@
 import './bootstrap.js';
 
 import {initRepoActivityTopAuthorsChart} from './features/repo-activity-top-authors.ts';
-import {initScopedAccessTokenCategories} from './features/scoped-access-token-selector.ts';
 import {initDashboardRepoList} from './features/dashboard-repo-list.ts';
 
 import {initGlobalCopyToClipboardListener} from './features/clipboard.js';
@@ -192,7 +191,6 @@ onDomReady(() => {
   initUserAuthWebAuthnRegister();
   initUserAuth();
   initRepoDiffView();
-  initScopedAccessTokenCategories();
   initColorPickers();
   initModalClose();
 
