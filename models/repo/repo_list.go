@@ -313,23 +313,6 @@ func userOrgPublicRepoCond(userID int64) builder.Cond {
 	)
 }
 
-// userOrgPublicRepoCondPrivate returns the condition that one user could access all public repositories in private organizations
-func userOrgPublicRepoCondPrivate(userID int64) builder.Cond {
-	return builder.And(
-		builder.Eq{"`repository`.is_private": false},
-		builder.In("`repository`.owner_id",
-			builder.Select("`org_user`.org_id").
-				From("org_user").
-				Join("INNER", "`user`", "`user`.id = `org_user`.org_id").
-				Where(builder.Eq{
-					"`org_user`.uid":    userID,
-					"`user`.`type`":     user_model.UserTypeOrganization,
-					"`user`.visibility": structs.VisibleTypePrivate,
-				}),
-		),
-	)
-}
-
 // UserOrgPublicUnitRepoCond returns the condition that one user could access all public repositories in the special organization
 func UserOrgPublicUnitRepoCond(userID, orgID int64) builder.Cond {
 	return userOrgPublicRepoCond(userID).
@@ -382,26 +365,14 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 		}
 
 		if opts.Collaborate.ValueOrDefault(true) {
-			// A Collaboration is:
-
 			collaborateCond := builder.NewCond()
+
+			// A Collaboration is:
 			// 1. Repository we don't own
 			collaborateCond = collaborateCond.And(builder.Neq{"owner_id": opts.OwnerID})
-			// 2. But we can see because of:
-			{
-				userAccessCond := builder.NewCond()
-				// A. We have unit independent access
-				userAccessCond = userAccessCond.Or(UserAccessRepoCond("`repository`.id", opts.OwnerID))
-				// B. We are in a team for
-				if opts.UnitType == unit.TypeInvalid {
-					userAccessCond = userAccessCond.Or(UserOrgTeamRepoCond("`repository`.id", opts.OwnerID))
-				} else {
-					userAccessCond = userAccessCond.Or(userOrgTeamUnitRepoCond("`repository`.id", opts.OwnerID, opts.UnitType))
-				}
-				// C. Public repositories in organizations that we are member of
-				userAccessCond = userAccessCond.Or(userOrgPublicRepoCondPrivate(opts.OwnerID))
-				collaborateCond = collaborateCond.And(userAccessCond)
-			}
+			// 2. But we can have access to unit on the repo > AccessModeNone
+			collaborateCond = collaborateCond.And(UserAccessRepoCond("`repository`.id", opts.OwnerID))
+
 			if !opts.Private {
 				collaborateCond = collaborateCond.And(builder.Expr("owner_id NOT IN (SELECT org_id FROM org_user WHERE org_user.uid = ? AND org_user.is_public = ?)", opts.OwnerID, false))
 			}
