@@ -180,7 +180,7 @@ func TestPackageContainer(t *testing.T) {
 
 			req := NewRequest(t, "GET", fmt.Sprintf("%sv2/token", setting.AppURL))
 			// Setting the header explicitly instead of using AddBasicAuth to supply an invalid password.
-			req.Request.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("user2:very-invalid")))
+			req.SetBasicAuth("user2", "very-invalid")
 			resp := MakeRequest(t, req, http.StatusUnauthorized)
 
 			assert.Equal(t, authenticate, resp.Header().Values("WWW-Authenticate"))

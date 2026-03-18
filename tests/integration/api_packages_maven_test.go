@@ -254,6 +254,20 @@ func TestPackageMaven(t *testing.T) {
 		resp := MakeRequest(t, req, http.StatusOK)
 		assert.NotContains(t, resp.Body.String(), "Internal server error")
 	})
+
+	t.Run("Invalid credentials", func(t *testing.T) {
+		req := NewRequest(t, "HEAD", fmt.Sprintf("%s/%s/%s", root, packageVersion, filename))
+		req.SetBasicAuth(user.Name, "invalid")
+		resp := MakeRequest(t, req, http.StatusUnauthorized)
+
+		// Verify that headers from other package endpoints do not leak into the Maven registry. That Forgejo responds
+		// with 401 Unauthorized without including any WWW-Authenticate header is *wrong*, though.
+		assert.Empty(t, resp.Header().Values("WWW-Authenticate"))
+
+		// Verify that the request would work with correct credentials.
+		req.AddBasicAuth(user.Name)
+		MakeRequest(t, req, http.StatusOK)
+	})
 }
 
 func TestPackageMavenConcurrent(t *testing.T) {
