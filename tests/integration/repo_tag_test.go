@@ -107,7 +107,7 @@ func TestCreateNewTagProtected(t *testing.T) {
 		t.Run("Git", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			httpContext := NewAPITestContext(t, owner.Name, repo.Name)
+			httpContext := NewAPITestContext(t, owner.Name, repo.Name, auth_model.AccessTokenScopeReadRepository)
 
 			dstPath := t.TempDir()
 
@@ -127,7 +127,7 @@ func TestCreateNewTagProtected(t *testing.T) {
 		t.Run("GitTagForce", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			httpContext := NewAPITestContext(t, owner.Name, repo.Name)
+			httpContext := NewAPITestContext(t, owner.Name, repo.Name, auth_model.AccessTokenScopeReadRepository)
 
 			dstPath := t.TempDir()
 
@@ -160,7 +160,7 @@ func TestSyncRepoTags(t *testing.T) {
 		owner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
 
 		t.Run("Git", func(t *testing.T) {
-			httpContext := NewAPITestContext(t, owner.Name, repo.Name)
+			httpContext := NewAPITestContext(t, owner.Name, repo.Name, auth_model.AccessTokenScopeReadRepository)
 
 			dstPath := t.TempDir()
 
@@ -199,7 +199,7 @@ func TestRepushTag(t *testing.T) {
 		session := loginUser(t, owner.LowerName)
 		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
 
-		httpContext := NewAPITestContext(t, owner.Name, repo.Name)
+		httpContext := NewAPITestContext(t, owner.Name, repo.Name, auth_model.AccessTokenScopeReadRepository)
 
 		dstPath := t.TempDir()
 

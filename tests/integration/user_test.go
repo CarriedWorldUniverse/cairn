@@ -256,7 +256,7 @@ func TestAccessTokenRegenerate(t *testing.T) {
 
 	assert.Equal(t, "TestAccessToken", oldTokenName)
 
-	req := NewRequestWithValues(t, "POST", "/user/settings/applications/regenerate", map[string]string{
+	req := NewRequestWithValues(t, "POST", "/user/settings/applications/tokens/regenerate", map[string]string{
 		"id": strconv.Itoa(oldTokenID),
 	})
 	session.MakeRequest(t, req, http.StatusOK)
@@ -268,7 +268,7 @@ func TestAccessTokenRegenerate(t *testing.T) {
 	assert.Equal(t, oldTokenID, newTokenID)
 	assert.Equal(t, "TestAccessToken", newTokenName)
 
-	req = NewRequestWithValues(t, "POST", "/user/settings/applications/delete", map[string]string{
+	req = NewRequestWithValues(t, "POST", "/user/settings/applications/tokens/delete", map[string]string{
 		"id": strconv.Itoa(newTokenID),
 	})
 	session.MakeRequest(t, req, http.StatusOK)

@@ -487,12 +487,14 @@ func getTokenForLoggedInUser(t testing.TB, session *TestSession, scopes ...auth.
 // createApplicationSettingsToken creates a token with given name and scopes for the currently logged in user.
 // It will redirect to the application settings page.
 func createApplicationSettingsToken(t testing.TB, session *TestSession, name string, scopes ...auth.AccessTokenScope) {
+	require.NotEmpty(t, scopes, "attempted to create access token with no scopes, which is not valid")
+
 	urlValues := url.Values{}
 	urlValues.Add("name", name)
 	for _, scope := range scopes {
 		urlValues.Add("scope", string(scope))
 	}
-	req := NewRequestWithURLValues(t, "POST", "/user/settings/applications", urlValues)
+	req := NewRequestWithURLValues(t, "POST", "/user/settings/applications/tokens/new", urlValues)
 	resp := session.MakeRequest(t, req, http.StatusSeeOther)
 
 	// Log the flash values on failure

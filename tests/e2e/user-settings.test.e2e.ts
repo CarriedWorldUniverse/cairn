@@ -128,11 +128,11 @@ test('User: Canceling adding GPG key clears input', async ({browser}, workerInfo
 test('User: Add access token', async ({browser}, workerInfo) => {
   const page = await login({browser}, workerInfo);
   await page.goto('/user/settings/applications');
+  await page.getByRole('link', {name: 'New access token'}).click();
 
   await page.locator('#scoped-access-submit').click();
   await page.locator('#name:invalid').isVisible();
 
-  await page.locator('details.optional.field').click();
   await page.selectOption('#access-token-scope-activitypub', 'read:activitypub');
   await page.locator('#scoped-access-submit').click();
 
@@ -144,4 +144,24 @@ test('User: Add access token', async ({browser}, workerInfo) => {
   await page.locator('#scoped-access-submit').click();
 
   await page.getByText(tokenName).isVisible();
+});
+
+test('User: Add access token validation error', async ({browser}, workerInfo) => {
+  const page = await login({browser}, workerInfo);
+  await page.goto('/user/settings/applications');
+  await page.getByRole('link', {name: 'New access token'}).click();
+
+  await page.getByRole('button', {name: 'Generate token'}).click();
+  await page.locator('#name:invalid').isVisible();
+
+  await page.getByRole('textbox', {name: 'Token name *'}).fill('Token A');
+  await page.getByRole('combobox', {name: 'activitypub'}).selectOption('read:activitypub');
+  await page.getByRole('radio', {name: 'Public only'}).click();
+
+  await page.getByRole('button', {name: 'Generate token'}).click();
+
+  await page.getByText('has been used as an application name already.').isVisible();
+  // validate that selected options (public-only, activitypub) are still selected.
+  await expect(page.getByRole('radio', {name: 'Public only'})).toBeChecked();
+  await expect(page.getByRole('combobox', {name: 'activitypub'})).toHaveValue('read:activitypub');
 });

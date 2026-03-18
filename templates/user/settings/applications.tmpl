@@ -2,6 +2,9 @@
 	<div class="user-setting-content">
 		<h4 class="ui top attached header">
 			{{ctx.Locale.Tr "settings.manage_access_token"}}
+			<div class="ui right">
+				<a class="ui primary tiny button" href="{{AppSubUrl}}/user/settings/applications/tokens/new">{{ctx.Locale.Tr "settings.new_access_token"}}</a>
+			</div>
 		</h4>
 		<div class="ui attached segment">
 			<div class="flex-list">
@@ -47,59 +50,17 @@
 							</div>
 						</div>
 						<div class="flex-item-trailing">
-								<button class="ui primary tiny button delete-button" data-modal-id="regenerate-token" data-url="{{$.Link}}/regenerate" data-id="{{.Token.ID}}">
+								<button class="ui primary tiny button delete-button" data-modal-id="regenerate-token" data-url="{{$.Link}}/tokens/regenerate" data-id="{{.Token.ID}}">
 									{{svg "octicon-issue-reopened" 16 "tw-mr-1"}}
 									{{ctx.Locale.Tr "settings.regenerate_token"}}
 								</button>
-								<button class="ui red tiny button delete-button" data-modal-id="delete-token" data-url="{{$.Link}}/delete" data-id="{{.Token.ID}}">
+								<button class="ui red tiny button delete-button" data-modal-id="delete-token" data-url="{{$.Link}}/tokens/delete" data-id="{{.Token.ID}}">
 									{{svg "octicon-trash" 16 "tw-mr-1"}}
 									{{ctx.Locale.Tr "settings.delete_token"}}
 								</button>
 						</div>
 					</div>
 				{{end}}
-			</div>
-		</div>
-		<div class="ui attached bottom segment">
-			<h5 class="ui top header">
-				{{ctx.Locale.Tr "settings.generate_new_token"}}
-			</h5>
-			<form id="scoped-access-form" class="ui form ignore-dirty" action="{{.Link}}" method="post">
-				<div class="required field {{if .Err_Name}}error{{end}}">
-					<label for="name">{{ctx.Locale.Tr "settings.token_name"}}</label>
-					<input id="name" name="name" value="{{.name}}" autofocus required maxlength="255">
-				</div>
-				<div class="field">
-					<label>{{ctx.Locale.Tr "settings.repo_and_org_access"}}</label>
-					<label class="tw-cursor-pointer">
-						<input class="enable-system tw-mt-1 tw-mr-1" type="radio" name="scope" value="{{$.AccessTokenScopePublicOnly}}">
-						{{ctx.Locale.Tr "settings.permissions_public_only"}}
-					</label>
-					<label class="tw-cursor-pointer">
-						<input class="enable-system tw-mt-1 tw-mr-1" type="radio" name="scope" value="" checked>
-						{{ctx.Locale.Tr "settings.permissions_access_all"}}
-					</label>
-				</div>
-				<details class="ui optional field">
-					<summary class="tw-pb-4 tw-pl-1">
-						{{ctx.Locale.Tr "settings.select_permissions"}}
-					</summary>
-					<p class="activity meta">
-						<p>{{ctx.Locale.Tr "settings.access_token_desc" (printf "%s/api/swagger" AppSubUrl) "https://forgejo.org/docs/latest/user/token-scope/"}}</p>
-					</p>
-					<div class="scoped-access-token"
-						data-is-admin="{{if .IsAdmin}}true{{else}}false{{end}}"
-						data-no-access-label="{{ctx.Locale.Tr "settings.permission_no_access"}}"
-						data-read-label="{{ctx.Locale.Tr "settings.permission_read"}}"
-						data-write-label="{{ctx.Locale.Tr "settings.permission_write"}}"
-					></div>
-				</details>
-				<button id="scoped-access-submit" class="ui primary button">
-					{{ctx.Locale.Tr "settings.generate_token"}}
-				</button>
-			</form>{{/* Fomantic ".ui.form .warning.message" is hidden by default, so put the warning message out of the form*/}}
-			<div id="scoped-access-warning" class="ui warning message center tw-hidden">
-				{{ctx.Locale.Tr "settings.at_least_one_permission"}}
 			</div>
 		</div>
 

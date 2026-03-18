@@ -99,7 +99,7 @@ func testMirrorPush(t *testing.T, u *url.URL) {
 	})
 	require.NoError(t, err)
 
-	ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+	ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name, auth_model.AccessTokenScopeReadRepository)
 
 	doCreatePushMirror(ctx, fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(ctx.Username), url.PathEscape(mirrorRepo.Name)), user.LowerName, userPassword)(t)
 	doCreatePushMirror(ctx, fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(ctx.Username), url.PathEscape("does-not-matter")), user.LowerName, userPassword)(t)
@@ -407,7 +407,7 @@ func TestPushMirrorBranchFilterWebUI(t *testing.T) {
 		mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
 		defer f()
 
-		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name, auth_model.AccessTokenScopeReadRepository)
 		ctx.Session = sess
 		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
 
@@ -506,7 +506,7 @@ func TestPushMirrorBranchFilterIntegration(t *testing.T) {
 		sess := loginUser(t, user.Name)
 		token := getTokenForLoggedInUser(t, sess, auth_model.AccessTokenScopeAll)
 
-		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name, auth_model.AccessTokenScopeReadRepository)
 		ctx.Session = sess
 		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape("foo"))
 		urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/push_mirrors", user.LowerName, srcRepo.Name)
@@ -682,7 +682,7 @@ func TestPushMirrorBranchFilterSyncOperations(t *testing.T) {
 		_, _, err = git.NewCommand(git.DefaultContext, "update-ref", "refs/heads/hotfix-123", "refs/heads/master").RunStdString(&git.RunOpts{Dir: testRepoPath})
 		require.NoError(t, err)
 
-		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name, auth_model.AccessTokenScopeReadRepository)
 		ctx.Session = sess
 
 		t.Run("Create push mirror with branch filter and trigger sync", func(t *testing.T) {
@@ -907,7 +907,7 @@ func TestPushMirrorWebUIToAPIIntegration(t *testing.T) {
 		mirrorRepo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit.Type{unit.TypeCode}, nil, nil)
 		defer f()
 
-		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name)
+		ctx := NewAPITestContext(t, user.LowerName, srcRepo.Name, auth_model.AccessTokenScopeReadRepository)
 		ctx.Session = session
 		remoteAddress := fmt.Sprintf("%s%s/%s", u.String(), url.PathEscape(user.Name), url.PathEscape(mirrorRepo.Name))
 		urlStr := fmt.Sprintf("/api/v1/repos/%s/%s/push_mirrors", user.Name, srcRepo.Name)

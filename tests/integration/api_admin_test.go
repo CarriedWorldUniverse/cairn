@@ -76,7 +76,7 @@ func TestAPIAdminDeleteUnauthorizedKey(t *testing.T) {
 	var newPublicKey api.PublicKey
 	DecodeJSON(t, resp, &newPublicKey)
 
-	token = getUserToken(t, normalUsername)
+	token = getUserToken(t, normalUsername, auth_model.AccessTokenScopeWriteAdmin)
 	req = NewRequestf(t, "DELETE", "/api/v1/admin/users/%s/keys/%d", adminUsername, newPublicKey.ID).
 		AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusForbidden)
@@ -178,7 +178,7 @@ func TestAPIListUsersNotLoggedIn(t *testing.T) {
 func TestAPIListUsersNonAdmin(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	nonAdminUsername := "user2"
-	token := getUserToken(t, nonAdminUsername)
+	token := getUserToken(t, nonAdminUsername, auth_model.AccessTokenScopeReadAdmin)
 	req := NewRequest(t, "GET", "/api/v1/admin/users").
 		AddTokenAuth(token)
 	MakeRequest(t, req, http.StatusForbidden)
