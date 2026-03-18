@@ -125,6 +125,24 @@ func verifyAuth(r *web.Route, authMethods []auth.Method) {
 		ctx.Doer, err = authGroup.Verify(ctx.Req, ctx.Resp, ctx, ctx.Session)
 		if err != nil {
 			log.Info("Failed to verify user: %v", err)
+			ctx.Error(http.StatusUnauthorized, "authGroup.Verify")
+			return
+		}
+		ctx.IsSigned = ctx.Doer != nil
+	})
+}
+
+func verifyContainerAuth(r *web.Route, authMethods []auth.Method) {
+	if setting.Service.EnableReverseProxyAuth {
+		authMethods = append(authMethods, &auth.ReverseProxy{})
+	}
+	authGroup := auth.NewGroup(authMethods...)
+
+	r.Use(func(ctx *context.Context) {
+		var err error
+		ctx.Doer, err = authGroup.Verify(ctx.Req, ctx.Resp, ctx, ctx.Session)
+		if err != nil {
+			log.Info("Failed to verify user: %v", err)
 			container.APIUnauthorizedError(ctx)
 			ctx.Error(http.StatusUnauthorized, "authGroup.Verify")
 			return
@@ -786,10 +804,7 @@ func ContainerRoutes() *web.Route {
 
 	r.Use(context.PackageContexter())
 
-	verifyAuth(r, []auth.Method{
-		&auth.Basic{},
-		&container.Auth{},
-	})
+	verifyContainerAuth(r, []auth.Method{&auth.Basic{}, &container.Auth{}})
 
 	r.Get("", container.ReqContainerAccess, container.DetermineSupport)
 	r.Group("/token", func() {
