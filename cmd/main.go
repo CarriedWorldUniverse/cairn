@@ -80,7 +80,6 @@ func appGlobalFlags() []cli.Flag {
 func prepareSubcommandWithConfig(command *cli.Command, globalFlags func() []cli.Flag) {
 	command.Flags = append(globalFlags(), command.Flags...)
 	command.Action = prepareWorkPathAndCustomConf(command.Action)
-	command.HideHelp = true
 	if command.Name != "help" {
 		command.Commands = append(command.Commands, cmdHelp())
 	}
@@ -199,7 +198,6 @@ func innerNewMainApp(version, versionExtra string, subCmdsStandaloneArgs, subCmd
 	}
 	app.Flags = append(app.Flags, cli.VersionFlag)
 	app.Flags = append(app.Flags, globalFlags()...)
-	app.HideHelp = true // use our own help action to show helps (with more information like default config)
 	app.Before = PrepareConsoleLoggerLevel(log.INFO)
 	for i := range subCmdWithConfig {
 		prepareSubcommandWithConfig(subCmdWithConfig[i], globalFlags)
