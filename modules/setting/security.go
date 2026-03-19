@@ -114,7 +114,7 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 
 	GlobalTwoFactorRequirement = NewTwoFactorRequirementType(sec.Key("GLOBAL_TWO_FACTOR_REQUIREMENT").String())
 
-	CookieRememberName = sec.Key("COOKIE_REMEMBER_NAME").MustString("gitea_incredible")
+	CookieRememberName = sec.Key("COOKIE_REMEMBER_NAME").MustString("persistent")
 
 	ReverseProxyAuthUser = sec.Key("REVERSE_PROXY_AUTHENTICATION_USER").MustString("X-WEBAUTH-USER")
 	ReverseProxyAuthEmail = sec.Key("REVERSE_PROXY_AUTHENTICATION_EMAIL").MustString("X-WEBAUTH-EMAIL")

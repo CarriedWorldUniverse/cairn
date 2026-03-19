@@ -34,7 +34,7 @@ func TestRedirect(t *testing.T) {
 		resp.Header().Add("Set-Cookie", (&http.Cookie{Name: setting.SessionConfig.CookieName, Value: "dummy"}).String())
 		b.Redirect(c.url)
 		cleanup()
-		has := resp.Header().Get("Set-Cookie") == "i_like_gitea=dummy"
+		has := resp.Header().Get("Set-Cookie") == "session=dummy"
 		assert.Equal(t, c.keep, has, "url = %q", c.url)
 		assert.Equal(t, http.StatusSeeOther, resp.Code)
 	}
