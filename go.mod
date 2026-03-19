@@ -52,7 +52,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.12
 	github.com/go-openapi/spec v0.22.3
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/go-webauthn/webauthn v0.14.0
+	github.com/go-webauthn/webauthn v0.16.1
 	github.com/gobwas/glob v0.2.3
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f
 	github.com/gogs/go-gogs-client v0.0.0-20210131175652-1d7215cd8d85
@@ -186,7 +186,8 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.4 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.4 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
-	github.com/go-webauthn/x v0.1.25 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
+	github.com/go-webauthn/x v0.2.2 // indirect
 	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
@@ -194,7 +195,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/go-tpm v0.9.5 // indirect
+	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
@@ -220,7 +221,6 @@ require (
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minlz v1.0.1 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mrjones/oauth v0.0.0-20190623134757-126b35219450 // indirect
