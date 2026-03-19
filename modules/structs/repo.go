@@ -80,35 +80,40 @@ type Repository struct {
 	// swagger:strfmt date-time
 	Created time.Time `json:"created_at"`
 	// swagger:strfmt date-time
-	Updated                       time.Time        `json:"updated_at"`
-	ArchivedAt                    time.Time        `json:"archived_at"`
-	Permissions                   *Permission      `json:"permissions,omitempty"`
-	HasIssues                     bool             `json:"has_issues"`
-	InternalTracker               *InternalTracker `json:"internal_tracker,omitempty"`
-	ExternalTracker               *ExternalTracker `json:"external_tracker,omitempty"`
-	HasWiki                       bool             `json:"has_wiki"`
-	ExternalWiki                  *ExternalWiki    `json:"external_wiki,omitempty"`
-	WikiBranch                    string           `json:"wiki_branch,omitempty"`
-	GloballyEditableWiki          bool             `json:"globally_editable_wiki"`
-	HasPullRequests               bool             `json:"has_pull_requests"`
-	HasProjects                   bool             `json:"has_projects"`
-	HasReleases                   bool             `json:"has_releases"`
-	HasPackages                   bool             `json:"has_packages"`
-	HasActions                    bool             `json:"has_actions"`
-	IgnoreWhitespaceConflicts     bool             `json:"ignore_whitespace_conflicts"`
-	AllowMerge                    bool             `json:"allow_merge_commits"`
-	AllowRebase                   bool             `json:"allow_rebase"`
-	AllowRebaseMerge              bool             `json:"allow_rebase_explicit"`
-	AllowSquash                   bool             `json:"allow_squash_merge"`
-	AllowFastForwardOnly          bool             `json:"allow_fast_forward_only_merge"`
-	AllowRebaseUpdate             bool             `json:"allow_rebase_update"`
-	DefaultDeleteBranchAfterMerge bool             `json:"default_delete_branch_after_merge"`
-	DefaultMergeStyle             string           `json:"default_merge_style"`
-	DefaultAllowMaintainerEdit    bool             `json:"default_allow_maintainer_edit"`
-	DefaultUpdateStyle            string           `json:"default_update_style"`
-	AvatarURL                     string           `json:"avatar_url"`
-	Internal                      bool             `json:"internal"`
-	MirrorInterval                string           `json:"mirror_interval"`
+	Updated         time.Time        `json:"updated_at"`
+	ArchivedAt      time.Time        `json:"archived_at"`
+	Permissions     *Permission      `json:"permissions,omitempty"`
+	HasIssues       bool             `json:"has_issues"`
+	InternalTracker *InternalTracker `json:"internal_tracker,omitempty"`
+	ExternalTracker *ExternalTracker `json:"external_tracker,omitempty"`
+	// is the wiki enabled
+	HasWiki bool `json:"has_wiki"`
+	// have wiki pages ever been created
+	HasWikiContents               bool          `json:"has_wiki_contents"`
+	ExternalWiki                  *ExternalWiki `json:"external_wiki,omitempty"`
+	WikiBranch                    string        `json:"wiki_branch,omitempty"`
+	WikiSSHURL                    string        `json:"wiki_ssh_url"`
+	WikiCloneURL                  string        `json:"wiki_clone_url"`
+	GloballyEditableWiki          bool          `json:"globally_editable_wiki"`
+	HasPullRequests               bool          `json:"has_pull_requests"`
+	HasProjects                   bool          `json:"has_projects"`
+	HasReleases                   bool          `json:"has_releases"`
+	HasPackages                   bool          `json:"has_packages"`
+	HasActions                    bool          `json:"has_actions"`
+	IgnoreWhitespaceConflicts     bool          `json:"ignore_whitespace_conflicts"`
+	AllowMerge                    bool          `json:"allow_merge_commits"`
+	AllowRebase                   bool          `json:"allow_rebase"`
+	AllowRebaseMerge              bool          `json:"allow_rebase_explicit"`
+	AllowSquash                   bool          `json:"allow_squash_merge"`
+	AllowFastForwardOnly          bool          `json:"allow_fast_forward_only_merge"`
+	AllowRebaseUpdate             bool          `json:"allow_rebase_update"`
+	DefaultDeleteBranchAfterMerge bool          `json:"default_delete_branch_after_merge"`
+	DefaultMergeStyle             string        `json:"default_merge_style"`
+	DefaultAllowMaintainerEdit    bool          `json:"default_allow_maintainer_edit"`
+	DefaultUpdateStyle            string        `json:"default_update_style"`
+	AvatarURL                     string        `json:"avatar_url"`
+	Internal                      bool          `json:"internal"`
+	MirrorInterval                string        `json:"mirror_interval"`
 	// ObjectFormatName of the underlying git repository
 	// enum: ["sha1", "sha256"]
 	ObjectFormatName string `json:"object_format_name"`

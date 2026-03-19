@@ -29016,8 +29016,14 @@
           "x-go-name": "HasReleases"
         },
         "has_wiki": {
+          "description": "is the wiki enabled",
           "type": "boolean",
           "x-go-name": "HasWiki"
+        },
+        "has_wiki_contents": {
+          "description": "have wiki pages ever been created",
+          "type": "boolean",
+          "x-go-name": "HasWikiContents"
         },
         "html_url": {
           "type": "string",
@@ -29158,6 +29164,14 @@
         "wiki_branch": {
           "type": "string",
           "x-go-name": "WikiBranch"
+        },
+        "wiki_clone_url": {
+          "type": "string",
+          "x-go-name": "WikiCloneURL"
+        },
+        "wiki_ssh_url": {
+          "type": "string",
+          "x-go-name": "WikiSSHURL"
         }
       },
       "x-go-package": "forgejo.org/modules/structs"
