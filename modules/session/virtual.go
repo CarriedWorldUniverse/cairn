@@ -76,7 +76,10 @@ func (o *VirtualSessionProvider) Exist(sid string) bool {
 func (o *VirtualSessionProvider) Destroy(sid string) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	return o.provider.Destroy(sid)
+	if o.provider.Exist(sid) {
+		return o.provider.Destroy(sid)
+	}
+	return nil
 }
 
 // Regenerate regenerates a session store from old session ID to new one.
