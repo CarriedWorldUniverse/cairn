@@ -122,7 +122,7 @@ export default {
 <template>
   <div>
     <div class="ui header tw-flex tw-items-center tw-justify-between">
-      {{ isLoading ? locale.loadingTitle : errorText ? locale.loadingTitleFailed: "Number of commits in the past year" }}
+      {{ isLoading ? locale.loadingTitle : errorText ? locale.loadingTitleFailed : locale.recentCommitsTitle }}
     </div>
     <div class="tw-flex ui segment main-graph">
       <div v-if="isLoading || errorText !== ''" class="gt-tc tw-m-auto">
