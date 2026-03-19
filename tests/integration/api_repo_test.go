@@ -1049,6 +1049,64 @@ func TestAPIViewRepoObjectFormat(t *testing.T) {
 	assert.Equal(t, "sha1", repo.ObjectFormatName)
 }
 
+// TestAPIViewRepoWikiGitInfo tests wiki git information
+func TestAPIViewRepoWikiGitInfo(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	for _, test := range []struct {
+		name        string
+		user        string
+		repo        string
+		hasWiki     bool
+		hasContents bool
+	}{
+		{
+			name:        "wiki enabled, wiki contents",
+			user:        "user2",
+			repo:        "repo1",
+			hasWiki:     true,
+			hasContents: true,
+		},
+		{
+			name:        "wiki enabled, no wiki contents",
+			user:        "user5",
+			repo:        "repo4",
+			hasWiki:     true,
+			hasContents: false,
+		},
+		{
+			name:        "wiki disabled, no wiki contents",
+			user:        "user12",
+			repo:        "repo10",
+			hasWiki:     false,
+			hasContents: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			// get repo
+			url := fmt.Sprintf("/api/v1/repos/%s/%s", test.user, test.repo)
+			req := NewRequest(t, "GET", url)
+			resp := MakeRequest(t, req, http.StatusOK)
+			var repo api.Repository
+			DecodeJSON(t, resp, &repo)
+
+			// check repo
+			sshURL := fmt.Sprintf("ssh://%s@%s:%d/%s/%s.wiki.git",
+				setting.SSH.User, setting.SSH.Domain, setting.SSH.Port,
+				test.user, test.repo)
+			cloneURL := fmt.Sprintf("http://%s:%s/%s/%s.wiki.git",
+				setting.Domain, setting.HTTPPort,
+				test.user, test.repo)
+			assert.Equal(t, test.hasWiki, repo.HasWiki)
+			assert.Equal(t, test.hasContents, repo.HasWikiContents)
+			assert.Equal(t, sshURL, repo.WikiSSHURL)
+			assert.Equal(t, cloneURL, repo.WikiCloneURL)
+		})
+	}
+}
+
 func TestAPIRepoCommitPull(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
