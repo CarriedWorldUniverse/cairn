@@ -198,10 +198,28 @@ func RegisterRenderer(renderer Renderer) {
 	}
 }
 
-// GetRendererByFileName get renderer by filename
-func GetRendererByFileName(filename string) Renderer {
-	extension := strings.ToLower(filepath.Ext(filename))
-	return extRenderers[extension]
+// FullExtension returns the full extension of path, i.e. everything after and including
+// the first period in the basename of path.
+func FullExtension(path string) string {
+	_, extension, found := strings.Cut(strings.ToLower(filepath.Base(path)), ".")
+	if !found {
+		return ""
+	}
+	return "." + extension
+}
+
+// GetRendererByExtension returns the most specific registered renderer for extension.
+func GetRendererByExtension(extension string) Renderer {
+	_, extension, found := strings.Cut(extension, ".")
+	checkedExtensions := 0
+	for found && checkedExtensions < 10 {
+		if renderer, ok := extRenderers["."+extension]; ok {
+			return renderer
+		}
+		checkedExtensions++
+		_, extension, found = strings.Cut(extension, ".")
+	}
+	return nil
 }
 
 // GetRendererByType returns a renderer according type
@@ -350,6 +368,20 @@ func renderByType(ctx *RenderContext, input io.Reader, output io.Writer) error {
 	return ErrUnsupportedRenderType{ctx.Type}
 }
 
+// ErrMissingExtension represents the error when a path does not have any extension.
+type ErrMissingExtension struct {
+	Path string
+}
+
+func IsErrMissingExtension(err error) bool {
+	_, ok := err.(ErrMissingExtension)
+	return ok
+}
+
+func (err ErrMissingExtension) Error() string {
+	return fmt.Sprintf("path '%s' does not have an extension", err.Path)
+}
+
 // ErrUnsupportedRenderExtension represents the error when extension doesn't supported to render
 type ErrUnsupportedRenderExtension struct {
 	Extension string
@@ -365,8 +397,11 @@ func (err ErrUnsupportedRenderExtension) Error() string {
 }
 
 func renderFile(ctx *RenderContext, input io.Reader, output io.Writer) error {
-	extension := strings.ToLower(filepath.Ext(ctx.RelativePath))
-	if renderer, ok := extRenderers[extension]; ok {
+	extension := FullExtension(ctx.RelativePath)
+	if extension == "" {
+		return ErrMissingExtension{ctx.RelativePath}
+	}
+	if renderer := GetRendererByExtension(extension); renderer != nil {
 		if r, ok := renderer.(ExternalRenderer); ok && r.DisplayInIFrame() {
 			if !ctx.InStandalonePage {
 				// for an external render, it could only output its content in a standalone page
@@ -381,7 +416,7 @@ func renderFile(ctx *RenderContext, input io.Reader, output io.Writer) error {
 
 // Type returns if markup format via the filename
 func Type(filename string) string {
-	if parser := GetRendererByFileName(filename); parser != nil {
+	if parser := GetRendererByExtension(FullExtension(filename)); parser != nil {
 		return parser.Name()
 	}
 	return ""
@@ -389,7 +424,7 @@ func Type(filename string) string {
 
 // IsMarkupFile reports whether file is a markup type file
 func IsMarkupFile(name, markup string) bool {
-	if parser := GetRendererByFileName(name); parser != nil {
+	if parser := GetRendererByExtension(FullExtension(name)); parser != nil {
 		return parser.Name() == markup
 	}
 	return false
