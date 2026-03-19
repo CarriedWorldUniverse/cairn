@@ -356,8 +356,8 @@ func canUserWriteIssueCommentAttachment(ctx *context.APIContext) bool {
 	// ctx.Comment is assumed to be set in a safe way via a middleware
 	comment := ctx.Comment
 
-	canEditComment := ctx.IsSigned && (ctx.Doer.ID == comment.PosterID || ctx.IsUserRepoAdmin() || ctx.IsUserSiteAdmin()) && ctx.Repo.CanWriteIssuesOrPulls(comment.Issue.IsPull)
-	if !canEditComment {
+	cannotEditComment := !ctx.IsSigned || (ctx.Doer.ID != comment.PosterID && !ctx.Repo.CanWriteIssuesOrPulls(comment.Issue.IsPull))
+	if cannotEditComment {
 		ctx.Error(http.StatusForbidden, "", "user should have permission to edit comment")
 		return false
 	}
