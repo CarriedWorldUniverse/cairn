@@ -14,7 +14,7 @@ import (
 	"forgejo.org/modules/web/middleware"
 )
 
-const CookieNameFlash = "gitea_flash"
+const CookieNameFlash = "flash"
 
 func removeSessionCookieHeader(w http.ResponseWriter) {
 	cookies := w.Header()["Set-Cookie"]
