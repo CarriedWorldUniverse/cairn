@@ -94,7 +94,7 @@ func (re *Renderer) RenderMarkup(ctx *context.Base, repo *context.Repository) {
 		Type:         markupType,
 		RelativePath: relativePath,
 	}, strings.NewReader(re.Text), ctx.Resp); err != nil {
-		if markup.IsErrUnsupportedRenderExtension(err) {
+		if markup.IsErrUnsupportedRenderExtension(err) || markup.IsErrMissingExtension(err) {
 			ctx.Error(http.StatusUnprocessableEntity, err.Error())
 		} else {
 			ctx.Error(http.StatusInternalServerError, err.Error())

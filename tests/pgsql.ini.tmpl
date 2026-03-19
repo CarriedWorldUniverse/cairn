@@ -154,3 +154,13 @@ NEED_POSTPROCESS = false
 [cache]
 # Disable caching so that data isn't kept in-memory between test cases
 ITEM_TTL = -1
+
+[markup.compound_file_extension]
+ENABLED = true
+FILE_EXTENSIONS = .ghi.jkl.md
+RENDER_COMMAND = echo .ghi.jkl.md renderer used
+
+[markup.compound_file_extension_2]
+ENABLED = true
+FILE_EXTENSIONS = .def.ghi.jkl.md
+RENDER_COMMAND = echo .def.ghi.jkl.md renderer used
