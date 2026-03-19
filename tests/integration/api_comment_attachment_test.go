@@ -96,12 +96,14 @@ func TestAPIListCommentAttachments(t *testing.T) {
 func TestAPICreateCommentAttachment(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
-	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 2})
+	comment := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: 3})
 	issue := unittest.AssertExistsAndLoadBean(t, &issues_model.Issue{ID: comment.IssueID})
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
 	repoOwner := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+	commentPoster := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: comment.PosterID})
 
-	session := loginUser(t, repoOwner.Name)
+	session := loginUser(t, commentPoster.Name)
+	require.NotEqual(t, commentPoster.Name, repoOwner.Name)
 	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteIssue)
 
 	filename := "image.png"
