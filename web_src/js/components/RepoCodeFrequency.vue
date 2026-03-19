@@ -145,7 +145,7 @@ export default {
 <template>
   <div>
     <div class="ui header tw-flex tw-items-center tw-justify-between">
-      {{ isLoading ? locale.loadingTitle : errorText ? locale.loadingTitleFailed: `Code frequency over the history of ${repoLink.slice(1)}` }}
+      {{ isLoading ? locale.loadingTitle : errorText ? locale.loadingTitleFailed : locale.codeFrequencyTitle.replace('{0}', repoLink.slice(1)) }}
     </div>
     <div class="tw-flex ui segment main-graph">
       <div v-if="isLoading || errorText !== ''" class="gt-tc tw-m-auto">

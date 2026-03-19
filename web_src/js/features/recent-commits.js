@@ -10,6 +10,7 @@ export async function initRepoRecentCommits() {
       locale: {
         loadingTitle: el.getAttribute('data-locale-loading-title'),
         loadingTitleFailed: el.getAttribute('data-locale-loading-title-failed'),
+        recentCommitsTitle: el.getAttribute('data-locale-recent-commits-title'),
         loadingInfo: el.getAttribute('data-locale-loading-info'),
       },
     });

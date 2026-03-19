@@ -15,3 +15,21 @@ test('Contributor graph', async ({page}) => {
   await page.getByRole('link', {name: '2 Commits'}).click();
   await expect(page.getByRole('cell', {name: 'Bob'})).toHaveCount(2);
 });
+
+test('Code frequency', async ({page}) => {
+  await page.goto('/user2/commits_search_test/activity/code-frequency');
+
+  /* Verify that Vue has access to i18n string */
+  const header = page.locator('#repo-code-frequency-chart .header');
+  await header.waitFor();
+  await expect(header).toContainText('Code frequency over the history of user2/commits_search_test');
+});
+
+test('Recent commits', async ({page}) => {
+  await page.goto('/user2/commits_search_test/activity/recent-commits');
+
+  /* Verify that Vue has access to i18n string */
+  const header = page.locator('#repo-recent-commits-chart .header');
+  await header.waitFor();
+  await expect(header).toContainText('Number of commits in the past year');
+});
