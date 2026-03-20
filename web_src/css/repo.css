@@ -116,6 +116,9 @@
 
 .repository .select-label .desc {
   padding-left: 23px;
+  white-space: normal;
+  display: block;
+  margin-top: 2px;
 }
 
 /* For the secondary pointing menu, respect its own border-bottom */
