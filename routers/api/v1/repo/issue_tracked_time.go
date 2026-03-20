@@ -69,8 +69,12 @@ func ListTrackedTimes(ctx *context.APIContext) {
 	// responses:
 	//   "200":
 	//     "$ref": "#/responses/TrackedTimeList"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
+	//   "422":
+	//     "$ref": "#/responses/validationError"
 
 	if !ctx.Repo.Repository.IsTimetrackerEnabled(ctx) {
 		ctx.NotFound("Timetracker is disabled")
@@ -508,6 +512,8 @@ func ListTrackedTimesByRepository(ctx *context.APIContext) {
 	//     "$ref": "#/responses/forbidden"
 	//   "404":
 	//     "$ref": "#/responses/notFound"
+	//   "422":
+	//     "$ref": "#/responses/validationError"
 
 	if !ctx.Repo.Repository.IsTimetrackerEnabled(ctx) {
 		ctx.Error(http.StatusBadRequest, "", "time tracking disabled")
