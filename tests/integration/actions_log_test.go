@@ -159,7 +159,7 @@ jobs:
 			})
 		}
 
-		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteRepository)
+		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteUser)
 		doAPIDeleteRepository(httpContext)(t)
 	})
 }
@@ -275,7 +275,7 @@ jobs:
 			)
 		}
 
-		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteRepository)
+		httpContext := NewAPITestContext(t, user2.Name, repo.Name, auth_model.AccessTokenScopeWriteUser)
 		doAPIDeleteRepository(httpContext)(t)
 	})
 }

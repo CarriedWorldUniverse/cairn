@@ -172,7 +172,7 @@ jobs:
 			})
 		}
 
-		httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+		httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteUser)
 		doAPIDeleteRepository(httpContext)(t)
 	})
 }
@@ -357,7 +357,7 @@ jobs:
 			})
 		}
 
-		httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+		httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteUser)
 		doAPIDeleteRepository(httpContext)(t)
 	})
 }
@@ -409,7 +409,7 @@ jobs:
 
 		apiBaseRepo := createActionsTestRepo(t, user2Token, "actions-gitea-context", false)
 		baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: apiBaseRepo.ID})
-		user2APICtx := NewAPITestContext(t, baseRepo.OwnerName, baseRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+		user2APICtx := NewAPITestContext(t, baseRepo.OwnerName, baseRepo.Name, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
 
 		runner := newMockRunner()
 		runner.registerAsRepoRunner(t, baseRepo.OwnerName, baseRepo.Name, "mock-runner", []string{"ubuntu-latest"})
@@ -620,7 +620,7 @@ func TestActionsEphemeral(t *testing.T) {
 
 		apiBaseRepo := createActionsTestRepo(t, user2Token, "actions-gitea-context", false)
 		baseRepo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: apiBaseRepo.ID})
-		user2APICtx := NewAPITestContext(t, baseRepo.OwnerName, baseRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+		user2APICtx := NewAPITestContext(t, baseRepo.OwnerName, baseRepo.Name, auth_model.AccessTokenScopeWriteRepository, auth_model.AccessTokenScopeWriteUser)
 
 		runner := newMockRunner()
 		runner.registerAsEphemeralRepoRunner(t, baseRepo.OwnerName, baseRepo.Name, "mock-runner", []string{"ubuntu-latest"})

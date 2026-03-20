@@ -358,6 +358,16 @@ func tokenRequiresScopes(requiredScopeCategories ...auth_model.AccessTokenScopeC
 	}
 }
 
+// Middleware that dynamically checks either the organization or user scope, depending on the owner type of the
+// repository (requires `repoAssignment()` middleware to be used before this).
+func tokenRequiresRepoOwnerScope(ctx *context.APIContext) {
+	if ctx.Repo.Owner.IsOrganization() {
+		tokenRequiresScopes(auth_model.AccessTokenScopeCategoryOrganization)(ctx)
+	} else {
+		tokenRequiresScopes(auth_model.AccessTokenScopeCategoryUser)(ctx)
+	}
+}
+
 // Contexter middleware already checks token for user sign in process.
 func reqToken() func(ctx *context.APIContext) {
 	return func(ctx *context.APIContext) {
@@ -1109,6 +1119,10 @@ func Routes() *web.Route {
 		// FIXME: Don't expose repository id outside of the system
 		m.Combo("/repositories/{id}", reqToken(), tokenRequiresScopes(auth_model.AccessTokenScopeCategoryRepository)).Get(repo.GetByID)
 
+		// Needs to be extracted from the larger `/repos` group because deleting a repo isn't protected by
+		// `AccessTokenScopeCategoryRepository`; it's protected by either the User or Organization scope.
+		m.Delete("/repos/{username}/{reponame}", repoAssignment(), tokenRequiresRepoOwnerScope, reqOwner(), repo.Delete)
+
 		// Repos (requires repo scope)
 		m.Group("/repos", func() {
 			m.Get("/search", repo.Search)
@@ -1120,12 +1134,12 @@ func Routes() *web.Route {
 				m.Get("/compare/*", reqRepoReader(unit.TypeCode), repo.CompareDiff)
 
 				m.Combo("").Get(reqAnyRepoReader(), repo.Get).
-					Delete(reqToken(), reqOwner(), repo.Delete).
 					Patch(reqToken(), reqAdmin(), bind(api.EditRepoOption{}), repo.Edit)
-				m.Post("/convert", reqOwner(), repo.Convert)
+
+				m.Post("/convert", reqOwner(), reqAdmin(), repo.Convert)
 				m.Post("/generate", reqToken(), reqRepoReader(unit.TypeCode), bind(api.GenerateRepoOption{}), repo.Generate)
 				m.Group("/transfer", func() {
-					m.Post("", reqOwner(), bind(api.TransferRepoOption{}), repo.Transfer)
+					m.Post("", reqOwner(), reqAdmin(), bind(api.TransferRepoOption{}), repo.Transfer)
 					m.Post("/accept", repo.AcceptTransfer)
 					m.Post("/reject", repo.RejectTransfer)
 				}, reqToken())

@@ -185,3 +185,23 @@ func CheckRepoScopedToken(ctx *Context, repo *repo_model.Repository, level auth_
 		}
 	}
 }
+
+func CheckRuntimeDeterminedScope(ctx *APIContext, scopeCategory auth_model.AccessTokenScopeCategory, level auth_model.AccessTokenScopeLevel, msg string) {
+	scope, ok := ctx.Data["ApiTokenScope"].(auth_model.AccessTokenScope)
+	if ok {
+		var scopeMatched bool
+
+		requiredScopes := auth_model.GetRequiredScopes(level, scopeCategory)
+
+		scopeMatched, err := scope.HasScope(requiredScopes...)
+		if err != nil {
+			ctx.ServerError("HasScope", err)
+			return
+		}
+
+		if !scopeMatched {
+			ctx.Error(http.StatusForbidden, "!scopeMatched", msg)
+			return
+		}
+	}
+}

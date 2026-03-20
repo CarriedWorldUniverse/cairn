@@ -80,7 +80,7 @@ jobs:
 				actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: actionRunJob.RunID})
 				assert.Equal(t, testCase.notifyEmail, actionRun.NotifyEmail)
 
-				httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteRepository)
+				httpContext := NewAPITestContext(t, user2.Name, apiRepo.Name, auth_model.AccessTokenScopeWriteUser)
 				doAPIDeleteRepository(httpContext)(t)
 			})
 		}
