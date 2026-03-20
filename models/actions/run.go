@@ -383,7 +383,8 @@ func InsertRunJobs(ctx context.Context, run *ActionRun, jobs []*jobparser.Single
 			name, _ = util.SplitStringAtByteN(job.Name, 255)
 			runsOn = job.RunsOn()
 		}
-		runJobs = append(runJobs, &ActionRunJob{
+
+		runJob := &ActionRunJob{
 			RunID:             run.ID,
 			RepoID:            run.RepoID,
 			OwnerID:           run.OwnerID,
@@ -394,8 +395,12 @@ func InsertRunJobs(ctx context.Context, run *ActionRun, jobs []*jobparser.Single
 			JobID:             id,
 			Needs:             needs,
 			RunsOn:            runsOn,
-			Status:            status,
-		})
+		}
+		if err := runJob.PrepareNextAttempt(status); err != nil {
+			return err
+		}
+
+		runJobs = append(runJobs, runJob)
 	}
 
 	if len(runJobs) > 0 {

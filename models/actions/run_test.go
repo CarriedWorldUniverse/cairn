@@ -502,3 +502,64 @@ func TestComputeRunStatus(t *testing.T) {
 		assert.Contains(t, columns, "stopped")
 	})
 }
+
+func TestInsertRunJobs(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	pullRequestPosterID := int64(4)
+	repoID := int64(10)
+	pullRequestID := int64(2)
+	actionRun := &ActionRun{
+		RepoID:              repoID,
+		PullRequestID:       pullRequestID,
+		PullRequestPosterID: pullRequestPosterID,
+		CommitSHA:           "1421f75bc5474c69fdb1dc176bcb96d381f935dd",
+	}
+
+	workflowRaw := []byte(`
+jobs:
+  build:
+    runs-on: fedora
+  test:
+    runs-on: debian
+    steps: []
+`)
+	jobs, err := jobparser.Parse(workflowRaw, false)
+	require.NoError(t, err)
+
+	require.NoError(t, InsertRun(t.Context(), actionRun, jobs))
+
+	insertedJobs, err := db.Find[ActionRunJob](t.Context(), FindRunJobOptions{RunID: actionRun.ID})
+	require.NoError(t, err)
+	require.Len(t, insertedJobs, 2)
+
+	assert.Equal(t, actionRun.ID, insertedJobs[0].RunID)
+	assert.Equal(t, actionRun.RepoID, insertedJobs[0].RepoID)
+	assert.Equal(t, actionRun.OwnerID, insertedJobs[0].OwnerID)
+	assert.Equal(t, actionRun.CommitSHA, insertedJobs[0].CommitSHA)
+	assert.Equal(t, actionRun.IsForkPullRequest, insertedJobs[0].IsForkPullRequest)
+	assert.Equal(t, "build", insertedJobs[0].Name)
+	assert.Equal(t, "build", insertedJobs[0].JobID)
+	assert.Empty(t, insertedJobs[0].Needs)
+	assert.Equal(t, []string{"fedora"}, insertedJobs[0].RunsOn)
+	assert.Equal(t, int64(1), insertedJobs[0].Attempt)
+	assert.Zero(t, insertedJobs[0].Started)
+	assert.Zero(t, insertedJobs[0].Stopped)
+	assert.Zero(t, insertedJobs[0].TaskID)
+	assert.Equal(t, StatusWaiting, insertedJobs[0].Status)
+
+	assert.Equal(t, actionRun.ID, insertedJobs[1].RunID)
+	assert.Equal(t, actionRun.RepoID, insertedJobs[1].RepoID)
+	assert.Equal(t, actionRun.OwnerID, insertedJobs[1].OwnerID)
+	assert.Equal(t, actionRun.CommitSHA, insertedJobs[1].CommitSHA)
+	assert.Equal(t, actionRun.IsForkPullRequest, insertedJobs[1].IsForkPullRequest)
+	assert.Equal(t, "test", insertedJobs[1].Name)
+	assert.Equal(t, "test", insertedJobs[1].JobID)
+	assert.Empty(t, insertedJobs[1].Needs)
+	assert.Equal(t, []string{"debian"}, insertedJobs[1].RunsOn)
+	assert.Equal(t, int64(1), insertedJobs[1].Attempt)
+	assert.Zero(t, insertedJobs[1].Started)
+	assert.Zero(t, insertedJobs[1].Stopped)
+	assert.Zero(t, insertedJobs[1].TaskID)
+	assert.Equal(t, StatusWaiting, insertedJobs[1].Status)
+}
