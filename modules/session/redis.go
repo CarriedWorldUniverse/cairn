@@ -103,6 +103,11 @@ func (s *RedisStore) Flush() error {
 	return nil
 }
 
+// True if no keys have been set
+func (s *RedisStore) Empty() bool {
+	return len(s.data) == 0
+}
+
 // RedisProvider represents a redis session provider implementation.
 type RedisProvider struct {
 	c        nosql.RedisClient

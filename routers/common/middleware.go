@@ -118,5 +118,6 @@ func Sessioner() func(next http.Handler) http.Handler {
 		Secure:         setting.SessionConfig.Secure,
 		SameSite:       setting.SessionConfig.SameSite,
 		Domain:         setting.SessionConfig.Domain,
+		DeferSetCookie: true,
 	})
 }

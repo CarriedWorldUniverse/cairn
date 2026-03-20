@@ -6,7 +6,6 @@ package integration
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -31,25 +30,14 @@ func getSessionID(t *testing.T, resp *httptest.ResponseRecorder) string {
 			found = true
 		}
 	}
-	assert.True(t, found)
-	assert.NotEmpty(t, sessionID)
+	if found {
+		assert.NotEmpty(t, sessionID)
+	}
 	return sessionID
 }
 
 func sessionFile(tmpDir, sessionID string) string {
 	return filepath.Join(tmpDir, sessionID[0:1], sessionID[1:2], sessionID)
-}
-
-func sessionFileExist(t *testing.T, tmpDir, sessionID string) bool {
-	sessionFile := sessionFile(tmpDir, sessionID)
-	_, err := os.Lstat(sessionFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-		require.NoError(t, err)
-	}
-	return true
 }
 
 func TestSessionFileCreation(t *testing.T) {
@@ -82,7 +70,7 @@ func TestSessionFileCreation(t *testing.T) {
 		sessionID := getSessionID(t, resp)
 
 		// We're not logged in so there should be no session
-		assert.False(t, sessionFileExist(t, tmpDir, sessionID))
+		assert.Empty(t, sessionID)
 	})
 	t.Run("CreateSessionOnLogin", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
@@ -92,7 +80,7 @@ func TestSessionFileCreation(t *testing.T) {
 		sessionID := getSessionID(t, resp)
 
 		// We're not logged in so there should be no session
-		assert.False(t, sessionFileExist(t, tmpDir, sessionID))
+		assert.Empty(t, sessionID)
 
 		req = NewRequestWithValues(t, "POST", "/user/login", map[string]string{
 			"user_name": "user2",
