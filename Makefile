@@ -486,11 +486,23 @@ RUN_DEADCODE = $(GO) run $(DEADCODE_PACKAGE) -generated=false -f='{{println .Pat
 
 .PHONY: lint-go
 lint-go:
-	$(GO) run $(GOLANGCI_LINT_PACKAGE) run $(GOLANGCI_LINT_ARGS)
-	$(GO) run $(ERRORTYPE_PACKAGE) ./...
-	$(RUN_DEADCODE) > .cur-deadcode-out
-	@$(DIFF) .deadcode-out .cur-deadcode-out \
+	$(GO) run $(GOLANGCI_LINT_PACKAGE) run $(GOLANGCI_LINT_ARGS) \
 	|| (code=$$?; echo "Please run 'make lint-go-fix' and commit the result"; exit $${code})
+	$(RUN_DEADCODE) > .cur-deadcode-out
+	@$(DIFF) .deadcode-out .cur-deadcode-out >.deadcode.diff || true
+	@if grep -qE '^[+][^+]' .deadcode.diff ; then \
+		cat .deadcode.diff ; \
+		echo "Looks like you added dead code, please evaluate and remove or use it."; \
+		echo "If you are sure the dead code should stay around, please run 'make lint-go-fix',"; \
+		echo "commit the result and explain the reason in the commit message / PR description."; \
+		exit 1; \
+	fi
+	@if grep -qE '^[-][^-]' .deadcode.diff ; then \
+		cat .deadcode.diff ; \
+		echo "Looks like you removed dead code. Thank you!"; \
+		echo "Run 'make lint-go-fix' and commit the result to accept."; \
+	fi
+	$(GO) run $(ERRORTYPE_PACKAGE) ./...
 
 .PHONY: lint-go-fix
 lint-go-fix:

@@ -107,6 +107,7 @@ cpu.out
 /.air
 /.go-licenses
 /.cur-deadcode-out
+/.deadcode.diff
 
 # Files and folders that were previously generated
 /public/assets/img/webpack
