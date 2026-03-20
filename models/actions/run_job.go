@@ -117,6 +117,20 @@ func (job *ActionRunJob) ItRunsOn(labels []string) bool {
 	return labelSet.IsSubset(job.RunsOn)
 }
 
+func (job *ActionRunJob) PrepareNextAttempt(initialStatus Status) error {
+	if job.Status != StatusUnknown && !job.Status.IsDone() {
+		return fmt.Errorf("cannot prepare next attempt because job %d is active: %s", job.ID, job.Status.String())
+	}
+
+	job.Attempt++
+	job.Started = 0
+	job.Stopped = 0
+	job.TaskID = 0
+	job.Status = initialStatus
+
+	return nil
+}
+
 func GetRunJobByID(ctx context.Context, id int64) (*ActionRunJob, error) {
 	var job ActionRunJob
 	has, err := db.GetEngine(ctx).Where("id=?", id).Get(&job)

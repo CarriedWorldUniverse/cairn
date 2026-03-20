@@ -378,7 +378,6 @@ func CreateTaskForRunner(ctx context.Context, runner *ActionRunner, requestKey *
 	}
 
 	now := timeutil.TimeStampNow()
-	job.Attempt++
 	job.Started = now
 	job.Status = StatusRunning
 

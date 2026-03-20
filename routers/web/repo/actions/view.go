@@ -520,11 +520,6 @@ func Rerun(ctx *app_context.Context) {
 				return
 			}
 			if redirectURL == "" {
-				// ActionRunJob's `Attempt` field won't be updated to reflect the rerun until the job is picked by a
-				// runner. But we need to redirect the user somewhere; if they stay on the current attempt then the
-				// rerun's logs won't appear. So, we redirect to the upcoming new attempt and then we'll handle the
-				// weirdness in the UI if the attempt doesn't exist yet.
-				j.Attempt++ // note: this is intentionally not persisted
 				redirectURL, err = j.HTMLURL(ctx)
 				if err != nil {
 					ctx.Error(http.StatusInternalServerError, err.Error())
@@ -552,8 +547,6 @@ func Rerun(ctx *app_context.Context) {
 			return
 		}
 		if j.JobID == job.JobID {
-			// see earlier comment about redirectURL, applicable here as well
-			j.Attempt++ // note: this is intentionally not persisted
 			redirectURL, err = j.HTMLURL(ctx)
 			if err != nil {
 				ctx.Error(http.StatusInternalServerError, err.Error())
@@ -575,16 +568,16 @@ func rerunJob(ctx *app_context.Context, job *actions_model.ActionRunJob, shouldB
 		return nil
 	}
 
-	job.TaskID = 0
-	job.Status = actions_model.StatusWaiting
+	initialStatus := actions_model.StatusWaiting
 	if shouldBlock {
-		job.Status = actions_model.StatusBlocked
+		initialStatus = actions_model.StatusBlocked
 	}
-	job.Started = 0
-	job.Stopped = 0
+	if err := job.PrepareNextAttempt(initialStatus); err != nil {
+		return err
+	}
 
 	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		_, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"status": status}, "task_id", "status", "started", "stopped")
+		_, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"status": status}, "attempt", "task_id", "status", "started", "stopped")
 		return err
 	}); err != nil {
 		return err
