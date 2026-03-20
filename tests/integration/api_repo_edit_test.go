@@ -394,3 +394,21 @@ func TestAPIRepoEdit(t *testing.T) {
 		assert.Equal(t, "rebase", apiRepo.DefaultUpdateStyle)
 	})
 }
+
+// This test verifies that a repo-specific access token with `write:repository` scope is not a sufficient scope to edit
+// the settings of a repository that is within its repo-specific list.
+func TestAPIRepoEditAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo2OnlyToken := createFineGrainedRepoAccessToken(t, "user2",
+		[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteRepository},
+		[]int64{2},
+	)
+	desc := "here's a new description"
+	req := NewRequestWithJSON(t, "PATCH", fmt.Sprintf("/api/v1/repos/user2/repo2"),
+		&api.EditRepoOption{
+			Description: &desc,
+		}).
+		AddTokenAuth(repo2OnlyToken)
+	MakeRequest(t, req, http.StatusForbidden)
+}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	activities_model "forgejo.org/models/activities"
+	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
 	"forgejo.org/models/perm"
@@ -404,10 +405,10 @@ func Generate(ctx *context.APIContext) {
 		return
 	}
 
-	ctxUser := ctx.Doer
+	targetOwner := ctx.Doer
 	var err error
-	if form.Owner != ctxUser.Name {
-		ctxUser, err = user_model.GetUserByName(ctx, form.Owner)
+	if form.Owner != targetOwner.Name {
+		targetOwner, err = user_model.GetUserByName(ctx, form.Owner)
 		if err != nil {
 			if user_model.IsErrUserNotExist(err) {
 				ctx.JSON(http.StatusNotFound, map[string]any{
@@ -420,13 +421,13 @@ func Generate(ctx *context.APIContext) {
 			return
 		}
 
-		if !ctx.IsUserSiteAdmin() && !ctxUser.IsOrganization() {
+		if !ctx.IsUserSiteAdmin() && !targetOwner.IsOrganization() {
 			ctx.Error(http.StatusForbidden, "", "Only admin can generate repository for other user.")
 			return
 		}
 
 		if !ctx.IsUserSiteAdmin() {
-			canCreate, err := organization.OrgFromUser(ctxUser).CanCreateOrgRepo(ctx, ctx.Doer.ID)
+			canCreate, err := organization.OrgFromUser(targetOwner).CanCreateOrgRepo(ctx, ctx.Doer.ID)
 			if err != nil {
 				ctx.ServerError("CanCreateOrgRepo", err)
 				return
@@ -435,13 +436,23 @@ func Generate(ctx *context.APIContext) {
 				return
 			}
 		}
+
+		context.CheckRuntimeDeterminedScope(ctx, auth_model.AccessTokenScopeCategoryOrganization, auth_model.Write, "token requires scope write:organization to create a repository owned by a user")
+		if ctx.Written() {
+			return
+		}
+	} else {
+		context.CheckRuntimeDeterminedScope(ctx, auth_model.AccessTokenScopeCategoryUser, auth_model.Write, "token requires scope write:user to create a repository owned by a user")
+		if ctx.Written() {
+			return
+		}
 	}
 
-	if !ctx.CheckQuota(quota_model.LimitSubjectSizeReposAll, ctxUser.ID, ctxUser.Name) {
+	if !ctx.CheckQuota(quota_model.LimitSubjectSizeReposAll, targetOwner.ID, targetOwner.Name) {
 		return
 	}
 
-	repo, err := repo_service.GenerateRepository(ctx, ctx.Doer, ctxUser, ctx.Repo.Repository, opts)
+	repo, err := repo_service.GenerateRepository(ctx, ctx.Doer, targetOwner, ctx.Repo.Repository, opts)
 	if err != nil {
 		if repo_model.IsErrRepoAlreadyExist(err) {
 			ctx.Error(http.StatusConflict, "", "The repository with the same name already exists.")
@@ -453,7 +464,7 @@ func Generate(ctx *context.APIContext) {
 		}
 		return
 	}
-	log.Trace("Repository generated [%d]: %s/%s", repo.ID, ctxUser.Name, repo.Name)
+	log.Trace("Repository generated [%d]: %s/%s", repo.ID, targetOwner.Name, repo.Name)
 
 	ctx.JSON(http.StatusCreated, convert.ToRepo(ctx, repo, access_model.Permission{AccessMode: perm.AccessModeOwner}))
 }

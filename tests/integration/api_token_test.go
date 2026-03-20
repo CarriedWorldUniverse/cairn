@@ -347,16 +347,6 @@ func TestAPIDeniesPermissionBasedOnTokenScope(t *testing.T) {
 			},
 		},
 		{
-			"/api/v1/repos/user1/repo1",
-			"DELETE",
-			[]permission{
-				{
-					auth_model.AccessTokenScopeCategoryRepository,
-					auth_model.Write,
-				},
-			},
-		},
-		{
 			"/api/v1/repos/user1/repo1/branches",
 			"GET",
 			[]permission{

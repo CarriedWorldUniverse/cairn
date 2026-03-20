@@ -64,3 +64,19 @@ func TestAPIConvert(t *testing.T) {
 	repo4edited := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
 	assert.False(t, repo4edited.IsMirror)
 }
+
+// This test verifies that a repo-specific access token with `write:repository` scope is not a sufficient scope to edit
+// the settings of a repository that is within its repo-specific list.
+func TestAPIConvertAccessTokenResources(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	repo5 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 5})
+	org3 := "org3"
+
+	repoSpecificToken := createFineGrainedRepoAccessToken(t, "user2",
+		[]auth_model.AccessTokenScope{auth_model.AccessTokenScopeWriteRepository},
+		[]int64{repo5.ID},
+	)
+	req := NewRequest(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/convert", org3, repo5.Name)).AddTokenAuth(repoSpecificToken)
+	MakeRequest(t, req, http.StatusForbidden)
+}
