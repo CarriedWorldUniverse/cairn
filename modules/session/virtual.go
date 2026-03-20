@@ -76,7 +76,10 @@ func (o *VirtualSessionProvider) Exist(sid string) bool {
 func (o *VirtualSessionProvider) Destroy(sid string) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	return o.provider.Destroy(sid)
+	if o.provider.Exist(sid) {
+		return o.provider.Destroy(sid)
+	}
+	return nil
 }
 
 // Regenerate regenerates a session store from old session ID to new one.
@@ -194,4 +197,9 @@ func (s *VirtualStore) Flush() error {
 
 	s.data = make(map[any]any)
 	return nil
+}
+
+// True if no keys have been set
+func (s *VirtualStore) Empty() bool {
+	return len(s.data) == 0
 }
