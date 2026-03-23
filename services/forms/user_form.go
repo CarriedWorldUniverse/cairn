@@ -356,19 +356,44 @@ func (f *EditVariableForm) Validate(req *http.Request, errs binding.Errors) bind
 	return middleware.Validate(errs, ctx.Data, f, ctx.Locale)
 }
 
-// NewAccessTokenForm form for creating access token
-type NewAccessTokenForm struct {
-	Name  string `binding:"Required;MaxSize(255)" locale:"settings.token_name"`
-	Scope []string
+// NewAccessTokenGetForm form for creating access token.  Similar to NewAccessTokenPostForm, but contains some data that
+// is only part of the GET requests as the SelectedRepo field is built up interactively, and, it also removes the
+// Required binding to allow this to be used on a formless GET request without displaying an initial error.
+type NewAccessTokenGetForm struct {
+	Name         string `binding:"MaxSize(255)" locale:"settings.token_name"`
+	Resource     string // all, public-only, repo-specific
+	Scope        []string
+	SelectedRepo []string // slice of ownername/reponame
+
+	// Transient form values, not part of the final data for the access token form
+	RepoSearch         string
+	AddSelectedRepo    string // add a repo to SelectedRepo
+	RemoveSelectedRepo string // remove a repo from SelectedRepo
+	Page               int    // repo search page
+	SetPage            int    // repo search buttons
 }
 
 // Validate validates the fields
-func (f *NewAccessTokenForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
+func (f *NewAccessTokenGetForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
 	ctx := context.GetValidateContext(req)
 	return middleware.Validate(errs, ctx.Data, f, ctx.Locale)
 }
 
-func (f *NewAccessTokenForm) GetScope() (auth_model.AccessTokenScope, error) {
+// NewAccessTokenPostForm form for creating access token
+type NewAccessTokenPostForm struct {
+	Name         string `binding:"Required;MaxSize(255)" locale:"settings.token_name"`
+	Resource     string `binding:"Required" locale:"settings.repo_and_org_access"` // all, public-only, repo-specific
+	Scope        []string
+	SelectedRepo []string // slice of ownername/reponame
+}
+
+// Validate validates the fields
+func (f *NewAccessTokenPostForm) Validate(req *http.Request, errs binding.Errors) binding.Errors {
+	ctx := context.GetValidateContext(req)
+	return middleware.Validate(errs, ctx.Data, f, ctx.Locale)
+}
+
+func (f *NewAccessTokenPostForm) GetScope() (auth_model.AccessTokenScope, error) {
 	scope := strings.Join(f.Scope, ",")
 	s, err := auth_model.AccessTokenScope(scope).Normalize()
 	return s, err

@@ -491,8 +491,18 @@ func createApplicationSettingsToken(t testing.TB, session *TestSession, name str
 
 	urlValues := url.Values{}
 	urlValues.Add("name", name)
+	publicOnly := false
 	for _, scope := range scopes {
-		urlValues.Add("scope", string(scope))
+		if scope == auth.AccessTokenScopePublicOnly {
+			publicOnly = true
+		} else {
+			urlValues.Add("scope", string(scope))
+		}
+	}
+	if publicOnly {
+		urlValues.Add("resource", "public-only")
+	} else {
+		urlValues.Add("resource", "all")
 	}
 	req := NewRequestWithURLValues(t, "POST", "/user/settings/applications/tokens/new", urlValues)
 	resp := session.MakeRequest(t, req, http.StatusSeeOther)

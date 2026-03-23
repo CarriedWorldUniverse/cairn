@@ -141,3 +141,30 @@
 .notifications-item:hover .notifications-updated {
   display: none;
 }
+
+/* user's access token edit page; /user/settings/applications/tokens/new; custom CSS for repo selector visibility */
+
+/* #repo-selector-wrapper hides and shows the repository selection based upon the radio-button value, with an animation
+to hint the connection between the two to the user. */
+#repo-selector-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+body:has(input[name="resource"][value="repo-specific"]:checked) #repo-selector-wrapper {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s ease-in;
+}
+
+/* Accessibility -- remove from the visibility tree when hidden so that it doesn't appear for screenreaders. Downside of
+this is that the contents of the selector disappear during the ease-in animation, but it's barely noticable.  The
+expansion animation is the important one anyway, as it associates the selector box with the selection just made for the
+user. */
+#repo-selector {
+  overflow: hidden; /* needed so that the grid-template-rows=0fr clips the selector out */
+  visibility: hidden;
+}
+
+body:has(input[name="resource"][value="repo-specific"]:checked) #repo-selector {
+  visibility: visible;
+}
