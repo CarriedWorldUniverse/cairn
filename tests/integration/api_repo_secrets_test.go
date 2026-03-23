@@ -158,7 +158,8 @@ func TestAPIRepoSecrets(t *testing.T) {
 	})
 
 	t.Run("Delete with forbidden names", func(t *testing.T) {
-		secret, err := secret_model.InsertEncryptedSecret(t.Context(), 0, repo.ID, "FORGEJO_FORBIDDEN", "illegal")
+		secret := secret_model.Secret{OwnerID: 0, RepoID: repo.ID, Name: "FORGEJO_FORBIDDEN"}
+		err := db.Insert(t.Context(), secret)
 		require.NoError(t, err)
 
 		url := fmt.Sprintf("/api/v1/repos/%s/actions/secrets/%s", repo.FullName(), secret.Name)

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
+	"forgejo.org/models/db"
 	secret_model "forgejo.org/models/secret"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
@@ -122,7 +123,8 @@ func TestAPIUserSecrets(t *testing.T) {
 	})
 
 	t.Run("Delete with forbidden names", func(t *testing.T) {
-		secret, err := secret_model.InsertEncryptedSecret(t.Context(), user.ID, 0, "FORGEJO_FORBIDDEN", "illegal")
+		secret := secret_model.Secret{OwnerID: user.ID, RepoID: 0, Name: "FORGEJO_FORBIDDEN"}
+		err := db.Insert(t.Context(), secret)
 		require.NoError(t, err)
 
 		url := fmt.Sprintf("/api/v1/user/actions/secrets/%s", secret.Name)
