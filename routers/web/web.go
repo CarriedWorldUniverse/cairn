@@ -635,8 +635,8 @@ func registerRoutes(m *web.Route) {
 			// access token
 			m.Group("/tokens", func() {
 				m.Combo("/new").
-					Get(user_setting.AccessTokenCreate).
-					Post(web.Bind(forms.NewAccessTokenForm{}), user_setting.AccessTokenCreatePost)
+					Get(web.Bind(forms.NewAccessTokenGetForm{}), user_setting.AccessTokenCreate).
+					Post(web.Bind(forms.NewAccessTokenPostForm{}), user_setting.AccessTokenCreatePost)
 				m.Post("/delete", user_setting.DeleteAccessToken)
 				m.Post("/regenerate", user_setting.RegenerateAccessToken)
 			})

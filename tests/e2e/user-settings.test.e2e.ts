@@ -141,8 +141,12 @@ test('User: Add access token', async ({browser}, workerInfo) => {
 
   const tokenName = globalThis.crypto.randomUUID();
   await page.locator('#name').fill(tokenName);
+  await page.getByRole('radio', {name: /^All /}).click();
   await page.locator('#scoped-access-submit').click();
 
+  await expect(page.locator('.ui.info.message.flash-info')).toBeVisible();
+  const flashText = await page.locator('.ui.info.message.flash-info').textContent();
+  expect(flashText?.trim()).toMatch(/^[0-9a-f]{40}$/);
   await page.getByText(tokenName).isVisible();
 });
 
@@ -161,7 +165,75 @@ test('User: Add access token validation error', async ({browser}, workerInfo) =>
   await page.getByRole('button', {name: 'Generate token'}).click();
 
   await page.getByText('has been used as an application name already.').isVisible();
-  // validate that selected options (public-only, activitypub) are still selected.
+  // validate that selected options (public-only, activitypub) are still selected after the validation error.
   await expect(page.getByRole('radio', {name: 'Public only'})).toBeChecked();
   await expect(page.getByRole('combobox', {name: 'activitypub'})).toHaveValue('read:activitypub');
+});
+
+test('User: Add specific repo access token', async ({browser}, workerInfo) => {
+  const page = await login({browser}, workerInfo);
+  await page.goto('/user/settings/applications');
+  await page.getByRole('link', {name: 'New access token'}).click();
+
+  const tokenName = globalThis.crypto.randomUUID();
+  await page.getByRole('textbox', {name: /^Token name/}).fill(tokenName);
+  await page.getByRole('combobox', {name: 'repository'}).selectOption('read:repository');
+
+  // clicking specific repositories will display currently available repositories:
+  await expect(page.getByText('org17/big_test_private_4')).toBeHidden();
+  await page.getByRole('radio', {name: 'Specific repositories'}).click();
+  await expect(page.getByText('org17/big_test_private_4')).toBeVisible();
+  await expect(page.getByText('user2/commits_search_test')).toBeVisible(); // another repo, will be used to verify search worked
+
+  await page.getByPlaceholder('Search repos…').fill('big_test_private_4');
+  await page.getByRole('button', {name: 'Search…'}).click();
+
+  // verify search results visible:
+  await expect(page.getByText('org17/big_test_private_4')).toBeVisible();
+  await expect(page.getByText('user2/commits_search_test')).toBeHidden();
+
+  // after performing a search, verify that the token name, 'selected repositories', and selected permissions are maintained
+  await expect(page.getByRole('textbox', {name: /^Token name/})).toHaveValue(tokenName);
+  await expect(page.getByRole('radio', {name: 'Specific repositories'})).toBeChecked();
+  await expect(page.getByRole('combobox', {name: 'repository'})).toHaveValue('read:repository');
+
+  // Add the big_test_private_4 repo.
+  await page.getByRole('button', {name: 'Add org17/big_test_private_4'}).click();
+  await expect(page.getByText('Selected repository (1)')).toBeVisible();
+  await expect(page.getByText('org17/big_test_private_4')).toBeVisible();
+
+  // Remove it to test remove, and then re-add
+  await page.getByRole('button', {name: 'Remove org17/big_test_private_4'}).click();
+  await expect(page.getByText('Selected repositories (0)')).toBeVisible();
+  await expect(page.getByText('org17/big_test_private_4')).toBeVisible();
+  await page.getByRole('button', {name: 'Add org17/big_test_private_4'}).click();
+
+  // Create the token and check for success.
+  await page.getByRole('button', {name: 'Generate token'}).click();
+  await expect(page.locator('.ui.info.message.flash-info')).toBeVisible();
+  const flashText = await page.locator('.ui.info.message.flash-info').textContent();
+  expect(flashText?.trim()).toMatch(/^[0-9a-f]{40}$/);
+  await page.getByText(tokenName).isVisible();
+});
+
+// Test that validation errors on the repo-specific access token page retain all the entered field values when the
+// error is displayed.
+test('User: Add specific repo access token error', async ({browser}, workerInfo) => {
+  const page = await login({browser}, workerInfo);
+  await page.goto('/user/settings/applications');
+  await page.getByRole('link', {name: 'New access token'}).click();
+
+  await page.getByRole('textbox', {name: /^Token name/}).fill('Token A');
+  await page.getByRole('combobox', {name: 'repository'}).selectOption('read:repository');
+  await page.getByRole('radio', {name: 'Specific repositories'}).click();
+  await page.getByRole('button', {name: 'Add org17/big_test_private_4'}).click();
+
+  // Create the token, verify error, then check all the fields for retained values.
+  await page.getByRole('button', {name: 'Generate token'}).click();
+  await page.getByText('has been used as an application name already.').isVisible();
+
+  await expect(page.getByRole('textbox', {name: /^Token name/})).toHaveValue('Token A');
+  await expect(page.getByRole('radio', {name: 'Specific repositories'})).toBeChecked();
+  await expect(page.getByRole('combobox', {name: 'repository'})).toHaveValue('read:repository');
+  await expect(page.getByRole('button', {name: 'Remove org17/big_test_private_4'})).toBeVisible();
 });
