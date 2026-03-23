@@ -92,7 +92,7 @@ func Secrets(ctx *context.Context) {
 	ctx.HTML(http.StatusOK, sCtx.SecretsTemplate)
 }
 
-func SecretsPost(ctx *context.Context) {
+func SecretsCreatePost(ctx *context.Context) {
 	sCtx, err := getSecretsCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getSecretsCtx", err)
@@ -104,7 +104,7 @@ func SecretsPost(ctx *context.Context) {
 		return
 	}
 
-	shared.PerformSecretsPost(
+	shared.CreateSecretPost(
 		ctx,
 		sCtx.OwnerID,
 		sCtx.RepoID,
@@ -112,16 +112,32 @@ func SecretsPost(ctx *context.Context) {
 	)
 }
 
-func SecretsDelete(ctx *context.Context) {
+func SecretsEditPost(ctx *context.Context) {
 	sCtx, err := getSecretsCtx(ctx)
 	if err != nil {
 		ctx.ServerError("getSecretsCtx", err)
 		return
 	}
-	shared.PerformSecretsDelete(
+
+	if ctx.HasError() {
+		ctx.JSONError(ctx.GetErrMsg())
+		return
+	}
+
+	shared.EditSecretPost(ctx, sCtx.OwnerID, sCtx.RepoID, ctx.ParamsInt64(":secret_id"), sCtx.RedirectLink)
+}
+
+func SecretsDeletePost(ctx *context.Context) {
+	sCtx, err := getSecretsCtx(ctx)
+	if err != nil {
+		ctx.ServerError("getSecretsCtx", err)
+		return
+	}
+	shared.DeleteSecretPost(
 		ctx,
 		sCtx.OwnerID,
 		sCtx.RepoID,
+		ctx.ParamsInt64(":secret_id"),
 		sCtx.RedirectLink,
 	)
 }

@@ -4,6 +4,7 @@
 package secret
 
 import (
+	"strings"
 	"testing"
 
 	"forgejo.org/models/unittest"
@@ -83,6 +84,11 @@ func TestInsertEncryptedSecret(t *testing.T) {
 		})
 	})
 
+	t.Run("Rejects invalid name", func(t *testing.T) {
+		_, err := InsertEncryptedSecret(t.Context(), 2, 0, "invalid name", "some secret")
+		require.ErrorContains(t, err, "invalid secret name")
+	})
+
 	t.Run("FetchActionSecrets", func(t *testing.T) {
 		secrets, err := FetchActionSecrets(t.Context(), 2, 1)
 		require.NoError(t, err)
@@ -122,4 +128,170 @@ func TestSecretGetDecryptedData(t *testing.T) {
 		assert.Empty(t, decryptedData)
 		assert.ErrorContains(t, err, "unable to decrypt secret[id=495,name=\"A_SECRET\"]")
 	})
+}
+
+func TestSecretGetSecretByID(t *testing.T) {
+	defer unittest.OverrideFixtures("models/secret/TestSecretGetSecretByID")()
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	testCases := []struct {
+		name          string
+		ownerID       int64
+		repoID        int64
+		id            int64
+		expectedName  string
+		expectedData  string
+		expectedError string
+	}{
+		{
+			name:         "Organization secret",
+			ownerID:      3,
+			repoID:       0,
+			id:           637340,
+			expectedName: "TEST_SECRET",
+			expectedData: "very secret",
+		},
+		{
+			name:          "Owner mismatch",
+			ownerID:       4,
+			repoID:        0,
+			id:            637340,
+			expectedError: "secret with ID 637340: resource does not exist",
+		},
+		{
+			name:          "Repository mismatch",
+			ownerID:       0,
+			repoID:        1,
+			id:            637340,
+			expectedError: "secret with ID 637340: resource does not exist",
+		},
+		{
+			name:         "Repository secret",
+			ownerID:      0,
+			repoID:       62,
+			id:           637341,
+			expectedName: "ANOTHER_SECRET",
+			expectedData: "also very secret",
+		},
+		{
+			name:          "Unsupported instance secret",
+			ownerID:       0,
+			repoID:        0,
+			id:            637341,
+			expectedError: "ownerID and repoID cannot be simultaneously 0",
+		},
+		{
+			name:         "User secret",
+			ownerID:      1,
+			repoID:       0,
+			id:           637342,
+			expectedName: "TEST_SECRET",
+			expectedData: "super secret",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			secret, err := GetSecretByID(t.Context(), testCase.ownerID, testCase.repoID, testCase.id)
+
+			if testCase.expectedError != "" {
+				assert.ErrorContains(t, err, testCase.expectedError)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.id, secret.ID)
+				assert.Equal(t, testCase.ownerID, secret.OwnerID)
+				assert.Equal(t, testCase.repoID, secret.RepoID)
+				assert.Equal(t, testCase.expectedName, secret.Name)
+
+				data, err := secret.GetDecryptedData()
+				require.NoError(t, err)
+				assert.Equal(t, testCase.expectedData, data)
+			}
+		})
+	}
+}
+
+func TestSecretUpdateSecret(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	secret, err := InsertEncryptedSecret(t.Context(), 2, 0, "a_secret", "very secret")
+	require.NoError(t, err)
+
+	secret.Name = "new_name"
+	secret.SetData("also very secret")
+
+	err = UpdateSecret(t.Context(), secret)
+	require.NoError(t, err)
+
+	updatedSecret := unittest.AssertExistsAndLoadBean(t, &Secret{ID: secret.ID})
+	decryptedData, err := updatedSecret.GetDecryptedData()
+	require.NoError(t, err)
+
+	assert.Equal(t, "NEW_NAME", updatedSecret.Name)
+	assert.Equal(t, "also very secret", decryptedData)
+}
+
+func TestSecretUpdateSecret_RejectsInvalidName(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	secret, err := InsertEncryptedSecret(t.Context(), 2, 0, "a_secret", "very secret")
+	require.NoError(t, err)
+
+	secret.Name = "GITHUB_IS_REJECTED" // Because it starts with `GITHUB_`.
+	secret.SetData("also very secret")
+
+	err = UpdateSecret(t.Context(), secret)
+	require.ErrorContains(t, err, "invalid secret name")
+
+	updatedSecret := unittest.AssertExistsAndLoadBean(t, &Secret{ID: secret.ID})
+	decryptedData, err := updatedSecret.GetDecryptedData()
+	require.NoError(t, err)
+
+	assert.Equal(t, "A_SECRET", updatedSecret.Name)
+	assert.Equal(t, "very secret", decryptedData)
+}
+
+func TestSecretValidateName(t *testing.T) {
+	testCases := []struct {
+		name  string
+		valid bool
+	}{
+		{"FORGEJO_", false},
+		{"FORGEJO_123", false},
+		{"FORGEJO_ABC", false},
+		{"GITEA_", false},
+		{"GITEA_123", false},
+		{"GITEA_ABC", false},
+		{"GITHUB_", false},
+		{"GITHUB_123", false},
+		{"GITHUB_ABC", false},
+		{"123_TEST", false},
+		{"CI", true},
+		{"_CI", true},
+		{"CI_", true},
+		{"CI123", true},
+		{"CIABC", true},
+		{"FORGEJO", true},
+		{"FORGEJO123", true},
+		{"FORGEJOABC", true},
+		{"GITEA", true},
+		{"GITEA123", true},
+		{"GITEAABC", true},
+		{"GITHUB", true},
+		{"GITHUB123", true},
+		{"GITHUBABC", true},
+		{"_123_TEST", true},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			t.Helper()
+			if tC.valid {
+				assert.NoError(t, ValidateName(tC.name))
+				assert.NoError(t, ValidateName(strings.ToLower(tC.name)))
+			} else {
+				require.ErrorIs(t, ValidateName(tC.name), ErrInvalidName)
+				require.ErrorIs(t, ValidateName(strings.ToLower(tC.name)), ErrInvalidName)
+			}
+		})
+	}
 }

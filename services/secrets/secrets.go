@@ -11,7 +11,7 @@ import (
 )
 
 func CreateOrUpdateSecret(ctx context.Context, ownerID, repoID int64, name, data string) (*secret_model.Secret, bool, error) {
-	if err := ValidateName(name); err != nil {
+	if err := secret_model.ValidateName(name); err != nil {
 		return nil, false, err
 	}
 
