@@ -104,6 +104,13 @@ func (run *ActionRun) Link() string {
 	return fmt.Sprintf("%s/actions/runs/%d", run.Repo.Link(), run.Index)
 }
 
+func (run *ActionRun) CommitLink() string {
+	if run.Repo == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s/commit/%s", run.Repo.Link(), run.CommitSHA)
+}
+
 // WorkflowPath returns the path in the git repo to the workflow file that this run was based on
 func (run *ActionRun) WorkflowPath() string {
 	if run.WorkflowDirectory == "" {
@@ -238,6 +245,14 @@ func (run *ActionRun) FindOuterWorkflowCall(ctx context.Context, innerCall *Acti
 		}
 	}
 	return nil, fmt.Errorf("no workflow call with ID %s found in run %d", parent, run.ID)
+}
+
+func (run *ActionRun) IsScheduledRun() bool {
+	return run.TriggerEvent == "schedule"
+}
+
+func (run *ActionRun) IsDispatchedRun() bool {
+	return run.TriggerEvent == "workflow_dispatch"
 }
 
 func actionsCountOpenCacheKey(repoID int64) string {

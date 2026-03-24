@@ -150,6 +150,7 @@ func baseExpectedViewResponse() *ViewResponse {
 				Title:             "update actions",
 				TitleHTML:         template.HTML("update actions"),
 				Status:            "success",
+				Description:       "actions.runs.on_push_description",
 				CanCancel:         false,
 				CanApprove:        false,
 				CanRerun:          false,
@@ -165,8 +166,6 @@ func baseExpectedViewResponse() *ViewResponse {
 					},
 				},
 				Commit: ViewCommit{
-					LocaleCommit:   "actions.runs.commit",
-					LocalePushedBy: "actions.runs.pushed_by",
 					LocaleWorkflow: "actions.runs.workflow",
 					LocaleAllRuns:  "actions.runs.all_runs_link",
 					ShortSha:       "c2d72f5484",

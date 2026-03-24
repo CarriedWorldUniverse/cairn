@@ -19,6 +19,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDetectedWorkflowGetWorkflowPath(t *testing.T) {
+	buildWorkflow := DetectedWorkflow{EntryDirectory: ".github/workflows", EntryName: "build.yaml"}
+	testWorkflow := DetectedWorkflow{EntryDirectory: ".forgejo/workflows", EntryName: "test.yaml"}
+
+	assert.Equal(t, ".github/workflows/build.yaml", buildWorkflow.GetWorkflowPath())
+	assert.Equal(t, ".forgejo/workflows/test.yaml", testWorkflow.GetWorkflowPath())
+}
+
 func TestActionsWorkflowsDetectMatched(t *testing.T) {
 	testCases := []struct {
 		desc           string
