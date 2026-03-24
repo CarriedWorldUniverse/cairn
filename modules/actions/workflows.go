@@ -5,6 +5,7 @@ package actions
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strings"
 
@@ -28,6 +29,12 @@ type DetectedWorkflow struct {
 	Content             []byte
 	EventDetectionError error
 	NeedApproval        actions_model.ApprovalType
+}
+
+// GetWorkflowPath returns the full path to the workflow from the repository root, for example,
+// .forgejo/workflows/test.yaml.
+func (wf *DetectedWorkflow) GetWorkflowPath() string {
+	return fmt.Sprintf("%s/%s", wf.EntryDirectory, wf.EntryName)
 }
 
 func init() {

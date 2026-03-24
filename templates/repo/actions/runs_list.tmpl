@@ -16,14 +16,13 @@
 				</a>
 				<div class="flex-item-body">
 					<b>{{if not $.CurWorkflow}}{{.WorkflowID}} {{end}}#{{.Index}}</b> -
-					{{if .ScheduleID -}}
-						{{ctx.Locale.Tr "actions.runs.scheduled"}}
-					{{- else -}}
-						{{ctx.Locale.Tr "actions.runs.commit"}}
-						<a href="{{$.RepoLink}}/commit/{{.CommitSHA}}">{{ShortSha .CommitSHA}}</a>
-						{{ctx.Locale.Tr "actions.runs.pushed_by"}}
-						<a href="{{.TriggerUser.HomeLink}}">{{.TriggerUser.GetDisplayName}}</a>
-					{{- end -}}
+					{{if .IsScheduledRun -}}
+						{{ctx.Locale.Tr "actions.runs.scheduled_description" .CommitLink (ShortSha .CommitSHA)}}
+					{{else if .IsDispatchedRun -}}
+						{{ctx.Locale.Tr "actions.runs.workflow_dispatch_description" .CommitLink (ShortSha .CommitSHA) .TriggerUser.HomeLink .TriggerUser.GetDisplayName}}
+					{{else -}}
+						{{ctx.Locale.Tr "actions.runs.on_push_description" .CommitLink (ShortSha .CommitSHA) .TriggerUser.HomeLink .TriggerUser.GetDisplayName}}
+					{{end -}}
 				</div>
 			</div>
 			<div class="flex-item-trailing">

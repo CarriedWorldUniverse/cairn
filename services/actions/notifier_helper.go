@@ -574,8 +574,13 @@ func handleSchedules(
 			continue
 		}
 
+		title := workflow.Name
+		if len(title) < 1 {
+			title = dwf.GetWorkflowPath()
+		}
+
 		run := &actions_model.ActionSchedule{
-			Title:             strings.SplitN(commit.CommitMessage, "\n", 2)[0],
+			Title:             title,
 			RepoID:            input.Repo.ID,
 			OwnerID:           input.Repo.OwnerID,
 			WorkflowID:        dwf.EntryName,

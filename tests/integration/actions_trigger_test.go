@@ -1134,3 +1134,83 @@ func TestActionsWorkflowDispatchConcurrencyGroup(t *testing.T) {
 		assert.Equal(t, actions_model.StatusCancelled, firstRunReload.Status)
 	})
 }
+
+func TestActionsScheduledWorkflow(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		workflowID            string
+		workflowDirectory     string
+		workflowContent       string
+		expectedWorkflowTitle string
+		expectedCronSpecs     []string
+	}{
+		{
+			name:              "GitHub",
+			workflowID:        "scheduled.yml",
+			workflowDirectory: ".github/workflows",
+			workflowContent: `
+on:
+  schedule:
+    - cron: "30 5,17 * * *"
+jobs:
+  test:
+    steps:
+      - run: echo OK
+`,
+			expectedWorkflowTitle: ".github/workflows/scheduled.yml",
+			expectedCronSpecs:     []string{"30 5,17 * * *"},
+		},
+		{
+			name:              "Gitea",
+			workflowID:        "test.yml",
+			workflowDirectory: ".gitea/workflows",
+			workflowContent: `
+name: My scheduled workflow
+on:
+  schedule:
+    - cron: "* * * * *"
+jobs:
+  test:
+    steps:
+      - run: echo OK
+`,
+			expectedWorkflowTitle: "My scheduled workflow",
+			expectedCronSpecs:     []string{"* * * * *"},
+		},
+	}
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+				// create the repo
+				repo, sha, f := tests.CreateDeclarativeRepo(t, user2, "repo-workflow-dispatch",
+					[]unit_model.Type{unit_model.TypeActions}, nil,
+					[]*files_service.ChangeRepoFile{
+						{
+							Operation:     "create",
+							TreePath:      fmt.Sprintf("%s/%s", testCase.workflowDirectory, testCase.workflowID),
+							ContentReader: strings.NewReader(testCase.workflowContent),
+						},
+					},
+				)
+				defer f()
+
+				schedules, err := db.Find[actions_model.ActionSchedule](t.Context(), actions_model.FindScheduleOptions{RepoID: repo.ID})
+				require.NoError(t, err)
+				require.Len(t, schedules, 1)
+
+				assert.Equal(t, testCase.expectedWorkflowTitle, schedules[0].Title)
+				assert.Equal(t, testCase.expectedCronSpecs, schedules[0].Specs)
+				assert.Equal(t, repo.ID, schedules[0].RepoID)
+				assert.Equal(t, repo.OwnerID, schedules[0].OwnerID)
+				assert.Equal(t, testCase.workflowID, schedules[0].WorkflowID)
+				assert.Equal(t, testCase.workflowDirectory, schedules[0].WorkflowDirectory)
+				assert.Equal(t, int64(-2), schedules[0].TriggerUserID)
+				assert.Equal(t, sha, schedules[0].CommitSHA)
+				assert.Equal(t, webhook_module.HookEventPush, schedules[0].Event)
+				assert.Equal(t, []byte(testCase.workflowContent), schedules[0].Content)
+			})
+		}
+	})
+}

@@ -11,6 +11,8 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/cache"
+	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"github.com/stretchr/testify/assert"
@@ -51,6 +53,47 @@ func TestGetWorkflowPath(t *testing.T) {
 		WorkflowDirectory: ".some/path/to/workflows",
 	}
 	assert.Equal(t, ".some/path/to/workflows/ci.yml", run.WorkflowPath())
+}
+
+func TestGetCommitLink(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	defer test.MockVariableValue(&setting.AppSubURL, "/sub")()
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+	run := ActionRun{
+		Repo:      repo,
+		CommitSHA: "a356d1f1f82945a039cd16d4ce0137bd55284e77",
+	}
+	assert.Equal(t, "/sub/user2/repo1/commit/a356d1f1f82945a039cd16d4ce0137bd55284e77", run.CommitLink())
+}
+
+func TestIsScheduledRun(t *testing.T) {
+	scheduledRun := ActionRun{
+		CommitSHA:    "a356d1f1f82945a039cd16d4ce0137bd55284e77",
+		TriggerEvent: "schedule",
+	}
+	pushRun := ActionRun{
+		CommitSHA:    "8f9b5c6ab342eb11d7422deecef7195b18058b90",
+		TriggerEvent: "push",
+	}
+
+	assert.True(t, scheduledRun.IsScheduledRun())
+	assert.False(t, pushRun.IsScheduledRun())
+}
+
+func TestIsManualRun(t *testing.T) {
+	manualRunRun := ActionRun{
+		CommitSHA:    "a356d1f1f82945a039cd16d4ce0137bd55284e77",
+		TriggerEvent: "workflow_dispatch",
+	}
+	pushRun := ActionRun{
+		CommitSHA:    "8f9b5c6ab342eb11d7422deecef7195b18058b90",
+		TriggerEvent: "push",
+	}
+
+	assert.True(t, manualRunRun.IsDispatchedRun())
+	assert.False(t, pushRun.IsDispatchedRun())
 }
 
 func TestRepoNumOpenActions(t *testing.T) {

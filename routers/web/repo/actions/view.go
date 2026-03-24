@@ -173,6 +173,7 @@ type ViewRunInfo struct {
 	Title             string        `json:"title"`
 	TitleHTML         template.HTML `json:"titleHTML"`
 	Status            string        `json:"status"`
+	Description       string        `json:"description"`
 	CanCancel         bool          `json:"canCancel"`
 	CanApprove        bool          `json:"canApprove"` // the run needs an approval and the doer has permission to approve
 	CanRerun          bool          `json:"canRerun"`
@@ -203,8 +204,6 @@ type ViewJob struct {
 }
 
 type ViewCommit struct {
-	LocaleCommit   string     `json:"localeCommit"`
-	LocalePushedBy string     `json:"localePushedBy"`
 	LocaleWorkflow string     `json:"localeWorkflow"`
 	LocaleAllRuns  string     `json:"localeAllRuns"`
 	ShortSha       string     `json:"shortSHA"`
@@ -281,6 +280,18 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 
 	metas := ctx.Repo.Repository.ComposeMetas(ctx)
 
+	var runDescription string
+	if run.IsScheduledRun() {
+		runDescription = ctx.Locale.TrString("actions.runs.scheduled_description", run.CommitLink(),
+			base.ShortSha(run.CommitSHA))
+	} else if run.IsDispatchedRun() {
+		runDescription = ctx.Locale.TrString("actions.runs.workflow_dispatch_description", run.CommitLink(),
+			base.ShortSha(run.CommitSHA), run.TriggerUser.HomeLink(), run.TriggerUser.GetDisplayName())
+	} else {
+		runDescription = ctx.Locale.TrString("actions.runs.on_push_description", run.CommitLink(),
+			base.ShortSha(run.CommitSHA), run.TriggerUser.HomeLink(), run.TriggerUser.GetDisplayName())
+	}
+
 	resp.State.Run.Title = run.Title
 	resp.State.Run.TitleHTML = templates.RenderCommitMessage(ctx, run.Title, metas)
 	resp.State.Run.Link = run.Link()
@@ -290,6 +301,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 	resp.State.Run.Jobs = make([]*ViewJob, 0, len(jobs)) // marshal to '[]' instead of 'null' in json
 	resp.State.Run.Status = run.Status.String()
 	resp.State.Run.PreExecutionError = actions_model.TranslatePreExecutionError(ctx.Locale, run)
+	resp.State.Run.Description = runDescription
 
 	// It's possible for the run to be marked with a finalized status (eg. failure) because of a  single job within the
 	// run; eg. one job fails, the run fails. But other jobs can still be running. The frontend RepoActionView uses the
@@ -332,8 +344,6 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 	}
 
 	resp.State.Run.Commit = ViewCommit{
-		LocaleCommit:   ctx.Locale.TrString("actions.runs.commit"),
-		LocalePushedBy: ctx.Locale.TrString("actions.runs.pushed_by"),
 		LocaleWorkflow: ctx.Locale.TrString("actions.runs.workflow"),
 		LocaleAllRuns:  ctx.Locale.TrString("actions.runs.all_runs_link"),
 		ShortSha:       base.ShortSha(run.CommitSHA),
