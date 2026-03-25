@@ -77,6 +77,7 @@ func fromRunJobModelToResponse(job []*actions_model.ActionRunJob, labels []strin
 			res = append(res, &structs.ActionRunJob{
 				ID:      job[i].ID,
 				Attempt: job[i].Attempt,
+				Handle:  job[i].Handle,
 				RepoID:  job[i].RepoID,
 				OwnerID: job[i].OwnerID,
 				Name:    job[i].Name,

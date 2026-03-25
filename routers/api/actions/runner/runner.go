@@ -142,49 +142,31 @@ func (s *Service) FetchTask(
 
 	requestKey := getRequestKey(ctx)
 	if requestKey != nil {
-		// Search for previous tasks is based upon both the runner and the request key in order to reduce the security
-		// risk. If a request key is leaked (eg. it appears in a log file, log file gets published in a bug report) it
-		// could be used indefinitely to retrieve the associated task(s), so requiring the correctly authenticated
-		// runner reduces that risk.
-		recoveredTasks, err := actions_model.GetTasksByRunnerRequestKey(ctx, runner, *requestKey)
+		recoveredTasks, err := recoverTasks(ctx, runner, *requestKey)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("query by request key failed: %w", err))
+			return nil, connect.NewError(connect.CodeInternal, err)
 		} else if len(recoveredTasks) > 0 {
-			// Recovered tasks from a repeat request key
-			tasks, err := actions_service.RecoverTasks(ctx, recoveredTasks)
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("recover tasks failed: %w", err))
-			}
 			resp := &runnerv1.FetchTaskResponse{
-				Task:            tasks[0],
+				Task:            recoveredTasks[0],
 				TasksVersion:    0,
-				AdditionalTasks: tasks[1:],
+				AdditionalTasks: recoveredTasks[1:],
 			}
 			return connect.NewResponse(resp), nil
 		}
 	}
 
-	var task *runnerv1.Task
-	tasksVersion := req.Msg.TasksVersion // task version from runner
-	latestVersion, err := actions_model.GetTasksVersionByScope(ctx, runner.OwnerID, runner.RepoID)
+	latestVersion, err := getLatestTasksVersion(ctx, runner.OwnerID, runner.RepoID)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("query tasks version failed: %w", err))
-	} else if latestVersion == 0 {
-		if err := actions_model.IncreaseTaskVersion(ctx, runner.OwnerID, runner.RepoID); err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("fail to increase task version: %w", err))
-		}
-		// if we don't increase the value of `latestVersion` here,
-		// the response of FetchTask will return tasksVersion as zero.
-		// and the runner will treat it as an old version of Gitea.
-		latestVersion++
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	var task *runnerv1.Task
 	var additionalTasks []*runnerv1.Task
-	if tasksVersion != latestVersion {
+	if req.Msg.TasksVersion != latestVersion {
 		// if the task version in request is not equal to the version in db,
 		// it means there may still be some tasks not be assigned.
 		// try to pick a task for the runner that send the request.
-		if t, ok, err := actions_service.PickTask(ctx, runner, requestKey); err != nil {
+		if t, ok, err := actions_service.PickTask(ctx, runner, requestKey, nil); err != nil {
 			log.Error("pick task failed: %v", err)
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("pick task: %w", err))
 		} else if ok {
@@ -193,7 +175,7 @@ func (s *Service) FetchTask(
 			taskCapacity := req.Msg.GetTaskCapacity()
 			taskCapacity-- // remove 1 for the task already fetched as `task`
 			for taskCapacity > 0 {
-				if t, ok, err := actions_service.PickTask(ctx, runner, requestKey); err != nil {
+				if t, ok, err := actions_service.PickTask(ctx, runner, requestKey, nil); err != nil {
 					// Don't return an error to the client/runner -- we've already assigned one-or-more tasks to the runner
 					// and if we don't return them, they can't be picked up by another runner and will become zombie tasks.
 					// Log the error and return the tasks we've assigned so far.
@@ -212,6 +194,55 @@ func (s *Service) FetchTask(
 		Task:            task,
 		TasksVersion:    latestVersion,
 		AdditionalTasks: additionalTasks,
+	})
+	return res, nil
+}
+
+func (s *Service) FetchSingleTask(
+	ctx context.Context,
+	req *connect.Request[runnerv1.FetchSingleTaskRequest],
+) (*connect.Response[runnerv1.FetchSingleTaskResponse], error) {
+	runner := GetRunner(ctx)
+
+	requestKey := getRequestKey(ctx)
+	if requestKey != nil {
+		recoveredTasks, err := recoverTasks(ctx, runner, *requestKey)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		} else if len(recoveredTasks) == 1 {
+			resp := &runnerv1.FetchSingleTaskResponse{
+				TasksVersion: 0,
+				Task:         recoveredTasks[0],
+			}
+			return connect.NewResponse(resp), nil
+		} else if len(recoveredTasks) > 1 {
+			return nil, connect.NewError(connect.CodeInternal,
+				fmt.Errorf("cannot recover %d tasks because runner requested only one", len(recoveredTasks)))
+		}
+	}
+
+	latestVersion, err := getLatestTasksVersion(ctx, runner.OwnerID, runner.RepoID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	var task *runnerv1.Task
+	if req.Msg.TasksVersion != latestVersion {
+		var handle *string
+		if req.Msg.Handle != nil && *req.Msg.Handle != "" {
+			handle = req.Msg.Handle
+		}
+
+		if t, ok, err := actions_service.PickTask(ctx, runner, requestKey, handle); err != nil {
+			log.Error("pick task failed: %v", err)
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("pick task: %w", err))
+		} else if ok {
+			task = t
+		}
+	}
+	res := connect.NewResponse(&runnerv1.FetchSingleTaskResponse{
+		TasksVersion: latestVersion,
+		Task:         task,
 	})
 	return res, nil
 }
@@ -353,4 +384,41 @@ func (s *Service) UpdateLog(
 	}
 
 	return res, nil
+}
+
+func recoverTasks(ctx context.Context, runner *actions_model.ActionRunner, requestKey string) ([]*runnerv1.Task, error) {
+	// Search for previous tasks is based upon both the runner and the request key in order to reduce the security
+	// risk. If a request key is leaked (eg. it appears in a log file, log file gets published in a bug report) it
+	// could be used indefinitely to retrieve the associated task(s), so requiring the correctly authenticated
+	// runner reduces that risk.
+	recoveredTasks, err := actions_model.GetTasksByRunnerRequestKey(ctx, runner, requestKey)
+	if err != nil {
+		return nil, fmt.Errorf("query by request key failed: %w", err)
+	} else if len(recoveredTasks) > 0 {
+		// Recovered tasks from a repeat request key
+		tasks, err := actions_service.RecoverTasks(ctx, recoveredTasks)
+		if err != nil {
+			return nil, fmt.Errorf("recover tasks failed: %w", err)
+		}
+		return tasks, nil
+	}
+
+	return []*runnerv1.Task{}, nil
+}
+
+func getLatestTasksVersion(ctx context.Context, ownerID, repoID int64) (int64, error) {
+	latestVersion, err := actions_model.GetTasksVersionByScope(ctx, ownerID, repoID)
+	if err != nil {
+		return 0, fmt.Errorf("query tasks version failed: %w", err)
+	} else if latestVersion == 0 {
+		if err := actions_model.IncreaseTaskVersion(ctx, ownerID, repoID); err != nil {
+			return 0, fmt.Errorf("fail to increase task version: %w", err)
+		}
+		// if we don't increase the value of `latestVersion` here,
+		// the response of FetchTask will return tasksVersion as zero.
+		// and the runner will treat it as an old version of Gitea.
+		latestVersion++
+	}
+
+	return latestVersion, nil
 }

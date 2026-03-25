@@ -587,7 +587,7 @@ func rerunJob(ctx *app_context.Context, job *actions_model.ActionRunJob, shouldB
 	}
 
 	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		_, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"status": status}, "attempt", "task_id", "status", "started", "stopped")
+		_, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"status": status}, "handle", "attempt", "task_id", "status", "started", "stopped")
 		return err
 	}); err != nil {
 		return err

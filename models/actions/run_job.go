@@ -15,6 +15,7 @@ import (
 	"forgejo.org/modules/util"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
+	gouuid "github.com/google/uuid"
 	"go.yaml.in/yaml/v3"
 	"xorm.io/builder"
 )
@@ -30,6 +31,7 @@ type ActionRunJob struct {
 	IsForkPullRequest bool
 	Name              string `xorm:"VARCHAR(255)"`
 	Attempt           int64
+	Handle            string `xorm:"unique"`
 	WorkflowPayload   []byte
 	JobID             string   `xorm:"VARCHAR(255)"` // job id in workflow, not job's id
 	Needs             []string `xorm:"JSON TEXT"`
@@ -108,6 +110,12 @@ func (job *ActionRunJob) LoadAttributes(ctx context.Context) error {
 	return job.Run.LoadAttributes(ctx)
 }
 
+// IsRequestedByRunner returns true if this attempt of this ActionRunJob was explicitly requested by the runner or if
+// the runner expressed no preference.
+func (job *ActionRunJob) IsRequestedByRunner(handle *string) bool {
+	return handle == nil || job.Handle == *handle
+}
+
 func (job *ActionRunJob) ItRunsOn(labels []string) bool {
 	if len(labels) == 0 || len(job.RunsOn) == 0 {
 		return false
@@ -126,6 +134,7 @@ func (job *ActionRunJob) PrepareNextAttempt(initialStatus Status) error {
 	job.Started = 0
 	job.Stopped = 0
 	job.TaskID = 0
+	job.Handle = gouuid.New().String()
 	job.Status = initialStatus
 
 	return nil
