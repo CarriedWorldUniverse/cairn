@@ -145,7 +145,6 @@
 	"actions.runs.run_attempt_label": "Upaya eksekusi #%[1]s (%[2]s)",
 	"actions.runs.viewing_out_of_date_run": "Anda sedang melihat hasil eksekusi yang sudah kadaluwarsa dari tugas ini yang dijalankan pada %[1]s.",
 	"actions.runs.view_most_recent_run": "Lihat hasil terbaru",
-	"actions.runs.commit": "Memperbuat",
 	"actions.runs.no_matching_online_runner.helper": "Tidak ada runner online yang cocok dengan label: %s",
 	"actions.runs.actor": "Aktor",
 	"actions.runs.status": "Status",

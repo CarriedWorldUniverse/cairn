@@ -6,7 +6,6 @@
 	"actions.runners.task_list.repository": "مخزن",
 	"actions.runners.task_list.commit": "کامیت",
 	"actions.runners.status.active": "فعال",
-	"actions.runs.commit": "کامیت",
 	"gpg.default_key": "ثبت شده با کلید پیش فرض",
 	"gpg.error.extract_sign": "خطا در استخراج امضا",
 	"gpg.error.generate_hash": "خطا در ساختن هش کامیت",
