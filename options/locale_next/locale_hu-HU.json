@@ -6,7 +6,6 @@
 	"actions.runners.task_list.repository": "Tároló",
 	"actions.runners.task_list.commit": "Commit",
 	"actions.runners.status.active": "Aktív",
-	"actions.runs.commit": "Commit",
 	"gpg.error.extract_sign": "Nem sikerült kinyerni az aláírást",
 	"gpg.error.generate_hash": "Nem sikerült létrehozni a commitot azonosító hash-t",
 	"gpg.error.no_gpg_keys_found": "Nem található kulcs ehhez az aláíráshoz az adatbázisban",

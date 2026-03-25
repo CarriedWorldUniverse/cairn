@@ -6,7 +6,6 @@
 	"actions.runners.task_list.repository": "저장소",
 	"actions.runners.task_list.commit": "커밋",
 	"actions.runners.status.active": "사용",
-	"actions.runs.commit": "커밋",
 	"gpg.error.extract_sign": "서명 추출에 실패",
 	"gpg.error.generate_hash": "커밋의 해시 생성에 실패",
 	"gpg.error.not_signed_commit": "서명되지 않은 커밋",
