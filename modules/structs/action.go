@@ -14,6 +14,8 @@ type ActionRunJob struct {
 	ID int64 `json:"id"`
 	// How many times the job has been attempted including the current attempt.
 	Attempt int64 `json:"attempt"`
+	// Opaque identifier that uniquely identifies a single attempt of a job.
+	Handle string `json:"handle"`
 	// the repository id
 	RepoID int64 `json:"repo_id"`
 	// the owner id

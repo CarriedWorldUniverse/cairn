@@ -347,7 +347,7 @@ func GetAvailableJobsForRunner(e db.Engine, runner *ActionRunner) ([]*ActionRunJ
 	return jobs, nil
 }
 
-func CreateTaskForRunner(ctx context.Context, runner *ActionRunner, requestKey *string) (*ActionTask, bool, error) {
+func CreateTaskForRunner(ctx context.Context, runner *ActionRunner, requestKey, handle *string) (*ActionTask, bool, error) {
 	ctx, committer, err := db.TxContext(ctx)
 	if err != nil {
 		return nil, false, err
@@ -364,9 +364,9 @@ func CreateTaskForRunner(ctx context.Context, runner *ActionRunner, requestKey *
 	// TODO: a more efficient way to filter labels
 	var job *ActionRunJob
 	log.Trace("runner labels: %v", runner.AgentLabels)
-	for _, v := range jobs {
-		if v.ItRunsOn(runner.AgentLabels) {
-			job = v
+	for _, j := range jobs {
+		if j.IsRequestedByRunner(handle) && j.ItRunsOn(runner.AgentLabels) {
+			job = j
 			break
 		}
 	}
