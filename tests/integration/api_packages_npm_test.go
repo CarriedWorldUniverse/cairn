@@ -14,6 +14,7 @@ import (
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/packages"
+	unit_model "forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/packages/npm"
@@ -28,6 +29,8 @@ func TestPackageNpm(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 
 	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+	session := loginUser(t, user.Name)
+	tokenWritePackage := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWritePackage)
 
 	token := fmt.Sprintf("Bearer %s", getTokenForLoggedInUser(t, loginUser(t, user.Name), auth_model.AccessTokenScopeWritePackage))
 
@@ -115,6 +118,22 @@ func TestPackageNpm(t *testing.T) {
 		pb, err := packages.GetBlobByID(db.DefaultContext, pfs[0].BlobID)
 		require.NoError(t, err)
 		assert.Equal(t, int64(192), pb.Size)
+	})
+
+	t.Run("RepositoryLink", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		// create a repository
+		repo, _, f := tests.CreateDeclarativeRepo(t, user, "", []unit_model.Type{unit_model.TypeCode}, nil, nil)
+		defer f()
+
+		// link to public repository
+		req := NewRequest(t, "POST", fmt.Sprintf("/api/v1/packages/%s/npm/%s/-/link/%s", user.Name, url.QueryEscape(packageName), repo.Name)).AddTokenAuth(tokenWritePackage)
+		MakeRequest(t, req, http.StatusCreated)
+
+		// remove link
+		req = NewRequest(t, "POST", fmt.Sprintf("/api/v1/packages/%s/npm/%s/-/unlink", user.Name, url.QueryEscape(packageName))).AddTokenAuth(tokenWritePackage)
+		MakeRequest(t, req, http.StatusNoContent)
 	})
 
 	t.Run("UploadExists", func(t *testing.T) {

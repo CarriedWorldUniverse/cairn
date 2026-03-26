@@ -249,7 +249,7 @@ func LinkPackage(ctx *context.APIContext) {
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 
-	pkg, err := packages.GetPackageByName(ctx, ctx.ContextUser.ID, packages.Type(ctx.PathParamRaw("type")), ctx.PathParamRaw("name"))
+	pkg, err := packages.GetPackageByName(ctx, ctx.ContextUser.ID, packages.Type(ctx.Params("type")), ctx.Params("name"))
 	if err != nil {
 		if errors.Is(err, util.ErrNotExist) {
 			ctx.Error(http.StatusNotFound, "GetPackageByName", err)
@@ -259,7 +259,7 @@ func LinkPackage(ctx *context.APIContext) {
 		return
 	}
 
-	repo, err := repo_model.GetRepositoryByName(ctx, ctx.ContextUser.ID, ctx.PathParamRaw("repo_name"))
+	repo, err := repo_model.GetRepositoryByName(ctx, ctx.ContextUser.ID, ctx.Params("repo_name"))
 	if err != nil {
 		if errors.Is(err, util.ErrNotExist) {
 			ctx.Error(http.StatusNotFound, "GetRepositoryByName", err)
@@ -311,7 +311,7 @@ func UnlinkPackage(ctx *context.APIContext) {
 	//   "404":
 	//     "$ref": "#/responses/notFound"
 
-	pkg, err := packages.GetPackageByName(ctx, ctx.ContextUser.ID, packages.Type(ctx.PathParamRaw("type")), ctx.PathParamRaw("name"))
+	pkg, err := packages.GetPackageByName(ctx, ctx.ContextUser.ID, packages.Type(ctx.Params("type")), ctx.Params("name"))
 	if err != nil {
 		if errors.Is(err, util.ErrNotExist) {
 			ctx.Error(http.StatusNotFound, "GetPackageByName", err)
