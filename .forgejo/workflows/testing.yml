@@ -13,7 +13,7 @@ jobs:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - name: event info
@@ -30,7 +30,7 @@ jobs:
     if: vars.ROLE == 'forgejo-coding' || vars.ROLE == 'forgejo-testing'
     runs-on: docker
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     services:
       elasticsearch:
@@ -75,10 +75,6 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install git >= 2.42
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git
       - name: test release-notes-assistant.sh
         run: |
           apt-get -q install -qq -y jq
@@ -139,7 +135,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks, test-unit]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     name: ${{ format('test-remote-cacher ({0})', matrix.cacher.name) }}
     strategy:
@@ -164,10 +160,6 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install git >= 2.42
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-remote-cacher test-check'
@@ -181,7 +173,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     services:
       mysql:
@@ -197,10 +189,10 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install dependencies & git >= 2.42
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git git-lfs
+      - name: install dependencies
+        run: apt-get update -qq && apt-get -q install -qq -y git-lfs
+        env:
+          DEBIAN_FRONTEND: noninteractive
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-mysql-migration test-mysql'
@@ -212,7 +204,7 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     services:
       minio:
@@ -235,10 +227,10 @@ jobs:
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install dependencies & git >= 2.42
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git git-lfs
+      - name: install dependencies
+        run: apt-get update -qq && apt-get -q install -qq -y git-lfs
+        env:
+          DEBIAN_FRONTEND: noninteractive
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-pgsql-migration test-pgsql'
@@ -252,15 +244,15 @@ jobs:
     runs-on: docker
     needs: [backend-checks, frontend-checks]
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
       - uses: ./.forgejo/workflows-composite/setup-env
-      - name: install dependencies & git >= 2.42
-        uses: ./.forgejo/workflows-composite/apt-install-from
-        with:
-          packages: git git-lfs
+      - name: install dependencies
+        run: apt-get update -qq && apt-get -q install -qq -y git-lfs
+        env:
+          DEBIAN_FRONTEND: noninteractive
       - uses: ./.forgejo/workflows-composite/build-backend
       - run: |
           su forgejo -c 'make test-sqlite-migration test-sqlite'
@@ -280,7 +272,7 @@ jobs:
       - test-remote-cacher
       - test-unit
     container:
-      image: 'data.forgejo.org/oci/node:22-bookworm'
+      image: 'data.forgejo.org/oci/node:22-trixie'
       options: --tmpfs /tmp:exec,noatime
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
