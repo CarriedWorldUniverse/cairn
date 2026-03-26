@@ -102,7 +102,7 @@ require (
 	go.uber.org/mock v0.5.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/image v0.38.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 	golang.org/x/oauth2 v0.28.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.41.0
