@@ -5,11 +5,13 @@ package packages
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/optional"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
@@ -153,6 +155,25 @@ func HasVersionFileReferences(ctx context.Context, versionID int64) (bool, error
 	return db.GetEngine(ctx).Get(&PackageFile{
 		VersionID: versionID,
 	})
+}
+
+func (pv *PackageVersion) LockForUpdate(ctx context.Context) error {
+	if !db.InTransaction(ctx) {
+		return errors.New("invalid state for PackageVersion.LockForUpdate: database is not in a transaction")
+	} else if setting.Database.Type.IsSQLite3() {
+		// SQLite both doesn't support "SELECT ... FOR UPDATE", and it's irrelevant for SQLite as the entire database is
+		// locked for write when a write transaction is open.
+		return nil
+	}
+
+	pvfu := PackageVersion{}
+	has, err := db.GetEngine(ctx).ID(pv.ID).ForUpdate().Get(&pvfu)
+	if err != nil {
+		return err
+	} else if !has {
+		return ErrPackageNotExist
+	}
+	return nil
 }
 
 // SearchValue describes a value to search
