@@ -6,6 +6,8 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 
 	"xorm.io/builder"
 	"xorm.io/xorm"
@@ -415,4 +417,43 @@ func inTransaction(ctx context.Context) (*xorm.Session, bool) {
 	default:
 		return nil, false
 	}
+}
+
+type RetryConfig struct {
+	ErrorIs      []error
+	AttemptCount int
+}
+
+// Execute the given function in a transaction. RetryConfig will retry the function on an error, if it matches the
+// ErrorIs parameter, up to the total of AttemptCount number of tries. RetryTx cannot be invoked when already within a
+// transaction and will return an error immediately.
+func RetryTx(ctx context.Context, config RetryConfig, f func(ctx context.Context) error) error {
+	if InTransaction(ctx) {
+		return errors.New("unsupported operation: attempted to use RetryTx while already within a transaction")
+	} else if config.AttemptCount == 0 {
+		return errors.New("unsupported operation: attempted to use RetryTx with 0 attempts")
+	}
+
+	var lastError error
+	for range config.AttemptCount {
+		err := WithTx(ctx, f)
+		if err == nil {
+			return nil
+		}
+
+		foundMatch := false
+		for _, possibleError := range config.ErrorIs {
+			if errors.Is(err, possibleError) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			return err
+		}
+
+		lastError = err
+	}
+
+	return fmt.Errorf("retry tx failed after %d attempts; last error: %w", config.AttemptCount, lastError)
 }

@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 
 	"forgejo.org/models/db"
@@ -19,12 +20,39 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	debian_module "forgejo.org/modules/packages/debian"
+	"forgejo.org/modules/setting"
 	"forgejo.org/tests"
 
 	"github.com/blakesmith/ar"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func createDebianArchive(name, version, architecture, packageDescription string) io.Reader {
+	var cbuf bytes.Buffer
+	zw := gzip.NewWriter(&cbuf)
+	tw := tar.NewWriter(zw)
+	tw.WriteHeader(&tar.Header{
+		Name: "control",
+		Mode: 0o600,
+		Size: 50,
+	})
+	fmt.Fprintf(tw, "Package: %s\nVersion: %s\nArchitecture: %s\nDescription: %s\n", name, version, architecture, packageDescription)
+	tw.Close()
+	zw.Close()
+
+	var buf bytes.Buffer
+	aw := ar.NewWriter(&buf)
+	aw.WriteGlobalHeader()
+	hdr := &ar.Header{
+		Name: "control.tar.gz",
+		Mode: 0o600,
+		Size: int64(cbuf.Len()),
+	}
+	aw.WriteHeader(hdr)
+	aw.Write(cbuf.Bytes())
+	return &buf
+}
 
 func TestPackageDebian(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
@@ -34,32 +62,6 @@ func TestPackageDebian(t *testing.T) {
 	packageVersion := "1.0.3"
 	packageVersion2 := "1.0.4"
 	packageDescription := "Package Description"
-
-	createArchive := func(name, version, architecture string) io.Reader {
-		var cbuf bytes.Buffer
-		zw := gzip.NewWriter(&cbuf)
-		tw := tar.NewWriter(zw)
-		tw.WriteHeader(&tar.Header{
-			Name: "control",
-			Mode: 0o600,
-			Size: 50,
-		})
-		fmt.Fprintf(tw, "Package: %s\nVersion: %s\nArchitecture: %s\nDescription: %s\n", name, version, architecture, packageDescription)
-		tw.Close()
-		zw.Close()
-
-		var buf bytes.Buffer
-		aw := ar.NewWriter(&buf)
-		aw.WriteGlobalHeader()
-		hdr := &ar.Header{
-			Name: "control.tar.gz",
-			Mode: 0o600,
-			Size: int64(cbuf.Len()),
-		}
-		aw.WriteHeader(hdr)
-		aw.Write(cbuf.Bytes())
-		return &buf
-	}
 
 	distributions := []string{"test", "gitea"}
 	components := []string{"main", "stable"}
@@ -97,16 +99,16 @@ func TestPackageDebian(t *testing.T) {
 								AddBasicAuth(user.Name)
 							MakeRequest(t, req, http.StatusBadRequest)
 
-							req = NewRequestWithBody(t, "PUT", uploadURL, createArchive("", "", "")).
+							req = NewRequestWithBody(t, "PUT", uploadURL, createDebianArchive("", "", "", packageDescription)).
 								AddBasicAuth(user.Name)
 							MakeRequest(t, req, http.StatusBadRequest)
 
-							req = NewRequestWithBody(t, "PUT", uploadURL, createArchive(packageName, packageVersion, architecture)).
+							req = NewRequestWithBody(t, "PUT", uploadURL, createDebianArchive(packageName, packageVersion, architecture, packageDescription)).
 								AddBasicAuth(user.Name).
 								SetHeader("content-type", "multipart/form-data")
 							MakeRequest(t, req, http.StatusBadRequest)
 
-							req = NewRequestWithBody(t, "PUT", uploadURL, createArchive(packageName, packageVersion, architecture)).
+							req = NewRequestWithBody(t, "PUT", uploadURL, createDebianArchive(packageName, packageVersion, architecture, packageDescription)).
 								AddBasicAuth(user.Name)
 							MakeRequest(t, req, http.StatusCreated)
 
@@ -154,7 +156,7 @@ func TestPackageDebian(t *testing.T) {
 								return seen
 							})
 
-							req = NewRequestWithBody(t, "PUT", uploadURL, createArchive(packageName, packageVersion, architecture)).
+							req = NewRequestWithBody(t, "PUT", uploadURL, createDebianArchive(packageName, packageVersion, architecture, packageDescription)).
 								AddBasicAuth(user.Name)
 							MakeRequest(t, req, http.StatusConflict)
 						})
@@ -171,7 +173,7 @@ func TestPackageDebian(t *testing.T) {
 						t.Run("Packages", func(t *testing.T) {
 							defer tests.PrintCurrentTest(t)()
 
-							req := NewRequestWithBody(t, "PUT", uploadURL, createArchive(packageName, packageVersion2, architecture)).
+							req := NewRequestWithBody(t, "PUT", uploadURL, createDebianArchive(packageName, packageVersion2, architecture, packageDescription)).
 								AddBasicAuth(user.Name)
 							MakeRequest(t, req, http.StatusCreated)
 
@@ -306,5 +308,52 @@ func TestPackageDebian(t *testing.T) {
 		body = resp.Body.String()
 		assert.NotContains(t, body, fmt.Sprintf("Version: %s", packageVersion))
 		require.Contains(t, body, fmt.Sprintf("Version: %s", packageVersion2))
+	})
+}
+
+func TestPackageDebianConcurrent(t *testing.T) {
+	if setting.Database.Type.IsSQLite3() {
+		// Concurrency test fails on SQLite w/ "database is locked"
+		t.Skip()
+	}
+
+	defer tests.PrepareTestEnv(t)()
+
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+	distribution := "test"
+	component := "main"
+	architecture := "amd64"
+	packageName := "gitea"
+	packageDescription := "Package Description"
+
+	rootURL := fmt.Sprintf("/api/packages/%s/debian", user.Name)
+	uploadURL := fmt.Sprintf("%s/pool/%s/%s/upload", rootURL, distribution, component)
+
+	t.Run("Concurrent Upload", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		var wg sync.WaitGroup
+		packageCount := 10
+		for i := range packageCount {
+			wg.Go(func() {
+				req := NewRequestWithBody(t, "PUT", uploadURL,
+					createDebianArchive(packageName, fmt.Sprintf("1.0.%d", i), architecture, packageDescription)).
+					AddBasicAuth(user.Name)
+				MakeRequest(t, req, http.StatusCreated)
+			})
+		}
+		wg.Wait()
+
+		url := fmt.Sprintf("%s/dists/%s/%s/binary-%s/Packages", rootURL, distribution, component, architecture)
+
+		req := NewRequest(t, "GET", url)
+		resp := MakeRequest(t, req, http.StatusOK)
+		body := resp.Body.String()
+
+		assert.Contains(t, body, fmt.Sprintf("Package: %s\n", packageName))
+		for i := range packageCount {
+			assert.Contains(t, body, fmt.Sprintf("Version: 1.0.%d\n", i))
+		}
 	})
 }
