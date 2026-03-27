@@ -220,3 +220,59 @@ func TestAfterTx(t *testing.T) {
 		})
 	}
 }
+
+func TestRetryTx(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		err := db.RetryTx(t.Context(), db.RetryConfig{AttemptCount: 1}, func(ctx context.Context) error {
+			assert.True(t, db.InTransaction(ctx))
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("fail constantly", func(t *testing.T) {
+		attemptCount := 0
+		testError := errors.New("hello")
+		err := db.RetryTx(t.Context(), db.RetryConfig{
+			AttemptCount: 2,
+			ErrorIs:      []error{testError},
+		}, func(ctx context.Context) error {
+			attemptCount++
+			return testError
+		})
+		require.ErrorIs(t, err, testError)
+		require.ErrorContains(t, err, "2 attempts")
+		assert.Equal(t, 2, attemptCount)
+	})
+
+	t.Run("fail w/ non retriable error", func(t *testing.T) {
+		attemptCount := 0
+		testError := errors.New("hello")
+		err := db.RetryTx(t.Context(), db.RetryConfig{
+			AttemptCount: 2,
+			ErrorIs:      []error{},
+		}, func(ctx context.Context) error {
+			attemptCount++
+			return testError
+		})
+		require.ErrorIs(t, err, testError)
+		assert.Equal(t, 1, attemptCount)
+	})
+
+	t.Run("succeed on retry", func(t *testing.T) {
+		attemptCount := 0
+		testError := errors.New("hello")
+		err := db.RetryTx(t.Context(), db.RetryConfig{
+			AttemptCount: 2,
+			ErrorIs:      []error{testError},
+		}, func(ctx context.Context) error {
+			attemptCount++
+			if attemptCount == 1 {
+				return testError
+			}
+			return nil
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 2, attemptCount)
+	})
+}

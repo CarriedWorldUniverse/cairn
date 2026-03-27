@@ -23,6 +23,8 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/storage"
 	notify_service "forgejo.org/services/notify"
+
+	"xorm.io/xorm"
 )
 
 var (
@@ -76,38 +78,54 @@ func CreatePackageOrAddFileToExisting(ctx context.Context, pvci *PackageCreation
 }
 
 func createPackageAndAddFile(ctx context.Context, pvci *PackageCreationInfo, pfci *PackageFileCreationInfo, allowDuplicate bool) (*packages_model.PackageVersion, *packages_model.PackageFile, error) {
-	dbCtx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer committer.Close()
+	var pv *packages_model.PackageVersion
+	var pf *packages_model.PackageFile
+	var blobHash256Created optional.Option[string]
+	var createdPackage bool
 
-	pv, created, err := createPackageAndVersion(dbCtx, pvci, allowDuplicate)
-	if err != nil {
-		return nil, nil, err
-	}
+	// ErrUniqueConstraintViolation can occur when two concurrent updates occur to a package registry. Typically this
+	// occurs when a registry with an index of organization-level packages is modified (Debian, Alpine, Alt, Arch, RPM)
+	// and that index needs to be rebuilt -- even if two different packages are being updated, they can write the
+	// registry concurrently and that can cause ErrUniqueConstraintViolation errors from the database operations that
+	// "check if record exists, if not, create it".
+	//
+	// The simple approach of detecting the ErrUniqueConstraintViolation error inside the transaction and picking up the
+	// other write isn't possible for two reasons: (a) PostgreSQL can't continue a transaction with an error in it, a
+	// SAVEPOINT and ROLLBACK TO SAVEPOINT are required, and (b) xorm keeps internal state during a transaction that
+	// causes such a recovery from error to panic.  So, we retry the entire modification transaction if
+	// ErrUniqueConstraintViolation is encountered.
+	err := db.RetryTx(ctx, db.RetryConfig{
+		// A single retry is sufficient as any package index that was concurrently modified should now be present:
+		AttemptCount: 2,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+	}, func(ctx context.Context) error {
+		var err error
+		var pb *packages_model.PackageBlob
+		var blobCreated bool
 
-	pf, pb, blobCreated, err := addFileToPackageVersion(dbCtx, pv, &pvci.PackageInfo, pfci)
-	removeBlob := false
-	defer func() {
-		if blobCreated && removeBlob {
-			contentStore := packages_module.NewContentStore()
-			if err := contentStore.Delete(packages_module.BlobHash256Key(pb.HashSHA256)); err != nil {
+		pv, createdPackage, err = createPackageAndVersion(ctx, pvci, allowDuplicate)
+		if err != nil {
+			return err
+		}
+
+		pf, pb, blobCreated, err = addFileToPackageVersion(ctx, pv, &pvci.PackageInfo, pfci)
+		if blobCreated {
+			blobHash256Created = optional.Some(pb.HashSHA256)
+		}
+		return err
+	})
+	if err != nil {
+		// If we have an error later in the process after writing a blob to the content store, make our best effort to
+		// remove the content -- it won't be referenced in the DB because the transaction would be rolled back.
+		if has, hash := blobHash256Created.Get(); has {
+			if err := packages_module.NewContentStore().Delete(packages_module.BlobHash256Key(hash)); err != nil {
 				log.Error("Error deleting package blob from content store: %v", err)
 			}
 		}
-	}()
-	if err != nil {
-		removeBlob = true
 		return nil, nil, err
 	}
 
-	if err := committer.Commit(); err != nil {
-		removeBlob = true
-		return nil, nil, err
-	}
-
-	if created {
+	if createdPackage {
 		pd, err := packages_model.GetPackageDescriptor(ctx, pv)
 		if err != nil {
 			return nil, nil, err
@@ -213,29 +231,33 @@ func AddFileToPackageVersionInternal(ctx context.Context, pv *packages_model.Pac
 }
 
 func addFileToPackageWrapper(ctx context.Context, fn func(ctx context.Context) (*packages_model.PackageFile, *packages_model.PackageBlob, bool, error)) (*packages_model.PackageFile, error) {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer committer.Close()
+	var pf *packages_model.PackageFile
+	var pb *packages_model.PackageBlob
+	var blobHash256Created optional.Option[string]
 
-	pf, pb, blobCreated, err := fn(ctx)
-	removeBlob := false
-	defer func() {
-		if removeBlob {
-			contentStore := packages_module.NewContentStore()
-			if err := contentStore.Delete(packages_module.BlobHash256Key(pb.HashSHA256)); err != nil {
+	// See comment in createPackageAndAddFile which explains why RetryTx is used with ErrUniqueConstraintViolation.
+	err := db.RetryTx(ctx, db.RetryConfig{
+		// A single retry is sufficient as any package index that was concurrently modified should now be present:
+		AttemptCount: 2,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+	}, func(ctx context.Context) error {
+		var err error
+		var blobCreated bool
+
+		pf, pb, blobCreated, err = fn(ctx)
+		if blobCreated {
+			blobHash256Created = optional.Some(pb.HashSHA256)
+		}
+		return err
+	})
+	if err != nil {
+		// If we have an error later in the process after writing a blob to the content store, make our best effort to
+		// remove the content -- it won't be referenced in the DB because the transaction would be rolled back.
+		if has, hash := blobHash256Created.Get(); has {
+			if err := packages_module.NewContentStore().Delete(packages_module.BlobHash256Key(hash)); err != nil {
 				log.Error("Error deleting package blob from content store: %v", err)
 			}
 		}
-	}()
-	if err != nil {
-		removeBlob = blobCreated
-		return nil, err
-	}
-
-	if err := committer.Commit(); err != nil {
-		removeBlob = blobCreated
 		return nil, err
 	}
 
@@ -266,6 +288,20 @@ func addFileToPackageVersion(ctx context.Context, pv *packages_model.PackageVers
 
 func addFileToPackageVersionUnchecked(ctx context.Context, pv *packages_model.PackageVersion, pfci *PackageFileCreationInfo, packageType packages_model.Type) (*packages_model.PackageFile, *packages_model.PackageBlob, bool, error) {
 	log.Trace("Adding package file: %v, %s", pv.ID, pfci.Filename)
+
+	// The `OverwriteExisting` capability in this method has a race condition in it -- it will check if the file already
+	// exists in the package, and delete the file's properties and the file, and then it will attempt to insert the new
+	// file.  This can cause the `ErrDuplicatePackageFile` error to be returned even when `OverwriteExisting` in
+	// concurrent modifications, as both modifications will attempt to delete the existing file, one will succeed, one
+	// will delete zero records and think it succeeded, and then both will attempt to add the file and one will hit
+	// `ErrDuplicatePackageFile`.
+	//
+	// To address this, lock the package version being modified by performing a `SELECT ... FOR UPDATE` on it,
+	// guaranteeing only one `addFileToPackageVersionUnchecked` is running on a specific package version.
+	err := pv.LockForUpdate(ctx)
+	if err != nil {
+		return nil, nil, false, err
+	}
 
 	pb, exists, err := packages_model.GetOrInsertBlob(ctx, NewPackageBlob(pfci.Data))
 	if err != nil {
@@ -430,7 +466,12 @@ func CheckSizeQuotaExceeded(ctx context.Context, doer, owner *user_model.User, p
 func GetOrCreateInternalPackageVersion(ctx context.Context, ownerID int64, packageType packages_model.Type, name, version string) (*packages_model.PackageVersion, error) {
 	var pv *packages_model.PackageVersion
 
-	return pv, db.WithTx(ctx, func(ctx context.Context) error {
+	// See comment in createPackageAndAddFile which explains why RetryTx is used with ErrUniqueConstraintViolation.
+	return pv, db.RetryTx(ctx, db.RetryConfig{
+		// A single retry is sufficient as any package index that was concurrently modified should now be present:
+		AttemptCount: 2,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+	}, func(ctx context.Context) error {
 		p := &packages_model.Package{
 			OwnerID:    ownerID,
 			Type:       packageType,
