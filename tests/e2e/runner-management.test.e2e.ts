@@ -134,7 +134,7 @@ test.describe('Runners of user2', () => {
 
     await expect(page.getByRole('heading', {name: 'Using program options'})).toBeVisible();
     await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--uuid ${runnerUUID}`);
-    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--token ${runnerToken}`);
+    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`echo -n "${runnerToken}"`);
 
     // Go back to list of runners.
     await page.getByRole('link', {name: 'List of runners', exact: true}).click();
@@ -238,7 +238,7 @@ test.describe('Runners of user2', () => {
 
     await expect(page.getByRole('heading', {name: 'Using program options'})).toBeVisible();
     await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--uuid ${runnerUUID}`);
-    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--token ${runnerToken}`);
+    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`echo -n "${runnerToken}"`);
   });
 
   test('delete runner', async ({page}) => {
@@ -425,7 +425,7 @@ test.describe('Global runners', () => {
 
     await expect(page.getByRole('heading', {name: 'Using program options'})).toBeVisible();
     await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--uuid ${runnerUUID}`);
-    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`--token ${runnerToken}`);
+    await expect(page.getByLabel('How to invoke forgejo-runner')).toContainText(`echo -n "${runnerToken}"`);
 
     // Go back to list of runners.
     await page.getByRole('link', {name: 'List of runners', exact: true}).click();
