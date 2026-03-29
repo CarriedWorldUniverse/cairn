@@ -43,10 +43,12 @@
 </code></pre>
 		<p>{{ctx.Locale.Tr "actions.runners.runner_setup.instruction_replace_connection_name"}}</p>
 		<h5>{{ctx.Locale.Tr "actions.runners.runner_setup.heading_using_options"}}</h5>
-		<pre><code aria-label="{{ctx.Locale.Tr "actions.runners.runner_setup.program_options_snippet_aria"}}">forgejo-runner daemon \
+		<pre><code aria-label="{{ctx.Locale.Tr "actions.runners.runner_setup.program_options_snippet_aria"}}">$ echo -n &quot;{{.Runner.Token}}&quot; > /path/to/runner-token
+$ forgejo-runner daemon \
 	--url {{.AppURL}} \
 	--uuid {{.Runner.UUID}} \
-	--token {{.Runner.Token}}
+	--token-url file:///path/to/runner-token \
+	--label docker:docker://node:lts
 </code></pre>
 		<p>{{ctx.Locale.Tr "actions.runners.runner_setup.instruction_advanced_configurations"}}</p>
 	</div>
