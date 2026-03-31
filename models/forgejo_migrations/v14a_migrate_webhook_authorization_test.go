@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	migration_tests "forgejo.org/models/gitea_migrations/test"
-	webhook_model "forgejo.org/models/webhook"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/timeutil"
 	webhook_module "forgejo.org/modules/webhook"
@@ -17,6 +16,7 @@ import (
 )
 
 func Test_MigrateWebhookSecrets(t *testing.T) {
+	type HookContentType int
 	type Webhook struct {
 		ID              int64 `xorm:"pk autoincr"`
 		RepoID          int64 `xorm:"INDEX"`
@@ -24,7 +24,7 @@ func Test_MigrateWebhookSecrets(t *testing.T) {
 		IsSystemWebhook bool
 		URL             string `xorm:"url TEXT"`
 		HTTPMethod      string `xorm:"http_method"`
-		ContentType     webhook_model.HookContentType
+		ContentType     HookContentType
 		Secret          string                  `xorm:"TEXT"`
 		Events          string                  `xorm:"TEXT"`
 		IsActive        bool                    `xorm:"INDEX"`
@@ -45,7 +45,7 @@ func Test_MigrateWebhookSecrets(t *testing.T) {
 		IsSystemWebhook bool
 		URL             string `xorm:"url TEXT"`
 		HTTPMethod      string `xorm:"http_method"`
-		ContentType     webhook_model.HookContentType
+		ContentType     HookContentType
 		Secret          string                  `xorm:"TEXT"`
 		Events          string                  `xorm:"TEXT"`
 		IsActive        bool                    `xorm:"INDEX"`

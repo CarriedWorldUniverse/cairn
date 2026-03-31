@@ -8,11 +8,11 @@ import (
 	"fmt"
 
 	"forgejo.org/models/db"
-	webhook_model "forgejo.org/models/webhook"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/secret"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/timeutil"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"
@@ -26,6 +26,16 @@ func init() {
 }
 
 func migrateWebhookSecrets(x *xorm.Engine) error {
+	type Webhook struct {
+		ID                           int64  `xorm:"pk autoincr"`
+		RepoID                       int64  `xorm:"INDEX"` // An ID of 0 indicates either a default or system webhook
+		OwnerID                      int64  `xorm:"INDEX"`
+		HeaderAuthorizationEncrypted []byte `xorm:"BLOB"`
+
+		CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
+		UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
+	}
+
 	return db.WithTx(db.DefaultContext, func(ctx context.Context) error {
 		sess := db.GetEngine(ctx)
 
@@ -59,7 +69,7 @@ func migrateWebhookSecrets(x *xorm.Engine) error {
 		messages := make([]string, 0, 100)
 		ids := make([]int64, 0, 100)
 
-		err := db.Iterate(ctx, nil, func(ctx context.Context, bean *webhook_model.Webhook) error {
+		err := db.Iterate(ctx, nil, func(ctx context.Context, bean *Webhook) error {
 			if len(bean.HeaderAuthorizationEncrypted) == 0 {
 				return nil
 			}
@@ -83,7 +93,7 @@ func migrateWebhookSecrets(x *xorm.Engine) error {
 					log.Error("migration[v14a_migrate_webhook_authorization]: %s", message)
 				}
 
-				_, err = sess.In("id", ids).NoAutoCondition().NoAutoTime().Delete(&webhook_model.Webhook{})
+				_, err = sess.In("id", ids).NoAutoCondition().NoAutoTime().Delete(&Webhook{})
 			}
 		}
 		return err
