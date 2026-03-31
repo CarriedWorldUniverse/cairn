@@ -97,6 +97,36 @@ func TestSigninWithRememberMe(t *testing.T) {
 	session.MakeRequest(t, req, http.StatusOK)
 }
 
+func TestProviderDisplayNameIsPathEscaped(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	testCases := []string{
+		"sla/shed",
+		"per%cent",
+		"que?ry=string",
+		"ha#sh",
+		"spa ce",     // doesn't break the path
+		"pl+us",      // unchanged by url.PathEscape
+		"amper&sand", // unchanged by url.PathEscape
+	}
+
+	for _, testCase := range testCases {
+		// GitLab is only used here for convenience.
+		addAuthSource(t, authSourcePayloadGitLabCustom(testCase))
+	}
+
+	request := NewRequest(t, "GET", "/user/login")
+	response := MakeRequest(t, request, http.StatusOK)
+	htmlDoc := NewHTMLParser(t, response.Body)
+
+	for _, testCase := range testCases {
+		t.Run(testCase, func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			htmlDoc.AssertElement(t, fmt.Sprintf("a.oauth-login-link[href='/user/oauth2/%s']", url.PathEscape(testCase)), true)
+		})
+	}
+}
+
 func TestDisableSignin(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	// Mock alternative auth ways as enabled
