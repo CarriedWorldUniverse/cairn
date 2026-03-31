@@ -361,6 +361,11 @@ a.label,
   background: var(--color-hover);
 }
 
+.ui.search > .results .content {
+  padding: 0;
+  background: none;
+}
+
 .inline-code-block {
   padding: 2px 4px;
   border-radius: .24em;

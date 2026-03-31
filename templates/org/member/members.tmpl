@@ -4,6 +4,14 @@
 	<div class="ui container">
 		{{template "base/alert" .}}
 
+		{{if $.IsOrganizationOwner}}
+			<div class="text right">
+				<button class="primary button" id="add-org-member-button">
+				{{svg "octicon-plus"}} {{ctx.Locale.Tr "members.add_member"}}
+				</button>
+			</div>
+			<div class="divider"></div>
+		{{end}}
 		<div class="list">
 			{{range $idx, $_ := .Members}}
 				{{if ne $idx 0}}
@@ -87,5 +95,6 @@
 	</div>
 	{{template "base/modal_actions_confirm" .}}
 </div>
+{{template "org/member/add_org_member" .}}
 
 {{template "base/footer" .}}
