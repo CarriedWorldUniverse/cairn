@@ -202,3 +202,8 @@
 .org-team-navbar .active.item {
   background: var(--color-box-body) !important;
 }
+
+#add-member-modal .team-list {
+  max-height: 300px;
+  overflow-y: auto;
+}

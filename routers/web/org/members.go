@@ -5,10 +5,12 @@
 package org
 
 import (
+	"fmt"
 	"net/http"
 
 	"forgejo.org/models"
 	"forgejo.org/models/organization"
+	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
@@ -67,8 +69,14 @@ func Members(ctx *context.Context) {
 		ctx.ServerError("GetMembers", err)
 		return
 	}
+	teams, err := organization.FindOrgTeams(ctx, org.ID)
+	if err != nil {
+		ctx.ServerError("GetTeams", err)
+		return
+	}
 	ctx.Data["Page"] = pager
 	ctx.Data["Members"] = members
+	ctx.Data["Teams"] = teams
 	ctx.Data["MembersIsPublicMember"] = membersIsPublic
 	ctx.Data["MembersIsUserOrgOwner"] = organization.IsUserOrgOwner(ctx, members, org.ID)
 	ctx.Data["MembersTwoFaStatus"] = members.GetTwoFaStatus(ctx)
@@ -110,6 +118,59 @@ func MembersAction(ctx *context.Context) {
 			ctx.JSONRedirect(ctx.Org.OrgLink + "/members")
 			return
 		}
+	case "add":
+		if !ctx.Org.IsOwner {
+			ctx.Error(http.StatusNotFound)
+			return
+		}
+		uname := ctx.FormString("uname")
+		var u *user_model.User
+		u, err = user_model.GetUserByName(ctx, uname)
+		if err != nil {
+			ctx.ServerError("GetUserByName", err)
+			return
+		}
+
+		if u.IsOrganization() {
+			ctx.Flash.Error(ctx.Tr("form.cannot_add_org_to_team"))
+			ctx.Redirect(ctx.Org.OrgLink + "/members")
+			return
+		}
+
+		alreadyMember, err := ctx.Org.Organization.IsOrgMember(ctx, u.ID)
+		if err != nil {
+			ctx.ServerError("IsOrgMember", err)
+			return
+		}
+		if alreadyMember {
+			ctx.Flash.Error(ctx.Tr("members.user_already_member"))
+			ctx.Redirect(ctx.Org.OrgLink + "/members")
+			return
+		}
+
+		teams, err := organization.FindOrgTeams(ctx, org.ID)
+		if err != nil {
+			ctx.ServerError("GetTeams", err)
+			return
+		}
+		addedToTeam := false
+		for _, team := range teams {
+			addToTeam := ctx.FormBool(fmt.Sprintf("team_%d", team.ID))
+			if addToTeam {
+				err = models.AddTeamMember(ctx, team, u.ID)
+				if err != nil {
+					ctx.ServerError("AddTeamMember", err)
+					return
+				}
+				addedToTeam = true
+			}
+		}
+
+		if !addedToTeam {
+			ctx.Flash.Error(ctx.Tr("members.no_team_selected"))
+		}
+		ctx.Redirect(ctx.Org.OrgLink + "/members")
+		return
 	case "leave":
 		err = models.RemoveOrgUser(ctx, org.ID, ctx.Doer.ID)
 		if err == nil {

@@ -64,6 +64,7 @@ import {initOrgTeamSearchRepoBox} from './features/org-team.js';
 import {initUserAuthWebAuthn, initUserAuthWebAuthnRegister} from './features/user-auth-webauthn.js';
 import {initRepoRelease, initRepoReleaseNew} from './features/repo-release.js';
 import {initRepoEditor} from './features/repo-editor.js';
+import {initAddOrgMemberButton} from './features/add-org-member.ts';
 import {initCompSearchUserBox} from './features/comp/SearchUserBox.js';
 import {initInstall} from './features/install.js';
 import {initCompWebHookEditor} from './features/comp/WebHookEditor.js';
@@ -152,6 +153,7 @@ onDomReady(() => {
   initRepoEllipsisButton();
   initRepoDiffCommitBranchesAndTags();
   initRepoEditor();
+  initAddOrgMemberButton();
   initRepoGraphGit();
   initRepoIssueContentHistory();
   initRepoIssueDue();
