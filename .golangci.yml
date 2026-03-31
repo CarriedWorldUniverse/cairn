@@ -45,6 +45,25 @@ linters:
               desc: use forgejo.org/modules/git instead, see https://codeberg.org/forgejo/forgejo/pulls/4941
             - pkg: gopkg.in/yaml.v3
               desc: use go.yaml.in/yaml instead, see https://codeberg.org/forgejo/forgejo/pulls/8956
+        migration-isolation:
+          list-mode: lax
+          files:
+            - "**/models/forgejo_migrations/**"
+          deny:
+            - pkg: "forgejo.org/models"
+              desc: >
+                Migrations must not import application models. Application models will be the most recent schema for
+                Forgejo, while migrations will be operating against the database schema that existed when they were
+                authored.
+            - pkg: "forgejo.org/services"
+              desc: >
+                Migrations must not import application services. Application services will reference application
+                models which will use the most recent schema for Forgejo, while migrations will be operating against the
+                database schema that existed when they were authored.
+          allow:
+            - "forgejo.org/models/db"
+            - "forgejo.org/models/gitea_migrations/base"
+            - "forgejo.org/models/gitea_migrations/test"
     gocritic:
       disabled-checks:
         - ifElseChain
