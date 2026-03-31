@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"forgejo.org/models/db"
 	packages_model "forgejo.org/models/packages"
 	debian_model "forgejo.org/models/packages/debian"
 	user_model "forgejo.org/models/user"
@@ -28,6 +29,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/ulikunitz/xz"
+	"xorm.io/xorm"
 )
 
 // GetOrCreateRepositoryVersion gets or creates the internal repository package
@@ -308,7 +310,21 @@ func buildReleaseFiles(ctx context.Context, ownerID int64, repoVersion *packages
 
 	sort.Strings(architectures)
 
-	priv, _, err := GetOrCreateKeyPair(ctx, ownerID)
+	// ErrUniqueConstraintViolation can occur rarely when two concurrent updates occur to the same organization and
+	// `GetOrCreateKeyPair` ends up being invoked simulatneously, which writes to `user_setting` to store a GPG key for
+	// the `Release.gpg` file.  In that event, retry the rebuild.
+	//
+	// See comment in package services' createPackageAndAddFile for why we cannot recover from the error in any other
+	// way.
+	var priv string
+	err = db.RetryTx(ctx, db.RetryConfig{
+		// A single retry is sufficient the user/org's key pair would have been created by the first successful tx.
+		AttemptCount: 2,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+	}, func(ctx context.Context) error {
+		priv, _, err = GetOrCreateKeyPair(ctx, ownerID)
+		return err
+	})
 	if err != nil {
 		return err
 	}
