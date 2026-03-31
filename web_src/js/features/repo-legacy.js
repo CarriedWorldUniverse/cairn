@@ -90,6 +90,9 @@ export function initRepoCommentForm() {
     $(`.${selector}`).dropdown({
       'action': 'nothing', // do not hide the menu if user presses Enter
       fullTextSearch: 'exact',
+      selector: {
+        unselectable: '.disabled, .filtered, .tw-hidden',
+      },
       async onHide() {
         hasUpdateAction = $listMenu.data('action') === 'update'; // Update the var
         if (hasUpdateAction) {
