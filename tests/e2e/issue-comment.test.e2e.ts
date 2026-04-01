@@ -331,7 +331,7 @@ test('Emoji suggestions', async ({page}) => {
   ];
 
   for (const {emoji, name} of expectedSuggestions) {
-    const item = suggestionList.locator(`li:has-text("${name}")`);
+    const item = suggestionList.locator(`[id="combobox-emoji-${name}"]`);
     await expect(item).toContainText(`${emoji} ${name}`);
   }
 

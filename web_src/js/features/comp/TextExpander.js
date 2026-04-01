@@ -12,6 +12,7 @@ export function initTextExpander(expander) {
       ul.classList.add('suggestions');
       for (const name of matches) {
         const li = document.createElement('li');
+        li.setAttribute('id', `combobox-emoji-${name}`);
         li.setAttribute('role', 'option');
         li.setAttribute('data-value', emojiString(name));
         if (customEmojis.has(name)) {
@@ -33,10 +34,12 @@ export function initTextExpander(expander) {
       ul.classList.add('suggestions');
       for (const {value, name, fullname, avatar} of matches) {
         const li = document.createElement('li');
+        li.setAttribute('id', `combobox-user-${name}`);
         li.setAttribute('role', 'option');
         li.setAttribute('data-value', `${key}${value}`);
 
         const img = document.createElement('img');
+        img.setAttribute('aria-hidden', 'true');
         img.src = avatar;
         li.append(img);
 
