@@ -83,7 +83,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.11.1",
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.1",
-    "@playwright/test": "1.57.0",
+    "@playwright/test": "1.58.2",
     "@stoplight/spectral-cli": "6.15.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "@stylistic/stylelint-plugin": "4.0.1",
