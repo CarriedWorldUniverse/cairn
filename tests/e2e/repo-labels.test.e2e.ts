@@ -41,3 +41,23 @@ test('Edit label', async ({page}) => {
 
   await expect(page.locator('.label-title').filter({hasText: labelName})).toBeVisible();
 });
+
+test('New label after a failed validation', async ({page}) => {
+  // for issue https://codeberg.org/forgejo/forgejo/issues/11842
+  const response = await page.goto('/user2/repo1/labels');
+  expect(response?.status()).toBe(200);
+
+  await page.getByRole('button', {name: 'New label'}).click();
+  await expect(page.locator('#new-label-modal')).toBeVisible();
+
+  // attempt to submit the form without having filled it first
+  await page.getByRole('button', {name: 'Create label'}).click();
+  await screenshot(page, page.locator('#new-label-modal'));
+
+  // then fill the form and submit it again
+  const labelName = dynamic_id();
+  await page.getByRole('textbox', {name: 'Label name'}).fill(labelName);
+  await page.getByRole('button', {name: 'Create label'}).click();
+
+  await expect(page.locator('.label-title').filter({hasText: labelName})).toBeVisible();
+});
