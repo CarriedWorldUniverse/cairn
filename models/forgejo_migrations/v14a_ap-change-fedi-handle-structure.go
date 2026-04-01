@@ -10,15 +10,14 @@ package forgejo_migrations
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"forgejo.org/models/db"
-	"forgejo.org/models/forgefed"
-	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/validation"
-	user_service "forgejo.org/services/user"
 
 	"xorm.io/xorm"
 )
@@ -31,6 +30,42 @@ func init() {
 }
 
 func changeActivityPubUsernameFormat(x *xorm.Engine) error {
+	type FederationHost struct {
+		ID         int64              `xorm:"pk autoincr"`
+		HostFqdn   string             `xorm:"host_fqdn UNIQUE(federation_host) INDEX VARCHAR(255) NOT NULL"`
+		HostPort   uint16             `xorm:" UNIQUE(federation_host) INDEX NOT NULL DEFAULT 443"`
+		HostSchema string             `xorm:"NOT NULL DEFAULT 'https'"`
+		Created    timeutil.TimeStamp `xorm:"created"`
+		Updated    timeutil.TimeStamp `xorm:"updated"`
+	}
+	type FederatedUser struct {
+		ID                    int64                  `xorm:"pk autoincr"`
+		UserID                int64                  `xorm:"NOT NULL INDEX user_id"`
+		ExternalID            string                 `xorm:"UNIQUE(federation_user_mapping) NOT NULL"`
+		FederationHostID      int64                  `xorm:"UNIQUE(federation_user_mapping) NOT NULL"`
+		KeyID                 sql.NullString         `xorm:"key_id UNIQUE"`
+		PublicKey             sql.Null[sql.RawBytes] `xorm:"BLOB"`
+		InboxPath             string
+		NormalizedOriginalURL string // This field is just to keep original information. Pls. do not use for search or as ID!
+	}
+	type User struct {
+		ID          int64              `xorm:"pk autoincr"`
+		LowerName   string             `xorm:"UNIQUE NOT NULL"`
+		Name        string             `xorm:"UNIQUE NOT NULL"`
+		CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
+		UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
+	}
+	deleteFederatedUser := func(ctx context.Context, userID int64) error {
+		_, err := db.GetEngine(ctx).Delete(&FederatedUser{UserID: userID})
+		return err
+	}
+	userLogString := func(u *User) string {
+		if u == nil {
+			return "<User nil>"
+		}
+		return fmt.Sprintf("<User %d:%s>", u.ID, u.Name)
+	}
+
 	// Normally, the db.WithTx statement ensures that the database transaction (aka. all changes made
 	// by this migration) will only be committed if the SQL operations inside of the iteration
 	// (db.Iterate) don't return an error.
@@ -45,9 +80,9 @@ func changeActivityPubUsernameFormat(x *xorm.Engine) error {
 	// migrations at a later point and has been kept as-is.
 	return db.WithTx(db.DefaultContext, func(ctx context.Context) error {
 		// The transaction is committed only if modifying all federated users is possible.
-		return db.Iterate(ctx, nil, func(ctx context.Context, federatedUser *user_model.FederatedUser) error {
+		return db.Iterate(ctx, nil, func(ctx context.Context, federatedUser *FederatedUser) error {
 			// localUser represents the "local" representation of an ActivityPub (federated) user
-			localUser := &user_model.User{}
+			localUser := &User{}
 			has, err := db.GetEngine(ctx).ID(federatedUser.UserID).Get(localUser)
 			if err != nil {
 				log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while getting local user (ID: %d), ignoring...: %e", federatedUser.UserID, err)
@@ -56,7 +91,7 @@ func changeActivityPubUsernameFormat(x *xorm.Engine) error {
 
 			if !has {
 				log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: User missing for federated user: %v", federatedUser)
-				err := user_model.DeleteFederatedUser(ctx, federatedUser.UserID)
+				err := deleteFederatedUser(ctx, federatedUser.UserID)
 				if err != nil {
 					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while deleting federated user (%s), ignoring...: %e", federatedUser, err)
 					return nil
@@ -68,24 +103,13 @@ func changeActivityPubUsernameFormat(x *xorm.Engine) error {
 			} else {
 				// Copied from models/forgefed/federationhost_repository.go (forgefed.GetFederationHost),
 				// minus some validation code for FederationHost which we do not otherwise manipulate here.
-				federationHost := new(forgefed.FederationHost)
+				federationHost := new(FederationHost)
 				has, err := db.GetEngine(ctx).ID(federatedUser.FederationHostID).Get(federationHost)
 				if err != nil {
 					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while looking up federation host info (for %v), ignoring...: %e", federatedUser, err)
 					return nil
 				} else if !has {
-					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Federation host for federated user missing, deleting: %v", federatedUser)
-					err := user_model.DeleteFederatedUser(ctx, federatedUser.UserID)
-					if err != nil {
-						log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while deleting federated user (%v), ignoring...: %e", federatedUser, err)
-						return nil
-					}
-
-					err = user_service.DeleteUser(ctx, localUser, true)
-					if err != nil {
-						log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while deleting user (%s), ignoring...: %v", localUser.LogString(), err)
-					}
-
+					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Federation host for federated user %s is missing", federatedUser)
 					return nil
 				}
 
@@ -117,10 +141,10 @@ func changeActivityPubUsernameFormat(x *xorm.Engine) error {
 
 				// Implicitly assumes that there won't be a lower name unique constraint violation.
 				// Potentially a bit paranoid, but why not?
-				userThatShouldntExist := &user_model.User{}
+				userThatShouldntExist := &User{}
 				lowernameTaken, err := db.GetEngine(ctx).Where("lower_name = ?", strings.ToLower(newUsername)).Table("user").Get(userThatShouldntExist)
 				if err != nil {
-					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred, skipping migration of %s: %e", localUser.LogString(), err)
+					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred, skipping migration of %s: %e", userLogString(localUser), err)
 					return nil
 				}
 
@@ -128,23 +152,23 @@ func changeActivityPubUsernameFormat(x *xorm.Engine) error {
 					log.Warn(
 						"Migration[v14a_ap-change-fedi-handle-structure]: New username %s for %s already taken by %s, deleting the former...",
 						newUsername,
-						localUser.LogString(),
-						userThatShouldntExist.LogString(),
+						userLogString(localUser),
+						userLogString(userThatShouldntExist),
 					)
-					err := user_model.DeleteFederatedUser(ctx, localUser.ID)
+					err := deleteFederatedUser(ctx, localUser.ID)
 					if err != nil {
-						log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while deleting federated user (%s), ignoring...: %e", localUser.LogString(), err)
+						log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred while deleting federated user (%s), ignoring...: %e", userLogString(localUser), err)
 					}
 					return nil
 				}
 
 				// Safe to assume that the following operations should just work now.
-				log.Info("Migration[v14a_ap-change-fedi-handle-structure]: Updating username of %s to %s", localUser.LogString(), newUsername)
-				if _, err := db.GetEngine(ctx).ID(localUser.ID).Cols("lower_name", "name").Update(&user_model.User{
+				log.Info("Migration[v14a_ap-change-fedi-handle-structure]: Updating username of %s to %s", userLogString(localUser), newUsername)
+				if _, err := db.GetEngine(ctx).ID(localUser.ID).Cols("lower_name", "name").Update(&User{
 					LowerName: strings.ToLower(newUsername),
 					Name:      newUsername,
 				}); err != nil {
-					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred when updating federated user's username (%s), ignoring...: %e", localUser.LogString(), err)
+					log.Warn("Migration[v14a_ap-change-fedi-handle-structure]: Database error occurred when updating federated user's username (%s), ignoring...: %e", userLogString(localUser), err)
 					return nil
 				}
 			}

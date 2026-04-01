@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	admin_model "forgejo.org/models/admin"
 	"forgejo.org/models/db"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/keying"
@@ -17,6 +16,7 @@ import (
 	"forgejo.org/modules/secret"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/structs"
+	"forgejo.org/modules/timeutil"
 
 	"xorm.io/builder"
 	"xorm.io/xorm"
@@ -30,6 +30,19 @@ func init() {
 }
 
 func migrateTaskSecrets(x *xorm.Engine) error {
+	type Task struct {
+		ID             int64
+		DoerID         int64              `xorm:"index"`
+		OwnerID        int64              `xorm:"index"`
+		RepoID         int64              `xorm:"index"`
+		PayloadContent string             `xorm:"TEXT"`
+		Created        timeutil.TimeStamp `xorm:"created"`
+	}
+	taskUpdateCols := func(ctx context.Context, task *Task, cols ...string) error {
+		_, err := db.GetEngine(ctx).ID(task.ID).Cols(cols...).Update(task)
+		return err
+	}
+
 	return db.WithTx(db.DefaultContext, func(ctx context.Context) error {
 		sess := db.GetEngine(ctx)
 
@@ -39,7 +52,7 @@ func migrateTaskSecrets(x *xorm.Engine) error {
 		messages := make([]string, 0, 100)
 		ids := make([]int64, 0, 100)
 
-		err := db.Iterate(ctx, builder.Eq{"type": structs.TaskTypeMigrateRepo}, func(ctx context.Context, bean *admin_model.Task) error {
+		err := db.Iterate(ctx, builder.Eq{"type": structs.TaskTypeMigrateRepo}, func(ctx context.Context, bean *Task) error {
 			var opts migration.MigrateOptions
 			err := json.Unmarshal([]byte(bean.PayloadContent), &opts)
 			if err != nil {
@@ -96,7 +109,7 @@ func migrateTaskSecrets(x *xorm.Engine) error {
 			}
 			bean.PayloadContent = string(bs)
 
-			return bean.UpdateCols(ctx, "payload_content")
+			return taskUpdateCols(ctx, bean, "payload_content")
 		})
 
 		if err == nil {
@@ -106,7 +119,7 @@ func migrateTaskSecrets(x *xorm.Engine) error {
 					log.Error("v14a_migrate_task_secrets: %s", message)
 				}
 
-				_, err = sess.In("id", ids).NoAutoCondition().NoAutoTime().Delete(&admin_model.Task{})
+				_, err = sess.In("id", ids).NoAutoCondition().NoAutoTime().Delete(&Task{})
 			}
 		}
 		return err
