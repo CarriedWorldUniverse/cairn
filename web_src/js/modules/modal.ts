@@ -13,7 +13,7 @@ export function showModal(modalID: string, onApprove: () => void) {
   modal.querySelector('.cancel')?.addEventListener('click', () => {
     modal.close();
   }, {once: true, passive: true});
-  modal.querySelector('.ok')?.addEventListener('click', onApprove, {once: true, passive: true});
+  modal.querySelector('.ok')?.addEventListener('click', onApprove, {passive: true});
 
   // The modal is ready to be shown.
   modal.showModal();
