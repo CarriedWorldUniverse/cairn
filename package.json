@@ -118,7 +118,7 @@
     "stylelint-value-no-unknown-custom-properties": "6.1.1",
     "svgo": "4.0.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.57.2",
+    "typescript-eslint": "8.58.0",
     "vite-string-plugin": "2.0.2",
     "vitest": "4.1.2"
   },
