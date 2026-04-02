@@ -45,7 +45,7 @@ func TestMoveRepoProjectColumns(t *testing.T) {
 	err := project_model.NewProject(db.DefaultContext, &project1)
 	require.NoError(t, err)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		err = project_model.NewColumn(db.DefaultContext, &project_model.Column{
 			Title:     fmt.Sprintf("column %d", i+1),
 			ProjectID: project1.ID,

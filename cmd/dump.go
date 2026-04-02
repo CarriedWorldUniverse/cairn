@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -83,11 +84,9 @@ func (o outputType) Join() string {
 }
 
 func (o *outputType) Set(value string) error {
-	for _, enum := range o.Enum {
-		if enum == value {
-			o.selected = value
-			return nil
-		}
+	if slices.Contains(o.Enum, value) {
+		o.selected = value
+		return nil
 	}
 
 	return fmt.Errorf("allowed values are %s", o.Join())
@@ -250,8 +249,8 @@ func runDump(stdCtx context.Context, ctx *cli.Command) error {
 		setupConsoleLogger(log.FATAL, log.CanColorStderr, os.Stderr)
 	} else {
 		for _, suffix := range outputTypeEnum.Enum {
-			if strings.HasSuffix(fileName, "."+suffix) {
-				fileName = strings.TrimSuffix(fileName, "."+suffix)
+			if before, ok := strings.CutSuffix(fileName, "."+suffix); ok {
+				fileName = before
 				break
 			}
 		}
@@ -330,14 +329,12 @@ func runDump(stdCtx context.Context, ctx *cli.Command) error {
 	go dumpDatabase(ctx, archiveJobs, &wg, verbose)
 
 	if len(setting.CustomConf) > 0 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			log.Info("Adding custom configuration file from %s", setting.CustomConf)
 			if err := addFile(archiveJobs, "app.ini", setting.CustomConf, verbose); err != nil {
 				fatal("Failed to include specified app.ini: %v", err)
 			}
-		}()
+		})
 	}
 
 	if ctx.IsSet("skip-custom-dir") && ctx.Bool("skip-custom-dir") {
@@ -361,15 +358,13 @@ func runDump(stdCtx context.Context, ctx *cli.Command) error {
 	if ctx.IsSet("skip-attachment-data") && ctx.Bool("skip-attachment-data") {
 		log.Info("Skipping attachment data")
 	} else {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := storage.Attachments.IterateObjects("", func(objPath string, object storage.Object) error {
 				return addObject(archiveJobs, object, path.Join("data", "attachments", objPath), verbose)
 			}); err != nil {
 				fatal("Failed to dump attachments: %v", err)
 			}
-		}()
+		})
 	}
 
 	if ctx.IsSet("skip-package-data") && ctx.Bool("skip-package-data") {
@@ -377,15 +372,13 @@ func runDump(stdCtx context.Context, ctx *cli.Command) error {
 	} else if !setting.Packages.Enabled {
 		log.Info("Package registry not enabled - skipping")
 	} else {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := storage.Packages.IterateObjects("", func(objPath string, object storage.Object) error {
 				return addObject(archiveJobs, object, path.Join("data", "packages", objPath), verbose)
 			}); err != nil {
 				fatal("Failed to dump packages: %v", err)
 			}
-		}()
+		})
 	}
 
 	// Doesn't check if LogRootPath exists before processing --skip-log intentionally,
@@ -399,13 +392,11 @@ func runDump(stdCtx context.Context, ctx *cli.Command) error {
 			log.Error("Failed to check if %s exists: %v", setting.Log.RootPath, err)
 		}
 		if isExist {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				if err := addRecursiveExclude(archiveJobs, "log", setting.Log.RootPath, []string{absFileName}, verbose); err != nil {
 					fatal("Failed to include log: %v", err)
 				}
-			}()
+			})
 		}
 	}
 

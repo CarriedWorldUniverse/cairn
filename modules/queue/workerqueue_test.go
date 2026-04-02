@@ -78,17 +78,17 @@ func TestWorkerPoolQueueUnhandled(t *testing.T) {
 
 	runCount := 2 // we can run these tests even hundreds times to see its stability
 	t.Run("1/1", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			test(t, setting.QueueSettings{BatchLength: 1, MaxWorkers: 1})
 		}
 	})
 	t.Run("3/1", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			test(t, setting.QueueSettings{BatchLength: 3, MaxWorkers: 1})
 		}
 	})
 	t.Run("4/5", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			test(t, setting.QueueSettings{BatchLength: 4, MaxWorkers: 5})
 		}
 	})
@@ -97,17 +97,17 @@ func TestWorkerPoolQueueUnhandled(t *testing.T) {
 func TestWorkerPoolQueuePersistence(t *testing.T) {
 	runCount := 2 // we can run these tests even hundreds times to see its stability
 	t.Run("1/1", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			testWorkerPoolQueuePersistence(t, setting.QueueSettings{BatchLength: 1, MaxWorkers: 1, Length: 100})
 		}
 	})
 	t.Run("3/1", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			testWorkerPoolQueuePersistence(t, setting.QueueSettings{BatchLength: 3, MaxWorkers: 1, Length: 100})
 		}
 	})
 	t.Run("4/5", func(t *testing.T) {
-		for i := 0; i < runCount; i++ {
+		for range runCount {
 			testWorkerPoolQueuePersistence(t, setting.QueueSettings{BatchLength: 4, MaxWorkers: 5, Length: 100})
 		}
 	})
@@ -142,7 +142,7 @@ func testWorkerPoolQueuePersistence(t *testing.T, queueSetting setting.QueueSett
 
 		q, _ := newWorkerPoolQueueForTest("pr_patch_checker_test", queueSetting, testHandler, true)
 		stop := runWorkerPoolQueue(q)
-		for i := 0; i < testCount; i++ {
+		for i := range testCount {
 			_ = q.Push("task-" + strconv.Itoa(i))
 		}
 		close(startWhenAllReady)
@@ -187,7 +187,7 @@ func TestWorkerPoolQueueActiveWorkers(t *testing.T) {
 
 	q, _ := newWorkerPoolQueueForTest("test-workpoolqueue", setting.QueueSettings{Type: "channel", BatchLength: 1, MaxWorkers: 1, Length: 100}, handler, false)
 	stop := runWorkerPoolQueue(q)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		require.NoError(t, q.Push(i))
 	}
 
@@ -203,7 +203,7 @@ func TestWorkerPoolQueueActiveWorkers(t *testing.T) {
 
 	q, _ = newWorkerPoolQueueForTest("test-workpoolqueue", setting.QueueSettings{Type: "channel", BatchLength: 1, MaxWorkers: 3, Length: 100}, handler, false)
 	stop = runWorkerPoolQueue(q)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		require.NoError(t, q.Push(i))
 	}
 
@@ -264,12 +264,12 @@ func TestWorkerPoolQueueWorkerIdleReset(t *testing.T) {
 	stop := runWorkerPoolQueue(q)
 
 	const workloadSize = 12
-	for i := 0; i < workloadSize; i++ {
+	for i := range workloadSize {
 		require.NoError(t, q.Push(i))
 	}
 
 	workerIDs := make(map[string]struct{})
-	for i := 0; i < workloadSize; i++ {
+	for i := range workloadSize {
 		c := <-chGoroutineIDs
 		workerIDs[c] = struct{}{}
 		t.Logf("%d workers: overall=%d current=%d", i, len(workerIDs), q.GetWorkerNumber())

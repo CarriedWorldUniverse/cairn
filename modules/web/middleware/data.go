@@ -5,6 +5,7 @@ package middleware
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"forgejo.org/modules/setting"
@@ -22,9 +23,7 @@ func (ds ContextData) GetData() ContextData {
 }
 
 func (ds ContextData) MergeFrom(other ContextData) ContextData {
-	for k, v := range other {
-		ds[k] = v
-	}
+	maps.Copy(ds, other)
 	return ds
 }
 

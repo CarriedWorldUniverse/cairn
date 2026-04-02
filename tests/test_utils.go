@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -524,23 +525,20 @@ func CreateDeclarativeRepo(t *testing.T, owner *user_model.User, name string, en
 	if enabledUnits != nil {
 		opts.EnabledUnits = optional.Some(enabledUnits)
 
-		for _, unitType := range enabledUnits {
-			if unitType == unit_model.TypePullRequests {
-				opts.UnitConfig = optional.Some(map[unit_model.Type]convert.Conversion{
-					unit_model.TypePullRequests: &repo_model.PullRequestsConfig{
-						AllowMerge:           true,
-						AllowRebase:          true,
-						AllowRebaseMerge:     true,
-						AllowSquash:          true,
-						AllowFastForwardOnly: true,
-						AllowManualMerge:     true,
-						AllowRebaseUpdate:    true,
-						DefaultMergeStyle:    repo_model.MergeStyleMerge,
-						DefaultUpdateStyle:   repo_model.UpdateStyleMerge,
-					},
-				})
-				break
-			}
+		if slices.Contains(enabledUnits, unit_model.TypePullRequests) {
+			opts.UnitConfig = optional.Some(map[unit_model.Type]convert.Conversion{
+				unit_model.TypePullRequests: &repo_model.PullRequestsConfig{
+					AllowMerge:           true,
+					AllowRebase:          true,
+					AllowRebaseMerge:     true,
+					AllowSquash:          true,
+					AllowFastForwardOnly: true,
+					AllowManualMerge:     true,
+					AllowRebaseUpdate:    true,
+					DefaultMergeStyle:    repo_model.MergeStyleMerge,
+					DefaultUpdateStyle:   repo_model.UpdateStyleMerge,
+				},
+			})
 		}
 	}
 	if disabledUnits != nil {

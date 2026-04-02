@@ -20,7 +20,7 @@ func TestSubTree_Issue29101(t *testing.T) {
 	require.NoError(t, err)
 
 	// old code could produce a different error if called multiple times
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, err = commit.SubTree("file1.txt")
 		require.Error(t, err)
 		assert.True(t, IsErrNotExist(err))

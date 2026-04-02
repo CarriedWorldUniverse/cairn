@@ -15,6 +15,7 @@ linters:
     - govet
     - importas
     - ineffassign
+    - modernize
     - nakedret
     - nolintlint
     - revive

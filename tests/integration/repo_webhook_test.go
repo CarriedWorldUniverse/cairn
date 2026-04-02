@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -408,9 +409,7 @@ func testWebhookFormsShared(t *testing.T, endpoint, name string, session *TestSe
 				payload := map[string]string{
 					"events": "send_everything",
 				}
-				for k, v := range validFields {
-					payload[k] = v
-				}
+				maps.Copy(payload, validFields)
 				for k, v := range invalidPatch {
 					if v == "" {
 						delete(payload, k)
@@ -448,9 +447,7 @@ func assertHasFlashMessages(t *testing.T, resp *httptest.ResponseRecorder, expec
 		for key, value := range flash {
 			// the key is itself url-encoded
 			if flash, err := url.ParseQuery(key); err == nil {
-				for key, value := range flash {
-					seenKeys[key] = value
-				}
+				maps.Copy(seenKeys, flash)
 			} else {
 				seenKeys[key] = value
 			}

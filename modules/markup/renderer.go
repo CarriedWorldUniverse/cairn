@@ -319,23 +319,19 @@ func render(ctx *RenderContext, renderer Renderer, input io.Reader, output io.Wr
 			_ = pw2.Close()
 		}()
 
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			err = donotpanic.SafeFuncWithError(func() error { return SanitizeReader(pr2, renderer.Name(), output) })
 			_ = pr2.Close()
-			wg.Done()
-		}()
+		})
 	} else {
 		pw2 = nopCloser{output}
 	}
 
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		err = donotpanic.SafeFuncWithError(func() error { return postProcessOrCopy(ctx, renderer, pr, pw2) })
 		_ = pr.Close()
 		_ = pw2.Close()
-		wg.Done()
-	}()
+	})
 
 	if err1 := renderer.Render(ctx, input, pw); err1 != nil {
 		return err1

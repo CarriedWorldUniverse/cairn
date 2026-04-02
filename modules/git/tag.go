@@ -50,20 +50,20 @@ l:
 		switch {
 		case eol > 0:
 			line := data[nextline : nextline+eol]
-			spacepos := bytes.IndexByte(line, ' ')
-			reftype := line[:spacepos]
+			before, after, _ := bytes.Cut(line, []byte{' '})
+			reftype := before
 			switch string(reftype) {
 			case "object":
-				id, err := NewIDFromString(string(line[spacepos+1:]))
+				id, err := NewIDFromString(string(after))
 				if err != nil {
 					return nil, err
 				}
 				tag.Object = id
 			case "type":
 				// A commit can have one or more parents
-				tag.Type = string(line[spacepos+1:])
+				tag.Type = string(after)
 			case "tagger":
-				tag.Tagger = parseSignatureFromCommitLine(util.UnsafeBytesToString(line[spacepos+1:]))
+				tag.Tagger = parseSignatureFromCommitLine(util.UnsafeBytesToString(after))
 			}
 			nextline += eol + 1
 		case eol == 0:

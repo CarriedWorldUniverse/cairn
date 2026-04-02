@@ -181,9 +181,9 @@ enabled=1`,
 
 					var result ReleaseClassic
 
-					lines := strings.Split(resp, "\n")
+					lines := strings.SplitSeq(resp, "\n")
 
-					for _, line := range lines {
+					for line := range lines {
 						parts := strings.SplitN(line, ": ", 2)
 						if len(parts) < 2 {
 							continue
@@ -406,7 +406,7 @@ enabled=1`,
 
 							if typ == 6 || typ == 8 || typ == 9 {
 								elem := data[offset:]
-								for j := uint32(0); j < count; j++ {
+								for range count {
 									strEnd := bytes.IndexByte(elem, 0)
 									if strEnd == -1 {
 										require.NoError(t, err)
@@ -420,13 +420,13 @@ enabled=1`,
 										result.Release = string(elem[:strEnd])
 									case 1004:
 										var summaries []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											summaries = append(summaries, string(elem[:strEnd]))
 										}
 										result.Summary = summaries
 									case 1005:
 										var descriptions []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											descriptions = append(descriptions, string(elem[:strEnd]))
 										}
 										result.Description = descriptions
@@ -436,7 +436,7 @@ enabled=1`,
 										result.Packager = string(elem[:strEnd])
 									case 1016:
 										var groups []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											groups = append(groups, string(elem[:strEnd]))
 										}
 										result.Group = groups
@@ -448,49 +448,49 @@ enabled=1`,
 										result.SourceRpm = string(elem[:strEnd])
 									case 1047:
 										var provideNames []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											provideNames = append(provideNames, string(elem[:strEnd]))
 										}
 										result.ProvideNames = provideNames
 									case 1049:
 										var requireNames []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											requireNames = append(requireNames, string(elem[:strEnd]))
 										}
 										result.RequireNames = requireNames
 									case 1050:
 										var requireVersions []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											requireVersions = append(requireVersions, string(elem[:strEnd]))
 										}
 										result.RequireVersions = requireVersions
 									case 1081:
 										var changeLogNames []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											changeLogNames = append(changeLogNames, string(elem[:strEnd]))
 										}
 										result.ChangeLogNames = changeLogNames
 									case 1082:
 										var changeLogTexts []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											changeLogTexts = append(changeLogTexts, string(elem[:strEnd]))
 										}
 										result.ChangeLogTexts = changeLogTexts
 									case 1113:
 										var provideVersions []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											provideVersions = append(provideVersions, string(elem[:strEnd]))
 										}
 										result.ProvideVersions = provideVersions
 									case 1117:
 										var baseNames []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											baseNames = append(baseNames, string(elem[:strEnd]))
 										}
 										result.BaseNames = baseNames
 									case 1118:
 										var dirNames []string
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											dirNames = append(dirNames, string(elem[:strEnd]))
 										}
 										result.DirNames = dirNames
@@ -509,7 +509,7 @@ enabled=1`,
 								}
 							} else if typ == 4 {
 								elem := data[offset:]
-								for j := uint32(0); j < count; j++ {
+								for range count {
 									val := binary.BigEndian.Uint32(elem)
 									switch tag {
 									case 1006:
@@ -518,25 +518,25 @@ enabled=1`,
 										result.Size = int(val)
 									case 1048:
 										var requireFlags []int
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											requireFlags = append(requireFlags, int(val))
 										}
 										result.RequireFlags = requireFlags
 									case 1080:
 										var changeLogTimes []int
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											changeLogTimes = append(changeLogTimes, int(val))
 										}
 										result.ChangeLogTimes = changeLogTimes
 									case 1112:
 										var provideFlags []int
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											provideFlags = append(provideFlags, int(val))
 										}
 										result.ProvideFlags = provideFlags
 									case 1116:
 										var dirIndexes []int
-										for i := uint32(0); i < count; i++ {
+										for range count {
 											dirIndexes = append(dirIndexes, int(val))
 										}
 										result.DirIndexes = dirIndexes

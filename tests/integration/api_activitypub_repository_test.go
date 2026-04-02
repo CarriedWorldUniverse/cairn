@@ -89,13 +89,13 @@ func TestActivityPubRepositoryInboxValid(t *testing.T) {
 			mock.Persons[0].KeyID(federatedSrv.URL))
 		require.NoError(t, err)
 
-		activity1 := []byte(fmt.Sprintf(
+		activity1 := fmt.Appendf(nil,
 			`{"type":"Like",`+
 				`"startTime":"%s",`+
 				`"actor":"%s/api/v1/activitypub/user-id/15",`+
 				`"object":"%s"}`,
 			timeNow.Format(time.RFC3339),
-			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", repositoryID)).String()))
+			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", repositoryID)).String())
 		t.Logf("activity: %s", activity1)
 		resp, err := c.Post(activity1, localRepoInbox)
 
@@ -107,14 +107,14 @@ func TestActivityPubRepositoryInboxValid(t *testing.T) {
 		unittest.AssertExistsAndLoadBean(t, &user.User{ID: federatedUser.UserID})
 
 		// A like activity by a different user of the same federated host.
-		activity2 := []byte(fmt.Sprintf(
+		activity2 := fmt.Appendf(nil,
 			`{"type":"Like",`+
 				`"startTime":"%s",`+
 				`"actor":"%s/api/v1/activitypub/user-id/30",`+
 				`"object":"%s"}`,
 			// Make sure this activity happens later then the one before
 			timeNow.Add(time.Second).Format(time.RFC3339),
-			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", repositoryID)).String()))
+			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", repositoryID)).String())
 		t.Logf("activity: %s", activity2)
 		resp, err = c.Post(activity2, localRepoInbox)
 
@@ -127,14 +127,14 @@ func TestActivityPubRepositoryInboxValid(t *testing.T) {
 		// The same user sends another like activity
 		otherRepositoryID := 3
 		otherRepoInboxURL := u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d/inbox", otherRepositoryID)).String()
-		activity3 := []byte(fmt.Sprintf(
+		activity3 := fmt.Appendf(nil,
 			`{"type":"Like",`+
 				`"startTime":"%s",`+
 				`"actor":"%s/api/v1/activitypub/user-id/30",`+
 				`"object":"%s"}`,
 			// Make sure this activity happens later then the ones before
 			timeNow.Add(time.Second*2).Format(time.RFC3339),
-			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", otherRepositoryID)).String()))
+			federatedSrv.URL, u.JoinPath(fmt.Sprintf("/api/v1/activitypub/repository-id/%d", otherRepositoryID)).String())
 		t.Logf("activity: %s", activity3)
 		resp, err = c.Post(activity3, otherRepoInboxURL)
 

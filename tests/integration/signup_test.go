@@ -185,10 +185,10 @@ func TestSignupImageCaptcha(t *testing.T) {
 	assert.True(t, ok)
 	assert.Len(t, digits, 6)
 
-	digitStr := ""
+	var digitStr strings.Builder
 	// Convert digits to ASCII digits.
 	for _, digit := range digits {
-		digitStr += string(digit + '0')
+		digitStr.WriteString(string(digit + '0'))
 	}
 
 	req = NewRequestWithValues(t, "POST", "/user/sign_up", map[string]string{
@@ -197,7 +197,7 @@ func TestSignupImageCaptcha(t *testing.T) {
 		"password":             "examplePassword!1",
 		"retype":               "examplePassword!1",
 		"img-captcha-id":       idCaptcha,
-		"img-captcha-response": digitStr,
+		"img-captcha-response": digitStr.String(),
 	})
 	MakeRequest(t, req, http.StatusSeeOther)
 

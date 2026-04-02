@@ -4,6 +4,8 @@
 package actions
 
 import (
+	"slices"
+
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/modules/container"
 )
@@ -20,13 +22,10 @@ func GetAllRerunJobs(job *actions_model.ActionRunJob, allJobs []*actions_model.A
 			if rerunJobsIDSet.Contains(j.JobID) {
 				continue
 			}
-			for _, need := range j.Needs {
-				if rerunJobsIDSet.Contains(need) {
-					found = true
-					rerunJobs = append(rerunJobs, j)
-					rerunJobsIDSet.Add(j.JobID)
-					break
-				}
+			if slices.ContainsFunc(j.Needs, rerunJobsIDSet.Contains) {
+				found = true
+				rerunJobs = append(rerunJobs, j)
+				rerunJobsIDSet.Add(j.JobID)
 			}
 		}
 		if !found {

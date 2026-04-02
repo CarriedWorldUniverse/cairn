@@ -1030,7 +1030,7 @@ func TestUserRepos(t *testing.T) {
 
 		sel := htmlDoc.doc.Find("a.name")
 		assert.Len(t, repos, len(sel.Nodes))
-		for i := 0; i < len(repos); i++ {
+		for i := range repos {
 			assert.Equal(t, repos[i], strings.TrimSpace(sel.Eq(i).Text()))
 		}
 	}

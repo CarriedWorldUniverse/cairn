@@ -80,7 +80,7 @@ func Iterate[Bean any](ctx context.Context, cond builder.Cond, f func(ctx contex
 
 func extractFieldValue(bean any, fieldName string) any {
 	v := reflect.ValueOf(bean)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	field := v.FieldByName(fieldName)

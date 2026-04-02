@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"forgejo.org/modules/setting"
@@ -40,12 +41,7 @@ func IsValidSiteURL(uri string) bool {
 		return false
 	}
 
-	for _, scheme := range setting.Service.ValidSiteURLSchemes {
-		if scheme == u.Scheme {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(setting.Service.ValidSiteURLSchemes, u.Scheme)
 }
 
 // IsAPIURL checks if URL is current Gitea instance API URL

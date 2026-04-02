@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -487,9 +488,7 @@ func doProtectBranch(ctx APITestContext, branch string, addParameter ...paramete
 			"rule_name": branch,
 		}
 		if len(addParameter) > 0 {
-			for k, v := range addParameter[0] {
-				parameter[k] = v
-			}
+			maps.Copy(parameter, addParameter[0])
 		}
 
 		// Change branch to protected
@@ -1162,15 +1161,15 @@ func doLFSNoAccess(ctx APITestContext, publicKeyID int64, objectFormat git.Objec
 }
 
 func extractRemoteMessages(stderr string) string {
-	var remoteMsg string
+	var remoteMsg strings.Builder
 	for line := range strings.SplitSeq(stderr, "\n") {
 		msg, found := strings.CutPrefix(line, "remote: ")
 		if found {
-			remoteMsg += msg
-			remoteMsg += "\n"
+			remoteMsg.WriteString(msg)
+			remoteMsg.WriteString("\n")
 		}
 	}
-	return remoteMsg
+	return remoteMsg.String()
 }
 
 func doTestForkPushMessages(apictx APITestContext, dstPath string) func(*testing.T) {

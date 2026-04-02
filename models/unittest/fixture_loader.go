@@ -151,8 +151,8 @@ func (l *loader) buildFixtureFile(fixturePath string) (*fixtureFile, error) {
 			switch v := value.(type) {
 			case string:
 				// Try to decode hex.
-				if strings.HasPrefix(v, "0x") {
-					value, err = hex.DecodeString(strings.TrimPrefix(v, "0x"))
+				if after, ok := strings.CutPrefix(v, "0x"); ok {
+					value, err = hex.DecodeString(after)
 					if err != nil {
 						return nil, err
 					}

@@ -6,6 +6,7 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -87,10 +88,8 @@ func ValidateMaxLen(value string, maxLen int, name string) []string {
 }
 
 func ValidateOneOf(value any, allowed []any, name string) []string {
-	for _, allowedElem := range allowed {
-		if value == allowedElem {
-			return []string{}
-		}
+	if slices.Contains(allowed, value) {
+		return []string{}
 	}
 	return []string{fmt.Sprintf("Field %s contains the value %v, which is not in allowed subset %v", name, value, allowed)}
 }

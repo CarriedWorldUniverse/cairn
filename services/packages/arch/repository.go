@@ -47,8 +47,8 @@ func BuildAllRepositoryFiles(ctx context.Context, ownerID int64) error {
 		return err
 	}
 	for _, pf := range pfs {
-		if strings.HasSuffix(pf.Name, ".db") {
-			arch := strings.TrimSuffix(pf.Name, ".db")
+		if before, ok := strings.CutSuffix(pf.Name, ".db"); ok {
+			arch := before
 			if err := BuildPacmanDB(ctx, ownerID, pf.CompositeKey, arch); err != nil {
 				return err
 			}

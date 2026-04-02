@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	activities_model "forgejo.org/models/activities"
@@ -127,11 +128,8 @@ func UpdateAssignees(ctx context.Context, issue *issues_model.Issue, oneAssignee
 	if oneAssignee != "" {
 		// Prevent double adding assignees
 		var isDouble bool
-		for _, assignee := range multipleAssignees {
-			if assignee == oneAssignee {
-				isDouble = true
-				break
-			}
+		if slices.Contains(multipleAssignees, oneAssignee) {
+			isDouble = true
 		}
 
 		if !isDouble {

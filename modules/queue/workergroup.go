@@ -142,11 +142,7 @@ func (q *WorkerPoolQueue[T]) basePushForShutdown(items ...T) bool {
 
 // doStartNewWorker starts a new worker for the queue, the worker reads from worker's channel and handles the items.
 func (q *WorkerPoolQueue[T]) doStartNewWorker(wp *workerGroup[T]) {
-	wp.wg.Add(1)
-
-	go func() {
-		defer wp.wg.Done()
-
+	wp.wg.Go(func() {
 		log.Debug("Queue %q starts new worker", q.GetName())
 		defer log.Debug("Queue %q stops idle worker", q.GetName())
 
@@ -187,7 +183,7 @@ func (q *WorkerPoolQueue[T]) doStartNewWorker(wp *workerGroup[T]) {
 				q.workerNumMu.Unlock()
 			}
 		}
-	}()
+	})
 }
 
 // doFlush flushes the queue: it tries to read all items from the queue and handles them.

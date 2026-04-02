@@ -48,13 +48,13 @@ func TestActivityPubPersonInboxFollow(t *testing.T) {
 		ctx, _ := contexttest.MockAPIContext(t, localUser2Inbox)
 
 		// distant follows local
-		followActivity := []byte(fmt.Sprintf(
+		followActivity := fmt.Appendf(nil,
 			`{"type":"Follow",`+
 				`"actor":"%s",`+
 				`"object":"%s"}`,
 			distantUser15URL,
 			localUser2URL,
-		))
+		)
 		cf, err := activitypub.NewClientFactoryWithTimeout(60 * time.Second)
 		require.NoError(t, err)
 		c, err := cf.WithKeysDirect(ctx, mock.ApActor.PrivKey,
@@ -84,7 +84,7 @@ func TestActivityPubPersonInboxFollow(t *testing.T) {
 		assert.Contains(t, mock.LastPost, "\"type\":\"Accept\"")
 
 		// distant undoes follow
-		undoFollowActivity := []byte(fmt.Sprintf(
+		undoFollowActivity := fmt.Appendf(nil,
 			`{"type":"Undo",`+
 				`"actor":"%s",`+
 				`"object":{"type":"Follow",`+
@@ -93,7 +93,7 @@ func TestActivityPubPersonInboxFollow(t *testing.T) {
 			distantUser15URL,
 			distantUser15URL,
 			localUser2URL,
-		))
+		)
 		c, err = cf.WithKeysDirect(ctx, mock.ApActor.PrivKey,
 			mock.ApActor.KeyID(federatedSrv.URL))
 		require.NoError(t, err)

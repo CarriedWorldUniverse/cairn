@@ -54,7 +54,7 @@ func TestIncludesAllRepositoriesTeams(t *testing.T) {
 
 	// Create repos.
 	repoIDs := make([]int64, 0)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		r, err := CreateRepositoryDirectly(db.DefaultContext, user, org.AsUser(), CreateRepoOptions{Name: fmt.Sprintf("repo-%d", i)})
 		require.NoError(t, err, "CreateRepository %d", i)
 		if r != nil {

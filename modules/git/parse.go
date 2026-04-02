@@ -33,16 +33,16 @@ func parseTreeEntries(data []byte, ptree *Tree) ([]*TreeEntry, error) {
 			posEnd += pos
 		}
 		line := data[pos:posEnd]
-		posTab := bytes.IndexByte(line, '\t')
-		if posTab == -1 {
+		before, after, ok := bytes.Cut(line, []byte{'\t'})
+		if !ok {
 			return nil, fmt.Errorf("invalid ls-tree output (no tab): %q", line)
 		}
 
 		entry := new(TreeEntry)
 		entry.ptree = ptree
 
-		entryAttrs := line[:posTab]
-		entryName := line[posTab+1:]
+		entryAttrs := before
+		entryName := after
 
 		entryMode, entryAttrs, _ := bytes.Cut(entryAttrs, sepSpace)
 		_ /* entryType */, entryAttrs, _ = bytes.Cut(entryAttrs, sepSpace) // the type is not used, the mode is enough to determine the type

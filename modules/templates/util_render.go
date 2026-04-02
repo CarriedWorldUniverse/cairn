@@ -246,7 +246,8 @@ func RenderMarkdownToHtml(ctx context.Context, input string) template.HTML { //n
 }
 
 func RenderLabels(ctx *Context, labels []*issues_model.Label, repoLink string, isPull bool) template.HTML {
-	htmlCode := `<span class="labels-list">`
+	var htmlCode strings.Builder
+	htmlCode.WriteString(`<span class="labels-list">`)
 	for _, label := range labels {
 		// Protect against nil value in labels - shouldn't happen but would cause a panic if so
 		if label == nil {
@@ -257,11 +258,11 @@ func RenderLabels(ctx *Context, labels []*issues_model.Label, repoLink string, i
 		if isPull {
 			issuesOrPull = "pulls"
 		}
-		htmlCode += fmt.Sprintf("<a href='%s/%s?labels=%d' rel='nofollow'>%s</a> ",
+		fmt.Fprintf(&htmlCode, "<a href='%s/%s?labels=%d' rel='nofollow'>%s</a> ",
 			repoLink, issuesOrPull, label.ID, RenderLabel(ctx, label))
 	}
-	htmlCode += "</span>"
-	return template.HTML(htmlCode)
+	htmlCode.WriteString("</span>")
+	return template.HTML(htmlCode.String())
 }
 
 func RenderUser(ctx context.Context, user user_model.User) template.HTML {

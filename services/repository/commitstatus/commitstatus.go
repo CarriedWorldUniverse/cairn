@@ -23,7 +23,7 @@ import (
 )
 
 func getCacheKey(repoID int64, branchName string) string {
-	hashBytes := sha256.Sum256([]byte(fmt.Sprintf("%d:%s", repoID, branchName)))
+	hashBytes := sha256.Sum256(fmt.Appendf(nil, "%d:%s", repoID, branchName))
 	return fmt.Sprintf("commit_status:%x", hashBytes)
 }
 
