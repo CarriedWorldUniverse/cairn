@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"maps"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -267,10 +268,7 @@ func issues(ctx *context.Context, milestoneID, projectID int64, isPullOption opt
 
 	archived := ctx.FormBool("archived")
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	var total int
 	switch {
@@ -1014,9 +1012,7 @@ func NewIssue(ctx *context.Context) {
 
 	_, templateErrs := issue_service.GetTemplatesFromDefaultBranch(ctx.Repo.Repository, ctx.Repo.GitRepo)
 	templateLoaded, errs := setTemplateIfExists(ctx, issueTemplateKey, issueTemplateCandidates)
-	for k, v := range errs {
-		templateErrs[k] = v
-	}
+	maps.Copy(templateErrs, errs)
 	if ctx.Written() {
 		return
 	}
@@ -2190,7 +2186,7 @@ func getActionIssues(ctx *context.Context) issues_model.IssueList {
 		return nil
 	}
 	issueIDs := make([]int64, 0, 10)
-	for _, stringIssueID := range strings.Split(commaSeparatedIssueIDs, ",") {
+	for stringIssueID := range strings.SplitSeq(commaSeparatedIssueIDs, ",") {
 		issueID, err := strconv.ParseInt(stringIssueID, 10, 64)
 		if err != nil {
 			ctx.ServerError("ParseInt", err)

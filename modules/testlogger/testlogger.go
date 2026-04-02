@@ -501,7 +501,7 @@ func PrintCurrentTest(t testing.TB, skip ...int) func() {
 // Printf takes a format and args and prints the string to os.Stdout
 func Printf(format string, args ...any) {
 	if log.CanColorStdout {
-		for i := 0; i < len(args); i++ {
+		for i := range args {
 			args[i] = log.NewColoredValue(args[i])
 		}
 	}

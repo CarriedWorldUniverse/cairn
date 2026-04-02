@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"strings"
 	"time"
 
 	packages_model "forgejo.org/models/packages"
@@ -734,15 +735,15 @@ NotAutomatic: false
 		codename := time.Now().Unix()
 		date := time.Now().UTC().Format(time.RFC1123)
 
-		var md5Sum string
-		var blake2b string
+		var md5Sum strings.Builder
+		var blake2b strings.Builder
 
 		for _, pkglistByArch := range pkglist[architecture] {
-			md5Sum += fmt.Sprintf(" %s %d %s\n", pkglistByArch.MD5Checksum.Value, pkglistByArch.Size, "base/"+pkglistByArch.Type)
-			blake2b += fmt.Sprintf(" %s %d %s\n", pkglistByArch.Blake2bHash.Value, pkglistByArch.Size, "base/"+pkglistByArch.Type)
+			fmt.Fprintf(&md5Sum, " %s %d %s\n", pkglistByArch.MD5Checksum.Value, pkglistByArch.Size, "base/"+pkglistByArch.Type)
+			fmt.Fprintf(&blake2b, " %s %d %s\n", pkglistByArch.Blake2bHash.Value, pkglistByArch.Size, "base/"+pkglistByArch.Type)
 		}
-		md5Sum += fmt.Sprintf(" %s %d %s\n", fileInfo.MD5Checksum.Value, fileInfo.Size, "base/"+fileInfo.Type)
-		blake2b += fmt.Sprintf(" %s %d %s\n", fileInfo.Blake2bHash.Value, fileInfo.Size, "base/"+fileInfo.Type)
+		fmt.Fprintf(&md5Sum, " %s %d %s\n", fileInfo.MD5Checksum.Value, fileInfo.Size, "base/"+fileInfo.Type)
+		fmt.Fprintf(&blake2b, " %s %d %s\n", fileInfo.Blake2bHash.Value, fileInfo.Size, "base/"+fileInfo.Type)
 
 		data = fmt.Sprintf(`Origin: %s
 Label: %s
@@ -755,7 +756,7 @@ MD5Sum:
 %s
 
 `,
-			origin, label, codename, date, architecture, md5Sum, blake2b)
+			origin, label, codename, date, architecture, md5Sum.String(), blake2b.String())
 		_, err = addReleaseAsFileToRepo(ctx, pv, "release", data, group, architecture)
 		if err != nil {
 			return err

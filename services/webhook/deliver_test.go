@@ -281,8 +281,6 @@ func TestWebhookDeliverSpecificTypes(t *testing.T) {
 	require.NoError(t, err)
 
 	for typ, hc := range cases {
-		typ := typ
-		hc := hc
 		t.Run(typ, func(t *testing.T) {
 			t.Parallel()
 			hook := &webhook_model.Webhook{

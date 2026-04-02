@@ -5,6 +5,7 @@ package integration
 
 import (
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -71,13 +72,7 @@ func testIssueCommentChangeEvent(t *testing.T, htmlDoc *HTMLDoc, commentID, badg
 
 	// Check links (href)
 	issueCommentLink := "#issuecomment-" + commentID
-	found := false
-	for _, link := range links {
-		if link == issueCommentLink {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(links, issueCommentLink)
 	if !found {
 		links = append(links, issueCommentLink)
 	}

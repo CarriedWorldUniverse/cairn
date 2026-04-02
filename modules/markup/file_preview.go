@@ -80,8 +80,8 @@ func newFilePreview(ctx *RenderContext, node *html.Node, locale translation.Loca
 	filePath := node.Data[m[6]:m[7]]
 	hash := node.Data[m[8]:m[9]]
 	urlFullSource := urlFull
-	if strings.HasSuffix(filePath, "?display=source") {
-		filePath = strings.TrimSuffix(filePath, "?display=source")
+	if before, ok := strings.CutSuffix(filePath, "?display=source"); ok {
+		filePath = before
 	} else if Type(filePath) != "" {
 		urlFullSource = node.Data[m[0]:m[6]] + filePath + "?display=source#" + hash
 	}

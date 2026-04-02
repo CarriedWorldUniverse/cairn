@@ -43,10 +43,7 @@ func (issues IssueList) LoadRepositories(ctx context.Context) (repo_model.Reposi
 	repoMaps := make(map[int64]*repo_model.Repository, len(repoIDs))
 	left := len(repoIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		err := db.GetEngine(ctx).
 			In("id", repoIDs[:limit]).
 			Find(&repoMaps)
@@ -99,10 +96,7 @@ func getPostersByIDs(ctx context.Context, posterIDs []int64) (map[int64]*user_mo
 	posterMaps := make(map[int64]*user_model.User, len(posterIDs))
 	left := len(posterIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		err := db.GetEngine(ctx).
 			In("id", posterIDs[:limit]).
 			Find(&posterMaps)
@@ -137,10 +131,7 @@ func (issues IssueList) LoadLabels(ctx context.Context) error {
 	issueIDs := issues.getIssueIDs()
 	left := len(issueIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).Table("label").
 			Join("LEFT", "issue_label", "issue_label.label_id = label.id").
 			In("issue_label.issue_id", issueIDs[:limit]).
@@ -192,10 +183,7 @@ func (issues IssueList) LoadMilestones(ctx context.Context) error {
 	milestoneMaps := make(map[int64]*Milestone, len(milestoneIDs))
 	left := len(milestoneIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		err := db.GetEngine(ctx).
 			In("id", milestoneIDs[:limit]).
 			Find(&milestoneMaps)
@@ -224,10 +212,7 @@ func (issues IssueList) LoadProjects(ctx context.Context) error {
 	}
 
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 
 		projects := make([]*projectWithIssueID, 0, limit)
 		err := db.GetEngine(ctx).
@@ -266,10 +251,7 @@ func (issues IssueList) LoadAssignees(ctx context.Context) error {
 	issueIDs := issues.getIssueIDs()
 	left := len(issueIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).Table("issue_assignees").
 			Join("INNER", "`user`", "`user`.id = `issue_assignees`.assignee_id").
 			In("`issue_assignees`.issue_id", issueIDs[:limit]).OrderBy(user_model.GetOrderByName()).
@@ -327,10 +309,7 @@ func (issues IssueList) LoadPullRequests(ctx context.Context) error {
 	pullRequestMaps := make(map[int64]*PullRequest, len(issuesIDs))
 	left := len(issuesIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("issue_id", issuesIDs[:limit]).
 			Rows(new(PullRequest))
@@ -375,10 +354,7 @@ func (issues IssueList) LoadAttachments(ctx context.Context) (err error) {
 	issuesIDs := issues.getIssueIDs()
 	left := len(issuesIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("issue_id", issuesIDs[:limit]).
 			Rows(new(repo_model.Attachment))
@@ -420,10 +396,7 @@ func (issues IssueList) loadComments(ctx context.Context, cond builder.Cond) (er
 	issuesIDs := issues.getIssueIDs()
 	left := len(issuesIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).Table("comment").
 			Join("INNER", "issue", "issue.id = comment.issue_id").
 			In("issue.id", issuesIDs[:limit]).
@@ -486,10 +459,7 @@ func (issues IssueList) loadTotalTrackedTimes(ctx context.Context) (err error) {
 
 	left := len(ids)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 
 		// select issue_id, sum(time) from tracked_time where issue_id in (<issue ids in current page>) group by issue_id
 		rows, err := db.GetEngine(ctx).Table("tracked_time").

@@ -52,7 +52,7 @@ func NewFromMap(o *map[string]string) Interface {
 
 func (o *gitPushOptions) ReadEnv() Interface {
 	if pushCount, err := strconv.Atoi(os.Getenv(EnvCount)); err == nil {
-		for idx := 0; idx < pushCount; idx++ {
+		for idx := range pushCount {
 			_ = o.Parse(os.Getenv(fmt.Sprintf(EnvFormat, idx)))
 		}
 	}

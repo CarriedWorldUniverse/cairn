@@ -6,6 +6,7 @@ package access
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
@@ -115,7 +116,8 @@ func (p *Permission) CanWriteIssuesOrPulls(isPull bool) bool {
 }
 
 func (p *Permission) LogString() string {
-	format := "<Permission AccessMode=%s, %d Units, %d UnitsMode(s): [ "
+	var format strings.Builder
+	format.WriteString("<Permission AccessMode=%s, %d Units, %d UnitsMode(s): [ ")
 	args := []any{p.AccessMode.String(), len(p.Units), len(p.UnitsMode)}
 
 	for i, unit := range p.Units {
@@ -127,15 +129,15 @@ func (p *Permission) LogString() string {
 				config = err.Error()
 			}
 		}
-		format += "\nUnits[%d]: ID: %d RepoID: %d Type: %s Config: %s"
+		format.WriteString("\nUnits[%d]: ID: %d RepoID: %d Type: %s Config: %s")
 		args = append(args, i, unit.ID, unit.RepoID, unit.Type.LogString(), config)
 	}
 	for key, value := range p.UnitsMode {
-		format += "\nUnitMode[%-v]: %-v"
+		format.WriteString("\nUnitMode[%-v]: %-v")
 		args = append(args, key.LogString(), value.LogString())
 	}
-	format += " ]>"
-	return fmt.Sprintf(format, args...)
+	format.WriteString(" ]>")
+	return fmt.Sprintf(format.String(), args...)
 }
 
 func GetActionRepoPermission(ctx context.Context, repo *repo_model.Repository, task *actions_model.ActionTask) (Permission, error) {

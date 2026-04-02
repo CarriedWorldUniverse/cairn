@@ -273,7 +273,7 @@ func doAPIMergePullRequestForm(t *testing.T, ctx APITestContext, owner, repo str
 	var req *RequestWrapper
 	var resp *httptest.ResponseRecorder
 
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		req = NewRequestWithJSON(t, http.MethodPost, urlStr, merge).AddTokenAuth(ctx.Token)
 
 		resp = ctx.Session.MakeRequest(t, req, NoExpectedStatus)

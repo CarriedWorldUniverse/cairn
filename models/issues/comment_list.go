@@ -54,10 +54,7 @@ func (comments CommentList) loadLabels(ctx context.Context) error {
 	commentLabels := make(map[int64]*Label, len(labelIDs))
 	left := len(labelIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("id", labelIDs[:limit]).
 			Rows(new(Label))
@@ -104,10 +101,7 @@ func (comments CommentList) loadMilestones(ctx context.Context) error {
 	milestones := make(map[int64]*Milestone, len(milestoneIDs))
 	left := len(milestoneIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		err := db.GetEngine(ctx).
 			In("id", milestoneIDs[:limit]).
 			Find(&milestones)
@@ -143,10 +137,7 @@ func (comments CommentList) loadOldMilestones(ctx context.Context) error {
 	milestones := make(map[int64]*Milestone, len(milestoneIDs))
 	left := len(milestoneIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		err := db.GetEngine(ctx).
 			In("id", milestoneIDs[:limit]).
 			Find(&milestones)
@@ -178,10 +169,7 @@ func (comments CommentList) loadAssignees(ctx context.Context) error {
 	assignees := make(map[int64]*user_model.User, len(assigneeIDs))
 	left := len(assigneeIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("id", assigneeIDs[:limit]).
 			Rows(new(user_model.User))
@@ -246,10 +234,7 @@ func (comments CommentList) LoadIssues(ctx context.Context) error {
 	issues := make(map[int64]*Issue, len(issueIDs))
 	left := len(issueIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("id", issueIDs[:limit]).
 			Rows(new(Issue))
@@ -300,10 +285,7 @@ func (comments CommentList) loadDependentIssues(ctx context.Context) error {
 	issues := make(map[int64]*Issue, len(issueIDs))
 	left := len(issueIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := e.
 			In("id", issueIDs[:limit]).
 			Rows(new(Issue))
@@ -379,10 +361,7 @@ func (comments CommentList) LoadAttachments(ctx context.Context) (err error) {
 	commentsIDs := comments.getAttachmentCommentIDs()
 	left := len(commentsIDs)
 	for left > 0 {
-		limit := db.DefaultMaxInSize
-		if left < limit {
-			limit = left
-		}
+		limit := min(left, db.DefaultMaxInSize)
 		rows, err := db.GetEngine(ctx).
 			In("comment_id", commentsIDs[:limit]).
 			Rows(new(repo_model.Attachment))

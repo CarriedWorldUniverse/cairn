@@ -5,6 +5,7 @@ package context
 
 import (
 	"net/http"
+	"slices"
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/perm"
@@ -47,10 +48,8 @@ func CanEnableEditor() func(ctx *Context) {
 // RequireRepoWriterOr returns a middleware for requiring repository write to one of the unit permission
 func RequireRepoWriterOr(unitTypes ...unit.Type) func(ctx *Context) {
 	return func(ctx *Context) {
-		for _, unitType := range unitTypes {
-			if ctx.Repo.CanWrite(unitType) {
-				return
-			}
+		if slices.ContainsFunc(unitTypes, ctx.Repo.CanWrite) {
+			return
 		}
 		ctx.NotFound(ctx.Req.URL.RequestURI(), nil)
 	}
@@ -85,10 +84,8 @@ func RequireRepoReader(unitType unit.Type) func(ctx *Context) {
 // RequireRepoReaderOr returns a middleware for requiring repository write to one of the unit permission
 func RequireRepoReaderOr(unitTypes ...unit.Type) func(ctx *Context) {
 	return func(ctx *Context) {
-		for _, unitType := range unitTypes {
-			if ctx.Repo.CanRead(unitType) {
-				return
-			}
+		if slices.ContainsFunc(unitTypes, ctx.Repo.CanRead) {
+			return
 		}
 		if log.IsTrace() {
 			var format string

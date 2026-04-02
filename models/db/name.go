@@ -6,6 +6,7 @@ package db
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -114,10 +115,8 @@ func IsUsableName(names, patterns []string, name string) error {
 		return ErrNameEmpty
 	}
 
-	for i := range names {
-		if name == names[i] {
-			return ErrNameReserved{name}
-		}
+	if slices.Contains(names, name) {
+		return ErrNameReserved{name}
 	}
 
 	for _, pat := range patterns {

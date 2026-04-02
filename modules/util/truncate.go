@@ -47,7 +47,7 @@ func SplitTrimSpace(input, sep string) []string {
 	input = strings.ReplaceAll(input, "\r\n", "\n")
 
 	var stringList []string
-	for _, s := range strings.Split(input, sep) {
+	for s := range strings.SplitSeq(input, sep) {
 		// trim leading and trailing space
 		stringList = append(stringList, strings.TrimSpace(s))
 	}

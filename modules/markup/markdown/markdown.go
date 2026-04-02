@@ -182,10 +182,7 @@ func actualRender(ctx *markup.RenderContext, input io.Reader, output io.Writer) 
 	}
 	buf, _ = ExtractMetadataBytes(buf, rc)
 
-	metaLength := bufWithMetadataLength - len(buf)
-	if metaLength < 0 {
-		metaLength = 0
-	}
+	metaLength := max(bufWithMetadataLength-len(buf), 0)
 	rc.metaLength = metaLength
 
 	pc.Set(markdownutil.RenderConfigKey, rc)

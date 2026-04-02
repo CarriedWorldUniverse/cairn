@@ -101,7 +101,7 @@ func Generate(n int) (string, error) {
 	buffer := make([]byte, n)
 	max := big.NewInt(int64(len(validChars)))
 	for {
-		for j := 0; j < n; j++ {
+		for j := range n {
 			rnd, err := rand.Int(rand.Reader, max)
 			if err != nil {
 				return "", err

@@ -31,7 +31,7 @@ func TestAPITopicSearchPaging(t *testing.T) {
 	token2 := getUserToken(t, user2.Name, auth_model.AccessTokenScopeWriteRepository)
 	repo2 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 	repo3 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 2})
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		req := NewRequestf(t, "PUT", "/api/v1/repos/%s/%s/topics/paging-topic-%d", user2.Name, repo2.Name, i).
 			AddTokenAuth(token2)
 		MakeRequest(t, req, http.StatusNoContent)

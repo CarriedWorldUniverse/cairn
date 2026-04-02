@@ -23,7 +23,7 @@ func FixPushMirrorsWithoutGitRemote(ctx context.Context, logger log.Logger, auto
 			return err
 		}
 
-		for i := 0; i < len(pushMirrors); i++ {
+		for i := range pushMirrors {
 			_, err = repo_model.GetPushMirrorRemoteAddress(repo.OwnerName, repo.Name, pushMirrors[i].RemoteName)
 			if err != nil {
 				if strings.Contains(err.Error(), "No such remote") {

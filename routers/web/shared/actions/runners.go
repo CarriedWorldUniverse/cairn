@@ -134,10 +134,7 @@ func RunnersList(ctx *context.Context) {
 		return
 	}
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	opts := actions_model.FindRunnerOptions{
 		ListOptions: db.ListOptions{
@@ -216,10 +213,7 @@ func RunnerDetails(ctx *context.Context) {
 	}
 
 	runnerID := ctx.ParamsInt64(":runnerid")
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	runner, err := actions_model.GetVisibleRunnerByID(ctx, runnerID, rCtx.OwnerID, rCtx.RepoID)
 	if errors.Is(err, util.ErrNotExist) {

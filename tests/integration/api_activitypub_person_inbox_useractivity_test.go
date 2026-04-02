@@ -53,13 +53,13 @@ func TestActivityPubPersonInboxNoteToDistant(t *testing.T) {
 		defer f()
 
 		// follow (distant follows local)
-		followActivity := []byte(fmt.Sprintf(
+		followActivity := fmt.Appendf(nil,
 			`{"type":"Follow",`+
 				`"actor":"%s",`+
 				`"object":"%s"}`,
 			distantUser15URL,
 			localUser2URL,
-		))
+		)
 		ctx, _ := contexttest.MockAPIContext(t, localUser2Inbox)
 		cf, err := activitypub.NewClientFactoryWithTimeout(60 * time.Second)
 		require.NoError(t, err)

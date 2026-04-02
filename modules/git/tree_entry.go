@@ -171,7 +171,7 @@ func (te *TreeEntry) FollowLinks() (*TreeEntry, string, error) {
 	}
 	entry := te
 	entryLink := ""
-	for i := 0; i < 999; i++ {
+	for range 999 {
 		if entry.IsLink() {
 			next, link, err := entry.FollowLink()
 			entryLink = link

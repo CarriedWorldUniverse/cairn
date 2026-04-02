@@ -206,18 +206,19 @@ func (m matrixConvertor) Push(p *api.PushPayload) (MatrixPayload, error) {
 	}
 
 	refName := html.EscapeString(git.RefName(p.Ref).ShortName())
-	text := fmt.Sprintf("[%s] %s pushed %s to %s:<br>", p.Repo.FullName, p.Pusher.UserName, commitDesc, refName)
+	var text strings.Builder
+	fmt.Fprintf(&text, "[%s] %s pushed %s to %s:<br>", p.Repo.FullName, p.Pusher.UserName, commitDesc, refName)
 
 	// for each commit, generate a new line text
 	for i, commit := range p.Commits {
-		text += fmt.Sprintf("%s: %s - %s", htmlLinkFormatter(commit.URL, commit.ID[:7]), commit.Message, commit.Author.Name)
+		fmt.Fprintf(&text, "%s: %s - %s", htmlLinkFormatter(commit.URL, commit.ID[:7]), commit.Message, commit.Author.Name)
 		// add linebreak to each commit but the last
 		if i < len(p.Commits)-1 {
-			text += "<br>"
+			text.WriteString("<br>")
 		}
 	}
 
-	return m.newPayload(text, p.Commits...)
+	return m.newPayload(text.String(), p.Commits...)
 }
 
 // PullRequest implements payloadConvertor PullRequest method

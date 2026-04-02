@@ -303,10 +303,7 @@ func ListWikiPages(ctx *context.APIContext) {
 		return
 	}
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 	limit := ctx.FormInt("limit")
 	if limit <= 1 {
 		limit = setting.API.DefaultPagingNum
@@ -439,10 +436,7 @@ func ListPageRevisions(ctx *context.APIContext) {
 	// get commit count - wiki revisions
 	commitsCount, _ := wikiRepo.FileCommitsCount(ctx.Repo.Repository.GetWikiBranchName(), pageFilename)
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	// get Commit Count
 	commitsHistory, err := wikiRepo.CommitsByFileAndRange(

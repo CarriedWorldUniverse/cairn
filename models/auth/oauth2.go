@@ -505,7 +505,7 @@ func (grant *OAuth2Grant) IncreaseCounter(ctx context.Context) error {
 
 // ScopeContains returns true if the grant scope contains the specified scope
 func (grant *OAuth2Grant) ScopeContains(scope string) bool {
-	for _, currentScope := range strings.Split(grant.Scope, " ") {
+	for currentScope := range strings.SplitSeq(grant.Scope, " ") {
 		if scope == currentScope {
 			return true
 		}

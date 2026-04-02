@@ -12,7 +12,7 @@ import (
 // Remove removes the named file or (empty) directory with at most 5 attempts.
 func Remove(name string) error {
 	var err error
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		err = os.Remove(name)
 		if err == nil {
 			break
@@ -35,7 +35,7 @@ func Remove(name string) error {
 // RemoveAll removes the named file or (empty) directory with at most 5 attempts.
 func RemoveAll(name string) error {
 	var err error
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		err = os.RemoveAll(name)
 		if err == nil {
 			break
@@ -58,7 +58,7 @@ func RemoveAll(name string) error {
 // Rename renames (moves) oldpath to newpath with at most 5 attempts.
 func Rename(oldpath, newpath string) error {
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		err = os.Rename(oldpath, newpath)
 		if err == nil {
 			break

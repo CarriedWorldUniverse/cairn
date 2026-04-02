@@ -6,6 +6,7 @@ package private
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	asymkey_model "forgejo.org/models/asymkey"
@@ -165,15 +166,13 @@ func ServCommand(ctx *context.PrivateContext) {
 	if err != nil {
 		if repo_model.IsErrRepoNotExist(err) {
 			repoExist = false
-			for _, verb := range ctx.FormStrings("verb") {
-				if verb == "git-upload-pack" {
-					// User is fetching/cloning a non-existent repository
-					sshLogger.Warn("Failed authentication attempt (cannot find repository: %s/%s) from %s", results.OwnerName, results.RepoName, ctx.RemoteAddr())
-					ctx.JSON(http.StatusNotFound, private.Response{
-						UserMsg: fmt.Sprintf("Cannot find repository: %s/%s", results.OwnerName, results.RepoName),
-					})
-					return
-				}
+			if slices.Contains(ctx.FormStrings("verb"), "git-upload-pack") {
+				// User is fetching/cloning a non-existent repository
+				sshLogger.Warn("Failed authentication attempt (cannot find repository: %s/%s) from %s", results.OwnerName, results.RepoName, ctx.RemoteAddr())
+				ctx.JSON(http.StatusNotFound, private.Response{
+					UserMsg: fmt.Sprintf("Cannot find repository: %s/%s", results.OwnerName, results.RepoName),
+				})
+				return
 			}
 		} else {
 			sshLogger.Error("Unable to get repository: %s/%s Error: %v", results.OwnerName, results.RepoName, err)

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -27,12 +28,7 @@ var storageTypes = []StorageType{
 
 // IsValidStorageType returns true if the given storage type is valid
 func IsValidStorageType(storageType StorageType) bool {
-	for _, t := range storageTypes {
-		if t == storageType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(storageTypes, storageType)
 }
 
 // MinioStorageConfig represents the configuration for a minio storage

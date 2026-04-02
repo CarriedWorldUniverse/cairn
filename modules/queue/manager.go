@@ -5,6 +5,7 @@ package queue
 
 import (
 	"context"
+	"maps"
 	"sync"
 	"time"
 
@@ -68,9 +69,7 @@ func (m *Manager) ManagedQueues() map[int64]ManagedWorkerPoolQueue {
 	defer m.mu.Unlock()
 
 	queues := make(map[int64]ManagedWorkerPoolQueue, len(m.Queues))
-	for k, v := range m.Queues {
-		queues[k] = v
-	}
+	maps.Copy(queues, m.Queues)
 	return queues
 }
 
