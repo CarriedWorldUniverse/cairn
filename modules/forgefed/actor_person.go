@@ -115,8 +115,8 @@ func (s *ForgePerson) UnmarshalJSON(data []byte) error {
 
 func (s ForgePerson) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(s.Type), "Type")...)
-	result = append(result, validation.ValidateOneOf(string(s.Type), []any{string(ap.PersonType)}, "Type")...)
+	result = append(result, validation.ValidateNotEmpty(s.Type, "Type")...)
+	result = append(result, validation.ValidateOneOf(s.Type, []any{ap.PersonType}, "Type")...)
 	result = append(result, validation.ValidateNotEmpty(s.PreferredUsername.String(), "PreferredUsername")...)
 
 	return result

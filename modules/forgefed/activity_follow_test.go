@@ -15,7 +15,7 @@ import (
 
 func Test_NewForgeFollowValidation(t *testing.T) {
 	sut := forgefed.ForgeFollow{}
-	sut.Type = "Follow"
+	sut.Type = ap.FollowType
 	sut.Actor = ap.IRI("example.org/alice")
 	sut.Object = ap.IRI("example.org/bob")
 

@@ -48,8 +48,8 @@ func (follow *ForgeFollow) UnmarshalJSON(data []byte) error {
 
 func (follow ForgeFollow) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(follow.Type), "type")...)
-	result = append(result, validation.ValidateOneOf(string(follow.Type), []any{"Follow"}, "type")...)
+	result = append(result, validation.ValidateNotEmpty(follow.Type, "type")...)
+	result = append(result, validation.ValidateOneOf(follow.Type, []any{ap.FollowType}, "type")...)
 	result = append(result, validation.ValidateIDExists(follow.Actor, "actor")...)
 	result = append(result, validation.ValidateIDExists(follow.Object, "object")...)
 

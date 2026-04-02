@@ -18,6 +18,8 @@ import (
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/validation"
 	"forgejo.org/tests"
+
+	ap "github.com/go-ap/activitypub"
 )
 
 func TestActivityPubRepoFollowing(t *testing.T) {
@@ -69,7 +71,7 @@ func TestActivityPubRepoFollowing(t *testing.T) {
 		}
 		activityType := like.Type
 		object := like.Object.GetLink().String()
-		isLikeType := activityType == "Like"
+		isLikeType := activityType == ap.LikeType
 		isCorrectObject := strings.HasSuffix(object, "/api/v1/activitypub/repository-id/1")
 		if !isLikeType || !isCorrectObject {
 			t.Error("Activity is not a like for this repo")

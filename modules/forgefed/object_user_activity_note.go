@@ -35,10 +35,7 @@ func newNote(doer *user_model.User, content, id string, published time.Time) (Fo
 	note.Type = ap.NoteType
 	note.AttributedTo = ap.IRI(doer.APActorID())
 	note.Content = ap.NaturalLanguageValues{
-		{
-			Ref:   ap.NilLangRef,
-			Value: ap.Content(content),
-		},
+		ap.NilLangRef: ap.Content(content),
 	}
 	note.ID = ap.IRI(id)
 	note.Published = published
@@ -59,8 +56,8 @@ func newNote(doer *user_model.User, content, id string, published time.Time) (Fo
 
 func (note ForgeUserActivityNote) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(note.Type), "type")...)
-	result = append(result, validation.ValidateOneOf(string(note.Type), []any{"Note"}, "type")...)
+	result = append(result, validation.ValidateNotEmpty(note.Type, "type")...)
+	result = append(result, validation.ValidateOneOf(note.Type, []any{ap.NoteType}, "type")...)
 	result = append(result, validation.ValidateNotEmpty(note.Content.String(), "content")...)
 	result = append(result, validation.ValidateIDExists(note.URL, "url")...)
 
