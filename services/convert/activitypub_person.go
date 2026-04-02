@@ -16,7 +16,7 @@ import (
 func ToActivityPubPersonFeedItem(item *activities.FederatedUserActivity) ap.Note {
 	return ap.Note{
 		AttributedTo: ap.IRI(item.ActorURI),
-		Content:      ap.NaturalLanguageValues{{Value: ap.Content(item.NoteContent), Ref: ap.NilLangRef}},
+		Content:      ap.NaturalLanguageValues{ap.NilLangRef: ap.Content(item.NoteContent)},
 		ID:           ap.IRI(item.NoteURL),
 		URL:          ap.IRI(item.OriginalNote),
 	}
@@ -27,13 +27,13 @@ func ToActivityPubPerson(ctx context.Context, user *user_model.User) (*ap.Person
 	person := ap.PersonNew(ap.IRI(link))
 
 	person.Name = ap.NaturalLanguageValuesNew()
-	err := person.Name.Set("en", ap.Content(user.FullName))
+	err := person.Name.Set(ap.NilLangRef, ap.Content(user.FullName))
 	if err != nil {
 		return nil, err
 	}
 
 	person.PreferredUsername = ap.NaturalLanguageValuesNew()
-	err = person.PreferredUsername.Set("en", ap.Content(user.Name))
+	err = person.PreferredUsername.Set(ap.NilLangRef, ap.Content(user.Name))
 	if err != nil {
 		return nil, err
 	}

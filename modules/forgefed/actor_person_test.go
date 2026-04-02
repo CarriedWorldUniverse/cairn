@@ -194,9 +194,9 @@ func TestShouldThrowErrorOnInvalidInput(t *testing.T) {
 
 func Test_PersonMarshalJSON(t *testing.T) {
 	sut := forgefed.ForgePerson{}
-	sut.Type = "Person"
+	sut.Type = ap.PersonType
 	sut.PreferredUsername = ap.NaturalLanguageValuesNew()
-	sut.PreferredUsername.Set("en", ap.Content("MaxMuster"))
+	sut.PreferredUsername.Set(ap.English, ap.Content("MaxMuster"))
 	result, _ := sut.MarshalJSON()
 	assert.JSONEq(t, `{"type":"Person","preferredUsername":"MaxMuster"}`, string(result), "Expected string is not equal")
 }
@@ -204,9 +204,9 @@ func Test_PersonMarshalJSON(t *testing.T) {
 func Test_PersonUnmarshalJSON(t *testing.T) {
 	expected := &forgefed.ForgePerson{
 		Actor: ap.Actor{
-			Type: "Person",
+			Type: ap.PersonType,
 			PreferredUsername: ap.NaturalLanguageValues{
-				ap.LangRefValue{Ref: "en", Value: []byte("MaxMuster")},
+				ap.English: []byte("MaxMuster"),
 			},
 		},
 	}

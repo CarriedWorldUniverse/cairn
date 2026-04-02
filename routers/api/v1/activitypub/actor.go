@@ -32,7 +32,7 @@ func Actor(ctx *context.APIContext) {
 	actor := ap.ActorNew(ap.IRI(link), ap.ApplicationType)
 
 	actor.PreferredUsername = ap.NaturalLanguageValuesNew()
-	err := actor.PreferredUsername.Set("en", ap.Content("ghost"))
+	err := actor.PreferredUsername.Set(ap.NilLangRef, ap.Content("ghost"))
 	if err != nil {
 		ctx.ServerError("PreferredUsername.Set", err)
 		return

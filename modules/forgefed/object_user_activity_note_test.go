@@ -15,12 +15,9 @@ import (
 
 func Test_UserActivityNoteValidation(t *testing.T) {
 	sut := forgefed.ForgeUserActivityNote{}
-	sut.Type = "Note"
+	sut.Type = ap.NoteType
 	sut.Content = ap.NaturalLanguageValues{
-		{
-			Ref:   ap.NilLangRef,
-			Value: ap.Content("Any Content!"),
-		},
+		ap.NilLangRef: ap.Content("Any Content!"),
 	}
 	sut.URL = ap.IRI("example.org/user-id/57")
 

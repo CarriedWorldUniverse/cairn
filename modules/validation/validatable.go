@@ -70,6 +70,8 @@ func ValidateNotEmpty(value any, name string) []string {
 		if v == 0 {
 			isValid = false
 		}
+	case ap.Typer:
+		isValid = len(value.(ap.Typer).AsTypes()) > 0
 	default:
 		isValid = false
 	}

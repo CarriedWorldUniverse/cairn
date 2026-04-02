@@ -44,8 +44,8 @@ func (like ForgeLike) IsNewer(compareTo time.Time) bool {
 
 func (like ForgeLike) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(like.Type), "type")...)
-	result = append(result, validation.ValidateOneOf(string(like.Type), []any{"Like"}, "type")...)
+	result = append(result, validation.ValidateNotEmpty(like.Type, "type")...)
+	result = append(result, validation.ValidateOneOf(like.Type, []any{ap.LikeType}, "type")...)
 
 	if like.Actor == nil {
 		result = append(result, "Actor should not be nil.")

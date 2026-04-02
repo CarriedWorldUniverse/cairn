@@ -64,7 +64,7 @@ func Test_UndoLikeMarshalJSON(t *testing.T) {
 				Activity: ap.Activity{
 					StartTime: startTime,
 					Actor:     ap.IRI("https://repo.prod.meissa.de/api/v1/activitypub/user-id/1"),
-					Type:      "Undo",
+					Type:      ap.UndoType,
 					Object:    like,
 				},
 			},
@@ -117,7 +117,7 @@ func Test_UndoLikeUnmarshalJSON(t *testing.T) {
 				Activity: ap.Activity{
 					StartTime: startTime,
 					Actor:     ap.IRI("https://repo.prod.meissa.de/api/v1/activitypub/user-id/1"),
-					Type:      "Undo",
+					Type:      ap.UndoType,
 					Object:    like,
 				},
 			},

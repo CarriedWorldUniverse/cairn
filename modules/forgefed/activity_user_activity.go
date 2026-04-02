@@ -60,8 +60,8 @@ func NewForgeUserActivity(doer *user_model.User, actionID int64, content string)
 
 func (userActivity ForgeUserActivity) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(userActivity.Type), "type")...)
-	result = append(result, validation.ValidateOneOf(string(userActivity.Type), []any{"Create"}, "type")...)
+	result = append(result, validation.ValidateNotEmpty(userActivity.Type, "type")...)
+	result = append(result, validation.ValidateOneOf(userActivity.Type, []any{ap.CreateType}, "type")...)
 	result = append(result, validation.ValidateIDExists(userActivity.Actor, "actor")...)
 
 	if len(userActivity.To) == 0 {

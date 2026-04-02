@@ -15,17 +15,14 @@ import (
 
 func Test_ForgeUserActivityValidation(t *testing.T) {
 	note := forgefed.ForgeUserActivityNote{}
-	note.Type = "Note"
+	note.Type = ap.NoteType
 	note.Content = ap.NaturalLanguageValues{
-		{
-			Ref:   ap.NilLangRef,
-			Value: ap.Content("Any Content!"),
-		},
+		ap.NilLangRef: ap.Content("Any Content!"),
 	}
 	note.URL = ap.IRI("example.org/user-id/57")
 
 	sut := forgefed.ForgeUserActivity{}
-	sut.Type = "Create"
+	sut.Type = ap.CreateType
 	sut.Actor = ap.IRI("example.org/user-id/23")
 	sut.CC = ap.ItemCollection{
 		ap.IRI("example.org/registration/public#2nd"),

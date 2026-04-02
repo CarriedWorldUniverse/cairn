@@ -42,8 +42,8 @@ func (undo *ForgeUndoLike) UnmarshalJSON(data []byte) error {
 
 func (undo ForgeUndoLike) Validate() []string {
 	var result []string
-	result = append(result, validation.ValidateNotEmpty(string(undo.Type), "type")...)
-	result = append(result, validation.ValidateOneOf(string(undo.Type), []any{"Undo"}, "type")...)
+	result = append(result, validation.ValidateNotEmpty(undo.Type, "type")...)
+	result = append(result, validation.ValidateOneOf(undo.Type, []any{ap.UndoType}, "type")...)
 
 	if undo.Actor == nil {
 		result = append(result, "Actor should not be nil.")
@@ -61,8 +61,8 @@ func (undo ForgeUndoLike) Validate() []string {
 	} else if activity, ok := undo.Object.(*ap.Activity); !ok {
 		result = append(result, "object is not of type Activity")
 	} else {
-		result = append(result, validation.ValidateNotEmpty(string(activity.Type), "type")...)
-		result = append(result, validation.ValidateOneOf(string(activity.Type), []any{"Like"}, "type")...)
+		result = append(result, validation.ValidateNotEmpty(activity.Type, "type")...)
+		result = append(result, validation.ValidateOneOf(activity.Type, []any{ap.LikeType}, "type")...)
 
 		if activity.Actor == nil {
 			result = append(result, "Object.Actor should not be nil.")

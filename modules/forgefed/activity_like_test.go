@@ -51,7 +51,7 @@ func Test_LikeMarshalJSON(t *testing.T) {
 			item: forgefed.ForgeLike{
 				Activity: ap.Activity{
 					Actor:  ap.IRI("https://repo.prod.meissa.de/api/v1/activitypub/user-id/1"),
-					Type:   "Like",
+					Type:   ap.LikeType,
 					Object: ap.IRI("https://codeberg.org/api/v1/activitypub/repository-id/1"),
 				},
 			},
@@ -80,7 +80,7 @@ func Test_LikeUnmarshalJSON(t *testing.T) {
 			item: []byte(`{"type":"Like","actor":"https://repo.prod.meissa.de/api/activitypub/user-id/1","object":"https://codeberg.org/api/activitypub/repository-id/1"}`),
 			want: &forgefed.ForgeLike{
 				Activity: ap.Activity{
-					Type:   "Like",
+					Type:   ap.LikeType,
 					Actor:  ap.IRI("https://repo.prod.meissa.de/api/activitypub/user-id/1"),
 					Object: ap.IRI("https://codeberg.org/api/activitypub/repository-id/1"),
 				},
@@ -124,7 +124,7 @@ func Test_ForgeLikeValidation(t *testing.T) {
 	validate := sut.Validate()
 	assert.Len(t, validate, 2)
 	assert.Equal(t,
-		"Field type contains the value , which is not in allowed subset [Like]",
+		"Field type contains the value <nil>, which is not in allowed subset [Like]",
 		validate[1])
 
 	sut.UnmarshalJSON([]byte(`{"type":"bad-type",
