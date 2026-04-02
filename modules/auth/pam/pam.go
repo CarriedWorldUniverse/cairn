@@ -7,9 +7,14 @@ package pam
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/msteinert/pam/v2"
 )
+
+// ErrInvalidCredentials is returned when PAM reports an authentication
+// or account error (wrong password, unknown user, expired account, etc.).
+var ErrInvalidCredentials = errors.New("invalid PAM credentials")
 
 // Supported is true when built with PAM
 var Supported = true
@@ -31,10 +36,16 @@ func Auth(serviceName, userName, passwd string) (string, error) {
 	defer t.End()
 
 	if err = t.Authenticate(0); err != nil {
+		if errors.Is(err, pam.ErrAuth) || errors.Is(err, pam.ErrUserUnknown) {
+			return "", fmt.Errorf("%w: %v", ErrInvalidCredentials, err)
+		}
 		return "", err
 	}
 
 	if err = t.AcctMgmt(0); err != nil {
+		if errors.Is(err, pam.ErrAcctExpired) || errors.Is(err, pam.ErrPermDenied) {
+			return "", fmt.Errorf("%w: %v", ErrInvalidCredentials, err)
+		}
 		return "", err
 	}
 
