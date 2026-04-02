@@ -319,7 +319,7 @@ func TestTotal_RenderWiki(t *testing.T) {
 
 	answers := testAnswers(util.URLJoin(FullURL, "wiki"), util.URLJoin(FullURL, "wiki", "raw"))
 
-	for i := 0; i < len(sameCases); i++ {
+	for i := range sameCases {
 		line, err := markdown.RenderString(&markup.RenderContext{
 			Ctx: git.DefaultContext,
 			Links: markup.Links{
@@ -363,7 +363,7 @@ func TestTotal_RenderString(t *testing.T) {
 
 	answers := testAnswers(util.URLJoin(FullURL, "src", "master"), util.URLJoin(FullURL, "media", "master"))
 
-	for i := 0; i < len(sameCases); i++ {
+	for i := range sameCases {
 		line, err := markdown.RenderString(&markup.RenderContext{
 			Ctx: git.DefaultContext,
 			Links: markup.Links{

@@ -88,7 +88,7 @@ jobs:
 		labelStr := "/api/v1/repos/user2/repo-pull-request/labels"
 		labelsCount := 2
 		labels := make([]*api.Label, labelsCount)
-		for i := 0; i < labelsCount; i++ {
+		for i := range labelsCount {
 			color := "abcdef"
 			req := NewRequestWithJSON(t, "POST", labelStr, &api.CreateLabelOption{
 				Name:  fmt.Sprintf("label%d", i),

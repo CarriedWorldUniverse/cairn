@@ -243,7 +243,7 @@ func TestGeneratingEd25519Keypair(t *testing.T) {
 	// And another 32 bytes are required, which is included as random value
 	// in the OpenSSH format.
 	b := make([]byte, 64)
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		b[i] = byte(i)
 	}
 	rand.Reader = bytes.NewReader(b)

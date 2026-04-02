@@ -99,8 +99,7 @@ func OIDCRoutes(prefix string) *web.Route {
 
 	// Add custom claims by iterating over [actions_service.IDTokenCustomClaims]
 	// and inspecting the names of the json struct tags
-	customClaims := actions_service.IDTokenCustomClaims{}
-	rt := reflect.TypeOf(customClaims)
+	rt := reflect.TypeFor[actions_service.IDTokenCustomClaims]()
 
 	for i := 0; i < rt.NumField(); i++ {
 		f := rt.Field(i)

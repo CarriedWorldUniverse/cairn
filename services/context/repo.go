@@ -395,14 +395,14 @@ func repoAssignment(ctx *Context, repo *repo_model.Repository) {
 
 	followingRepoList, err := repo_model.FindFollowingReposByRepoID(ctx, repo.ID)
 	if err == nil {
-		followingRepoString := ""
+		var followingRepoString strings.Builder
 		for idx, followingRepo := range followingRepoList {
 			if idx > 0 {
-				followingRepoString += ";"
+				followingRepoString.WriteString(";")
 			}
-			followingRepoString += followingRepo.URI
+			followingRepoString.WriteString(followingRepo.URI)
 		}
-		ctx.Data["FollowingRepos"] = followingRepoString
+		ctx.Data["FollowingRepos"] = followingRepoString.String()
 	} else if err != repo_model.ErrMirrorNotExist {
 		ctx.ServerError("FindFollowingRepoByRepoID", err)
 		return

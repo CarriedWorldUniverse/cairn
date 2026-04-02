@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"maps"
 	"net"
 	"net/url"
 	"path/filepath"
@@ -543,9 +544,7 @@ func (repo *Repository) ComposeMetas(ctx context.Context) map[string]string {
 func (repo *Repository) ComposeDocumentMetas(ctx context.Context) map[string]string {
 	if len(repo.DocumentRenderingMetas) == 0 {
 		metas := map[string]string{}
-		for k, v := range repo.ComposeMetas(ctx) {
-			metas[k] = v
-		}
+		maps.Copy(metas, repo.ComposeMetas(ctx))
 		metas["mode"] = "document"
 		repo.DocumentRenderingMetas = metas
 	}
@@ -786,8 +785,8 @@ func GetRepositoryByName(ctx context.Context, ownerID int64, name string) (*Repo
 
 // getRepositoryURLPathSegments returns segments (owner, reponame) extracted from a url
 func getRepositoryURLPathSegments(repoURL string) []string {
-	if strings.HasPrefix(repoURL, setting.AppURL) {
-		return strings.Split(strings.TrimPrefix(repoURL, setting.AppURL), "/")
+	if after, ok := strings.CutPrefix(repoURL, setting.AppURL); ok {
+		return strings.Split(after, "/")
 	}
 
 	sshURLVariants := [4]string{
@@ -798,8 +797,8 @@ func getRepositoryURLPathSegments(repoURL string) []string {
 	}
 
 	for _, sshURL := range sshURLVariants {
-		if strings.HasPrefix(repoURL, sshURL) {
-			return strings.Split(strings.TrimPrefix(repoURL, sshURL), "/")
+		if after, ok := strings.CutPrefix(repoURL, sshURL); ok {
+			return strings.Split(after, "/")
 		}
 	}
 

@@ -244,7 +244,7 @@ func UpdateIssueAttachments(ctx context.Context, issue *Issue, uuids []string) (
 	if err != nil {
 		return fmt.Errorf("FindRepoAttachmentsByUUID[uuids=%q,repoID=%d]: %w", uuids, issue.RepoID, err)
 	}
-	for i := 0; i < len(attachments); i++ {
+	for i := range attachments {
 		attachments[i].IssueID = issue.ID
 		if err := repo_model.UpdateAttachment(ctx, attachments[i]); err != nil {
 			return fmt.Errorf("update attachment [id: %d]: %w", attachments[i].ID, err)

@@ -102,13 +102,13 @@ func NewMockWebServer(t *testing.T, liveServerBaseURL, testDataDir string, liveM
 		// parse back the fixture file into a series of HTTP headers followed by response body
 		lines := strings.Split(stringFixture, "\n")
 		for idx, line := range lines {
-			colonIndex := strings.Index(line, ": ")
-			if colonIndex != -1 {
+			before, after, ok := strings.Cut(line, ": ")
+			if ok {
 				// Because we modified the body with ReplaceAll() above, we need to
 				// remove Content-Length. w.Write() should add it back.
-				header := line[0:colonIndex]
+				header := before
 				if !strings.EqualFold(header, "Content-Length") {
-					w.Header().Set(line[0:colonIndex], line[colonIndex+2:])
+					w.Header().Set(before, after)
 				}
 			} else {
 				// we reached the end of the headers (empty line), so what follows is the body

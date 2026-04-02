@@ -283,8 +283,8 @@ type userInfoResponse struct {
 
 func ifOnlyPublicGroups(scopes string) bool {
 	scopes = strings.ReplaceAll(scopes, ",", " ")
-	scopesList := strings.Fields(scopes)
-	for _, scope := range scopesList {
+	scopesList := strings.FieldsSeq(scopes)
+	for scope := range scopesList {
 		if scope == "all" || scope == "read:organization" || scope == "read:admin" {
 			return false
 		}
@@ -424,11 +424,11 @@ func AuthorizeOAuth(ctx *context.Context) {
 	errs := binding.Errors{}
 	errs = form.Validate(ctx.Req, errs)
 	if len(errs) > 0 {
-		errstring := ""
+		var errstring strings.Builder
 		for _, e := range errs {
-			errstring += e.Error() + "\n"
+			errstring.WriteString(e.Error() + "\n")
 		}
-		ctx.ServerError("AuthorizeOAuth: Validate: ", fmt.Errorf("errors occurred during validation: %s", errstring))
+		ctx.ServerError("AuthorizeOAuth: Validate: ", fmt.Errorf("errors occurred during validation: %s", errstring.String()))
 		return
 	}
 

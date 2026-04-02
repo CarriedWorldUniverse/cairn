@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"slices"
 	"strconv"
 	"unicode/utf8"
 
@@ -198,12 +199,7 @@ func (t CommentType) HasMailReplySupport() bool {
 }
 
 func (t CommentType) CountedAsConversation() bool {
-	for _, ct := range ConversationCountedCommentType() {
-		if t == ct {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ConversationCountedCommentType(), t)
 }
 
 // ConversationCountedCommentType returns the comment types that are counted as a conversation
@@ -619,7 +615,7 @@ func (c *Comment) UpdateAttachments(ctx context.Context, uuids []string) error {
 	if err != nil {
 		return fmt.Errorf("FindRepoAttachmentsByUUID[uuids=%q,repoID=%d]: %w", uuids, c.Issue.RepoID, err)
 	}
-	for i := 0; i < len(attachments); i++ {
+	for i := range attachments {
 		attachments[i].IssueID = c.IssueID
 		attachments[i].CommentID = c.ID
 		if err := repo_model.UpdateAttachment(ctx, attachments[i]); err != nil {

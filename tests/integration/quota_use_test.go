@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -656,9 +657,7 @@ func (ctx *quotaWebEnvAsContext) With(opts Context) *quotaWebEnvAsContext {
 		ctx.Repo = opts.Repo
 	}
 	if opts.Payload != nil {
-		for key, value := range *opts.Payload {
-			ctx.Payload[key] = value
-		}
+		maps.Copy(ctx.Payload, *opts.Payload)
 	}
 	return ctx
 }

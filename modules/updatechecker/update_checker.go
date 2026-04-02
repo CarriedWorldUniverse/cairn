@@ -60,9 +60,9 @@ func getVersionDNS(domainEndpoint string) (version string, err error) {
 	}
 
 	for _, record := range records {
-		if strings.HasPrefix(record, "forgejo_versions=") {
+		if after, ok := strings.CutPrefix(record, "forgejo_versions="); ok {
 			// Get all supported versions, separated by a comma.
-			supportedVersions := strings.Split(strings.TrimPrefix(record, "forgejo_versions="), ",")
+			supportedVersions := strings.Split(after, ",")
 			// For now always return the latest supported version.
 			return supportedVersions[len(supportedVersions)-1], nil
 		}

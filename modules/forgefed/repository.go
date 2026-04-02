@@ -88,7 +88,7 @@ func ToRepository(it ap.Item) (*Repository, error) {
 		return (*Repository)(unsafe.Pointer(&i)), nil
 	default:
 		// NOTE(marius): this is an ugly way of dealing with the interface conversion error: types from different scopes
-		typ := reflect.TypeOf(new(Repository))
+		typ := reflect.TypeFor[*Repository]()
 		if i, ok := reflect.ValueOf(it).Convert(typ).Interface().(*Repository); ok {
 			return i, nil
 		}

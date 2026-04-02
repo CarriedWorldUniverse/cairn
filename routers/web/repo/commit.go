@@ -68,10 +68,7 @@ func Commits(ctx *context.Context) {
 		return
 	}
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	pageSize := ctx.FormInt("limit")
 	if pageSize <= 0 {
@@ -241,10 +238,7 @@ func FileHistory(ctx *context.Context) {
 		return
 	}
 
-	page := ctx.FormInt("page")
-	if page <= 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	commits, err := ctx.Repo.GitRepo.CommitsByFileAndRange(
 		git.CommitsByFileAndRangeOptions{

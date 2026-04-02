@@ -38,7 +38,7 @@ func Verify(buf []byte, fileName, allowedTypesStr string) error {
 	allowedTypesStr = strings.ReplaceAll(allowedTypesStr, "|", ",") // compat for old config format
 
 	allowedTypes := []string{}
-	for _, entry := range strings.Split(allowedTypesStr, ",") {
+	for entry := range strings.SplitSeq(allowedTypesStr, ",") {
 		entry = strings.ToLower(strings.TrimSpace(entry))
 		if entry != "" {
 			allowedTypes = append(allowedTypes, entry)

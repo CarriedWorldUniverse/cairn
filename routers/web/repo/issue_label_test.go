@@ -6,6 +6,7 @@ package repo
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	issues_model "forgejo.org/models/issues"
@@ -21,14 +22,14 @@ import (
 )
 
 func int64SliceToCommaSeparated(a []int64) string {
-	s := ""
+	var s strings.Builder
 	for i, n := range a {
 		if i > 0 {
-			s += ","
+			s.WriteString(",")
 		}
-		s += strconv.Itoa(int(n))
+		s.WriteString(strconv.Itoa(int(n)))
 	}
-	return s
+	return s.String()
 }
 
 func TestInitializeLabels(t *testing.T) {

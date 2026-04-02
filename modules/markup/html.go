@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 
@@ -124,13 +125,7 @@ func CustomLinkURLSchemes(schemes []string) {
 		if !validScheme.MatchString(s) {
 			continue
 		}
-		without := false
-		for _, sna := range xurls.SchemesNoAuthority {
-			if s == sna {
-				without = true
-				break
-			}
-		}
+		without := slices.Contains(xurls.SchemesNoAuthority, s)
 		if without {
 			s += ":"
 		} else {
@@ -675,9 +670,9 @@ func shortLinkProcessor(ctx *RenderContext, node *html.Node) {
 		// It makes page handling terrible, but we prefer GitHub syntax
 		// And fall back to MediaWiki only when it is obvious from the look
 		// Of text and link contents
-		sl := strings.Split(content, "|")
-		for _, v := range sl {
-			if equalPos := strings.IndexByte(v, '='); equalPos == -1 {
+		sl := strings.SplitSeq(content, "|")
+		for v := range sl {
+			if found := strings.Contains(v, "="); !found {
 				// There is no equal in this argument; this is a mandatory arg
 				if props["name"] == "" {
 					if IsLinkStr(v) {
@@ -1148,7 +1143,7 @@ func comparePatternProcessor(ctx *RenderContext, node *html.Node) {
 		}
 
 		// Ensure that every group (m[0]...m[9]) has a match
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			if m[i] == -1 {
 				return
 			}

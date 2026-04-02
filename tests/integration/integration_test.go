@@ -471,14 +471,14 @@ func loginUserMaybeTOTP(t testing.TB, user *user_model.User, useTOTP bool) *Test
 }
 
 // token has to be unique this counter take care of
-var tokenCounter int64
+var tokenCounter atomic.Int64
 
 // getTokenForLoggedInUser returns a token for a logged in user.
 // The scope is an optional list of snake_case strings like the frontend form fields,
 // but without the "scope_" prefix.
 func getTokenForLoggedInUser(t testing.TB, session *TestSession, scopes ...auth.AccessTokenScope) string {
 	t.Helper()
-	accessTokenName := fmt.Sprintf("api-testing-token-%d", atomic.AddInt64(&tokenCounter, 1))
+	accessTokenName := fmt.Sprintf("api-testing-token-%d", tokenCounter.Add(1))
 	createApplicationSettingsToken(t, session, accessTokenName, scopes...)
 	token := assertAccessToken(t, session)
 	return token

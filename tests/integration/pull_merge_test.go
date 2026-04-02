@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"maps"
 	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -71,9 +72,7 @@ func testPullMergeForm(t *testing.T, session *TestSession, expectedCode int, use
 	link := path.Join(user, repo, "pulls", pullnum, "merge")
 
 	options := map[string]string{}
-	for k, v := range addOptions {
-		options[k] = v
-	}
+	maps.Copy(options, addOptions)
 
 	req := NewRequestWithValues(t, "POST", link, options)
 	resp := session.MakeRequest(t, req, expectedCode)

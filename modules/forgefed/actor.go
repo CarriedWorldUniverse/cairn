@@ -6,6 +6,7 @@ package forgefed
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -107,12 +108,7 @@ func newActorID(uri string) (ActorID, error) {
 }
 
 func containsEmptyString(ar []string) bool {
-	for _, elem := range ar {
-		if elem == "" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ar, "")
 }
 
 func removeEmptyStrings(ls []string) []string {

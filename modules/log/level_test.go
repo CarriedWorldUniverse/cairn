@@ -33,11 +33,11 @@ func TestLevelMarshalUnmarshalJSON(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, INFO, testLevel.Level)
 
-	err = json.Unmarshal([]byte(fmt.Sprintf(`{"level":%d}`, 2)), &testLevel)
+	err = json.Unmarshal(fmt.Appendf(nil, `{"level":%d}`, 2), &testLevel)
 	require.NoError(t, err)
 	assert.Equal(t, INFO, testLevel.Level)
 
-	err = json.Unmarshal([]byte(fmt.Sprintf(`{"level":%d}`, 10012)), &testLevel)
+	err = json.Unmarshal(fmt.Appendf(nil, `{"level":%d}`, 10012), &testLevel)
 	require.NoError(t, err)
 	assert.Equal(t, INFO, testLevel.Level)
 
@@ -52,5 +52,5 @@ func TestLevelMarshalUnmarshalJSON(t *testing.T) {
 }
 
 func makeTestLevelBytes(level string) []byte {
-	return []byte(fmt.Sprintf(`{"level":"%s"}`, level))
+	return fmt.Appendf(nil, `{"level":"%s"}`, level)
 }

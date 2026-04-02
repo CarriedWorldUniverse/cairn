@@ -4,6 +4,8 @@
 package context
 
 import (
+	"slices"
+
 	"forgejo.org/models/unit"
 )
 
@@ -19,11 +21,5 @@ func (ctx *Context) IsUserRepoAdmin() bool {
 
 // IsUserRepoWriter returns true if current user has write privilege in current repo
 func (ctx *Context) IsUserRepoWriter(unitTypes []unit.Type) bool {
-	for _, unitType := range unitTypes {
-		if ctx.Repo.CanWrite(unitType) {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(unitTypes, ctx.Repo.CanWrite)
 }

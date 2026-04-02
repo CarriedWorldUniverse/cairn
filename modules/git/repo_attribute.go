@@ -96,8 +96,8 @@ func (ca GitAttribute) String() string {
 // sometimes used within gitlab-language: https://docs.gitlab.com/ee/user/project/highlighting.html#override-syntax-highlighting-for-a-file-type
 func (ca GitAttribute) Prefix() string {
 	s := ca.String()
-	if i := strings.IndexByte(s, '?'); i >= 0 {
-		return s[:i]
+	if before, _, ok := strings.Cut(s, "?"); ok {
+		return before
 	}
 	return s
 }

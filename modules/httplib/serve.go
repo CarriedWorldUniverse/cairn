@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"path"
@@ -86,9 +87,7 @@ func ServeSetHeaders(w http.ResponseWriter, opts *ServeHeaderOptions) {
 	}
 
 	if opts.AdditionalHeaders != nil {
-		for k, v := range opts.AdditionalHeaders {
-			header[k] = v
-		}
+		maps.Copy(header, opts.AdditionalHeaders)
 	}
 }
 

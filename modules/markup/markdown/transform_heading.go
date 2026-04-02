@@ -17,7 +17,7 @@ import (
 func (g *ASTTransformer) transformHeading(_ *markup.RenderContext, v *ast.Heading, reader text.Reader, tocList *[]markup.Header) {
 	for _, attr := range v.Attributes() {
 		if _, ok := attr.Value.([]byte); !ok {
-			v.SetAttribute(attr.Name, []byte(fmt.Sprintf("%v", attr.Value)))
+			v.SetAttribute(attr.Name, fmt.Appendf(nil, "%v", attr.Value))
 		}
 	}
 	txt := mdutil.Text(v, reader.Source())

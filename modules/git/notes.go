@@ -8,6 +8,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 
 	"forgejo.org/modules/log"
 )
@@ -33,7 +34,7 @@ func GetNote(ctx context.Context, repo *Repository, commitID string) (*Note, err
 		return nil, err
 	}
 
-	path := ""
+	var path strings.Builder
 
 	tree := &notes.Tree
 	log.Trace("Found tree with ID %q while searching for git note corresponding to the commit %q", tree.ID, commitID)
@@ -43,12 +44,12 @@ func GetNote(ctx context.Context, repo *Repository, commitID string) (*Note, err
 	for len(commitID) > 2 {
 		entry, err = tree.GetTreeEntryByPath(commitID)
 		if err == nil {
-			path += commitID
+			path.WriteString(commitID)
 			break
 		}
 		if IsErrNotExist(err) {
 			tree, err = tree.SubTree(commitID[0:2])
-			path += commitID[0:2] + "/"
+			path.WriteString(commitID[0:2] + "/")
 			commitID = commitID[2:]
 		}
 		if err != nil {
@@ -80,9 +81,9 @@ func GetNote(ctx context.Context, repo *Repository, commitID string) (*Note, err
 	_ = dataRc.Close()
 	closed = true
 
-	lastCommit, err := repo.getCommitByPathWithID(notes.ID, path)
+	lastCommit, err := repo.getCommitByPathWithID(notes.ID, path.String())
 	if err != nil {
-		log.Error("Unable to get the commit for the path %q. Error: %v", path, err)
+		log.Error("Unable to get the commit for the path %q. Error: %v", path.String(), err)
 		return nil, err
 	}
 

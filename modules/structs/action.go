@@ -70,13 +70,13 @@ type ActionRun struct {
 	// the current status of this run
 	Status string `json:"status"`
 	// when the action run was started
-	Started time.Time `json:"started,omitempty"`
+	Started time.Time `json:"started"`
 	// when the action run was stopped
-	Stopped time.Time `json:"stopped,omitempty"`
+	Stopped time.Time `json:"stopped"`
 	// when the action run was created
-	Created time.Time `json:"created,omitempty"`
+	Created time.Time `json:"created"`
 	// when the action run was last updated
-	Updated time.Time `json:"updated,omitempty"`
+	Updated time.Time `json:"updated"`
 	// how long the action run ran for
 	Duration time.Duration `json:"duration,omitempty"`
 	// the url of this action run

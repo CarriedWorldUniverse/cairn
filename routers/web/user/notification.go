@@ -226,10 +226,7 @@ func NotificationPurgePost(ctx *context.Context) {
 
 // NotificationSubscriptions returns the list of subscribed issues
 func NotificationSubscriptions(ctx *context.Context) {
-	page := ctx.FormInt("page")
-	if page < 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	sortType := ctx.FormString("sort")
 	ctx.Data["SortType"] = sortType
@@ -358,10 +355,7 @@ func NotificationSubscriptions(ctx *context.Context) {
 
 // NotificationWatching returns the list of watching repos
 func NotificationWatching(ctx *context.Context) {
-	page := ctx.FormInt("page")
-	if page < 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	keyword := ctx.FormTrim("q")
 	ctx.Data["Keyword"] = keyword

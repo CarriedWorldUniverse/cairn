@@ -51,10 +51,10 @@ func decodeEnvSectionKey(encoded string) (ok bool, section, key string) {
 	for _, unescapeIdx := range escapeStringIndices {
 		preceding := encoded[last:unescapeIdx[0]]
 		if !inKey {
-			if splitter := strings.Index(preceding, "__"); splitter > -1 {
-				section += preceding[:splitter]
+			if before, after, ok := strings.Cut(preceding, "__"); ok {
+				section += before
 				inKey = true
-				key += preceding[splitter+2:]
+				key += after
 			} else {
 				section += preceding
 			}
@@ -77,9 +77,9 @@ func decodeEnvSectionKey(encoded string) (ok bool, section, key string) {
 	}
 	remaining := encoded[last:]
 	if !inKey {
-		if splitter := strings.Index(remaining, "__"); splitter > -1 {
-			section += remaining[:splitter]
-			key += remaining[splitter+2:]
+		if before, after, ok := strings.Cut(remaining, "__"); ok {
+			section += before
+			key += after
 		} else {
 			section += remaining
 		}
@@ -113,25 +113,24 @@ func decodeEnvironmentKey(prefixRegexp *regexp.Regexp, suffixFile, envKey string
 func EnvironmentToConfig(cfg ConfigProvider, envs []string) (changed bool) {
 	prefixRegexp := regexp.MustCompile(EnvConfigKeyPrefixGitea)
 	for _, kv := range envs {
-		idx := strings.IndexByte(kv, '=')
-		if idx < 0 {
+		before, after, ok0 := strings.Cut(kv, "=")
+		if !ok0 {
 			continue
 		}
 
 		// parse the environment variable to config section name and key name
-		envKey := kv[:idx]
-		envValue := kv[idx+1:]
+		envKey := before
+		keyValue := after
 		ok, sectionName, keyName, useFileValue := decodeEnvironmentKey(prefixRegexp, EnvConfigKeySuffixFile, envKey)
 		if !ok {
 			continue
 		}
 
 		// use environment value as config value, or read the file content as value if the key indicates a file
-		keyValue := envValue
 		if useFileValue {
-			fileContent, err := os.ReadFile(envValue)
+			fileContent, err := os.ReadFile(keyValue)
 			if err != nil {
-				log.Error("Error reading file for %s : %v", envKey, envValue, err)
+				log.Error("Error reading file for %s : %v", envKey, keyValue, err)
 				continue
 			}
 			if bytes.HasSuffix(fileContent, []byte("\r\n")) {

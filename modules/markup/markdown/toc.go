@@ -44,7 +44,7 @@ func createTOCNode(toc []markup.Header, lang string, detailsAttrs map[string]str
 		}
 		li := ast.NewListItem(currentLevel * 2)
 		a := ast.NewLink()
-		a.Destination = []byte(fmt.Sprintf("#%s", url.QueryEscape(header.ID)))
+		a.Destination = fmt.Appendf(nil, "#%s", url.QueryEscape(header.ID))
 		a.AppendChild(a, ast.NewString([]byte(header.Text)))
 		li.AppendChild(li, a)
 		ul.AppendChild(ul, li)

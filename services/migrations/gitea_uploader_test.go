@@ -361,7 +361,7 @@ func TestGiteaUploadUpdateGitForPullRequest(t *testing.T) {
 	require.NoError(t, git.InitRepository(git.DefaultContext, fromRepo.RepoPath(), false, fromRepo.ObjectFormatName))
 	err := git.NewCommand(git.DefaultContext, "symbolic-ref").AddDynamicArguments("HEAD", git.BranchPrefix+baseRef).Run(&git.RunOpts{Dir: fromRepo.RepoPath()})
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(fromRepo.RepoPath(), "README.md"), []byte(fmt.Sprintf("# Testing Repository\n\nOriginally created in: %s", fromRepo.RepoPath())), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(fromRepo.RepoPath(), "README.md"), fmt.Appendf(nil, "# Testing Repository\n\nOriginally created in: %s", fromRepo.RepoPath()), 0o644))
 	require.NoError(t, git.AddChanges(fromRepo.RepoPath(), true))
 	signature := git.Signature{
 		Email: "test@example.com",
@@ -409,7 +409,7 @@ func TestGiteaUploadUpdateGitForPullRequest(t *testing.T) {
 	}))
 	_, _, err = git.NewCommand(git.DefaultContext, "checkout", "-b").AddDynamicArguments(forkHeadRef).RunStdString(&git.RunOpts{Dir: forkRepo.RepoPath()})
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(forkRepo.RepoPath(), "README.md"), []byte(fmt.Sprintf("# branch2 %s", forkRepo.RepoPath())), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(forkRepo.RepoPath(), "README.md"), fmt.Appendf(nil, "# branch2 %s", forkRepo.RepoPath()), 0o644))
 	require.NoError(t, git.AddChanges(forkRepo.RepoPath(), true))
 	require.NoError(t, git.CommitChanges(forkRepo.RepoPath(), git.CommitChangesOptions{
 		Committer: &signature,

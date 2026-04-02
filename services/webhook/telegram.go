@@ -116,22 +116,22 @@ func (t telegramConvertor) Push(p *api.PushPayload) (TelegramPayload, error) {
 
 	title := fmt.Sprintf(`[%s:%s] %s`, p.Repo.FullName, branchName, commitDesc)
 
-	var text string
+	var text strings.Builder
 	// for each commit, generate attachment text
 	for i, commit := range p.Commits {
 		var authorName string
 		if commit.Author != nil {
 			authorName = " - " + commit.Author.Name
 		}
-		text += fmt.Sprintf(`[<a href="%s">%s</a>] %s`, commit.URL, commit.ID[:7],
-			strings.TrimRight(commit.Message, "\r\n")) + authorName
+		text.WriteString(fmt.Sprintf(`[<a href="%s">%s</a>] %s`, commit.URL, commit.ID[:7],
+			strings.TrimRight(commit.Message, "\r\n")) + authorName)
 		// add linebreak to each commit but the last
 		if i < len(p.Commits)-1 {
-			text += "\n"
+			text.WriteString("\n")
 		}
 	}
 
-	return createTelegramPayload(title + "\n" + text), nil
+	return createTelegramPayload(title + "\n" + text.String()), nil
 }
 
 // Issue implements PayloadConvertor Issue method

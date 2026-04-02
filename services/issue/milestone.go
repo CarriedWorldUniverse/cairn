@@ -26,10 +26,7 @@ func updateMilestoneCounters(ctx context.Context, issue *issues_model.Issue, id 
 		if err != nil {
 			return fmt.Errorf("GetMilestoneByRepoID: %w", err)
 		}
-		updatedUnix := milestone.UpdatedUnix
-		if issue.UpdatedUnix > updatedUnix {
-			updatedUnix = issue.UpdatedUnix
-		}
+		updatedUnix := max(issue.UpdatedUnix, milestone.UpdatedUnix)
 		stats.QueueRecalcMilestoneByIDWithDate(ctx, id, updatedUnix)
 	} else {
 		stats.QueueRecalcMilestoneByID(ctx, id)

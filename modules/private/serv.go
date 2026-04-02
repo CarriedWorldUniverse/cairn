@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/perm"
@@ -47,17 +48,18 @@ type ServCommandResults struct {
 
 // ServCommand preps for a serv call
 func ServCommand(ctx context.Context, keyID int64, ownerName, repoName string, mode perm.AccessMode, verbs ...string) (*ServCommandResults, ResponseExtra) {
-	reqURL := setting.LocalURL + fmt.Sprintf("api/internal/serv/command/%d/%s/%s?mode=%d",
+	var reqURL strings.Builder
+	reqURL.WriteString(setting.LocalURL + fmt.Sprintf("api/internal/serv/command/%d/%s/%s?mode=%d",
 		keyID,
 		url.PathEscape(ownerName),
 		url.PathEscape(repoName),
 		mode,
-	)
+	))
 	for _, verb := range verbs {
 		if verb != "" {
-			reqURL += fmt.Sprintf("&verb=%s", url.QueryEscape(verb))
+			fmt.Fprintf(&reqURL, "&verb=%s", url.QueryEscape(verb))
 		}
 	}
-	req := newInternalRequest(ctx, reqURL, "GET")
+	req := newInternalRequest(ctx, reqURL.String(), "GET")
 	return requestJSONResp(req, &ServCommandResults{})
 }

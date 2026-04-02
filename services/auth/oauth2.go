@@ -39,7 +39,7 @@ func grantAdditionalScopes(grantScopes string) string {
 	}
 
 	var apiTokenScopes []string
-	for _, apiTokenScope := range strings.Split(grantScopes, " ") {
+	for apiTokenScope := range strings.SplitSeq(grantScopes, " ") {
 		if slices.Index(scopesSupported, apiTokenScope) == -1 {
 			apiTokenScopes = append(apiTokenScopes, apiTokenScope)
 		}
