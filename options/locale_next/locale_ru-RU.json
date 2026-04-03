@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s коммит",
+		"many": "%s коммитов"
+	},
+	"counters.n_branches": {
+		"one": "%s ветвь",
+		"many": "%s ветвей"
+	},
+	"counters.n_tags": {
+		"one": "%s тег",
+		"many": "%s тегов"
+	},
+	"counters.n_releases": {
+		"one": "%s выпуск",
+		"many": "%s выпусков"
+	},
 	"gpg.default_key": "Подписано ключом по умолчанию",
 	"gpg.error.extract_sign": "Не удалось извлечь подпись",
 	"gpg.error.generate_hash": "Не удалось создать хеш коммита",
@@ -344,6 +360,23 @@
 	"migrate.gitbucket.description": "Перенести данные с сервера GitBucket.",
 	"migrate.codebase.description": "Перенести данные с codebasehq.com.",
 	"migrate.forgejo.description": "Перенести данные с codeberg.org или другого сервера Forgejo.",
+	"migrate.items.label": "Переносимые элементы",
+	"migrate.items.wiki": "Вики",
+	"migrate.items.milestones": "Этапы",
+	"migrate.items.labels": "Метки",
+	"migrate.items.issues": "Задачи",
+	"migrate.items.pull_requests": "Запросы на слияние",
+	"migrate.items.merge_requests": "Запросы на слияние",
+	"migrate.items.releases": "Выпуски",
+	"migrate.in_progress.git": "Перенос данных Git",
+	"migrate.in_progress.topics": "Перенос тем",
+	"migrate.in_progress.milestones": "Перенос этапов",
+	"migrate.in_progress.labels": "Перенос меток",
+	"migrate.in_progress.releases": "Перенос выпусков",
+	"migrate.in_progress.issues": "Перенос задач",
+	"migrate.in_progress.pulls": "Перенос запросов на слияние",
+	"migrate.cancel.title": "Отменить перенос",
+	"migrate.cancel.confirmation": "Вы хотите отменить перенос?",
 	"user.ghost.tooltip": "Пользователь удалён или неизвестен.",
 	"migrate.form.error.url_credentials": "Ссылка содержит данные авторизации. Поместите их в соответствующие поля",
 	"actions.runs.run_attempt_label": "Попытка №%[1]s (%[2]s)",

@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s إيداع",
+		"other": "%s إيداعات"
+	},
+	"counters.n_branches": {
+		"one": "%s فرع",
+		"other": "%s فروع"
+	},
+	"counters.n_tags": {
+		"one": "%s علامة",
+		"other": "‪%s علامات"
+	},
+	"counters.n_releases": {
+		"one": "%s إصدار",
+		"other": "%s إصدارات"
+	},
 	"actions.actions": "الإجراءات",
 	"actions.status.unknown": "مجهول",
 	"actions.status.waiting": "ينتظر",
@@ -254,6 +270,23 @@
 	"migrate.gitbucket.description": "ترحيل البيانات من مثيلات GitBucket.",
 	"migrate.codebase.description": "ترحيل البيانات من codebasehq.com.",
 	"migrate.forgejo.description": "ترحيل المعلومات من كودبيرج أو خوادم فورجيو الأخرى.",
+	"migrate.items.label": "عناصر الترحيل",
+	"migrate.items.wiki": "الموسوعة",
+	"migrate.items.milestones": "أهداف",
+	"migrate.items.labels": "تصنيفات",
+	"migrate.items.issues": "البلاغات",
+	"migrate.items.pull_requests": "طلبات السحب",
+	"migrate.items.merge_requests": "طلبات الدمج",
+	"migrate.items.releases": "الإصدارات",
+	"migrate.in_progress.git": "ترحيل بيانات Git",
+	"migrate.in_progress.topics": "ترحيل المواضيع",
+	"migrate.in_progress.milestones": "ترحيل الأهداف",
+	"migrate.in_progress.labels": "ترحيل الوسوم",
+	"migrate.in_progress.releases": "ترحيل الإصدارات",
+	"migrate.in_progress.issues": "ترحيل البلاغات",
+	"migrate.in_progress.pulls": "ترحيل طلبات السحب",
+	"migrate.cancel.title": "إلغاء الترحيل",
+	"migrate.cancel.confirmation": "تريد إلغاء عملية الترحيل هذه؟",
 	"user.ghost.tooltip": "تم حذف هذا المستخدم أو لا يمكن مطابقته.",
 	"migrate.form.error.url_credentials": "يحتوي عنوان الرابط على بيانات اعتماد، ضعها في حقلي اسم المستخدم وكلمة المرور على التوالي",
 	"pulse.n_active_issues": {

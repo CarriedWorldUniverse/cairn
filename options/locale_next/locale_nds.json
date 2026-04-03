@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s Kommitteren",
+		"other": "%s Kommitterens"
+	},
+	"counters.n_branches": {
+		"one": "%s Twieg",
+		"other": "%s Twiegen"
+	},
+	"counters.n_tags": {
+		"one": "%s Mark",
+		"other": "%s Markens"
+	},
+	"counters.n_releases": {
+		"one": "%s Publizeren",
+		"other": "%s Publizerens"
+	},
 	"gpg.default_key": "Mit normaalem Slötel unnerschrieven",
 	"gpg.error.extract_sign": "Kunn Unnerschrift nich uttrecken",
 	"gpg.error.generate_hash": "Kunn Prüfsumm vum Kommitteren nich bereken",
@@ -323,6 +339,23 @@
 	"migrate.gitbucket.description": "Daten vun GitBucket-Instanzen umtrecken.",
 	"migrate.codebase.description": "Daten vun codebasehq.com umtrecken.",
 	"migrate.forgejo.description": "Daten vun codeberg.org of anner Forgejo-Instanzen umtrecken.",
+	"migrate.items.label": "Umtreck-Dingen",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Markstenen",
+	"migrate.items.labels": "Vermarkens",
+	"migrate.items.issues": "Gefallens",
+	"migrate.items.pull_requests": "Haalvörslagen",
+	"migrate.items.merge_requests": "Tosamenföhren-Vörslagen",
+	"migrate.items.releases": "Publizerens",
+	"migrate.in_progress.git": "Git-Daten worden umtrucken",
+	"migrate.in_progress.topics": "Themen worden umtrucken",
+	"migrate.in_progress.milestones": "Markstenen worden umtrucken",
+	"migrate.in_progress.labels": "Vermarkens worden umtrucken",
+	"migrate.in_progress.releases": "Publizerens worden umtrucken",
+	"migrate.in_progress.issues": "Gefallens worden umtrucken",
+	"migrate.in_progress.pulls": "Haalvörslagen worden umtrucken",
+	"migrate.cancel.title": "Umtreck ofbreken",
+	"migrate.cancel.confirmation": "Willst du deesen Umtreck ofbreken?",
 	"admin.config.security": "Sekerheids-Instellens",
 	"admin.config.global_2fa_requirement.all": "All Brukers",
 	"error.must_enable_2fa": "Deese Forgejo-Instanz verlangt, dat Brukers Twee-Faktooren-Anmellen anknipsen, ehr se up hör Konten togriepen könen. Knips dat hier an: %s",

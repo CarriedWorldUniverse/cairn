@@ -144,6 +144,7 @@
 	"migrate.gitbucket.description": "Migrer data fra GitBucket instanser.",
 	"migrate.codebase.description": "Migrer data fra codebasehq.com.",
 	"migrate.forgejo.description": "Migrer data fra codeberg.org eller andre Forgejo instanser.",
+	"migrate.items.releases": "Utgivelser",
 	"search.syntax": "Søkesyntaks",
 	"search.fuzzy": "Fuzzy",
 	"search.fuzzy_tooltip": "Inkluder resultater som er omtrent like søkeordet",

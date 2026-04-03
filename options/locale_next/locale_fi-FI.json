@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s kommitti",
+		"other": "%s kommittia"
+	},
+	"counters.n_branches": {
+		"one": "%s haara",
+		"other": "%s haaraa"
+	},
+	"counters.n_tags": {
+		"one": "%s tagi",
+		"other": "%s tagia"
+	},
+	"counters.n_releases": {
+		"one": "%s julkaisu",
+		"other": "%s julkaisua"
+	},
 	"gpg.default_key": "Allekirjoitettu oletusavaimella",
 	"gpg.error.extract_sign": "Allekirjoituksen purkaminen epäonnistui",
 	"gpg.error.generate_hash": "Kommitin tiivisteen luominen epäonnistui",
@@ -284,6 +300,23 @@
 	"migrate.gitbucket.description": "Tee migraatio GitBucket-instansseista.",
 	"migrate.codebase.description": "Tee migraatio codebasehq.comista.",
 	"migrate.forgejo.description": "Tee migraatio codeberg.orgista tai muista Forgejo-instansseista.",
+	"migrate.items.label": "Migraation kohteet",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Merkkipaalut",
+	"migrate.items.labels": "Nimilaput",
+	"migrate.items.issues": "Ongelmat",
+	"migrate.items.pull_requests": "Vetopyynnöt",
+	"migrate.items.merge_requests": "Yhdistämispyynnöt",
+	"migrate.items.releases": "Julkaisut",
+	"migrate.in_progress.git": "Suoritetaan Git-datan migraatiota",
+	"migrate.in_progress.topics": "Suoritetaan aiheiden migraatiota",
+	"migrate.in_progress.milestones": "Suoritetaan merkkipaalujen migraatiota",
+	"migrate.in_progress.labels": "Suoritetaan nimilappujen migraatiota",
+	"migrate.in_progress.releases": "Suoritetaan julkaisujen migraatiota",
+	"migrate.in_progress.issues": "Suoritetaan ongelmien migraatiota",
+	"migrate.in_progress.pulls": "Suoritetaan vetopyyntöjen migraatiota",
+	"migrate.cancel.title": "Peruuta migraatio",
+	"migrate.cancel.confirmation": "Haluatko perua tämän migraation?",
 	"moderation.report_abuse_form.invalid": "Virheelliset argumentit",
 	"admin.config.security": "Turvallisuusasetukset",
 	"admin.config.global_2fa_requirement.title": "Globaali kaksivaiheisen tunnistuksen vaatimus",

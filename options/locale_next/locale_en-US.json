@@ -88,6 +88,7 @@
 	"repo.pulls.maintainers_cannot_edit": "Maintainers cannot edit this pull request.",
 	"repo.form.cannot_create": "All spaces in which you can create repositories have reached the limit of repositories.",
 	"repo.view.gitmodules_too_large": "The .gitmodules file is too large and will be ignored (on API calls for instance)",
+	"migrate.select.title": "Migrate repository",
 	"migrate.form.error.url_credentials": "The URL contains credentials, put them in the username and password fields respectively",
 	"migrate.github.description": "Migrate data from github.com or GitHub Enterprise server.",
 	"migrate.git.description": "Migrate a repository only from any Git service.",
@@ -98,6 +99,23 @@
 	"migrate.gitbucket.description": "Migrate data from GitBucket instances.",
 	"migrate.codebase.description": "Migrate data from codebasehq.com.",
 	"migrate.forgejo.description": "Migrate data from codeberg.org or other Forgejo instances.",
+	"migrate.items.label": "Migration items",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Milestones",
+	"migrate.items.labels": "Labels",
+	"migrate.items.issues": "Issues",
+	"migrate.items.pull_requests": "Pull requests",
+	"migrate.items.merge_requests": "Merge requests",
+	"migrate.items.releases": "Releases",
+	"migrate.in_progress.git": "Migrating Git data",
+	"migrate.in_progress.topics": "Migrating topics",
+	"migrate.in_progress.milestones": "Migrating milestones",
+	"migrate.in_progress.labels": "Migrating labels",
+	"migrate.in_progress.releases": "Migrating releases",
+	"migrate.in_progress.issues": "Migrating issues",
+	"migrate.in_progress.pulls": "Migrating pull requests",
+	"migrate.cancel.title": "Cancel migration",
+	"migrate.cancel.confirmation": "Do you want to cancel this migration?",
 	"repo.issue_indexer.title": "Issue Indexer",
 	"search.milestone_kind": "Search milestones…",
 	"search.syntax": "Search syntax",
@@ -257,6 +275,22 @@
 	"munits.data.tib": "TiB",
 	"munits.data.pib": "PiB",
 	"munits.data.eib": "EiB",
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "%s branch",
+		"other": "%s branches"
+	},
+	"counters.n_tags": {
+		"one": "%s tag",
+		"other": "%s tags"
+	},
+	"counters.n_releases": {
+		"one": "%s release",
+		"other": "%s releases"
+	},
 	"packages.title": "Packages",
 	"packages.empty": "There are no packages yet.",
 	"packages.empty.documentation": "For more information on the package registry, see <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"%s\">the documentation</a>.",

@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s revize",
+		"other": "%s revizí"
+	},
+	"counters.n_branches": {
+		"one": "%s větev",
+		"other": "%s větví"
+	},
+	"counters.n_tags": {
+		"one": "%s značka",
+		"other": "%s značek"
+	},
+	"counters.n_releases": {
+		"one": "%s vydání",
+		"other": "%s vydání"
+	},
 	"gpg.default_key": "Podepsáno výchozím klíčem",
 	"gpg.error.extract_sign": "Nepodařilo se získat podpis",
 	"gpg.error.generate_hash": "Nepodařilo se vygenerovat hash revize",
@@ -334,6 +350,23 @@
 	"migrate.gitbucket.description": "Migrovat data z instancí GitBucket.",
 	"migrate.codebase.description": "Migrovat data z codebasehq.com.",
 	"migrate.forgejo.description": "Migrovat data z codeberg.org nebo jiných instancí Forgejo.",
+	"migrate.items.label": "Položky pro migrování",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Milníky",
+	"migrate.items.labels": "Štítky",
+	"migrate.items.issues": "Problémy",
+	"migrate.items.pull_requests": "Žádosti o sloučení",
+	"migrate.items.merge_requests": "Sloučit žádosti",
+	"migrate.items.releases": "Vydání",
+	"migrate.in_progress.git": "Migrace dat z Gitu",
+	"migrate.in_progress.topics": "Migrace témat",
+	"migrate.in_progress.milestones": "Migrace milníků",
+	"migrate.in_progress.labels": "Migrace štítků",
+	"migrate.in_progress.releases": "Migrace vydání",
+	"migrate.in_progress.issues": "Migrace problémů",
+	"migrate.in_progress.pulls": "Migrace žádostí o sloučení",
+	"migrate.cancel.title": "Zrušit migraci",
+	"migrate.cancel.confirmation": "Chcete zrušit tuto migraci?",
 	"admin.config.security": "Nastavení zabezpečení",
 	"admin.config.global_2fa_requirement.title": "Globální požadavek dvoufázového ověření",
 	"error.must_enable_2fa": "Tato instance Forgejo vyžaduje, aby si všichni uživatelé zapnuli dvoufázové ověření, než začnou používat svůj účet. Povolíte jej zde: %s",

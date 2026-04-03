@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s подаване",
+		"other": "%s подавания"
+	},
+	"counters.n_branches": {
+		"one": "%s клон",
+		"other": "%s клона"
+	},
+	"counters.n_tags": {
+		"one": "%s маркер",
+		"other": "%s маркера"
+	},
+	"counters.n_releases": {
+		"one": "%s издание",
+		"other": "%s издания"
+	},
 	"actions.actions": "Действия",
 	"actions.status.unknown": "Неизвестно",
 	"actions.status.waiting": "Изчаква се",
@@ -283,6 +299,23 @@
 	"migrate.gitbucket.description": "Мигриране на данни от GitBucket инстанции.",
 	"migrate.codebase.description": "Мигриране на данни от codebasehq.com.",
 	"migrate.forgejo.description": "Мигриране на данни от codeberg.org или други Forgejo инстанции.",
+	"migrate.items.label": "Елементи за мигриране",
+	"migrate.items.wiki": "Уики",
+	"migrate.items.milestones": "Етапи",
+	"migrate.items.labels": "Етикети",
+	"migrate.items.issues": "Задачи",
+	"migrate.items.pull_requests": "Заявки за сливане",
+	"migrate.items.merge_requests": "Заявки за сливане",
+	"migrate.items.releases": "Издания",
+	"migrate.in_progress.git": "Мигриране на Git данни",
+	"migrate.in_progress.topics": "Мигриране на теми",
+	"migrate.in_progress.milestones": "Мигриране на етапи",
+	"migrate.in_progress.labels": "Мигриране на етикети",
+	"migrate.in_progress.releases": "Мигриране на издания",
+	"migrate.in_progress.issues": "Мигриране на задачи",
+	"migrate.in_progress.pulls": "Мигриране на заявки за сливане",
+	"migrate.cancel.title": "Отказ от миграцията",
+	"migrate.cancel.confirmation": "Искате ли да откажете тази миграция?",
 	"keys.ssh.link": "SSH ключове",
 	"feed.atom.link": "Atom емисия",
 	"keys.gpg.link": "GPG ключове",

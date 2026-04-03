@@ -1,4 +1,16 @@
 {
+	"counters.n_branches": {
+		"one": "%s nhánh",
+		"other": "%s nhánh"
+	},
+	"counters.n_tags": {
+		"one": "%s nhãn",
+		"other": "%s nhãn"
+	},
+	"counters.n_releases": {
+		"one": "%s bản phát hành",
+		"other": "%s bản phát hành"
+	},
 	"packages.filter.container.tagged": "Được gắn nhãn",
 	"packages.filter.container.untagged": "Không được gắn nhãn",
 	"packages.details.project_site": "Trang mạng dự án",
@@ -30,6 +42,21 @@
 	"migrate.form.error.url_credentials": "URL có chứa thông tin đăng nhập, điền chúng vào các ô tên người dùng và mật khẩu tương ứng",
 	"migrate.github.description": "Nhập dữ liệu từ github.com hoặc máy chủ GitHub Enterprise.",
 	"migrate.git.description": "Chỉ nhập kho mã từ dịch vụ Git bất kì.",
+	"migrate.items.milestones": "Cột mốc",
+	"migrate.items.labels": "Nhãn",
+	"migrate.items.issues": "Vấn đề",
+	"migrate.items.pull_requests": "Yêu cầu kéo",
+	"migrate.items.merge_requests": "Yêu cầu hợp",
+	"migrate.items.releases": "Bản phát hành",
+	"migrate.in_progress.git": "Đang nhập dữ liệu Git",
+	"migrate.in_progress.topics": "Đang nhập các chủ đề",
+	"migrate.in_progress.milestones": "Đang nhập các cột mốc",
+	"migrate.in_progress.labels": "Đang nhập các nhãn",
+	"migrate.in_progress.releases": "Đang nhập các bản phát hành",
+	"migrate.in_progress.issues": "Đang nhập các vấn đề",
+	"migrate.in_progress.pulls": "Đang nhập các yêu cầu kéo",
+	"migrate.cancel.title": "Huỷ nhập",
+	"migrate.cancel.confirmation": "Bạn có muốn huỷ nhập không?",
 	"home.explore_repos": "Khám phá kho mã",
 	"stars.list.none": "Chưa ai tặng sao cho kho mã này.",
 	"watch.list.none": "Không có ai đang theo dõi kho mã này.",

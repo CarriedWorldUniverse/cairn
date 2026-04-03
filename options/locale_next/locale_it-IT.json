@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commit"
+	},
+	"counters.n_branches": {
+		"one": "%s ramo",
+		"other": "%s rami"
+	},
+	"counters.n_tags": {
+		"one": "%s etichetta",
+		"other": "%s etichette"
+	},
+	"counters.n_releases": {
+		"one": "%s rilascio",
+		"other": "%s rilasci"
+	},
 	"gpg.default_key": "Firmato con la chiave predefinita",
 	"gpg.error.extract_sign": "Impossibile ricavare la firma",
 	"gpg.error.generate_hash": "Impossibile generare hash del commit",
@@ -296,6 +312,23 @@
 	"migrate.gitbucket.description": "Migra i dati dalle istanze di GitBucket.",
 	"migrate.codebase.description": "Migrare i dati da codebasehq.com.",
 	"migrate.forgejo.description": "Migra dati da codeberg.org o da altre istanze Forgejo.",
+	"migrate.items.label": "Elementi di migrazione",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Traguardi",
+	"migrate.items.labels": "Etichette",
+	"migrate.items.issues": "Segnalazioni",
+	"migrate.items.pull_requests": "Richieste di modifica",
+	"migrate.items.merge_requests": "Richieste di fusione",
+	"migrate.items.releases": "Rilasci",
+	"migrate.in_progress.git": "Migrazione dei dati Git",
+	"migrate.in_progress.topics": "Migrazione degli argomenti",
+	"migrate.in_progress.milestones": "Migrazione dei traguardi",
+	"migrate.in_progress.labels": "Migrazione delle etichette",
+	"migrate.in_progress.releases": "Migrazione dei rilasci",
+	"migrate.in_progress.issues": "Migrazione delle segnalazioni",
+	"migrate.in_progress.pulls": "Migrazione delle richieste di modifica",
+	"migrate.cancel.title": "Annulla migrazione",
+	"migrate.cancel.confirmation": "Vuoi annullare questa migrazione?",
 	"repo.settings.push_mirror.branch_filter.label": "Filtro ramo (opzionale)",
 	"alert.range_error": " deve essere un numero tra %[1]s e %[2]s.",
 	"keys.gpg.link": "Chiavi GPG",

@@ -1,4 +1,10 @@
 {
+	"migrate.items.wiki": "維基",
+	"migrate.items.milestones": "里程碑",
+	"migrate.items.labels": "標籤",
+	"migrate.items.issues": "問題數",
+	"migrate.items.pull_requests": "合併請求",
+	"migrate.items.releases": "版本發佈",
 	"actions.runners.name": "名稱",
 	"actions.runners.owner_type": "認證類型",
 	"actions.runners.description": "描述",

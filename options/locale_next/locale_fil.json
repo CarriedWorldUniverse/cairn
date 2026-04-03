@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s mga commit"
+	},
+	"counters.n_branches": {
+		"one": "%s branch",
+		"other": "%s mga branch"
+	},
+	"counters.n_tags": {
+		"one": "%s tag",
+		"other": "%s mga tag"
+	},
+	"counters.n_releases": {
+		"one": "%s release",
+		"other": "%s mga release"
+	},
 	"gpg.default_key": "Naka-sign gamit ang default key",
 	"gpg.error.extract_sign": "Nabigong i-extract ang signature",
 	"gpg.error.generate_hash": "Nabigong i-generate ang hash ng commit",
@@ -323,6 +339,23 @@
 	"migrate.gitbucket.description": "Mag-migrate ng data mula sa mga GitBucket na instansya.",
 	"migrate.codebase.description": "Mag-migrate ng data mula sa codebasehq.com.",
 	"migrate.forgejo.description": "Mag-migrate ng data mula sa codeberg.org o iba pang mga Forgejo na instansya.",
+	"migrate.items.label": "Mga item sa pagmigrate",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Mga milestone",
+	"migrate.items.labels": "Mga label",
+	"migrate.items.issues": "Mga isyu",
+	"migrate.items.pull_requests": "Mga hiling sa paghila",
+	"migrate.items.merge_requests": "Mga merge request",
+	"migrate.items.releases": "Mga paglabas",
+	"migrate.in_progress.git": "Nililipat ang Git data",
+	"migrate.in_progress.topics": "Nililipat ang mga paksa",
+	"migrate.in_progress.milestones": "Nililipat ang mga milestone",
+	"migrate.in_progress.labels": "Nililipat ang mga label",
+	"migrate.in_progress.releases": "Nililipat ang mga paglabas",
+	"migrate.in_progress.issues": "Nililipat ang mga isyu",
+	"migrate.in_progress.pulls": "Nililipat ang mga pull request",
+	"migrate.cancel.title": "Kanselahin ang pag-migrate",
+	"migrate.cancel.confirmation": "Gusto mo bang kanselahin ang migration na ito?",
 	"admin.config.security": "Pagsasaayos sa seguridad",
 	"error.must_enable_2fa": "Kinakailangan ng instansyang ito na ang mga user ay paganahin ang authentikasyong two-factor bago nila i-access ang kani-kanilang account. Paganahin ito sa: %s",
 	"admin.config.global_2fa_requirement.title": "Global na pangangailangan ng two-factor",

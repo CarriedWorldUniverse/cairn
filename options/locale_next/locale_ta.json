@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s உறுதி",
+		"other": "%s உறுதியளிக்கிறது"
+	},
+	"counters.n_branches": {
+		"one": "%s கிளை",
+		"other": "%s கிளைகள்"
+	},
+	"counters.n_tags": {
+		"one": "%s குறிச்சொல்",
+		"other": "%s குறிச்சொற்கள்"
+	},
+	"counters.n_releases": {
+		"one": "%s வெளியீடு",
+		"other": "%s வெளியீடுகள்"
+	},
 	"gpg.default_key": "இயல்புநிலை விசையுடன் கையொப்பமிடப்பட்டது",
 	"gpg.error.extract_sign": "கையொப்பத்தைப் பிரித்தெடுக்க முடியவில்லை",
 	"gpg.error.generate_hash": "உறுதியின் ஆச் உருவாக்க முடியவில்லை",
@@ -257,6 +273,23 @@
 	"migrate.gitbucket.description": "GitBucket நிகழ்வுகளிலிருந்து தரவை நகர்த்தவும்.",
 	"migrate.codebase.description": "codebasehq.com இலிருந்து தரவை நகர்த்தவும்.",
 	"migrate.forgejo.description": "codeberg.org அல்லது பிற Forgejo நிகழ்வுகளில் இருந்து தரவை நகர்த்தவும்.",
+	"migrate.items.label": "இடம்பெயர்வு பொருட்கள்",
+	"migrate.items.wiki": "விக்கி",
+	"migrate.items.milestones": "மைல்கற்கள்",
+	"migrate.items.labels": "சிட்டைகள்",
+	"migrate.items.issues": "சிக்கல்கள்",
+	"migrate.items.pull_requests": "கோரிக்கைகளை இழுக்கவும்",
+	"migrate.items.merge_requests": "கோரிக்கைகளை ஒன்றிணைக்கவும்",
+	"migrate.items.releases": "வெளியிடுகிறது",
+	"migrate.in_progress.git": "Git தரவை நகர்த்துகிறது",
+	"migrate.in_progress.topics": "இடம்பெயர்ந்த தலைப்புகள்",
+	"migrate.in_progress.milestones": "இடம்பெயரும் மைல்கற்கள்",
+	"migrate.in_progress.labels": "இடம்பெயர்தல் லேபிள்கள்",
+	"migrate.in_progress.releases": "இடம்பெயர்ந்த வெளியீடுகள்",
+	"migrate.in_progress.issues": "இடம்பெயர்வு பிரச்சினைகள்",
+	"migrate.in_progress.pulls": "இழுக்கும் கோரிக்கைகளை நகர்த்துகிறது",
+	"migrate.cancel.title": "இடம்பெயர்வை நீக்கறல்",
+	"migrate.cancel.confirmation": "இந்த இடம்பெயர்வை ரத்துசெய்ய விரும்புகிறீர்களா?",
 	"repo.issue_indexer.title": "வெளியீட்டு அட்டவணை",
 	"search.milestone_kind": "மைல்கற்களைத் தேடு…",
 	"repo.settings.push_mirror.branch_filter.label": "கிளை வடிகட்டி (விரும்பினால்)",

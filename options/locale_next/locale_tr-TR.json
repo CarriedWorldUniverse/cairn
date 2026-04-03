@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s katkı",
+		"other": "%s gönderi"
+	},
+	"counters.n_branches": {
+		"one": "%s dal",
+		"other": "%s dal"
+	},
+	"counters.n_tags": {
+		"one": "%s etiket",
+		"other": "%s etiket"
+	},
+	"counters.n_releases": {
+		"one": "%s sürüm",
+		"other": "%s sürüm"
+	},
 	"gpg.default_key": "Varsayılan anahtarla imzalanmış",
 	"gpg.error.extract_sign": "İmza çıkarılamadı",
 	"gpg.error.generate_hash": "İşlemenin sağlama kodu oluşturulamadı",
@@ -186,6 +202,23 @@
 	"migrate.onedev.description": "code.onedev.io veya diğer OneDev oluşumlarından veri aktar.",
 	"migrate.gitbucket.description": "GitBucket oluşumlarından veri aktar.",
 	"migrate.codebase.description": "codebasehq.com'dan veri aktar.",
+	"migrate.items.label": "Taşıma öğeleri",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Kilometre Taşları",
+	"migrate.items.labels": "Etiketler",
+	"migrate.items.issues": "Konular",
+	"migrate.items.pull_requests": "Birleştirme istekleri",
+	"migrate.items.merge_requests": "Birleştirme istekleri",
+	"migrate.items.releases": "Sürümler",
+	"migrate.in_progress.git": "Git Verilerini Taşıma",
+	"migrate.in_progress.topics": "Konuları taşıma",
+	"migrate.in_progress.milestones": "Kilometre Taşlarını Taşıma",
+	"migrate.in_progress.labels": "Etiketleri Taşıma",
+	"migrate.in_progress.releases": "Sürümleri Taşıma",
+	"migrate.in_progress.issues": "Konuları Taşıma",
+	"migrate.in_progress.pulls": "Değişiklik İsteklerini Taşıma",
+	"migrate.cancel.title": "Göçü iptal et",
+	"migrate.cancel.confirmation": "Bu göçü iptal etmek istiyor musunuz?",
 	"pulse.n_active_issues": {
 		"one": "%s aktif sorun",
 		"other": "%s aktif sorun"

@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "%s branch",
+		"other": "%s branches"
+	},
+	"counters.n_tags": {
+		"one": "%s tag",
+		"other": "%s tags"
+	},
+	"counters.n_releases": {
+		"one": "%s release",
+		"other": "%s releases"
+	},
 	"gpg.default_key": "Ondertekend met standaard sleutel",
 	"gpg.error.extract_sign": "Handtekening uitpakken mislukt",
 	"gpg.error.generate_hash": "Genereren van commit hash mislukt",
@@ -323,6 +339,23 @@
 	"migrate.gitbucket.description": "Gegevens migreren van GitBucket instanties.",
 	"migrate.codebase.description": "Gegevens migreren van codebasehq.com.",
 	"migrate.forgejo.description": "Migreer data van codeberg.org of andere Forgejo instanties.",
+	"migrate.items.label": "Migratie items",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Mijlpalen",
+	"migrate.items.labels": "Labels",
+	"migrate.items.issues": "Issues",
+	"migrate.items.pull_requests": "Pull requests",
+	"migrate.items.merge_requests": "Samenvoeg verzoeken",
+	"migrate.items.releases": "Releases",
+	"migrate.in_progress.git": "Git gegevens migreren",
+	"migrate.in_progress.topics": "Onderwerpen migreren",
+	"migrate.in_progress.milestones": "Mijlpalen migreren",
+	"migrate.in_progress.labels": "Labels migreren",
+	"migrate.in_progress.releases": "Releases migreren",
+	"migrate.in_progress.issues": "Issues migreren",
+	"migrate.in_progress.pulls": "Pull requests migreren",
+	"migrate.cancel.title": "Annuleer migratie",
+	"migrate.cancel.confirmation": "Wil je deze migratie annuleren?",
 	"settings.twofa_unroll_unavailable": "Tweefactorauthenticatie is vereist voor uw account en kan niet worden uitgeschakeld.",
 	"admin.config.security": "Beveiligingsconfiguratie",
 	"admin.config.global_2fa_requirement.title": "Globale vereiste van tweefactorauthenticatie",

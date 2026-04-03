@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "%s branch",
+		"other": "%s branches"
+	},
+	"counters.n_tags": {
+		"one": "%s étiquettes",
+		"other": "%s étiquettes"
+	},
+	"counters.n_releases": {
+		"one": "%s publication",
+		"other": "%s publications"
+	},
 	"gpg.default_key": "Signé avec la clé par défaut",
 	"gpg.error.extract_sign": "Impossible d'extraire la signature",
 	"gpg.error.generate_hash": "Impossible de générer la chaine de hachage de la révision",
@@ -326,6 +342,23 @@
 	"migrate.gitbucket.description": "Migrer les données depuis des instances GitBucket.",
 	"migrate.codebase.description": "Migrer les données depuis codebasehq.com.",
 	"migrate.forgejo.description": "Migrer les données depuis codeberg.org ou une autre instance Forgejo.",
+	"migrate.items.label": "Éléments à migrer",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Jalons",
+	"migrate.items.labels": "Labels",
+	"migrate.items.issues": "Tickets",
+	"migrate.items.pull_requests": "Demandes d'ajout",
+	"migrate.items.merge_requests": "Demandes de fusion",
+	"migrate.items.releases": "Publications",
+	"migrate.in_progress.git": "Migration des données Git",
+	"migrate.in_progress.topics": "Migration des sujets",
+	"migrate.in_progress.milestones": "Migration des jalons",
+	"migrate.in_progress.labels": "Migration des labels",
+	"migrate.in_progress.releases": "Migration des publications",
+	"migrate.in_progress.issues": "Migration des tickets",
+	"migrate.in_progress.pulls": "Migration des demandes d'ajout",
+	"migrate.cancel.title": "Annuler la migration",
+	"migrate.cancel.confirmation": "Voulez-vous abandonner cette migration ?",
 	"admin.dashboard.remove_resolved_reports": "Supprimer les signalements résolus",
 	"admin.auths.allow_username_change": "Autoriser le changement de nom d'utilisateur",
 	"admin.auths.allow_username_change.description": "Autoriser les utilisateurs à changer leur nom d'utilisateur dans les paramètres du profil",

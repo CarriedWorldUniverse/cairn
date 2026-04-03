@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s cometimento",
+		"other": "%s cometimentos"
+	},
+	"counters.n_branches": {
+		"one": "%s ramo",
+		"other": "%s ramos"
+	},
+	"counters.n_tags": {
+		"one": "%s etiqueta",
+		"other": "%s etiquetas"
+	},
+	"counters.n_releases": {
+		"one": "%s lançamento",
+		"other": "%s lançamentos"
+	},
 	"gpg.default_key": "Assinado com a chave padrão",
 	"gpg.error.extract_sign": "Falhou ao extrair a assinatura",
 	"gpg.error.generate_hash": "Falhou ao gerar o <i>hash</i> do cometimento",
@@ -345,6 +361,23 @@
 	"migrate.codebase.description": "Migrar dados de codebasehq.com.",
 	"migrate.forgejo.description": "Migrar dados de codeberg.org ou de outras instâncias Forgejo.",
 	"migrate.form.error.url_credentials": "O URL contém credenciais, insira-as nos campos do nome de utilizador e palavra-passe, respetivamente",
+	"migrate.items.label": "Itens da migração",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Etapas",
+	"migrate.items.labels": "Rótulos",
+	"migrate.items.issues": "Questões",
+	"migrate.items.pull_requests": "Pedidos de integração",
+	"migrate.items.merge_requests": "Pedidos de integração",
+	"migrate.items.releases": "Lançamentos",
+	"migrate.in_progress.git": "Migrando dados Git",
+	"migrate.in_progress.topics": "Migrando tópicos",
+	"migrate.in_progress.milestones": "Migrando etapas",
+	"migrate.in_progress.labels": "Migrando rótulos",
+	"migrate.in_progress.releases": "Migrando lançamentos",
+	"migrate.in_progress.issues": "Migrando questões",
+	"migrate.in_progress.pulls": "Migrando pedidos de integração",
+	"migrate.cancel.title": "Cancelar migração",
+	"migrate.cancel.confirmation": "Quer cancelar esta migração?",
 	"user.ghost.tooltip": "Este utilizador foi eliminado ou não é possível encontrar uma correspondência.",
 	"actions.runs.run_attempt_label": "Tentativa de execução #%[1]s (%[2]s)",
 	"actions.runs.viewing_out_of_date_run": "Está a visualizar uma execução desatualizada deste trabalho que foi executado %[1]s.",

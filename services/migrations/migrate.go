@@ -236,14 +236,14 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 	}
 
 	log.Trace("migrating git data from %s", repo.CloneURL)
-	messenger("repo.migrate.migrating_git")
+	messenger("migrate.in_progress.git")
 	if err = uploader.CreateRepo(repo, opts); err != nil {
 		return err
 	}
 	defer uploader.Close()
 
 	log.Trace("migrating topics")
-	messenger("repo.migrate.migrating_topics")
+	messenger("migrate.in_progress.topics")
 	topics, err := downloader.GetTopics()
 	if err != nil {
 		if !base.IsErrNotSupported(err) {
@@ -259,7 +259,7 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 
 	if opts.Milestones {
 		log.Trace("migrating milestones")
-		messenger("repo.migrate.migrating_milestones")
+		messenger("migrate.in_progress.milestones")
 		milestones, err := downloader.GetMilestones()
 		if err != nil {
 			if !base.IsErrNotSupported(err) {
@@ -282,7 +282,7 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 
 	if opts.Labels {
 		log.Trace("migrating labels")
-		messenger("repo.migrate.migrating_labels")
+		messenger("migrate.in_progress.labels")
 		labels, err := downloader.GetLabels()
 		if err != nil {
 			if !base.IsErrNotSupported(err) {
@@ -306,7 +306,7 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 
 	if opts.Releases {
 		log.Trace("migrating releases")
-		messenger("repo.migrate.migrating_releases")
+		messenger("migrate.in_progress.releases")
 		releases, err := downloader.GetReleases()
 		if err != nil {
 			if !base.IsErrNotSupported(err) {
@@ -342,7 +342,7 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 
 	if opts.Issues {
 		log.Trace("migrating issues and comments")
-		messenger("repo.migrate.migrating_issues")
+		messenger("migrate.in_progress.issues")
 		issueBatchSize := uploader.MaxBatchInsertSize("issue")
 
 		for i := 1; ; i++ {
@@ -397,7 +397,7 @@ func migrateRepository(_ context.Context, doer *user_model.User, downloader base
 
 	if opts.PullRequests {
 		log.Trace("migrating pull requests and comments")
-		messenger("repo.migrate.migrating_pulls")
+		messenger("migrate.in_progress.pulls")
 		prBatchSize := uploader.MaxBatchInsertSize("pullrequest")
 		for i := 1; ; i++ {
 			prs, isEnd, err := downloader.GetPullRequests(i, prBatchSize)

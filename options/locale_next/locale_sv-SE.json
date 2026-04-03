@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s incheckning",
+		"other": "%s incheckningar"
+	},
+	"counters.n_branches": {
+		"one": "%s gren",
+		"other": "%s grenar"
+	},
+	"counters.n_tags": {
+		"one": "%s tagg",
+		"other": "%s taggar"
+	},
+	"counters.n_releases": {
+		"one": "%s utgåva",
+		"other": "%s utgåvor"
+	},
 	"gpg.default_key": "Signerad med standardnyckeln",
 	"gpg.error.extract_sign": "Det gick inte att extrahera signatur",
 	"gpg.error.generate_hash": "Misslyckades att generera en hashsumma för incheckningen",
@@ -304,6 +320,23 @@
 	"migrate.gitbucket.description": "Migrera data från GitBucket-instans.",
 	"migrate.codebase.description": "Migrera data från codebasehq.com.",
 	"migrate.forgejo.description": "Migrera data från codeberg.org eller annan Forgejo-instans.",
+	"migrate.items.label": "Migrationsobjekt",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Milstolpar",
+	"migrate.items.labels": "Etiketter",
+	"migrate.items.issues": "Ärenden",
+	"migrate.items.pull_requests": "Ändringsförfrågningar",
+	"migrate.items.merge_requests": "Ändringsförfrågningar",
+	"migrate.items.releases": "Utgåvor",
+	"migrate.in_progress.git": "Migrerar Git-data",
+	"migrate.in_progress.topics": "Migrerar ämnen",
+	"migrate.in_progress.milestones": "Migrerar milstolpar",
+	"migrate.in_progress.labels": "Migrerar etiketter",
+	"migrate.in_progress.releases": "Migrerar utgåvor",
+	"migrate.in_progress.issues": "Migrerar ärenden",
+	"migrate.in_progress.pulls": "Migrerar ändringsförfrågningar",
+	"migrate.cancel.title": "Avbryt migrering",
+	"migrate.cancel.confirmation": "Vill du avbryta denna migrering?",
 	"repo.settings.push_mirror.branch_filter.label": "Grenfilter (frivilligt)",
 	"repo.settings.push_mirror.branch_filter.description": "Grenar att speglas. Lämna tom för att spegla alla grenar. Se <a href=\"%[1]s\">%[2]s dokumentation</a> för syntax. Exempel: <code>main, release/*</code>",
 	"admin.moderation.moderation_reports": "Modereringsrapporter",

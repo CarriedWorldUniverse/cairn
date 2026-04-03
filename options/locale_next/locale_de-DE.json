@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s Commit",
+		"other": "%s Commits"
+	},
+	"counters.n_branches": {
+		"one": "%s Branch",
+		"other": "%s Branches"
+	},
+	"counters.n_tags": {
+		"one": "%s Tag",
+		"other": "%s Tags"
+	},
+	"counters.n_releases": {
+		"one": "%s freigegeben",
+		"other": "%s Veröffentlichungen"
+	},
 	"gpg.default_key": "Mit Standardschlüssel signiert",
 	"gpg.error.extract_sign": "Die Signatur konnte nicht extrahiert werden",
 	"gpg.error.generate_hash": "Es konnte kein Hash vom Commit generiert werden",
@@ -317,6 +333,23 @@
 	"migrate.gitbucket.description": "Daten von GitBucket-Instanzen migrieren.",
 	"migrate.codebase.description": "Daten von codebasehq.com migrieren.",
 	"migrate.forgejo.description": "Daten von codeberg.org oder anderen Forgejo-Instanzen migrieren.",
+	"migrate.items.label": "Migrationselemente",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Meilensteine",
+	"migrate.items.labels": "Labels",
+	"migrate.items.issues": "Issues",
+	"migrate.items.pull_requests": "Pull-Requests",
+	"migrate.items.merge_requests": "Merge-Requests",
+	"migrate.items.releases": "Releases",
+	"migrate.in_progress.git": "Git-Daten werden migriert",
+	"migrate.in_progress.topics": "Themen werden migriert",
+	"migrate.in_progress.milestones": "Meilensteine werden migriert",
+	"migrate.in_progress.labels": "Labels werden migriert",
+	"migrate.in_progress.releases": "Releases werden migriert",
+	"migrate.in_progress.issues": "Issues werden migriert",
+	"migrate.in_progress.pulls": "Pull-Requests werden migriert",
+	"migrate.cancel.title": "Migration abbrechen",
+	"migrate.cancel.confirmation": "Möchtest du diese Migration abbrechen?",
 	"repo.pulls.already_merged": "Zusammenführung fehlgeschlagen. Der Pull-Request wurde bereits zusammengeführt.",
 	"migrate.pagure.incorrect_url": "Falsche Quellrepository-URL wurde angegeben",
 	"migrate.pagure.project_example": "Die URL des Pagure-Projekts, z. B. https://pagure.io/pagure",

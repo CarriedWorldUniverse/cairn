@@ -1,4 +1,9 @@
 {
+	"migrate.items.wiki": "ვიკი",
+	"migrate.items.milestones": "მისაღწევი გეგმები",
+	"migrate.items.labels": "ჭდეები",
+	"migrate.items.issues": "პრობლემები",
+	"migrate.items.releases": "რელიზები",
 	"actions.actions": "ქმედებები",
 	"actions.status.unknown": "უცნობი",
 	"actions.status.waiting": "ველოდები",

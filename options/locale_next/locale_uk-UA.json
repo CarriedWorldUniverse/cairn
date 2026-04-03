@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s коміт",
+		"many": "%s комітів"
+	},
+	"counters.n_branches": {
+		"one": "%s гілка",
+		"many": "%s гілок"
+	},
+	"counters.n_tags": {
+		"one": "%s тег",
+		"many": "%s тегів"
+	},
+	"counters.n_releases": {
+		"one": "%s випуск",
+		"many": "%s випусків"
+	},
 	"gpg.default_key": "Підписано типовим ключем",
 	"gpg.error.extract_sign": "Не вдалося витягти підпис",
 	"gpg.error.generate_hash": "Не вдалося згенерувати хеш коміту",
@@ -334,6 +350,23 @@
 	"migrate.gitbucket.description": "Перенести дані з екземплярів GitBucket.",
 	"migrate.codebase.description": "Перенести дані з codebasehq.com.",
 	"migrate.forgejo.description": "Перенести дані з codeberg.org або інших екземплярів Forgejo.",
+	"migrate.items.label": "Елементи для перенесення",
+	"migrate.items.wiki": "Вікі",
+	"migrate.items.milestones": "Етапи",
+	"migrate.items.labels": "Мітки",
+	"migrate.items.issues": "Задачі",
+	"migrate.items.pull_requests": "Запити на злиття",
+	"migrate.items.merge_requests": "Запити на об’єднання",
+	"migrate.items.releases": "Випуски",
+	"migrate.in_progress.git": "Перенесення даних Git",
+	"migrate.in_progress.topics": "Перенесення тем",
+	"migrate.in_progress.milestones": "Перенесення етапів",
+	"migrate.in_progress.labels": "Перенесення міток",
+	"migrate.in_progress.releases": "Перенесення випусків",
+	"migrate.in_progress.issues": "Перенесення задач",
+	"migrate.in_progress.pulls": "Перенесення запитів на злиття",
+	"migrate.cancel.title": "Скасувати перенесення",
+	"migrate.cancel.confirmation": "Бажаєте скасувати перенесення?",
 	"settings.must_enable_2fa": "На цьому екземплярі Forgejo для доступу до облікового запису вам необхідно захистити його двофакторною автентифікацією.",
 	"error.must_enable_2fa": "На цьому екземплярі Forgejo для доступу до облікового запису вам необхідно захистити його двофакторною автентифікацією. Увімкніть її тут: %s",
 	"admin.config.global_2fa_requirement.none": "Немає",
