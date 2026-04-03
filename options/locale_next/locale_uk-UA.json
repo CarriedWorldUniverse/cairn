@@ -598,5 +598,9 @@
 	"settings.access_token.no_repositories_found": "Не знайдено жодного репозиторію.",
 	"settings.access_token.resource_public_only_help": "Дозволити доступ лише до публічних репозиторіїв та організацій.",
 	"settings.access_token.resource_specific_repo_help": "Дозволити доступ лише до окремих репозиторіїв. Доступ тільки для читання дозволено до всіх публічних репозиторіїв. Можна ввімкнути лише дозволи, що надають доступ до репозиторіїв і задач.",
-	"settings.permissions_access_specific_repositories": "Визначені репозиторії"
+	"settings.permissions_access_specific_repositories": "Визначені репозиторії",
+	"members.add_member": "Додати учасника",
+	"members.user": "Користувач",
+	"members.user_already_member": "Цей користувач уже є учасником організації.",
+	"members.no_team_selected": "Учасники організації повинні входити принаймні до однієї команди."
 }
