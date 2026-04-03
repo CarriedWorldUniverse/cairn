@@ -1,6 +1,7 @@
 # Case 600 -- workflow that is not a workflow call outer job
 -
   id: 600
+  attempt: 1
   status: 1 # success
   started: 1683636528
   workflow_payload: |
@@ -18,6 +19,7 @@
 # contexts should be considered as those in `on.workflow_call.outputs`.
 -
   id: 601
+  attempt: 1
   run_id: 900
   status: 1 # success
   started: 1683636528
@@ -44,6 +46,7 @@
       workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
 - # inner job of run 601
   id: 602
+  attempt: 1
   run_id: 900
   status: 1 # success
   job_id: outer-job.inner-job
@@ -54,7 +57,7 @@
 -
   id: 603
   run_id: 901
-  attempt: 1
+  attempt: 2
   status: 1 # success
   started: 1683636528
   needs: ["outer-job.inner-job"]
@@ -81,6 +84,7 @@
 - # inner job of run 603
   id: 604
   run_id: 901
+  attempt: 2
   status: 1 # success
   job_id: outer-job.inner-job
   task_id: 101
