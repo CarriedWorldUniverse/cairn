@@ -582,5 +582,9 @@
 	"settings.access_token.admin_disabled": "Chef-Rechten sünd utknipst.",
 	"actions.runs.scheduled_description": "Utföhren na Tiedplaan vun Kommitteren <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Utföhren vun Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> utlööst",
-	"actions.runs.on_push_description": "Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> schuven"
+	"actions.runs.on_push_description": "Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> schuven",
+	"members.add_member": "Liddmaat hentofögen",
+	"members.user": "Bruker",
+	"members.user_already_member": "Deeser Bruker is al een Liddmaat vun deeser Vereenigung.",
+	"members.no_team_selected": "Vereenigungs-Liddmaten mutten to tominnst eener Klottje tohören."
 }

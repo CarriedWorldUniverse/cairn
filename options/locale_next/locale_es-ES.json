@@ -411,5 +411,7 @@
 	"moderation.comment.deletion_success": "El comentario ha sido eliminado.",
 	"mail.actions.run_info_sha": "Confirmación: %[1]s",
 	"mail.issue.action.close_by_commit": "%[1]s cerró %[2]s en la confirmación %[3]s.",
-	"repo.diff.commit.next-short": "Siguiente"
+	"repo.diff.commit.next-short": "Siguiente",
+	"admin.config.global_2fa_requirement.all": "Todos los usuarios",
+	"admin.config.global_2fa_requirement.admin": "Administradores"
 }
