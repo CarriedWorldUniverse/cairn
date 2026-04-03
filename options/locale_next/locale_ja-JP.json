@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s のコミット",
+		"other": "%s のコミット"
+	},
+	"counters.n_branches": {
+		"one": "%s のブランチ",
+		"other": "%s のブランチ"
+	},
+	"counters.n_tags": {
+		"one": "%s のタグ",
+		"other": "%s のタグ"
+	},
+	"counters.n_releases": {
+		"one": "%s リリース",
+		"other": "%s リリース"
+	},
 	"actions.actions": "Actions",
 	"actions.status.unknown": "不明",
 	"actions.status.waiting": "待機中",
@@ -229,6 +245,23 @@
 	"migrate.gitbucket.description": "GitBucket インスタンスからデータを移行します。",
 	"migrate.codebase.description": "codebasehq.com からデータを移行します。",
 	"migrate.forgejo.description": "codeberg.orgまたは他のインスタンスからデータを移行する。",
+	"migrate.items.label": "移行する項目",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "マイルストーン",
+	"migrate.items.labels": "ラベル",
+	"migrate.items.issues": "イシュー",
+	"migrate.items.pull_requests": "プルリクエスト",
+	"migrate.items.merge_requests": "マージリクエスト",
+	"migrate.items.releases": "リリース",
+	"migrate.in_progress.git": "Gitデータ移行中",
+	"migrate.in_progress.topics": "トピック移行中",
+	"migrate.in_progress.milestones": "マイルストーン移行中",
+	"migrate.in_progress.labels": "ラベル移行中",
+	"migrate.in_progress.releases": "リリース移行中",
+	"migrate.in_progress.issues": "イシュー移行中",
+	"migrate.in_progress.pulls": "プルリクエスト移行中",
+	"migrate.cancel.title": "移行のキャンセル",
+	"migrate.cancel.confirmation": "この移行をキャンセルしますか？",
 	"pulse.n_active_issues": "%s件のアクティブなイシュー",
 	"pulse.n_active_prs": "%s件のアクティブなプルリクエスト",
 	"meta.last_line": " ",

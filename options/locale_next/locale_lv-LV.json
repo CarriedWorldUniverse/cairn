@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s iesūtījums",
+		"other": "%s iesūtījumi"
+	},
+	"counters.n_branches": {
+		"one": "%s zars",
+		"other": "%s zari"
+	},
+	"counters.n_tags": {
+		"one": "%s birka",
+		"other": "%s birkas"
+	},
+	"counters.n_releases": {
+		"one": "%s laidiens",
+		"other": "%s laidieni"
+	},
 	"gpg.default_key": "Parakstīts ar noklusējuma atslēgu",
 	"gpg.error.extract_sign": "Neizdevās izgūt parakstu",
 	"gpg.error.generate_hash": "Neizdevās izveidot iesūtījuma jaucējkodu",
@@ -333,6 +349,23 @@
 	"migrate.gitbucket.description": "Pārcelt datus no GitBucket serveriem.",
 	"migrate.codebase.description": "Pārcelt datus no codebasehq.com.",
 	"migrate.forgejo.description": "Pārcelt datus no codeberg.org vai citiem Fogejo serveriem.",
+	"migrate.items.label": "Pārcelšanas vienumi",
+	"migrate.items.wiki": "Vikivietni",
+	"migrate.items.milestones": "Atskaites punktus",
+	"migrate.items.labels": "Iezīmes",
+	"migrate.items.issues": "Pieteikumi",
+	"migrate.items.pull_requests": "Izmaiņu pieprasījumus",
+	"migrate.items.merge_requests": "Iekļaušanas pieprasījumi",
+	"migrate.items.releases": "Laidienus",
+	"migrate.in_progress.git": "Pārceļ Git datus",
+	"migrate.in_progress.topics": "Pārceļ tēmas",
+	"migrate.in_progress.milestones": "Pārceļ atskaites punktus",
+	"migrate.in_progress.labels": "Pārceļ iezīmes",
+	"migrate.in_progress.releases": "Pārceļ laidienus",
+	"migrate.in_progress.issues": "Pārnes pieteikumus",
+	"migrate.in_progress.pulls": "Pārceļ izmaiņu pieprasījumus",
+	"migrate.cancel.title": "Atcelt pārcelšanu",
+	"migrate.cancel.confirmation": "Vai atcelt šo pārcelšanu?",
 	"repo.pulls.already_merged": "Apvienošana neizdevās: šis izmaiņu pieprasījums jau ir iekļauts.",
 	"admin.config.security": "Drošības konfigurācija",
 	"settings.twofa_reenroll.description": "Atkārtoti ieslēgt savu divpakāpju autentificēšanos",

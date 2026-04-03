@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "Branca %s",
+		"other": "Branques %s"
+	},
+	"counters.n_tags": {
+		"one": "Etiqueta %s",
+		"other": "Etiquetes %s"
+	},
+	"counters.n_releases": {
+		"one": "Publicació %s",
+		"other": "Publicacions %s"
+	},
 	"fork.n_forks": {
 		"one": "%s fork",
 		"many": "%s forks",
@@ -65,6 +81,23 @@
 	"migrate.gitbucket.description": "Migrar dades d'instàncies de GitBucket.",
 	"migrate.codebase.description": "Migrar dades de codebasehq.com.",
 	"migrate.forgejo.description": "Migrar dades de codeberg.org o d'altres instàncies de Forgejo.",
+	"migrate.items.label": "Elements de migració",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Fites",
+	"migrate.items.labels": "Etiquetes",
+	"migrate.items.issues": "Problemes",
+	"migrate.items.pull_requests": "Pull requests",
+	"migrate.items.merge_requests": "Sol·licituds de fusió",
+	"migrate.items.releases": "Publicacions",
+	"migrate.in_progress.git": "Migrant dades Git",
+	"migrate.in_progress.topics": "Migrant tòpics",
+	"migrate.in_progress.milestones": "Migrant fites",
+	"migrate.in_progress.labels": "Migrant etiquetes",
+	"migrate.in_progress.releases": "Migrant publicacions",
+	"migrate.in_progress.issues": "Migrant problemes",
+	"migrate.in_progress.pulls": "Migrant «pull requests»",
+	"migrate.cancel.title": "Cancel·la la migració",
+	"migrate.cancel.confirmation": "Voleu cancel·lar aquesta migració?",
 	"repo.issue_indexer.title": "Indexador d'incidències",
 	"repo.settings.push_mirror.branch_filter.label": "Filtre de branca (opcional)",
 	"incorrect_root_url": "Aquesta instància de Forejo està configurada per ser servida a \"%s\". Actualment esteu veient Forgejo des d'una URL diferent, la qual cosa pot provocar que algunes parts de l'aplicació no funcionin correctament. Els administradors de Forgejo controlen l'URL canònica mitjançant el paràmetre ROOT_URL a app.ini.",

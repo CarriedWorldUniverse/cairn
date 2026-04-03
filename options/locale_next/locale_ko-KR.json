@@ -1,4 +1,9 @@
 {
+	"migrate.items.wiki": "위키",
+	"migrate.items.milestones": "마일스톤",
+	"migrate.items.issues": "이슈",
+	"migrate.items.pull_requests": "풀 리퀘스트",
+	"migrate.items.releases": "릴리즈",
 	"actions.runners.name": "이름",
 	"actions.runners.owner_type": "유형",
 	"actions.runners.description": "설명",

@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s提交",
+		"other": "%s提交"
+	},
+	"counters.n_branches": {
+		"one": "%s分支",
+		"other": "%s分支"
+	},
+	"counters.n_tags": {
+		"one": "%s标签",
+		"other": "%s标签"
+	},
+	"counters.n_releases": {
+		"one": "%s版本发布",
+		"other": "%s版本发布"
+	},
 	"gpg.default_key": "使用默认密钥签名",
 	"gpg.error.extract_sign": "无法提取签名",
 	"gpg.error.generate_hash": "无法生成提交散列",
@@ -284,6 +300,23 @@
 	"migrate.gitbucket.description": "从GitBucket实例迁移数据。",
 	"migrate.codebase.description": "从codebasehq.com迁移数据。",
 	"migrate.forgejo.description": "从codeberg.org或其他Forgejo实例迁移数据。",
+	"migrate.items.label": "迁移项目",
+	"migrate.items.wiki": "百科",
+	"migrate.items.milestones": "里程碑",
+	"migrate.items.labels": "标签",
+	"migrate.items.issues": "议题",
+	"migrate.items.pull_requests": "合并请求",
+	"migrate.items.merge_requests": "合并请求",
+	"migrate.items.releases": "版本发布",
+	"migrate.in_progress.git": "迁移Git数据",
+	"migrate.in_progress.topics": "正在迁移主题",
+	"migrate.in_progress.milestones": "正在迁移里程碑",
+	"migrate.in_progress.labels": "正在迁移标签",
+	"migrate.in_progress.releases": "正在迁移发布",
+	"migrate.in_progress.issues": "正在迁移议题",
+	"migrate.in_progress.pulls": "正在迁移合并请求",
+	"migrate.cancel.title": "取消迁移",
+	"migrate.cancel.confirmation": "您想要取消此次迁移吗？",
 	"warning.repository.out_of_sync": "此仓库的数据库表示已脱同步。如果在向此仓库推送提交后仍出现此警告，请联系管理员。",
 	"admin.config.security": "安全设置",
 	"settings.twofa_unroll_unavailable": "你的账户必须启用双因子认证，无法禁用。",

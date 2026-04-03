@@ -32,5 +32,13 @@
 	"packages.pypi.requires": "Þarfnast Python",
 	"repo.pulls.title_desc": "vill sameina %[1]d framlög frá <code>%[2]s</code> í <code id=\"%[4]s\">%[3]s</code>",
 	"migrate.git.description": "Flytja hugbúnaðarsafn aðeins frá Git þjónustu.",
+	"migrate.items.wiki": "Handbók",
+	"migrate.items.milestones": "Tímamót",
+	"migrate.items.labels": "Skýringar",
+	"migrate.items.issues": "Vandamál",
+	"migrate.items.pull_requests": "Sameiningarbeiðnir",
+	"migrate.items.merge_requests": "Sameiningarbeiðnir",
+	"migrate.items.releases": "Útgáfur",
+	"migrate.in_progress.labels": "Að færa Lýsingar",
 	"meta.last_line": " "
 }

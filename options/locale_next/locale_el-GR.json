@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s υποβολή",
+		"other": "%s υποβολές"
+	},
+	"counters.n_branches": {
+		"one": "%s κλάδος",
+		"other": "%s κλάδοι"
+	},
+	"counters.n_tags": {
+		"one": "%s ετικέτα",
+		"other": "%s ετικέτες"
+	},
+	"counters.n_releases": {
+		"one": "%s κυκλοφορία",
+		"other": "%s κυκλοφορίες"
+	},
 	"gpg.default_key": "Υπογραφή με το προεπιλεγμένο κλειδί",
 	"gpg.error.extract_sign": "Αποτυχία εξαγωγής υπογραφής",
 	"gpg.error.generate_hash": "Αποτυχία δημιουργίας hash της υποβολής",
@@ -224,6 +240,23 @@
 	"migrate.gitbucket.description": "Μεταφορά δεδομένων από διακομιστές GitBucket.",
 	"migrate.codebase.description": "Μεταφορά δεδομένων από το codebasehq.com.",
 	"migrate.forgejo.description": "Μεταφορά δεδομένων από το codeberg.org ή άλλων υπηρεσιών Forgejo.",
+	"migrate.items.label": "Αντικείμενα μεταφοράς",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Ορόσημα",
+	"migrate.items.labels": "Σήματα",
+	"migrate.items.issues": "Ζητήματα",
+	"migrate.items.pull_requests": "Pull requests",
+	"migrate.items.merge_requests": "Merge requests",
+	"migrate.items.releases": "Κυκλοφορίες",
+	"migrate.in_progress.git": "Τα δεδομένα Git μεταφέρονται",
+	"migrate.in_progress.topics": "Τα θέματα μεταφέρονται",
+	"migrate.in_progress.milestones": "Τα ορόσημα μεταφέρονται",
+	"migrate.in_progress.labels": "Τα σήματα μεταφέρονται",
+	"migrate.in_progress.releases": "Οι κυκλοφορίες μεταφέρονται",
+	"migrate.in_progress.issues": "Τα ζητήματα μεταφέρονται",
+	"migrate.in_progress.pulls": "Μεταφέρονται τα pull requests",
+	"migrate.cancel.title": "Ακύρωση μεταφοράς",
+	"migrate.cancel.confirmation": "Θέλετε να ακυρώσετε αυτή τη μεταφορά;",
 	"relativetime.future": "στο μέλλον",
 	"relativetime.now": "τώρα",
 	"repo.form.cannot_create": "Όλοι οι χώροι που μπορείτε να δημιουργήσετε αποθετήρια έχουν φτάσει στο μέγιστο όριο αποθετηρίων.",

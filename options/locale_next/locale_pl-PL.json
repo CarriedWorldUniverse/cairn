@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"many": "%s commity"
+	},
+	"counters.n_branches": {
+		"one": "%s gałąź",
+		"many": "%s gałęzie"
+	},
+	"counters.n_tags": {
+		"one": "%s tag",
+		"many": "%s tagi"
+	},
+	"counters.n_releases": {
+		"one": "%s wydanie",
+		"many": "%s wydań"
+	},
 	"gpg.default_key": "Podpisano domyślnym kluczem",
 	"gpg.error.extract_sign": "Nie udało się wyłuskać podpisu",
 	"gpg.error.generate_hash": "Nie udało się wygenerować skrótu dla commitu",
@@ -236,6 +252,23 @@
 	"migrate.gitbucket.description": "Migruj dane z instancji GitBucket.",
 	"migrate.codebase.description": "Migracja danych z codebasehq.com.",
 	"migrate.forgejo.description": "Migruj dane z codeberg.org lub innych instancji Forgejo.",
+	"migrate.items.label": "Elementy migracji",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Kamienie milowe",
+	"migrate.items.labels": "Etykiety",
+	"migrate.items.issues": "Zgłoszenia",
+	"migrate.items.pull_requests": "Pull requesty",
+	"migrate.items.merge_requests": "Requesty scalające",
+	"migrate.items.releases": "Wydania",
+	"migrate.in_progress.git": "Migracja danych Git",
+	"migrate.in_progress.topics": "Migracja tematów",
+	"migrate.in_progress.milestones": "Migracja kamieni milowych",
+	"migrate.in_progress.labels": "Migracja etykiet",
+	"migrate.in_progress.releases": "Migracja wydań",
+	"migrate.in_progress.issues": "Migracja zgłoszeń",
+	"migrate.in_progress.pulls": "Migracja pull requestów",
+	"migrate.cancel.title": "Anuluj migrację",
+	"migrate.cancel.confirmation": "Czy chcesz anulować tę migrację?",
 	"relativetime.hours": {
 		"one": "godzinę temu",
 		"few": "%d godziny temu",

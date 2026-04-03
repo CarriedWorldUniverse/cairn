@@ -113,6 +113,11 @@
 	"migrate.onedev.description": "Migrovať dáta z code.onedev.io alebo iných inštancií OneDev.",
 	"migrate.gitbucket.description": "Migrovať dáta z inštancií GitBucket.",
 	"migrate.codebase.description": "Migrovať dáta z codebasehq.com.",
+	"migrate.items.label": "Položky migrácie",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Míľniky",
+	"migrate.items.labels": "Štítky",
+	"migrate.items.pull_requests": "Pull requesty",
 	"repo.pulls.title_desc": {
 		"one": "je potrebné zlúčiť %[1]d revíziu z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",
 		"few": "je potrebné zlúčiť %[1]d revízie z <code>%[2]s</code> do <code id=\"%[4]s\">%[3]s</code>",

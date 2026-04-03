@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "%s ramo",
+		"other": "%s ramos"
+	},
+	"counters.n_tags": {
+		"one": "%s etiqueta",
+		"other": "%s etiquetas"
+	},
+	"counters.n_releases": {
+		"one": "%s versão",
+		"other": "%s versões"
+	},
 	"gpg.default_key": "Assinado com a chave padrão",
 	"gpg.error.extract_sign": "Falha ao extrair assinatura",
 	"gpg.error.generate_hash": "Falha ao gerar hash de commit",
@@ -328,6 +344,23 @@
 	"migrate.gitbucket.description": "Migrar dados de instâncias do GitBucket.",
 	"migrate.codebase.description": "Migrar dados de codebasehq.com.",
 	"migrate.forgejo.description": "Migrar dados do codeberg.org ou outras servidores Forgejo.",
+	"migrate.items.label": "Itens da migração",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Marcos",
+	"migrate.items.labels": "Etiquetas",
+	"migrate.items.issues": "Issues",
+	"migrate.items.pull_requests": "Propostas de revisão",
+	"migrate.items.merge_requests": "Pedidos de merge",
+	"migrate.items.releases": "Versões",
+	"migrate.in_progress.git": "Migrando dados Git",
+	"migrate.in_progress.topics": "Migrando tópicos",
+	"migrate.in_progress.milestones": "Migrando marcos",
+	"migrate.in_progress.labels": "Migrando rótulos",
+	"migrate.in_progress.releases": "Migrando releases",
+	"migrate.in_progress.issues": "Migrando issues",
+	"migrate.in_progress.pulls": "Migrando propostas de revisão",
+	"migrate.cancel.title": "Cancelar migração",
+	"migrate.cancel.confirmation": "Você quer cancelar essa migração?",
 	"warning.repository.out_of_sync": "A representação deste repositório no banco de dados está fora de sincronia. Se este aviso ainda aparecer após fazer push de um commit para este repositório, contate o administrador.",
 	"repo.pulls.already_merged": "Mescla falhou: Este pull request já foi mesclado.",
 	"migrate.pagure.incorrect_url": "Uma URL incorreta do repositório fonte foi fornecida",

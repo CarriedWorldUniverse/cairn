@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s 個提交",
+		"other": "%s 個提交"
+	},
+	"counters.n_branches": {
+		"one": "%s 條分支",
+		"other": "%s 條分支"
+	},
+	"counters.n_tags": {
+		"one": "%s 個標籤",
+		"other": "%s 個標籤"
+	},
+	"counters.n_releases": {
+		"one": "%s 發行",
+		"other": "%s 發行"
+	},
 	"actions.actions": "Actions",
 	"actions.status.unknown": "未知的",
 	"actions.status.waiting": "等待中",
@@ -315,6 +331,23 @@
 	"migrate.gitbucket.description": "從 GitBucket 站點遷移資料。",
 	"migrate.codebase.description": "從 codebasehq.com 遷移資料。",
 	"migrate.forgejo.description": "從 codeberg.org 或其他 Forgejo 站點遷移資料。",
+	"migrate.items.label": "遷移項目",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "里程碑",
+	"migrate.items.labels": "標籤",
+	"migrate.items.issues": "問題",
+	"migrate.items.pull_requests": "合併請求",
+	"migrate.items.merge_requests": "合併請求",
+	"migrate.items.releases": "版本發布",
+	"migrate.in_progress.git": "正在遷移 Git 資料",
+	"migrate.in_progress.topics": "正在遷移主題",
+	"migrate.in_progress.milestones": "正在遷移里程碑",
+	"migrate.in_progress.labels": "正在遷移標籤",
+	"migrate.in_progress.releases": "正在遷移版本發佈",
+	"migrate.in_progress.issues": "正在遷移問題",
+	"migrate.in_progress.pulls": "正在遷移合併請求",
+	"migrate.cancel.title": "取消遷移",
+	"migrate.cancel.confirmation": "您確定要取消這次的遷移嗎？",
 	"pulse.n_active_issues": "%s 個問題",
 	"pulse.n_active_prs": "%s 個合併請求",
 	"watch.n_watchers": "%s 位關注者",

@@ -1,4 +1,8 @@
 {
+	"counters.n_branches": {
+		"one": "%s alamharu",
+		"other": "%s alamharu"
+	},
 	"packages.alpine.repository.branches": "Alamharud",
 	"stars.n_stars": {
 		"one": "%s tärn",

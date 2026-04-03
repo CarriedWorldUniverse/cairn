@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s คอมมิต",
+		"other": "%s คอมมิต"
+	},
+	"counters.n_branches": {
+		"one": "%s สาขา",
+		"other": "%s สาขา"
+	},
+	"counters.n_tags": {
+		"one": "%s แท็ก",
+		"other": "%s แท็ก"
+	},
+	"counters.n_releases": {
+		"one": "%s รีลีส",
+		"other": "%s รีลีส"
+	},
 	"gpg.default_key": "ลงนามด้วยคีย์เริ่มต้น",
 	"gpg.error.extract_sign": "ไม่สามารถแยกข้อมูลลายเซ็นได้",
 	"gpg.error.generate_hash": "ไม่สามารถสร้างแฮชของคอมมิตได้",
@@ -224,6 +240,23 @@
 	"migrate.gitbucket.description": "ย้ายข้อมูลจากอินสแตนซ์ GitBucket",
 	"migrate.codebase.description": "ย้ายข้อมูลจาก codebasehq.com",
 	"migrate.forgejo.description": "ย้ายข้อมูลจาก codeberg.org หรืออินสแตนซ์ Forgejo อื่นๆ",
+	"migrate.items.label": "รายการการย้าย",
+	"migrate.items.wiki": "วิกิ",
+	"migrate.items.milestones": "เหตุการณ์สำคัญ",
+	"migrate.items.labels": "ป้ายกำกับ",
+	"migrate.items.issues": "ปัญหา",
+	"migrate.items.pull_requests": "คำขอดึง",
+	"migrate.items.merge_requests": "คำขอผสาน",
+	"migrate.items.releases": "รีลีส",
+	"migrate.in_progress.git": "กำลังย้ายข้อมูล Git",
+	"migrate.in_progress.topics": "กำลังย้ายหัวข้อ",
+	"migrate.in_progress.milestones": "กำลังย้ายเหตุการณ์สำคัญ",
+	"migrate.in_progress.labels": "กำลังย้ายป้ายกำกับ",
+	"migrate.in_progress.releases": "กำลังย้ายรีลีส",
+	"migrate.in_progress.issues": "กำลังย้ายปัญหา",
+	"migrate.in_progress.pulls": "กำลังย้ายคำขอดึง",
+	"migrate.cancel.title": "ยกเลิกการย้าย",
+	"migrate.cancel.confirmation": "คุณต้องการยกเลิกการย้ายนี้หรือไม่?",
 	"repo.issue_indexer.title": "ตัวจัดทำดัชนี Issue",
 	"search.milestone_kind": "ค้นหาเหตุการณ์สำคัญ…",
 	"repo.settings.push_mirror.branch_filter.label": "ตัวกรองสาขา (ไม่บังคับ)",

@@ -1,4 +1,20 @@
 {
+	"counters.n_commits": {
+		"one": "%s commit",
+		"other": "%s commits"
+	},
+	"counters.n_branches": {
+		"one": "%s rama",
+		"other": "%s ramas"
+	},
+	"counters.n_tags": {
+		"one": "%s etiqueta",
+		"other": "%s etiquetas"
+	},
+	"counters.n_releases": {
+		"one": "%s lanzamiento",
+		"other": "%s versiones"
+	},
 	"actions.actions": "Acciones",
 	"actions.status.unknown": "Desconocido",
 	"actions.status.waiting": "Esperando",
@@ -355,6 +371,23 @@
 	"migrate.gitbucket.description": "Migrar datos de instancias de GitBucket.",
 	"migrate.codebase.description": "Migrar datos desde codebasehq.com.",
 	"migrate.forgejo.description": "Migrar datos desde codeberg.org u otras instancias de Forgejo.",
+	"migrate.items.label": "Objetos de migración",
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Hitos",
+	"migrate.items.labels": "Etiquetas",
+	"migrate.items.issues": "Incidencias",
+	"migrate.items.pull_requests": "Solicitudes de extracción",
+	"migrate.items.merge_requests": "Solicitudes de fusión",
+	"migrate.items.releases": "Lanzamientos",
+	"migrate.in_progress.git": "Migrando datos de Git",
+	"migrate.in_progress.topics": "Migrando temas",
+	"migrate.in_progress.milestones": "Migrando hitos",
+	"migrate.in_progress.labels": "Migrando etiquetas",
+	"migrate.in_progress.releases": "Migrar versiones",
+	"migrate.in_progress.issues": "Migrando incidencias",
+	"migrate.in_progress.pulls": "Migrando solicitudes de incorporación de cambios",
+	"migrate.cancel.title": "Cancelar la migración",
+	"migrate.cancel.confirmation": "¿Quiere cancelar esta migración?",
 	"moderation.abuse_category.spam": "Spam",
 	"pulse.n_active_issues": {
 		"one": "%s incidencia activa",

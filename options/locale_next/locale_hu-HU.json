@@ -1,4 +1,10 @@
 {
+	"migrate.items.wiki": "Wiki",
+	"migrate.items.milestones": "Mérföldkövek",
+	"migrate.items.labels": "Címkék",
+	"migrate.items.issues": "Hibajegyek",
+	"migrate.items.pull_requests": "Pull request-ek",
+	"migrate.items.releases": "Kiadások",
 	"actions.runners.name": "Név",
 	"actions.runners.owner_type": "Típus",
 	"actions.runners.description": "Leírás",
