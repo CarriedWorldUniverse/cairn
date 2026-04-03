@@ -597,7 +597,6 @@ func tryHandleWorkflowCallOuterJob(ctx context.Context, job *actions_model.Actio
 	)
 
 	// Insert a placeholder task with all the computed outputs
-	job.Attempt++
 	actionTask, err := actions_model.CreatePlaceholderTask(ctx, job, outputs)
 	if err != nil {
 		return nil, fmt.Errorf("failure to insert placeholder task: %w", err)
