@@ -378,4 +378,8 @@ test('Issue: Reference', async ({page}) => {
   await expect(page.locator('.ui.reference .truncate')).toContainText(
     'user2/repo1#1',
   );
+
+  await page.getByRole('button', {name: 'Copy'}).click();
+  const reference = await page.evaluate(() => navigator.clipboard.readText());
+  expect(reference).toBe('user2/repo1#1');
 });
