@@ -5,7 +5,6 @@ package actions
 
 import (
 	"context"
-	"time"
 
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
@@ -21,7 +20,7 @@ import (
 type ActionSchedule struct {
 	ID                int64
 	Title             string
-	Specs             []string
+	Specs             []*ActionScheduleSpec  `xorm:"-"`
 	RepoID            int64                  `xorm:"index"`
 	Repo              *repo_model.Repository `xorm:"-"`
 	OwnerID           int64                  `xorm:"index"`
@@ -73,25 +72,12 @@ func CreateScheduleTask(ctx context.Context, rows []*ActionSchedule) error {
 			return err
 		}
 
-		// Loop through each schedule spec and create a new spec row
-		now := time.Now()
-
 		for _, spec := range row.Specs {
-			specRow := &ActionScheduleSpec{
-				RepoID:     row.RepoID,
-				ScheduleID: row.ID,
-				Spec:       spec,
-			}
-			// Parse the spec and check for errors
-			schedule, err := specRow.Parse()
-			if err != nil {
-				continue // skip to the next spec if there's an error
-			}
-
-			specRow.Next = timeutil.TimeStamp(schedule.Next(now).Unix())
+			spec.ScheduleID = row.ID
+			spec.RepoID = row.RepoID
 
 			// Insert the new schedule spec row
-			if err = db.Insert(ctx, specRow); err != nil {
+			if err = db.Insert(ctx, spec); err != nil {
 				return err
 			}
 		}
