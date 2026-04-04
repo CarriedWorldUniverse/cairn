@@ -2,8 +2,6 @@
 -
   id: 1
   title: schedule_title1
-  specs:
-    - '* * * * *'
   repo_id: 4
   owner_id: 2
   workflow_id: 'workflow1.yml'
@@ -23,8 +21,6 @@
 -
   id: 2
   title: schedule_title2
-  specs:
-    - '* * * * *'
   repo_id: 4
   owner_id: 2
   workflow_id: 'workflow2.yml'
