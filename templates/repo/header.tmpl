@@ -77,9 +77,10 @@
 			{{end}}
 		</div>
 		{{if $.PullMirror}}
+			{{$address := MirrorRemoteAddress $.Context $.PullMirror}}
 			<div class="fork-flag">
 				{{ctx.Locale.Tr "repo.mirror_from"}}
-				<a target="_blank" rel="noopener noreferrer" href="{{$.PullMirror.RemoteAddress}}">{{$.PullMirror.RemoteAddress}}</a>
+				<a target="_blank" rel="noopener noreferrer" href="{{$address.Address}}">{{$address.Address}}</a>
 				{{if $.PullMirror.UpdatedUnix}}{{ctx.Locale.Tr "repo.mirror_sync"}} {{DateUtils.TimeSince $.PullMirror.UpdatedUnix}}{{end}}
 			</div>
 		{{end}}

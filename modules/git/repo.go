@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
 	"forgejo.org/modules/proxy"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
@@ -141,44 +140,13 @@ func CloneWithArgs(ctx context.Context, args TrustedCmdArgs, from, to string, op
 		envs = proxy.EnvWithProxy(parsedFromURL)
 	}
 
-	fromURL := from
-	sanitizedFrom := from
+	sanitizedFrom := util.SanitizeCredentialURLs(from)
 
-	// If the clone URL has credentials, build a credential file for usage by git-credential-store
-	// to prevent credential leak in the process list.
-	// https://git-scm.com/docs/git-credential-store#_storage_format
-	// credential.helper adjustment must be set before the git subcommand
-	if strings.Contains(from, "://") && strings.Contains(from, "@") {
-		sanitizedFrom = util.SanitizeCredentialURLs(from)
-		if parsedFromURL != nil {
-			credentialsFile, err := os.CreateTemp("", "forgejo-clone-credentials-")
-			if err != nil {
-				return err
-			}
-			credentialsPath := credentialsFile.Name()
-
-			defer func() {
-				_ = credentialsFile.Close()
-				if err := util.Remove(credentialsPath); err != nil {
-					log.Warn("Unable to remove temporary file %q: %v", credentialsPath, err)
-				}
-			}()
-			_, err = credentialsFile.Write([]byte(parsedFromURL.String()))
-			if err != nil {
-				return err
-			}
-			err = credentialsFile.Close()
-			if err != nil {
-				return err
-			}
-
-			cmd.AddArguments("-c").AddDynamicArguments("credential.helper=store --file=" + credentialsPath)
-
-			// remove the password from the URL argument
-			parsedFromURL.User = url.User(parsedFromURL.User.Username())
-			fromURL = parsedFromURL.String()
-		}
+	fromURL, cleanup, err := cmd.AddAuthCredentialHelperForRemote(from)
+	if err != nil {
+		return err
 	}
+	defer cleanup()
 
 	cmd.AddArguments("clone")
 

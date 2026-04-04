@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime/trace"
@@ -444,6 +445,54 @@ func (c *Command) RunStdBytes(opts *RunOpts) (stdout, stderr []byte, runErr RunS
 	}
 	// even if there is no err, there could still be some stderr output
 	return stdoutBuf.Bytes(), stderr, nil
+}
+
+// If `remoteURL` is a URL with a password in it, add parameters to the git command that will read that password from a
+// credential store file, and return the URL that should be used in the command instead of the original, and a cleanup
+// function to call to remove the credential file. If `remoteURL` doesn't have a password, then it is returned as-is.
+// This function must be invoked on the the git command before the git sub-command -- eg. before the `clone` or `fetch`
+// parameter is added to the command's args.
+func (c *Command) AddAuthCredentialHelperForRemote(remoteURL string) (commandURL string, cleanup func(), err error) {
+	parsedFromURL, _ := url.Parse(remoteURL)
+
+	// If the clone URL has credentials, build a credential file for usage by git-credential-store
+	// to prevent credential leak in the process list.
+	// https://git-scm.com/docs/git-credential-store#_storage_format
+	// credential.helper adjustment must be set before the git subcommand
+	if strings.Contains(remoteURL, "://") && strings.Contains(remoteURL, "@") && parsedFromURL != nil {
+		credentialsFile, err := os.CreateTemp("", "forgejo-clone-credentials-")
+		if err != nil {
+			return "", nil, err
+		}
+		credentialsPath := credentialsFile.Name()
+
+		cleanup := func() {
+			_ = credentialsFile.Close()
+			if err := util.Remove(credentialsPath); err != nil {
+				log.Warn("Unable to remove temporary file %q: %v", credentialsPath, err)
+			}
+		}
+		_, err = credentialsFile.Write([]byte(parsedFromURL.String()))
+		if err != nil {
+			cleanup()
+			return "", nil, err
+		}
+		err = credentialsFile.Close()
+		if err != nil {
+			cleanup()
+			return "", nil, err
+		}
+
+		c.AddArguments("-c").AddDynamicArguments("credential.helper=store --file=" + credentialsPath)
+
+		// remove the password from the URL argument
+		parsedFromURL.User = url.User(parsedFromURL.User.Username())
+		commandURL = parsedFromURL.String()
+
+		return commandURL, cleanup, nil
+	}
+
+	return remoteURL, func() {}, nil
 }
 
 // AllowLFSFiltersArgs return globalCommandArgs with lfs filter, it should only be used for tests

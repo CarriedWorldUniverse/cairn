@@ -31,55 +31,27 @@ const gitShortEmptySha = "0000000"
 
 // UpdateAddress writes new address to Git repository and database
 func UpdateAddress(ctx context.Context, m *repo_model.Mirror, addr string) error {
-	u, err := giturl.Parse(addr)
-	if err != nil {
-		return fmt.Errorf("invalid addr: %v", err)
-	}
-
 	remoteName := m.GetRemoteName()
 	repoPath := m.GetRepository(ctx).RepoPath()
-	// Remove old remote
-	_, _, err = git.NewCommand(ctx, "remote", "rm").AddDynamicArguments(remoteName).RunStdString(&git.RunOpts{Dir: repoPath})
-	if err != nil && !git.IsRemoteNotExistError(err) {
-		return err
-	}
-
-	cmd := git.NewCommand(ctx, "remote", "add").AddDynamicArguments(remoteName).AddArguments("--mirror=fetch").AddDynamicArguments(addr)
-	if strings.Contains(addr, "://") && strings.Contains(addr, "@") {
-		cmd.SetDescription(fmt.Sprintf("remote add %s --mirror=fetch %s [repo_path: %s]", remoteName, util.SanitizeCredentialURLs(addr), repoPath))
-	} else {
-		cmd.SetDescription(fmt.Sprintf("remote add %s --mirror=fetch %s [repo_path: %s]", remoteName, addr, repoPath))
-	}
-	_, _, err = cmd.RunStdString(&git.RunOpts{Dir: repoPath})
-	if err != nil && !git.IsRemoteNotExistError(err) {
+	_, _, err := git.NewCommand(ctx, "remote", "set-url").
+		AddDynamicArguments(remoteName, addr).
+		RunStdString(&git.RunOpts{Dir: repoPath})
+	if err != nil {
 		return err
 	}
 
 	if m.Repo.HasWiki() {
 		wikiPath := m.Repo.WikiPath()
 		wikiRemotePath := repo_module.WikiRemoteURL(ctx, addr)
-		// Remove old remote of wiki
-		_, _, err = git.NewCommand(ctx, "remote", "rm").AddDynamicArguments(remoteName).RunStdString(&git.RunOpts{Dir: wikiPath})
-		if err != nil && !git.IsRemoteNotExistError(err) {
-			return err
-		}
-
-		cmd = git.NewCommand(ctx, "remote", "add").AddDynamicArguments(remoteName).AddArguments("--mirror=fetch").AddDynamicArguments(wikiRemotePath)
-		if strings.Contains(wikiRemotePath, "://") && strings.Contains(wikiRemotePath, "@") {
-			cmd.SetDescription(fmt.Sprintf("remote add %s --mirror=fetch %s [repo_path: %s]", remoteName, util.SanitizeCredentialURLs(wikiRemotePath), wikiPath))
-		} else {
-			cmd.SetDescription(fmt.Sprintf("remote add %s --mirror=fetch %s [repo_path: %s]", remoteName, wikiRemotePath, wikiPath))
-		}
-		_, _, err = cmd.RunStdString(&git.RunOpts{Dir: wikiPath})
-		if err != nil && !git.IsRemoteNotExistError(err) {
+		_, _, err = git.NewCommand(ctx, "remote", "set-url").
+			AddDynamicArguments(remoteName, wikiRemotePath).
+			RunStdString(&git.RunOpts{Dir: wikiPath})
+		if err != nil {
 			return err
 		}
 	}
 
-	// erase authentication before storing in database
-	u.User = nil
-	m.Repo.OriginalURL = u.String()
-	return repo_model.UpdateRepositoryCols(ctx, m.Repo, "original_url")
+	return nil
 }
 
 // mirrorSyncResult contains information of a updated reference.
@@ -262,6 +234,46 @@ func checkRecoverableSyncError(stderrMessage string) bool {
 	}
 }
 
+// Decrypt RemoteAddressAuth from the mirror. If absent on the mirror database table, fallback to the older method where
+// credentials are stored in the git config file as the remote's address, encrypt those credentials and store them in
+// the database, and wipe them from the git config file so that they're only stored in the one encrypted location in DB.
+func DecryptOrRecoverRemoteAddress(ctx context.Context, m *repo_model.Mirror) (*giturl.GitURL, error) {
+	decryptedRemoteURL, err := m.DecryptRemoteAddress()
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt remote address: %w", err)
+	}
+
+	if has, url := decryptedRemoteURL.Get(); has {
+		remoteURL, err := giturl.Parse(url)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse decrypted remote address: %w", err)
+		}
+		return remoteURL, nil
+	}
+
+	// fallback to reading remote URL from the git config file for repos that predate DecryptRemoteAddress
+	repoPath := m.GetRepository(ctx).RepoPath()
+	remoteURL, err := git.GetRemoteURL(ctx, repoPath, m.GetRemoteName())
+	if err != nil {
+		return nil, fmt.Errorf("GetRemoteAddress error: %w", err)
+	}
+
+	// Store the full address in the database
+	if err := m.UpdateRemoteAddress(ctx, remoteURL.URL.String()); err != nil {
+		return nil, fmt.Errorf("UpdateRemoteAddress error: %w", err)
+	}
+
+	// Update the git config file to just contain the sanitized address
+	if maybeSanitizedURL, err := m.SanitizedRemoteAddress(); err != nil {
+		return nil, fmt.Errorf("SanitizedRemoteAddress error: %w", err)
+	} else if has, sanitizedURL := maybeSanitizedURL.Get(); !has {
+		return nil, fmt.Errorf("SanitizedRemoteAddress must be present after we just stored it, but had error: %w", err)
+	} else if err := UpdateAddress(ctx, m, sanitizedURL); err != nil {
+		return nil, fmt.Errorf("UpdateAddress error: %w", err)
+	}
+	return remoteURL, nil
+}
+
 // runSync returns true if sync finished without error.
 func runSync(ctx context.Context, m *repo_model.Mirror) ([]*mirrorSyncResult, bool) {
 	repoPath := m.Repo.RepoPath()
@@ -270,18 +282,28 @@ func runSync(ctx context.Context, m *repo_model.Mirror) ([]*mirrorSyncResult, bo
 
 	log.Trace("SyncMirrors [repo: %-v]: running git remote update...", m.Repo)
 
+	remoteURL, err := DecryptOrRecoverRemoteAddress(ctx, m)
+	if err != nil {
+		log.Error("SyncMirrors [repo: %-v]: failed to get remote address: %v", m.Repo, err)
+		return nil, false
+	}
+
+	cmd := git.NewCommand(ctx)
+
+	// Setup credential helper to authenticate the fetch; needs to occur before the `fetch` arg.
+	_, credCleanup, err := cmd.AddAuthCredentialHelperForRemote(remoteURL.URL.String())
+	if err != nil {
+		log.Error("SyncMirrors [repo: %-v]: AddAuthCredentialHelperForRemote Error %v", m.Repo, err)
+		return nil, false
+	}
+	defer credCleanup()
+
 	// use fetch but not remote update because git fetch support --tags but remote update doesn't
-	cmd := git.NewCommand(ctx, "fetch")
+	cmd.AddArguments("fetch")
 	if m.EnablePrune {
 		cmd.AddArguments("--prune")
 	}
 	cmd.AddArguments("--tags").AddDynamicArguments(m.GetRemoteName())
-
-	remoteURL, remoteErr := git.GetRemoteURL(ctx, repoPath, m.GetRemoteName())
-	if remoteErr != nil {
-		log.Error("SyncMirrors [repo: %-v]: GetRemoteAddress Error %v", m.Repo, remoteErr)
-		return nil, false
-	}
 
 	envs := proxy.EnvWithProxy(remoteURL.URL)
 
