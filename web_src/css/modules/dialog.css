@@ -88,6 +88,11 @@ dialog .actions {
   padding: 1rem;
 }
 
+dialog footer {
+  border-bottom-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
 /* positive/negative action buttons */
 dialog .actions .ui.button {
   display: inline-flex;
