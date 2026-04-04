@@ -134,6 +134,9 @@ forgejo.org/modules/json
 	StdJSON.Indent
 
 forgejo.org/modules/log
+	eventWriterBuffer.Close
+	eventWriterBuffer.Write
+	eventWriterBuffer.GetString
 	NewEventWriterBuffer
 
 forgejo.org/modules/markup

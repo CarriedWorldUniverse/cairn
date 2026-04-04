@@ -23,5 +23,5 @@ func TestLog(t *testing.T) {
 	testGeneric(logger, "I'm the generic value!")
 	logger.Close()
 
-	assert.Contains(t, bufferWriter.Buffer.String(), ".../logger_impl_test.go:13:testGeneric() [I] Just testing the logging of a generic function I'm the generic value!")
+	assert.Contains(t, bufferWriter.(EventWriterBuffer).GetString(), ".../logger_impl_test.go:13:testGeneric() [I] Just testing the logging of a generic function I'm the generic value!")
 }
