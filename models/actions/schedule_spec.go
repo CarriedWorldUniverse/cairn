@@ -10,6 +10,7 @@ import (
 
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/timeutil"
 
 	"github.com/robfig/cron/v3"
@@ -27,11 +28,26 @@ type ActionScheduleSpec struct {
 	// started or this entry's schedule is unsatisfiable
 	Next timeutil.TimeStamp `xorm:"index"`
 	// Prev is the last time this job was run, or the zero time if never.
-	Prev timeutil.TimeStamp
-	Spec string
+	Prev     timeutil.TimeStamp
+	Spec     string
+	TimeZone optional.Option[string]
 
 	Created timeutil.TimeStamp `xorm:"created"`
 	Updated timeutil.TimeStamp `xorm:"updated"`
+}
+
+func NewActionScheduleSpec(cron string, tz optional.Option[string], referenceTime time.Time) (*ActionScheduleSpec, error) {
+	spec := &ActionScheduleSpec{
+		Spec:     cron,
+		TimeZone: tz,
+	}
+	cronSchedule, err := spec.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	spec.Next = timeutil.TimeStamp(cronSchedule.Next(referenceTime).Unix())
+	return spec, nil
 }
 
 // Parse parses the spec and returns a cron.Schedule
@@ -43,19 +59,29 @@ func (s *ActionScheduleSpec) Parse() (cron.Schedule, error) {
 		return nil, err
 	}
 
-	// If the spec has specified a timezone, use it
-	if strings.HasPrefix(s.Spec, "TZ=") || strings.HasPrefix(s.Spec, "CRON_TZ=") {
-		return schedule, nil
-	}
-
 	specSchedule, ok := schedule.(*cron.SpecSchedule)
 	// If it's not a spec schedule, like "@every 5m", timezone is not relevant
 	if !ok {
 		return schedule, nil
 	}
 
-	// Set the timezone to UTC
-	specSchedule.Location = time.UTC
+	// If `timezone` is not defined in the workflow, but the spec includes a timezone, use it.
+	if !s.TimeZone.Has() && (strings.HasPrefix(s.Spec, "TZ=") || strings.HasPrefix(s.Spec, "CRON_TZ=")) {
+		return schedule, nil
+	}
+
+	var location *time.Location
+	if present, tz := s.TimeZone.Get(); present {
+		location, err = time.LoadLocation(tz)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// UTC is the default time zone.
+		location = time.UTC
+	}
+
+	specSchedule.Location = location
 	return specSchedule, nil
 }
 

@@ -6,12 +6,14 @@ package actions
 import (
 	"context"
 	"testing"
+	"time"
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/test"
 	"forgejo.org/modules/timeutil"
 	webhook_module "forgejo.org/modules/webhook"
@@ -29,6 +31,9 @@ func TestServiceActions_startTask(t *testing.T) {
 	// Load fixtures that are corrupted and create one valid scheduled workflow
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
 
+	spec, err := actions_model.NewActionScheduleSpec("* * * * *", optional.None[string](), time.Now())
+	require.NoError(t, err)
+
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
@@ -42,7 +47,7 @@ func TestServiceActions_startTask(t *testing.T) {
 			CommitSHA:         "fakeSHA",
 			Event:             webhook_module.HookEventSchedule,
 			EventPayload:      "fakepayload",
-			Specs:             []string{"* * * * *"},
+			Specs:             []*actions_model.ActionScheduleSpec{spec},
 			Content: []byte(
 				`
 jobs:
@@ -57,7 +62,7 @@ jobs:
 	require.Equal(t, 2, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
 	require.NoError(t, actions_model.CreateScheduleTask(t.Context(), schedules))
 	require.Equal(t, 3, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
-	_, err := db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
+	_, err = db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
 	require.NoError(t, err)
 
 	// After running startTasks an ActionRun row is created for the valid scheduled workflow
@@ -291,6 +296,9 @@ func TestServiceActions_DynamicMatrix(t *testing.T) {
 	// Load fixtures that are corrupted and create one valid scheduled workflow
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
 
+	spec, err := actions_model.NewActionScheduleSpec("* * * * *", optional.None[string](), time.Now())
+	require.NoError(t, err)
+
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
@@ -304,7 +312,7 @@ func TestServiceActions_DynamicMatrix(t *testing.T) {
 			CommitSHA:         "fakeSHA",
 			Event:             webhook_module.HookEventSchedule,
 			EventPayload:      "fakepayload",
-			Specs:             []string{"* * * * *"},
+			Specs:             []*actions_model.ActionScheduleSpec{spec},
 			Content: []byte(
 				`
 jobs:
@@ -322,7 +330,7 @@ jobs:
 	require.Equal(t, 2, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
 	require.NoError(t, actions_model.CreateScheduleTask(t.Context(), schedules))
 	require.Equal(t, 3, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
-	_, err := db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
+	_, err = db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
 	require.NoError(t, err)
 
 	// After running startTasks an ActionRun row is created for the valid scheduled workflow
@@ -354,6 +362,9 @@ func TestServiceActions_RunsOnNeeds(t *testing.T) {
 	// Load fixtures that are corrupted and create one valid scheduled workflow
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
 
+	spec, err := actions_model.NewActionScheduleSpec("* * * * *", optional.None[string](), time.Now())
+	require.NoError(t, err)
+
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
@@ -366,7 +377,7 @@ func TestServiceActions_RunsOnNeeds(t *testing.T) {
 			CommitSHA:     "fakeSHA",
 			Event:         webhook_module.HookEventSchedule,
 			EventPayload:  "fakepayload",
-			Specs:         []string{"* * * * *"},
+			Specs:         []*actions_model.ActionScheduleSpec{spec},
 			Content: []byte(
 				`
 jobs:
@@ -381,7 +392,7 @@ jobs:
 	require.Equal(t, 2, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
 	require.NoError(t, actions_model.CreateScheduleTask(t.Context(), schedules))
 	require.Equal(t, 3, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
-	_, err := db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
+	_, err = db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
 	require.NoError(t, err)
 
 	// After running startTasks an ActionRun row is created for the valid scheduled workflow
@@ -440,6 +451,9 @@ func TestServiceActions_ExpandReusableWorkflow(t *testing.T) {
 	// Load fixtures that are corrupted and create one valid scheduled workflow
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 4})
 
+	spec, err := actions_model.NewActionScheduleSpec("* * * * *", optional.None[string](), time.Now())
+	require.NoError(t, err)
+
 	workflowID := "some.yml"
 	schedules := []*actions_model.ActionSchedule{
 		{
@@ -452,7 +466,7 @@ func TestServiceActions_ExpandReusableWorkflow(t *testing.T) {
 			CommitSHA:     "fakeSHA",
 			Event:         webhook_module.HookEventSchedule,
 			EventPayload:  "fakepayload",
-			Specs:         []string{"* * * * *"},
+			Specs:         []*actions_model.ActionScheduleSpec{spec},
 			Content: []byte(
 				`
 jobs:
@@ -467,7 +481,7 @@ jobs:
 	require.Equal(t, 2, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
 	require.NoError(t, actions_model.CreateScheduleTask(t.Context(), schedules))
 	require.Equal(t, 3, unittest.GetCount(t, actions_model.ActionScheduleSpec{}))
-	_, err := db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
+	_, err = db.GetEngine(db.DefaultContext).Exec("UPDATE `action_schedule_spec` SET next = 1")
 	require.NoError(t, err)
 
 	// After running startTasks an ActionRun row is created for the valid scheduled workflow
