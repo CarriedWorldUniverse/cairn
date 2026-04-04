@@ -29,7 +29,7 @@ func TestBufferLogger(t *testing.T) {
 		MsgSimpleText: expected,
 	})
 	logger.Close()
-	assert.Contains(t, bufferWriter.Buffer.String(), expected)
+	assert.Contains(t, bufferWriter.(log.EventWriterBuffer).GetString(), expected)
 }
 
 func TestBufferLoggerWithExclusion(t *testing.T) {
@@ -41,7 +41,7 @@ func TestBufferLoggerWithExclusion(t *testing.T) {
 		Level:     level,
 		Prefix:    prefix,
 		Exclusion: message,
-	})
+	}).(log.EventWriterBuffer)
 
 	logger := log.NewLoggerWithWriters(t.Context(), "test", bufferWriter)
 
@@ -50,7 +50,7 @@ func TestBufferLoggerWithExclusion(t *testing.T) {
 		MsgSimpleText: message,
 	})
 	logger.Close()
-	assert.NotContains(t, bufferWriter.Buffer.String(), message)
+	assert.NotContains(t, bufferWriter.GetString(), message)
 }
 
 func TestBufferLoggerWithExpressionAndExclusion(t *testing.T) {
@@ -64,7 +64,7 @@ func TestBufferLoggerWithExpressionAndExclusion(t *testing.T) {
 		Prefix:     prefix,
 		Expression: expression,
 		Exclusion:  exclusion,
-	})
+	}).(log.EventWriterBuffer)
 
 	logger := log.NewLoggerWithWriters(t.Context(), "test", bufferWriter)
 
@@ -74,6 +74,6 @@ func TestBufferLoggerWithExpressionAndExclusion(t *testing.T) {
 	logger.SendLogEvent(&log.Event{Level: log.INFO, MsgSimpleText: "none"})
 	logger.Close()
 
-	assert.Contains(t, bufferWriter.Buffer.String(), "foo expression")
-	assert.NotContains(t, bufferWriter.Buffer.String(), "bar")
+	assert.Contains(t, bufferWriter.GetString(), "foo expression")
+	assert.NotContains(t, bufferWriter.GetString(), "bar")
 }

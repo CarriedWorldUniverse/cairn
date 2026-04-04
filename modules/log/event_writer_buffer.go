@@ -5,18 +5,44 @@ package log
 
 import (
 	"bytes"
+	"sync"
 )
 
-type EventWriterBuffer struct {
-	*EventWriterBaseImpl
-	Buffer *bytes.Buffer
+type EventWriterBuffer interface {
+	EventWriter
+	GetString() string
 }
 
-var _ EventWriter = (*EventWriterBuffer)(nil)
+type eventWriterBuffer struct {
+	*EventWriterBaseImpl
+	buffer *bytes.Buffer
+	mu     sync.RWMutex
+}
 
-func NewEventWriterBuffer(name string, mode WriterMode) *EventWriterBuffer {
-	w := &EventWriterBuffer{EventWriterBaseImpl: NewEventWriterBase(name, "buffer", mode)}
-	w.Buffer = new(bytes.Buffer)
-	w.OutputWriteCloser = nopCloser{w.Buffer}
+var _ EventWriterBuffer = (*eventWriterBuffer)(nil)
+
+func (*eventWriterBuffer) Close() error {
+	return nil
+}
+
+func (o *eventWriterBuffer) Write(p []byte) (n int, err error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return o.buffer.Write(p)
+}
+
+func (o *eventWriterBuffer) GetString() string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	b := o.buffer.Bytes()
+	s := make([]byte, len(b))
+	copy(s, b)
+	return string(s)
+}
+
+func NewEventWriterBuffer(name string, mode WriterMode) EventWriter {
+	w := &eventWriterBuffer{EventWriterBaseImpl: NewEventWriterBase(name, "buffer", mode)}
+	w.buffer = new(bytes.Buffer)
+	w.OutputWriteCloser = w
 	return w
 }
