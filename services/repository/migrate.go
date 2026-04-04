@@ -182,17 +182,12 @@ func MigrateRepositoryGitData(ctx context.Context, u *user_model.User,
 	defer committer.Close()
 
 	if opts.Mirror {
-		remoteAddress, err := util.SanitizeURL(opts.CloneAddr)
-		if err != nil {
-			return repo, err
-		}
 		mirrorModel := repo_model.Mirror{
 			RepoID:         repo.ID,
 			Interval:       setting.Mirror.DefaultInterval,
 			EnablePrune:    true,
 			NextUpdateUnix: timeutil.TimeStampNow().AddDuration(setting.Mirror.DefaultInterval),
 			LFS:            opts.LFS,
-			RemoteAddress:  remoteAddress,
 		}
 		if opts.LFS {
 			mirrorModel.LFSEndpoint = opts.LFSEndpoint
@@ -217,7 +212,7 @@ func MigrateRepositoryGitData(ctx context.Context, u *user_model.User,
 			}
 		}
 
-		if err = repo_model.InsertMirror(ctx, &mirrorModel); err != nil {
+		if err = mirrorModel.InsertWithAddress(ctx, opts.CloneAddr); err != nil {
 			return repo, fmt.Errorf("InsertOne: %w", err)
 		}
 

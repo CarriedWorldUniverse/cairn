@@ -41,6 +41,8 @@ var (
 	MigrateTask = deriveKey("migrate_repo_task")
 	// Used for the `webhook` table.
 	Webhook = deriveKey("webhook")
+	// Used for the `mirror` table.
+	PullMirror = deriveKey("pullmirror")
 )
 
 var (
