@@ -17,12 +17,11 @@ import (
 	asymkey_model "forgejo.org/models/asymkey"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	giturl "forgejo.org/modules/git/url"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/repository"
 	"forgejo.org/modules/svg"
+	mirror_service "forgejo.org/services/mirror"
 
 	"github.com/editorconfig/editorconfig-core-go/v2"
 )
@@ -164,17 +163,11 @@ type remoteAddress struct {
 	Password string
 }
 
-func mirrorRemoteAddress(ctx context.Context, m *repo_model.Repository, remoteName string) remoteAddress {
+func mirrorRemoteAddress(ctx context.Context, mirror *repo_model.Mirror) remoteAddress {
 	ret := remoteAddress{}
-	remoteURL, err := git.GetRemoteAddress(ctx, m.RepoPath(), remoteName)
+	u, err := mirror_service.DecryptOrRecoverRemoteAddress(ctx, mirror)
 	if err != nil {
-		log.Error("GetRemoteURL %v", err)
-		return ret
-	}
-
-	u, err := giturl.Parse(remoteURL)
-	if err != nil {
-		log.Error("giturl.Parse %v", err)
+		log.Error("DecryptOrRecoverRemoteAddress %v", err)
 		return ret
 	}
 
