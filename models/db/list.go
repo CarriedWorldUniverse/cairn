@@ -14,7 +14,7 @@ import (
 
 const (
 	// DefaultMaxInSize represents default variables number on IN () in SQL
-	DefaultMaxInSize     = 50
+	DefaultMaxInSize     = 500
 	defaultFindSliceSize = 10
 )
 
