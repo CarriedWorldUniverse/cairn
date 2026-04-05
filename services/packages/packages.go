@@ -95,9 +95,10 @@ func createPackageAndAddFile(ctx context.Context, pvci *PackageCreationInfo, pfc
 	// causes such a recovery from error to panic.  So, we retry the entire modification transaction if
 	// ErrUniqueConstraintViolation is encountered.
 	err := db.RetryTx(ctx, db.RetryConfig{
-		// A single retry is sufficient as any package index that was concurrently modified should now be present:
-		AttemptCount: 2,
-		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+		// A single retry is sufficient as any package index that was concurrently modified should now be present; an
+		// additional retry may be necessary if a deadlock occurs with concurrent updates.
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation, xorm.ErrDeadlock},
 	}, func(ctx context.Context) error {
 		var err error
 		var pb *packages_model.PackageBlob
@@ -237,9 +238,10 @@ func addFileToPackageWrapper(ctx context.Context, fn func(ctx context.Context) (
 
 	// See comment in createPackageAndAddFile which explains why RetryTx is used with ErrUniqueConstraintViolation.
 	err := db.RetryTx(ctx, db.RetryConfig{
-		// A single retry is sufficient as any package index that was concurrently modified should now be present:
-		AttemptCount: 2,
-		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+		// A single retry is sufficient as any package index that was concurrently modified should now be present; an
+		// additional retry may be necessary if a deadlock occurs with concurrent updates.
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation, xorm.ErrDeadlock},
 	}, func(ctx context.Context) error {
 		var err error
 		var blobCreated bool
@@ -468,9 +470,10 @@ func GetOrCreateInternalPackageVersion(ctx context.Context, ownerID int64, packa
 
 	// See comment in createPackageAndAddFile which explains why RetryTx is used with ErrUniqueConstraintViolation.
 	return pv, db.RetryTx(ctx, db.RetryConfig{
-		// A single retry is sufficient as any package index that was concurrently modified should now be present:
-		AttemptCount: 2,
-		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+		// A single retry is sufficient as any package index that was concurrently modified should now be present; an
+		// additional retry may be necessary if a deadlock occurs with concurrent updates.
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation, xorm.ErrDeadlock},
 	}, func(ctx context.Context) error {
 		p := &packages_model.Package{
 			OwnerID:    ownerID,
