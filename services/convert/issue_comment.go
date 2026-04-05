@@ -43,12 +43,6 @@ func ToTimelineComment(ctx context.Context, repo *repo_model.Repository, c *issu
 		return nil
 	}
 
-	err = c.LoadResolveDoer(ctx)
-	if err != nil {
-		log.Error("LoadResolveDoer: %v", err)
-		return nil
-	}
-
 	err = c.LoadDepIssueDetails(ctx)
 	if err != nil {
 		log.Error("LoadDepIssueDetails: %v", err)

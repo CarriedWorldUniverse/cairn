@@ -176,6 +176,37 @@ func FindReactions(ctx context.Context, opts FindReactionsOptions) (ReactionList
 	return reactions, count, err
 }
 
+func getReactionsForComments(ctx context.Context, issueID int64, commentIDs []int64) (map[int64]ReactionList, error) {
+	reactions := make(map[int64]ReactionList, len(commentIDs))
+	left := len(commentIDs)
+	for left > 0 {
+		limit := min(left, db.DefaultMaxInSize)
+		rows, err := db.GetEngine(ctx).
+			Where(builder.Eq{"issue_id": issueID}).
+			In("reaction.`type`", setting.UI.Reactions).
+			In("comment_id", commentIDs[:limit]).
+			Rows(&Reaction{})
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+			var reaction Reaction
+			err = rows.Scan(&reaction)
+			if err != nil {
+				_ = rows.Close()
+				return nil, err
+			}
+			reactions[reaction.CommentID] = append(reactions[reaction.CommentID], &reaction)
+		}
+
+		_ = rows.Close()
+		left -= limit
+		commentIDs = commentIDs[limit:]
+	}
+	return reactions, nil
+}
+
 func createReaction(ctx context.Context, opts *ReactionOptions) (*Reaction, error) {
 	reaction := &Reaction{
 		Type:      opts.Type,
