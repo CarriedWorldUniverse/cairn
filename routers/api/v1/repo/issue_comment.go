@@ -215,6 +215,11 @@ func ListIssueCommentsAndTimeline(ctx *context.APIContext) {
 		return
 	}
 
+	if err := comments.LoadResolveDoers(ctx); err != nil {
+		ctx.Error(http.StatusInternalServerError, "LoadResolveDoers", err)
+		return
+	}
+
 	var apiComments []*api.TimelineComment
 	for _, comment := range comments {
 		if comment.Type != issues_model.CommentTypeCode && isXRefCommentAccessible(ctx, ctx.Doer, comment, issue.RepoID, ctx.Reducer) {

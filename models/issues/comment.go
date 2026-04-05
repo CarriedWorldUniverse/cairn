@@ -663,21 +663,6 @@ func (c *Comment) LoadAssigneeUserAndTeam(ctx context.Context) error {
 	return nil
 }
 
-// LoadResolveDoer if comment.Type is CommentTypeCode and ResolveDoerID not zero, then load resolveDoer
-func (c *Comment) LoadResolveDoer(ctx context.Context) (err error) {
-	if c.ResolveDoerID == 0 || c.Type != CommentTypeCode {
-		return nil
-	}
-	c.ResolveDoer, err = user_model.GetUserByID(ctx, c.ResolveDoerID)
-	if err != nil {
-		if user_model.IsErrUserNotExist(err) {
-			c.ResolveDoer = user_model.NewGhostUser()
-			err = nil
-		}
-	}
-	return err
-}
-
 // IsResolved check if an code comment is resolved
 func (c *Comment) IsResolved() bool {
 	return c.ResolveDoerID != 0 && c.Type == CommentTypeCode
