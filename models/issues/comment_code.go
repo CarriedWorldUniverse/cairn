@@ -133,7 +133,7 @@ func findCodeComments(ctx context.Context, opts FindCommentsOptions, issue *Issu
 		return nil, err
 	}
 
-	n := 0
+	readyComments := make(CommentList, 0, len(comments))
 	for _, comment := range comments {
 		if re, ok := reviews[comment.ReviewID]; ok && re != nil {
 			// If the review is pending only the author can see the comments (except if the review is set)
@@ -143,17 +143,18 @@ func findCodeComments(ctx context.Context, opts FindCommentsOptions, issue *Issu
 			}
 			comment.Review = re
 		}
-		comments[n] = comment
-		n++
+		readyComments = append(readyComments, comment)
+	}
 
-		if err := comment.LoadResolveDoer(ctx); err != nil {
-			return nil, err
-		}
+	if err := readyComments.LoadResolveDoers(ctx); err != nil {
+		return nil, err
+	}
 
-		if err := comment.LoadReactions(ctx, issue.Repo); err != nil {
-			return nil, err
-		}
+	if err := readyComments.LoadReactions(ctx, issue.Repo); err != nil {
+		return nil, err
+	}
 
+	for _, comment := range readyComments {
 		var err error
 		if comment.RenderedContent, err = markdown.RenderString(&markup.RenderContext{
 			Ctx: ctx,
@@ -165,7 +166,8 @@ func findCodeComments(ctx context.Context, opts FindCommentsOptions, issue *Issu
 			return nil, err
 		}
 	}
-	return comments[:n], nil
+
+	return readyComments, nil
 }
 
 // FetchCodeConversation fetches the code conversation of a given comment (same review, treePath and line number)

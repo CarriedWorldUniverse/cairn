@@ -1663,6 +1663,11 @@ func ViewIssue(ctx *context.Context) {
 		return
 	}
 
+	if err := issue.Comments.LoadResolveDoers(ctx); err != nil {
+		ctx.ServerError("LoadResolveDoers", err)
+		return
+	}
+
 	for commentIdx, comment = range issue.Comments {
 		comment.Issue = issue
 		metas := ctx.Repo.Repository.ComposeMetas(ctx)
@@ -1800,10 +1805,6 @@ func ViewIssue(ctx *context.Context) {
 						participants = addParticipant(c.Poster, participants)
 					}
 				}
-			}
-			if err = comment.LoadResolveDoer(ctx); err != nil {
-				ctx.ServerError("LoadResolveDoer", err)
-				return
 			}
 		} else if comment.Type == issues_model.CommentTypePullRequestPush {
 			participants = addParticipant(comment.Poster, participants)

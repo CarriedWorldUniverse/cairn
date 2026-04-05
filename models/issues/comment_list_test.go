@@ -84,3 +84,111 @@ func TestCommentListLoadUser(t *testing.T) {
 		})
 	}
 }
+
+func TestCommentListLoadResolveDoers(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	issue := unittest.AssertExistsAndLoadBean(t, &Issue{})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+
+	empty := CommentList{}
+	require.NoError(t, empty.LoadResolveDoers(t.Context()))
+
+	comment1, err := CreateComment(db.DefaultContext, &CreateCommentOptions{
+		Type:    CommentTypeCode,
+		Doer:    doer,
+		Repo:    repo,
+		Issue:   issue,
+		Content: "Hello",
+	})
+	require.NoError(t, err)
+	require.NoError(t, MarkConversation(t.Context(), comment1, doer, true))
+	comment1 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment1.ID}) // reload after change
+	comment1List := CommentList{comment1}
+	require.NoError(t, comment1List.LoadResolveDoers(t.Context()))
+	require.NotNil(t, comment1.ResolveDoer)
+	assert.Equal(t, doer.ID, comment1.ResolveDoer.ID)
+
+	comment2, err := CreateComment(db.DefaultContext, &CreateCommentOptions{
+		Type:    CommentTypeCode,
+		Doer:    doer,
+		Repo:    repo,
+		Issue:   issue,
+		Content: "Hello again",
+	})
+	require.NoError(t, err)
+	require.NoError(t, MarkConversation(t.Context(), comment2, user_model.NewGhostUser(), true))
+
+	// Reload for fresh objects
+	comment1 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment1.ID})
+	comment2 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment2.ID})
+
+	comment2List := CommentList{comment1, comment2}
+	require.NoError(t, comment2List.LoadResolveDoers(t.Context()))
+	require.NotNil(t, comment1.ResolveDoer)
+	assert.Equal(t, doer.ID, comment1.ResolveDoer.ID)
+	require.NotNil(t, comment2.ResolveDoer)
+	assert.EqualValues(t, -1, comment2.ResolveDoer.ID)
+}
+
+func TestCommentListLoadReactions(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+
+	issue := unittest.AssertExistsAndLoadBean(t, &Issue{})
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: issue.RepoID})
+	doer := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+
+	empty := CommentList{}
+	require.NoError(t, empty.LoadReactions(t.Context(), repo))
+
+	comment1, err := CreateComment(db.DefaultContext, &CreateCommentOptions{
+		Type:    CommentTypeCode,
+		Doer:    doer,
+		Repo:    repo,
+		Issue:   issue,
+		Content: "Hello",
+	})
+	require.NoError(t, err)
+	_, err = CreateReaction(t.Context(), &ReactionOptions{
+		Type:      "eyes",
+		DoerID:    doer.ID,
+		IssueID:   issue.ID,
+		CommentID: comment1.ID,
+	})
+	require.NoError(t, err)
+
+	comment1 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment1.ID}) // reload after change
+	comment1List := CommentList{comment1}
+	require.NoError(t, comment1List.LoadReactions(t.Context(), repo))
+	require.Len(t, comment1.Reactions, 1)
+	assert.Equal(t, "eyes", comment1.Reactions[0].Type)
+	assert.NotNil(t, comment1.Reactions[0].User)
+
+	comment2, err := CreateComment(db.DefaultContext, &CreateCommentOptions{
+		Type:    CommentTypeCode,
+		Doer:    doer,
+		Repo:    repo,
+		Issue:   issue,
+		Content: "Hello again",
+	})
+	require.NoError(t, err)
+	_, err = CreateReaction(t.Context(), &ReactionOptions{
+		Type:      "rocket",
+		DoerID:    doer.ID,
+		IssueID:   issue.ID,
+		CommentID: comment2.ID,
+	})
+	require.NoError(t, err)
+
+	// Reload for fresh objects
+	comment1 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment1.ID})
+	comment2 = unittest.AssertExistsAndLoadBean(t, &Comment{ID: comment2.ID})
+
+	comment2List := CommentList{comment1, comment2}
+	require.NoError(t, comment2List.LoadReactions(t.Context(), repo))
+	require.Len(t, comment1.Reactions, 1)
+	require.Len(t, comment2.Reactions, 1)
+	assert.Equal(t, "rocket", comment2.Reactions[0].Type)
+	assert.NotNil(t, comment2.Reactions[0].User)
+}

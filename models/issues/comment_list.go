@@ -5,6 +5,7 @@ package issues
 
 import (
 	"context"
+	"errors"
 
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
@@ -387,6 +388,84 @@ func (comments CommentList) LoadAttachments(ctx context.Context) (err error) {
 	for _, comment := range comments {
 		comment.Attachments = attachments[comment.ID]
 	}
+	return nil
+}
+
+func (comments CommentList) LoadResolveDoers(ctx context.Context) (err error) {
+	relevant := func(c *Comment) bool {
+		return c.ResolveDoerID != 0 && c.Type == CommentTypeCode
+	}
+	userIDs := make(container.Set[int64])
+	for _, comment := range comments {
+		if relevant(comment) {
+			userIDs.Add(comment.ResolveDoerID)
+		}
+	}
+
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	userMap := make(map[int64]*user_model.User)
+	users, err := user_model.GetUsersByIDs(ctx, userIDs.Slice())
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	for _, comment := range comments {
+		if !relevant(comment) {
+			continue
+		}
+		resolveDoer, ok := userMap[comment.ResolveDoerID]
+		if !ok {
+			comment.ResolveDoer = user_model.NewGhostUser()
+		} else {
+			comment.ResolveDoer = resolveDoer
+		}
+	}
+
+	return nil
+}
+
+func (comments CommentList) LoadReactions(ctx context.Context, repo *repo_model.Repository) (err error) {
+	loadIssueID := int64(0)
+	loadCommentIDs := make([]int64, 0, len(comments))
+
+	for _, comment := range comments {
+		if loadIssueID == 0 {
+			loadIssueID = comment.IssueID
+		} else if loadIssueID != comment.IssueID {
+			return errors.New("unable to load reactions from comments on different issues than each other")
+		}
+		if comment.Reactions == nil {
+			loadCommentIDs = append(loadCommentIDs, comment.ID)
+		}
+	}
+
+	if loadIssueID == 0 {
+		return nil
+	}
+
+	reactions, err := getReactionsForComments(ctx, loadIssueID, loadCommentIDs)
+	if err != nil {
+		return err
+	}
+
+	allReactions := make(ReactionList, 0, len(reactions))
+	for _, comment := range comments {
+		if comment.Reactions == nil {
+			comment.Reactions = reactions[comment.ID]
+			allReactions = append(allReactions, comment.Reactions...)
+		}
+	}
+
+	if _, err := allReactions.LoadUsers(ctx, repo); err != nil {
+		return err
+	}
+
 	return nil
 }
 
