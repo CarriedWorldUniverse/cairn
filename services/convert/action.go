@@ -47,3 +47,22 @@ func ToActionRun(ctx context.Context, run *actions_model.ActionRun, doer *user_m
 		HTMLURL:           run.HTMLURL(),
 	}
 }
+
+func ToActionRunJob(job *actions_model.ActionRunJob) *api.ActionRunJob {
+	if job == nil {
+		return nil
+	}
+
+	return &api.ActionRunJob{
+		ID:      job.ID,
+		Attempt: job.Attempt,
+		Handle:  job.Handle,
+		RepoID:  job.RepoID,
+		OwnerID: job.OwnerID,
+		Name:    job.Name,
+		Needs:   job.Needs,
+		RunsOn:  job.RunsOn,
+		TaskID:  job.TaskID,
+		Status:  job.Status.String(),
+	}
+}

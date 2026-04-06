@@ -1031,3 +1031,68 @@ func GetActionRun(ctx *context.APIContext) {
 
 	ctx.JSON(http.StatusOK, convert.ToActionRun(ctx, run, ctx.Doer))
 }
+
+// ListActionRunJobs return a filtered list of jobs that belong to a single workflow run
+func ListActionRunJobs(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs repository ListActionRunJobs
+	// ---
+	// summary: List jobs of a workflow run
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: run_id
+	//   in: path
+	//   description: ID of the workflow run
+	//   type: integer
+	//   format: int64
+	//   required: true
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/ActionRunJobList"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	run, err := actions_model.GetRunByID(ctx, ctx.ParamsInt64(":run_id"))
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Error(http.StatusNotFound, "GetRunById", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetRunByID", err)
+		}
+		return
+	}
+
+	// Action runs lives in its own table, therefore we check that the
+	// run with the requested ID is owned by the repository
+	if ctx.Repo.Repository.ID != run.RepoID {
+		ctx.Error(http.StatusNotFound, "GetRunById", util.ErrNotExist)
+		return
+	}
+
+	jobs, err := actions_model.GetRunJobsByRunID(ctx, run.ID)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "GetRunJobsByRunID", err)
+		return
+	}
+
+	response := make([]*api.ActionRunJob, 0, len(jobs))
+	for _, job := range jobs {
+		response = append(response, convert.ToActionRunJob(job))
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}

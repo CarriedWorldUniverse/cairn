@@ -74,18 +74,7 @@ func fromRunJobModelToResponse(job []*actions_model.ActionRunJob, labels []strin
 	var res []*structs.ActionRunJob
 	for i := range job {
 		if len(labels) == 0 || labels[0] == "" && len(job[i].RunsOn) == 0 || job[i].ItRunsOn(labels) {
-			res = append(res, &structs.ActionRunJob{
-				ID:      job[i].ID,
-				Attempt: job[i].Attempt,
-				Handle:  job[i].Handle,
-				RepoID:  job[i].RepoID,
-				OwnerID: job[i].OwnerID,
-				Name:    job[i].Name,
-				Needs:   job[i].Needs,
-				RunsOn:  job[i].RunsOn,
-				TaskID:  job[i].TaskID,
-				Status:  job[i].Status.String(),
-			})
+			res = append(res, convert.ToActionRunJob(job[i]))
 		}
 	}
 	return res
