@@ -318,9 +318,10 @@ func buildReleaseFiles(ctx context.Context, ownerID int64, repoVersion *packages
 	// way.
 	var priv string
 	err = db.RetryTx(ctx, db.RetryConfig{
-		// A single retry is sufficient the user/org's key pair would have been created by the first successful tx.
-		AttemptCount: 2,
-		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation},
+		// A single retry is sufficient the user/org's key pair would have been created by the first successful tx; an
+		// additional retry may be necessary if a deadlock occurs with concurrent updates.
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrUniqueConstraintViolation, xorm.ErrDeadlock},
 	}, func(ctx context.Context) error {
 		priv, _, err = GetOrCreateKeyPair(ctx, ownerID)
 		return err
