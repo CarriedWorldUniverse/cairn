@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -666,5 +667,111 @@ func TestAPIRepoActionsRunnerOperations(t *testing.T) {
 		request = NewRequest(t, "GET", requestURL)
 		request.AddTokenAuth(readToken)
 		MakeRequest(t, request, http.StatusNotFound)
+	})
+}
+
+func TestActionsAPIListActionRunJobs(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+
+	t.Run("Jobs", func(t *testing.T) {
+		for _, setup := range []struct {
+			runID, repoID int64
+		}{
+			{793, 4},
+			{895, 4},
+		} {
+			repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: setup.repoID})
+			user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+			token := getUserToken(t, user.LowerName, auth_model.AccessTokenScopeReadRepository)
+			req := NewRequest(t, http.MethodGet,
+				fmt.Sprintf("/api/v1/repos/%s/%s/actions/runs/%d/jobs",
+					repo.OwnerName, repo.Name, setup.runID,
+				),
+			).AddTokenAuth(token)
+			res := MakeRequest(t, req, http.StatusOK)
+			var jobList []*api.ActionRunJob
+			DecodeJSON(t, res, &jobList)
+
+			correctJobList, err := actions_model.GetRunJobsByRunID(context.Background(), setup.runID)
+			require.NoError(t, err, "GetRunJobsByRunID")
+			assert.Len(t, jobList, len(correctJobList))
+
+			for i := range jobList {
+				expected := correctJobList[i]
+				actual := jobList[i]
+				assert.Equal(t, expected.ID, actual.ID)
+				assert.Equal(t, expected.Attempt, actual.Attempt)
+				assert.Equal(t, expected.Handle, actual.Handle)
+				assert.Equal(t, expected.RepoID, actual.RepoID)
+				assert.Equal(t, expected.OwnerID, actual.OwnerID)
+				assert.Equal(t, expected.Name, actual.Name)
+				assert.Equal(t, expected.Needs, actual.Needs)
+				assert.Equal(t, expected.RunsOn, actual.RunsOn)
+				assert.Equal(t, expected.TaskID, actual.TaskID)
+				assert.Equal(t, expected.Status.String(), actual.Status)
+
+				if expected.ID == 195 {
+					assert.Equal(t, &api.ActionRunJob{
+						ID:      195,
+						Attempt: 1,
+						Handle:  "",
+						RepoID:  4,
+						OwnerID: 1,
+						Name:    "job1 (2)",
+						Needs:   nil,
+						RunsOn:  nil,
+						TaskID:  50,
+						Status:  "success",
+					}, actual)
+				} else if expected.ID == 197 {
+					assert.Equal(t, &api.ActionRunJob{
+						ID:      197,
+						Attempt: 0,
+						Handle:  "",
+						RepoID:  4,
+						OwnerID: 1,
+						Name:    "job1 (1)",
+						Needs:   nil,
+						RunsOn:  []string{"postmarketOS"},
+						TaskID:  54,
+						Status:  "failure",
+					}, actual)
+				}
+			}
+		}
+	})
+
+	repoID := int64(4)
+	runID := int64(793)
+
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: repoID})
+	user := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: repo.OwnerID})
+	token := getUserToken(t, user.LowerName, auth_model.AccessTokenScopeReadRepository)
+
+	t.Run("Wrong Run ID", func(t *testing.T) {
+		req := NewRequest(t, http.MethodGet,
+			fmt.Sprintf("/api/v1/repos/%s/%s/actions/runs/%d/jobs",
+				repo.OwnerName, repo.Name, runID+9999,
+			),
+		).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Wrong Repo Name", func(t *testing.T) {
+		req := NewRequest(t, http.MethodGet,
+			fmt.Sprintf("/api/v1/repos/%s/%s/actions/runs/%d/jobs",
+				repo.OwnerName, repo.Name+"_wrong_repo", runID,
+			),
+		).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNotFound)
+	})
+
+	t.Run("Wrong Owner", func(t *testing.T) {
+		req := NewRequest(t, http.MethodGet,
+			fmt.Sprintf("/api/v1/repos/%s/%s/actions/runs/%d/jobs",
+				repo.OwnerName+"_wrong_owner", repo.Name, runID,
+			),
+		).AddTokenAuth(token)
+		MakeRequest(t, req, http.StatusNotFound)
 	})
 }
