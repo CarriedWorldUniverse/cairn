@@ -13,6 +13,44 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestActionScheduleSpec_NewActionScheduleSpec(t *testing.T) {
+	tests := []struct {
+		name        string
+		refTime     time.Time
+		cronPattern string
+		timeZone    string
+		want        string
+		wantErr     assert.ErrorAssertionFunc
+	}{
+		{
+			name:        "without timezone",
+			refTime:     time.Date(2026, 4, 6, 11, 56, 0, 0, time.UTC),
+			cronPattern: "58 14 * * *",
+			want:        "2026-04-06T14:58:00Z",
+			wantErr:     assert.NoError,
+		},
+		{
+			name:        "with separate timezone",
+			refTime:     time.Date(2026, 4, 6, 11, 56, 0, 0, time.UTC),
+			cronPattern: "58 14 * * *",
+			timeZone:    "Europe/Tallinn", // +03 (EEST)
+			want:        "2026-04-06T11:58:00Z",
+			wantErr:     assert.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s, err := NewActionScheduleSpec(test.cronPattern, optional.FromNonDefault(test.timeZone), test.refTime)
+			test.wantErr(t, err)
+
+			if err == nil {
+				assert.Equal(t, test.want, s.Next.AsTime().UTC().Format(time.RFC3339))
+			}
+		})
+	}
+}
+
 func TestActionScheduleSpec_Parse(t *testing.T) {
 	// Mock the local timezone is not UTC
 	local := time.Local
@@ -88,24 +126,24 @@ func TestActionScheduleSpec_Parse(t *testing.T) {
 			// skipping the execution on that day because any time between 2 and 3 o'clock never happened. Forgejo uses
 			// option B because the code it inherited already did that and was exposed to users.
 			name:     "skips execution during DST jump forwards",
-			refTime:  time.Date(2025, 3, 30, 1, 5, 0, 0, time.UTC),
-			spec:     "10 2 * * *", // The clock jumps at 2 o'clock to 3 o'clock.
+			refTime:  time.Date(2025, 3, 30, 0, 55, 0, 0, time.UTC), // 01:55 local time
+			spec:     "10 2 * * *",                                  // The clock jumps at 2 o'clock to 3 o'clock.
 			timeZone: "Europe/Berlin",
 			want:     "2025-03-31T00:10:00Z",
 			wantErr:  assert.NoError,
 		},
 		{
 			name:     "executes a first time before DST jump backwards",
-			refTime:  time.Date(2025, 10, 26, 0, 5, 0, 0, time.UTC),
-			spec:     "10 2 * * *", // The clock jumps at 3 o'clock to 2 o'clock.
+			refTime:  time.Date(2025, 10, 26, 0, 5, 0, 0, time.UTC), // 02:05 local time
+			spec:     "10 2 * * *",                                  // The clock jumps at 3 o'clock to 2 o'clock.
 			timeZone: "Europe/Berlin",
 			want:     "2025-10-26T00:10:00Z",
 			wantErr:  assert.NoError,
 		},
 		{
 			name:     "executes a second time after DST jump backwards",
-			refTime:  time.Date(2025, 10, 26, 1, 5, 0, 0, time.UTC),
-			spec:     "10 2 * * *", // The clock jumps at 3 o'clock to 2 o'clock.
+			refTime:  time.Date(2025, 10, 26, 1, 5, 0, 0, time.UTC), // 02:05 local time
+			spec:     "10 2 * * *",                                  // The clock jumps at 3 o'clock to 2 o'clock.
 			timeZone: "Europe/Berlin",
 			want:     "2025-10-26T01:10:00Z",
 			wantErr:  assert.NoError,
