@@ -47,6 +47,8 @@ func TestActionsIDToken(t *testing.T) {
 
 	token, err := actions_service.CreateAuthorizationToken(task, gitCtx, true)
 	require.NoError(t, err)
+	tokenWithoutOIDCAccess, err := actions_service.CreateAuthorizationToken(task, gitCtx, false)
+	require.NoError(t, err)
 
 	// get JWKs information
 	req := NewRequest(t, "GET", "/api/actions/.well-known/keys")
@@ -116,6 +118,13 @@ func TestActionsIDToken(t *testing.T) {
 		require.NoError(t, err)
 
 		doAssertions("testingAud", claims)
+	})
+
+	t.Run("with token that doesn't support OIDC", func(t *testing.T) {
+		req = NewRequest(t, "GET", "/api/actions/_apis/pipelines/workflows/792/idtoken?placeholder=true").AddTokenAuth(tokenWithoutOIDCAccess)
+		resp = MakeRequest(t, req, http.StatusInternalServerError)
+		assert.Contains(t, resp.Body.String(), "Error runner api parsing custom claims")
+		assert.NotContains(t, resp.Body.String(), "value") // must not leak an actual `getTokenResponse`
 	})
 
 	t.Run("with no auth header", func(t *testing.T) {
