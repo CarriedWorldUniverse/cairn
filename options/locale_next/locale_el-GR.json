@@ -12,12 +12,12 @@
         "other": "%s λήψεις"
     },
     "repo.pulls.merged_title_desc": {
-        "one": "συγχώνευθηκε %[1]d υποβολή από τον κλάδο <code>%[2]s</code> στον κλάδο <code>%[3]s</code> %[4]s",
-        "other": "συγχώνευσε %[1]d υποβολές από <code>%[2]s</code> σε <code>%[3]s</code> %[4]s"
+        "one": "συγχώνευσε %[1]d υποβολή από <code>%[2]s</code> στο <code>%[3]s</code> %[4]s",
+        "other": "συγχώνευσε %[1]d υποβολές από <code>%[2]s</code> στο <code>%[3]s</code> %[4]s"
     },
     "repo.pulls.title_desc": {
-        "one": ": θα ήθελε να συγχωνεύσει %[1]d υποβολή από τον κλάδο <code>%[2]s</code> στον κλάδο <code id=\"%[4]s\">%[3]s</code>",
-        "other": "θέλει να συγχωνεύσει %[1]d υποβολές από <code>%[2]s</code> σε <code id=\"%[4]s\">%[3]s</code>"
+        "one": "θέλει να συγχωνεύσει %[1]d υποβολή από <code>%[2]s</code> στο <code id=\"%[4]s\">%[3]s</code>",
+        "other": "θέλει να συγχωνεύσει %[1]d υποβολές από <code>%[2]s</code> στο <code id=\"%[4]s\">%[3]s</code>"
     },
     "search.milestone_kind": "Αναζήτηση ορόσημων…",
     "home.welcome.no_activity": "Καμιά δραστηριότητα",
@@ -213,5 +213,10 @@
     "editor.replace": "Αντικατάσταση",
     "editor.replace_all": "Αντικατάσταση όλων",
     "migrate.pagure.token.placeholder": "Μόνο για δημιουργία ιδιωτικού αρχείου ζητημάτων",
-    "repo.issues.filter_sort.hint_with_placeholder": "Ταξινόμηση κατά: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Ταξινόμηση κατά: %s",
+    "repo.pulls.poster_trust_deny.tooltip": "Οι ροές εργασίας που αναμένουν έγκριση θα ακυρωθούν.",
+    "moderation.report.mark_as_handled": "Σήμανση ως αντιμετωπίστηκε",
+    "moderation.report.mark_as_ignored": "Σήμανση ως αγνοήθηκε",
+    "mail.issue.action.close_by_commit": "Ο/Η %[1]s έκλεισε το %[2]s στην υποβολή %[3]s.",
+    "actions.workflow.event_detection_error": "Αδυναμία ανάλυσης των υποστηριζόμενων συμβάντων στη ροή εργασίας: %v"
 }

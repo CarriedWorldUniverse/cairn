@@ -155,7 +155,7 @@
     "migrate.pagure.incorrect_url": "Foi fornecida uma URL incorreta do repositório de origem",
     "migrate.pagure.project_url": "URL do projeto Pagure",
     "migrate.pagure.project_example": "URL do projeto Pagure, por exemplo, https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Código da API do Pagure",
+    "migrate.pagure.token_label": "Token da API do Pagure",
     "migrate.github.description": "Migrar dados do github.com ou do GitHub Enterprise server.",
     "migrate.git.description": "Migrar um repositório somente de qualquer serviço Git.",
     "migrate.gitea.description": "Migrar dados de gitea.com ou de outras instâncias do Gitea.",
@@ -184,9 +184,9 @@
     "repo.pulls.maintainers_cannot_edit": "Os responsáveis não podem editar este pedido de integração.",
     "mail.issue.action.close_by_commit": "%[1]s fechou %[2]s no cometimento %[3]s.",
     "migrate.pagure.private_issues.summary": "Questões privadas (opcional)",
-    "migrate.pagure.private_issues.description": "Esta funcionalidade está desenhada para criar um segundo repositório contendo apenas questões privadas do seu repositório Pagure para efeitos de arquivo. Primeiro, faça uma migração normal (sem um código) para importar todo o conteúdo público. Depois, se tiver questões privadas a preservar, crie um repositório separado usando esta opção com código para arquivar essas questões privadas.",
+    "migrate.pagure.private_issues.description": "Esta funcionalidade está desenhada para criar um segundo repositório contendo apenas questões privadas do seu repositório Pagure para efeitos de arquivo. Primeiro, faça uma migração normal (sem um token) para importar todo o conteúdo público. Depois, se tiver questões privadas a preservar, crie um repositório separado usando esta opção com token para arquivar essas questões privadas.",
     "migrate.pagure.private_issues.warning": "Certifique-se que passa a visibilidade do repositório para Privado se estiver a usar a chave de API para importar questões privadas. Isso irá evitar que exponha acidentalmente conteúdo privado num repositório público.",
-    "migrate.pagure.token.placeholder": "Somente para criar arquivo com questões privadas",
+    "migrate.pagure.token.placeholder": "Apenas para criar arquivo com questões privadas",
     "actions.workflow.job_parsing_error": "Não foi possível analisar os trabalhos na sequência de trabalho: %v",
     "actions.workflow.event_detection_error": "Não foi possível analisar eventos suportados na sequência de trabalho: %v",
     "actions.workflow.pre_execution_error": "A sequência de trabalho não foi executada por causa de um erro que bloqueou a tentativa de execução.",
@@ -211,7 +211,7 @@
     "repo.pulls.poster_trust_revoke": "Revogar",
     "repo.pulls.poster_trust_revoke.tooltip": "O autor deste pedido de integração deixará de ser considerado confiável para executar sequências de trabalho acionadas por um evento `pull_request`, cada execução terá que ser aprovada manualmente.",
     "admin.dashboard.actions_action_user": "Revogar a confiança em Forgejo Actions para utilizadores inativos",
-    "keys.verify.token.hint": "O código é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>.",
+    "keys.verify.token.hint": "O token é válido apenas por 1 minuto. <a href=\"%[1]s\">Obtenha um novo se ele expirou</a>.",
     "actions.status.diagnostics.waiting": {
         "one": "Aguardando por um executor com o seguinte rótulo: %s",
         "many": "Aguardando por um executor com os seguintes rótulos: %s",
@@ -266,5 +266,6 @@
     "editor.toggle_whole_word": "Ativar/desativar correspondência de palavras inteiras",
     "install.ssh_authorized_keys_inspection_error": "Falha ao inspecionar o ficheiro authorized_keys existente: %v",
     "install.ssh_authorized_keys_unexpected_key": "A ativação do SSH para o Forgejo entra em conflito com o ficheiro localizado em %s que contém chaves SSH existentes. Sugestões: use um utilizador de sistema dedicado para o Forgejo ou desative o SSH.",
-    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s",
+    "repo.pulls.auto_merge.no_permission": "Não tem permissão para cancelar a integração automática deste pedido de integração."
 }

@@ -266,5 +266,6 @@
     "editor.toggle_whole_word": "Перемкнути пошук цілих слів",
     "install.ssh_authorized_keys_inspection_error": "Не вдалося перевірити наявний файл authorized_keys: %v",
     "install.ssh_authorized_keys_unexpected_key": "Увімкнення SSH для Forgejo конфліктує з файлом, розташованим за адресою %s, який містить існуючі ключі SSH. Підказка: використовуйте для Forgejo спеціального системного користувача або вимкніть SSH.",
-    "repo.issues.filter_sort.hint_with_placeholder": "Сортувати за: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Сортувати за: %s",
+    "repo.pulls.auto_merge.no_permission": "У вас немає дозволу скасувати автоматичне об’єднання цього запиту на злиття."
 }

@@ -38,7 +38,7 @@
     "alert.asset_load_failed": "Nepodařilo se načíst soubory příloh z {path}. Ujistěte se, že jsou dané soubory přístupné.",
     "install.invalid_lfs_path": "Nepodařilo se vytvořit kořen LFS na zvolené cestě: %[1]s",
     "alert.range_error": " musí být číslo mezi %[1]s a %[2]s.",
-    "meta.last_line": "Díky všem přispěvatelům za pomoc!",
+    "meta.last_line": "Díky všem přispěvatelům za pomoc!.",
     "mail.actions.not_successful_run_subject": "Workflow %[1]s selhal v repozitáři %[2]s",
     "mail.actions.not_successful_run": "Workflow %[1]s selhal v repozitáři %[2]s",
     "mail.actions.run_info_cur_status": "Stav tohoto procesu: %[1]s (právě aktualizováno z %[2]s)",
@@ -266,5 +266,6 @@
     "editor.toggle_whole_word": "Přepnout shodu s celými slovy",
     "install.ssh_authorized_keys_inspection_error": "Nepodařilo se projít existující soubor authorized_keys: %v",
     "install.ssh_authorized_keys_unexpected_key": "Povolení SSH pro Forgejo je v konfliktu se souborem umístěným v %s, který obsahuje existující klíče SSH. Návrhy: použijte pro Forgejo vyhrazeného systémového uživatele nebo SSH deaktivujte.",
-    "repo.issues.filter_sort.hint_with_placeholder": "Řadit podle: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Řadit podle: %s",
+    "repo.pulls.auto_merge.no_permission": "Nemáte oprávnění ke zrušení automatického sloučení této žádosti."
 }

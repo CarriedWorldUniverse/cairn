@@ -194,5 +194,8 @@
     "editor.toggle_case": "Íogaireacht cás a scoránaigh",
     "editor.toggle_regex": "Scoránaigh ag baint úsáide as nathanna rialta",
     "editor.toggle_whole_word": "Athraigh focail iomlána meaitseála",
-    "meta.last_line": "Go raibh maith agat as Forgejo a aistriú! Ní fheiceann na húsáideoirí an líne seo ach tá cuspóirí eile aici i mbainistíocht an aistriúcháin. Is féidir leat fíric spraíúil a chur san aistriúchán in ionad í a aistriú."
+    "meta.last_line": "Go raibh maith agat as Forgejo a aistriú! Ní fheiceann na húsáideoirí an líne seo ach tá cuspóirí eile aici i mbainistíocht an aistriúcháin. Is féidir leat fíric spraíúil a chur san aistriúchán in ionad í a aistriú.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sórtáil de réir: %s",
+    "install.ssh_authorized_keys_inspection_error": "Theip ar an gcomhad authorized_keys atá ann cheana a iniúchadh: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Tá coimhlint idir cumasú SSH do Forgejo agus an comhad atá suite ag %s ina bhfuil eochracha SSH atá ann cheana féin. Moltaí: bain úsáid as úsáideoir córais tiomnaithe do Forgejo, nó díchumasaigh SSH."
 }

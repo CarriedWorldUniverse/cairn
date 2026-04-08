@@ -251,5 +251,6 @@
     "editor.toggle_whole_word": "Treffer auf ganze Wörter umschalten",
     "install.ssh_authorized_keys_inspection_error": "Existierende authorized_keys-Datei konnte nicht untersucht werden: %v",
     "install.ssh_authorized_keys_unexpected_key": "Die Aktivierung von SSH für Forgejo steht im Konflikt mit der Datei, die sich bei %s befindet und existierende SSH-Keys enthält. Vorschlag: Benutzen Sie einen eigenen Systembenutzer für Forgejo oder deaktivieren Sie SSH.",
-    "repo.issues.filter_sort.hint_with_placeholder": "Sortieren nach: %"
+    "repo.issues.filter_sort.hint_with_placeholder": "Sortieren nach: %",
+    "repo.pulls.auto_merge.no_permission": "Du hast nicht die Erlaubnis, die automatische Zusammenführung dieses Pull-Requests abzubrechen."
 }

@@ -202,5 +202,16 @@
     "moderation.action.comment.delete": "Elimina commento",
     "repo.issues.filter_reviewers.hint": "Filtra per utente che ha recensito",
     "repo.issues.filter_mention.hint": "Filtra per utente menzionato",
-    "repo.issues.filter_modified.hint": "Filtra per ultima data modificata"
+    "repo.issues.filter_modified.hint": "Filtra per ultima data modificata",
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordina per: %s",
+    "issues.updated": "aggiornato %s",
+    "repo.pulls.poster_requires_approval.tooltip": "L'autore di questa richiesta di modifica non è autorizzato ad eseguire i flussi di lavoro attivati da una richiesta di modifica o da un repository forkato o con AGit. I flussi di lavoro attivati da un evento `pull_request` non verranno eseguiti fino a quando non saranno approvati.",
+    "repo.pulls.poster_trust_always.tooltip": "I flussi di lavoro attivati da un evento `pull_request` verranno eseguiti su questo commit e non sarà necessario approvare successive esecuzioni da questa proposta di modifica definita dallo stesso utente.",
+    "repo.pulls.poster_trust_revoke": "Revoca",
+    "repo.pulls.poster_trust_revoke.tooltip": "L'autore di questa richiesta di modifica non sarà più attendibile per eseguire flussi di lavoro avviati da un evento `pull request`, ogni esecuzione dovrà essere approvata manualmente.",
+    "repo.view.gitmodules_too_large": "Il file .gitmodules è troppo grande e verrà ignorato (durante le chiamate API per esempio)",
+    "search.syntax": "Sintassi di ricerca",
+    "search.fuzzy": "Fuzzy",
+    "search.fuzzy_tooltip": "Includere i risultati è una corrispondenza approssimativa al termine di ricerca",
+    "install.ssh_authorized_keys_inspection_error": "Ispezione del file authorized_keys esistente fallito: %v"
 }
