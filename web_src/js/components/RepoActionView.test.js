@@ -183,7 +183,8 @@ function configureForMultipleAttemptTests({viewHistorical}) {
         },
       ],
       allAttempts: [
-        {number: 2, time_since_started_html: 'yesterday', status: 'success', status_diagnostics: ['Success']},
+        {number: 3, time_since_started_html: 'yesterday', status: 'success', status_diagnostics: ['Success']},
+        // Omit one attempt to simulate the case when a job isn't run because a `needs:` failed.
         {number: 1, time_since_started_html: 'two days ago', status: 'failure', status_diagnostics: ['Failure']},
       ],
     },
@@ -218,7 +219,7 @@ function configureForMultipleAttemptTests({viewHistorical}) {
     props: {
       ...defaultTestProps,
       runIndex: '123',
-      attemptNumber: viewHistorical ? '1' : '2',
+      attemptNumber: viewHistorical ? '1' : '3',
       actionsURL: toAbsoluteUrl('/user1/repo2/actions'),
       initialJobData: {...minimalInitialJobData, state: myJobState},
     },
@@ -243,7 +244,7 @@ test('display baseline with most-recent attempt', async () => {
   // Attempt selector dropdown...
   expect(wrapper.findAll('.job-attempt-dropdown').length).toEqual(1);
   expect(wrapper.findAll('.job-attempt-dropdown .svg.octicon-check-circle-fill.text.green').length).toEqual(1);
-  expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 2 yesterday');
+  expect(wrapper.get('.job-attempt-dropdown .ui.dropdown').text()).toEqual('Run attempt 3 yesterday');
 
   // Attempt status
   expect(wrapper.get('.job-info-header h3').text()).toEqual('test');
@@ -302,7 +303,7 @@ test('historical attempt dropdown interactions', async () => {
   const attemptsExpanded = () => {
     expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu').length).toEqual(1);
     expect(wrapper.get('.job-attempt-dropdown .action-job-menu').isVisible()).toBe(true);
-    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu a').filter((a) => a.text() === 'Run attempt 2 yesterday').length).toEqual(1);
+    expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu a').filter((a) => a.text() === 'Run attempt 3 yesterday').length).toEqual(1);
     expect(wrapper.findAll('.job-attempt-dropdown .action-job-menu a').filter((a) => a.text() === 'Run attempt 1 two days ago').length).toEqual(1);
   };
   attemptsExpanded();
@@ -332,8 +333,8 @@ test('historical attempt dropdown interactions', async () => {
   attemptsExpanded();
 
   // Click on the other option in the dropdown to verify it navigates to the target attempt
-  wrapper.findAll('.job-attempt-dropdown .action-job-menu a').find((a) => a.text() === 'Run attempt 2 yesterday').trigger('click');
-  expect(window.location.href).toEqual(toAbsoluteUrl('/user1/repo2/actions/runs/123/jobs/1/attempt/2'));
+  wrapper.findAll('.job-attempt-dropdown .action-job-menu a').find((a) => a.text() === 'Run attempt 3 yesterday').trigger('click');
+  expect(window.location.href).toEqual(toAbsoluteUrl('/user1/repo2/actions/runs/123/jobs/1/attempt/3'));
 });
 
 test('run approval interaction', async () => {
