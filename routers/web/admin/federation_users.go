@@ -18,10 +18,7 @@ const (
 )
 
 func FederationUsers(ctx *context.Context) {
-	page := ctx.FormInt("page")
-	if page < 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	users, err := user_model.FindFederatedUsers(ctx, db.ListOptions{
 		Page:     page,
