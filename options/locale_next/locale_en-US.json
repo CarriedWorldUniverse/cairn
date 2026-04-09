@@ -447,6 +447,7 @@
 	"actions.runners.token": "Token",
 	"actions.runners.ephemeral": "Ephemeral",
 	"actions.runners.labels": "Labels",
+	"actions.runners.version": "Version",
 	"actions.runners.last_online": "Last online time",
 	"actions.runners.list_runners.details_column": "Details",
 	"actions.runners.list_runners.edit_column": "Edit",
