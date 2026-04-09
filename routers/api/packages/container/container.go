@@ -118,8 +118,7 @@ func apiErrorDefined(ctx *context.Context, err *container_service.NamedError) {
 func APIUnauthorizedError(ctx *context.Context) {
 	// Do not include more than one challenge in the same header field. That breaks clients even though the HTTP RFC
 	// allows it.
-	ctx.Resp.Header().Add("WWW-Authenticate", `Bearer realm="`+setting.AppURL+`v2/token",service="container_registry",scope="*"`)
-	ctx.Resp.Header().Add("WWW-Authenticate", `Basic realm="Forgejo Container Registry"`)
+	ctx.Resp.Header().Set("WWW-Authenticate", `Bearer realm="`+setting.AppURL+`v2/token",service="container_registry",scope="*"`)
 	apiErrorDefined(ctx, container_service.ErrUnauthorized)
 }
 
