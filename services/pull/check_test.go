@@ -11,6 +11,7 @@ import (
 
 	"forgejo.org/models/db"
 	issues_model "forgejo.org/models/issues"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	"forgejo.org/modules/queue"
 	"forgejo.org/modules/setting"
@@ -66,4 +67,54 @@ func TestPullRequest_AddToTaskQueue(t *testing.T) {
 
 	prPatchCheckerQueue.ShutdownWait(5 * time.Second)
 	prPatchCheckerQueue = nil
+}
+
+func TestIsMergeSigningRequired(t *testing.T) {
+	testCases := []struct {
+		name       string
+		mergeStyle repo_model.MergeStyle
+		expected   bool
+	}{
+		{
+			name:       "fast-forward never requires signing",
+			mergeStyle: repo_model.MergeStyleFastForwardOnly,
+			expected:   false,
+		},
+		{
+			name:       "rebase requires signing even when up to date",
+			mergeStyle: repo_model.MergeStyleRebase,
+			expected:   true,
+		},
+		{
+			name:       "rebase-merge requires signing",
+			mergeStyle: repo_model.MergeStyleRebaseMerge,
+			expected:   true,
+		},
+		{
+			name:       "squash commits require signing",
+			mergeStyle: repo_model.MergeStyleSquash,
+			expected:   true,
+		},
+		{
+			name:       "merge commits require signing",
+			mergeStyle: repo_model.MergeStyleMerge,
+			expected:   true,
+		},
+		{
+			name:       "rebase-update style still requires signing",
+			mergeStyle: repo_model.MergeStyleRebaseUpdate,
+			expected:   true,
+		},
+		{
+			name:       "empty merge style requires signing",
+			mergeStyle: "",
+			expected:   true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.expected, isMergeSigningRequired(testCase.mergeStyle))
+		})
+	}
 }

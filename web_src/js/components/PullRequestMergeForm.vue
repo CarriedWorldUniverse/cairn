@@ -38,7 +38,8 @@ export default {
   },
   watch: {
     mergeStyle(val) {
-      this.mergeStyleDetail = this.mergeForm.mergeStyles.find((e) => e.name === val);
+      const mergeStyleDetail = this.mergeForm.mergeStyles.find((e) => e.name === val);
+      if (mergeStyleDetail) this.mergeStyleDetail = mergeStyleDetail;
       for (const elem of document.querySelectorAll('[data-pull-merge-style]')) {
         toggleElem(elem, elem.getAttribute('data-pull-merge-style') === val);
       }
@@ -49,6 +50,7 @@ export default {
 
     let mergeStyle = this.mergeForm.mergeStyles.find((e) => e.allowed && e.name === this.mergeForm.defaultMergeStyle)?.name;
     if (!mergeStyle) mergeStyle = this.mergeForm.mergeStyles.find((e) => e.allowed)?.name;
+    if (!mergeStyle) return;
     this.switchMergeStyle(mergeStyle, !this.mergeForm.canMergeNow);
   },
   mounted() {
@@ -62,6 +64,7 @@ export default {
       this.showMergeStyleMenu = false;
     },
     toggleActionForm(show) {
+      if (show && this.mergeStyleAllowedCount === 0) return;
       this.showActionForm = show;
       if (!show) return;
       this.deleteBranchAfterMerge = this.mergeForm.defaultDeleteBranchAfterMerge;
@@ -134,7 +137,7 @@ export default {
       </div>
     </form>
 
-    <div v-if="!showActionForm" class="tw-flex">
+    <div v-if="!showActionForm && mergeStyleAllowedCount > 0" class="tw-flex">
       <!-- the merge button -->
       <div class="ui buttons merge-button" :class="[mergeForm.emptyCommit ? 'grey' : mergeForm.allOverridableChecksOk ? 'primary' : 'red']" @click="toggleActionForm(true)">
         <button class="ui button">
@@ -146,7 +149,7 @@ export default {
             </template>
           </span>
         </button>
-        <div class="ui dropdown icon button" @click.stop="showMergeStyleMenu = !showMergeStyleMenu" v-if="mergeStyleAllowedCount>1">
+        <div class="ui dropdown icon button" @click.stop="showMergeStyleMenu = !showMergeStyleMenu" v-if="mergeStyleAllowedCount > 1">
           <svg-icon name="octicon-triangle-down" :size="14"/>
           <div class="menu" :class="{'show':showMergeStyleMenu}">
             <template v-for="msd in mergeForm.mergeStyles">
