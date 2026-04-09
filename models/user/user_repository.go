@@ -83,6 +83,57 @@ func FindFederatedUser(ctx context.Context, externalID string, federationHostID 
 	return user, federatedUser, nil
 }
 
+func CountFederatedUsers(ctx context.Context) (int64, error) {
+	return db.GetEngine(ctx).Count(FederatedUser{})
+}
+
+func FindFederatedUsers(ctx context.Context, opts db.ListOptions) (users []*FederatedUser, err error) {
+	sess := db.GetEngine(ctx)
+
+	if opts.PageSize > 0 {
+		sess = db.SetSessionPagination(sess, &opts)
+	}
+
+	err = sess.Find(&users)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if res, err := validation.IsValid(user); !res {
+			return nil, err
+		}
+	}
+
+	return users, err
+}
+
+func CountFederatedUsersByHostID(ctx context.Context, federationHostID int64) (int64, error) {
+	return db.GetEngine(ctx).Where("federation_host_id = ?", federationHostID).Count(FederatedUser{})
+}
+
+func FindFederatedUsersByHostID(ctx context.Context, federationHostID int64, opts db.ListOptions) ([]*FederatedUser, error) {
+	var users []*FederatedUser
+	sess := db.GetEngine(ctx).Where("federation_host_id = ?", federationHostID)
+
+	if opts.PageSize > 0 {
+		sess = db.SetSessionPagination(sess, &opts)
+	}
+
+	err := sess.Find(&users)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if res, err := validation.IsValid(user); !res {
+			return nil, err
+		}
+	}
+
+	return users, nil
+}
+
 func GetFederatedUser(ctx context.Context, externalID string, federationHostID int64) (*User, *FederatedUser, error) {
 	user, federatedUser, err := FindFederatedUser(ctx, externalID, federationHostID)
 	if err != nil {

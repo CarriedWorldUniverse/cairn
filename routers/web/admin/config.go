@@ -148,6 +148,8 @@ func Config(ctx *context.Context) {
 	ctx.Data["DbCfg"] = setting.Database
 	ctx.Data["Webhook"] = setting.Webhook
 	ctx.Data["Moderation"] = setting.Moderation
+	ctx.Data["Federation"] = setting.Federation
+	ctx.Data["FederationMaxSize"] = setting.Federation.MaxSize / 1024 / 1024 // in MiB
 
 	ctx.Data["MailerEnabled"] = false
 	if setting.MailService != nil {
