@@ -113,8 +113,8 @@
         "other": "%s aktiva ärenden"
     },
     "pulse.n_active_prs": {
-        "one": "%s aktiv pull-förfrågan",
-        "other": "%s aktiva pull-förfrågningar"
+        "one": "%s aktiv ändringsförfrågan",
+        "other": "%s aktiva ändringsförfrågningar"
     },
     "migrate.form.error.url_credentials": "URL:en innehåller inloggningsuppgifter, sätt dem i respektive användarnamn- och lösenordsfält",
     "migrate.git.description": "Migrera ett kodförråd från en Git-tjänst.",
@@ -188,8 +188,8 @@
     "admin.dashboard.actions_action_user": "Återkalla Forgejo Actions-förtroende för inaktiva användare",
     "admin.dashboard.transfer_lingering_logs": "Överför loggar över slutförda åtgärder från databasen till lagringsutrymmet",
     "actions.workflow.persistent_incomplete_matrix": "Det går inte att utvärdera `strategy.matrix` för jobb %[1]s på grund av ett ogiltigt `needs`-uttryck. Det kan hänvisa till ett jobb som inte finns i dess ’needs’-lista (%[2]s) eller en utdata som inte finns i något av dessa jobb.",
-    "teams.add_all_repos.modal.header": "Lägg till arkiv",
-    "teams.remove_all_repos.modal.header": "Ta bort alla arkiv",
+    "teams.add_all_repos.modal.header": "Lägg till alla kodförråd",
+    "teams.remove_all_repos.modal.header": "Ta bort alla kodförråd",
     "admin.auths.oauth2_quota_group_map_removal": "Ta bort användare från synkroniserade kvotgrupper om användaren inte tillhör motsvarande grupp.",
     "repo.issues.filter_sort.hint": "Sortera utifrån: skapad/kommentarer/uppdaterad/slutdatum",
     "issues.updated": "uppdaterade %s",
@@ -237,5 +237,6 @@
     "editor.toggle_case": "Växla skiftlägeskänslighet",
     "editor.toggle_regex": "Använd reguljära uttryck",
     "editor.toggle_whole_word": "Matcha hela ord",
-    "repo.issues.filter_sort.hint_with_placeholder": "Sortera efter: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Sortera efter: %s",
+    "repo.pulls.auto_merge.no_permission": "Du har inte behörighet att avbryta auto-sammanfogning av denna ändringsförfrågan."
 }

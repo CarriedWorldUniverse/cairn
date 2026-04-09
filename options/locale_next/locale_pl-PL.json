@@ -162,7 +162,7 @@
     "repo.pulls.poster_trust_revoke": "Unieważnij",
     "repo.pulls.poster_trust_revoke.tooltip": "Autor tego pull requesta nie będzie już zaufany do uruchamiania workflowów wyzwalanych przez zdarzenie `pull_request`. Każde uruchomienie będzie musiało zostać zatwierdzone ręcznie.",
     "search.syntax": "Syntax wyszukiwania",
-    "search.fuzzy": "fFzzy",
+    "search.fuzzy": "fuzzy",
     "moderation.report.mark_as_ignored": "Oznacz jako ignorowane",
     "moderation.action.account.delete": "Usuń konto",
     "moderation.action.account.suspend": "Zawieś konto",
@@ -228,5 +228,7 @@
     "actions.workflow.pre_execution_error": "Workflow nie został uruchomiony z powodu błędu, który zablokował próbę jego wykonania.",
     "teams.add_all_repos.modal.header": "Dodaj wszystkie repozytoria",
     "teams.remove_all_repos.modal.header": "Usuń wszystkie repozytoria",
-    "meta.last_line": " "
+    "meta.last_line": " ",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sortuj wg: %s",
+    "repo.pulls.auto_merge.no_permission": "Nie masz uprawnień aby anulować auto merge tego pull requesta."
 }

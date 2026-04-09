@@ -243,5 +243,11 @@
     "actions.workflow.incomplete_runson_missing_output": "No s'ha pogut avaluar `runs-on` del treball %[1]s: el treball %[2]s no té una sortida %[3]s.",
     "actions.workflow.incomplete_runson_missing_matrix_dimension": "No s'ha pogut avaluar `runs-on` del treball %[1]s: la mida de la matriu %[2]s no existeix.",
     "actions.workflow.incomplete_runson_unknown_cause": "No s'ha pogut avaluar `runs-on` del treball %[1]s: error desconegut.",
-    "admin.auths.oauth2_quota_group_map_removal": "Elimina els usuaris dels grups de quotes sincronitzats si l'usuari no pertany al grup corresponent."
+    "admin.auths.oauth2_quota_group_map_removal": "Elimina els usuaris dels grups de quotes sincronitzats si l'usuari no pertany al grup corresponent.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar per: %s",
+    "issues.updated": "actualitzat %s",
+    "repo.pulls.auto_merge.no_permission": "No tens permís per a cancel·lar la fusió automàtica d'aquesta «pull request».",
+    "repo.pulls.poster_requires_approval.tooltip": "A l'autor d'aquesta «pull request» no se li ha confiat l'execució de fluxos de treball disparats per una «pull request» creada desde un repositori bifurcat a amb AGit. Els fluxos de treball disparats per un event `pull_request` no s'executaran fins que siguin aprovats.",
+    "repo.view.gitmodules_too_large": "L'arxiu .gitmodules es massa gran i serà ignorat (en crides a l'API per exemple)",
+    "install.ssh_authorized_keys_inspection_error": "Error a l'inspeccionar l'arxiu authorized_keys existent: %v"
 }

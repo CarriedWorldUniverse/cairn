@@ -258,5 +258,13 @@
     "search.fuzzy_tooltip": "Incluir resultados que sejam uma correspondência aproximada ao termo de busca",
     "install.ssh_authorized_keys_inspection_error": "Falha ao inspecionar o arquivo authorized_keys existente: %v",
     "install.ssh_authorized_keys_unexpected_key": "Habilitar SSH para o Forgejo conflita com o arquivo localizado em %s que contém chaves SSH existentes. Sugestões: use um usuário de sistema dedicado para o Forgejo ou desabilite o SSH.",
-    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Ordenar por: %s",
+    "editor.search": "Busca",
+    "editor.find_previous": "Ocorrência anterior",
+    "editor.find_next": "Ocorrência seguinte",
+    "editor.replace": "Substituir",
+    "editor.replace_all": "Substituir todos",
+    "editor.toggle_case": "Alternar sensibilidade a maiúsculas/minúsculas",
+    "editor.toggle_regex": "Alternar o uso de expressões regulares",
+    "editor.toggle_whole_word": "Alternar correspondência completa de palavras"
 }

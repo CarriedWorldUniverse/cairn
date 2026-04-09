@@ -206,7 +206,7 @@
     "repo.issues.filter_assignee.hint": "Filter op toegewezen gebruiker",
     "repo.issues.filter_reviewers.hint": "Filteren op gebruiker die beoordeelde",
     "repo.issues.filter_mention.hint": "Filteren op genoemde gebruiker",
-    "repo.issues.filter_modified.hint": "Filteren op laatst gewijzigde datum",
+    "repo.issues.filter_modified.hint": "Filter op laatst gemodificeerd",
     "repo.issues.filter_sort.hint": "Sorteer op: aangemaakt/reacties/updated/deadline",
     "issues.updated": "bijgewerkt %s",
     "repo.view.gitmodules_too_large": "Het .gitmodules-bestand is te groot en wordt genegeerd (bijvoorbeeld bij API-aanroepen)",
@@ -248,5 +248,6 @@
     "editor.replace_all": "Vervang alles",
     "editor.toggle_case": "Hoofdlettergevoeligheid in- of uitschakelen",
     "editor.toggle_regex": "Schakelen met behulp van reguliere expressies",
-    "editor.toggle_whole_word": "Schakel het matchen van hele woorden in of uit"
+    "editor.toggle_whole_word": "Schakel het matchen van hele woorden in of uit",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sorteer bij: %s"
 }
