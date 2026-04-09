@@ -32,3 +32,35 @@ test('renders escaped branch name', async () => {
   mergeform = await renderMergeForm('<script class="evil">alert("evil message");</script>');
   expect(mergeform.get('label[for="delete-branch-after-merge"]').text()).toBe('Delete branch "<script class="evil">alert("evil message");</script>"');
 });
+
+test('hides merge controls when no merge style is allowed', () => {
+  window.config.pageData.pullRequestMergeForm = {
+    textDeleteBranch: 'Delete branch',
+    textAutoMergeButtonWhenSucceed: 'when checks succeed',
+    textAutoMergeWhenSucceed: 'Auto merge when checks succeed',
+    textAutoMergeCancelSchedule: 'Cancel schedule',
+    textCancel: 'Cancel',
+    defaultDeleteBranchAfterMerge: false,
+    defaultMergeMessage: '',
+    defaultMergeStyle: 'merge',
+    emptyCommit: false,
+    hasPendingPullRequestMerge: false,
+    hasPendingPullRequestMergeTip: '',
+    isPullBranchDeletable: false,
+    canMergeNow: true,
+    allOverridableChecksOk: true,
+    pullHeadCommitID: 'abc123',
+    mergeStyles: [{
+      name: 'merge',
+      allowed: false,
+      textDoMerge: 'Merge',
+      mergeTitleFieldText: '',
+      mergeMessageFieldText: '',
+      hideAutoMerge: false,
+    }],
+  };
+
+  const mergeform = mount(PullRequestMergeForm);
+  expect(mergeform.find('.merge-button').exists()).toBe(false);
+  expect(mergeform.find('form.form-fetch-action').exists()).toBe(false);
+});

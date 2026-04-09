@@ -1,3 +1,9 @@
+{{$prUnit := .Repository.MustGetUnit $.Context $.UnitTypePullRequests}}
+{{$prConfig := $prUnit.PullRequestsConfig}}
+{{$fastForwardStyleAllowed := and $prConfig.AllowFastForwardOnly (eq .Issue.PullRequest.CommitsBehind 0)}}
+{{$manualMergeStyleAllowed := $prConfig.AllowManualMerge}}
+{{$hasUnsignedMergeStyle := or $fastForwardStyleAllowed $manualMergeStyleAllowed}}
+{{$signingBlocksAllMergeStyles := and .AllowMerge .RequireSigned (not .WillSign) (not $hasUnsignedMergeStyle)}}
 {{if and .Issue.PullRequest.HasMerged (not .IsPullBranchDeletable)}}
 {{/* Then the merge box will not be displayed because this page already contains enough information */}}
 {{else}}
@@ -14,7 +20,7 @@
 	{{- else if .IsBlockedByChangedProtectedFiles}}red
 	{{- else if and .EnableStatusCheck (or .RequiredStatusCheckState.IsFailure .RequiredStatusCheckState.IsError)}}red
 	{{- else if and .EnableStatusCheck (or (not $.LatestCommitStatus) .RequiredStatusCheckState.IsPending .RequiredStatusCheckState.IsWarning)}}yellow
-	{{- else if and .AllowMerge .RequireSigned (not .WillSign)}}red
+	{{- else if $signingBlocksAllMergeStyles}}red
 	{{- else if .Issue.PullRequest.IsChecking}}yellow
 	{{- else if .Issue.PullRequest.IsEmpty}}grey
 	{{- else if .Issue.PullRequest.CanAutoMerge}}green
@@ -148,7 +154,7 @@
 						{{svg "octicon-x"}}
 						{{ctx.Locale.Tr "repo.pulls.required_status_check_missing"}}
 					</div>
-				{{else if and .AllowMerge .RequireSigned (not .WillSign)}}
+				{{else if $signingBlocksAllMergeStyles}}
 					<div class="item">
 						{{svg "octicon-x"}}
 						{{ctx.Locale.Tr "repo.pulls.require_signed_wont_sign"}}
@@ -162,7 +168,7 @@
 				{{$notAllOverridableChecksOk := or .IsBlockedByApprovals .IsBlockedByRejection .IsBlockedByOfficialReviewRequests .IsBlockedByOutdatedBranch .IsBlockedByChangedProtectedFiles (and .EnableStatusCheck (not .RequiredStatusCheckState.IsSuccess))}}
 
 				{{/* admin can merge without checks, writer can merge when checks succeed */}}
-				{{$canMergeNow := and (or (and $.IsRepoAdmin (not .ProtectedBranch.ApplyToAdmins)) (not $notAllOverridableChecksOk)) (or (not .AllowMerge) (not .RequireSigned) .WillSign)}}
+				{{$canMergeNow := and (or (and $.IsRepoAdmin (not .ProtectedBranch.ApplyToAdmins)) (not $notAllOverridableChecksOk)) (or (not .AllowMerge) (not $signingBlocksAllMergeStyles))}}
 				{{/* admin and writer both can make an auto merge schedule */}}
 
 				{{if $canMergeNow}}
@@ -201,8 +207,7 @@
 				{{end}}
 
 				{{if .AllowMerge}} {{/* user is allowed to merge */}}
-					{{$prUnit := .Repository.MustGetUnit $.Context $.UnitTypePullRequests}}
-					{{if or $prUnit.PullRequestsConfig.AllowMerge $prUnit.PullRequestsConfig.AllowRebase $prUnit.PullRequestsConfig.AllowRebaseMerge $prUnit.PullRequestsConfig.AllowSquash $prUnit.PullRequestsConfig.AllowFastForwardOnly $prUnit.PullRequestsConfig.AllowManualMerge}}
+					{{if or $prConfig.AllowMerge $prConfig.AllowRebase $prConfig.AllowRebaseMerge $prConfig.AllowSquash $prConfig.AllowFastForwardOnly $prConfig.AllowManualMerge}}
 						{{$hasPendingPullRequestMergeTip := ""}}
 						{{if .HasPendingPullRequestMerge}}
 							{{$createdPRMergeStr := DateUtils.TimeSince .PendingPullRequestMerge.CreatedUnix}}
@@ -231,7 +236,7 @@
 								'pullHeadCommitID': {{.PullHeadCommitID}},
 								'isPullBranchDeletable': {{.IsPullBranchDeletable}},
 								'defaultMergeStyle': {{.MergeStyle}},
-								'defaultDeleteBranchAfterMerge': {{$prUnit.PullRequestsConfig.DefaultDeleteBranchAfterMerge}},
+								'defaultDeleteBranchAfterMerge': {{$prConfig.DefaultDeleteBranchAfterMerge}},
 								'mergeMessageFieldPlaceHolder': {{ctx.Locale.Tr "repo.editor.commit_message_desc"}},
 								'defaultMergeMessage': defaultMergeMessage,
 
@@ -243,7 +248,7 @@
 							mergeForm['mergeStyles'] = [
 								{
 									'name': 'merge',
-									'allowed': {{$prUnit.PullRequestsConfig.AllowMerge}},
+									'allowed': {{and $prConfig.AllowMerge (or (not .RequireSigned) .WillSign)}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.merge_pull_request"}},
 									'mergeTitleFieldText': defaultMergeTitle,
 									'mergeMessageFieldText': defaultMergeMessage,
@@ -251,14 +256,14 @@
 								},
 								{
 									'name': 'rebase',
-									'allowed': {{$prUnit.PullRequestsConfig.AllowRebase}},
+									'allowed': {{and $prConfig.AllowRebase (or (not .RequireSigned) .WillSign)}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.rebase_merge_pull_request"}},
 									'hideMergeMessageTexts': true,
 									'hideAutoMerge': generalHideAutoMerge,
 								},
 								{
 									'name': 'rebase-merge',
-									'allowed': {{$prUnit.PullRequestsConfig.AllowRebaseMerge}},
+									'allowed': {{and $prConfig.AllowRebaseMerge (or (not .RequireSigned) .WillSign)}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.rebase_merge_commit_pull_request"}},
 									'mergeTitleFieldText': defaultMergeTitle,
 									'mergeMessageFieldText': defaultMergeMessage,
@@ -266,7 +271,7 @@
 								},
 								{
 									'name': 'squash',
-									'allowed': {{$prUnit.PullRequestsConfig.AllowSquash}},
+									'allowed': {{and $prConfig.AllowSquash (or (not .RequireSigned) .WillSign)}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.squash_merge_pull_request"}},
 									'mergeTitleFieldText': defaultSquashMergeTitle,
 									'mergeMessageFieldText': {{.GetCommitMessages}} + defaultSquashMergeMessage,
@@ -274,14 +279,14 @@
 								},
 								{
 									'name': 'fast-forward-only',
-									'allowed': {{and $prUnit.PullRequestsConfig.AllowFastForwardOnly (eq .Issue.PullRequest.CommitsBehind 0)}},
+									'allowed': {{$fastForwardStyleAllowed}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.fast_forward_only_merge_pull_request"}},
 									'hideMergeMessageTexts': true,
 									'hideAutoMerge': generalHideAutoMerge,
 								},
 								{
 									'name': 'manually-merged',
-									'allowed': {{$prUnit.PullRequestsConfig.AllowManualMerge}},
+									'allowed': {{$manualMergeStyleAllowed}},
 									'textDoMerge': {{ctx.Locale.Tr "repo.pulls.merge_manually"}},
 									'hideMergeMessageTexts': true,
 									'hideAutoMerge': true,
@@ -293,7 +298,7 @@
 						{{$showGeneralMergeForm = true}}
 						<div id="pull-request-merge-form"></div>
 					{{else}}
-						{{/* no merge style was set in repo setting: not or ($prUnit.PullRequestsConfig.AllowMerge ...) */}}
+						{{/* no merge style was set in repo setting: not or ($prConfig.AllowMerge ...) */}}
 						<div class="divider"></div>
 						<div class="item text red">
 							{{svg "octicon-x"}}
@@ -349,7 +354,7 @@
 						{{svg "octicon-x"}}
 						{{ctx.Locale.Tr "repo.pulls.required_status_check_failed"}}
 					</div>
-				{{else if and .RequireSigned (not .WillSign)}}
+				{{else if $signingBlocksAllMergeStyles}}
 					<div class="item text red">
 						{{svg "octicon-x"}}
 						{{ctx.Locale.Tr "repo.pulls.require_signed_wont_sign"}}

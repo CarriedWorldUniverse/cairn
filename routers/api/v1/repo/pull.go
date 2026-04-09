@@ -922,7 +922,8 @@ func MergePullRequest(ctx *context.APIContext) {
 		}
 	}
 
-	manuallyMerged := repo_model.MergeStyle(form.Do) == repo_model.MergeStyleManuallyMerged
+	mergeStyle := repo_model.MergeStyle(form.Do)
+	manuallyMerged := mergeStyle == repo_model.MergeStyleManuallyMerged
 
 	mergeCheckType := pull_service.MergeCheckTypeGeneral
 	if form.MergeWhenChecksSucceed {
@@ -933,7 +934,7 @@ func MergePullRequest(ctx *context.APIContext) {
 	}
 
 	// start with merging by checking
-	if err := pull_service.CheckPullMergeable(ctx, ctx.Doer, &ctx.Repo.Permission, pr, mergeCheckType, form.ForceMerge); err != nil {
+	if err := pull_service.CheckPullMergeable(ctx, ctx.Doer, &ctx.Repo.Permission, pr, mergeCheckType, form.ForceMerge, mergeStyle); err != nil {
 		if errors.Is(err, pull_service.ErrIsClosed) {
 			ctx.NotFound()
 		} else if errors.Is(err, pull_service.ErrUserNotAllowedToMerge) {
