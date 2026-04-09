@@ -19,10 +19,7 @@ const (
 
 func FederationHosts(ctx *context.Context) {
 	sort := ctx.FormTrim("sort")
-	page := ctx.FormInt("page")
-	if page < 1 {
-		page = 1
-	}
+	page := max(ctx.FormInt("page"), 1)
 
 	hosts, err := forgefed.FindFederationHosts(ctx, db.ListOptions{
 		Page:     page,
