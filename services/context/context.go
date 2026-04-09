@@ -184,6 +184,7 @@ func Contexter() func(next http.Handler) http.Handler {
 			ctx.Data["DisableStars"] = setting.Repository.DisableStars
 			ctx.Data["DisableForks"] = setting.Repository.DisableForks
 			ctx.Data["EnableActions"] = setting.Actions.Enabled
+			ctx.Data["EnableFederation"] = setting.Federation.Enabled
 
 			ctx.Data["UnitWikiGlobalDisabled"] = unit.TypeWiki.UnitGlobalDisabled()
 			ctx.Data["UnitIssuesGlobalDisabled"] = unit.TypeIssues.UnitGlobalDisabled()

@@ -55,10 +55,12 @@ var UI = struct {
 	} `ini:"ui.csv"`
 
 	Admin struct {
-		UserPagingNum   int
-		RepoPagingNum   int
-		NoticePagingNum int
-		OrgPagingNum    int
+		UserPagingNum           int
+		RepoPagingNum           int
+		NoticePagingNum         int
+		OrgPagingNum            int
+		FederationHostPagingNum int
+		FederationUserPagingNum int
 	} `ini:"ui.admin"`
 	User struct {
 		RepoPagingNum int
@@ -114,15 +116,19 @@ var UI = struct {
 		MaxRows:     2500,
 	},
 	Admin: struct {
-		UserPagingNum   int
-		RepoPagingNum   int
-		NoticePagingNum int
-		OrgPagingNum    int
+		UserPagingNum           int
+		RepoPagingNum           int
+		NoticePagingNum         int
+		OrgPagingNum            int
+		FederationHostPagingNum int
+		FederationUserPagingNum int
 	}{
-		UserPagingNum:   50,
-		RepoPagingNum:   50,
-		NoticePagingNum: 25,
-		OrgPagingNum:    50,
+		UserPagingNum:           50,
+		RepoPagingNum:           50,
+		NoticePagingNum:         25,
+		OrgPagingNum:            50,
+		FederationHostPagingNum: 50,
+		FederationUserPagingNum: 50,
 	},
 	User: struct {
 		RepoPagingNum int

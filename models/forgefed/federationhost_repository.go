@@ -16,6 +16,31 @@ func init() {
 	db.RegisterModel(new(FederationHost))
 }
 
+func CountFederationHosts(ctx context.Context) (int64, error) {
+	return db.GetEngine(ctx).Count(FederationHost{})
+}
+
+func FindFederationHosts(ctx context.Context, opts db.ListOptions) (hosts []*FederationHost, err error) {
+	sess := db.GetEngine(ctx)
+
+	if opts.PageSize > 0 {
+		sess = db.SetSessionPagination(sess, &opts)
+	}
+
+	err = sess.Find(&hosts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, host := range hosts {
+		if res, err := validation.IsValid(host); !res {
+			return nil, err
+		}
+	}
+
+	return hosts, nil
+}
+
 func GetFederationHost(ctx context.Context, ID int64) (*FederationHost, error) {
 	log.Trace("GetFederationHost: %v", ID)
 	host := new(FederationHost)
