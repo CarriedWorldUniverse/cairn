@@ -79,6 +79,16 @@
 				</dd>
 			</div>
 			<div class="item">
+				<dt>{{ctx.Locale.Tr "actions.runners.version"}}</dt>
+				<dd>
+					{{if .Runner.Version}}
+						{{.Runner.Version}}
+					{{else}}
+						&mdash;
+					{{end}}
+				</dd>
+			</div>
+			<div class="item">
 				<dt>{{ctx.Locale.Tr "actions.runners.description"}}</dt>
 				<dd>
 					{{if .Runner.Description}}

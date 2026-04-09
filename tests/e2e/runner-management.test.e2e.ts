@@ -80,6 +80,8 @@ test.describe('Runners of user2', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: 12.2.0
       - term: Description
       - definition: A runner for everyone
     `);
@@ -200,6 +202,8 @@ test.describe('Runners of user2', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: —
       - term: Description
       - definition: Description of runner-46636
     `);
@@ -370,6 +374,8 @@ test.describe('Global runners', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: 12.2.0
       - term: Description
       - definition: A runner for everyone
     `);
@@ -491,6 +497,8 @@ test.describe('Global runners', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: —
       - term: Description
       - definition: Description of runner-956858
     `);
@@ -594,6 +602,8 @@ test.describe('Organization runners', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: 12.2.0
       - term: Description
       - definition: A runner for everyone
     `);
@@ -722,6 +732,8 @@ test.describe('Repository runners', () => {
       - definition: Offline
       - term: Ephemeral
       - definition: "no"
+      - term: Version
+      - definition: 12.2.0
       - term: Description
       - definition: A runner for everyone
     `);
