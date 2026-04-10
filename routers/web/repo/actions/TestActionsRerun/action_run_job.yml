@@ -56,3 +56,18 @@
   runs_on: '["fedora"]'
   started: 1683636528
   stopped: 1683636626
+
+- id: 248954
+  run_id: 83732
+  repo_id: 1
+  owner_id: 3
+  commit_sha: 985f0301dba5e7b34be866819cd15ad3d8f508ee
+  is_fork_pull_request: false
+  name: job_2
+  attempt: 1
+  job_id: job_2
+  task_id: 47
+  status: 2 # failure
+  runs_on: '["fedora"]'
+  started: 1683636528
+  stopped: 1683636626

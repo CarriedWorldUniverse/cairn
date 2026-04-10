@@ -136,6 +136,10 @@ type jobStatusResolver struct {
 	jobMap   map[int64]*actions_model.ActionRunJob
 }
 
+// unknownJobID stores the ID of an unknown job that might be referenced in the workflow. The ID can be any number as
+// long it does not match the ID of an existing job.
+var unknownJobID int64 = -1
+
 func newJobStatusResolver(jobs actions_model.ActionJobList) *jobStatusResolver {
 	idToJobs := make(map[string][]*actions_model.ActionRunJob, len(jobs))
 	jobMap := make(map[int64]*actions_model.ActionRunJob)
@@ -149,8 +153,14 @@ func newJobStatusResolver(jobs actions_model.ActionJobList) *jobStatusResolver {
 	for _, job := range jobs {
 		statuses[job.ID] = job.Status
 		for _, need := range job.Needs {
-			for _, v := range idToJobs[need] {
-				needs[job.ID] = append(needs[job.ID], v.ID)
+			neededJobs, ok := idToJobs[need]
+			if ok {
+				for _, v := range neededJobs {
+					needs[job.ID] = append(needs[job.ID], v.ID)
+				}
+			} else {
+				// Handles the case of an unknown job being referenced in `needs`, for example, `needs: ["unknown"]`.
+				needs[job.ID] = append(needs[job.ID], unknownJobID)
 			}
 		}
 	}

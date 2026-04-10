@@ -137,6 +137,12 @@ func TestActions_consistencyCheckRun(t *testing.T) {
 			name:  "consistent: matrix missing dimension but matrix is dynamic",
 			runID: 904,
 		},
+		{
+			name:                     "unknown job in needs",
+			runID:                    905,
+			preExecutionError:        actions_model.ErrorCodeUnknownJobInNeeds,
+			preExecutionErrorDetails: []any{"job_2", "unknown, Job_1"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

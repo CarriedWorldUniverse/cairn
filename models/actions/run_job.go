@@ -140,6 +140,15 @@ func (job *ActionRunJob) PrepareNextAttempt(initialStatus Status) error {
 	return nil
 }
 
+// CanBeRerun answers whether this ActionRunJob can be rerun. Returns true if it is done and the Run it belongs to
+// is runnable. Returns false in all other cases, including when Run is nil.
+func (job *ActionRunJob) CanBeRerun() bool {
+	if job.Run == nil || !job.Run.IsRunnable() {
+		return false
+	}
+	return job.Status.IsDone()
+}
+
 func GetRunJobByID(ctx context.Context, id int64) (*ActionRunJob, error) {
 	var job ActionRunJob
 	has, err := db.GetEngine(ctx).Where("id=?", id).Get(&job)
@@ -337,4 +346,18 @@ func (job *ActionRunJob) EnableOpenIDConnect() (bool, error) {
 		return false, fmt.Errorf("failure decoding workflow payload: %w", err)
 	}
 	return jobWorkflow.EnableOpenIDConnect, nil
+}
+
+// AllNeedsExist checks whether this ActionRunJob's Needs can theoretically be met by comparing them with the supplied
+// list of all job IDs that part of a particular workflow run. Returns the list of unknown job IDs found in Needs
+// alongside an indicator whether the check was successful.
+func (job *ActionRunJob) AllNeedsExist(allExistingJobIDs container.Set[string]) ([]string, bool) {
+	unknownJobIDs := []string{}
+	for _, need := range job.Needs {
+		if !allExistingJobIDs.Contains(need) {
+			unknownJobIDs = append(unknownJobIDs, need)
+		}
+	}
+
+	return unknownJobIDs, len(unknownJobIDs) == 0
 }
