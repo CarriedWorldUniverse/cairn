@@ -96,6 +96,86 @@ func TestIsManualRun(t *testing.T) {
 	assert.False(t, pushRun.IsDispatchedRun())
 }
 
+func TestActionRun_IsRunnable(t *testing.T) {
+	testCases := []struct {
+		name       string
+		run        ActionRun
+		isRunnable bool
+	}{
+		{
+			name:       "valid run",
+			run:        ActionRun{},
+			isRunnable: true,
+		},
+		{
+			name:       "with pre-execution error",
+			run:        ActionRun{PreExecutionErrorCode: ErrorCodeIncompleteRunsOnMissingOutput},
+			isRunnable: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.isRunnable, testCase.run.IsRunnable())
+		})
+	}
+}
+
+func TestActionRun_CanBeRerun(t *testing.T) {
+	testCases := []struct {
+		name       string
+		run        ActionRun
+		canBeRerun bool
+	}{
+		{
+			name:       "run with unknown status",
+			run:        ActionRun{Status: StatusUnknown},
+			canBeRerun: false,
+		},
+		{
+			name:       "successful run",
+			run:        ActionRun{Status: StatusSuccess},
+			canBeRerun: true,
+		},
+		{
+			name:       "failed run",
+			run:        ActionRun{Status: StatusFailure},
+			canBeRerun: true,
+		},
+		{
+			name:       "cancelled run",
+			run:        ActionRun{Status: StatusCancelled},
+			canBeRerun: true,
+		},
+		{
+			name:       "skipped run",
+			run:        ActionRun{Status: StatusSkipped},
+			canBeRerun: true,
+		},
+		{
+			name:       "waiting run",
+			run:        ActionRun{Status: StatusWaiting},
+			canBeRerun: false,
+		},
+		{
+			name:       "blocked run",
+			run:        ActionRun{Status: StatusBlocked},
+			canBeRerun: false,
+		},
+		{
+			name:       "with pre-execution error",
+			run:        ActionRun{PreExecutionErrorCode: ErrorCodeIncompleteRunsOnMissingOutput, Status: StatusSuccess},
+			canBeRerun: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.canBeRerun, testCase.run.CanBeRerun())
+		})
+	}
+}
+
 func TestRepoNumOpenActions(t *testing.T) {
 	require.NoError(t, unittest.PrepareTestDatabase())
 	err := cache.Init()

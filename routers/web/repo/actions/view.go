@@ -296,7 +296,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 	resp.State.Run.TitleHTML = templates.RenderCommitMessage(ctx, run.Title, metas)
 	resp.State.Run.Link = run.Link()
 	resp.State.Run.CanApprove = run.NeedApproval && ctx.Repo.CanWrite(unit.TypeActions)
-	resp.State.Run.CanRerun = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
+	resp.State.Run.CanRerun = run.CanBeRerun() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.CanDeleteArtifact = run.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions)
 	resp.State.Run.Jobs = make([]*ViewJob, 0, len(jobs)) // marshal to '[]' instead of 'null' in json
 	resp.State.Run.Status = run.Status.String()
@@ -318,7 +318,7 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 			ID:       v.ID,
 			Name:     v.Name,
 			Status:   v.Status.String(),
-			CanRerun: v.Status.IsDone() && ctx.Repo.CanWrite(unit.TypeActions),
+			CanRerun: v.CanBeRerun() && ctx.Repo.CanWrite(unit.TypeActions),
 			Duration: v.Duration().String(),
 		})
 	}
@@ -495,6 +495,10 @@ func Rerun(ctx *app_context.Context) {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
+	if jobIndexStr == "" && !run.CanBeRerun() {
+		ctx.JSONError(ctx.Locale.Tr("actions.workflow.rerun_impossible"))
+		return
+	}
 
 	// can not rerun job when workflow is disabled
 	cfgUnit := ctx.Repo.Repository.MustGetUnit(ctx, unit.TypeActions)
@@ -523,6 +527,11 @@ func Rerun(ctx *app_context.Context) {
 	if jobIndexStr == "" { // rerun all jobs
 		var redirectURL string
 		for _, j := range jobs {
+			if !j.CanBeRerun() {
+				ctx.JSONError(ctx.Locale.Tr("actions.workflow.job_rerun_impossible"))
+				return
+			}
+
 			// if the job has needs, it should be set to "blocked" status to wait for other jobs
 			shouldBlock := len(j.Needs) > 0
 			if err := rerunJob(ctx, j, shouldBlock); err != nil {
@@ -550,6 +559,11 @@ func Rerun(ctx *app_context.Context) {
 
 	var redirectURL string
 	for _, j := range rerunJobs {
+		if !j.CanBeRerun() {
+			ctx.JSONError(ctx.Locale.Tr("actions.workflow.job_rerun_impossible"))
+			return
+		}
+
 		// jobs other than the specified one should be set to "blocked" status
 		shouldBlock := j.JobID != job.JobID
 		if err := rerunJob(ctx, j, shouldBlock); err != nil {

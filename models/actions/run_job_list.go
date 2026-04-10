@@ -22,6 +22,14 @@ func (jobs ActionJobList) GetRunIDs() []int64 {
 	})
 }
 
+func (jobs ActionJobList) GetJobIDs() container.Set[string] {
+	jobIDs := container.SetOf[string]()
+	for _, job := range jobs {
+		jobIDs.Add(job.JobID)
+	}
+	return jobIDs
+}
+
 func (jobs ActionJobList) LoadRuns(ctx context.Context, withRepo bool) error {
 	runIDs := jobs.GetRunIDs()
 	runs := make(map[int64]*ActionRun, len(runIDs))
