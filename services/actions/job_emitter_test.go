@@ -231,6 +231,30 @@ __metadata:
 				3: actions_model.StatusFailure,
 			},
 		},
+		{
+			name: "blocked if needs are unknown",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "build", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 2, JobID: "test", Status: actions_model.StatusBlocked, Needs: []string{"build", "unknown"}},
+			},
+			want: map[int64]actions_model.Status{},
+		},
+		{
+			name: "blocked if needs are unknown despite always()",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "build", Status: actions_model.StatusSuccess, Needs: []string{}},
+				{ID: 45, JobID: "test", Needs: []string{"build", "unknown"}, Status: actions_model.StatusBlocked, WorkflowPayload: []byte(`
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    needs: [build, unknown]
+    if: always()
+    steps: []
+`)},
+			},
+			want: map[int64]actions_model.Status{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

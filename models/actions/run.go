@@ -255,6 +255,19 @@ func (run *ActionRun) IsDispatchedRun() bool {
 	return run.TriggerEvent == "workflow_dispatch"
 }
 
+// IsRunnable indicates whether this ActionRun can generally be run.
+func (run *ActionRun) IsRunnable() bool {
+	return run.PreExecutionErrorCode == 0 && run.PreExecutionError == ""
+}
+
+// CanBeRerun indicates whether this ActionRun can be rerun.
+func (run *ActionRun) CanBeRerun() bool {
+	if !run.IsRunnable() {
+		return false
+	}
+	return run.Status.IsDone()
+}
+
 func actionsCountOpenCacheKey(repoID int64) string {
 	return fmt.Sprintf("Actions:CountOpenActionRuns:%d", repoID)
 }

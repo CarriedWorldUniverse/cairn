@@ -8,6 +8,7 @@ import (
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
+	"forgejo.org/modules/container"
 	"forgejo.org/modules/timeutil"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
@@ -368,4 +369,127 @@ func TestIsRequestedByRunner(t *testing.T) {
 	assert.True(t, emptyHandleJob.IsRequestedByRunner(&emptyHandle))
 
 	assert.False(t, emptyHandleJob.IsRequestedByRunner(&differentHandle))
+}
+
+func TestAllNeedsExist(t *testing.T) {
+	testCases := []struct {
+		name               string
+		job                ActionRunJob
+		existingJobIDs     container.Set[string]
+		expectedUnknownIDs []string
+		ok                 bool
+	}{
+		{
+			name:               "no needs",
+			job:                ActionRunJob{Needs: nil},
+			existingJobIDs:     container.Set[string]{},
+			expectedUnknownIDs: []string{},
+			ok:                 true,
+		},
+		{
+			name:               "empty needs",
+			job:                ActionRunJob{Needs: []string{}},
+			existingJobIDs:     container.Set[string]{},
+			expectedUnknownIDs: []string{},
+			ok:                 true,
+		},
+		{
+			name:               "satisfied needs",
+			job:                ActionRunJob{Needs: []string{"job1", "job2"}},
+			existingJobIDs:     container.SetOf("job2", "job1"),
+			expectedUnknownIDs: []string{},
+			ok:                 true,
+		},
+		{
+			name:               "unsatisfied needs",
+			job:                ActionRunJob{Needs: []string{"unknown", "job2"}},
+			existingJobIDs:     container.SetOf("job2", "job1"),
+			expectedUnknownIDs: []string{"unknown"},
+			ok:                 false,
+		},
+		{
+			name:               "comparison is case-sensitive",
+			job:                ActionRunJob{Needs: []string{"Job1", "job2"}},
+			existingJobIDs:     container.SetOf("job2", "job1"),
+			expectedUnknownIDs: []string{"Job1"},
+			ok:                 false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			unknownIDs, ok := testCase.job.AllNeedsExist(testCase.existingJobIDs)
+
+			assert.Equal(t, testCase.ok, ok)
+			assert.Equal(t, testCase.expectedUnknownIDs, unknownIDs)
+		})
+	}
+}
+
+func TestActionRunJob_CanBeRerun(t *testing.T) {
+	testCases := []struct {
+		name       string
+		job        ActionRunJob
+		canBeRerun bool
+	}{
+		{
+			name:       "job with unknown status",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusUnknown},
+			canBeRerun: false,
+		},
+		{
+			name:       "successful job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusSuccess},
+			canBeRerun: true,
+		},
+		{
+			name:       "failed job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusFailure},
+			canBeRerun: true,
+		},
+		{
+			name:       "cancelled job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusCancelled},
+			canBeRerun: true,
+		},
+		{
+			name:       "skipped job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusSkipped},
+			canBeRerun: true,
+		},
+		{
+			name:       "waiting job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusWaiting},
+			canBeRerun: false,
+		},
+		{
+			name:       "blocked job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusSuccess}, Status: StatusBlocked},
+			canBeRerun: false,
+		},
+		{
+			name:       "ActionRun is nil",
+			job:        ActionRunJob{Run: nil, Status: StatusSuccess},
+			canBeRerun: false,
+		},
+		{
+			name:       "with busy run but completed job",
+			job:        ActionRunJob{Run: &ActionRun{Status: StatusRunning}, Status: StatusSuccess},
+			canBeRerun: true,
+		},
+		{
+			name: "with run that cannot be run",
+			job: ActionRunJob{
+				Run:    &ActionRun{Status: StatusRunning, PreExecutionErrorCode: ErrorCodeEventDetectionError},
+				Status: StatusSuccess,
+			},
+			canBeRerun: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.canBeRerun, testCase.job.CanBeRerun())
+		})
+	}
 }
