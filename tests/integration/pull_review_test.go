@@ -1242,6 +1242,7 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 			assert.Equal(t, "proposed", comment.DiffSide())
 			assert.EqualValues(t, 50, comment.Line)
 			assert.Equal(t, commit1, comment.CommitSHA)
+			assert.False(t, comment.Invalidated)
 
 			// Add a second commit to the PR which removes  "Line 1" - "Line 10".
 			content = strings.Replace(content, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\n", "", 1)
@@ -1271,6 +1272,11 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 			}
 			tester.assertFilesChangedDiff(diff1, "checking commit1 contents in full PR diff")
 			tester.assertCommitDiff(commit1, diff1, "checking commit1 contents in single-commit diff")
+
+			// This comment can still be located in the diff, so it should not be marked as Invalidated/Outdated --
+			// which is kinda guaranteed by it being loaded in the diff, but for test sanity assert specifically.
+			commentReloaded := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: comment.ID})
+			assert.False(t, commentReloaded.Invalidated)
 		})
 
 		t.Run("comment on line commit is rewritten and force-push'd", func(t *testing.T) {
@@ -1296,6 +1302,7 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 			assert.Equal(t, "proposed", comment.DiffSide())
 			assert.EqualValues(t, 50, comment.Line)
 			assert.Equal(t, commit1, comment.CommitSHA)
+			assert.False(t, comment.Invalidated)
 
 			// Add a second commit to the PR which removes  "Line 1" - "Line 10".
 			content = strings.Replace(content, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\n", "", 1)
@@ -1350,6 +1357,17 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 				{rowType: RowHasCode, code: "Line 51"},
 			}
 			tester.assertFilesChangedDiff(diff1, "checking commit1 contents in full PR diff")
+
+			// After the force push, the comment we originally left should be marked as invalidated since it can no
+			// longer be resolved to a code location in the PR head. The above tests validate that it no longer appears
+			// in the diff, but this will also happen because of the diff-side check for the correct location -- so
+			// let's check that it's invalidated as well, indicating that it will be shown in the UI as "Outdated". This
+			// usually passes on the first check but is wrapped in Eventually because the async goroutine used in the
+			// pull request testing when the branch is pushed may not be immediately complete.
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
+				commentReloaded := unittest.AssertExistsAndLoadBean(t, &issues_model.Comment{ID: comment.ID})
+				assert.True(t, commentReloaded.Invalidated)
+			}, 1*time.Second, 50*time.Millisecond)
 		})
 
 		t.Run("comment lands on blame with original line number varying from current", func(t *testing.T) {
@@ -1551,7 +1569,7 @@ func (tester *PullRequestCommentPlacementTester) withBranchCheckout(action func(
 
 func (tester *PullRequestCommentPlacementTester) assertFilesChangedDiff(rowAssertions []diffTableRow, note ...string) {
 	req := NewRequest(tester.t, "GET",
-		fmt.Sprintf("/%s/%s/pulls/%d/files?show-outdated=true", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index))
+		fmt.Sprintf("/%s/%s/pulls/%d/files", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index))
 	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
 	doc := NewHTMLParser(tester.t, resp.Body)
 	var testNote string
@@ -1565,7 +1583,7 @@ func (tester *PullRequestCommentPlacementTester) assertFilesChangedDiff(rowAsser
 
 func (tester *PullRequestCommentPlacementTester) assertCommitDiff(commitSHA string, rowAssertions []diffTableRow, note ...string) {
 	req := NewRequest(tester.t, "GET",
-		fmt.Sprintf("/%s/%s/pulls/%d/commits/%s?show-outdated=true", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, commitSHA))
+		fmt.Sprintf("/%s/%s/pulls/%d/commits/%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, commitSHA))
 	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
 	doc := NewHTMLParser(tester.t, resp.Body)
 	var testNote string

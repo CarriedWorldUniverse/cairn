@@ -42,7 +42,29 @@ func (err ErrDismissRequestOnClosedPR) Unwrap() error {
 
 // checkInvalidation checks if the line of code comment got changed by another commit.
 // If the line got changed the comment is going to be invalidated.
-func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.Repository, branch string) error {
+func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *repo_model.Repository, branch, newCommitID string) error {
+	if c.Line < 0 {
+		// Comment is on a removed line of code -- the `git blame --reverse` codepath doesn't work for this. Retain the
+		// originalbehaviour until a revision is done specific to removed lines:
+		gitRepo, closer, err := gitrepo.RepositoryFromContextOrOpen(ctx, repo)
+		if err != nil {
+			return fmt.Errorf("failed to open repo: %w", err)
+		}
+		defer closer.Close()
+		return obsoleteCheckInvalidation(ctx, c, gitRepo, branch)
+	}
+
+	reverseBlame, err := c.ResolveCurrentLine(ctx, repo, newCommitID)
+	if err != nil {
+		log.Warn("ResolveCurrentLine failed: %s", err.Error())
+	} else if reverseBlame.CommitID != newCommitID {
+		c.Invalidated = true
+		return issues_model.UpdateCommentInvalidate(ctx, c)
+	}
+	return nil
+}
+
+func obsoleteCheckInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.Repository, branch string) error {
 	// FIXME differentiate between previous and proposed line
 	commit, _, err := repo.LineBlame(branch, c.TreePath, c.UnsignedLine())
 	if err != nil && (errors.Is(err, git.ErrBlameFileDoesNotExist) || errors.Is(err, git.ErrBlameFileNotEnoughLines)) {
@@ -60,7 +82,7 @@ func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.R
 }
 
 // InvalidateCodeComments will lookup the prs for code comments which got invalidated by change
-func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestList, doer *user_model.User, repo *git.Repository, branch string) error {
+func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestList, doer *user_model.User, repo *repo_model.Repository, branch, newCommitID string) error {
 	if len(prs) == 0 {
 		return nil
 	}
@@ -76,7 +98,7 @@ func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestLis
 		return fmt.Errorf("find code comments: %v", err)
 	}
 	for _, comment := range codeComments {
-		if err := checkInvalidation(ctx, comment, repo, branch); err != nil {
+		if err := checkInvalidation(ctx, comment, repo, branch, newCommitID); err != nil {
 			return err
 		}
 	}
