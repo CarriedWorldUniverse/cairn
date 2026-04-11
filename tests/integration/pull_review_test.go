@@ -214,27 +214,27 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 		req := NewRequest(t, "GET", "/user2/repo1/pulls/3/files/reviews/new_comment")
 		resp := session.MakeRequest(t, req, http.StatusOK)
-		doc := NewHTMLParser(t, resp.Body)
+		newCommentForm := NewHTMLParser(t, resp.Body)
 
 		var firstReviewID int64
 		{
 			// first (outdated) review
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-				"origin":           doc.GetInputValueByName("origin"),
-				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"origin":           newCommentForm.GetInputValueByName("origin"),
+				"latest_commit_id": newCommentForm.GetInputValueByName("latest_commit_id"),
 				"side":             "proposed",
 				"line":             "2",
 				"path":             "iso-8859-1.txt",
-				"diff_start_cid":   doc.GetInputValueByName("diff_start_cid"),
-				"diff_end_cid":     doc.GetInputValueByName("diff_end_cid"),
-				"diff_base_cid":    doc.GetInputValueByName("diff_base_cid"),
+				"diff_start_cid":   newCommentForm.GetInputValueByName("diff_start_cid"),
+				"diff_end_cid":     newCommentForm.GetInputValueByName("diff_end_cid"),
+				"diff_base_cid":    newCommentForm.GetInputValueByName("diff_base_cid"),
 				"content":          "nitpicking comment",
 				"pending_review":   "",
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/submit", map[string]string{
-				"commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"commit_id": newCommentForm.GetInputValueByName("latest_commit_id"),
 				"content":   "looks good",
 				"type":      "comment",
 			})
@@ -243,7 +243,7 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			// retrieve comment_id by reloading the comment page
 			req = NewRequest(t, "GET", "/user2/repo1/pulls/3")
 			resp = session.MakeRequest(t, req, http.StatusOK)
-			doc = NewHTMLParser(t, resp.Body)
+			doc := NewHTMLParser(t, resp.Body)
 			commentID, ok := doc.Find(`[data-action="Resolve"]`).Attr("data-comment-id")
 			assert.True(t, ok)
 
@@ -266,21 +266,21 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			// second (up-to-date) review on the same line
 			// make a second review
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/comments", map[string]string{
-				"origin":           doc.GetInputValueByName("origin"),
-				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"origin":           newCommentForm.GetInputValueByName("origin"),
+				"latest_commit_id": newCommentForm.GetInputValueByName("latest_commit_id"),
 				"side":             "proposed",
 				"line":             "2",
 				"path":             "iso-8859-1.txt",
-				"diff_start_cid":   doc.GetInputValueByName("diff_start_cid"),
-				"diff_end_cid":     doc.GetInputValueByName("diff_end_cid"),
-				"diff_base_cid":    doc.GetInputValueByName("diff_base_cid"),
+				"diff_start_cid":   newCommentForm.GetInputValueByName("diff_start_cid"),
+				"diff_end_cid":     newCommentForm.GetInputValueByName("diff_end_cid"),
+				"diff_base_cid":    newCommentForm.GetInputValueByName("diff_base_cid"),
 				"content":          "nitpicking comment",
 				"pending_review":   "",
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
 			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/3/files/reviews/submit", map[string]string{
-				"commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"commit_id": newCommentForm.GetInputValueByName("latest_commit_id"),
 				"content":   "looks better",
 				"type":      "comment",
 			})
@@ -289,7 +289,7 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 			// retrieve comment_id by reloading the comment page
 			req = NewRequest(t, "GET", "/user2/repo1/pulls/3")
 			resp = session.MakeRequest(t, req, http.StatusOK)
-			doc = NewHTMLParser(t, resp.Body)
+			doc := NewHTMLParser(t, resp.Body)
 
 			commentIDs := doc.Find(`[data-action="Resolve"]`).Map(func(i int, elt *goquery.Selection) string {
 				v, _ := elt.Attr("data-comment-id")
@@ -318,7 +318,7 @@ func TestPullView_ResolveInvalidatedReviewComment(t *testing.T) {
 
 		// even on template error, the page returns HTTP 200
 		// count the comments to ensure success.
-		doc = NewHTMLParser(t, resp.Body)
+		doc := NewHTMLParser(t, resp.Body)
 		comments := doc.Find(`.comment-code-cloud > .comment`)
 		assert.Len(t, comments.Nodes, 1) // the outdated comment belongs to another review and should not be shown
 	})
@@ -674,13 +674,17 @@ func TestPullRequestReplyMail(t *testing.T) {
 
 		review := unittest.AssertExistsAndLoadBean(t, &issues_model.Review{ID: 1002}, "type = 0")
 
-		req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-			"origin":  "diff",
-			"content": "Just a comment!",
-			"side":    "proposed",
-			"line":    "4",
-			"path":    "README.md",
-			"reply":   strconv.FormatInt(review.ID, 10),
+		req := NewRequest(t, "GET", "/user2/repo1/pulls/2/files/reviews/new_comment")
+		resp := session.MakeRequest(t, req, http.StatusOK)
+		doc := NewHTMLParser(t, resp.Body)
+		req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
+			"origin":           "diff",
+			"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+			"content":          "Just a comment!",
+			"side":             "proposed",
+			"line":             "4",
+			"path":             "README.md",
+			"reply":            strconv.FormatInt(review.ID, 10),
 		})
 		session.MakeRequest(t, req, http.StatusOK)
 
@@ -696,12 +700,16 @@ func TestPullRequestReplyMail(t *testing.T) {
 			called = true
 		})()
 
-		req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-			"origin":  "diff",
-			"content": "Notification time 2!",
-			"side":    "proposed",
-			"line":    "2",
-			"path":    "README.md",
+		req := NewRequest(t, "GET", "/user2/repo1/pulls/2/files/reviews/new_comment")
+		resp := session.MakeRequest(t, req, http.StatusOK)
+		doc := NewHTMLParser(t, resp.Body)
+		req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
+			"origin":           "diff",
+			"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+			"content":          "Notification time 2!",
+			"side":             "proposed",
+			"line":             "2",
+			"path":             "README.md",
 		})
 		session.MakeRequest(t, req, http.StatusOK)
 
@@ -725,13 +733,17 @@ func TestPullRequestReplyMail(t *testing.T) {
 
 			review := unittest.AssertExistsAndLoadBean(t, &issues_model.Review{ID: 1001, Type: issues_model.ReviewTypeComment})
 
-			req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-				"origin":  "diff",
-				"content": "Notification time!",
-				"side":    "proposed",
-				"line":    "3",
-				"path":    "README.md",
-				"reply":   strconv.FormatInt(review.ID, 10),
+			req := NewRequest(t, "GET", "/user2/repo1/pulls/2/files/reviews/new_comment")
+			resp := session.MakeRequest(t, req, http.StatusOK)
+			doc := NewHTMLParser(t, resp.Body)
+			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
+				"origin":           "diff",
+				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"content":          "Notification time!",
+				"side":             "proposed",
+				"line":             "3",
+				"path":             "README.md",
+				"reply":            strconv.FormatInt(review.ID, 10),
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
@@ -751,13 +763,17 @@ func TestPullRequestReplyMail(t *testing.T) {
 				called = true
 			})()
 
-			req := NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
-				"origin":        "diff",
-				"content":       "Notification time 2!",
-				"side":          "proposed",
-				"line":          "5",
-				"path":          "README.md",
-				"single_review": "true",
+			req := NewRequest(t, "GET", "/user2/repo1/pulls/2/files/reviews/new_comment")
+			resp := session.MakeRequest(t, req, http.StatusOK)
+			doc := NewHTMLParser(t, resp.Body)
+			req = NewRequestWithValues(t, "POST", "/user2/repo1/pulls/2/files/reviews/comments", map[string]string{
+				"origin":           "diff",
+				"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
+				"content":          "Notification time 2!",
+				"side":             "proposed",
+				"line":             "5",
+				"path":             "README.md",
+				"single_review":    "true",
 			})
 			session.MakeRequest(t, req, http.StatusOK)
 
@@ -1409,6 +1425,52 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 			tester.assertFilesChangedDiff(diff)
 			tester.assertCommitDiff(commitSHA, diff)
 		})
+
+		t.Run("comment on specific commit adjusts correctly to later changes in the PR", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			tester := newPullRequestCommentPlacementTester(t)
+
+			// Modify an earlier part of the file in one commit, and then change line numbers in a second commit by
+			// removing some content from the file earlier than the first commit
+			content := tester.fileContent
+			content = strings.Replace(content, "Line 50\n", "Line 50--modified\n", 1)
+			commit1 := tester.changeFile("file1.md", content)
+			content = strings.Replace(content, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\n", "", 1)
+			commit2 := tester.changeFile("file1.md", content)
+			tester.createPR()
+
+			// Create a comment on commit1's "Line 50" change, from the commit-specific view:
+			comment := tester.commentFromSpecificCommit(commit1, "file1.md", 50)
+			assert.Equal(t, `diff --git a/file1.md b/file1.md
+--- a/file1.md
++++ b/file1.md
+@@ -48,3 +48,3 @@
+ Line 48
+ Line 49
+-Line 50
++Line 50--modified`, comment.PatchQuoted)
+			assert.Equal(t, "proposed", comment.DiffSide())
+			assert.EqualValues(t, 50, comment.Line)
+			assert.Equal(t, commit1, comment.CommitSHA)
+
+			diff50 := []diffTableRow{
+				{rowType: RowHasCode, code: "Line 49"},
+				{rowType: RowDelCode, code: "Line 50"},
+				{rowType: RowAddCode, code: "Line 50--modified"},
+				{rowType: RowComment, commentID: comment.ID},
+				{rowType: RowHasCode, code: "Line 51"},
+			}
+			tester.assertFilesChangedDiff(diff50)
+			tester.assertCommitDiff(commit1, diff50)
+
+			diff10 := []diffTableRow{
+				{rowType: RowDelCode, code: "Line 9"},
+				{rowType: RowDelCode, code: "Line 10"},
+				{rowType: RowHasCode, code: "Line 11"},
+			}
+			tester.assertFilesChangedDiff(diff10)
+			tester.assertCommitDiff(commit2, diff10)
+		})
 	})
 }
 
@@ -1526,14 +1588,24 @@ func (tester *PullRequestCommentPlacementTester) createPR() {
 }
 
 func (tester *PullRequestCommentPlacementTester) commentFromFilesChanged(filename string, line int) *issues_model.Comment {
-	commentContent := uuid.New().String()
-
 	req := NewRequest(tester.t, "GET",
+		// omit after_commit_id -- new_comment form defaults to fetching the PR head
 		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index))
 	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
+	return tester.commentFromNewCommentForm(resp, filename, line)
+}
 
+func (tester *PullRequestCommentPlacementTester) commentFromSpecificCommit(commitID, filename string, line int) *issues_model.Comment {
+	req := NewRequest(tester.t, "GET",
+		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment?after_commit_id=%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, commitID))
+	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
+	return tester.commentFromNewCommentForm(resp, filename, line)
+}
+
+func (tester *PullRequestCommentPlacementTester) commentFromNewCommentForm(resp *httptest.ResponseRecorder, filename string, line int) *issues_model.Comment {
+	commentContent := uuid.New().String()
 	doc := NewHTMLParser(tester.t, resp.Body)
-	req = NewRequestWithValues(tester.t, "POST",
+	req := NewRequestWithValues(tester.t, "POST",
 		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/comments", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index),
 		map[string]string{
 			"origin":           doc.GetInputValueByName("origin"),

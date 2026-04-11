@@ -44,12 +44,15 @@ func RenderNewCodeCommentForm(ctx *context.Context) {
 	ctx.Data["PageIsPullFiles"] = true
 	ctx.Data["Issue"] = issue
 	ctx.Data["CurrentReview"] = currentReview
-	pullHeadCommitID, err := ctx.Repo.GitRepo.GetRefCommitID(issue.PullRequest.GetGitRefName())
-	if err != nil {
-		ctx.ServerError("GetRefCommitID", err)
-		return
+	afterCommitID := ctx.FormString("after_commit_id")
+	if afterCommitID == "" {
+		afterCommitID, err = ctx.Repo.GitRepo.GetRefCommitID(issue.PullRequest.GetGitRefName())
+		if err != nil {
+			ctx.ServerError("GetRefCommitID", err)
+			return
+		}
 	}
-	ctx.Data["AfterCommitID"] = pullHeadCommitID
+	ctx.Data["AfterCommitID"] = afterCommitID
 	ctx.Data["IsAttachmentEnabled"] = setting.Attachment.Enabled
 	upload.AddUploadContext(ctx, "comment")
 	ctx.HTML(http.StatusOK, tplNewComment)

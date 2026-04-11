@@ -137,6 +137,7 @@ func CreateCodeComment(ctx context.Context, doer *user_model.User, gitRepo *git.
 			issue,
 			content,
 			treePath,
+			latestCommitID,
 			line,
 			replyReviewID,
 			attachments,
@@ -178,6 +179,7 @@ func CreateCodeComment(ctx context.Context, doer *user_model.User, gitRepo *git.
 		issue,
 		content,
 		treePath,
+		latestCommitID,
 		line,
 		review.ID,
 		attachments,
@@ -199,7 +201,7 @@ func CreateCodeComment(ctx context.Context, doer *user_model.User, gitRepo *git.
 }
 
 // CreateCodeCommentKnownReviewID creates a plain code comment at the specified line / path
-func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, repo *repo_model.Repository, issue *issues_model.Issue, content, treePath string, line, reviewID int64, attachments []string) (*issues_model.Comment, error) {
+func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, repo *repo_model.Repository, issue *issues_model.Issue, content, treePath, afterCommitID string, line, reviewID int64, attachments []string) (*issues_model.Comment, error) {
 	var commitID, blamedCommitID, patch string
 	blamedLine := line
 	if err := issue.LoadPullRequest(ctx); err != nil {
@@ -249,7 +251,7 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			// FIXME validate treePath
 			// Get latest commit referencing the commented line
 			// No need for get commit for base branch changes
-			commit, lineres, err := gitRepo.LineBlame(head, treePath, uint64(line))
+			commit, lineres, err := gitRepo.LineBlame(afterCommitID, treePath, uint64(line))
 			if err == nil {
 				blamedCommitID = commit.ID.String()
 				blamedLine = int64(lineres)

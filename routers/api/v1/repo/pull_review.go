@@ -337,6 +337,7 @@ func CreatePullReviewComment(ctx *context.APIContext) {
 		pr.Issue,
 		opts.Body,
 		opts.Path,
+		review.CommitID,
 		line,
 		review.ID,
 		nil,
