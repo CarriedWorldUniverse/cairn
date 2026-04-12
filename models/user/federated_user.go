@@ -5,6 +5,7 @@ package user
 
 import (
 	"database/sql"
+	"fmt"
 
 	"forgejo.org/modules/validation"
 )
@@ -41,4 +42,19 @@ func (federatedUser FederatedUser) Validate() []string {
 	result = append(result, validation.ValidateNotEmpty(federatedUser.FederationHostID, "FederationHostID")...)
 	result = append(result, validation.ValidateNotEmpty(federatedUser.InboxPath, "InboxPath")...)
 	return result
+}
+
+func (federatedUser *FederatedUser) LogString() string {
+	if federatedUser == nil {
+		return "<FederatedUser nil>"
+	}
+
+	return fmt.Sprintf(
+		"<FederatedUser ID: %d, UserID: %d, ExternalID: %s, NormalizedOriginalURL: %s, InboxPath: %s>",
+		federatedUser.ID,
+		federatedUser.UserID,
+		federatedUser.ExternalID,
+		federatedUser.NormalizedOriginalURL,
+		federatedUser.InboxPath,
+	)
 }

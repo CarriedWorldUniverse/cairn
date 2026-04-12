@@ -176,6 +176,28 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 		} else {
 			ctx.Data["CardsNoneMsg"] = ctx.Tr("followers.outgoing.list.none", ctx.ContextUser.Name)
 		}
+	case "feed":
+		if setting.Federation.Enabled {
+			pagingNum = setting.UI.FeedPagingNum
+			var items []*activities_model.FederatedUserActivity
+			var count int64
+			if ctx.Doer != nil {
+				items, count, err = activities_model.GetFollowingFeeds(ctx,
+					ctx.Doer.ID,
+					activities_model.GetFollowingFeedsOptions{
+						ListOptions: db.ListOptions{
+							PageSize: pagingNum,
+							Page:     page,
+						},
+					})
+				if err != nil {
+					ctx.ServerError("GetFollowingFeeds", err)
+					return
+				}
+			}
+			ctx.Data["FollowingFeeds"] = items
+			total = int(count)
+		}
 	case "activity":
 		// prepare heatmap data
 		if setting.Service.EnableUserHeatmap {

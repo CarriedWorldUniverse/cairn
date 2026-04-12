@@ -82,11 +82,6 @@ func FindOrCreateFederatedUserKey(ctx context.Context, keyID string) (pubKey any
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		_, err = forgefed.GetFederationHost(ctx, federatedUser.FederationHostID)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	if federatedUser.PublicKey.Valid {
