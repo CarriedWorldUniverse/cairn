@@ -90,6 +90,8 @@ func (g *ASTTransformer) Transform(node *ast.Document, reader text.Reader, pc pa
 			}
 		case *ast.RawHTML:
 			g.transformRawHTML(ctx, v, reader)
+		case *ast.FencedCodeBlock:
+			g.transformCodeblockLanguage(v, reader)
 		}
 		return ast.WalkContinue, nil
 	})
