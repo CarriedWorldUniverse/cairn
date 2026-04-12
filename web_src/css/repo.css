@@ -237,7 +237,7 @@ td .commit-summary {
   max-width: calc(calc(min(100vw, 1280px)) - 145px - calc(2 * var(--page-margin-x)));
 }
 
-.repo-files-table-latest-commit-row td {
+.repository.file.list #repo-files-table thead th {
   font-weight: var(--font-weight-normal);
 }
 
