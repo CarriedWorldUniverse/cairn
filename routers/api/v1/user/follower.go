@@ -10,9 +10,11 @@ import (
 
 	user_model "forgejo.org/models/user"
 	api "forgejo.org/modules/structs"
+	"forgejo.org/modules/web"
 	"forgejo.org/routers/api/v1/utils"
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
+	"forgejo.org/services/federation"
 )
 
 func responseAPIUsers(ctx *context.APIContext, users []*user_model.User) {
@@ -277,5 +279,35 @@ func Unfollow(ctx *context.APIContext) {
 		ctx.Error(http.StatusInternalServerError, "UnfollowUser", err)
 		return
 	}
+	ctx.Status(http.StatusNoContent)
+}
+
+// Follow follow a remote activitypub account
+func ActivityPubFollow(ctx *context.APIContext) {
+	// swagger:operation POST /user/activitypub/follow user userCurrentActivityPubFollow
+	// ---
+	// summary: Follow a remote activitypub account
+	// parameters:
+	// - name: body
+	//   in: body
+	//   schema:
+	//     "$ref": "#/definitions/APRemoteFollowOption"
+	// responses:
+	//   "204":
+	//     "$ref": "#/responses/empty"
+	//   "401":
+	//     "$ref": "#/responses/unauthorized"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+
+	form := web.GetForm(ctx).(*api.APRemoteFollowOption)
+
+	if err := federation.FollowRemoteActor(ctx, ctx.Doer, form.Target); err != nil {
+		ctx.Error(http.StatusInternalServerError, "federation.FollowRemoteActor", err)
+		return
+	}
+
 	ctx.Status(http.StatusNoContent)
 }

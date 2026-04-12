@@ -88,7 +88,6 @@ forgejo.org/modules/eventsource
 	Event.String
 
 forgejo.org/modules/forgefed
-	NewForgeFollow
 	NewForgeUndoLike
 	ForgeUndoLike.UnmarshalJSON
 	ForgeUndoLike.Validate
@@ -226,9 +225,6 @@ forgejo.org/routers/web/org
 
 forgejo.org/services/context
 	GetPrivateContext
-
-forgejo.org/services/federation
-	FollowRemoteActor
 
 forgejo.org/services/notify
 	UnregisterNotifier

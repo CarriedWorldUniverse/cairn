@@ -82,7 +82,7 @@ func GetFollowingFeeds(ctx context.Context, actorID int64, opts GetFollowingFeed
 	sess = db.SetSessionPagination(sess, &opts)
 
 	actions := make([]*FederatedUserActivity, 0, opts.PageSize)
-	count, err := sess.FindAndCount(&actions)
+	count, err := sess.Desc("`federated_user_activity`.created").FindAndCount(&actions)
 	if err != nil {
 		return nil, 0, fmt.Errorf("FindAndCount: %w", err)
 	}
