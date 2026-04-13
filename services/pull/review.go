@@ -42,18 +42,7 @@ func (err ErrDismissRequestOnClosedPR) Unwrap() error {
 
 // checkInvalidation checks if the line of code comment got changed by another commit.
 // If the line got changed the comment is going to be invalidated.
-func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *repo_model.Repository, branch, newCommitID string) error {
-	if c.Line < 0 {
-		// Comment is on a removed line of code -- the `git blame --reverse` codepath doesn't work for this. Retain the
-		// originalbehaviour until a revision is done specific to removed lines:
-		gitRepo, closer, err := gitrepo.RepositoryFromContextOrOpen(ctx, repo)
-		if err != nil {
-			return fmt.Errorf("failed to open repo: %w", err)
-		}
-		defer closer.Close()
-		return obsoleteCheckInvalidation(ctx, c, gitRepo, branch)
-	}
-
+func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *repo_model.Repository, newCommitID string) error {
 	reverseBlame, err := c.ResolveCurrentLine(ctx, repo, newCommitID)
 	if err != nil {
 		log.Warn("ResolveCurrentLine failed: %s", err.Error())
@@ -64,25 +53,8 @@ func checkInvalidation(ctx context.Context, c *issues_model.Comment, repo *repo_
 	return nil
 }
 
-func obsoleteCheckInvalidation(ctx context.Context, c *issues_model.Comment, repo *git.Repository, branch string) error {
-	// FIXME differentiate between previous and proposed line
-	commit, _, err := repo.LineBlame(branch, c.TreePath, c.UnsignedLine())
-	if err != nil && (errors.Is(err, git.ErrBlameFileDoesNotExist) || errors.Is(err, git.ErrBlameFileNotEnoughLines)) {
-		c.Invalidated = true
-		return issues_model.UpdateCommentInvalidate(ctx, c)
-	}
-	if err != nil {
-		return err
-	}
-	if c.CommitSHA != "" && c.CommitSHA != commit.ID.String() {
-		c.Invalidated = true
-		return issues_model.UpdateCommentInvalidate(ctx, c)
-	}
-	return nil
-}
-
 // InvalidateCodeComments will lookup the prs for code comments which got invalidated by change
-func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestList, doer *user_model.User, repo *repo_model.Repository, branch, newCommitID string) error {
+func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestList, doer *user_model.User, repo *repo_model.Repository, newCommitID string) error {
 	if len(prs) == 0 {
 		return nil
 	}
@@ -98,7 +70,7 @@ func InvalidateCodeComments(ctx context.Context, prs issues_model.PullRequestLis
 		return fmt.Errorf("find code comments: %v", err)
 	}
 	for _, comment := range codeComments {
-		if err := checkInvalidation(ctx, comment, repo, branch, newCommitID); err != nil {
+		if err := checkInvalidation(ctx, comment, repo, newCommitID); err != nil {
 			return err
 		}
 	}
@@ -260,6 +232,31 @@ func CreateCodeCommentKnownReviewID(ctx context.Context, doer *user_model.User, 
 			}
 		} else {
 			blamedCommitID = commitID
+		}
+	} else {
+		// Commenting on a line that was removed. In this case, what we want to track in the comment is which line of
+		// code was this, in the last commit that the line of code actually existed in. We'll use a reverse git blame to
+		// identify this, from the PR base -> commit being viewed.
+		blame, err := gitRepo.ReverseLineBlame(pr.MergeBase, treePath, uint64(-1*line), afterCommitID)
+		if err != nil {
+			return nil, fmt.Errorf("ReverseLineBlame[%s, %s, %d, %s]: %w", pr.MergeBase, treePath, -1*line, afterCommitID, err)
+		} else if blame.CommitID == afterCommitID {
+			// Although this is a comment on the "previous" side of the diff, the reverse blame indicates that the line
+			// of code still exists in the commit being viewed (eg. it was a comment on a white line in the left-side of
+			// the diff, not a red removed line). In order to record the right information for where to place this
+			// commit, we'll convert this into a right-hand comment -- using the present line number that the reverse
+			// blame gave us:
+			commit, lineres, err := gitRepo.LineBlame(afterCommitID, treePath, blame.LineNumber)
+			if err == nil {
+				blamedCommitID = commit.ID.String()
+				blamedLine = int64(lineres)
+			} else if !errors.Is(err, git.ErrBlameFileDoesNotExist) && !errors.Is(err, git.ErrBlameFileNotEnoughLines) {
+				return nil, fmt.Errorf("LineBlame[%s, %s, %s, %d]: %w", pr.GetGitRefName(), gitRepo.Path, treePath, line, err)
+			}
+		} else {
+			blamedCommitID = blame.CommitID
+			// retain negative line numbering to identify we're commenting on the "previous" side of the diff
+			blamedLine = -1 * int64(blame.LineNumber)
 		}
 	}
 

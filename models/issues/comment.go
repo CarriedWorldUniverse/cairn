@@ -6,11 +6,14 @@
 package issues
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"slices"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	"forgejo.org/models/db"
@@ -771,9 +774,43 @@ func (c *Comment) ResolveCurrentLine(ctx context.Context, repo *repo_model.Repos
 		}
 		defer closer.Close()
 
-		reverseBlame, err := gitRepo.ReverseLineBlame(c.CommitSHA, c.TreePath, c.UnsignedLine(), currentHead)
-		if err != nil {
-			return "", fmt.Errorf("failed to perform `git blame --reverse` to resolve current line for comment (id=%d): %w", c.ID, err)
+		var reverseBlame *git.ReverseLineBlame
+		if c.Line > 0 {
+			var err error
+			reverseBlame, err = gitRepo.ReverseLineBlame(c.CommitSHA, c.TreePath, c.UnsignedLine(), currentHead)
+			if err != nil {
+				return "", fmt.Errorf("failed to perform `git blame --reverse` to resolve current line for comment (id=%d): %w", c.ID, err)
+			}
+		} else {
+			// For comments on removed lines, perform a `git diff` between the last commit that the line of code was
+			// known to exist (which is recorded as CommitSHA) and the requested head. Then inspect the diff to verify
+			// that the removed line of code is present in the diff.
+			buffer := bytes.Buffer{}
+			err := git.GetRepoRawDiffForFile(gitRepo, c.CommitSHA, currentHead, git.RawDiffNormal, c.TreePath, &buffer)
+			if err != nil {
+				return "", fmt.Errorf("failed to get diff: %w", err)
+			}
+
+			diff := buffer.String()
+			adjustedLine, err := git.FindAdjustedLineNumber(c.Patch, int64(c.UnsignedLine()), strings.NewReader(diff))
+			if err != nil && errors.Is(err, git.ErrLineNotFound) {
+				// Line not found in the diff. Don't treat this as an error, because that would break the caching --
+				// instead, return a blame where CommitID != headCommitID, which will be an indicator to callers (for
+				// both resolution methods) that the line of code is outdated in the diff.
+				reverseBlame = &git.ReverseLineBlame{
+					CommitID:   c.CommitSHA, // not currentHead
+					LineNumber: c.UnsignedLine(),
+					FilePath:   c.TreePath,
+				}
+			} else if err != nil {
+				return "", fmt.Errorf("failed in finding adjusted line number: %w", err)
+			} else {
+				reverseBlame = &git.ReverseLineBlame{
+					CommitID:   currentHead,
+					LineNumber: uint64(adjustedLine.Left),
+					FilePath:   c.TreePath,
+				}
+			}
 		}
 
 		data, err := json.Marshal(reverseBlame)
