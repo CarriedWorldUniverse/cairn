@@ -20,27 +20,25 @@ func processPersonInboxUndo(ctx context.Context, ctxUser *user.User, activity *a
 	}
 
 	actorURI := activity.Actor.GetLink().String()
-	_, federatedUser, _, err := findFederatedUser(ctx, actorURI)
+	_, federatedUser, err := findFederatedUser(ctx, actorURI)
 	if err != nil {
 		log.Error("User not found: %v", err)
 		return ServiceResult{}, NewErrInternalf("User not found: %v", err)
 	}
 
-	if federatedUser != nil {
-		following, err := user.IsFollowingAp(ctx, ctxUser, federatedUser)
-		if err != nil {
-			log.Error("forgefed.IsFollowing: %v", err)
-			return ServiceResult{}, NewErrInternalf("forgefed.IsFollowing: %v", err)
-		}
-		if !following {
-			// The local user is not following the federated one, nothing to do.
-			log.Trace("Local user[%d] is not following federated user[%d]", ctxUser.ID, federatedUser.ID)
-			return NewServiceResultStatusOnly(http.StatusNoContent), nil
-		}
-		if err := user.RemoveFollower(ctx, ctxUser, federatedUser); err != nil {
-			log.Error("Unable to remove follower", err)
-			return ServiceResult{}, NewErrInternalf("Unable to remove follower: %v", err)
-		}
+	following, err := user.IsFollowingAp(ctx, ctxUser, federatedUser)
+	if err != nil {
+		log.Error("forgefed.IsFollowing: %v", err)
+		return ServiceResult{}, NewErrInternalf("forgefed.IsFollowing: %v", err)
+	}
+	if !following {
+		// The local user is not following the federated one, nothing to do.
+		log.Trace("Local user[%d] is not following federated user[%d]", ctxUser.ID, federatedUser.ID)
+		return NewServiceResultStatusOnly(http.StatusNoContent), nil
+	}
+	if err := user.RemoveFollower(ctx, ctxUser, federatedUser); err != nil {
+		log.Error("Unable to remove follower", err)
+		return ServiceResult{}, NewErrInternalf("Unable to remove follower: %v", err)
 	}
 
 	return NewServiceResultStatusOnly(http.StatusNoContent), nil

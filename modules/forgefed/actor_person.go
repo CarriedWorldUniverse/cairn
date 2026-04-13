@@ -20,6 +20,8 @@ type PersonID struct {
 const (
 	personIDapiPathV1       = "api/v1/activitypub/user-id"
 	personIDapiPathV1Latest = "api/activitypub/user-id"
+	actorIDapiPathV1        = "api/v1/activitypub"
+	actorIDapiPathLatest    = "api/activitypub"
 )
 
 // Factory function for PersonID. Created struct is asserted to be valid
@@ -88,8 +90,11 @@ func (id PersonID) Validate() []string {
 	result = append(result, validation.ValidateOneOf(id.Source, []any{"forgejo", "gitea", "mastodon", "gotosocial"}, "Source")...)
 	if id.Source == "forgejo" {
 		result = append(result, validation.ValidateNotEmpty(id.Path, "path")...)
-		if strings.ToLower(id.Path) != personIDapiPathV1 && strings.ToLower(id.Path) != personIDapiPathV1Latest {
-			result = append(result, fmt.Sprintf("path: %q has to be a person specific api path", id.Path))
+		lowerPath := strings.ToLower(id.Path)
+		if lowerPath != personIDapiPathV1 && lowerPath != personIDapiPathV1Latest {
+			if lowerPath != actorIDapiPathV1 && lowerPath != actorIDapiPathLatest || id.ID != "actor" {
+				result = append(result, fmt.Sprintf("path: %q has to be a person specific api path", id.Path))
+			}
 		}
 	}
 

@@ -65,7 +65,7 @@ func FindFederatedUser(ctx context.Context, externalID string, federationHostID 
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, nil
+		return nil, nil, ErrFederatedUserNotExists{Identifier: externalID}
 	}
 	has, err = db.GetEngine(ctx).ID(federatedUser.UserID).Get(user)
 	if err != nil {
@@ -134,16 +134,6 @@ func FindFederatedUsersByHostID(ctx context.Context, federationHostID int64, opt
 	return users, nil
 }
 
-func GetFederatedUser(ctx context.Context, externalID string, federationHostID int64) (*User, *FederatedUser, error) {
-	user, federatedUser, err := FindFederatedUser(ctx, externalID, federationHostID)
-	if err != nil {
-		return nil, nil, err
-	} else if federatedUser == nil {
-		return nil, nil, fmt.Errorf("FederatedUser not found (given externalId: %v, federationHostId: %v)", externalID, federationHostID)
-	}
-	return user, federatedUser, nil
-}
-
 func GetFederatedUserByUserID(ctx context.Context, userID int64) (*User, *FederatedUser, error) {
 	federatedUser := new(FederatedUser)
 	user := new(User)
@@ -177,7 +167,7 @@ func FindFederatedUserByKeyID(ctx context.Context, keyID string) (*User, *Federa
 	if err != nil {
 		return nil, nil, err
 	} else if !has {
-		return nil, nil, nil
+		return nil, nil, ErrFederatedUserNotExists{Identifier: keyID}
 	}
 	has, err = db.GetEngine(ctx).ID(federatedUser.UserID).Get(user)
 	if err != nil {

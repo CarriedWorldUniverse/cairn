@@ -105,3 +105,16 @@ func IsErrUserIsNotLocal(err error) bool {
 	_, ok := err.(ErrUserIsNotLocal)
 	return ok
 }
+
+type ErrFederatedUserNotExists struct {
+	Identifier string
+}
+
+func (err ErrFederatedUserNotExists) Error() string {
+	return fmt.Sprintf("No cached federated user found for identifier %s", err.Identifier)
+}
+
+func IsErrFederatedUserNotExists(err error) bool {
+	_, ok := err.(ErrFederatedUserNotExists)
+	return ok
+}
