@@ -263,14 +263,14 @@ func ChangeTargetBranch(ctx context.Context, pr *issues_model.PullRequest, doer 
 	return nil
 }
 
-func checkForInvalidation(ctx context.Context, requests issues_model.PullRequestList, repoID int64, doer *user_model.User, branch, newCommitID string) error {
+func checkForInvalidation(ctx context.Context, requests issues_model.PullRequestList, repoID int64, doer *user_model.User, newCommitID string) error {
 	repo, err := repo_model.GetRepositoryByID(ctx, repoID)
 	if err != nil {
 		return fmt.Errorf("GetRepositoryByIDCtx: %w", err)
 	}
 	go func() {
 		// FIXME: graceful: We need to tell the manager we're doing something...
-		err := InvalidateCodeComments(ctx, requests, doer, repo, branch, newCommitID)
+		err := InvalidateCodeComments(ctx, requests, doer, repo, newCommitID)
 		if err != nil {
 			log.Error("PullRequestList.InvalidateCodeComments: %v", err)
 		}
@@ -335,7 +335,7 @@ func TestPullRequest(ctx context.Context, doer *user_model.User, repoID, olderTh
 		if err = requests.LoadAttributes(ctx); err != nil {
 			log.Error("PullRequestList.LoadAttributes: %v", err)
 		}
-		if invalidationErr := checkForInvalidation(ctx, requests, repoID, doer, branch, newCommitID); invalidationErr != nil {
+		if invalidationErr := checkForInvalidation(ctx, requests, repoID, doer, newCommitID); invalidationErr != nil {
 			log.Error("checkForInvalidation: %v", invalidationErr)
 		}
 		if err == nil {
