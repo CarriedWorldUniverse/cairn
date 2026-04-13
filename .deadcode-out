@@ -58,7 +58,6 @@ forgejo.org/models/user
 	IsErrUserSettingIsNotExist
 	GetUserAllSettings
 	DeleteUserSetting
-	GetFederatedUser
 
 forgejo.org/modules/activitypub
 	NewContext

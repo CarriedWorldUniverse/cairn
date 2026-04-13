@@ -42,3 +42,11 @@ func HTTPStatus(err error) int {
 		return http.StatusInternalServerError
 	}
 }
+
+type ErrKeyNotFound struct {
+	KeyID string
+}
+
+func (err ErrKeyNotFound) Error() string {
+	return fmt.Sprintf("No key found for key ID: %s", err.KeyID)
+}

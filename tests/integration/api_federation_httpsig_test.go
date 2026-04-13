@@ -19,7 +19,6 @@ import (
 	"forgejo.org/modules/test"
 	"forgejo.org/routers"
 	"forgejo.org/services/contexttest"
-	"forgejo.org/services/federation"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,10 +41,27 @@ func TestFederationHttpSigValidation(t *testing.T) {
 		apClient, err := clientFactory.WithKeys(ctx, user1, user1.KeyID())
 		require.NoError(t, err)
 
+		// HACK HACK HACK: the host part of the URL gets set to which IP forgejo is
+		// listening on, NOT localhost, which is the Domain given to forgejo which
+		// is then used for eg. the keyID all requests
+		applicationKeyID := fmt.Sprintf("%sapi/v1/activitypub/actor#main-key", setting.AppURL)
+		actorKeyID := fmt.Sprintf("%sapi/v1/activitypub/user-id/1#main-key", setting.AppURL)
+
 		// Unsigned request
 		t.Run("UnsignedRequest", func(t *testing.T) {
 			req := NewRequest(t, "GET", userURL)
 			MakeRequest(t, req, http.StatusBadRequest)
+		})
+
+		// Check for missing public keys
+		t.Run("ValidateEmptyCaches", func(t *testing.T) {
+			_, err := forgefed.FindFederationHostByKeyID(db.DefaultContext, applicationKeyID)
+			require.Error(t, err)
+			assert.True(t, forgefed.IsErrFederationHostNotFound(err))
+
+			_, _, err = user.FindFederatedUserByKeyID(db.DefaultContext, actorKeyID)
+			require.Error(t, err)
+			assert.True(t, user.IsErrFederatedUserNotExists(err))
 		})
 
 		// Signed request
@@ -54,12 +70,6 @@ func TestFederationHttpSigValidation(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
-
-		// HACK HACK HACK: the host part of the URL gets set to which IP forgejo is
-		// listening on, NOT localhost, which is the Domain given to forgejo which
-		// is then used for eg. the keyID all requests
-		applicationKeyID := fmt.Sprintf("%sapi/v1/activitypub/actor#main-key", setting.AppURL)
-		actorKeyID := fmt.Sprintf("%sapi/v1/activitypub/user-id/1#main-key", setting.AppURL)
 
 		// Check for cached public keys
 		t.Run("ValidateCaches", func(t *testing.T) {
@@ -72,14 +82,6 @@ func TestFederationHttpSigValidation(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotNil(t, user)
 			assert.True(t, user.PublicKey.Valid)
-		})
-
-		t.Run("ValidateActorFromKeyID", func(t *testing.T) {
-			_, err := federation.NewActorIDFromKeyID(ctx, actorKeyID)
-			require.NoError(t, err)
-
-			_, err = federation.NewActorIDFromKeyID(ctx, "http://bad.url/%^&")
-			require.Error(t, err)
 		})
 
 		// Disable signature validation

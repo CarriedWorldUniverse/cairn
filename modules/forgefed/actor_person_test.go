@@ -159,6 +159,48 @@ func TestPersonIdValidation(t *testing.T) {
 	result, err = validation.IsValid(sut)
 	assert.False(t, result)
 	require.EqualError(t, err, "Validation Error: forgefed.PersonID: Field Source contains the value forgejox, which is not in allowed subset [forgejo gitea mastodon gotosocial]")
+
+	sut = forgefed.PersonID{}
+	sut.ID = "actor"
+	sut.Source = "forgejo"
+	sut.HostSchema = "https"
+	sut.Path = "api/v1/activitypub"
+	sut.Host = "example.com"
+	sut.HostPort = 443
+	sut.IsPortSupplemented = true
+	sut.UnvalidatedInput = "https://example.com/api/v1/activitypub/actor"
+
+	result, err = validation.IsValid(sut)
+	assert.True(t, result)
+	require.NoError(t, err)
+
+	sut = forgefed.PersonID{}
+	sut.ID = "actor"
+	sut.Source = "forgejo"
+	sut.HostSchema = "https"
+	sut.Path = "api/activitypub"
+	sut.Host = "example.com"
+	sut.HostPort = 443
+	sut.IsPortSupplemented = true
+	sut.UnvalidatedInput = "https://example.com/api/activitypub/actor"
+
+	result, err = validation.IsValid(sut)
+	assert.True(t, result)
+	require.NoError(t, err)
+
+	sut = forgefed.PersonID{}
+	sut.ID = "1"
+	sut.Source = "forgejo"
+	sut.HostSchema = "https"
+	sut.Path = "api/v1/activitypub"
+	sut.Host = "example.com"
+	sut.HostPort = 443
+	sut.IsPortSupplemented = true
+	sut.UnvalidatedInput = "https://example.com/api/v1/activitypub/1"
+
+	result, err = validation.IsValid(sut)
+	assert.False(t, result)
+	require.EqualError(t, err, "Validation Error: forgefed.PersonID: path: \"api/v1/activitypub\" has to be a person specific api path")
 }
 
 func TestWebfingerId(t *testing.T) {

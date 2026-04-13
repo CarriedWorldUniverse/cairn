@@ -30,13 +30,9 @@ func verifyHTTPSignature(ctx app_context.APIContext) (authenticated bool, err er
 
 	log.Debug("Verify %q, signed by KeyId: %v", r.URL.Path, v.KeyId())
 	signatureAlgorithm := httpsig.Algorithm(setting.Federation.SignatureAlgorithms[0])
-	pubKey, err := federation.FindOrCreateFederatedUserKey(ctx, v.KeyId())
-	if err != nil || pubKey == nil {
-		pubKey, err = federation.FindOrCreateFederationHostKey(ctx, v.KeyId())
-		if err != nil {
-			log.Debug("For %q verification failed: %v", r.URL.Path, err)
-			return false, err
-		}
+	pubKey, err := federation.FindOrCreateActorKey(ctx, v.KeyId())
+	if err != nil {
+		return false, err
 	}
 
 	err = v.Verify(pubKey, signatureAlgorithm)

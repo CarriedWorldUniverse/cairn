@@ -224,9 +224,6 @@ linters:
       - path: models/dbfs/dbfile.go
         linters:
           - nilnil
-      - path: models/forgefed/federationhost_repository.go
-        linters:
-          - nilnil
       - path: models/forgejo_migrations_legacy/v32.go
         linters:
           - nilnil
@@ -282,9 +279,6 @@ linters:
         linters:
           - nilnil
       - path: models/repo/repo.go
-        linters:
-          - nilnil
-      - path: models/user/user_repository.go
         linters:
           - nilnil
       - path: modules/git/commit.go
@@ -378,9 +372,6 @@ linters:
         linters:
           - nilnil
       - path: routers/api/packages/conan/auth.go
-        linters:
-          - nilnil
-      - path: services/federation/signature_service.go
         linters:
           - nilnil
       - path: services/issue/commit.go
