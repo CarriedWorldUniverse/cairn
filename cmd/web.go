@@ -164,8 +164,6 @@ func serveInstall(_ context.Context, ctx *cli.Command) error {
 }
 
 func serveInstalled(_ context.Context, ctx *cli.Command) error {
-	setting.InitCfgProvider(setting.CustomConf)
-	setting.LoadCommonSettings()
 	setting.MustInstalled()
 
 	showWebStartupMessage("Prepare to run web server")
