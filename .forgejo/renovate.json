@@ -154,6 +154,12 @@
       "enabled": false
     },
     {
+      "description": "Disable updates for old stable branches but still allow security updates",
+      "matchBaseBranches": ["v11.0/forgejo", "v14.0/forgejo"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "enabled": false
+    },
+    {
       "description": "Require approval for stable branches (must be last rule to override all others)",
       "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
       "dependencyDashboardApproval": true,
