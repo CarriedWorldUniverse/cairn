@@ -2,7 +2,7 @@
 	<h4 class="ui top attached header">
 		{{ctx.Locale.Tr "actions.runners.runner_setup.title" .Runner.Name}}
 		<div class="ui right">
-			<a class="ui secondary tiny button" href="{{.RunnersListLink}}" tabindex="0">
+			<a class="ui basic tiny button" href="{{.RunnersListLink}}" tabindex="0">
 				{{ctx.Locale.Tr "actions.runners.runner_setup.list_of_runners_link"}}
 			</a>
 		</div>
@@ -50,6 +50,6 @@ $ forgejo-runner daemon \
 	--token-url file:///path/to/runner-token \
 	--label docker:docker://node:lts
 </code></pre>
-		<p>{{ctx.Locale.Tr "actions.runners.runner_setup.instruction_advanced_configurations"}}</p>
+		<p>{{ctx.Locale.Tr "actions.runners.runner_setup.instruction_advanced_configurations" "https://forgejo.org/docs/latest/admin/actions/"}}</p>
 	</div>
 </div>
