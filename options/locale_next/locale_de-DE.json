@@ -551,7 +551,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "Wie man forgejo-runner aufruft",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Ersetze den Verbindungsnamen (<code>forgejo</code> im Beispiel) mit einem Wert deiner Wahl.",
 	"actions.runners.runner_setup.heading_using_options": "Unter Benutzung der Programmoptionen",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Um Forgejo Runner so zu konfigurieren, dass er in Containern oder mit einer fortgeschrittenen Konfigurationen läuft, siehe die <a href=\"https://TO-BE-REPLACED.COM\">Dokumentation</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Um Forgejo Runner so zu konfigurieren, dass er in Containern oder mit einer fortgeschrittenen Konfigurationen läuft, siehe die <a href=\"%s\">Dokumentation</a>.",
 	"actions.runners.reset_registration_token.token": "Registrierungs-Token (missbilligt)",
 	"form.RunnerName": "Name",
 	"actions.runners.task_list_repo": "Neuliche Aufgaben dieses Repositorys auf diesem Runner",

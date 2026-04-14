@@ -505,7 +505,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "How to invoke forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Replace the connection name (<code>forgejo</code> in the example) with a value of your liking.",
 	"actions.runners.runner_setup.heading_using_options": "Using program options",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "For configuring Forgejo Runner running in containers or advanced configurations, see the <a href=\"https://TO-BE-REPLACED.COM\">documentation</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "For configuring Forgejo Runner running in containers or advanced configurations, see the <a href=\"%s\">documentation</a>.",
 	"actions.runners.none": "No runners available",
 	"actions.runners.reset_registration_token.token": "Registration Token (Deprecated)",
 	"actions.runners.reset_registration_token.button": "Reset registration token",

@@ -551,7 +551,7 @@
 	"actions.runners.list_runners.delete_button": "Ta bort",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Ersätt anslutningsnamnet (<code>forgejo</code> i exemplet) med ett värde.",
 	"actions.runners.runner_setup.heading_using_options": "Använder programval",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "För konfiguration av Forgejo Runner i containrar eller för avancerade konfigurationer, se <a href=\"https://TO-BE-REPLACED.COM\">dokumentationen.</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "För konfiguration av Forgejo Runner i containrar eller för avancerade konfigurationer, se <a href=\"%s\">dokumentationen.</a>.",
 	"actions.runners.reset_registration_token.token": "Registreringstoken (Föråldrad)",
 	"form.RunnerName": "Namn",
 	"settings.new_access_token": "Ny åtkomsttoken",

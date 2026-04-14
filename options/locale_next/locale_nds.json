@@ -553,7 +553,7 @@
 	"actions.runners.ephemeral": "Körttiedig",
 	"actions.runners.runner_details.labels_note": "De Vermarkens vun de Loper worden in de Inrichtens-Datei vun Forgejo Runner fastleggt of as Oorderreeg-Instellen angeven. Se worden elkeen Maal verneeit, wenn Forgejo Runner sik mit Forgejo verbinnt.",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Wessel de Verbinnens-Naam (<code>forgejo</code> im Bispööl) mit eenem Weert na dienem Smaak ut.",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Um Forgejo Runner so intorichten, dat dat in Behälters löppt, of för kumplizeertere Inrichtens, bekiek de <a href=\"https://TO-BE-REPLACED.COM\">Dokumenteren</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Um Forgejo Runner so intorichten, dat dat in Behälters löppt, of för kumplizeertere Inrichtens, bekiek de <a href=\"%s\">Dokumenteren</a>.",
 	"actions.runners.task_list_repo": "Leste Upgaven vun deesem Repositorium up deesem Loper",
 	"actions.runners.task_list_org": "Leste Upgaven up deesem Loper in deeser Vereenigung",
 	"actions.runners.task_list_admin": "Leste Upgaven up deesem Loper",

@@ -567,7 +567,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "Como iniciar o forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Substitua o nome da ligação (<code>forgejo</code> no exemplo) por um valor à sua escolha.",
 	"actions.runners.runner_setup.heading_using_options": "Utilizando as opções do programa",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Para configurar o Forgejo Runner em containers ou em configurações avançadas, consulte a <a href=\"https://TO-BE-REPLACED.COM\">documentação</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Para configurar o Forgejo Runner em containers ou em configurações avançadas, consulte a <a href=\"%s\">documentação</a>.",
 	"form.RunnerName": "Nome",
 	"settings.new_access_token": "Novo token de acesso",
 	"settings.permissions_access_specific_repositories": "Repositórios específicos",

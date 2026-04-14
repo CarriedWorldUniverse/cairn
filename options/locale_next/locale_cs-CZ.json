@@ -566,7 +566,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "Jak spustit forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Nahraďte název spojení (<code>forgejo</code> v příkladu) vlastní hodnotou.",
 	"actions.runners.runner_setup.heading_using_options": "Používám možnosti programu",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Pro nastavení runneru Forgejo běžícího v kontejnerech nebo pokročilých konfiguracích si přečtěte <a href=\"https://TO-BE-REPLACED.COM\">dokumentaci</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Pro nastavení runneru Forgejo běžícího v kontejnerech nebo pokročilých konfiguracích si přečtěte <a href=\"%s\">dokumentaci</a>.",
 	"actions.runners.reset_registration_token.token": "Registrační token (zastaralý)",
 	"form.RunnerName": "Název",
 	"actions.runners.task_list_repo": "Nedávné úlohy tohoto repozitáře na tomto runneru",

@@ -562,7 +562,7 @@
 	"actions.runners.runner_setup.last_chance_copying_token": "Скопіюйте токен зараз, оскільки ви більше його не побачите!",
 	"actions.runners.runner_setup.program_options_snippet_aria": "Як викликати forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Замініть назву з’єднання (у прикладі — <code>forgejo</code>) на значення, яке вам до вподоби.",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Щоб налаштувати роботу Forgejo Runner у контейнерах або про розширені налаштування читайте в <a href=\"https://TO-BE-REPLACED.COM\">документації</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Щоб налаштувати роботу Forgejo Runner у контейнерах або про розширені налаштування читайте в <a href=\"%s\">документації</a>.",
 	"actions.runners.runner_setup.configuration_snippet_aria": "Фрагмент для вставки в конфігурацію ранера",
 	"actions.runners.runner_details.labels_note": "Мітки ранера вказуються у файлі конфігурації Forgejo Runner або передаються як параметри командного рядка. Вони оновлюються щоразу, коли Forgejo Runner встановлює з’єднання з Forgejo.",
 	"actions.runners.runner_setup.heading_using_options": "Використання налаштувань програми",

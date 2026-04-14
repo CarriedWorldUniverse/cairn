@@ -506,7 +506,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "如何调用forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "将连接名（例子中的<code>forgejo</code>）替换为你喜欢的值。",
 	"actions.runners.runner_setup.heading_using_options": "使用命令行选项",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "参见<a href=\"https://TO-BE-REPLACED.COM\">文档</a>以了解如何配置运行在容器中的Forgejo Runner及其他高级配置。",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "参见<a href=\"%s\">文档</a>以了解如何配置运行在容器中的Forgejo Runner及其他高级配置。",
 	"actions.runners.reset_registration_token.token": "注册令牌（已弃用）",
 	"form.RunnerName": "名称",
 	"settings.new_access_token": "创建访问令牌",
