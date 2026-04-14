@@ -1730,6 +1730,67 @@ func TestPullRequestCommentPlacement(t *testing.T) {
 				assert.True(t, commentReloaded.Invalidated)
 			}, 1*time.Second, 50*time.Millisecond)
 		})
+
+		t.Run("comment on removed line in specific commit adjusts to correct location", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+			tester := newPullRequestCommentPlacementTester(t)
+
+			// 3 commits: modify line 50, remove line 50, remove some earlier lines
+			content := tester.fileContent
+			content = strings.Replace(content, "Line 50\n", "Line 50--modified\n", 1)
+			commit1 := tester.changeFile("file1.md", content)
+			t.Logf("commit1 = %q", commit1)
+			content = strings.Replace(content, "Line 50--modified\n", "", 1)
+			commit2 := tester.changeFile("file1.md", content)
+			t.Logf("commit2 = %q", commit2)
+			content = strings.Replace(content, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\n", "", 1)
+			commit3 := tester.changeFile("file1.md", content)
+			t.Logf("commit3 = %q", commit3)
+			tester.createPR()
+
+			comment := tester.commentOnPreviousFromSpecificCommit(commit2, "file1.md", 50)
+			assert.Equal(t, `diff --git a/file1.md b/file1.md
+--- a/file1.md
++++ b/file1.md
+@@ -47,7 +47,6 @@ Line 46
+ Line 47
+ Line 48
+ Line 49
+-Line 50--modified`, comment.PatchQuoted)
+			assert.Equal(t, "previous", comment.DiffSide())
+			assert.EqualValues(t, -50, comment.Line)
+			assert.Equal(t, commit1, comment.CommitSHA)
+
+			diff1 := []diffTableRow{
+				{rowType: RowHasCode, code: "Line 49"},
+				{rowType: RowDelCode, code: "Line 50"},
+				{rowType: RowAddCode, code: "Line 50--modified"},
+				{rowType: RowHasCode, code: "Line 51"},
+			}
+			tester.assertCommitDiff(commit1, diff1, "checking commit1 contents in single-commit diff")
+
+			diff2 := []diffTableRow{
+				{rowType: RowHasCode, code: "Line 49"},
+				{rowType: RowDelCode, code: "Line 50--modified"},
+				{rowType: RowComment, commentID: comment.ID},
+				{rowType: RowHasCode, code: "Line 51"},
+			}
+			tester.assertCommitDiff(commit2, diff2, "checking commit2 contents in single-commit diff")
+
+			diff3 := []diffTableRow{
+				{rowType: RowHasCode, code: "Line 49"},
+				{rowType: RowDelCode, code: "Line 50"},
+				// This is a small bug -- the comment was placed on the code "Line 50--modified" in commit1, which was
+				// later amended by commit2. This comment should be marked out-of-date and not appear here. But the
+				// comment's `ResolveCurrentLine` doesn't quite detect this case correctly -- as the comment's CommitSHA
+				// is commit1, it performs a diff commit1..PR-HEAD, not mergebase..PR-HEAD, and it believes that this
+				// line of code still exists because it exists in that diff range. It's a rare edge case that is defered
+				// for future repair.
+				{rowType: RowComment, commentID: comment.ID},
+				{rowType: RowHasCode, code: "Line 51"},
+			}
+			tester.assertFilesChangedDiff(diff3, "checking overall contents in full PR diff")
+		})
 	})
 }
 
@@ -1862,16 +1923,29 @@ func (tester *PullRequestCommentPlacementTester) commentOnPreviousFromFilesChang
 	return tester.commentFromNewCommentForm(resp, filename, line, "previous")
 }
 
+func (tester *PullRequestCommentPlacementTester) getCommitParent(commitID string) string {
+	repo, err := gitrepo.OpenRepository(tester.t.Context(), tester.repo)
+	require.NoError(tester.t, err)
+	defer repo.Close()
+	commit, err := repo.GetCommit(commitID)
+	require.NoError(tester.t, err)
+	require.Len(tester.t, commit.Parents, 1)
+	return commit.Parents[0].String()
+}
+
 func (tester *PullRequestCommentPlacementTester) commentFromSpecificCommit(commitID, filename string, line int) *issues_model.Comment {
+	beforeCommitID := tester.getCommitParent(commitID)
 	req := NewRequest(tester.t, "GET",
-		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment?after_commit_id=%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, commitID))
+		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment?before_commit_id=%s&after_commit_id=%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, beforeCommitID, commitID))
 	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
 	return tester.commentFromNewCommentForm(resp, filename, line, "proposed")
 }
 
 func (tester *PullRequestCommentPlacementTester) commentOnPreviousFromSpecificCommit(commitID, filename string, line int) *issues_model.Comment {
+	beforeCommitID := tester.getCommitParent(commitID)
+	tester.t.Logf("beforeCommitID(%q) = %q", commitID, beforeCommitID)
 	req := NewRequest(tester.t, "GET",
-		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment?after_commit_id=%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, commitID))
+		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/new_comment?before_commit_id=%s&after_commit_id=%s", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index, beforeCommitID, commitID))
 	resp := tester.session.MakeRequest(tester.t, req, http.StatusOK)
 	return tester.commentFromNewCommentForm(resp, filename, line, "previous")
 }
@@ -1879,10 +1953,13 @@ func (tester *PullRequestCommentPlacementTester) commentOnPreviousFromSpecificCo
 func (tester *PullRequestCommentPlacementTester) commentFromNewCommentForm(resp *httptest.ResponseRecorder, filename string, line int, side string) *issues_model.Comment {
 	commentContent := uuid.New().String()
 	doc := NewHTMLParser(tester.t, resp.Body)
+	tester.t.Logf("doc.before = %q", doc.GetInputValueByName("before_commit_id"))
+	tester.t.Logf("doc.latest = %q", doc.GetInputValueByName("latest_commit_id"))
 	req := NewRequestWithValues(tester.t, "POST",
 		fmt.Sprintf("/%s/%s/pulls/%d/files/reviews/comments", tester.repo.OwnerName, tester.repo.Name, tester.pr.Index),
 		map[string]string{
 			"origin":           doc.GetInputValueByName("origin"),
+			"before_commit_id": doc.GetInputValueByName("before_commit_id"),
 			"latest_commit_id": doc.GetInputValueByName("latest_commit_id"),
 			"side":             side, // "proposed" (RHS) or "previous" (LHS)
 			"line":             strconv.Itoa(line),
