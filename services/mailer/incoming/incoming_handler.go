@@ -152,6 +152,7 @@ func (h *ReplyHandler) Handle(ctx context.Context, content *MailContent, doer *u
 				comment.TreePath,
 				false, // not pending review but a single review
 				comment.ReviewID,
+				issue.PullRequest.MergeBase,
 				afterCommitID,
 				attachmentIDs,
 			)

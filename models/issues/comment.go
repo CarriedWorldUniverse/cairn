@@ -798,7 +798,7 @@ func (c *Comment) ResolveCurrentLine(ctx context.Context, repo *repo_model.Repos
 				// instead, return a blame where CommitID != headCommitID, which will be an indicator to callers (for
 				// both resolution methods) that the line of code is outdated in the diff.
 				reverseBlame = &git.ReverseLineBlame{
-					CommitID:   c.CommitSHA, // not currentHead
+					CommitID:   "", // not currentHead
 					LineNumber: c.UnsignedLine(),
 					FilePath:   c.TreePath,
 				}

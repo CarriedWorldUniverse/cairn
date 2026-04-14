@@ -1027,7 +1027,11 @@ func viewPullFiles(ctx *context.Context, specifiedStartCommit, specifiedEndCommi
 		}
 
 		endCommitID = commitID
-		startCommitID = prInfo.MergeBase
+		if prevCommit != nil {
+			startCommitID = prevCommit.ID.String()
+		} else {
+			startCommitID = prInfo.MergeBase
+		}
 		ctx.Data["IsShowingAllCommits"] = false
 	} else if willShowSpecifiedCommitRange {
 		if len(specifiedEndCommit) > 0 {
