@@ -12,8 +12,8 @@
 
 <body>
 	<ul>
-		<h3>{{.Locale.Tr "mail.admin.new_user.user_info"}}: <a href="{{.NewUserUrl}}">@{{.NewUser.Name}}</a></h3>
-		<li>{{.Locale.Tr "admin.users.created"}}: {{DateTime "full" .NewUser.CreatedUnix}}</li>
+		<h3>{{.locale.Tr "mail.admin.new_user.user_info"}}: <a href="{{.NewUserUrl}}">@{{.NewUser.Name}}</a></h3>
+		<li>{{.locale.Tr "admin.users.created"}}: {{DateTime "full" .NewUser.CreatedUnix}}</li>
 	</ul>
 	<p> {{.Body | SanitizeHTML}} </p>
 </body>
