@@ -576,5 +576,7 @@
 	"actions.runners.ephemeral.no": "non",
 	"actions.runs.scheduled_description": "Exécution planifiée du commit <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Exécution du commit <a href=\"%[1]s\">%[2]s</a> déclenché par <a href=\"%[3]s\">%[4]s</a>",
-	"actions.runs.on_push_description": "Commit <a href=\"%[1]s\">%[2]s</a> poussé par <a href=\"%[3]s\">%[4]s</a>"
+	"actions.runs.on_push_description": "Commit <a href=\"%[1]s\">%[2]s</a> poussé par <a href=\"%[3]s\">%[4]s</a>",
+	"settings.access_token.resource_all_help": "Autoriser l'accès à toutes les ressources.",
+	"actions.runners.version": "Version"
 }

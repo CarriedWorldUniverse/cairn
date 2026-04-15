@@ -103,5 +103,26 @@
 		"one": "%d n wesrag aya",
 		"other": "%d n yesragen aya"
 	},
-	"packages.settings.delete": "Kkes akemmus"
+	"packages.settings.delete": "Kkes akemmus",
+	"actions.actions": "Tigawin",
+	"actions.runners.token": "Tiddest",
+	"actions.runners.version": "Lqem",
+	"actions.runners.list_runners.details_column": "Talqayt",
+	"actions.runners.list_runners.edit_column": "Ẓreg",
+	"actions.runners.list_runners.delete_column": "Kkes",
+	"actions.runners.list_runners.details_button": "Talqayt",
+	"actions.runners.list_runners.delete_button": "Kkes",
+	"actions.runners.list_runners.edit_button": "Ẓreg",
+	"actions.runners.ephemeral.yes": "ih",
+	"actions.runners.ephemeral.no": "uhu",
+	"actions.runners.create_runner.name_label": "Isem",
+	"actions.runners.create_runner.description_label": "Aglam",
+	"actions.runners.create_runner.create_button": "Snulfu-d",
+	"actions.runners.create_runner.cancel_button": "Semmet",
+	"actions.runners.edit_runner.properties_options": "Tixtiṛiyin",
+	"actions.runners.edit_runner.name_label": "Isem",
+	"actions.runners.edit_runner.description_label": "Aglam",
+	"actions.runners.edit_runner.save_button": "Sekles",
+	"actions.runners.edit_runner.cancel_button": "Semmet",
+	"form.RunnerName": "Isem"
 }

@@ -598,5 +598,9 @@
 	"graphs.code_frequency.title": "Frequência do código ao longo da história de {0}",
 	"actions.runs.scheduled_description": "Execução agendada do cometimento <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Execução do commit <a href=\"%[1]s\">%[2]s</a> acionada por <a href=\"%[3]s\">%[4]s</a>",
-	"actions.runs.on_push_description": "Cometimento <a href=\"%[1]s\">%[2]s</a> enviado por <a href=\"%[3]s\">%[4]s</a>"
+	"actions.runs.on_push_description": "Cometimento <a href=\"%[1]s\">%[2]s</a> enviado por <a href=\"%[3]s\">%[4]s</a>",
+	"actions.runners.version": "Versão",
+	"actions.workflow.unknown_job_in_needs": "O trabalho com o ID %[1]s faz referência a trabalhos desconhecidos em `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "A sequência de trabalho não pode ser executada novamente.",
+	"actions.workflow.job_rerun_impossible": "O trabalho não pode ser executado novamente."
 }

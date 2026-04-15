@@ -3,7 +3,7 @@
 	"gpg.error.extract_sign": "Не вдалося витягти підпис",
 	"gpg.error.generate_hash": "Не вдалося згенерувати хеш коміту",
 	"gpg.error.no_committer_account": "Електронна пошта автора не пов’язана із жодним обліковим записом",
-	"gpg.error.no_gpg_keys_found": "Не вдалося знайти GPG-ключ, що відповідає даному підпису",
+	"gpg.error.no_gpg_keys_found": "Не вдалося знайти ключ, що відповідає даному підпису",
 	"gpg.error.not_signed_commit": "Непідписаний коміт",
 	"gpg.error.failed_retrieval_gpg_keys": "Не вдалось отримати ключ, пов’язаний з обліковим записом комітера",
 	"gpg.error.probable_bad_signature": "УВАГА! Хоча ключ із таким ID і є в базі, цей коміт неможливо ним перевірити! Цей коміт ПІДОЗРІЛИЙ.",
@@ -562,7 +562,7 @@
 	"actions.runners.runner_setup.last_chance_copying_token": "Скопіюйте токен зараз, оскільки ви більше його не побачите!",
 	"actions.runners.runner_setup.program_options_snippet_aria": "Як викликати forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Замініть назву з’єднання (у прикладі — <code>forgejo</code>) на значення, яке вам до вподоби.",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Щоб налаштувати роботу Forgejo Runner у контейнерах або про розширені налаштування читайте в <a href=\"%s\">документації</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Як налаштувати Forgejo Runner для роботи в контейнерах або з розширеними налаштуваннями, читайте в <a href=\"%s\">документації</a>.",
 	"actions.runners.runner_setup.configuration_snippet_aria": "Фрагмент для вставки в конфігурацію ранера",
 	"actions.runners.runner_details.labels_note": "Мітки ранера вказуються у файлі конфігурації Forgejo Runner або передаються як параметри командного рядка. Вони оновлюються щоразу, коли Forgejo Runner встановлює з’єднання з Forgejo.",
 	"actions.runners.runner_setup.heading_using_options": "Використання налаштувань програми",
@@ -598,5 +598,9 @@
 	"settings.access_token.no_repositories_found": "Не знайдено жодного репозиторію.",
 	"settings.access_token.resource_public_only_help": "Дозволити доступ лише до публічних репозиторіїв та організацій.",
 	"settings.access_token.resource_specific_repo_help": "Дозволити доступ лише до окремих репозиторіїв. Доступ тільки для читання дозволено до всіх публічних репозиторіїв. Можна ввімкнути лише дозволи, що надають доступ до репозиторіїв і задач.",
-	"settings.permissions_access_specific_repositories": "Визначені репозиторії"
+	"settings.permissions_access_specific_repositories": "Визначені репозиторії",
+	"actions.runners.version": "Версія",
+	"actions.workflow.unknown_job_in_needs": "Завдання з ID %[1]s посилається на невідомі завдання в `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "Робочий потік неможливо перезапустити.",
+	"actions.workflow.job_rerun_impossible": "Завдання неможливо перезапустити."
 }

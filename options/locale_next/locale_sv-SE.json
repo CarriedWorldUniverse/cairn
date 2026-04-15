@@ -551,7 +551,7 @@
 	"actions.runners.list_runners.delete_button": "Ta bort",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Ersätt anslutningsnamnet (<code>forgejo</code> i exemplet) med ett värde.",
 	"actions.runners.runner_setup.heading_using_options": "Använder programval",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "För konfiguration av Forgejo Runner i containrar eller för avancerade konfigurationer, se <a href=\"%s\">dokumentationen.</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "För konfiguration av Forgejo Runner i containrar eller för avancerade konfigurationer, se <a href=\"%s\">dokumentationen</a>.",
 	"actions.runners.reset_registration_token.token": "Registreringstoken (Föråldrad)",
 	"form.RunnerName": "Namn",
 	"settings.new_access_token": "Ny åtkomsttoken",
@@ -567,10 +567,10 @@
 		"other": "Valda kodförråd (%d)"
 	},
 	"settings.access_token.available_repositories": "Tillgängliga kodförråd",
-	"settings.access_token.no_repositories_selected": "Inga valda kodförråd",
+	"settings.access_token.no_repositories_selected": "Inga valda kodförråd.",
 	"settings.access_token.no_repositories_found": "Fann inga kodförråd.",
 	"settings.access_token.remove": "Ta bort %s",
-	"settings.access_token.resource_all_help": "Tillåt åtkomst till alla resurser",
+	"settings.access_token.resource_all_help": "Tillåt åtkomst till alla resurser.",
 	"settings.access_token.resource_public_only_help": "Begränsa tillgången till publika kodförråd och organisationer.",
 	"settings.access_token.admin_disabled": "Administrativa rättigheter är inaktiverade.",
 	"actions.secrets.edit_button": "Redigera hemlighet \"%s\"",
@@ -582,5 +582,9 @@
 	"actions.secrets.mutation.success_message": "Hemligheten \"%s\" har uppdaterats.",
 	"actions.secrets.mutation.failure_message": "Hemligheten \"%s\" kunde inte uppdateras.",
 	"actions.secrets.mutation.name_description": "Namnet på en hemlighet får bara innehålla bokstäver, siffror och understreck. Den får inte börja med FORGEJO_, GITEA_, GITHUB_ eller en siffra. Forgejo konverterar den automatiskt till versaler.",
-	"actions.secrets.mutation.value_description": "Det existerande värdet visas inte. Lämna fältet tomt om du inte vill ändra det. Specialtecken behålls. CRLF (radbrytningar i Windows-stil) konverteras automatiskt till LF. Koda värdet med Base64 om radbrytningar ska behållas."
+	"actions.secrets.mutation.value_description": "Det existerande värdet visas inte. Lämna fältet tomt om du inte vill ändra det. Specialtecken behålls. CRLF (radbrytningar i Windows-stil) konverteras automatiskt till LF. Koda värdet med Base64 om radbrytningar ska behållas.",
+	"actions.runners.version": "Version",
+	"actions.workflow.unknown_job_in_needs": "Jobb med ID %[1]s refererar till okända jobb i `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "Arbetsflödet kan inte köras om.",
+	"actions.workflow.job_rerun_impossible": "Jobbet kan inte köras om."
 }

@@ -572,5 +572,16 @@
 	"actions.runners.create_runner.page_title": "Новый исполнитель",
 	"actions.runners.create_runner.create_button": "Создать",
 	"actions.runners.create_runner.cancel_button": "Отмена",
-	"actions.runners.show_registration_token": "Показать токен регистрации"
+	"actions.runners.show_registration_token": "Показать токен регистрации",
+	"actions.runners.version": "Версия",
+	"actions.runners.edit_runner.page_title": "Изменение исполнителя %s",
+	"actions.runners.edit_runner.title": "Изменить исполнителя %s",
+	"actions.runners.edit_runner.properties_fieldset": "Свойства",
+	"actions.runners.edit_runner.description_label": "Описание",
+	"actions.runners.edit_runner.save_button": "Сохранить",
+	"actions.runners.edit_runner.cancel_button": "Отмена",
+	"actions.runners.runner_details.page_title": "Исполнитель %s",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Для настройки исполнителя Forgejo Действий в контейнерах и др. расширенных настроек, обратитесь к <a href=\"%s\">документации</a>.",
+	"actions.workflow.rerun_impossible": "Раб. поток невозможно выполнить повторно.",
+	"actions.workflow.job_rerun_impossible": "Задание невозможно выполнить повторно."
 }
