@@ -23,6 +23,14 @@
 					{{.Runner.BelongsToOwnerType.LocaleString ctx.Locale}}
 				</dd>
 			</div>
+			{{if and $.PageIsAdmin .Runner.BelongsToOwnerName}}
+			<div class="item">
+				<dt>{{.Runner.BelongsToOwnerType.LocaleString ctx.Locale}}</dt>
+				<dd>
+					{{.Runner.BelongsToOwnerName}}
+				</dd>
+			</div>
+			{{end}}
 			<div class="item">
 				<dt>{{ctx.Locale.Tr "actions.runners.labels"}}</dt>
 				<dd class="tw-flex tw-items-start tw-flex-wrap tw-gap-2">
