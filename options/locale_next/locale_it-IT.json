@@ -431,8 +431,8 @@
 	"moderation.action.comment.delete": "Elimina commento",
 	"moderation.action.account.suspend": "Sospendi profilo",
 	"repo.issues.filter_reviewers.hint": "Filtra per utente che ha recensito",
-	"repo.issues.filter_mention.hint": "Filtra per utente menzionato",
-	"repo.issues.filter_modified.hint": "Filtra per ultima data modificata",
+	"repo.issues.filter_mention.hint": "Filtra per utente menzionatə",
+	"repo.issues.filter_modified.hint": "Filtra per ultima modifica",
 	"repo.issues.filter_sort.hint_with_placeholder": "Ordina per: %s",
 	"issues.updated": "aggiornato %s",
 	"issues.filters.labels.exclude": "Escludi etichetta",
@@ -447,5 +447,9 @@
 	"search.syntax": "Sintassi di ricerca",
 	"search.fuzzy": "Fuzzy",
 	"search.fuzzy_tooltip": "Includere i risultati è una corrispondenza approssimativa al termine di ricerca",
-	"install.ssh_authorized_keys_inspection_error": "Ispezione del file authorized_keys esistente fallito: %v"
+	"install.ssh_authorized_keys_inspection_error": "Ispezione del file authorized_keys esistente fallito: %v",
+	"repo.issues.filter_poster.hint": "Filtra per autore",
+	"repo.issues.filter_assignee.hint": "Filtra per utente assegnatə",
+	"repo.pulls.auto_merge.no_permission": "Non hai i permessi di annullare l'immissione automatica di questa richiesta di modifica.",
+	"repo.pulls.poster_manage_approval": "Gestisci approvazione"
 }

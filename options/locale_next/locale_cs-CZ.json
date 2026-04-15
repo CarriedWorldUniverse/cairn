@@ -581,5 +581,21 @@
 	"actions.secrets.mutation.success_message": "Tajný klíč „%s“ byl upraven.",
 	"actions.secrets.mutation.failure_message": "Tajný klíč „%s“ se nepodařilo upravit.",
 	"actions.secrets.mutation.name_description": "Název tajného klíče může obsahovat pouze písmena, číslice a podtržítka. Nemůže začínat textem FORGEJO_, GITEA_, GITHUB_ nebo číslem. Forgejo jej automaticky převede na velká písmena.",
-	"actions.secrets.mutation.value_description": "Existující hodnota nebude zobrazena. Ponechte pole prázdné, pokud jej nechcete upravit. Zvláštní znaky zůstanou zachovány. CRLF (zakončení řádků ve stylu Windows) budou automaticky převedeny na LF. Pokud chcete zachovat zakončení řádků, zakódujte hodnotu pomocí Base64."
+	"actions.secrets.mutation.value_description": "Existující hodnota nebude zobrazena. Ponechte pole prázdné, pokud jej nechcete upravit. Zvláštní znaky zůstanou zachovány. CRLF (zakončení řádků ve stylu Windows) budou automaticky převedeny na LF. Pokud chcete zachovat zakončení řádků, zakódujte hodnotu pomocí Base64.",
+	"settings.permissions_access_specific_repositories": "Konkrétní repozitáře",
+	"settings.access_token.available_repositories": "Dostupné repozitáře",
+	"settings.access_token.no_repositories_selected": "Nejsou vybrány žádné repozitáře.",
+	"settings.access_token.no_repositories_found": "Nenalezeny žádné repozitáře.",
+	"settings.access_token.remove": "Odstranit %s",
+	"settings.access_token.resource_all_help": "Povolit přístup ke všem zdrojům.",
+	"settings.access_token.resource_public_only_help": "Omezit přístup k veřejným repozitářům a organizacím.",
+	"settings.access_token.resource_specific_repo_help": "Omezit přístup ke konkrétním repozitářům. Přístup pouze ke čtení je udělen všem veřejným repozitářům. Povolena mohou být pouze oprávnění, která povolují přístup k repozitářům a problémům.",
+	"settings.access_token.admin_disabled": "Administrativní oprávnění jsou zakázána.",
+	"actions.runs.scheduled_description": "Naplánovaný běh revize <a href=\"%[1]s\">%[2]s</a>",
+	"actions.runs.workflow_dispatch_description": "Běh revize <a href=\"%[1]s\">%[2]s</a> spuštěný službou <a href=\"%[3]s\">%[4]s</a>",
+	"actions.runs.on_push_description": "Revize <a href=\"%[1]s\">%[2]s</a> odeslaná uživatelem <a href=\"%[3]s\">%[4]s</a>",
+	"actions.runners.version": "Verze",
+	"actions.workflow.unknown_job_in_needs": "Úloha s ID %[1]s odkazuje na neznámé úlohy v `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "Workflow nelze znovu spustit.",
+	"actions.workflow.job_rerun_impossible": "Úlohu nelze znovu spustit."
 }

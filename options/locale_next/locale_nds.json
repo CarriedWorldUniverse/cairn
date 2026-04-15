@@ -582,5 +582,9 @@
 	"settings.access_token.admin_disabled": "Chef-Rechten sünd utknipst.",
 	"actions.runs.scheduled_description": "Utföhren na Tiedplaan vun Kommitteren <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Utföhren vun Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> utlööst",
-	"actions.runs.on_push_description": "Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> schuven"
+	"actions.runs.on_push_description": "Kommitteren <a href=\"%[1]s\">%[2]s</a> vun <a href=\"%[3]s\">%[4]s</a> schuven",
+	"actions.runners.version": "Versioon",
+	"actions.workflow.unknown_job_in_needs": "Upgaav mit ID %[1]s benöömt unbekannte Upgaven in `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "De Warkwies kann nich weer lopen laten worden.",
+	"actions.workflow.job_rerun_impossible": "De Upgaav kann nich weer lopen laten worden."
 }
