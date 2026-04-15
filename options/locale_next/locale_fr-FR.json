@@ -1,19 +1,23 @@
 {
 	"counters.n_commits": {
 		"one": "%s commit",
-		"other": "%s commits"
+		"many": "%s commits",
+		"other": ""
 	},
 	"counters.n_branches": {
 		"one": "%s branch",
-		"other": "%s branches"
+		"many": "%s branches",
+		"other": ""
 	},
 	"counters.n_tags": {
 		"one": "%s étiquettes",
-		"other": "%s étiquettes"
+		"many": "%s étiquettes",
+		"other": ""
 	},
 	"counters.n_releases": {
 		"one": "%s publication",
-		"other": "%s publications"
+		"many": "%s publications",
+		"other": ""
 	},
 	"gpg.default_key": "Signé avec la clé par défaut",
 	"gpg.error.extract_sign": "Impossible d'extraire la signature",
@@ -614,5 +618,22 @@
 	"actions.runners.ephemeral.no": "non",
 	"actions.runs.scheduled_description": "Exécution planifiée du commit <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Exécution du commit <a href=\"%[1]s\">%[2]s</a> déclenché par <a href=\"%[3]s\">%[4]s</a>",
-	"actions.runs.on_push_description": "Commit <a href=\"%[1]s\">%[2]s</a> poussé par <a href=\"%[3]s\">%[4]s</a>"
+	"actions.runs.on_push_description": "Commit <a href=\"%[1]s\">%[2]s</a> poussé par <a href=\"%[3]s\">%[4]s</a>",
+	"migrate.select.title": "Migrer le dépôt",
+	"admin.federation.federation": "Fédération",
+	"admin.federation.hosts": "Hôtes",
+	"admin.federation.hosts.show_details": "Afficher les détails de l'hôte",
+	"admin.federation.host.id": "ID",
+	"admin.federation.host.schema": "Schéma",
+	"admin.federation.host.port": "Port",
+	"admin.federation.host.latest_activity": "Dernières activités",
+	"admin.federation.users": "Utilisateurs",
+	"admin.federation.user.id": "ID",
+	"admin.federation.user.user_id": "ID utilisateur local",
+	"admin.federation.user.external_id": "ID utilisateur externe",
+	"admin.config.federation": "Configuration de la fédération",
+	"admin.config.federation.enabled": "Activé",
+	"settings.access_token.resource_all_help": "Autoriser l'accès à toutes les ressources.",
+	"user.activitypub_feed.posted_on": "Posté sur %[1]s",
+	"actions.runners.version": "Version"
 }

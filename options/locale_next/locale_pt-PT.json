@@ -1,19 +1,23 @@
 {
 	"counters.n_commits": {
 		"one": "%s cometimento",
-		"other": "%s cometimentos"
+		"many": "%s cometimentos",
+		"other": ""
 	},
 	"counters.n_branches": {
 		"one": "%s ramo",
-		"other": "%s ramos"
+		"many": "%s ramos",
+		"other": ""
 	},
 	"counters.n_tags": {
 		"one": "%s etiqueta",
-		"other": "%s etiquetas"
+		"many": "%s etiquetas",
+		"other": ""
 	},
 	"counters.n_releases": {
 		"one": "%s lançamento",
-		"other": "%s lançamentos"
+		"many": "%s lançamentos",
+		"other": ""
 	},
 	"gpg.default_key": "Assinado com a chave padrão",
 	"gpg.error.extract_sign": "Falhou ao extrair a assinatura",
@@ -600,7 +604,7 @@
 	"actions.runners.runner_setup.program_options_snippet_aria": "Como iniciar o forgejo-runner",
 	"actions.runners.runner_setup.instruction_replace_connection_name": "Substitua o nome da ligação (<code>forgejo</code> no exemplo) por um valor à sua escolha.",
 	"actions.runners.runner_setup.heading_using_options": "Utilizando as opções do programa",
-	"actions.runners.runner_setup.instruction_advanced_configurations": "Para configurar o Forgejo Runner em containers ou em configurações avançadas, consulte a <a href=\"https://TO-BE-REPLACED.COM\">documentação</a>.",
+	"actions.runners.runner_setup.instruction_advanced_configurations": "Para configurar o Forgejo Runner em containers ou em configurações avançadas, consulte a <a href=\"%s\">documentação</a>.",
 	"form.RunnerName": "Nome",
 	"settings.new_access_token": "Novo token de acesso",
 	"settings.permissions_access_specific_repositories": "Repositórios específicos",
@@ -631,5 +635,51 @@
 	"graphs.code_frequency.title": "Frequência do código ao longo da história de {0}",
 	"actions.runs.scheduled_description": "Execução agendada do cometimento <a href=\"%[1]s\">%[2]s</a>",
 	"actions.runs.workflow_dispatch_description": "Execução do commit <a href=\"%[1]s\">%[2]s</a> acionada por <a href=\"%[3]s\">%[4]s</a>",
-	"actions.runs.on_push_description": "Cometimento <a href=\"%[1]s\">%[2]s</a> enviado por <a href=\"%[3]s\">%[4]s</a>"
+	"actions.runs.on_push_description": "Cometimento <a href=\"%[1]s\">%[2]s</a> enviado por <a href=\"%[3]s\">%[4]s</a>",
+	"migrate.select.title": "Migrar repositório",
+	"members.add_member": "Adicionar membro",
+	"members.user": "Utilizador",
+	"members.user_already_member": "Este utilizador já é membro da organização.",
+	"members.no_team_selected": "Os membros da organização devem pertencer a, pelo menos, uma equipa.",
+	"admin.federation.federation": "Federação",
+	"admin.federation.hosts": "Servidores",
+	"admin.federation.hosts.title": "Servidores da federação",
+	"admin.federation.hosts.manage_panel": "Gerir servidores da federação",
+	"admin.federation.hosts.details_panel": "Detalhes do servidor da federação",
+	"admin.federation.hosts.show_details": "Mostrar detalhes do servidor",
+	"admin.federation.host.id": "ID",
+	"admin.federation.host.fqdn": "FQDN",
+	"admin.federation.host.schema": "Esquema",
+	"admin.federation.host.port": "Porto",
+	"admin.federation.host.software_name": "Software",
+	"admin.federation.host.created": "Criado",
+	"admin.federation.host.updated": "Atualizado",
+	"admin.federation.host.latest_activity": "Atividade mais recente",
+	"admin.federation.users": "Utilizadores",
+	"admin.federation.users.title": "Utilizadores federados",
+	"admin.federation.users.manage_panel": "Gerir utilizadores federados",
+	"admin.federation.users.show_local_user": "Mostrar detalhes do utilizador local",
+	"admin.federation.user.id": "ID",
+	"admin.federation.user.user_id": "ID do utilizador local",
+	"admin.federation.user.external_id": "ID do utilizador externo",
+	"admin.federation.user.inbox_path": "Caminho da caixa de entrada",
+	"admin.config.federation": "Configuração da federação",
+	"admin.config.federation.enabled": "Habilitado",
+	"admin.config.federation.share_user_statistics": "Partilhar estatísticas de utilizadores com outros servidores",
+	"admin.config.federation.max_size": "Tamanho máximo permitido da resposta",
+	"admin.config.federation.signature_enforced": "Exigir assinaturas HTTP",
+	"admin.config.federation.signature_algorithms": "Algoritmos de assinatura",
+	"admin.config.federation.digest_algorithm": "Algoritmo de resumo da assinatura",
+	"admin.config.federation.get_headers": "Cabeçalhos GET assinados",
+	"admin.config.federation.post_headers": "Cabeçalhos POST assinados",
+	"user.activitypub_feed.feed": "Feed do Fediverso",
+	"user.activitypub_feed.no_activity": "Sem atividade no fediverso",
+	"user.activitypub_feed.is_empty": "O seu feed do fediverso está vazio.",
+	"user.activitypub_feed.hint": "Este feed mostra as atividades das contas do fediverso que segue, bem como as publicações federadas que o mencionaram.",
+	"user.activitypub_feed.posted_on": "Publicado em %[1]s",
+	"user.activitypub_feed.original_source": "Fonte original",
+	"actions.runners.version": "Versão",
+	"actions.workflow.unknown_job_in_needs": "O trabalho com o ID %[1]s faz referência a trabalhos desconhecidos em `needs`: %[2]s.",
+	"actions.workflow.rerun_impossible": "A sequência de trabalho não pode ser executada novamente.",
+	"actions.workflow.job_rerun_impossible": "O trabalho não pode ser executado novamente."
 }
