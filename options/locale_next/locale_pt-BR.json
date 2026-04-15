@@ -514,5 +514,20 @@
 	"editor.search": "Busca",
 	"editor.find_previous": "Ocorrência anterior",
 	"editor.find_next": "Ocorrência seguinte",
-	"editor.toggle_whole_word": "Alternar correspondência completa de palavras"
+	"editor.toggle_whole_word": "Alternar correspondência completa de palavras",
+	"settings.specific_repo_access": "Acesso ao repositório",
+	"settings.new_access_token": "Novo token de acesso",
+	"settings.permissions_access_specific_repositories": "Repositórios específicos",
+	"settings.access_token.available_repositories": "Repositórios disponíveis",
+	"settings.access_token.no_repositories_selected": "Nenhum repositório selecionado.",
+	"settings.access_token.no_repositories_found": "Nenhum repositório encontrado.",
+	"settings.access_token.remove": "Remova %s",
+	"actions.runners.task_list_admin": "Tarefas recentes neste executor",
+	"actions.runners.task_list_user": "Tarefas recentes deste usuário neste executor",
+	"actions.runners.edit_runner_button": "Editar executor",
+	"actions.runners.create_runner.page_title": "Criar novo executor",
+	"actions.runners.create_runner.title": "Criar novo executor",
+	"actions.runners.create_runner.name_label": "Noe",
+	"actions.runners.edit_runner.page_title": "Editar executor %s",
+	"actions.runners.edit_runner.title": "Editar executor %s"
 }
