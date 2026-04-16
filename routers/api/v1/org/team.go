@@ -591,6 +591,7 @@ func GetTeamRepos(ctx *context.APIContext) {
 			// Due to the pagination of the API it doesn't make sense to skip it, as we wouldn't be giving the right
 			// number of results back to the API consumer.
 			ctx.Error(http.StatusInternalServerError, "InvalidAuthorizationReducer", "Repository was available from GetTeamRepositories, but not readable.")
+			return
 		}
 		repos[i] = convert.ToRepo(ctx, repo, permission)
 	}
