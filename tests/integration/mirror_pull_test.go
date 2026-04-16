@@ -492,7 +492,7 @@ func waitForPullMirror(t *testing.T, mirrorName, expectedSha string) {
 }
 
 func getGitConfig(t *testing.T, configFile, configPath string) string {
-	stdout, stderr, err := process.GetManager().Exec("getGitConfig", "git", "config", "get", "--file", configFile, configPath)
+	stdout, stderr, err := process.GetManager().Exec("getGitConfig", "git", "config", "--get", "--file", configFile, configPath)
 	require.NoError(t, err, "fetch config %s failed: git stderr: %s", configPath, stderr)
 	return strings.TrimSpace(stdout)
 }
