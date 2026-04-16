@@ -416,6 +416,10 @@ func SearchUsers(ctx *context.APIContext) {
 	//   in: query
 	//   description: user's login name to search for
 	//   type: string
+	// - name: is_2fa_enabled
+	//   in: query
+	//   description: whether or not to filter users with the 2fa enabled
+	//   type: boolean
 	// - name: sort
 	//   in: query
 	//   description: sort order of results
@@ -446,12 +450,13 @@ func SearchUsers(ctx *context.APIContext) {
 	}
 
 	users, maxResults, err := user_model.SearchUsers(ctx, &user_model.SearchUserOptions{
-		Actor:       ctx.Doer,
-		Type:        user_model.UserTypeIndividual,
-		LoginName:   ctx.FormTrim("login_name"),
-		SourceID:    sourceID,
-		OrderBy:     utils.GetDbSearchOrder(ctx),
-		ListOptions: listOptions,
+		Actor:              ctx.Doer,
+		Type:               user_model.UserTypeIndividual,
+		LoginName:          ctx.FormTrim("login_name"),
+		IsTwoFactorEnabled: ctx.FormOptionalBool("is_2fa_enabled"),
+		SourceID:           sourceID,
+		OrderBy:            utils.GetDbSearchOrder(ctx),
+		ListOptions:        listOptions,
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "SearchUsers", err)
