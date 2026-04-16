@@ -361,7 +361,7 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 	}
 
 	// Restrict repositories to those the OwnerID owns or contributes to as per opts.Collaborate
-	if opts.OwnerID > 0 {
+	if opts.OwnerID != 0 {
 		accessCond := builder.NewCond()
 		if !opts.Collaborate.ValueOrZeroValue() {
 			accessCond = builder.Eq{"owner_id": opts.OwnerID}
