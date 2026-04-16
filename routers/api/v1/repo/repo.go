@@ -234,11 +234,13 @@ func Search(ctx *context.APIContext) {
 				OK:    false,
 				Error: err.Error(),
 			})
+			return
 		} else if !permission.HasAccess() {
 			// It shouldn't happen that a repo is returned from GetTeamRepositories which we have no access to at all.
 			// Due to the pagination of the API it doesn't make sense to skip it, as we wouldn't be giving the right
 			// number of results back to the API consumer.
 			ctx.Error(http.StatusInternalServerError, "InvalidAuthorizationReducer", "Repository was available from SearchRepository, but not readable.")
+			return
 		}
 
 		results[i] = convert.ToRepo(ctx, repo, permission)
