@@ -178,6 +178,59 @@ func TestAPIPullsFiles(t *testing.T) {
 	})
 }
 
+func TestAPIViewPullsFilterByBaseHead(t *testing.T) {
+	defer tests.PrepareTestEnv(t)()
+	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
+
+	ctx := NewAPITestContext(t, "user2", repo.Name, auth_model.AccessTokenScopeReadRepository)
+
+	t.Run("FilterByBase", func(t *testing.T) {
+		req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/pulls?state=all&base=master", repo.OwnerName, repo.Name).
+			AddTokenAuth(ctx.Token)
+		resp := ctx.Session.MakeRequest(t, req, http.StatusOK)
+
+		var pulls []*api.PullRequest
+		DecodeJSON(t, resp, &pulls)
+		assert.Len(t, pulls, 2)
+		for _, pr := range pulls {
+			assert.Equal(t, "master", pr.Base.Name)
+		}
+	})
+
+	t.Run("FilterByHead", func(t *testing.T) {
+		req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/pulls?state=all&head=branch2", repo.OwnerName, repo.Name).
+			AddTokenAuth(ctx.Token)
+		resp := ctx.Session.MakeRequest(t, req, http.StatusOK)
+
+		var pulls []*api.PullRequest
+		DecodeJSON(t, resp, &pulls)
+		assert.Len(t, pulls, 1)
+		assert.Equal(t, "branch2", pulls[0].Head.Name)
+	})
+
+	t.Run("FilterByBaseAndHead", func(t *testing.T) {
+		req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/pulls?state=all&base=master&head=branch2", repo.OwnerName, repo.Name).
+			AddTokenAuth(ctx.Token)
+		resp := ctx.Session.MakeRequest(t, req, http.StatusOK)
+
+		var pulls []*api.PullRequest
+		DecodeJSON(t, resp, &pulls)
+		assert.Len(t, pulls, 1)
+		assert.Equal(t, "master", pulls[0].Base.Name)
+		assert.Equal(t, "branch2", pulls[0].Head.Name)
+	})
+
+	t.Run("FilterByBaseNoMatch", func(t *testing.T) {
+		req := NewRequestf(t, "GET", "/api/v1/repos/%s/%s/pulls?state=all&base=nonexistent", repo.OwnerName, repo.Name).
+			AddTokenAuth(ctx.Token)
+		resp := ctx.Session.MakeRequest(t, req, http.StatusOK)
+
+		var pulls []*api.PullRequest
+		DecodeJSON(t, resp, &pulls)
+		assert.Empty(t, pulls)
+	})
+}
+
 func TestAPIViewPullsByBaseHead(t *testing.T) {
 	defer tests.PrepareTestEnv(t)()
 	repo := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
