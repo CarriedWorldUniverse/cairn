@@ -75,6 +75,7 @@ func TestAPISearchRepo(t *testing.T) {
 	org3 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 18})
 	user4 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 20})
 	orgUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 17})
+	actionsUser := user_model.NewActionsUser()
 
 	oldAPIDefaultNum := setting.API.DefaultPagingNum
 	defer func() {
@@ -191,6 +192,12 @@ func TestAPISearchRepo(t *testing.T) {
 			nil:   {count: 0},
 			user:  {count: 1, includesPrivate: true},
 			user4: {count: 1, includesPrivate: true},
+		}},
+		{name: "ForgejoActionsUser/UID", requestURL: fmt.Sprintf("/api/v1/repos/search?uid=%d", actionsUser.ID), expectedResults: expectedResults{
+			nil:         {count: 0},
+			actionsUser: {count: 0},
+			user:        {count: 0},
+			user4:       {count: 0},
 		}},
 	}
 
