@@ -114,12 +114,12 @@ func TestAPIPrivateServ(t *testing.T) {
 		assert.Empty(t, results)
 
 		// Cannot pull from a private repo we're not associated with
-		results, extra = private.ServCommand(ctx, deployKey.ID, "user15", "big_test_private_2", perm.AccessModeRead, "git-upload-pack", "")
+		results, extra = private.ServCommand(ctx, deployKey.KeyID, "user15", "big_test_private_2", perm.AccessModeRead, "git-upload-pack", "")
 		require.Error(t, extra.Error)
 		assert.Empty(t, results)
 
 		// Cannot pull from a public repo we're not associated with
-		results, extra = private.ServCommand(ctx, deployKey.ID, "user15", "big_test_public_1", perm.AccessModeRead, "git-upload-pack", "")
+		results, extra = private.ServCommand(ctx, deployKey.KeyID, "user15", "big_test_public_1", perm.AccessModeRead, "git-upload-pack", "")
 		require.Error(t, extra.Error)
 		assert.Empty(t, results)
 
