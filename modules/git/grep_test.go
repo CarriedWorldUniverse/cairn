@@ -65,7 +65,7 @@ func TestGrepSearch(t *testing.T) {
 			return
 		}
 
-		res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{MatchesPerFile: 1})
+		res, err = GrepSearch(t.Context(), repo, "world", GrepOptions{RefName: "95d3505f2db273e40be79f84416051ae85e9ea0d", MatchesPerFile: 1})
 		require.NoError(t, err)
 		assert.Equal(t, []*GrepResult{
 			{

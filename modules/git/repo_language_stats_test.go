@@ -34,6 +34,16 @@ func TestRepository_GetLanguageStats(t *testing.T) {
 		"Python": 67,
 		"Java":   112,
 	}, stats)
+
+	stats, err = gitRepo.GetLanguageStats("5684d0c8cfdfb17fcd59101826efc9ff54b80df4")
+	require.NoError(t, err)
+
+	assert.Equal(t, map[string]int64{
+		"Cobra":    67,
+		"Python":   67,
+		"Markdown": 15,
+		"Java":     112,
+	}, stats)
 }
 
 func TestMergeLanguageStats(t *testing.T) {

@@ -26,7 +26,7 @@ func TestFetch(t *testing.T) {
 
 			fetchedCommitID, err := repo.Fetch(otherRepoPath, "refs/heads/master")
 			require.NoError(t, err)
-			assert.Equal(t, "95d3505f2db273e40be79f84416051ae85e9ea0d", fetchedCommitID)
+			assert.Equal(t, "5684d0c8cfdfb17fcd59101826efc9ff54b80df4", fetchedCommitID)
 
 			c, err := repo.getCommit(MustIDFromString(fetchedCommitID))
 			require.NoError(t, err)
