@@ -40,7 +40,7 @@ function test_main() {
   test "$(categorize)" = 'BB Breaking bug fixes'
 
   test_payload_labels $label_worth $label_breaking
-  test "$(categorize)" = 'ZB Breaking changes without a feature or bug label'
+  test "$(categorize)" = 'BC Breaking changes without a feature or bug label'
 
   test_payload_labels $label_worth $label_ui $label_feature
   test "$(categorize)" = 'CA User Interface features'
@@ -232,7 +232,7 @@ function categorize() {
     elif $is_bug; then
       echo -n BB Breaking bug fixes
     else
-      echo -n ZB Breaking changes without a feature or bug label
+      echo -n BC Breaking changes without a feature or bug label
     fi
   elif $is_ui; then
     if $is_feature; then
