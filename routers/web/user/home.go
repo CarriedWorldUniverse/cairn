@@ -705,6 +705,9 @@ func ShowSSHKeys(ctx *context.Context) {
 
 	var buf bytes.Buffer
 	for i := range keys {
+		if keys[i].Type == asymkey_model.KeyTypePrincipal {
+			continue // Don't display SSH principals, only public keys
+		}
 		buf.WriteString(keys[i].OmitEmail())
 		buf.WriteString("\n")
 	}
