@@ -168,11 +168,21 @@ func (repo *Repository) GetLanguageStats(commitID string) (map[string]int64, err
 			}
 		}
 
-		if isFalse(isDetectable) || isTrue(isVendored) || isTrue(isDocumentation) ||
-			(!isFalse(isVendored) && analyze.IsVendor(f.Name())) ||
-			enry.IsDotFile(f.Name()) ||
-			enry.IsConfiguration(f.Name()) ||
-			(!isFalse(isDocumentation) && enry.IsDocumentation(f.Name())) {
+		// Don't skip this file if it is explicitly set to be detectable.
+		// Skip this file if one of the following conditions holds:
+		// 1. Explicitly set to not be detectable.
+		// 2. Explicitly set that it is vendored.
+		// 3. Explicitly set that it is documentation.
+		// 4. Is not explicitly set to not be vendored and is by heuristic considered to be vendored.
+		// 5. It is considered to be a dot file.
+		// 6. It is considered to be a configuration file.
+		// 7. Is not explicitly set to not be documentation and is by heuristic considered to be documentation.
+		if !isTrue(isDetectable) &&
+			(isFalse(isDetectable) || isTrue(isVendored) || isTrue(isDocumentation) ||
+				(!isFalse(isVendored) && analyze.IsVendor(f.Name())) ||
+				enry.IsDotFile(f.Name()) ||
+				enry.IsConfiguration(f.Name()) ||
+				(!isFalse(isDocumentation) && enry.IsDocumentation(f.Name()))) {
 			continue
 		}
 
