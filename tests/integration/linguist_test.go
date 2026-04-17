@@ -156,8 +156,8 @@ func TestLinguistSupport(t *testing.T) {
 
 			langs := getFreshLanguageStats(t, repo, sha)
 			assert.Len(t, langs, 2)
-			assert.Equal(t, "C", langs[0].Language)
-			assert.Equal(t, "Markdown", langs[1].Language)
+			assert.Equal(t, "Markdown", langs[0].Language)
+			assert.Equal(t, "C", langs[1].Language)
 		})
 
 		// 4. Marking foo.c as documentation
