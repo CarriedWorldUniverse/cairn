@@ -136,6 +136,7 @@ func ProjectLinkForRepo(repo *repo_model.Repository, projectID int64) string { /
 
 // Link returns the project's relative URL.
 func (p *Project) Link(ctx context.Context) string {
+	// nosemgrep: forgejo-logic-suspicious-OwnerID-check (system users are not stored in the database)
 	if p.OwnerID > 0 {
 		err := p.LoadOwner(ctx)
 		if err != nil {
@@ -224,7 +225,7 @@ func (opts SearchOptions) ToConds() builder.Cond {
 	if opts.Type > 0 {
 		cond = cond.And(builder.Eq{"type": opts.Type})
 	}
-	if opts.OwnerID > 0 {
+	if opts.OwnerID != 0 {
 		cond = cond.And(builder.Eq{"owner_id": opts.OwnerID})
 	}
 

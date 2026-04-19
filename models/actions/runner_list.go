@@ -28,6 +28,7 @@ func (runners RunnerList) LoadOwners(ctx context.Context) error {
 		return err
 	}
 	for _, runner := range runners {
+		// nosemgrep: forgejo-logic-suspicious-OwnerID-check (system users are not stored in the database)
 		if runner.OwnerID > 0 && runner.Owner == nil {
 			runner.Owner = users[runner.OwnerID]
 		}

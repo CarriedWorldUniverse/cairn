@@ -152,6 +152,7 @@ func (r *ActionRunner) Editable(ownerID, repoID int64) bool {
 
 // LoadAttributes loads the attributes of the runner
 func (r *ActionRunner) LoadAttributes(ctx context.Context) error {
+	// nosemgrep: forgejo-logic-suspicious-OwnerID-check (system users are not stored in the database)
 	if r.OwnerID > 0 {
 		var user user_model.User
 		has, err := db.GetEngine(ctx).ID(r.OwnerID).Get(&user)
@@ -214,7 +215,7 @@ func (opts FindRunnerOptions) ToConds() builder.Cond {
 			c = c.Or(builder.Eq{"repo_id": 0, "owner_id": 0})
 		}
 		cond = cond.And(c)
-	} else if opts.OwnerID > 0 { // OwnerID is ignored if RepoID is set
+	} else if opts.OwnerID != 0 { // OwnerID is ignored if RepoID is set
 		c := builder.NewCond().And(builder.Eq{"owner_id": opts.OwnerID})
 		if opts.WithVisible {
 			c = c.Or(builder.Eq{"repo_id": 0, "owner_id": 0})
