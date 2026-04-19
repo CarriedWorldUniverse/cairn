@@ -341,7 +341,7 @@ func checkWebhook(ctx *context.Context) (*ownerRepoCtx, *webhook.Webhook) {
 	var w *webhook.Webhook
 	if orCtx.RepoID > 0 {
 		w, err = webhook.GetWebhookByRepoID(ctx, orCtx.RepoID, ctx.ParamsInt64(":id"))
-	} else if orCtx.OwnerID > 0 {
+	} else if orCtx.OwnerID > 0 { // nosemgrep: forgejo-logic-suspicious-OwnerID-check (system users do not own webhooks)
 		w, err = webhook.GetWebhookByOwnerID(ctx, orCtx.OwnerID, ctx.ParamsInt64(":id"))
 	} else if orCtx.IsAdmin {
 		w, err = webhook.GetSystemOrDefaultWebhook(ctx, ctx.ParamsInt64(":id"))
