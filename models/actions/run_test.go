@@ -96,27 +96,27 @@ func TestIsManualRun(t *testing.T) {
 	assert.False(t, pushRun.IsDispatchedRun())
 }
 
-func TestActionRun_IsRunnable(t *testing.T) {
+func TestActionRun_IsValid(t *testing.T) {
 	testCases := []struct {
-		name       string
-		run        ActionRun
-		isRunnable bool
+		name    string
+		run     ActionRun
+		isValid bool
 	}{
 		{
-			name:       "valid run",
-			run:        ActionRun{},
-			isRunnable: true,
+			name:    "valid run",
+			run:     ActionRun{},
+			isValid: true,
 		},
 		{
-			name:       "with pre-execution error",
-			run:        ActionRun{PreExecutionErrorCode: ErrorCodeIncompleteRunsOnMissingOutput},
-			isRunnable: false,
+			name:    "with pre-execution error",
+			run:     ActionRun{PreExecutionErrorCode: ErrorCodeIncompleteRunsOnMissingOutput},
+			isValid: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			assert.Equal(t, testCase.isRunnable, testCase.run.IsRunnable())
+			assert.Equal(t, testCase.isValid, testCase.run.IsValid())
 		})
 	}
 }

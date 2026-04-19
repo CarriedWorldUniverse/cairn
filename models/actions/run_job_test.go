@@ -428,9 +428,10 @@ func TestAllNeedsExist(t *testing.T) {
 
 func TestActionRunJob_CanBeRerun(t *testing.T) {
 	testCases := []struct {
-		name       string
-		job        ActionRunJob
-		canBeRerun bool
+		name          string
+		job           ActionRunJob
+		canBeRerun    bool
+		expectedError string
 	}{
 		{
 			name:       "job with unknown status",
@@ -468,9 +469,9 @@ func TestActionRunJob_CanBeRerun(t *testing.T) {
 			canBeRerun: false,
 		},
 		{
-			name:       "ActionRun is nil",
-			job:        ActionRunJob{Run: nil, Status: StatusSuccess},
-			canBeRerun: false,
+			name:          "ActionRun is nil",
+			job:           ActionRunJob{ID: 12, Run: nil, Status: StatusSuccess},
+			expectedError: "cannot load run 0 of job 12",
 		},
 		{
 			name:       "with busy run but completed job",
@@ -489,7 +490,15 @@ func TestActionRunJob_CanBeRerun(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			assert.Equal(t, testCase.canBeRerun, testCase.job.CanBeRerun())
+			result, err := testCase.job.CanBeRerun(t.Context())
+
+			if testCase.expectedError == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, testCase.expectedError)
+			}
+
+			assert.Equal(t, testCase.canBeRerun, result)
 		})
 	}
 }

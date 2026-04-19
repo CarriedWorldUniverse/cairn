@@ -314,11 +314,16 @@ func getViewResponse(ctx *app_context.Context, req *ViewRequest, runIndex, jobIn
 			// Ah, another job is still running. Keep the frontend polling enabled then.
 			done = false
 		}
+		canBeRerun, err := v.CanBeRerun(ctx)
+		if err != nil {
+			ctx.Error(http.StatusInternalServerError, err.Error())
+			return nil
+		}
 		resp.State.Run.Jobs = append(resp.State.Run.Jobs, &ViewJob{
 			ID:       v.ID,
 			Name:     v.Name,
 			Status:   v.Status.String(),
-			CanRerun: v.CanBeRerun() && ctx.Repo.CanWrite(unit.TypeActions),
+			CanRerun: canBeRerun && ctx.Repo.CanWrite(unit.TypeActions),
 			Duration: v.Duration().String(),
 		})
 	}
@@ -495,120 +500,48 @@ func Rerun(ctx *app_context.Context) {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if jobIndexStr == "" && !run.CanBeRerun() {
-		ctx.JSONError(ctx.Locale.Tr("actions.workflow.rerun_impossible"))
-		return
-	}
 
-	// can not rerun job when workflow is disabled
-	cfgUnit := ctx.Repo.Repository.MustGetUnit(ctx, unit.TypeActions)
-	cfg := cfgUnit.ActionsConfig()
-	if cfg.IsWorkflowDisabled(run.WorkflowID) {
-		ctx.JSONError(ctx.Locale.Tr("actions.workflow.disabled"))
-		return
-	}
-
-	// reset run's start and stop time when it is done
-	if run.Status.IsDone() {
-		run.PreviousDuration = run.Duration()
-		run.Started = 0
-		run.Stopped = 0
-		if err := actions_service.UpdateRun(ctx, run, "started", "stopped", "previous_duration"); err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
+	var rerunJobs []*actions_model.ActionRunJob
+	if jobIndexStr == "" { // Rerun the entire workflow.
+		rerunJobs, err = actions_service.RerunAllJobs(ctx, run)
+	} else { // Rerun a single job
+		job, _ := getRunJobs(ctx, runIndex, jobIndex)
+		if ctx.Written() {
 			return
 		}
+		rerunJobs, err = actions_service.RerunJob(ctx, job)
 	}
 
-	job, jobs := getRunJobs(ctx, runIndex, jobIndex)
-	if ctx.Written() {
-		return
-	}
-
-	if jobIndexStr == "" { // rerun all jobs
-		var redirectURL string
-		for _, j := range jobs {
-			if !j.CanBeRerun() {
-				ctx.JSONError(ctx.Locale.Tr("actions.workflow.job_rerun_impossible"))
-				return
-			}
-
-			// if the job has needs, it should be set to "blocked" status to wait for other jobs
-			shouldBlock := len(j.Needs) > 0
-			if err := rerunJob(ctx, j, shouldBlock); err != nil {
-				ctx.Error(http.StatusInternalServerError, err.Error())
-				return
-			}
-			if redirectURL == "" {
-				redirectURL, err = j.HTMLURL(ctx)
-				if err != nil {
-					ctx.Error(http.StatusInternalServerError, err.Error())
-					return
-				}
-			}
+	if err != nil {
+		if errors.Is(err, actions_service.ErrRerunWorkflowInvalid) ||
+			errors.Is(err, actions_service.ErrRerunWorkflowStillRunning) {
+			ctx.JSONError(ctx.Locale.Tr("actions.workflow.rerun_impossible"))
+			return
 		}
-
-		if redirectURL != "" {
-			ctx.JSON(http.StatusOK, &redirectObject{Redirect: redirectURL})
-		} else {
-			ctx.Error(http.StatusInternalServerError, "unable to determine redirectURL for job rerun")
+		if errors.Is(err, actions_service.ErrRerunWorkflowDisabled) {
+			ctx.JSONError(ctx.Locale.Tr("actions.workflow.disabled"))
+			return
 		}
-		return
-	}
-
-	rerunJobs := actions_service.GetAllRerunJobs(job, jobs)
-
-	var redirectURL string
-	for _, j := range rerunJobs {
-		if !j.CanBeRerun() {
+		if errors.Is(err, actions_service.ErrRerunJobStillRunning) {
 			ctx.JSONError(ctx.Locale.Tr("actions.workflow.job_rerun_impossible"))
 			return
 		}
-
-		// jobs other than the specified one should be set to "blocked" status
-		shouldBlock := j.JobID != job.JobID
-		if err := rerunJob(ctx, j, shouldBlock); err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
-			return
-		}
-		if j.JobID == job.JobID {
-			redirectURL, err = j.HTMLURL(ctx)
-			if err != nil {
-				ctx.Error(http.StatusInternalServerError, err.Error())
-				return
-			}
-		}
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	if redirectURL != "" {
-		ctx.JSON(http.StatusOK, &redirectObject{Redirect: redirectURL})
-	} else {
-		ctx.Error(http.StatusInternalServerError, "unable to determine redirectURL for job rerun")
-	}
-}
-
-func rerunJob(ctx *app_context.Context, job *actions_model.ActionRunJob, shouldBlock bool) error {
-	status := job.Status
-	if !status.IsDone() {
-		return nil
+	if len(rerunJobs) == 0 {
+		ctx.Error(http.StatusInternalServerError, "no jobs were rerun")
+		return
 	}
 
-	initialStatus := actions_model.StatusWaiting
-	if shouldBlock {
-		initialStatus = actions_model.StatusBlocked
-	}
-	if err := job.PrepareNextAttempt(initialStatus); err != nil {
-		return err
+	redirectURL, err := rerunJobs[0].HTMLURL(ctx)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		_, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"status": status}, "handle", "attempt", "task_id", "status", "started", "stopped")
-		return err
-	}); err != nil {
-		return err
-	}
-
-	actions_service.CreateCommitStatus(ctx, job)
-	return nil
+	ctx.JSON(http.StatusOK, &redirectObject{Redirect: redirectURL})
 }
 
 func Logs(ctx *app_context.Context) {
