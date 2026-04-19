@@ -255,17 +255,31 @@ func (run *ActionRun) IsDispatchedRun() bool {
 	return run.TriggerEvent == "workflow_dispatch"
 }
 
-// IsRunnable indicates whether this ActionRun can generally be run.
-func (run *ActionRun) IsRunnable() bool {
+// IsValid indicates whether this ActionRun is valid and can be run.
+func (run *ActionRun) IsValid() bool {
 	return run.PreExecutionErrorCode == 0 && run.PreExecutionError == ""
 }
 
 // CanBeRerun indicates whether this ActionRun can be rerun.
 func (run *ActionRun) CanBeRerun() bool {
-	if !run.IsRunnable() {
+	if !run.IsValid() {
 		return false
 	}
 	return run.Status.IsDone()
+}
+
+func (run *ActionRun) PrepareNextAttempt() error {
+	if run.Status != StatusUnknown && !run.Status.IsDone() {
+		return fmt.Errorf("cannot prepare next attempt because run %d is active: %s", run.ID, run.Status.String())
+	}
+
+	run.PreviousDuration = run.Duration()
+
+	run.Status = StatusWaiting
+	run.Started = 0
+	run.Stopped = 0
+
+	return nil
 }
 
 func actionsCountOpenCacheKey(repoID int64) string {

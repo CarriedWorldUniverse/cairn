@@ -554,7 +554,7 @@ func TestActionsRerun(t *testing.T) {
 			runIndex:     138575,
 			jobIndex:     1,
 			expectedCode: 400,
-			expectedBody: "{\"errorMessage\":\"actions.workflow.job_rerun_impossible\",\"renderFormat\":\"html\"}\n",
+			expectedBody: "{\"errorMessage\":\"actions.workflow.rerun_impossible\",\"renderFormat\":\"html\"}\n",
 		},
 	}
 	for _, tt := range tests {
