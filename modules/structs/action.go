@@ -88,3 +88,26 @@ type ListActionRunResponse struct {
 	Entries    []*ActionRun `json:"workflow_runs"`
 	TotalCount int64        `json:"total_count"`
 }
+
+// ActionArtifact represents an artifact of a workflow run
+// swagger:model
+type ActionArtifact struct {
+	// the artifact's ID
+	ID int64 `json:"id"`
+	// the artifact's name
+	Name string `json:"name"`
+	// the total size of the artifact in bytes
+	SizeInBytes int64 `json:"size_in_bytes"`
+	// the URL to download the artifact zip archive
+	ArchiveDownloadURL string `json:"archive_download_url"`
+	// whether the artifact has expired
+	Expired bool `json:"expired"`
+	// the ID of the workflow run that produced this artifact
+	RunID int64 `json:"run_id"`
+	// swagger:strfmt date-time
+	CreatedAt time.Time `json:"created_at"`
+	// swagger:strfmt date-time
+	UpdatedAt time.Time `json:"updated_at"`
+	// swagger:strfmt date-time
+	ExpiresAt time.Time `json:"expires_at"`
+}

@@ -48,6 +48,22 @@ func ToActionRun(ctx context.Context, run *actions_model.ActionRun, doer *user_m
 	}
 }
 
+// ToActionArtifact converts an AggregatedArtifact to an API ActionArtifact.
+// repoAPIURL is the API URL prefix for the repository (e.g. from Repository.APIURL()).
+func ToActionArtifact(repoAPIURL string, art *actions_model.AggregatedArtifact) *api.ActionArtifact {
+	return &api.ActionArtifact{
+		ID:                 art.ID,
+		Name:               art.ArtifactName,
+		SizeInBytes:        art.FileSize,
+		ArchiveDownloadURL: art.APIDownloadURL(repoAPIURL),
+		Expired:            art.Status == actions_model.ArtifactStatusExpired,
+		RunID:              art.RunID,
+		CreatedAt:          art.CreatedUnix.AsTime(),
+		UpdatedAt:          art.UpdatedUnix.AsTime(),
+		ExpiresAt:          art.ExpiredUnix.AsTime(),
+	}
+}
+
 func ToActionRunJob(job *actions_model.ActionRunJob) *api.ActionRunJob {
 	if job == nil {
 		return nil
