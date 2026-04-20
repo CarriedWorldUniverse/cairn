@@ -9,6 +9,7 @@ package actions
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"forgejo.org/models/db"
@@ -88,6 +89,13 @@ func CreateArtifact(ctx context.Context, t *ActionTask, artifactName, artifactPa
 	return artifact, nil
 }
 
+// IsV4 reports whether the artifact was uploaded via the v4 backend.
+// The v4 backend stores the whole artifact as a single zip file;
+// v1-v3 stores each file as a separate row.
+func (a *ActionArtifact) IsV4() bool {
+	return a.ArtifactName+".zip" == a.ArtifactPath && a.ContentEncoding == "application/zip"
+}
+
 func getArtifactByNameAndPath(ctx context.Context, runID int64, name, fpath string) (*ActionArtifact, error) {
 	var art ActionArtifact
 	has, err := db.GetEngine(ctx).Where("run_id = ? AND artifact_name = ? AND artifact_path = ?", runID, name, fpath).Get(&art)
@@ -150,11 +158,32 @@ type ActionArtifactMeta struct {
 	Status       ArtifactStatus
 }
 
+// AggregatedArtifact is the aggregated view of a logical artifact
+// (one or more rows sharing the same run_id + artifact_name), used by the
+// public API to represent a single artifact to clients.
+type AggregatedArtifact struct {
+	ID           int64              `xorm:"id"`
+	RunID        int64              `xorm:"run_id"`
+	RepoID       int64              `xorm:"-"`
+	ArtifactName string             `xorm:"artifact_name"`
+	FileSize     int64              `xorm:"file_size"`
+	Status       ArtifactStatus     `xorm:"status"`
+	CreatedUnix  timeutil.TimeStamp `xorm:"created_unix"`
+	UpdatedUnix  timeutil.TimeStamp `xorm:"updated_unix"`
+	ExpiredUnix  timeutil.TimeStamp `xorm:"expired_unix"`
+}
+
+// APIDownloadURL returns the download URL for this artifact under the given
+// repository API URL prefix (e.g. "https://host/api/v1/repos/owner/name").
+func (a *AggregatedArtifact) APIDownloadURL(repoAPIURL string) string {
+	return fmt.Sprintf("%s/actions/artifacts/%d/zip", repoAPIURL, a.ID)
+}
+
 // ListUploadedArtifactsMeta returns all uploaded artifacts meta of a run
 func ListUploadedArtifactsMeta(ctx context.Context, runID int64) ([]*ActionArtifactMeta, error) {
 	arts := make([]*ActionArtifactMeta, 0, 10)
 	return arts, db.GetEngine(ctx).Table("action_artifact").
-		Where("run_id=? AND (status=? OR status=?)", runID, ArtifactStatusUploadConfirmed, ArtifactStatusExpired).
+		Where(builder.Eq{"run_id": runID}.And(builder.In("status", ArtifactStatusUploadConfirmed, ArtifactStatusExpired))).
 		GroupBy("artifact_name").
 		Select("artifact_name, sum(file_size) as file_size, max(status) as status").
 		Find(&arts)
@@ -191,4 +220,86 @@ func SetArtifactNeedDelete(ctx context.Context, runID int64, name string) error 
 func SetArtifactDeleted(ctx context.Context, artifactID int64) error {
 	_, err := db.GetEngine(ctx).ID(artifactID).Cols("status").Update(&ActionArtifact{Status: int64(ArtifactStatusDeleted)})
 	return err
+}
+
+// aggregatedArtifactConds returns the common WHERE clause used by aggregated
+// artifact queries: restrict to visible statuses and apply the caller's filters.
+// The Status field on opts is ignored — visibility is fixed to UploadConfirmed/Expired.
+func aggregatedArtifactConds(opts FindArtifactsOptions) builder.Cond {
+	opts.Status = 0
+	return opts.ToConds().And(builder.In("status", ArtifactStatusUploadConfirmed, ArtifactStatusExpired))
+}
+
+const aggregatedArtifactSelect = "min(id) as id, run_id, artifact_name, sum(file_size) as file_size, max(status) as status, min(created_unix) as created_unix, max(updated_unix) as updated_unix, max(expired_unix) as expired_unix"
+
+// ListAggregatedArtifacts returns paginated aggregated artifacts.
+// Each result represents one logical artifact: a (run_id, artifact_name) group,
+// with ID = MIN(id), FileSize = SUM(file_size), Status = MAX(status), and
+// timestamps aggregated accordingly. Status filter in opts is ignored; results
+// are always restricted to UploadConfirmed and Expired statuses.
+func ListAggregatedArtifacts(ctx context.Context, opts FindArtifactsOptions) ([]*AggregatedArtifact, int64, error) {
+	cond := aggregatedArtifactConds(opts)
+
+	var countKeys []struct {
+		ID int64 `xorm:"id"`
+	}
+	if err := db.GetEngine(ctx).Table("action_artifact").
+		Where(cond).
+		GroupBy("run_id, artifact_name").
+		Select("min(id) as id").
+		Find(&countKeys); err != nil {
+		return nil, 0, err
+	}
+	total := int64(len(countKeys))
+
+	sess := db.GetEngine(ctx).Table("action_artifact").
+		Where(cond).
+		GroupBy("run_id, artifact_name").
+		Select(aggregatedArtifactSelect).
+		OrderBy("id DESC")
+
+	capacity := 10
+	if opts.PageSize > 0 {
+		sess = sess.Limit(opts.PageSize, (opts.Page-1)*opts.PageSize)
+		capacity = opts.PageSize
+	}
+
+	arts := make([]*AggregatedArtifact, 0, capacity)
+	return arts, total, sess.Find(&arts)
+}
+
+// GetAggregatedArtifactByID returns the aggregated artifact by its canonical ID
+// (MIN(id) of the group), scoped to the given repository. Returns util.ErrNotExist
+// when the ID does not exist, is not canonical for its group, or does not belong to repoID.
+// The repoID scoping is performed in the query so callers don't need a follow-up check.
+func GetAggregatedArtifactByID(ctx context.Context, repoID, artifactID int64) (*AggregatedArtifact, error) {
+	var art ActionArtifact
+	has, err := db.GetEngine(ctx).Where(builder.Eq{"id": artifactID, "repo_id": repoID}).Get(&art)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, util.ErrNotExist
+	}
+
+	cond := aggregatedArtifactConds(FindArtifactsOptions{
+		RunID:        art.RunID,
+		ArtifactName: art.ArtifactName,
+	})
+
+	meta := new(AggregatedArtifact)
+	has, err = db.GetEngine(ctx).Table("action_artifact").
+		Where(cond).
+		GroupBy("run_id, artifact_name").
+		Select(aggregatedArtifactSelect).
+		Get(meta)
+	if err != nil {
+		return nil, err
+	}
+	if !has || meta.ID != artifactID {
+		return nil, util.ErrNotExist
+	}
+
+	meta.RepoID = art.RepoID
+	return meta, nil
 }

@@ -1096,3 +1096,317 @@ func ListActionRunJobs(ctx *context.APIContext) {
 
 	ctx.JSON(http.StatusOK, response)
 }
+
+// ListActionArtifacts list artifacts for a repository
+func ListActionArtifacts(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/actions/artifacts repository ListActionArtifacts
+	// ---
+	// summary: List a repository's artifacts
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: name
+	//   in: query
+	//   description: filter by artifact name
+	//   type: string
+	// - name: page
+	//   in: query
+	//   description: page number of results to return (1-based)
+	//   type: integer
+	// - name: limit
+	//   in: query
+	//   description: page size of results, default maximum page size is 50
+	//   type: integer
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/ActionArtifactList"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+
+	opts := actions_model.FindArtifactsOptions{
+		ListOptions:  utils.GetListOptions(ctx),
+		RepoID:       ctx.Repo.Repository.ID,
+		ArtifactName: ctx.FormString("name"),
+	}
+
+	arts, total, err := actions_model.ListAggregatedArtifacts(ctx, opts)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "ListAggregatedArtifacts", err)
+		return
+	}
+
+	repoAPIURL := ctx.Repo.Repository.APIURL()
+
+	entries := make([]*api.ActionArtifact, len(arts))
+	for i, art := range arts {
+		entries[i] = convert.ToActionArtifact(repoAPIURL, art)
+	}
+
+	ctx.SetLinkHeader(int(total), opts.PageSize)
+	ctx.SetTotalCountHeader(total)
+	ctx.JSON(http.StatusOK, entries)
+}
+
+// ListActionRunArtifacts list artifacts for a workflow run
+func ListActionRunArtifacts(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts repository ListActionRunArtifacts
+	// ---
+	// summary: List artifacts of a workflow run
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: run_id
+	//   in: path
+	//   description: ID of the workflow run
+	//   type: integer
+	//   format: int64
+	//   required: true
+	// - name: name
+	//   in: query
+	//   description: filter by artifact name
+	//   type: string
+	// - name: page
+	//   in: query
+	//   description: page number of results to return (1-based)
+	//   type: integer
+	// - name: limit
+	//   in: query
+	//   description: page size of results, default maximum page size is 50
+	//   type: integer
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/ActionArtifactList"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	runID := ctx.ParamsInt64(":run_id")
+	run, err := actions_model.GetRunByID(ctx, runID)
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Error(http.StatusNotFound, "GetRunByID", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetRunByID", err)
+		}
+		return
+	}
+	if ctx.Repo.Repository.ID != run.RepoID {
+		ctx.Error(http.StatusNotFound, "GetRunByID", util.ErrNotExist)
+		return
+	}
+
+	opts := actions_model.FindArtifactsOptions{
+		ListOptions:  utils.GetListOptions(ctx),
+		RunID:        runID,
+		ArtifactName: ctx.FormString("name"),
+	}
+
+	arts, total, err := actions_model.ListAggregatedArtifacts(ctx, opts)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "ListAggregatedArtifacts", err)
+		return
+	}
+
+	repoAPIURL := ctx.Repo.Repository.APIURL()
+
+	entries := make([]*api.ActionArtifact, len(arts))
+	for i, art := range arts {
+		entries[i] = convert.ToActionArtifact(repoAPIURL, art)
+	}
+
+	ctx.SetLinkHeader(int(total), opts.PageSize)
+	ctx.SetTotalCountHeader(total)
+	ctx.JSON(http.StatusOK, entries)
+}
+
+// GetActionArtifact get an artifact by its ID
+func GetActionArtifact(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id} repository GetActionArtifact
+	// ---
+	// summary: Get an artifact by ID
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: artifact_id
+	//   in: path
+	//   description: ID of the artifact
+	//   type: integer
+	//   format: int64
+	//   required: true
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/ActionArtifact"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	meta, err := actions_model.GetAggregatedArtifactByID(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":artifact_id"))
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Error(http.StatusNotFound, "GetAggregatedArtifactByID", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetAggregatedArtifactByID", err)
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, convert.ToActionArtifact(ctx.Repo.Repository.APIURL(), meta))
+}
+
+// DownloadActionArtifact download an artifact by its ID
+func DownloadActionArtifact(ctx *context.APIContext) {
+	// swagger:operation GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip repository DownloadActionArtifact
+	// ---
+	// summary: Download an artifact
+	// produces:
+	// - application/zip
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: artifact_id
+	//   in: path
+	//   description: ID of the artifact
+	//   type: integer
+	//   format: int64
+	//   required: true
+	// responses:
+	//   "200":
+	//     description: the artifact archive
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	meta, err := actions_model.GetAggregatedArtifactByID(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":artifact_id"))
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Error(http.StatusNotFound, "GetAggregatedArtifactByID", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetAggregatedArtifactByID", err)
+		}
+		return
+	}
+
+	// Load all artifact rows for this logical artifact
+	artifacts, err := db.Find[actions_model.ActionArtifact](ctx, actions_model.FindArtifactsOptions{
+		RunID:        meta.RunID,
+		ArtifactName: meta.ArtifactName,
+	})
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "FindArtifacts", err)
+		return
+	}
+
+	for _, art := range artifacts {
+		if art.Status != int64(actions_model.ArtifactStatusUploadConfirmed) {
+			ctx.Error(http.StatusNotFound, "DownloadActionArtifact", errors.New("artifact not confirmed"))
+			return
+		}
+	}
+
+	if err := actions_service.ServeArtifact(ctx.Base, artifacts); err != nil {
+		ctx.Error(http.StatusInternalServerError, "ServeArtifact", err)
+		return
+	}
+}
+
+// DeleteActionArtifact marks an artifact for deletion
+func DeleteActionArtifact(ctx *context.APIContext) {
+	// swagger:operation DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id} repository DeleteActionArtifact
+	// ---
+	// summary: Mark an artifact for deletion
+	// description: |
+	//   Marks the artifact for deletion. Storage space will be reclaimed
+	//   asynchronously by a background job.
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - name: artifact_id
+	//   in: path
+	//   description: ID of the artifact
+	//   type: integer
+	//   format: int64
+	//   required: true
+	// responses:
+	//   "204":
+	//     description: artifact marked for deletion
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/forbidden"
+	//   "404":
+	//     "$ref": "#/responses/notFound"
+
+	meta, err := actions_model.GetAggregatedArtifactByID(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":artifact_id"))
+	if err != nil {
+		if errors.Is(err, util.ErrNotExist) {
+			ctx.Error(http.StatusNotFound, "GetAggregatedArtifactByID", err)
+		} else {
+			ctx.Error(http.StatusInternalServerError, "GetAggregatedArtifactByID", err)
+		}
+		return
+	}
+
+	if err := actions_model.SetArtifactNeedDelete(ctx, meta.RunID, meta.ArtifactName); err != nil {
+		ctx.Error(http.StatusInternalServerError, "SetArtifactNeedDelete", err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}

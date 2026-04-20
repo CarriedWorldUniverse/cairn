@@ -1240,10 +1240,17 @@ func Routes() *web.Route {
 				}, reqToken(), reqAdmin())
 				m.Group("/actions", func() {
 					m.Get("/tasks", repo.ListActionTasks)
+					m.Group("/artifacts", func() {
+						m.Get("", repo.ListActionArtifacts)
+						m.Get("/{artifact_id}", repo.GetActionArtifact)
+						m.Delete("/{artifact_id}", reqToken(), reqRepoWriter(unit.TypeActions), repo.DeleteActionArtifact)
+						m.Get("/{artifact_id}/zip", repo.DownloadActionArtifact)
+					})
 					m.Group("/runs", func() {
 						m.Get("", repo.ListActionRuns)
 						m.Get("/{run_id}", repo.GetActionRun)
 						m.Get("/{run_id}/jobs", repo.ListActionRunJobs)
+						m.Get("/{run_id}/artifacts", repo.ListActionRunArtifacts)
 					})
 
 					m.Group("/workflows", func() {

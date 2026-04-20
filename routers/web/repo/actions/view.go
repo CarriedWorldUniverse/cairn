@@ -5,13 +5,10 @@
 package actions
 
 import (
-	"archive/zip"
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
 	"html/template"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -28,14 +25,11 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
 	"forgejo.org/modules/templates"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
-	"forgejo.org/routers/common"
 	actions_service "forgejo.org/services/actions"
 	app_context "forgejo.org/services/context"
 
@@ -818,7 +812,6 @@ func ArtifactsDownloadView(ctx *app_context.Context) {
 		return
 	}
 
-	// if artifacts status is not uploaded-confirmed, treat it as not found
 	for _, art := range artifacts {
 		if art.Status != int64(actions_model.ArtifactStatusUploadConfirmed) {
 			ctx.Error(http.StatusNotFound, "artifact not found")
@@ -826,62 +819,9 @@ func ArtifactsDownloadView(ctx *app_context.Context) {
 		}
 	}
 
-	// Artifacts using the v4 backend are stored as a single combined zip file per artifact on the backend
-	// The v4 backend ensures ContentEncoding is set to "application/zip", which is not the case for the old backend
-	if len(artifacts) == 1 && artifacts[0].ArtifactName+".zip" == artifacts[0].ArtifactPath && artifacts[0].ContentEncoding == "application/zip" {
-		art := artifacts[0]
-		if setting.Actions.ArtifactStorage.MinioConfig.ServeDirect {
-			u, err := storage.ActionsArtifacts.URL(art.StoragePath, art.ArtifactPath, nil)
-
-			if u != nil && err == nil {
-				ctx.Redirect(u.String())
-				return
-			}
-		}
-		f, err := storage.ActionsArtifacts.Open(art.StoragePath)
-		if err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
-			return
-		}
-		common.ServeContentByReadSeeker(ctx.Base, artifacts[0].ArtifactName+".zip", util.ToPointer(art.UpdatedUnix.AsTime()), f)
+	if err := actions_service.ServeArtifact(ctx.Base, artifacts); err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
-	}
-
-	// Artifacts using the v1-v3 backend are stored as multiple individual files per artifact on the backend
-	// Those need to be zipped for download
-	artifactName := artifacts[0].ArtifactName
-
-	ctx.Resp.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip; filename*=UTF-8''%s.zip", url.PathEscape(artifactName), artifactName))
-	writer := zip.NewWriter(ctx.Resp)
-	defer writer.Close()
-	for _, art := range artifacts {
-		f, err := storage.ActionsArtifacts.Open(art.StoragePath)
-		if err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		var r io.ReadCloser
-		if art.ContentEncoding == "gzip" {
-			r, err = gzip.NewReader(f)
-			if err != nil {
-				ctx.Error(http.StatusInternalServerError, err.Error())
-				return
-			}
-		} else {
-			r = f
-		}
-		defer r.Close()
-
-		w, err := writer.Create(art.ArtifactPath)
-		if err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
-			return
-		}
-		if _, err := io.Copy(w, r); err != nil {
-			ctx.Error(http.StatusInternalServerError, err.Error())
-			return
-		}
 	}
 }
 
