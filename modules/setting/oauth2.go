@@ -5,10 +5,10 @@ package setting
 
 import (
 	"math"
-	"path/filepath"
 	"sync/atomic"
 
 	"forgejo.org/modules/generate"
+	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/log"
 )
 
@@ -96,18 +96,15 @@ var OAuth2 = struct {
 	AccessTokenExpirationTime   int64
 	RefreshTokenExpirationTime  int64
 	InvalidateRefreshTokens     bool
-	JWTSigningAlgorithm         string `ini:"JWT_SIGNING_ALGORITHM"`
-	JWTSigningPrivateKeyFile    string `ini:"JWT_SIGNING_PRIVATE_KEY_FILE"`
 	MaxTokenLength              int
 	DefaultApplications         []string
 	EnableAdditionalGrantScopes bool
+	KeyCfg                      *jwtx.KeyCfg
 }{
 	Enabled:                     true,
 	AccessTokenExpirationTime:   3600,
 	RefreshTokenExpirationTime:  730,
 	InvalidateRefreshTokens:     true,
-	JWTSigningAlgorithm:         "RS256",
-	JWTSigningPrivateKeyFile:    "jwt/private.pem",
 	MaxTokenLength:              math.MaxInt16,
 	DefaultApplications:         []string{"git-credential-oauth", "git-credential-manager", "tea"},
 	EnableAdditionalGrantScopes: false,
@@ -126,30 +123,26 @@ func loadOAuth2From(rootCfg ConfigProvider) {
 		OAuth2.Enabled = sec.Key("ENABLE").MustBool(OAuth2.Enabled)
 	}
 
-	if !filepath.IsAbs(OAuth2.JWTSigningPrivateKeyFile) {
-		OAuth2.JWTSigningPrivateKeyFile = filepath.Join(AppDataPath, OAuth2.JWTSigningPrivateKeyFile)
-	}
-
 	// FIXME: at the moment, no matter oauth2 is enabled or not, it must generate a "oauth2 JWT_SECRET"
 	// Because this secret is also used as GeneralTokenSigningSecret (as a quick not-that-breaking fix for some legacy problems).
 	// Including: CSRF token, account validation token, etc ...
 	// In main branch, the signing token should be refactored (eg: one unique for LFS/OAuth2/etc ...)
-	jwtSecretBase64 := loadSecret(sec, "JWT_SECRET_URI", "JWT_SECRET")
 	if InstallLock {
-		jwtSecretBytes, err := generate.DecodeJwtSecret(jwtSecretBase64)
+		signingKey, err := loadSymmeticSigningKeyCfg(rootCfg, sec, "JWT_")
 		if err != nil {
-			jwtSecretBytes, jwtSecretBase64 = generate.NewJwtSecret()
-			saveCfg, err := rootCfg.PrepareSaving()
-			if err != nil {
-				log.Fatal("save oauth2.JWT_SECRET failed: %v", err)
-			}
-			rootCfg.Section("oauth2").Key("JWT_SECRET").SetValue(jwtSecretBase64)
-			saveCfg.Section("oauth2").Key("JWT_SECRET").SetValue(jwtSecretBase64)
-			if err := saveCfg.Save(); err != nil {
-				log.Fatal("save oauth2.JWT_SECRET failed: %v", err)
-			}
+			log.Fatal("%v", err)
 		}
-		generalSigningSecret.Store(&jwtSecretBytes)
+		generalSigningSecret.Store(signingKey)
+	}
+
+	if !OAuth2.Enabled {
+		return
+	}
+
+	var err error
+	OAuth2.KeyCfg, err = loadKeyCfg(rootCfg, "oauth2", "JWT_", "RS256", "jwt/private.pem")
+	if err != nil {
+		log.Fatal("oauth2 key initialization failed: %v", err)
 	}
 }
 

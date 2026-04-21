@@ -48,7 +48,7 @@ type OIDCContext struct {
 
 func InitOIDC() error {
 	var err error
-	jwtSigningKey, err = jwtx.InitAsymmetricSigningKey(setting.Actions.IDTokenSigningPrivateKeyFile, string(setting.Actions.IDTokenSigningAlgorithm))
+	jwtSigningKey, err = jwtx.InitSigningKey(&setting.Actions.KeyCfg.Signing)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func OIDCRoutes(prefix string) *web.Route {
 			SubjectTypesSupported:            []string{"public"},
 			ResponseTypesSupported:           []string{"id_token"},
 			ClaimsSupported:                  claimsSupported,
-			IDTokenSigningAlgValuesSupported: []string{string(setting.Actions.IDTokenSigningAlgorithm)},
+			IDTokenSigningAlgValuesSupported: []string{jwtSigningKey.SigningMethod().Alg()},
 			ScopesSupported:                  []string{"openid"},
 		},
 		jwks: map[string][]map[string]string{

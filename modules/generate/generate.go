@@ -37,7 +37,7 @@ func DecodeJwtSecret(src string) ([]byte, error) {
 	encoding := base64.RawURLEncoding
 	decoded := make([]byte, encoding.DecodedLen(len(src))+3)
 	if n, err := encoding.Decode(decoded, []byte(src)); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("JwtSecret decode failed: %v", err)
 	} else if n != defaultJwtSecretLen {
 		return nil, fmt.Errorf("invalid base64 decoded length: %d, expects: %d", n, defaultJwtSecretLen)
 	}

@@ -25,6 +25,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// The ...KeyCfg types are only used for handover from setting to signingkey
+// see comment in setting/security.go
+
+type SigningKeyCfg struct {
+	Algorithm      string
+	SecretBytes    *[]byte
+	PrivateKeyPath *string
+}
+
+type KeyCfg struct {
+	Signing *SigningKeyCfg
+	// more later
+}
+
 // ErrInvalidAlgorithmType represents an invalid algorithm error.
 type ErrInvalidAlgorithmType struct {
 	Algorithm string
@@ -399,50 +413,39 @@ func loadOrCreateAsymmetricKey(keyPath, algorithm string) (any, error) {
 	return loadAsymmetricKey(keyPath)
 }
 
-// InitSigningKey creates a signing key from settings or creates a random key.
-func InitSigningKey(getGeneralTokenSigningSecret func() []byte, keyPath, algorithm string) (SigningKey, error) {
+// InitSigningKey creates a signing key from SigningKeyCfg
+// cfgP is set to nil to mark that is has been processed
+func InitSigningKey(cfgP **SigningKeyCfg) (SigningKey, error) {
+	cfg := *cfgP
+	*cfgP = nil
 	var err error
 	var key SigningKey
 
-	key, err = InitSymmetricSigningKey(getGeneralTokenSigningSecret, algorithm)
-	if err != nil {
-		key, err = InitAsymmetricSigningKey(keyPath, algorithm)
-		if err != nil {
-			return nil, err
-		}
+	if IsValidSymmetricAlgorithm(cfg.Algorithm) {
+		key, err = CreateSigningKey(cfg.Algorithm, *cfg.SecretBytes)
+	} else if IsValidAsymmetricAlgorithm(cfg.Algorithm) {
+		key, err = InitAsymmetricSigningKey(*cfg.PrivateKeyPath, cfg.Algorithm)
+	} else {
+		// should never happen, setting.loadSigningKeyCfg() ensures
+		err = ErrInvalidAlgorithmType{Algorithm: cfg.Algorithm}
 	}
 
-	return key, nil
+	return key, err
 }
+
+var (
+	ValidSymmetricAlgorighms  = []string{"HS256", "HS384", "HS512"}
+	ValidAsymmetricAlgorithms = []string{"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"}
+)
 
 // IsValidSymmetricAlgorithm checks if the passed in algorithm is a supported symettric algorithm.
 func IsValidSymmetricAlgorithm(algorithm string) bool {
-	validAlgs := []string{"HS256", "HS384", "HS512"}
-
-	return slices.Contains(validAlgs, algorithm)
-}
-
-// InitSymmetricSigningKey creates a symmetric signing key from settings.
-func InitSymmetricSigningKey(getGeneralTokenSigningSecret func() []byte, algorithm string) (SigningKey, error) {
-	var err error
-
-	if !IsValidSymmetricAlgorithm(algorithm) {
-		return nil, fmt.Errorf("invalid algorithm: %s", algorithm)
-	}
-
-	signingKey, err := CreateSigningKey(algorithm, getGeneralTokenSigningSecret())
-	if err != nil {
-		return nil, err
-	}
-
-	return signingKey, nil
+	return slices.Contains(ValidSymmetricAlgorighms, algorithm)
 }
 
 // IsValidAsymmetricAlgorithm checks if the passed in algorithm is a supported asymmetric algorithm.
 func IsValidAsymmetricAlgorithm(algorithm string) bool {
-	validAlgs := []string{"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "EdDSA"}
-
-	return slices.Contains(validAlgs, algorithm)
+	return slices.Contains(ValidAsymmetricAlgorithms, algorithm)
 }
 
 // InitAsymmetricSigningKey creates an asymmetric signing key from settings or creates a random key.

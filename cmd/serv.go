@@ -290,10 +290,9 @@ func runServ(ctx context.Context, c *cli.Command) error {
 			Op:     lfsVerb,
 			UserID: results.UserID,
 		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 		// Sign and get the complete encoded token as a string using the secret
-		tokenString, err := token.SignedString(setting.LFS.JWTSecretBytes)
+		tokenString, err := setting.LFS.SigningKey.JWT(claims)
 		if err != nil {
 			return fail(ctx, "Failed to sign JWT Token", "Failed to sign JWT token: %v", err)
 		}
