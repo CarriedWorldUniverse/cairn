@@ -25,6 +25,8 @@ test.describe('Pull: Toggle WIP', () => {
   }
 
   async function check_wip({page}: {page: Page}, is: boolean) {
+    await page.waitForLoadState();
+
     const elemTitle = 'h1';
     const stateLabel = '.issue-state-label';
     await page.waitForLoadState('domcontentloaded');
@@ -66,7 +68,6 @@ test.describe('Pull: Toggle WIP', () => {
   });
 
   test('manual edit', async ({page}) => {
-    await page.goto('/user2/repo1/pulls/5');
     // manually edit title to another prefix
     await page.locator('#issue-title-edit-show').click();
     await page.locator('#issue-title-editor input').fill(`[WIP] ${prTitle}`);
@@ -78,7 +79,6 @@ test.describe('Pull: Toggle WIP', () => {
   });
 
   test('maximum title length', async ({page}) => {
-    await page.goto('/user2/repo1/pulls/5');
     // check maximum title length is handled gracefully
     const maxLenStr = prTitle + 'a'.repeat(240);
     await page.locator('#issue-title-edit-show').click();
@@ -95,7 +95,6 @@ test.describe('Pull: Toggle WIP', () => {
   });
 
   test('wip prefix casing', async ({page}) => {
-    await page.goto('/user2/repo1/pulls/5');
     await setTitle({page}, `wIP:${prTitle}`);
     await expect(page.locator('h1')).toContainText(`wIP:${prTitle}`);
     await check_wip({page}, true);
