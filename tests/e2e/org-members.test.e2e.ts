@@ -29,6 +29,8 @@ test('Toggle visibility', async ({page}) => {
 
   // Revert for repeatability
   await showUser2.click();
+  await expect(hideUser2).toBeVisible();
+  await expect(showUser2).toBeHidden();
 });
 
 test('Leave org', async ({page}) => {
@@ -50,7 +52,7 @@ test('Leave org', async ({page}) => {
   await expect(page.locator('.flash-error').getByText('You cannot remove the last user from the "owners" team.')).toBeVisible();
 });
 
-test('Add a new member to the org', async ({page}) => {
+test('Add and remove a new member to the org', async ({page}) => {
   page.goto('/org/org3/members');
 
   // Click the "Add member" button
@@ -72,6 +74,17 @@ test('Add a new member to the org', async ({page}) => {
   // Click the button
   await page.locator('#add-member-modal .actions button.ok').click();
 
-  // Getting error is enough to know that the correct request went though
+  // Verify that the user was added
   await expect(page.locator('.organization.members .list a').getByText('user5 (User Five)')).toBeVisible();
+
+  // Revert for repeatability
+  const removeButton = page.locator('.delete-button[data-url="/org/org3/members/action/remove"][data-datauid="5"]');
+  await expect(async () => {
+    await removeButton.click();
+    // A confirmation modal will appear
+    await expect(page.locator('.modal#remove-organization-member')).toBeVisible();
+    // Proceed removing from the org
+    await page.locator('.modal#remove-organization-member .actions button.ok').click();
+    await expect(page.locator('.organization.members .list a').getByText('user5 (User Five)')).toBeHidden();
+  }).toPass();
 });

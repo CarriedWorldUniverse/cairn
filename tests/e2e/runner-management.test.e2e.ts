@@ -125,9 +125,12 @@ test.describe('Runners of user2', () => {
     const runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
     expect(runnerUUID).toMatch(uuidPattern);
 
-    await page.getByRole('button', {name: 'Copy runner token'}).click();
-    const runnerToken = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerToken).toMatch(tokenPattern);
+    let runnerToken;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner token'}).click();
+      runnerToken = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerToken).toMatch(tokenPattern);
+    }).toPass();
 
     await expect(page.getByRole('term')).toHaveText(['UUID', 'Token']);
     await expect(page.getByRole('definition')).toContainText([runnerUUID, runnerToken]);
