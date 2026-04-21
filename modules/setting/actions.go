@@ -5,7 +5,6 @@ package setting
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -28,17 +27,15 @@ var (
 		SkipWorkflowStrings          []string          `ini:"SKIP_WORKFLOW_STRINGS"`
 		LimitDispatchInputs          int64             `ini:"LIMIT_DISPATCH_INPUTS"`
 		ConcurrencyGroupQueueEnabled bool              `ini:"CONCURRENCY_GROUP_QUEUE_ENABLED"`
-		IDTokenSigningAlgorithm      idTokenAlgorithm  `ini:"ID_TOKEN_SIGNING_ALGORITHM"`
-		IDTokenSigningPrivateKeyFile string            `ini:"ID_TOKEN_SIGNING_PRIVATE_KEY_FILE"`
 		IDTokenExpirationTime        int64             `ini:"ID_TOKEN_EXPIRATION_TIME"`
+
+		KeyCfg *jwtx.KeyCfg
 	}{
 		Enabled:                      true,
 		DefaultActionsURL:            defaultActionsURLForgejo,
 		SkipWorkflowStrings:          []string{"[skip ci]", "[ci skip]", "[no ci]", "[skip actions]", "[actions skip]"},
 		LimitDispatchInputs:          100,
 		ConcurrencyGroupQueueEnabled: true,
-		IDTokenSigningAlgorithm:      "RS256",
-		IDTokenSigningPrivateKeyFile: "actions_id_token/private.pem",
 		IDTokenExpirationTime:        3600,
 	}
 )
@@ -76,15 +73,9 @@ func (c logCompression) IsZstd() bool {
 	return c == "" || strings.ToLower(string(c)) == "zstd"
 }
 
-type idTokenAlgorithm string
-
-func (c idTokenAlgorithm) IsValid() bool {
-	// Empty string implies RS256
-	return jwtx.IsValidAsymmetricAlgorithm(string(c)) || string(c) == ""
-}
-
 func loadActionsFrom(rootCfg ConfigProvider) error {
-	sec := rootCfg.Section("actions")
+	secName := "actions"
+	sec := rootCfg.Section(secName)
 	err := sec.MapTo(&Actions)
 	if err != nil {
 		return fmt.Errorf("failed to map Actions settings: %v", err)
@@ -120,13 +111,9 @@ func loadActionsFrom(rootCfg ConfigProvider) error {
 		return fmt.Errorf("invalid [actions] LOG_COMPRESSION: %q", Actions.LogCompression)
 	}
 
-	if !Actions.IDTokenSigningAlgorithm.IsValid() {
-		return fmt.Errorf("invalid [actions] ID_TOKEN_SIGNING_ALGORITHM: %q", Actions.IDTokenSigningAlgorithm)
+	Actions.KeyCfg, err = loadKeyCfg(rootCfg, secName, "ID_TOKEN_", "RS256", "actions_id_token/private.pem", onlyAsymmetric())
+	if err != nil {
+		return err
 	}
-
-	if !filepath.IsAbs(Actions.IDTokenSigningPrivateKeyFile) {
-		Actions.IDTokenSigningPrivateKeyFile = filepath.Join(AppDataPath, Actions.IDTokenSigningPrivateKeyFile)
-	}
-
 	return nil
 }

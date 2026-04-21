@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/generate"
+	"forgejo.org/modules/jwtx"
 )
 
 // LFS represents the server-side configuration for Git LFS.
@@ -16,13 +16,13 @@ import (
 // Could be refactored in the future while keeping backwards compatibility.
 var LFS = struct {
 	StartServer    bool          `ini:"LFS_START_SERVER"`
-	JWTSecretBytes []byte        `ini:"-"`
 	HTTPAuthExpiry time.Duration `ini:"LFS_HTTP_AUTH_EXPIRY"`
 	MaxFileSize    int64         `ini:"LFS_MAX_FILE_SIZE"`
 	LocksPagingNum int           `ini:"LFS_LOCKS_PAGING_NUM"`
 	MaxBatchSize   int           `ini:"LFS_MAX_BATCH_SIZE"`
 
-	Storage *Storage
+	SigningKey jwtx.SigningKey
+	Storage    *Storage
 }{}
 
 // LFSClient represents configuration for Gitea's LFS clients, for example: mirroring upstream Git LFS
@@ -77,20 +77,14 @@ func loadLFSFrom(rootCfg ConfigProvider) error {
 		return nil
 	}
 
-	jwtSecretBase64 := loadSecret(rootCfg.Section("server"), "LFS_JWT_SECRET_URI", "LFS_JWT_SECRET")
-	LFS.JWTSecretBytes, err = generate.DecodeJwtSecret(jwtSecretBase64)
-	if err != nil {
-		LFS.JWTSecretBytes, jwtSecretBase64 = generate.NewJwtSecret()
-
-		// Save secret
-		saveCfg, err := rootCfg.PrepareSaving()
-		if err != nil {
-			return fmt.Errorf("error saving JWT Secret for custom config: %v", err)
+	// TODO: #11024 check nil because settings loaded twice
+	if LFS.SigningKey == nil {
+		keyCfg, err := loadKeyCfg(rootCfg, "server", "LFS_JWT_", "HS256", "lfs/private.pem")
+		if err == nil {
+			LFS.SigningKey, err = jwtx.InitSigningKey(&keyCfg.Signing)
 		}
-		rootCfg.Section("server").Key("LFS_JWT_SECRET").SetValue(jwtSecretBase64)
-		saveCfg.Section("server").Key("LFS_JWT_SECRET").SetValue(jwtSecretBase64)
-		if err := saveCfg.Save(); err != nil {
-			return fmt.Errorf("error saving JWT Secret for custom config: %v", err)
+		if err != nil {
+			return fmt.Errorf("lfs key initialization failed: %v", err)
 		}
 	}
 

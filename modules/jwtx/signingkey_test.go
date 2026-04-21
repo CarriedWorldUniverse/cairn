@@ -18,6 +18,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func testSignVerify(t *testing.T, signKey, verifyKey SigningKey) {
+	t.Helper()
+	// test sign and verify
+	claimsIn := jwt.RegisteredClaims{
+		Issuer: "abc",
+		ID:     "0815",
+	}
+	token, err := signKey.JWT(claimsIn)
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+
+	var claimsOut jwt.RegisteredClaims
+	parsed, err := jwt.ParseWithClaims(token, &claimsOut, func(valToken *jwt.Token) (any, error) {
+		assert.NotNil(t, valToken.Method)
+		assert.Equal(t, signKey.SigningMethod().Alg(), valToken.Method.Alg())
+		assert.Equal(t, verifyKey.SigningMethod().Alg(), valToken.Method.Alg())
+		kid, ok := valToken.Header["kid"]
+		assert.True(t, ok)
+		assert.NotNil(t, kid)
+
+		return verifyKey.VerifyKey(), nil
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, parsed)
+	assert.Equal(t, claimsIn, claimsOut)
+	assert.Equal(t, &claimsIn, parsed.Claims)
+}
+
+// creates private key
+// loads it back from the file
 func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 	loadKey := func(t *testing.T, keyPath, algorithm string) any {
 		t.Helper()
@@ -35,6 +65,21 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		return parsedKey
 	}
+	useKey := func(t *testing.T, keyPath, algorithm string) {
+		t.Helper()
+		// duplicates loadKey() to some extent, but uses SigningKey
+		cfg := &SigningKeyCfg{
+			Algorithm:      algorithm,
+			PrivateKeyPath: &keyPath,
+		}
+
+		key, err := InitSigningKey(&cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, key)
+		assert.Nil(t, cfg)
+
+		testSignVerify(t, key, key)
+	}
 	t.Run("RSA-2048", func(t *testing.T) {
 		keyPath := filepath.Join(t.TempDir(), "jwt-rsa-2048.priv")
 		algorithm := "RS256"
@@ -43,6 +88,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		rsaPrivateKey := parsedKey.(*rsa.PrivateKey)
 		assert.Equal(t, 2048, rsaPrivateKey.N.BitLen())
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 
 		t.Run("Load key with differ specified algorithm", func(t *testing.T) {
 			algorithm = "EdDSA"
@@ -61,6 +109,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		rsaPrivateKey := parsedKey.(*rsa.PrivateKey)
 		assert.Equal(t, 3072, rsaPrivateKey.N.BitLen())
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
 
 	t.Run("RSA-4096", func(t *testing.T) {
@@ -71,6 +122,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		rsaPrivateKey := parsedKey.(*rsa.PrivateKey)
 		assert.Equal(t, 4096, rsaPrivateKey.N.BitLen())
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
 
 	t.Run("ECDSA-256", func(t *testing.T) {
@@ -81,6 +135,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		ecdsaPrivateKey := parsedKey.(*ecdsa.PrivateKey)
 		assert.Equal(t, 256, ecdsaPrivateKey.Params().BitSize)
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
 
 	t.Run("ECDSA-384", func(t *testing.T) {
@@ -91,6 +148,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		ecdsaPrivateKey := parsedKey.(*ecdsa.PrivateKey)
 		assert.Equal(t, 384, ecdsaPrivateKey.Params().BitSize)
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
 
 	t.Run("ECDSA-512", func(t *testing.T) {
@@ -101,6 +161,9 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 
 		ecdsaPrivateKey := parsedKey.(*ecdsa.PrivateKey)
 		assert.Equal(t, 521, ecdsaPrivateKey.Params().BitSize)
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
 
 	t.Run("EdDSA", func(t *testing.T) {
@@ -110,45 +173,10 @@ func TestLoadOrCreateAsymmetricKey(t *testing.T) {
 		parsedKey := loadKey(t, keyPath, algorithm)
 
 		assert.NotNil(t, parsedKey.(ed25519.PrivateKey))
+		t.Run("Use", func(t *testing.T) {
+			useKey(t, keyPath, algorithm)
+		})
 	})
-}
-
-type testClaims struct {
-	Foo string `json:"Foo"`
-	jwt.RegisteredClaims
-}
-
-func TestJWTHasKid(t *testing.T) {
-	keyPath := filepath.Join(t.TempDir(), "jwt-rsa-2048.priv")
-	algorithm := "RS256"
-	key, err := InitAsymmetricSigningKey(keyPath, algorithm)
-	require.NoError(t, err)
-
-	claimsIn := testClaims{
-		Foo:              "bar",
-		RegisteredClaims: jwt.RegisteredClaims{},
-	}
-	token, err := key.JWT(&claimsIn)
-	require.NoError(t, err)
-
-	var claimsOut testClaims
-	parsed, err := jwt.ParseWithClaims(token, &claimsOut, func(valToken *jwt.Token) (any, error) {
-		assert.NotNil(t, valToken.Method)
-		assert.Equal(t, key.SigningMethod().Alg(), valToken.Method.Alg())
-		kid, ok := valToken.Header["kid"]
-		assert.True(t, ok)
-		assert.NotNil(t, kid)
-
-		return key.VerifyKey(), nil
-	})
-	require.NoError(t, err)
-	assert.NotNil(t, parsed)
-	assert.Equal(t, "bar", parsed.Claims.(*testClaims).Foo)
-	assert.Equal(t, "bar", claimsOut.Foo)
-	// dup to keyFunc above
-	kid, ok := parsed.Header["kid"]
-	assert.True(t, ok)
-	assert.NotNil(t, kid)
 }
 
 func TestCannotCreatePrivateKey(t *testing.T) {

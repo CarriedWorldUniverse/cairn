@@ -35,7 +35,7 @@ var DefaultSigningKey jwtx.SigningKey
 // Init initializes the oauth source
 func Init(ctx context.Context) error {
 	var err error
-	DefaultSigningKey, err = jwtx.InitSigningKey(setting.GetGeneralTokenSigningSecret, setting.OAuth2.JWTSigningPrivateKeyFile, setting.OAuth2.JWTSigningAlgorithm)
+	DefaultSigningKey, err = jwtx.InitSigningKey(&setting.OAuth2.KeyCfg.Signing)
 	if err != nil {
 		return err
 	}

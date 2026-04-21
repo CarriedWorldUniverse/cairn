@@ -21,11 +21,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var ini = `[security]
+INSTALL_LOCK = true
+INTERNAL_TOKEN = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
+[oauth2]
+JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
+[server]
+LFS_START_SERVER = true
+LFS_JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
+	`
+
 func TestGarbageCollectLFSMetaObjects(t *testing.T) {
+	var err error
+	setting.CfgProvider, err = setting.NewConfigProviderFromData(ini)
+	require.NoError(t, err, "Config")
+	setting.LoadCommonSettings()
+
 	unittest.PrepareTestEnv(t)
 
-	setting.LFS.StartServer = true
-	err := storage.Init()
+	err = storage.Init()
 	require.NoError(t, err)
 
 	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "lfs")

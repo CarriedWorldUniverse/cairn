@@ -41,18 +41,23 @@ func getLFSAuthTokenWithBearer(opts authTokenOptions) (string, error) {
 		Op:     opts.Op,
 		UserID: opts.UserID,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString(setting.LFS.JWTSecretBytes)
+	tokenString, err := setting.LFS.SigningKey.JWT(claims)
 	if err != nil {
 		return "", fmt.Errorf("failed to sign LFS JWT token: %w", err)
 	}
 	return "Bearer " + tokenString, nil
 }
 
-func TestAuthenticate(t *testing.T) {
+func testAuthenticate(t *testing.T, cfg string) {
 	require.NoError(t, unittest.PrepareTestDatabase())
+	var err error
+	setting.CfgProvider, err = setting.NewConfigProviderFromData(cfg)
+	require.NoError(t, err, "Config")
+	setting.LoadCommonSettings()
+	assert.True(t, setting.LFS.StartServer, "LFS_START_SERVER = true")
+	assert.NotNil(t, setting.LFS.SigningKey, "SigningKey initialized")
 	repo1 := unittest.AssertExistsAndLoadBean(t, &repo_model.Repository{ID: 1})
 
 	token2, _ := getLFSAuthTokenWithBearer(authTokenOptions{Op: "download", UserID: 2, RepoID: 1})
@@ -79,4 +84,31 @@ func TestAuthenticate(t *testing.T) {
 		assert.False(t, authenticate(ctx, repo1, prefixBearer+"invalid", true, false))
 		assert.True(t, authenticate(ctx, repo1, prefixBearer+token2, true, false))
 	})
+}
+
+type namedCfg struct {
+	name, cfg string
+}
+
+var iniCommon = `[security]
+INSTALL_LOCK = true
+INTERNAL_TOKEN = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
+[oauth2]
+JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
+[server]
+LFS_START_SERVER = true
+	`
+
+var cfgVariants = []namedCfg{
+	{name: "HS256_default", cfg: `LFS_JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_`},
+	{name: "RS256", cfg: `LFS_JWT_SIGNING_ALGORITHM = RS256`},
+}
+
+func TestAuthenticate(t *testing.T) {
+	// TODO: #11024
+	setting.InstallLock = true
+	for _, v := range cfgVariants {
+		cfg := iniCommon + v.cfg
+		t.Run(v.name, func(t *testing.T) { testAuthenticate(t, cfg) })
+	}
 }

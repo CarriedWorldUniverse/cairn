@@ -4,7 +4,6 @@
 package setting
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -176,8 +175,8 @@ func Test_getIDTokenSettingsForActions(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, loadActionsFrom(cfg))
 
-	assert.EqualValues(t, "RS256", Actions.IDTokenSigningAlgorithm)
-	assert.Equal(t, "/home/app/data/actions_id_token/private.pem", Actions.IDTokenSigningPrivateKeyFile)
+	assert.Equal(t, "RS256", Actions.KeyCfg.Signing.Algorithm)
+	assert.Equal(t, "/home/app/data/actions_id_token/private.pem", *Actions.KeyCfg.Signing.PrivateKeyPath)
 	assert.EqualValues(t, 3600, Actions.IDTokenExpirationTime)
 
 	iniStr = `
@@ -190,8 +189,8 @@ func Test_getIDTokenSettingsForActions(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, loadActionsFrom(cfg))
 
-	assert.EqualValues(t, "ES256", Actions.IDTokenSigningAlgorithm)
-	assert.Equal(t, "/test/test.pem", Actions.IDTokenSigningPrivateKeyFile)
+	assert.Equal(t, "ES256", Actions.KeyCfg.Signing.Algorithm)
+	assert.Equal(t, "/test/test.pem", *Actions.KeyCfg.Signing.PrivateKeyPath)
 	assert.EqualValues(t, 120, Actions.IDTokenExpirationTime)
 
 	iniStr = `
@@ -204,8 +203,8 @@ func Test_getIDTokenSettingsForActions(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, loadActionsFrom(cfg))
 
-	assert.EqualValues(t, "EdDSA", Actions.IDTokenSigningAlgorithm)
-	assert.Equal(t, "/home/app/data/test/test.pem", Actions.IDTokenSigningPrivateKeyFile)
+	assert.Equal(t, "EdDSA", Actions.KeyCfg.Signing.Algorithm)
+	assert.Equal(t, "/home/app/data/test/test.pem", *Actions.KeyCfg.Signing.PrivateKeyPath)
 	assert.EqualValues(t, 123, Actions.IDTokenExpirationTime)
 
 	iniStr = `
@@ -215,6 +214,23 @@ func Test_getIDTokenSettingsForActions(t *testing.T) {
 	cfg, err = NewConfigProviderFromData(iniStr)
 	require.NoError(t, err)
 	err = loadActionsFrom(cfg)
-	require.ErrorContains(t, err,
-		fmt.Sprintf("invalid [actions] ID_TOKEN_SIGNING_ALGORITHM: %q", Actions.IDTokenSigningAlgorithm))
+	require.ErrorContains(t, err, "[actions] Unexpected algorithm: ID_TOKEN_SIGNING_ALGORITHM = HS256, needs to be one of [RS256 RS384 RS512 ES256 ES384 ES512 EdDSA]")
+
+	iniStr = `
+  [actions]
+	ID_TOKEN_SECRET = ABC
+	`
+	cfg, err = NewConfigProviderFromData(iniStr)
+	require.NoError(t, err)
+	err = loadActionsFrom(cfg)
+	require.ErrorContains(t, err, "[actions] Invalid config key: ID_TOKEN_SECRET - must be removed")
+
+	iniStr = `
+  [actions]
+	ID_TOKEN_SECRET_URI = ABC
+	`
+	cfg, err = NewConfigProviderFromData(iniStr)
+	require.NoError(t, err)
+	err = loadActionsFrom(cfg)
+	require.ErrorContains(t, err, "[actions] Invalid config key: ID_TOKEN_SECRET_URI - must be removed")
 }
