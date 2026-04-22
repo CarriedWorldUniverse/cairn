@@ -1,7 +1,7 @@
 // Copyright 2024 The Gitea Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package auth
+package method
 
 import (
 	"net/http"
@@ -11,7 +11,6 @@ import (
 	"forgejo.org/models/auth"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/actions"
 
 	"github.com/stretchr/testify/assert"
@@ -33,14 +32,13 @@ func TestUserIDFromToken(t *testing.T) {
 		token, err := actions.CreateAuthorizationToken(task, map[string]any{}, false)
 		require.NoError(t, err)
 
-		ds := make(middleware.ContextData)
-
 		o := OAuth2{}
-		uid, err := o.userIDFromToken(t.Context(), token, ds)
+		authResult, err := o.userIDFromToken(t.Context(), token)
 		require.NoError(t, err)
-		assert.Equal(t, int64(user_model.ActionsUserID), uid)
-		assert.Equal(t, true, ds["IsActionsToken"])
-		assert.Equal(t, ds["ActionsTaskID"], int64(RunningTaskID))
+		assert.Equal(t, int64(user_model.ActionsUserID), authResult.User().ID)
+		isActionsToken, authTaskID := authResult.ActionsTaskID().Get()
+		assert.True(t, isActionsToken)
+		assert.Equal(t, int64(RunningTaskID), authTaskID)
 	})
 
 	t.Run("Actions error-JWT", func(t *testing.T) {
@@ -52,13 +50,12 @@ func TestUserIDFromToken(t *testing.T) {
 			"To short": {"abc", auth.ErrAccessTokenNotExist{Token: "abc"}},
 		}
 
-		ds := make(middleware.ContextData)
 		o := OAuth2{}
 		for name, c := range cases {
 			t.Run(name, func(t *testing.T) {
-				uid, err := o.userIDFromToken(t.Context(), c.Token, ds)
+				authResult, err := o.userIDFromToken(t.Context(), c.Token)
 				require.ErrorIs(t, err, c.Error)
-				assert.Equal(t, int64(0), uid)
+				assert.Nil(t, authResult)
 			})
 		}
 	})

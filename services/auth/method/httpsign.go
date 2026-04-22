@@ -1,7 +1,7 @@
 // Copyright 2021 The Gitea Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package auth
+package method
 
 import (
 	"bytes"
@@ -16,6 +16,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
+	"forgejo.org/services/auth"
 
 	"github.com/42wim/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -23,7 +24,7 @@ import (
 
 // Ensure the struct implements the interface.
 var (
-	_ Method = &HTTPSign{}
+	_ auth.Method = &HTTPSign{}
 )
 
 // HTTPSign implements the Auth interface and authenticates requests (API requests
@@ -31,18 +32,13 @@ var (
 // more information can be found on https://github.com/go-fed/httpsig
 type HTTPSign struct{}
 
-// Name represents the name of auth method
-func (h *HTTPSign) Name() string {
-	return "httpsign"
-}
-
 // Verify extracts and validates HTTPsign from the Signature header of the request and returns
 // the corresponding user object on successful validation.
 // Returns nil if header is empty or validation fails.
-func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, store DataStore, sess SessionStore) (*user_model.User, error) {
+func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) (auth.AuthenticationResult, error) {
 	sigHead := req.Header.Get("Signature")
 	if len(sigHead) == 0 {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	var (
@@ -53,14 +49,14 @@ func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, store DataSt
 	if len(req.Header.Get("X-Ssh-Certificate")) != 0 {
 		// Handle Signature signed by SSH certificates
 		if len(setting.SSH.TrustedUserCAKeys) == 0 {
-			return nil, nil
+			return &auth.UnauthenticatedResult{}, nil
 		}
 
 		publicKey, err = VerifyCert(req)
 		if err != nil {
 			log.Debug("VerifyCert on request from %s: failed: %v", req.RemoteAddr, err)
 			log.Warn("Failed authentication attempt from %s", req.RemoteAddr)
-			return nil, nil
+			return &auth.UnauthenticatedResult{}, nil
 		}
 	} else {
 		// Handle Signature signed by Public Key
@@ -68,7 +64,7 @@ func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, store DataSt
 		if err != nil {
 			log.Debug("VerifyPubKey on request from %s: failed: %v", req.RemoteAddr, err)
 			log.Warn("Failed authentication attempt from %s", req.RemoteAddr)
-			return nil, nil
+			return &auth.UnauthenticatedResult{}, nil
 		}
 	}
 
@@ -78,11 +74,8 @@ func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, store DataSt
 		return nil, err
 	}
 
-	store.GetData()["IsApiToken"] = true
-
 	log.Trace("HTTP Sign: Logged in user %-v", u)
-
-	return u, nil
+	return &httpSignAuthenticationResult{user: u}, nil
 }
 
 func VerifyPubKey(r *http.Request) (*asymkey_model.PublicKey, error) {

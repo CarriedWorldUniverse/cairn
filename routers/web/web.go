@@ -48,6 +48,7 @@ import (
 	user_setting "forgejo.org/routers/web/user/setting"
 	"forgejo.org/routers/web/user/setting/security"
 	auth_service "forgejo.org/services/auth"
+	auth_method "forgejo.org/services/auth/method"
 	"forgejo.org/services/context"
 	"forgejo.org/services/forms"
 	"forgejo.org/services/lfs"
@@ -104,15 +105,15 @@ func optionsCorsHandler() func(next http.Handler) http.Handler {
 //
 // The Session plugin is expected to be executed second, in order to skip authentication
 // for users that have already signed in.
-func buildAuthGroup() *auth_service.Group {
-	group := auth_service.NewGroup()
-	group.Add(&auth_service.OAuth2{}) // FIXME: this should be removed and only applied in download and oauth related routers
-	group.Add(&auth_service.Basic{})  // FIXME: this should be removed and only applied in download and git/lfs routers
+func buildAuthGroup() *auth_method.Group {
+	group := auth_method.NewGroup()
+	group.Add(&auth_method.OAuth2{}) // FIXME: this should be removed and only applied in download and oauth related routers
+	group.Add(&auth_method.Basic{})  // FIXME: this should be removed and only applied in download and git/lfs routers
 
 	if setting.Service.EnableReverseProxyAuth {
-		group.Add(&auth_service.ReverseProxy{}) // reverseproxy should before Session, otherwise the header will be ignored if user has login
+		group.Add(&auth_method.ReverseProxy{}) // reverseproxy should before Session, otherwise the header will be ignored if user has login
 	}
-	group.Add(&auth_service.Session{})
+	group.Add(&auth_method.Session{})
 
 	return group
 }
@@ -125,9 +126,13 @@ func webAuth(authMethod auth_service.Method) func(*context.Context) {
 			ctx.Error(http.StatusUnauthorized, ctx.Locale.TrString("auth.unauthorized_credentials", "https://codeberg.org/forgejo/forgejo/issues/2809"))
 			return
 		}
-		ctx.Doer = ar.Doer
-		ctx.IsSigned = ar.Doer != nil
-		ctx.IsBasicAuth = ar.IsBasicAuth
+		if ar == nil {
+			ctx.Error(http.StatusInternalServerError, "webAuth nil authentication result")
+			return
+		}
+		ctx.Doer = ar.User()
+		ctx.IsSigned = ar.User() != nil
+		ctx.Authentication = ar
 		if ctx.Doer == nil {
 			// ensure the session uid is deleted
 			_ = ctx.Session.Delete("uid")

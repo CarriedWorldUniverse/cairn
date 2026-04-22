@@ -94,9 +94,10 @@ nwIDAQAB
 			defer tests.PrintCurrentTest(t)()
 
 			req := NewRequest(t, "POST", "/dummy")
-			u, err := auth.Verify(req.Request, nil, nil, nil)
-			assert.Nil(t, u)
+			u, err := auth.Verify(req.Request, nil, nil)
 			require.NoError(t, err)
+			require.NotNil(t, u)
+			assert.Nil(t, u.User())
 		})
 
 		t.Run("NotExistingUser", func(t *testing.T) {
@@ -104,7 +105,7 @@ nwIDAQAB
 
 			req := NewRequest(t, "POST", "/dummy").
 				SetHeader("X-Ops-Userid", "not-existing-user")
-			u, err := auth.Verify(req.Request, nil, nil, nil)
+			u, err := auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 		})
@@ -114,12 +115,12 @@ nwIDAQAB
 
 			req := NewRequest(t, "POST", "/dummy").
 				SetHeader("X-Ops-Userid", user.Name)
-			u, err := auth.Verify(req.Request, nil, nil, nil)
+			u, err := auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
 			req.SetHeader("X-Ops-Timestamp", "2023-01-01T00:00:00Z")
-			u, err = auth.Verify(req.Request, nil, nil, nil)
+			u, err = auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 		})
@@ -130,27 +131,27 @@ nwIDAQAB
 			req := NewRequest(t, "POST", "/dummy").
 				SetHeader("X-Ops-Userid", user.Name).
 				SetHeader("X-Ops-Timestamp", time.Now().UTC().Format(time.RFC3339))
-			u, err := auth.Verify(req.Request, nil, nil, nil)
+			u, err := auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
 			req.SetHeader("X-Ops-Sign", "version=none")
-			u, err = auth.Verify(req.Request, nil, nil, nil)
+			u, err = auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
 			req.SetHeader("X-Ops-Sign", "version=1.4")
-			u, err = auth.Verify(req.Request, nil, nil, nil)
+			u, err = auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
 			req.SetHeader("X-Ops-Sign", "version=1.0;algorithm=sha2")
-			u, err = auth.Verify(req.Request, nil, nil, nil)
+			u, err = auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
 			req.SetHeader("X-Ops-Sign", "version=1.0;algorithm=sha256")
-			u, err = auth.Verify(req.Request, nil, nil, nil)
+			u, err = auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 		})
@@ -166,7 +167,7 @@ nwIDAQAB
 				SetHeader("X-Ops-Sign", "version=1.0;algorithm=sha1").
 				SetHeader("X-Ops-Content-Hash", "unused").
 				SetHeader("X-Ops-Authorization-4", "dummy")
-			u, err := auth.Verify(req.Request, nil, nil, nil)
+			u, err := auth.Verify(req.Request, nil, nil)
 			assert.Nil(t, u)
 			require.Error(t, err)
 
@@ -257,7 +258,7 @@ nwIDAQAB
 					defer tests.PrintCurrentTest(t)()
 
 					signRequest(req, v)
-					u, err = auth.Verify(req.Request, nil, nil, nil)
+					u, err = auth.Verify(req.Request, nil, nil)
 					assert.NotNil(t, u)
 					require.NoError(t, err)
 				})

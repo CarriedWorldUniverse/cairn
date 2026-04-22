@@ -2,7 +2,7 @@
 // Copyright 2019 The Gitea Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package auth
+package method
 
 import (
 	"errors"
@@ -14,48 +14,42 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
+	"forgejo.org/services/auth"
 	"forgejo.org/services/authz"
 )
 
 // Ensure the struct implements the interface.
 var (
-	_ Method = &Basic{}
+	_ auth.Method = &Basic{}
 )
-
-// BasicMethodName is the constant name of the basic authentication method
-const BasicMethodName = "basic"
 
 // Basic implements the Auth interface and authenticates requests (API requests
 // only) by looking for Basic authentication data or "x-oauth-basic" token in the "Authorization"
 // header.
 type Basic struct{}
 
-// Name represents the name of auth method
-func (b *Basic) Name() string {
-	return BasicMethodName
-}
-
 // Verify extracts and validates Basic data (username and password/token) from the
 // "Authorization" header of the request and returns the corresponding user object for that
 // name/token on successful validation.
 // Returns nil if header is empty or validation fails.
-func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore, sess SessionStore) (*user_model.User, error) {
+func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) (auth.AuthenticationResult, error) {
 	// Basic authentication should only fire on API, Download or on Git or LFSPaths
 	if !middleware.IsAPIPath(req) && !isContainerPath(req) && !isAttachmentDownload(req) && !isGitRawOrAttachOrLFSPath(req) {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	baHead := req.Header.Get("Authorization")
 	if len(baHead) == 0 {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	auths := strings.SplitN(baHead, " ", 2)
 	if len(auths) != 2 || (strings.ToLower(auths[0]) != "basic") {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	uname, passwd, _ := base.BasicAuthDecode(auths[1])
@@ -83,13 +77,13 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 			return nil, err
 		}
 
-		store.GetData()["IsApiToken"] = true
+		var scope auth_model.AccessTokenScope
 		if grantScopes != "" {
-			store.GetData()["ApiTokenScope"] = auth_model.AccessTokenScope(grantScopes)
+			scope = auth_model.AccessTokenScope(grantScopes)
 		} else {
-			store.GetData()["ApiTokenScope"] = auth_model.AccessTokenScopeAll // fallback to all
+			scope = auth_model.AccessTokenScopeAll // fallback to all
 		}
-		return u, nil
+		return &oAuth2JWTAuthenticationResult{user: u, scope: optional.Some(scope)}, nil
 	}
 
 	// check personal access token
@@ -106,17 +100,13 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 			log.Error("UpdateLastUsed:  %v", err)
 		}
 
-		store.GetData()["IsApiToken"] = true
-		store.GetData()["ApiTokenScope"] = token.Scope
-
 		reducer, err := authz.GetAuthorizationReducerForAccessToken(req.Context(), token)
 		if err != nil {
 			log.Error("authz.GetAuthorizationReducerForAccessToken: %v", err)
 			return nil, err
 		}
-		store.GetData()["ApiTokenReducer"] = reducer
 
-		return u, nil
+		return &accessTokenAuthenticationResult{user: u, scope: token.Scope, reducer: reducer}, nil
 	} else if !auth_model.IsErrAccessTokenNotExist(err) && !auth_model.IsErrAccessTokenEmpty(err) {
 		log.Error("GetAccessTokenBySha: %v", err)
 	}
@@ -125,15 +115,11 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 	task, err := actions_model.GetRunningTaskByToken(req.Context(), authToken)
 	if err == nil && task != nil {
 		log.Trace("Basic Authorization: Valid AccessToken for task[%d]", task.ID)
-
-		store.GetData()["IsActionsToken"] = true
-		store.GetData()["ActionsTaskID"] = task.ID
-
-		return user_model.NewActionsUser(), nil
+		return &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: task.ID}, nil
 	}
 
 	if !setting.Service.EnableBasicAuth {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	log.Trace("Basic Authorization: Attempting SignIn for %s", uname)
@@ -155,7 +141,7 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 		return nil, errors.New("Basic authorization is not allowed while having security keys enrolled")
 	}
 
-	if skipper, ok := source.Cfg.(LocalTwoFASkipper); !ok || !skipper.IsSkipLocalTwoFA() {
+	if skipper, ok := source.Cfg.(auth.LocalTwoFASkipper); !ok || !skipper.IsSkipLocalTwoFA() {
 		if err := validateTOTP(req, u); err != nil {
 			return nil, err
 		}
@@ -163,8 +149,7 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, store DataStore
 
 	log.Trace("Basic Authorization: Logged in user %-v", u)
 
-	store.GetData()["IsPasswordLogin"] = true
-	return u, nil
+	return &basicPaswordAuthenticationResult{user: u}, nil
 }
 
 func getOtpHeader(header http.Header) string {

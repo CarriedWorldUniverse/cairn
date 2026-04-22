@@ -2,9 +2,10 @@
 // Copyright 2019 The Gitea Authors. All rights reserved.
 // SPDX-License-Identifier: MIT
 
-package auth
+package method
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -12,14 +13,16 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
+	"forgejo.org/services/auth"
 
 	gouuid "github.com/google/uuid"
 )
 
 // Ensure the struct implements the interface.
 var (
-	_ Method = &ReverseProxy{}
+	_ auth.Method = &ReverseProxy{}
 )
 
 // ReverseProxyMethodName is the constant name of the ReverseProxy authentication method
@@ -37,11 +40,6 @@ func (r *ReverseProxy) getUserName(req *http.Request) string {
 	return strings.TrimSpace(req.Header.Get(setting.ReverseProxyAuthUser))
 }
 
-// Name represents the name of auth method
-func (r *ReverseProxy) Name() string {
-	return ReverseProxyMethodName
-}
-
 // getUserFromAuthUser extracts the username from the "setting.ReverseProxyAuthUser" header
 // of the request and returns the corresponding user object for that name.
 // Verification of header data is not performed as it should have already been done by
@@ -52,7 +50,7 @@ func (r *ReverseProxy) Name() string {
 func (r *ReverseProxy) getUserFromAuthUser(req *http.Request) (*user_model.User, error) {
 	username := r.getUserName(req)
 	if len(username) == 0 {
-		return nil, nil
+		return nil, util.ErrNotExist
 	}
 	log.Trace("ReverseProxy Authorization: Found username: %s", username)
 
@@ -104,15 +102,15 @@ func (r *ReverseProxy) getUserFromAuthEmail(req *http.Request) *user_model.User 
 // First it will attempt to load it based on the username (see docs for getUserFromAuthUser),
 // and failing that it will attempt to load it based on the email (see docs for getUserFromAuthEmail).
 // Returns nil if the headers are empty or the user is not found.
-func (r *ReverseProxy) Verify(req *http.Request, w http.ResponseWriter, store DataStore, sess SessionStore) (*user_model.User, error) {
+func (r *ReverseProxy) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) (auth.AuthenticationResult, error) {
 	user, err := r.getUserFromAuthUser(req)
-	if err != nil {
+	if err != nil && !errors.Is(err, util.ErrNotExist) {
 		return nil, err
 	}
 	if user == nil {
 		user = r.getUserFromAuthEmail(req)
 		if user == nil {
-			return nil, nil
+			return &auth.UnauthenticatedResult{}, nil
 		}
 	}
 
@@ -122,10 +120,9 @@ func (r *ReverseProxy) Verify(req *http.Request, w http.ResponseWriter, store Da
 			handleSignIn(w, req, sess, user)
 		}
 	}
-	store.GetData()["IsReverseProxy"] = true
 
 	log.Trace("ReverseProxy Authorization: Logged in user %-v", user)
-	return user, nil
+	return &reverseProxyAuthenticationResult{user: user}, nil
 }
 
 // isAutoRegisterAllowed checks if EnableReverseProxyAutoRegister setting is true
