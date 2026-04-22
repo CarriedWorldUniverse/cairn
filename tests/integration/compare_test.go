@@ -239,6 +239,16 @@ func TestCompareBranches(t *testing.T) {
 	diffChanges = []string{"test.txt"}
 
 	inspectCompare(t, htmlDoc, diffCount, diffChanges)
+
+	// Branches with name 'diff' or 'patch'
+	req = NewRequest(t, "GET", "/user2/repo16/compare/master..diff")
+	session.MakeRequest(t, req, http.StatusOK)
+	req = NewRequest(t, "GET", "/user2/repo16/compare/master..diff.patch")
+	session.MakeRequest(t, req, http.StatusOK)
+	req = NewRequest(t, "GET", "/user2/repo16/compare/master..patch")
+	session.MakeRequest(t, req, http.StatusOK)
+	req = NewRequest(t, "GET", "/user2/repo16/compare/master..patch.diff")
+	session.MakeRequest(t, req, http.StatusOK)
 }
 
 func TestCompareWithPRsDisabled(t *testing.T) {
