@@ -192,7 +192,7 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 		if status != actions_model.StatusBlocked {
 			continue
 		}
-		allDone, allSucceed := true, true
+		allDone, allSucceed, allSucceedOrSkip := true, true, true
 		for _, need := range r.needs[id] {
 			needStatus := r.statuses[need]
 			if !needStatus.IsDone() {
@@ -201,13 +201,16 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 			if needStatus.In(actions_model.StatusFailure, actions_model.StatusCancelled, actions_model.StatusSkipped) {
 				allSucceed = false
 			}
+			if needStatus.In(actions_model.StatusFailure, actions_model.StatusCancelled) {
+				allSucceedOrSkip = false
+			}
 		}
 		if allDone {
 			if isWorkflowCallOuterJob, _ := r.jobMap[id].IsWorkflowCallOuterJob(); isWorkflowCallOuterJob {
 				// If the dependent job was a workflow call outer job, then options aren't waiting/skipped, but rather
 				// success/failure.  checkJobsOfRun will do additional work in these cases to "finish" the workflow call
 				// job as well.
-				if allSucceed {
+				if allSucceedOrSkip {
 					isIncompleteMatrix, _, _ := r.jobMap[id].HasIncompleteMatrix()
 					isIncompleteWith, _, _, _ := r.jobMap[id].HasIncompleteWith()
 					if isIncompleteMatrix || isIncompleteWith {
