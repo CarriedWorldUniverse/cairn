@@ -4,32 +4,30 @@
 package common
 
 import (
-	user_model "forgejo.org/models/user"
+	"errors"
+
 	"forgejo.org/modules/web/middleware"
 	auth_service "forgejo.org/services/auth"
 	"forgejo.org/services/context"
 )
 
-type AuthResult struct {
-	Doer        *user_model.User
-	IsBasicAuth bool
-}
-
-func AuthShared(ctx *context.Base, sessionStore auth_service.SessionStore, authMethod auth_service.Method) (ar AuthResult, err error) {
-	ar.Doer, err = authMethod.Verify(ctx.Req, ctx.Resp, ctx, sessionStore)
+func AuthShared(ctx *context.Base, sessionStore auth_service.SessionStore, authMethod auth_service.Method) (ar auth_service.AuthenticationResult, err error) {
+	ar, err = authMethod.Verify(ctx.Req, ctx.Resp, sessionStore)
 	if err != nil {
 		return ar, err
 	}
-	if ar.Doer != nil {
-		if ctx.Locale.Language() != ar.Doer.Language {
+	if ar == nil {
+		return nil, errors.New("failure to retrieve AuthenticationResult - nil value")
+	}
+	doer := ar.User()
+	if doer != nil {
+		if ctx.Locale.Language() != doer.Language {
 			ctx.Locale = middleware.Locale(ctx.Resp, ctx.Req)
 		}
-		ar.IsBasicAuth = ctx.Data["AuthedMethod"].(string) == auth_service.BasicMethodName
-
 		ctx.Data["IsSigned"] = true
-		ctx.Data[middleware.ContextDataKeySignedUser] = ar.Doer
-		ctx.Data["SignedUserID"] = ar.Doer.ID
-		ctx.Data["IsAdmin"] = ar.Doer.IsAdmin
+		ctx.Data[middleware.ContextDataKeySignedUser] = doer
+		ctx.Data["SignedUserID"] = doer.ID
+		ctx.Data["IsAdmin"] = doer.IsAdmin
 	} else {
 		ctx.Data["IsSigned"] = false
 		ctx.Data["SignedUserID"] = int64(0)

@@ -12,7 +12,6 @@ import (
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	"forgejo.org/modules/log"
-	"forgejo.org/services/authz"
 )
 
 // RequireRepoAdmin returns a middleware for requiring repository admin permission
@@ -125,12 +124,7 @@ func CheckRepoDelegateActionTrust(ctx *Context) bool {
 
 // CheckRepoScopedToken check whether personal access token has repo scope
 func CheckRepoScopedToken(ctx *Context, repo *repo_model.Repository, level auth_model.AccessTokenScopeLevel) {
-	if !ctx.IsBasicAuth || ctx.Data["IsApiToken"] != true {
-		return
-	}
-
-	scope, ok := ctx.Data["ApiTokenScope"].(auth_model.AccessTokenScope)
-	if ok { // it's a personal access token but not oauth2 token
+	if hasScope, scope := ctx.Authentication.Scope().Get(); hasScope {
 		var scopeMatched bool
 
 		requiredScopes := auth_model.GetRequiredScopes(level, auth_model.AccessTokenScopeCategoryRepository)
@@ -159,8 +153,7 @@ func CheckRepoScopedToken(ctx *Context, repo *repo_model.Repository, level auth_
 		}
 	}
 
-	reducer, ok := ctx.Data["ApiTokenReducer"].(authz.AuthorizationReducer)
-	if ok {
+	if reducer := ctx.Authentication.Reducer(); reducer != nil {
 		var accessMode perm.AccessMode
 		switch level {
 		case auth_model.Read:
@@ -184,8 +177,7 @@ func CheckRepoScopedToken(ctx *Context, repo *repo_model.Repository, level auth_
 }
 
 func CheckRuntimeDeterminedScope(ctx *APIContext, scopeCategory auth_model.AccessTokenScopeCategory, level auth_model.AccessTokenScopeLevel, msg string) {
-	scope, ok := ctx.Data["ApiTokenScope"].(auth_model.AccessTokenScope)
-	if ok {
+	if hasScope, scope := ctx.Authentication.Scope().Get(); hasScope {
 		var scopeMatched bool
 
 		requiredScopes := auth_model.GetRequiredScopes(level, scopeCategory)

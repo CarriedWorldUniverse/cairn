@@ -6,13 +6,32 @@ package container
 import (
 	"net/http"
 
+	auth_model "forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/services/auth"
 	"forgejo.org/services/packages"
 )
 
-var _ auth.Method = &Auth{}
+var (
+	_ auth.Method               = &Auth{}
+	_ auth.AuthenticationResult = &containerAuthenticationResult{}
+)
+
+type containerAuthenticationResult struct {
+	*auth.BaseAuthenticationResult
+	user  *user_model.User
+	scope optional.Option[auth_model.AccessTokenScope]
+}
+
+func (r *containerAuthenticationResult) Scope() optional.Option[auth_model.AccessTokenScope] {
+	return r.scope
+}
+
+func (r *containerAuthenticationResult) User() *user_model.User {
+	return r.user
+}
 
 type Auth struct{}
 
@@ -22,7 +41,7 @@ func (a *Auth) Name() string {
 
 // Verify extracts the user from the Bearer token
 // If it's an anonymous session a ghost user is returned
-func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, store auth.DataStore, sess auth.SessionStore) (*user_model.User, error) {
+func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) (auth.AuthenticationResult, error) {
 	uid, scope, err := packages.ParseAuthorizationToken(req)
 	if err != nil {
 		log.Trace("ParseAuthorizationToken: %v", err)
@@ -30,13 +49,13 @@ func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, store auth.DataS
 	}
 
 	if uid == 0 {
-		return nil, nil
+		return &auth.UnauthenticatedResult{}, nil
 	}
 
 	// Propagate scope of the authorization token.
+	authScope := optional.None[auth_model.AccessTokenScope]()
 	if scope != "" {
-		store.GetData()["IsApiToken"] = true
-		store.GetData()["ApiTokenScope"] = scope
+		authScope = optional.Some(scope)
 	}
 
 	u, err := user_model.GetPossibleUserByID(req.Context(), uid)
@@ -45,5 +64,5 @@ func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, store auth.DataS
 		return nil, err
 	}
 
-	return u, nil
+	return &containerAuthenticationResult{user: u, scope: authScope}, nil
 }

@@ -33,7 +33,7 @@ import (
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/modules/web/middleware"
-	auth_service "forgejo.org/services/auth"
+	auth_method "forgejo.org/services/auth/method"
 	source_service "forgejo.org/services/auth/source"
 	"forgejo.org/services/auth/source/oauth2"
 	"forgejo.org/services/context"
@@ -294,7 +294,7 @@ func ifOnlyPublicGroups(scopes string) bool {
 
 // InfoOAuth manages request for userinfo endpoint
 func InfoOAuth(ctx *context.Context) {
-	if ctx.Doer == nil || ctx.Data["AuthedMethod"] != (&auth_service.OAuth2{}).Name() {
+	if ctx.Doer == nil || !ctx.Authentication.IsOAuth2JWTAuthentication() {
 		ctx.Resp.Header().Set("WWW-Authenticate", `Bearer realm=""`)
 		ctx.PlainText(http.StatusUnauthorized, "no valid authorization")
 		return
@@ -316,7 +316,7 @@ func InfoOAuth(ctx *context.Context) {
 		}
 	}
 
-	_, grantScopes := auth_service.CheckOAuthAccessToken(ctx, token)
+	_, grantScopes := auth_method.CheckOAuthAccessToken(ctx, token)
 	onlyPublicGroups := ifOnlyPublicGroups(grantScopes)
 
 	groups, err := getOAuthGroupsForUser(ctx, ctx.Doer, onlyPublicGroups)
