@@ -4,6 +4,7 @@
 package conan
 
 import (
+	"fmt"
 	"net/http"
 
 	auth_model "forgejo.org/models/auth"
@@ -40,15 +41,18 @@ func (a *Auth) Name() string {
 }
 
 // Verify extracts the user from the Bearer token
-func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) (auth.AuthenticationResult, error) {
+func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) auth.MethodOutput {
 	uid, scope, err := packages.ParseAuthorizationToken(req)
 	if err != nil {
 		log.Trace("ParseAuthorizationToken: %v", err)
-		return nil, err
-	}
-
-	if uid == 0 {
-		return &auth.UnauthenticatedResult{}, nil
+		// Errors from ParseAuthorizationToken are almost all from malformed incoming input, which we'll consider an
+		// auth failure:
+		// - `Authorization` header was present for all cases, so it's not `AuthenticationNotAttempted`
+		// - it's not `AuthenticationError` because malformed headers would cause errors, and this is intended for
+		//   server errors which should cause 500s
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: fmt.Errorf("conan auth JWT error: %w", err)}
+	} else if uid == 0 {
+		return &auth.AuthenticationNotAttempted{}
 	}
 
 	// Propagate scope of the authorization token.
@@ -60,8 +64,8 @@ func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.Sessio
 	u, err := user_model.GetUserByID(req.Context(), uid)
 	if err != nil {
 		log.Error("GetUserByID:  %v", err)
-		return nil, err
+		return &auth.AuthenticationError{Error: fmt.Errorf("conan auth GetUserByID failed: %w", err)}
 	}
 
-	return &conanAuthenticationResult{user: u, scope: authScope}, nil
+	return &auth.AuthenticationSuccess{Result: &conanAuthenticationResult{user: u, scope: authScope}}
 }

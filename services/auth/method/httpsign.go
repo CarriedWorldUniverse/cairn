@@ -35,10 +35,10 @@ type HTTPSign struct{}
 // Verify extracts and validates HTTPsign from the Signature header of the request and returns
 // the corresponding user object on successful validation.
 // Returns nil if header is empty or validation fails.
-func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) (auth.AuthenticationResult, error) {
+func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) auth.MethodOutput {
 	sigHead := req.Header.Get("Signature")
 	if len(sigHead) == 0 {
-		return &auth.UnauthenticatedResult{}, nil
+		return &auth.AuthenticationNotAttempted{}
 	}
 
 	var (
@@ -49,14 +49,14 @@ func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, _ auth.Sessi
 	if len(req.Header.Get("X-Ssh-Certificate")) != 0 {
 		// Handle Signature signed by SSH certificates
 		if len(setting.SSH.TrustedUserCAKeys) == 0 {
-			return &auth.UnauthenticatedResult{}, nil
+			return &auth.AuthenticationNotAttempted{}
 		}
 
 		publicKey, err = VerifyCert(req)
 		if err != nil {
 			log.Debug("VerifyCert on request from %s: failed: %v", req.RemoteAddr, err)
 			log.Warn("Failed authentication attempt from %s", req.RemoteAddr)
-			return &auth.UnauthenticatedResult{}, nil
+			return &auth.AuthenticationNotAttempted{} // 401 is not expected on signature validation miss; return not attempted
 		}
 	} else {
 		// Handle Signature signed by Public Key
@@ -64,18 +64,17 @@ func (h *HTTPSign) Verify(req *http.Request, w http.ResponseWriter, _ auth.Sessi
 		if err != nil {
 			log.Debug("VerifyPubKey on request from %s: failed: %v", req.RemoteAddr, err)
 			log.Warn("Failed authentication attempt from %s", req.RemoteAddr)
-			return &auth.UnauthenticatedResult{}, nil
+			return &auth.AuthenticationNotAttempted{} // 401 is not expected on signature validation miss; return not attempted
 		}
 	}
 
 	u, err := user_model.GetUserByID(req.Context(), publicKey.OwnerID)
 	if err != nil {
-		log.Error("GetUserByID:  %v", err)
-		return nil, err
+		return &auth.AuthenticationError{Error: fmt.Errorf("httpsign GetUserByID: %w", err)}
 	}
 
 	log.Trace("HTTP Sign: Logged in user %-v", u)
-	return &httpSignAuthenticationResult{user: u}, nil
+	return &auth.AuthenticationSuccess{Result: &httpSignAuthenticationResult{user: u}}
 }
 
 func VerifyPubKey(r *http.Request) (*asymkey_model.PublicKey, error) {

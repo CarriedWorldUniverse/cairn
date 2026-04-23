@@ -4,6 +4,7 @@
 package packages
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -119,19 +120,30 @@ func verifyAuth(r *web.Route, authMethods []auth.Method) {
 	authGroup := auth_method.NewGroup(authMethods...)
 
 	r.Use(func(ctx *context.Context) {
-		authResult, err := authGroup.Verify(ctx.Req, ctx.Resp, ctx.Session)
-		if err != nil {
-			log.Info("Failed to verify user: %v", err)
+		output := authGroup.Verify(ctx.Req, ctx.Resp, ctx.Session)
+		var ar auth.AuthenticationResult
+		switch v := output.(type) {
+		case *auth.AuthenticationSuccess:
+			ar = v.Result
+		case *auth.AuthenticationNotAttempted:
+			ar = &auth.UnauthenticatedResult{}
+		case *auth.AuthenticationError:
+			ctx.ServerError("authentication error", v.Error)
+			return
+		case *auth.AuthenticationAttemptedIncorrectCredential:
 			ctx.Error(http.StatusUnauthorized, "authGroup.Verify")
 			return
-		}
-		if authResult == nil {
-			ctx.Error(http.StatusInternalServerError, "verifyAuth nil authentication result")
+		default:
+			ctx.ServerError("Verify failed", errors.New("unexpected result from Method.Verify"))
 			return
 		}
-		ctx.Doer = authResult.User()
+		if ar == nil {
+			ctx.ServerError("nil authentication result", errors.New("nil authentication result"))
+			return
+		}
+		ctx.Doer = ar.User()
 		ctx.IsSigned = ctx.Doer != nil
-		ctx.Authentication = authResult
+		ctx.Authentication = ar
 	})
 }
 
@@ -142,20 +154,32 @@ func verifyContainerAuth(r *web.Route, authMethods []auth.Method) {
 	authGroup := auth_method.NewGroup(authMethods...)
 
 	r.Use(func(ctx *context.Context) {
-		authResult, err := authGroup.Verify(ctx.Req, ctx.Resp, ctx.Session)
-		if err != nil {
-			log.Info("Failed to verify user: %v", err)
+		output := authGroup.Verify(ctx.Req, ctx.Resp, ctx.Session)
+		var ar auth.AuthenticationResult
+		switch v := output.(type) {
+		case *auth.AuthenticationSuccess:
+			ar = v.Result
+		case *auth.AuthenticationNotAttempted:
+			ar = &auth.UnauthenticatedResult{}
+		case *auth.AuthenticationError:
+			ctx.ServerError("authentication error", v.Error)
+			return
+		case *auth.AuthenticationAttemptedIncorrectCredential:
+			log.Info("Failed to verify user: %v", v.Error)
 			container.APIUnauthorizedError(ctx)
 			ctx.Error(http.StatusUnauthorized, "authGroup.Verify")
 			return
-		}
-		if authResult == nil {
-			ctx.Error(http.StatusInternalServerError, "verifyContainerAuth nil authentication result")
+		default:
+			ctx.ServerError("Verify failed", errors.New("unexpected result from Method.Verify"))
 			return
 		}
-		ctx.Doer = authResult.User()
+		if ar == nil {
+			ctx.ServerError("nil authentication result", errors.New("nil authentication result"))
+			return
+		}
+		ctx.Doer = ar.User()
 		ctx.IsSigned = ctx.Doer != nil
-		ctx.Authentication = authResult
+		ctx.Authentication = ar
 	})
 }
 

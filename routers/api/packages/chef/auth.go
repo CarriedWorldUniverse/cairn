@@ -65,34 +65,37 @@ func (a *Auth) Name() string {
 
 // Verify extracts the user from the signed request
 // If the request is signed with the user private key the user is verified.
-func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) (auth.AuthenticationResult, error) {
+func (a *Auth) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) auth.MethodOutput {
 	u, err := getUserFromRequest(req)
 	if err != nil {
-		return nil, err
+		if !user_model.IsErrUserNotExist(err) {
+			return &auth.AuthenticationError{Error: fmt.Errorf("chef auth getUserFromRequest: %w", err)}
+		}
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 	if u == nil {
-		return &auth.UnauthenticatedResult{}, nil
+		return &auth.AuthenticationNotAttempted{}
 	}
 
 	pub, err := getUserPublicKey(req.Context(), u)
 	if err != nil {
-		return nil, err
+		return &auth.AuthenticationError{Error: fmt.Errorf("chef auth getUserPublicKey: %w", err)}
 	}
 
 	if err := verifyTimestamp(req); err != nil {
-		return nil, err
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 
 	version, err := getSignVersion(req)
 	if err != nil {
-		return nil, err
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 
 	if err := verifySignedHeaders(req, version, pub.(*rsa.PublicKey)); err != nil {
-		return nil, err
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 
-	return &chefAuthenticationResult{user: u}, nil
+	return &auth.AuthenticationSuccess{Result: &chefAuthenticationResult{user: u}}
 }
 
 func getUserFromRequest(req *http.Request) (*user_model.User, error) {
