@@ -4,6 +4,8 @@
 package method
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"forgejo.org/services/auth"
@@ -31,33 +33,34 @@ func (b *Group) Add(method auth.Method) {
 	b.methods = append(b.methods, method)
 }
 
-func (b *Group) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) (auth.AuthenticationResult, error) {
-	// Try to sign in with each of the enabled plugins
-	var retErr error
+func (b *Group) Verify(req *http.Request, w http.ResponseWriter, sess auth.SessionStore) auth.MethodOutput {
+	var incorrectCredentials []error
+
 	for _, m := range b.methods {
-		authResult, err := m.Verify(req, w, sess)
-		if err != nil {
-			if retErr == nil {
-				retErr = err
-			}
-			// Try other methods if this one failed.
-			// Some methods may share the same protocol to detect if they are matched.
-			// For example, OAuth2 and conan.Auth both read token from "Authorization: Bearer <token>" header,
-			// If OAuth2 returns error, we should give conan.Auth a chance to try.
+		output := m.Verify(req, w, sess)
+
+		switch v := output.(type) {
+		case *auth.AuthenticationSuccess, *auth.AuthenticationError:
+			return v
+
+		case *auth.AuthenticationNotAttempted:
+			// Move on to the next supported authentication method.
 			continue
-		}
 
-		// If any method returns an authenticated result, we can stop trying. Return and ignore any error returned by
-		// previous methods.
-		if authResult.User() != nil {
-			return authResult, nil
+		case *auth.AuthenticationAttemptedIncorrectCredential:
+			// Move on to the next supported authentication method, but keep a record of this error.  If none of the
+			// other methods are able to authenticate the user, we'll report this as an incorrect credential (401) case.
+			incorrectCredentials = append(incorrectCredentials, v.Error)
+			continue
+
+		default:
+			return &auth.AuthenticationError{Error: fmt.Errorf("unexpected result from Method.Verify on method %v: %v", m, v)}
 		}
 	}
 
-	if retErr != nil {
-		// If no method returns a user, return the error returned by the first method.
-		return nil, retErr
+	if len(incorrectCredentials) != 0 {
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: errors.Join(incorrectCredentials...)}
 	}
 
-	return &auth.UnauthenticatedResult{}, nil
+	return &auth.AuthenticationNotAttempted{}
 }

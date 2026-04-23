@@ -12,6 +12,7 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/services/actions"
+	auth_service "forgejo.org/services/auth"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,8 +34,10 @@ func TestUserIDFromToken(t *testing.T) {
 		require.NoError(t, err)
 
 		o := OAuth2{}
-		authResult, err := o.userIDFromToken(t.Context(), token)
-		require.NoError(t, err)
+		output := o.userIDFromToken(t.Context(), token)
+		ar, authSuccess := output.(*auth_service.AuthenticationSuccess)
+		require.True(t, authSuccess, "expected type AuthenticationSuccess, but was: %#v", output)
+		authResult := ar.Result
 		assert.Equal(t, int64(user_model.ActionsUserID), authResult.User().ID)
 		isActionsToken, authTaskID := authResult.ActionsTaskID().Get()
 		assert.True(t, isActionsToken)
@@ -53,9 +56,13 @@ func TestUserIDFromToken(t *testing.T) {
 		o := OAuth2{}
 		for name, c := range cases {
 			t.Run(name, func(t *testing.T) {
-				authResult, err := o.userIDFromToken(t.Context(), c.Token)
+				output := o.userIDFromToken(t.Context(), c.Token)
+
+				ar, authFailure := output.(*auth_service.AuthenticationAttemptedIncorrectCredential)
+				require.True(t, authFailure, "expected type AuthenticationAttemptedIncorrectCredential, but was: %#v", output)
+				err := ar.Error
+
 				require.ErrorIs(t, err, c.Error)
-				assert.Nil(t, authResult)
 			})
 		}
 	})

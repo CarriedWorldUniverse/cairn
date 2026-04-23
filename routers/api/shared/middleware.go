@@ -60,13 +60,25 @@ func buildAuthGroup() *auth_method.Group {
 
 func apiAuthentication(authMethod auth.Method) func(*context.APIContext) {
 	return func(ctx *context.APIContext) {
-		ar, err := common.AuthShared(ctx.Base, nil, authMethod)
-		if err != nil {
-			ctx.Error(http.StatusUnauthorized, "APIAuth", err)
+		output := common.AuthShared(ctx.Base, nil, authMethod)
+		var ar auth.AuthenticationResult
+		switch v := output.(type) {
+		case *auth.AuthenticationSuccess:
+			ar = v.Result
+		case *auth.AuthenticationNotAttempted:
+			ar = &auth.UnauthenticatedResult{}
+		case *auth.AuthenticationAttemptedIncorrectCredential:
+			ctx.Error(http.StatusUnauthorized, "APIAuth", v.Error)
+			return
+		case *auth.AuthenticationError:
+			ctx.ServerError("authentication error", v.Error)
+			return
+		default:
+			ctx.ServerError("authentication error", errors.New("unexpected result from common.AuthShared"))
 			return
 		}
 		if ar == nil {
-			ctx.Error(http.StatusInternalServerError, "apiAuthentication nil authentication result", errors.New("nil authentication result"))
+			ctx.ServerError("nil authentication result", errors.New("nil authentication result"))
 			return
 		}
 		ctx.Doer = ar.User()

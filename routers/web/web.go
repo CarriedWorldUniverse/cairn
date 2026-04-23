@@ -6,6 +6,7 @@ package web
 
 import (
 	gocontext "context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -120,14 +121,28 @@ func buildAuthGroup() *auth_method.Group {
 
 func webAuth(authMethod auth_service.Method) func(*context.Context) {
 	return func(ctx *context.Context) {
-		ar, err := common.AuthShared(ctx.Base, ctx.Session, authMethod)
-		if err != nil {
-			log.Info("Failed to verify user: %v", err)
+		output := common.AuthShared(ctx.Base, ctx.Session, authMethod)
+		var ar auth_service.AuthenticationResult
+		switch v := output.(type) {
+		case *auth_service.AuthenticationSuccess:
+			ar = v.Result
+		case *auth_service.AuthenticationNotAttempted:
+			ar = &auth_service.UnauthenticatedResult{}
+		case *auth_service.AuthenticationAttemptedIncorrectCredential:
 			ctx.Error(http.StatusUnauthorized, ctx.Locale.TrString("auth.unauthorized_credentials", "https://codeberg.org/forgejo/forgejo/issues/2809"))
+			return
+		case *auth_service.AuthenticationError:
+			// Don't reveal the internal server error details to the user as they may contain sensitive details -- log
+			// the details, return a generic error.
+			log.Error("internal error during authentication: %v", v.Error)
+			ctx.ServerError("authentication error", errors.New("internal server error in authentication"))
+			return
+		default:
+			ctx.ServerError("authentication error", errors.New("unexpected result from common.AuthShared"))
 			return
 		}
 		if ar == nil {
-			ctx.Error(http.StatusInternalServerError, "webAuth nil authentication result")
+			ctx.ServerError("nil authentication result", errors.New("nil authentication result"))
 			return
 		}
 		ctx.Doer = ar.User()

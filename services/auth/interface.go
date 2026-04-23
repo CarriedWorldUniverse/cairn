@@ -23,12 +23,48 @@ type SessionStore session.Store
 
 // Method represents an authentication method (plugin) for HTTP requests.
 type Method interface {
-	// Verify tries to verify the authentication data contained in the request. If verification is successful returns an
-	// AuthenticationResult implementation with details about the authentication, or, may return an
-	// AnonymousAuthentication if the authentication method doesn't indicate that the request is authenticated. An error
-	// is only returned if a failure occurred while checking authentication.
-	Verify(http *http.Request, w http.ResponseWriter, sess SessionStore) (AuthenticationResult, error)
+	// Verify tries to validate credentials provided in the request, and returns one of the [MethodOutput] results
+	// indicating the result of its validation.
+	Verify(http *http.Request, w http.ResponseWriter, sess SessionStore) MethodOutput
 }
+
+// When attempting to authenticate with an authentication [Method], one of the MethodOutput implementations must be
+// returned. This interface serves as a enum of supported outputs, plus related values for each enum. Outputs are
+// [AuthenticationSuccess], [AuthenticationNotAttempted], [AuthenticationAttemptedWithFailure], and
+// [AuthenticationError].
+type MethodOutput interface {
+	isMethodOutput()
+}
+
+// Authentication positively identified the incoming request as successfully authenticated with the result in the
+// attached [AuthenticationResult]. For example, if a username and password were provided and we confirmed that those
+// credentials matched an existing user in the database, then AuthenticationSuccess would be returned.
+type AuthenticationSuccess struct {
+	Result AuthenticationResult
+}
+
+// Authentication method was not found to be applicable for the given request. For example, if a request did not contain
+// `Authorization: Basic ...`, then a basic authentication method would return AuthenticationNotAttempted to indicate
+// that this method didn't apply to the incoming request.
+type AuthenticationNotAttempted struct{}
+
+// Authentication method was attempted against the request and positively identified to be an incorrect credential. For
+// example, if a request contained `Authorization: Basic ...`, and the username and password that were provided were
+// found to not match any user, AuthenticationAttemptedIncorrectCredential would be returned. This is typically an
+// indicator of a `401 Unauthorized ...` response.
+type AuthenticationAttemptedIncorrectCredential struct {
+	Error error
+}
+
+// Authentication was attempted and an unexpected internal error occurred.
+type AuthenticationError struct {
+	Error error
+}
+
+func (*AuthenticationSuccess) isMethodOutput()                      {}
+func (*AuthenticationNotAttempted) isMethodOutput()                 {}
+func (*AuthenticationAttemptedIncorrectCredential) isMethodOutput() {}
+func (*AuthenticationError) isMethodOutput()                        {}
 
 // PasswordAuthenticator represents a source of authentication
 type PasswordAuthenticator interface {

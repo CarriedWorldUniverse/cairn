@@ -6,7 +6,7 @@ package method
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -146,16 +146,16 @@ func parseToken(req *http.Request) (string, bool) {
 // userIDFromToken returns the user id corresponding to the OAuth token.
 // It will set 'IsApiToken' to true if the token is an API token and
 // set 'ApiTokenScope' to the scope of the access token
-func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string) (auth.AuthenticationResult, error) {
+func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string) auth.MethodOutput {
 	if tokenSHA == "" {
-		return nil, auth_model.ErrAccessTokenEmpty{}
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: auth_model.ErrAccessTokenEmpty{}}
 	}
 	// Let's see if token is valid.
 	if strings.Contains(tokenSHA, ".") {
 		// First attempt to decode an actions JWT, returning the actions user
 		if taskID, err := actions.TokenToTaskID(tokenSHA); err == nil {
 			if CheckTaskIsRunning(ctx, taskID) {
-				return &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: taskID}, nil
+				return &auth.AuthenticationSuccess{Result: &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: taskID}}
 			}
 		}
 
@@ -171,12 +171,12 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string) (auth.Aut
 		}
 		user, err := user_model.GetPossibleUserByID(ctx, uid)
 		if err != nil {
-			if !user_model.IsErrUserNotExist(err) {
-				log.Error("GetUserByName: %v", err)
+			if user_model.IsErrUserNotExist(err) {
+				return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 			}
-			return nil, err
+			return &auth.AuthenticationError{Error: fmt.Errorf("oauth2 GetPossibleUserByID: %w", err)}
 		}
-		return &oAuth2JWTAuthenticationResult{user: user, scope: accessTokenScope}, nil
+		return &auth.AuthenticationSuccess{Result: &oAuth2JWTAuthenticationResult{user: user, scope: accessTokenScope}}
 	}
 
 	t, err := auth_model.GetAccessTokenBySHA(ctx, tokenSHA)
@@ -186,63 +186,50 @@ func (o *OAuth2) userIDFromToken(ctx context.Context, tokenSHA string) (auth.Aut
 			task, err := actions_model.GetRunningTaskByToken(ctx, tokenSHA)
 			if err == nil && task != nil {
 				log.Trace("Basic Authorization: Valid AccessToken for task[%d]", task.ID)
-				return &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: task.ID}, nil
+				return &auth.AuthenticationSuccess{Result: &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: task.ID}}
 			}
 		} else if !auth_model.IsErrAccessTokenNotExist(err) && !auth_model.IsErrAccessTokenEmpty(err) {
-			log.Error("GetAccessTokenBySHA: %v", err)
-			return nil, err
+			return &auth.AuthenticationError{Error: fmt.Errorf("oauth2 GetAccessTokenBySHA: %w", err)}
 		}
-		return nil, err
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 	if err := t.UpdateLastUsed(ctx); err != nil {
 		log.Error("UpdateLastUsed: %v", err)
 	}
 	if t.UID == 0 {
-		return nil, auth_model.ErrAccessTokenNotExist{}
+		return &auth.AuthenticationAttemptedIncorrectCredential{Error: err}
 	}
 
 	reducer, err := authz.GetAuthorizationReducerForAccessToken(ctx, t)
 	if err != nil {
-		log.Error("authz.GetAuthorizationReducerForAccessToken: %v", err)
-		return nil, err
+		return &auth.AuthenticationError{Error: fmt.Errorf("oauth2 GetAuthorizationReducerForAccessToken: %w", err)}
 	}
 
 	u, err := user_model.GetUserByID(ctx, t.UID)
 	if err != nil {
-		log.Error("GetUserByID:  %v", err)
-		return nil, err
+		return &auth.AuthenticationError{Error: fmt.Errorf("oauth2 GetUserByID: %w", err)}
 	}
 
-	return &accessTokenAuthenticationResult{user: u, scope: t.Scope, reducer: reducer}, nil
+	return &auth.AuthenticationSuccess{Result: &accessTokenAuthenticationResult{user: u, scope: t.Scope, reducer: reducer}}
 }
 
 // Verify extracts the user ID from the OAuth token in the query parameters
 // or the "Authorization" header and returns the corresponding user object for that ID.
 // If verification is successful returns an existing user object.
 // Returns nil if verification fails.
-func (o *OAuth2) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) (auth.AuthenticationResult, error) {
+func (o *OAuth2) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) auth.MethodOutput {
 	// These paths are not API paths, but we still want to check for tokens because they maybe in the API returned URLs
 	if !middleware.IsAPIPath(req) && !isAttachmentDownload(req) && !isAuthenticatedTokenRequest(req) &&
 		!isGitRawOrAttachPath(req) && !isArchivePath(req) {
-		return &auth.UnauthenticatedResult{}, nil
+		return &auth.AuthenticationNotAttempted{}
 	}
 
 	token, ok := parseToken(req)
 	if !ok {
-		return &auth.UnauthenticatedResult{}, nil
+		return &auth.AuthenticationNotAttempted{}
 	}
 
-	auth, err := o.userIDFromToken(req.Context(), token)
-	if err != nil {
-		return nil, err
-	} else if auth.User() == nil {
-		// Having successfully found a token, it's now expected that the only valid outcomes are either errors that
-		// result in 401s (if the token wasn't valid), or valid authentication as a user. If we reach here, we've missed
-		// those expected outcomes and somehow returned an unauthenticated response even though a token was provided.
-		return nil, errors.New("unexpected unauthenticated result from userIDFromToken")
-	}
-	log.Trace("OAuth2 Authorization: Logged in user %-v", auth.User())
-	return auth, nil
+	return o.userIDFromToken(req.Context(), token)
 }
 
 func isAuthenticatedTokenRequest(req *http.Request) bool {
