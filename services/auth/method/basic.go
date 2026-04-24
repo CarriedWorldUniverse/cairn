@@ -10,18 +10,15 @@ import (
 	"net/http"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
 	auth_model "forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/auth"
 	"forgejo.org/services/auth/source/db"
-	"forgejo.org/services/authz"
 )
 
 // Ensure the struct implements the interface.
@@ -34,10 +31,8 @@ var (
 // header.
 type Basic struct{}
 
-// Verify extracts and validates Basic data (username and password/token) from the
-// "Authorization" header of the request and returns the corresponding user object for that
-// name/token on successful validation.
-// Returns nil if header is empty or validation fails.
+// Verify extracts and validates Basic data (username and password/token) from the "Authorization" header of the request
+// and returns the corresponding user object for that name/token on successful validation.
 func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionStore) auth.MethodOutput {
 	// Basic authentication should only fire on API, Download or on Git or LFSPaths
 	if !middleware.IsAPIPath(req) && !isContainerPath(req) && !isAttachmentDownload(req) && !isGitRawOrAttachOrLFSPath(req) {
@@ -55,67 +50,6 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionS
 	}
 
 	uname, passwd, _ := base.BasicAuthDecode(auths[1])
-
-	// Check if username or password is a token
-	isUsernameToken := len(passwd) == 0 || passwd == "x-oauth-basic"
-	// Assume username is token
-	authToken := uname
-	if !isUsernameToken {
-		log.Trace("Basic Authorization: Attempting login for: %s", uname)
-		// Assume password is token
-		authToken = passwd
-	} else {
-		log.Trace("Basic Authorization: Attempting login with username as token")
-	}
-
-	// check oauth2 token
-	uid, grantScopes := CheckOAuthAccessToken(req.Context(), authToken)
-	if uid != 0 {
-		log.Trace("Basic Authorization: Valid OAuthAccessToken for user[%d]", uid)
-
-		u, err := user_model.GetUserByID(req.Context(), uid)
-		if err != nil {
-			return &auth.AuthenticationError{Error: fmt.Errorf("basic auth GetUserByID: %w", err)}
-		}
-
-		var scope auth_model.AccessTokenScope
-		if grantScopes != "" {
-			scope = auth_model.AccessTokenScope(grantScopes)
-		} else {
-			scope = auth_model.AccessTokenScopeAll // fallback to all
-		}
-		return &auth.AuthenticationSuccess{Result: &oAuth2JWTAuthenticationResult{user: u, scope: optional.Some(scope)}}
-	}
-
-	// check personal access token
-	token, err := auth_model.GetAccessTokenBySHA(req.Context(), authToken)
-	if err == nil {
-		log.Trace("Basic Authorization: Valid AccessToken for user[%d]", token.UID)
-		u, err := user_model.GetUserByID(req.Context(), token.UID)
-		if err != nil {
-			return &auth.AuthenticationError{Error: fmt.Errorf("basic auth GetUserByID for access token: %w", err)}
-		}
-
-		if err = token.UpdateLastUsed(req.Context()); err != nil {
-			log.Error("UpdateLastUsed:  %v", err)
-		}
-
-		reducer, err := authz.GetAuthorizationReducerForAccessToken(req.Context(), token)
-		if err != nil {
-			return &auth.AuthenticationError{Error: fmt.Errorf("basic auth GetAuthorizationReducerForAccessToken: %w", err)}
-		}
-
-		return &auth.AuthenticationSuccess{Result: &accessTokenAuthenticationResult{user: u, scope: token.Scope, reducer: reducer}}
-	} else if !auth_model.IsErrAccessTokenNotExist(err) && !auth_model.IsErrAccessTokenEmpty(err) {
-		log.Error("GetAccessTokenBySha: %v", err)
-	}
-
-	// check task token
-	task, err := actions_model.GetRunningTaskByToken(req.Context(), authToken)
-	if err == nil && task != nil {
-		log.Trace("Basic Authorization: Valid AccessToken for task[%d]", task.ID)
-		return &auth.AuthenticationSuccess{Result: &actionsTaskTokenAuthenticationResult{user: user_model.NewActionsUser(), taskID: task.ID}}
-	}
 
 	if !setting.Service.EnableBasicAuth {
 		return &auth.AuthenticationAttemptedIncorrectCredential{Error: errors.New("basic authentication by username & password is disabled")}
@@ -147,7 +81,6 @@ func (b *Basic) Verify(req *http.Request, w http.ResponseWriter, _ auth.SessionS
 	}
 
 	log.Trace("Basic Authorization: Logged in user %-v", u)
-
 	return &auth.AuthenticationSuccess{Result: &basicPaswordAuthenticationResult{user: u}}
 }
 

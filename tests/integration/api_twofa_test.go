@@ -6,6 +6,7 @@ package integration
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -82,7 +83,7 @@ func TestAPIWebAuthn(t *testing.T) {
 
 	DecodeJSON(t, resp, &userParsed)
 
-	assert.Equal(t, "Basic authorization is not allowed while having security keys enrolled", userParsed.Message)
+	assert.Contains(t, userParsed.Message, "Basic authorization is not allowed while having security keys enrolled\n")
 }
 
 func TestAPIWithRequiredTwoFactor(t *testing.T) {
@@ -144,7 +145,14 @@ func TestAPIWithRequiredTwoFactor(t *testing.T) {
 			var response userResponse
 			DecodeJSON(t, resp, &response)
 
-			assert.True(t, strings.HasPrefix(response.Message, messagePrefix))
+			assert.True(t,
+				slices.ContainsFunc(
+					strings.Split(response.Message, "\n"),
+					func(msg string) bool {
+						return strings.HasPrefix(msg, messagePrefix)
+					},
+				),
+				"expected prefix %q, but response message was %q", messagePrefix, response.Message)
 		}
 	}
 
