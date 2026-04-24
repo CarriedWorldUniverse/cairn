@@ -5,7 +5,6 @@
 package actions
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"html/template"
@@ -26,14 +25,11 @@ import (
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/templates"
-	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	actions_service "forgejo.org/services/actions"
 	app_context "forgejo.org/services/context"
-
-	"xorm.io/builder"
 )
 
 func RedirectToLatestAttempt(ctx *app_context.Context) {
@@ -591,40 +587,15 @@ func Logs(ctx *app_context.Context) {
 func Cancel(ctx *app_context.Context) {
 	runIndex := ctx.ParamsInt64("run")
 
-	_, jobs := getRunJobs(ctx, runIndex, -1)
-	if ctx.Written() {
-		return
-	}
-
-	if err := db.WithTx(ctx, func(ctx context.Context) error {
-		for _, job := range jobs {
-			status := job.Status
-			if status.IsDone() {
-				continue
-			}
-			if job.TaskID == 0 {
-				job.Status = actions_model.StatusCancelled
-				job.Stopped = timeutil.TimeStampNow()
-				n, err := actions_service.UpdateRunJob(ctx, job, builder.Eq{"task_id": 0}, "status", "stopped")
-				if err != nil {
-					return err
-				}
-				if n == 0 {
-					return errors.New("job has changed, try again")
-				}
-				continue
-			}
-			if err := actions_service.StopTask(ctx, job.TaskID, actions_model.StatusCancelled); err != nil {
-				return err
-			}
-		}
-		return nil
-	}); err != nil {
+	run, err := actions_model.GetRunByIndex(ctx, ctx.Repo.Repository.ID, runIndex)
+	if err != nil {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	actions_service.CreateCommitStatus(ctx, jobs...)
+	if err := actions_service.CancelRun(ctx, run); err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	ctx.JSON(http.StatusOK, struct{}{})
 }

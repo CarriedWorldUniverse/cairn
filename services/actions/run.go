@@ -27,7 +27,7 @@ func killRun(ctx context.Context, run *actions_model.ActionRun, newStatus action
 			if job.TaskID == 0 {
 				job.Status = newStatus
 				job.Stopped = timeutil.TimeStampNow()
-				_, err := actions_model.UpdateRunJobWithoutNotification(ctx, job, nil, "status", "stopped")
+				_, err := UpdateRunJob(ctx, job, nil, "status", "stopped")
 				if err != nil {
 					return err
 				}
