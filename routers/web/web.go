@@ -111,6 +111,12 @@ func buildAuthGroup() *auth_method.Group {
 	group.Add(&auth_method.OAuth2{}) // FIXME: this should be removed and only applied in download and oauth related routers
 	group.Add(&auth_method.Basic{})  // FIXME: this should be removed and only applied in download and git/lfs routers
 
+	// FIXME: extracted from OAuth2 & Basic -- these methods have internal URL filters that should be moved into
+	// middlewares (if we can figure out the right way to do that), similar to the notes on OAuth2 & Basic above.
+	group.Add(&auth_method.AccessToken{})
+	group.Add(&auth_method.ActionRuntimeToken{})
+	group.Add(&auth_method.ActionTaskToken{})
+
 	if setting.Service.EnableReverseProxyAuth {
 		group.Add(&auth_method.ReverseProxy{}) // reverseproxy should before Session, otherwise the header will be ignored if user has login
 	}

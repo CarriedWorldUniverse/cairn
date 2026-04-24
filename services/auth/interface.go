@@ -97,9 +97,9 @@ type AuthenticationResult interface {
 	// Identifies if the authentication was performed by a reverse proxy.
 	IsReverseProxyAuthentication() bool
 
-	// Identifies specifically that the OAuth2 JWT authentication method was used. If so, some related OAuth2 API
-	// endpoints may be accessible that otherwise wouldn't be.
-	IsOAuth2JWTAuthentication() bool
+	// Defined scopes of the [OAuth2Grant] as a comma-separated string, if authenticated via an OAuth access token JWT.
+	// Otherwise, None.
+	OAuth2GrantScopes() optional.Option[string]
 
 	// If authenticated as an Actions task (using ${{ forgejo.token }}), then indicates the specific task that performed
 	// the authentication.
@@ -108,8 +108,8 @@ type AuthenticationResult interface {
 
 type BaseAuthenticationResult struct{}
 
-func (*BaseAuthenticationResult) IsOAuth2JWTAuthentication() bool {
-	return false
+func (*BaseAuthenticationResult) OAuth2GrantScopes() optional.Option[string] {
+	return optional.None[string]()
 }
 
 func (*BaseAuthenticationResult) IsPasswordAuthentication() bool {

@@ -33,7 +33,6 @@ import (
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/modules/web/middleware"
-	auth_method "forgejo.org/services/auth/method"
 	source_service "forgejo.org/services/auth/source"
 	"forgejo.org/services/auth/source/oauth2"
 	"forgejo.org/services/context"
@@ -294,7 +293,9 @@ func ifOnlyPublicGroups(scopes string) bool {
 
 // InfoOAuth manages request for userinfo endpoint
 func InfoOAuth(ctx *context.Context) {
-	if ctx.Doer == nil || !ctx.Authentication.IsOAuth2JWTAuthentication() {
+	hasGrantScopes, grantScopes := ctx.Authentication.OAuth2GrantScopes().Get()
+
+	if ctx.Doer == nil || !hasGrantScopes {
 		ctx.Resp.Header().Set("WWW-Authenticate", `Bearer realm=""`)
 		ctx.PlainText(http.StatusUnauthorized, "no valid authorization")
 		return
@@ -308,17 +309,7 @@ func InfoOAuth(ctx *context.Context) {
 		Picture:  ctx.Doer.AvatarLink(ctx),
 	}
 
-	var token string
-	if auHead := ctx.Req.Header.Get("Authorization"); auHead != "" {
-		auths := strings.Fields(auHead)
-		if len(auths) == 2 && (auths[0] == "token" || strings.ToLower(auths[0]) == "bearer") {
-			token = auths[1]
-		}
-	}
-
-	_, grantScopes := auth_method.CheckOAuthAccessToken(ctx, token)
 	onlyPublicGroups := ifOnlyPublicGroups(grantScopes)
-
 	groups, err := getOAuthGroupsForUser(ctx, ctx.Doer, onlyPublicGroups)
 	if err != nil {
 		ctx.ServerError("Oauth groups for user", err)

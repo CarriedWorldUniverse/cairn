@@ -193,6 +193,9 @@ func CommonRoutes() *web.Route {
 	verifyAuth(r, []auth.Method{
 		&auth_method.OAuth2{},
 		&auth_method.Basic{},
+		&auth_method.AccessToken{},
+		&auth_method.ActionRuntimeToken{},
+		&auth_method.ActionTaskToken{},
 		&nuget.Auth{},
 		&conan.Auth{},
 		&chef.Auth{},
@@ -836,7 +839,13 @@ func ContainerRoutes() *web.Route {
 
 	r.Use(context.PackageContexter())
 
-	verifyContainerAuth(r, []auth.Method{&auth_method.Basic{}, &container.Auth{}})
+	verifyContainerAuth(r, []auth.Method{
+		&auth_method.Basic{},
+		&auth_method.AccessToken{},
+		&auth_method.ActionRuntimeToken{},
+		&auth_method.ActionTaskToken{},
+		&container.Auth{},
+	})
 
 	r.Get("", container.ReqContainerAccess, container.DetermineSupport)
 	r.Group("/token", func() {
