@@ -233,17 +233,37 @@ td .commit-summary {
 }
 
 /* this is what limits the commit table width to a value that works on all viewport sizes */
-#repo-files-table th:first-of-type {
+.repo-files-table-latest-commit-left {
   max-width: calc(calc(min(100vw, 1280px)) - 145px - calc(2 * var(--page-margin-x)));
 }
 
-.repository.file.list #repo-files-table thead th {
+.repo-files-table-latest-commit-cell {
   font-weight: var(--font-weight-normal);
+  background: var(--color-box-header);
+  text-align: inherit;
+  color: var(--color-text);
+  vertical-align: inherit;
+  border-left: none;
+  padding: 6px 5px 6px 10px;
+}
+
+.latest-commit .commit-summary {
+  white-space: nowrap;
 }
 
 .repository.file.list #repo-files-table tbody .svg {
   margin-left: 3px;
   margin-right: 5px;
+}
+
+@media (min-width: 767.98px) {
+  #repo-files-table tbody > tr.commit-list td {
+    border-bottom: 1px solid var(--color-secondary);
+  }
+
+  #repo-files-table tbody > tr:is(.entry, .has-parent):nth-child(2) td {
+    border-top: none;
+  }
 }
 
 .repository.file.list #repo-files-table tbody .svg.octicon-reply {
@@ -262,7 +282,7 @@ td .commit-summary {
   color: var(--color-secondary-dark-7);
 }
 
-.repository.file.list #repo-files-table td {
+.repository.file.list #repo-files-table td:not(.repo-files-table-latest-commit-cell) {
   padding-top: 0;
   padding-bottom: 0;
   overflow: initial;
@@ -328,7 +348,7 @@ td .commit-summary {
   padding-bottom: 8px;
 }
 
-.repository.file.list #repo-files-table td a {
+.repository.file.list #repo-files-table td a:not(.sha, .author-wrapper) {
   padding-top: 8px;
   padding-bottom: 8px;
 }
