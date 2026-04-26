@@ -153,7 +153,9 @@ func (run *ActionRun) LoadAttributes(ctx context.Context) error {
 
 	if run.TriggerUser == nil {
 		u, err := user_model.GetPossibleUserByID(ctx, run.TriggerUserID)
-		if err != nil {
+		if user_model.IsErrUserNotExist(err) {
+			u = user_model.NewGhostUser()
+		} else if err != nil {
 			return err
 		}
 		run.TriggerUser = u
