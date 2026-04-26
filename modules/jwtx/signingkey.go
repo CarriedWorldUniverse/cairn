@@ -469,3 +469,97 @@ func InitAsymmetricSigningKey(keyPath, algorithm string) (SigningKey, error) {
 
 	return signingKey, nil
 }
+
+func requiredJWKStr(jwk map[string]any, key string) (string, error) {
+	vAny, ok := jwk[key]
+	if !ok {
+		return "", fmt.Errorf("JWK missing required field %q", key)
+	}
+	vStr, ok := vAny.(string)
+	if !ok {
+		return "", fmt.Errorf("JWK field %q must be string, but was %T", key, vAny)
+	}
+	return vStr, nil
+}
+
+// Reconstructs public key from a JWKS entry (such as those produced by [SigningKey.ToJWK]), parsing the JWK output and
+// returning a key object.  The key object produced must be usable for [jwt.SigningMethod] interface's [Verify] method,
+// for the related signing method -- an [rsa.PublicKey] object, an [ed25519.PublicKey] object, or [ecdsa.PublicKey]
+// object, with the currently supported asymmetric algorithms.
+func ParseJWKToPublicKey(jwk map[string]any) (any, error) {
+	kty := jwk["kty"]
+
+	switch kty {
+	case "RSA":
+		eStr, err := requiredJWKStr(jwk, "e")
+		if err != nil {
+			return nil, err
+		}
+		nStr, err := requiredJWKStr(jwk, "n")
+		if err != nil {
+			return nil, err
+		}
+		eBytes, err := base64.RawURLEncoding.DecodeString(eStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid RSA JWK 'e' field: %w", err)
+		}
+		nBytes, err := base64.RawURLEncoding.DecodeString(nStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid RSA JWK 'n' field: %w", err)
+		}
+		pubKey := &rsa.PublicKey{
+			E: int(new(big.Int).SetBytes(eBytes).Int64()),
+			N: new(big.Int).SetBytes(nBytes),
+		}
+		return pubKey, nil
+	case "OKP":
+		if jwk["crv"] != "Ed25519" {
+			return nil, fmt.Errorf("OKP curve %d is not supported; only Ed25519", jwk["crv"])
+		}
+		xStr, err := requiredJWKStr(jwk, "x")
+		if err != nil {
+			return nil, err
+		}
+		xBytes, err := base64.RawURLEncoding.DecodeString(xStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid EdDSA JWK 'x' field: %w", err)
+		}
+		return ed25519.PublicKey(xBytes), nil
+	case "EC":
+		xStr, err := requiredJWKStr(jwk, "x")
+		if err != nil {
+			return nil, err
+		}
+		yStr, err := requiredJWKStr(jwk, "y")
+		if err != nil {
+			return nil, err
+		}
+		var curve elliptic.Curve
+		switch jwk["crv"] {
+		case "P-256":
+			curve = elliptic.P256()
+		case "P-384":
+			curve = elliptic.P384()
+		case "P-521":
+			curve = elliptic.P521()
+		default:
+			return nil, fmt.Errorf("unsupported ECDSA curve in JWK: %s", jwk["crv"])
+		}
+		xBytes, err := base64.RawURLEncoding.DecodeString(xStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ECDSA JWK 'x' field: %w", err)
+		}
+		yBytes, err := base64.RawURLEncoding.DecodeString(yStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ECDSA JWK 'y' field: %w", err)
+		}
+		pubKey := &ecdsa.PublicKey{
+			Curve: curve,
+			X:     new(big.Int).SetBytes(xBytes),
+			Y:     new(big.Int).SetBytes(yBytes),
+		}
+		return pubKey, nil
+	default:
+		return nil, fmt.Errorf("unsupported key type in JWK: %s", kty)
+	}
+}
