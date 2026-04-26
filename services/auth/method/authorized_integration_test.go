@@ -250,7 +250,7 @@ func TestAuthorizedIntegration(t *testing.T) {
 		hasScope, scope := res.Scope().Get()
 		assert.True(t, hasScope)
 		assert.Equal(t, auth_model.AccessTokenScopeAll, scope)
-		assert.Nil(t, res.Reducer())
+		assert.NotNil(t, res.Reducer())
 	})
 
 	t.Run("valid Basic JWT", func(t *testing.T) {

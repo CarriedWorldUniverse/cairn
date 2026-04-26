@@ -42,7 +42,7 @@ func TestGetAuthorizationReducerForAccessToken(t *testing.T) {
 		require.NotNil(t, specific)
 
 		require.Len(t, specific.resourceRepos, 1)
-		assert.EqualValues(t, 1, specific.resourceRepos[0].RepoID)
+		assert.EqualValues(t, 1, specific.resourceRepos[0].GetTargetRepoID())
 	})
 }
 

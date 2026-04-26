@@ -24,6 +24,10 @@ func init() {
 	db.RegisterModel(new(AccessTokenResourceRepo))
 }
 
+func (atr *AccessTokenResourceRepo) GetTargetRepoID() int64 {
+	return atr.RepoID
+}
+
 func GetRepositoriesAccessibleWithToken(ctx context.Context, accessTokenID int64) ([]*AccessTokenResourceRepo, error) {
 	var resources []*AccessTokenResourceRepo
 	err := db.GetEngine(ctx).
