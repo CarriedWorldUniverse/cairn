@@ -19,9 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetRunBefore(t *testing.T) {
-}
-
 func TestSetConcurrencyGroup(t *testing.T) {
 	run := ActionRun{}
 	run.SetConcurrencyGroup("abc123")
@@ -685,4 +682,13 @@ jobs:
 	assert.Zero(t, insertedJobs[1].Stopped)
 	assert.Zero(t, insertedJobs[1].TaskID)
 	assert.Equal(t, StatusWaiting, insertedJobs[1].Status)
+}
+
+func TestActionRunLoadAttributes(t *testing.T) {
+	run := &ActionRun{
+		RepoID:        10,
+		TriggerUserID: 1000,
+	}
+	require.NoError(t, run.LoadAttributes(t.Context()))
+	assert.Equal(t, "ghost", run.TriggerUser.LowerName)
 }
