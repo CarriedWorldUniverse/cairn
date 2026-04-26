@@ -23,6 +23,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 	"forgejo.org/services/auth"
+	"forgejo.org/services/authz"
 
 	"github.com/gobwas/glob"
 	"github.com/golang-jwt/jwt/v5"
@@ -204,11 +205,16 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 		log.Error("UpdateLastUsed:  %v", err)
 	}
 
+	reducer, err := authz.GetAuthorizationReducerForAuthorizedIntegration(req.Context(), authorizedIntegration)
+	if err != nil {
+		return &auth.AuthenticationError{Error: fmt.Errorf("authorized integration GetAuthorizationReducerForAuthorizedIntegration: %w", err)}
+	}
+
 	return &auth.AuthenticationSuccess{
 		Result: &authorizedIntegrationAuthenticationResult{
-			user:  u,
-			scope: authorizedIntegration.Scope,
-			// TODO: add repo-specific access with an authz reducer
+			user:    u,
+			scope:   authorizedIntegration.Scope,
+			reducer: reducer,
 		},
 	}
 }

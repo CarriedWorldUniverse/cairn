@@ -8,14 +8,16 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/optional"
 	"forgejo.org/services/auth"
+	"forgejo.org/services/authz"
 )
 
 var _ auth.AuthenticationResult = &authorizedIntegrationAuthenticationResult{}
 
 type authorizedIntegrationAuthenticationResult struct {
 	*auth.BaseAuthenticationResult
-	user  *user_model.User
-	scope auth_model.AccessTokenScope
+	user    *user_model.User
+	scope   auth_model.AccessTokenScope
+	reducer authz.AuthorizationReducer
 }
 
 func (r *authorizedIntegrationAuthenticationResult) User() *user_model.User {
@@ -24,4 +26,8 @@ func (r *authorizedIntegrationAuthenticationResult) User() *user_model.User {
 
 func (r *authorizedIntegrationAuthenticationResult) Scope() optional.Option[auth_model.AccessTokenScope] {
 	return optional.Some(r.scope)
+}
+
+func (r *authorizedIntegrationAuthenticationResult) Reducer() authz.AuthorizationReducer {
+	return r.reducer
 }

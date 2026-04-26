@@ -25,7 +25,12 @@ func GetAuthorizationReducerForAccessToken(ctx context.Context, token *auth_mode
 	if err != nil {
 		return nil, fmt.Errorf("GetRepositoriesAccessibleWithToken: %w", err)
 	}
-	return &SpecificReposAuthorizationReducer{resourceRepos: repos}, nil
+	// Cast slice into []RepoGetter
+	iface := make([]RepoGetter, len(repos))
+	for i, r := range repos {
+		iface[i] = r
+	}
+	return &SpecificReposAuthorizationReducer{resourceRepos: iface}, nil
 }
 
 // A locale lookup string for the error -- eg. `access_token.error.invalid_something`

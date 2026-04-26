@@ -4,6 +4,8 @@
 package auth
 
 import (
+	"context"
+
 	"forgejo.org/models/db"
 	"forgejo.org/modules/timeutil"
 )
@@ -24,4 +26,19 @@ type AuthorizedIntegResourceRepo struct {
 
 func init() {
 	db.RegisterModel(new(AuthorizedIntegResourceRepo))
+}
+
+func (air *AuthorizedIntegResourceRepo) GetTargetRepoID() int64 {
+	return air.RepoID
+}
+
+func GetRepositoriesAccessibleWithIntegration(ctx context.Context, aiID int64) ([]*AuthorizedIntegResourceRepo, error) {
+	var resources []*AuthorizedIntegResourceRepo
+	err := db.GetEngine(ctx).
+		Where("integ_id = ?", aiID).
+		Find(&resources)
+	if err != nil {
+		return nil, err
+	}
+	return resources, nil
 }
