@@ -33,13 +33,16 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/graceful"
 	"forgejo.org/modules/json"
+	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/keying"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/test"
 	"forgejo.org/modules/testlogger"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/routers"
+	auth_method "forgejo.org/services/auth/method"
 	"forgejo.org/services/auth/source/remote"
 	app_context "forgejo.org/services/context"
 	"forgejo.org/services/mailer"
@@ -47,6 +50,8 @@ import (
 	"forgejo.org/tests"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/golang-jwt/jwt/v5"
+	gouuid "github.com/google/uuid"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	goth_github "github.com/markbates/goth/providers/github"
@@ -778,4 +783,98 @@ func SortMailerMessages(msgs []*mailer.Message) {
 	slices.SortFunc(msgs, func(a, b *mailer.Message) int {
 		return strings.Compare(b.To, a.To)
 	})
+}
+
+type AuthorizedIntegrationTester struct {
+	t                       *testing.T
+	authorizedIntegration   *auth.AuthorizedIntegration
+	jwtSigningKey           jwtx.SigningKey
+	testServer              *httptest.Server
+	resetHTTPClient         func()
+	resetAllowLocalNetworks func()
+}
+
+func newAITester(t *testing.T, setupAI ...func(*auth.AuthorizedIntegration)) *AuthorizedIntegrationTester {
+	ait := &AuthorizedIntegrationTester{
+		t: t,
+	}
+
+	var jwtSigningKey jwtx.SigningKey
+	keyPath := filepath.Join(t.TempDir(), "jwt-rsa-2048.priv")
+	jwtSigningKey, err := jwtx.InitAsymmetricSigningKey(keyPath, "RS256")
+	require.NoError(t, err)
+	ait.jwtSigningKey = jwtSigningKey
+
+	ait.testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/actions/.well-known/openid-configuration" {
+			retval := map[string]any{
+				"issuer":                                ait.authorizedIntegration.Issuer,
+				"jwks_uri":                              fmt.Sprintf("%s/.keys", ait.authorizedIntegration.Issuer),
+				"id_token_signing_alg_values_supported": []string{"RS256"},
+			}
+			err := json.NewEncoder(w).Encode(retval)
+			require.NoError(t, err)
+			return
+		}
+		if r.URL.Path == "/api/actions/.keys" {
+			jwk, err := ait.jwtSigningKey.ToJWK()
+			require.NoError(t, err)
+			jwk["use"] = "sig"
+			retval := map[string]any{
+				"keys": []map[string]string{jwk},
+			}
+			_ = json.NewEncoder(w).Encode(retval) // no error checking -- some tests abort read
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	// trust TLS cert of our NewTLSServer  by inserting the test client for our test server in as the HTTP client to use
+	ait.resetHTTPClient = test.MockVariableValue(
+		&auth_method.GetAuthorizedIntegrationHTTPClient,
+		func() *http.Client {
+			return ait.testServer.Client()
+		})
+
+	ait.authorizedIntegration = &auth.AuthorizedIntegration{
+		UserID:   2,
+		Scope:    auth.AccessTokenScopeAll,
+		Issuer:   fmt.Sprintf("%s/api/actions", ait.testServer.URL),
+		Audience: fmt.Sprintf("https://forgejo.example.org/-/coolguy/authorized-integration/%s", gouuid.New().String()),
+		ClaimRules: &auth.ClaimRules{
+			Rules: []auth.ClaimRule{
+				{
+					Claim:      "custom-claim",
+					Comparison: auth.ClaimEqual,
+					Value:      "custom-claim-value",
+				},
+			},
+		},
+	}
+	for _, setup := range setupAI {
+		setup(ait.authorizedIntegration)
+	}
+	_, err = db.GetEngine(t.Context()).Insert(ait.authorizedIntegration)
+	require.NoError(t, err)
+
+	ait.resetAllowLocalNetworks = test.MockVariableValue(&setting.AuthorizedIntegration.AllowLocalNetworks, true)
+
+	return ait
+}
+
+func (ait *AuthorizedIntegrationTester) signedJWT() string {
+	claims := jwt.MapClaims{
+		"iss":          ait.authorizedIntegration.Issuer,
+		"aud":          ait.authorizedIntegration.Audience,
+		"custom-claim": "custom-claim-value",
+	}
+	signedToken, err := ait.jwtSigningKey.JWT(claims)
+	require.NoError(ait.t, err)
+	return signedToken
+}
+
+func (ait *AuthorizedIntegrationTester) close() {
+	ait.resetAllowLocalNetworks()
+	ait.resetHTTPClient()
+	ait.testServer.Close()
 }

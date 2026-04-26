@@ -35,6 +35,12 @@ var (
 	initHTTPClient sync.Once
 
 	errParseInternalServer = errors.New("internal server error")
+
+	// Allow mocking / overridding during tests:
+	GetAuthorizedIntegrationHTTPClient = func() *http.Client {
+		initHTTPClient.Do(initAuthorizedIntegrationHTTPClient)
+		return aiHTTPClient
+	}
 )
 
 // Restrict document size to prevent resource exhaustion attack with a malicious authorized integration; largest
@@ -247,9 +253,7 @@ func (a *AuthorizedIntegration) fetchJSON(urlString string, v any) error {
 		return fmt.Errorf("unsupported URL scheme: %q", parsedURL.String())
 	}
 
-	initHTTPClient.Do(initAuthorizedIntegrationHTTPClient)
-
-	resp, err := aiHTTPClient.Get(parsedURL.String())
+	resp, err := GetAuthorizedIntegrationHTTPClient().Get(parsedURL.String())
 	if err != nil {
 		return err
 	}
