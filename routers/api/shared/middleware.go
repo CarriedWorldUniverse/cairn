@@ -53,6 +53,7 @@ func buildAuthGroup() *auth_method.Group {
 		&auth_method.AccessToken{},
 		&auth_method.ActionRuntimeToken{},
 		&auth_method.ActionTaskToken{},
+		&auth_method.AuthorizedIntegration{},
 	)
 	if setting.Service.EnableReverseProxyAuthAPI {
 		group.Add(&auth_method.ReverseProxy{})
