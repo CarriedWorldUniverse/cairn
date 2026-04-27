@@ -1,4 +1,16 @@
 {
+	"webauthn.error.timeout": "קריאת מפתחך לקחה יותר מדי זמן. אפשר לטעון מחדש את הדף ולנסות שוב.",
+	"webauthn.error.empty": "שם המפתח הוא שדה חובה.",
+	"webauthn.error.duplicated": "מפתח האבטחה לא יכול לשמש לבקשה זו. נא לוודא שהמפתח לא רשום.",
+	"webauthn.error.unable_to_process": "שרת זה נכשל בעיבוד בקשתך.",
+	"webauthn.error.insecure": "הפרוטוקול WebAuthn לא תומך בחיבורים לא מאובטחים, למעט דרך \"localhost\" או \"127.0.0.1\"",
+	"webauthn.error.unknown": "שגיאה לא ידועה, אפשר לנסות שוב.",
+	"webauthn.unsupported_browser": "הדפדפן שלך לא תומך בWebAuthn.",
+	"webauthn.error": "קריאת מפתח האבטחה נכשלה.",
+	"webauthn.use_twofa": "השתמש בקוד אימות דו־שלבי מהטלפון שלך",
+	"webauthn.press_button": "נא ללחוץ על הכפתור שעל מפתח האבטחה…",
+	"webauthn.sign_in": "יש ללחוץ על הכפתור שעל מפתח האבטחה. אם אין כפתור, אפשר להוציא את המפתח ולחבר אותו שוב.",
+	"webauthn.insert_key": "יש להכניס את מפתח אבטחך",
 	"fork.n_forks": {
 		"one": "מזלוג אחד",
 		"two": "%s מזלוגים",

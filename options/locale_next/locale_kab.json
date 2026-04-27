@@ -1,4 +1,9 @@
 {
+	"admin.monitor.queue.settings.remove_all_items": "Kkes-iten akk",
+	"admin.monitor.queue.name": "Isem",
+	"admin.users.list_status_filter.is_admin": "Anedbal",
+	"admin.users.list_status_filter.not_active": "D arurmid",
+	"admin.users.list_status_filter.is_active": "D urmid",
 	"actions.runners.name": "Isem",
 	"actions.runners.description": "Aglam",
 	"actions.runners.task_list.repository": "Akufi",

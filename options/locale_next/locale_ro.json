@@ -1,4 +1,16 @@
 {
+	"webauthn.error.timeout": "Limita de timp a fost depășită înainte ca cheia ta să poată fi citită. Reîncarcă pagina și reîncearcă.",
+	"webauthn.error.empty": "Trebuie să setezi un nume pentru această cheie.",
+	"webauthn.error.duplicated": "Cheia de securitate nu este permisă pentru această cerere. Asigură-te că cheia nu este înregistrată deja.",
+	"webauthn.error.unable_to_process": "Serverul nu a putut procesa cererea.",
+	"webauthn.error.insecure": "WebAuthn funcționează doar prin conexiuni securizate. Pentru a testa folosind HTTP, poți folosi \"localhost\" sau \"127.0.0.1\" ca origine",
+	"webauthn.error.unknown": "O eroare necunoscută a apărut. Te rog reîncearcă.",
+	"webauthn.unsupported_browser": "Browserul tău nu are abilități WebAuthn pe moment.",
+	"webauthn.error": "Cheia de securitate nu a putut fi citită.",
+	"webauthn.use_twofa": "Folosește un cod de verificare de pe telefon",
+	"webauthn.press_button": "Apasă butonul de pe cheia de securitate…",
+	"webauthn.sign_in": "Apasă butonul de pe cheia de securitate. Dacă cheia de securitate nu are un buton, reintrodu-o.",
+	"webauthn.insert_key": "Inserează cheia de securitate",
 	"meta.last_line": " ",
 	"packages.empty": "Momentan nu există pachete."
 }

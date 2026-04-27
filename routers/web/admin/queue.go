@@ -84,6 +84,6 @@ func QueueRemoveAllItems(ctx *context.Context) {
 		return
 	}
 
-	ctx.Flash.Success(ctx.Tr("admin.monitor.queue.settings.remove_all_items_done"))
+	ctx.Flash.Success(ctx.Tr("admin.monitor.queue.settings.remove_all_items.success"))
 	ctx.Redirect(setting.AppSubURL + "/admin/monitor/queue/" + strconv.FormatInt(qid, 10))
 }

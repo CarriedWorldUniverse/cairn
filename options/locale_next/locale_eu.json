@@ -1,3 +1,15 @@
 {
+	"webauthn.error.timeout": "Zure gakoa irakurri aurretik denbora-muga gainditu da. Kargatu berriro orrialde hau eta saiatu berriro.",
+	"webauthn.error.empty": "Gako honetarako izen bat jarri behar duzu.",
+	"webauthn.error.duplicated": "Segurtasun-gakorik ez da onartzen eskaera honetarako. Mesedez, ziurtatu giltza ea dagoela erregistratuta.",
+	"webauthn.error.unable_to_process": "Zerbitzariak ezin izan du zure eskaera prozesatu.",
+	"webauthn.error.insecure": "WebAuthnek konexio seguruak baino ez ditu onartzen. HTTP bidez probatzeko, \"localhost\" edo \"127.0.0.1\" jatorria erabil daiteke",
+	"webauthn.error.unknown": "Akats ezezagun bat gertatu da. Mesedez, saiatu berriro.",
+	"webauthn.unsupported_browser": "Zure nabigatzaileak ez du WebAuthn onartzen.",
+	"webauthn.error": "Ezin izan da irakurri zure segurtasun-gakoa.",
+	"webauthn.use_twofa": "Erabili zure telefonoko bi faktoreko kodea",
+	"webauthn.press_button": "Mesedez, sakatu botoia zure segurtasun-gakoan…",
+	"webauthn.sign_in": "Sakatu botoia zure segurtasun-gakoan. Zure segurtasun-gakoak ez badu botoirik, sartu berriro.",
+	"webauthn.insert_key": "Sartu zure segurtasun-gakoa",
 	"meta.last_line": " "
 }
