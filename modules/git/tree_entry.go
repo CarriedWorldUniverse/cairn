@@ -5,6 +5,7 @@
 package git
 
 import (
+	"fmt"
 	"io"
 	"sort"
 	"strings"
@@ -136,11 +137,11 @@ func (te *TreeEntry) LinkTarget() (string, error) {
 }
 
 // FollowLink returns the entry pointed to by a symlink
-func (te *TreeEntry) FollowLink() (*TreeEntry, string, error) {
+func (te *TreeEntry) FollowLink() (*TreeEntry, error) {
 	// read the link
 	lnk, err := te.LinkTarget()
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	t := te.ptree
@@ -151,35 +152,33 @@ func (te *TreeEntry) FollowLink() (*TreeEntry, string, error) {
 	}
 
 	if t == nil {
-		return nil, "", ErrBadLink{te.Name(), "points outside of repo"}
+		return nil, ErrBadLink{te.Name(), "points outside of repo"}
 	}
 
 	target, err := t.GetTreeEntryByPath(lnk)
 	if err != nil {
 		if IsErrNotExist(err) {
-			return nil, "", ErrBadLink{te.Name(), "broken link"}
+			return nil, ErrBadLink{te.Name(), "broken link"}
 		}
-		return nil, "", err
+		return nil, err
 	}
-	return target, lnk, nil
+	return target, nil
 }
 
 // FollowLinks returns the entry ultimately pointed to by a symlink
-func (te *TreeEntry) FollowLinks() (*TreeEntry, string, error) {
+func (te *TreeEntry) FollowLinks() (*TreeEntry, error) {
 	if !te.IsLink() {
-		return nil, "", ErrBadLink{te.Name(), "not a symlink"}
+		return nil, ErrBadLink{te.Name(), "not a symlink"}
 	}
 	entry := te
-	entryLink := ""
 	for range 999 {
 		if entry.IsLink() {
-			next, link, err := entry.FollowLink()
-			entryLink = link
+			next, err := entry.FollowLink()
 			if err != nil {
-				return nil, "", err
+				return nil, err
 			}
 			if next.ID == entry.ID {
-				return nil, "", ErrBadLink{
+				return nil, ErrBadLink{
 					entry.Name(),
 					"recursive link",
 				}
@@ -190,12 +189,12 @@ func (te *TreeEntry) FollowLinks() (*TreeEntry, string, error) {
 		}
 	}
 	if entry.IsLink() {
-		return nil, "", ErrBadLink{
+		return nil, ErrBadLink{
 			te.Name(),
 			"too many levels of symbolic links",
 		}
 	}
-	return entry, entryLink, nil
+	return entry, nil
 }
 
 // returns the Tree pointed to by this TreeEntry, or nil if this is not a tree
@@ -206,6 +205,42 @@ func (te *TreeEntry) Tree() *Tree {
 	}
 	t.ptree = te.ptree
 	return t
+}
+
+// returns the calulcated path within the tree of this TreeEntry, or an error if it can be determined
+func (te *TreeEntry) Path() (string, error) {
+	targetPath := te.Name()
+	parentTree := te.ptree
+	if parentTree == nil {
+		return "", fmt.Errorf("couldn't find the parent tree of the entry")
+	}
+
+	prevID := parentTree.ID
+	parentTree = parentTree.ptree
+	for parentTree != nil {
+		entries, err := parentTree.ListEntries()
+		if err != nil {
+			return "", fmt.Errorf("couldn't list entries: %v", err)
+		}
+
+		var matchingEntry *TreeEntry
+		for _, entry := range entries {
+			if entry.ID == prevID {
+				matchingEntry = entry
+				break
+			}
+		}
+
+		if matchingEntry == nil {
+			return "", fmt.Errorf("this shouldn't happen: couldn't find entry (ID: %s) in tree (ID: %s)", prevID, parentTree.ID)
+		}
+
+		targetPath = matchingEntry.name + "/" + targetPath
+		prevID = parentTree.ID
+		parentTree = parentTree.ptree
+	}
+
+	return targetPath, nil
 }
 
 // GetSubJumpablePathName return the full path of subdirectory jumpable ( contains only one directory )
