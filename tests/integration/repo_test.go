@@ -1079,7 +1079,7 @@ func TestRepoFollowSymlink(t *testing.T) {
 
 	t.Run("Normal", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
-		assertCase(t, "/user2/readme-test/src/branch/symlink/up/back/down/down/README.md", "/user2/readme-test/src/branch/symlink/down/side/../left/right/../reelmein", true)
+		assertCase(t, "/user2/readme-test/src/branch/symlink/up/back/down/down/README.md", "/user2/readme-test/src/branch/symlink/up/down/left/reelmein", true)
 	})
 
 	t.Run("Broken symlink", func(t *testing.T) {

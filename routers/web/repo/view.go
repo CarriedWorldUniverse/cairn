@@ -120,7 +120,7 @@ func FindReadmeFileInEntries(ctx *context.Context, entries []*git.TreeEntry, try
 			log.Debug("Potential readme file: %s", entry.Name())
 			if readmeFiles[i] == nil || base.NaturalSortLess(readmeFiles[i].Name(), entry.Blob().Name()) {
 				if entry.IsLink() {
-					target, _, err := entry.FollowLinks()
+					target, err := entry.FollowLinks()
 					if err != nil && !git.IsErrBadLink(err) {
 						return "", nil, err
 					} else if target != nil && (target.IsExecutable() || target.IsRegular()) {
@@ -270,7 +270,7 @@ func getFileReader(ctx gocontext.Context, repoID int64, blob *git.Blob) ([]byte,
 func renderReadmeFile(ctx *context.Context, subfolder string, readmeFile *git.TreeEntry) {
 	target := readmeFile
 	if readmeFile != nil && readmeFile.IsLink() {
-		target, _, _ = readmeFile.FollowLinks()
+		target, _ = readmeFile.FollowLinks()
 	}
 	if target == nil {
 		// if findReadmeFile() failed and/or gave us a broken symlink (which it shouldn't)
@@ -398,11 +398,14 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 	ctx.Data["OpenGraphNoDescription"] = true
 
 	if entry.IsLink() {
-		_, link, err := entry.FollowLinks()
+		target, err := entry.FollowLinks()
 		// Errors should be allowed, because this shouldn't
 		// block rendering invalid symlink files.
 		if err == nil {
-			ctx.Data["SymlinkURL"] = ctx.Repo.RepoLink + "/src/" + ctx.Repo.BranchNameSubURL() + "/" + util.PathEscapeSegments(link)
+			targetPath, err := target.Path()
+			if err == nil {
+				ctx.Data["SymlinkURL"] = ctx.Repo.RepoLink + "/src/" + ctx.Repo.BranchNameSubURL() + "/" + util.PathEscapeSegments(targetPath)
+			}
 		}
 	}
 
