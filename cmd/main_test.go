@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -62,7 +63,12 @@ func runTestApp(app *cli.Command, args ...string) (runResult, error) {
 }
 
 func TestCliCmd(t *testing.T) {
-	defaultWorkPath := filepath.Dir(setting.AppPath)
+	path, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	defaultWorkPath := filepath.Dir(path)
 	defaultCustomPath := filepath.Join(defaultWorkPath, "custom")
 	defaultCustomConf := filepath.Join(defaultCustomPath, "conf/app.ini")
 

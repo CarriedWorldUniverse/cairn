@@ -47,7 +47,6 @@ func subcmdRegenerate() *cli.Command {
 		Name:  "regenerate",
 		Usage: "Regenerate specific files",
 		Commands: []*cli.Command{
-			microcmdRegenHooks,
 			microcmdRegenKeys,
 		},
 	}

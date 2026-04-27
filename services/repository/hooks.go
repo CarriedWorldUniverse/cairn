@@ -5,50 +5,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/webhook"
 	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-
-	"xorm.io/builder"
 )
-
-// SyncRepositoryHooks rewrites all repositories' pre-receive, update and post-receive hooks
-// to make sure the binary and custom conf path are up-to-date.
-func SyncRepositoryHooks(ctx context.Context) error {
-	log.Trace("Doing: SyncRepositoryHooks")
-
-	if err := db.Iterate(
-		ctx,
-		builder.Gt{"id": 0},
-		func(ctx context.Context, repo *repo_model.Repository) error {
-			select {
-			case <-ctx.Done():
-				return db.ErrCancelledf("before sync repository hooks for %s", repo.FullName())
-			default:
-			}
-
-			if err := repo_module.CreateDelegateHooks(repo.RepoPath()); err != nil {
-				return fmt.Errorf("SyncRepositoryHook: %w", err)
-			}
-			if repo.HasWiki() {
-				if err := repo_module.CreateDelegateHooks(repo.WikiPath()); err != nil {
-					return fmt.Errorf("SyncRepositoryHook: %w", err)
-				}
-			}
-			return nil
-		},
-	); err != nil {
-		return err
-	}
-
-	log.Trace("Finished: SyncRepositoryHooks")
-	return nil
-}
 
 // GenerateGitHooks generates git hooks from a template repository
 func GenerateGitHooks(ctx context.Context, templateRepo, generateRepo *repo_model.Repository) error {

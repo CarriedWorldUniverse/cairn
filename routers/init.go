@@ -92,8 +92,6 @@ func syncAppConfForGit(ctx context.Context) error {
 	}
 
 	if updated {
-		log.Info("re-sync repository hooks ...")
-		mustInitCtx(ctx, repo_service.SyncRepositoryHooks)
 		return system.AppState.Set(ctx, runtimeState)
 	}
 	return nil

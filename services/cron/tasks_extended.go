@@ -86,16 +86,6 @@ func registerRewriteAllPrincipalKeys() {
 	})
 }
 
-func registerRepositoryUpdateHook() {
-	RegisterTaskFatal("resync_all_hooks", &BaseConfig{
-		Enabled:    false,
-		RunAtStart: false,
-		Schedule:   "@every 72h",
-	}, func(ctx context.Context, _ *user_model.User, _ Config) error {
-		return repo_service.SyncRepositoryHooks(ctx)
-	})
-}
-
 func registerReinitMissingRepositories() {
 	RegisterTaskFatal("reinit_missing_repos", &BaseConfig{
 		Enabled:    false,
@@ -251,7 +241,6 @@ func initExtendedTasks() {
 	registerGarbageCollectRepositories()
 	registerRewriteAllPublicKeys()
 	registerRewriteAllPrincipalKeys()
-	registerRepositoryUpdateHook()
 	registerReinitMissingRepositories()
 	registerDeleteMissingRepositories()
 	registerRemoveRandomAvatars()

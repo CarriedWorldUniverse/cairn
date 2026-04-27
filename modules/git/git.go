@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -200,6 +201,11 @@ func InitFull(ctx context.Context) (err error) {
 	_, err = exec.LookPath("ssh")
 	HasSSHExecutable = err == nil
 
+	err = InitDelegateHooks(HomeDir())
+	if err != nil {
+		return nil
+	}
+
 	return syncGitConfig()
 }
 
@@ -227,6 +233,10 @@ func syncGitConfig() (err error) {
 		if err := configSetNonExist(configKey, defaultValue); err != nil {
 			return err
 		}
+	}
+
+	if err := configSet("core.hooksPath", path.Join(HomeDir(), "hooks")); err != nil {
+		return err
 	}
 
 	// Set git some configurations - these must be set to these values for forgejo to work correctly
