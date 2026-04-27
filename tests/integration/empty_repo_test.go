@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"testing"
 
 	auth_model "forgejo.org/models/auth"
@@ -44,96 +45,96 @@ func TestEmptyRepo(t *testing.T) {
 }
 
 func TestEmptyRepoAddFile(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		session := loginUser(t, "user30")
+		req := NewRequest(t, "GET", "/user30/empty/_new/"+setting.Repository.DefaultBranch)
+		resp := session.MakeRequest(t, req, http.StatusOK)
+		doc := NewHTMLParser(t, resp.Body).Find(`input[name="commit_choice"]`)
+		assert.Empty(t, doc.AttrOr("checked", "_no_"))
+		req = NewRequestWithValues(t, "POST", "/user30/empty/_new/"+setting.Repository.DefaultBranch, map[string]string{
+			"commit_choice":  "direct",
+			"tree_path":      "test-file.md",
+			"content":        "newly-added-test-file",
+			"commit_mail_id": "32",
+		})
 
-	session := loginUser(t, "user30")
-	req := NewRequest(t, "GET", "/user30/empty/_new/"+setting.Repository.DefaultBranch)
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	doc := NewHTMLParser(t, resp.Body).Find(`input[name="commit_choice"]`)
-	assert.Empty(t, doc.AttrOr("checked", "_no_"))
-	req = NewRequestWithValues(t, "POST", "/user30/empty/_new/"+setting.Repository.DefaultBranch, map[string]string{
-		"commit_choice":  "direct",
-		"tree_path":      "test-file.md",
-		"content":        "newly-added-test-file",
-		"commit_mail_id": "32",
+		resp = session.MakeRequest(t, req, http.StatusSeeOther)
+		redirect := test.RedirectURL(resp)
+		assert.Equal(t, "/user30/empty/src/branch/"+setting.Repository.DefaultBranch+"/test-file.md", redirect)
+
+		req = NewRequest(t, "GET", redirect)
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		assert.Contains(t, resp.Body.String(), "newly-added-test-file")
 	})
-
-	resp = session.MakeRequest(t, req, http.StatusSeeOther)
-	redirect := test.RedirectURL(resp)
-	assert.Equal(t, "/user30/empty/src/branch/"+setting.Repository.DefaultBranch+"/test-file.md", redirect)
-
-	req = NewRequest(t, "GET", redirect)
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	assert.Contains(t, resp.Body.String(), "newly-added-test-file")
 }
 
 func TestEmptyRepoUploadFile(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		session := loginUser(t, "user30")
+		req := NewRequest(t, "GET", "/user30/empty/_new/"+setting.Repository.DefaultBranch)
+		resp := session.MakeRequest(t, req, http.StatusOK)
+		doc := NewHTMLParser(t, resp.Body).Find(`input[name="commit_choice"]`)
+		assert.Empty(t, doc.AttrOr("checked", "_no_"))
 
-	session := loginUser(t, "user30")
-	req := NewRequest(t, "GET", "/user30/empty/_new/"+setting.Repository.DefaultBranch)
-	resp := session.MakeRequest(t, req, http.StatusOK)
-	doc := NewHTMLParser(t, resp.Body).Find(`input[name="commit_choice"]`)
-	assert.Empty(t, doc.AttrOr("checked", "_no_"))
+		body := &bytes.Buffer{}
+		mpForm := multipart.NewWriter(body)
+		file, _ := mpForm.CreateFormFile("file", "uploaded-file.txt")
+		_, _ = io.Copy(file, bytes.NewBufferString("newly-uploaded-test-file"))
+		_ = mpForm.Close()
 
-	body := &bytes.Buffer{}
-	mpForm := multipart.NewWriter(body)
-	file, _ := mpForm.CreateFormFile("file", "uploaded-file.txt")
-	_, _ = io.Copy(file, bytes.NewBufferString("newly-uploaded-test-file"))
-	_ = mpForm.Close()
+		req = NewRequestWithBody(t, "POST", "/user30/empty/upload-file", body)
+		req.Header.Add("Content-Type", mpForm.FormDataContentType())
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		respMap := map[string]string{}
+		require.NoError(t, json.Unmarshal(resp.Body.Bytes(), &respMap))
+		filesFullpathKey := fmt.Sprintf("files_fullpath[%s]", respMap["uuid"])
+		req = NewRequestWithValues(t, "POST", "/user30/empty/_upload/"+setting.Repository.DefaultBranch, map[string]string{
+			"commit_choice":  "direct",
+			"files":          respMap["uuid"],
+			filesFullpathKey: "uploaded-file.txt",
+			"tree_path":      "",
+			"commit_mail_id": "-1",
+		})
+		resp = session.MakeRequest(t, req, http.StatusSeeOther)
+		redirect := test.RedirectURL(resp)
+		assert.Equal(t, "/user30/empty/src/branch/"+setting.Repository.DefaultBranch+"/", redirect)
 
-	req = NewRequestWithBody(t, "POST", "/user30/empty/upload-file", body)
-	req.Header.Add("Content-Type", mpForm.FormDataContentType())
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	respMap := map[string]string{}
-	require.NoError(t, json.Unmarshal(resp.Body.Bytes(), &respMap))
-	filesFullpathKey := fmt.Sprintf("files_fullpath[%s]", respMap["uuid"])
-	req = NewRequestWithValues(t, "POST", "/user30/empty/_upload/"+setting.Repository.DefaultBranch, map[string]string{
-		"commit_choice":  "direct",
-		"files":          respMap["uuid"],
-		filesFullpathKey: "uploaded-file.txt",
-		"tree_path":      "",
-		"commit_mail_id": "-1",
+		req = NewRequest(t, "GET", redirect)
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		assert.Contains(t, resp.Body.String(), "uploaded-file.txt")
 	})
-	resp = session.MakeRequest(t, req, http.StatusSeeOther)
-	redirect := test.RedirectURL(resp)
-	assert.Equal(t, "/user30/empty/src/branch/"+setting.Repository.DefaultBranch+"/", redirect)
-
-	req = NewRequest(t, "GET", redirect)
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	assert.Contains(t, resp.Body.String(), "uploaded-file.txt")
 }
 
 func TestEmptyRepoAddFileByAPI(t *testing.T) {
-	defer tests.PrepareTestEnv(t)()
+	onApplicationRun(t, func(t *testing.T, _ *url.URL) {
+		session := loginUser(t, "user30")
+		token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
 
-	session := loginUser(t, "user30")
-	token := getTokenForLoggedInUser(t, session, auth_model.AccessTokenScopeWriteRepository)
+		req := NewRequestWithJSON(t, "POST", "/api/v1/repos/user30/empty/contents/new-file.txt", &api.CreateFileOptions{
+			FileOptions: api.FileOptions{
+				NewBranchName: "new_branch",
+				Message:       "init",
+			},
+			ContentBase64: base64.StdEncoding.EncodeToString([]byte("newly-added-api-file")),
+		}).AddTokenAuth(token)
 
-	req := NewRequestWithJSON(t, "POST", "/api/v1/repos/user30/empty/contents/new-file.txt", &api.CreateFileOptions{
-		FileOptions: api.FileOptions{
-			NewBranchName: "new_branch",
-			Message:       "init",
-		},
-		ContentBase64: base64.StdEncoding.EncodeToString([]byte("newly-added-api-file")),
-	}).AddTokenAuth(token)
+		resp := MakeRequest(t, req, http.StatusCreated)
+		var fileResponse api.FileResponse
+		DecodeJSON(t, resp, &fileResponse)
+		expectedHTMLURL := setting.AppURL + "user30/empty/src/branch/new_branch/new-file.txt"
+		assert.Equal(t, expectedHTMLURL, *fileResponse.Content.HTMLURL)
 
-	resp := MakeRequest(t, req, http.StatusCreated)
-	var fileResponse api.FileResponse
-	DecodeJSON(t, resp, &fileResponse)
-	expectedHTMLURL := setting.AppURL + "user30/empty/src/branch/new_branch/new-file.txt"
-	assert.Equal(t, expectedHTMLURL, *fileResponse.Content.HTMLURL)
+		req = NewRequest(t, "GET", "/user30/empty/src/branch/new_branch/new-file.txt")
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		assert.Contains(t, resp.Body.String(), "newly-added-api-file")
 
-	req = NewRequest(t, "GET", "/user30/empty/src/branch/new_branch/new-file.txt")
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	assert.Contains(t, resp.Body.String(), "newly-added-api-file")
-
-	req = NewRequest(t, "GET", "/api/v1/repos/user30/empty").
-		AddTokenAuth(token)
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	var apiRepo api.Repository
-	DecodeJSON(t, resp, &apiRepo)
-	assert.Equal(t, "new_branch", apiRepo.DefaultBranch)
+		req = NewRequest(t, "GET", "/api/v1/repos/user30/empty").
+			AddTokenAuth(token)
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		var apiRepo api.Repository
+		DecodeJSON(t, resp, &apiRepo)
+		assert.Equal(t, "new_branch", apiRepo.DefaultBranch)
+	})
 }
 
 func TestEmptyRepoAPIRequestsReturn404(t *testing.T) {
