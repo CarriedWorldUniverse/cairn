@@ -560,11 +560,8 @@
 	"actions.runners.uuid": "UUID",
 	"actions.runners.token": "Token",
 	"actions.runners.ephemeral": "Dočasný",
-	"actions.runners.list_runners.details_column": "Podrobnosti",
 	"actions.runners.list_runners.edit_column": "Upravit",
 	"actions.runners.list_runners.delete_column": "Odstranit",
-	"actions.runners.list_runners.details_button": "Podrobnosti",
-	"actions.runners.list_runners.details_button_aria": "Zobrazit podrobnosti %s",
 	"actions.runners.list_runners.delete_button": "Odstranit",
 	"actions.runners.list_runners.delete_button_aria": "Odstranit %s",
 	"actions.runners.list_runners.edit_button": "Upravit",
@@ -681,5 +678,9 @@
 	"user.activitypub_feed.is_empty": "Váš kanál Fediverse je prázdný.",
 	"user.activitypub_feed.hint": "Tento kanál zobrazuje aktivity z účtů Fediverse, které sledujete, a z federovaných příspěvků, které vás zmínily.",
 	"user.activitypub_feed.posted_on": "Zveřejněno na %[1]s",
-	"user.activitypub_feed.original_source": "Původní zdroj"
+	"user.activitypub_feed.original_source": "Původní zdroj",
+	"repo.files.caption": "Soubory repozitáře (poslední revize jako první)",
+	"repo.files.filename": "Název souboru",
+	"repo.files.last_commit_message": "Zpráva poslední revize",
+	"repo.files.last_commit_date": "Datum poslední revize"
 }
