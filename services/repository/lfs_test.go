@@ -15,31 +15,18 @@ import (
 	"forgejo.org/modules/lfs"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/storage"
+	"forgejo.org/modules/test"
 	repo_service "forgejo.org/services/repository"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var ini = `[security]
-INSTALL_LOCK = true
-INTERNAL_TOKEN = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
-[oauth2]
-JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
-[server]
-LFS_START_SERVER = true
-LFS_JWT_SECRET = ForgejoForgejoForgejoForgejoForgejoForgejo_	# don't use in prod
-	`
-
 func TestGarbageCollectLFSMetaObjects(t *testing.T) {
-	var err error
-	setting.CfgProvider, err = setting.NewConfigProviderFromData(ini)
-	require.NoError(t, err, "Config")
-	setting.LoadCommonSettings()
-
 	unittest.PrepareTestEnv(t)
 
-	err = storage.Init()
+	defer test.MockVariableValue(&setting.LFS.StartServer, true)()
+	err := storage.Init()
 	require.NoError(t, err)
 
 	repo, err := repo_model.GetRepositoryByOwnerAndName(db.DefaultContext, "user2", "lfs")
