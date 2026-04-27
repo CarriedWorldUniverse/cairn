@@ -1,4 +1,17 @@
 {
+	"markup.filepreview.truncated": "Peržiūra buvo sutrumpinta",
+	"webauthn.error.timeout": "Baigėsi laikas, per kurį nebuvo galima nuskaityti rakto. Perkraukite šį puslapį ir bandykite dar kartą.",
+	"webauthn.error.empty": "Turite nustatyti šio rakto pavadinimą.",
+	"webauthn.error.duplicated": "Saugumo raktas neleidžiamas šiai prašymai. Įsitikinkite, kad raktas dar nėra užregistruotas.",
+	"webauthn.error.unable_to_process": "Serveris negalėjo apdoroti jūsų prašymo.",
+	"webauthn.error.insecure": "„WebAuthn“ palaiko tik saugius ryšius. Bandymams per HTTP galite naudoti „localhost“ arba „127.0.0.0.1“.",
+	"webauthn.error.unknown": "Įvyko nežinoma klaida. Bandykite dar kartą.",
+	"webauthn.unsupported_browser": "Jūsų naršyklė šiuo metu nepalaiko „WebAuthn“.",
+	"webauthn.error": "Nepavyko nuskaityti saugumo rakto.",
+	"webauthn.use_twofa": "Naudoti dvigubą kodą iš telefono",
+	"webauthn.press_button": "Paspauskite saugumo rakto mygtuką…",
+	"webauthn.sign_in": "Paspauskite saugumo rakto mygtuką. Jei saugumo raktas neturi mygtuko, įkiškite jį iš naujo.",
+	"webauthn.insert_key": "Įkiškite savo saugumo raktą",
 	"search.milestone_kind": "Ieškoti gairių...",
 	"meta.last_line": " "
 }

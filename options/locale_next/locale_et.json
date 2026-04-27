@@ -1,4 +1,21 @@
 {
+	"actions.variables.deletion": "Eemalda muutuja",
+	"actions.variables.none": "Muutujaid veel pole.",
+	"actions.variables.creation": "Lisa muutuja",
+	"actions.variables.management": "Halda muutujaid",
+	"actions.variables": "Muutujad",
+	"webauthn.error.timeout": "Päring aegus enne võtme lugemist. Palun laadi see lehekülg uuesti ja proovi uuesti.",
+	"webauthn.error.empty": "Palun lisa sellele võtmele täisnimi.",
+	"webauthn.error.duplicated": "Turvavõti ei ole selle päringu puhul lubatud. Palun veendu, et võti ei ole juba registreeritud.",
+	"webauthn.error.unable_to_process": "Server ei saanud sinu päringut töödelda.",
+	"webauthn.error.insecure": "WebAuthn toetab ainult turvalisi ühendusi. HTTP kaudu testimiseks võid kasutada lähteaadressina „localhost“ või „127.0.0.1“",
+	"webauthn.error.unknown": "Tekkis tundmatu viga. Palun proovi uuesti.",
+	"webauthn.unsupported_browser": "Sinu veebibrauser ei toeta praegu WebAuthn-liidestust.",
+	"webauthn.error": "Sinu turvavõtit ei saanud lugeda.",
+	"webauthn.use_twofa": "Sisesta oma telefonist kahefaktorilise autentimise kood",
+	"webauthn.press_button": "Palun vajuta turvavõtme nuppu…",
+	"webauthn.sign_in": "Vajuta turvavõtme nuppu. Kui sinu turvavõtmel ei ole nuppu, sisesta see uuesti.",
+	"webauthn.insert_key": "Sisesta oma turvavõti",
 	"counters.n_branches": {
 		"one": "%s alamharu",
 		"other": "%s alamharu"
