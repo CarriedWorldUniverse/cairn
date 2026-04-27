@@ -1,19 +1,23 @@
 {
 	"counters.n_commits": {
 		"one": "%s commit",
-		"other": "%s commits"
+		"many": "%s commits",
+		"other": ""
 	},
 	"counters.n_branches": {
 		"one": "%s ramo",
-		"other": "%s ramos"
+		"many": "%s ramos",
+		"other": ""
 	},
 	"counters.n_tags": {
 		"one": "%s etiqueta",
-		"other": "%s etiquetas"
+		"many": "%s etiquetas",
+		"other": ""
 	},
 	"counters.n_releases": {
 		"one": "%s versão",
-		"other": "%s versões"
+		"many": "%s versões",
+		"other": ""
 	},
 	"gpg.default_key": "Assinado com a chave padrão",
 	"gpg.error.extract_sign": "Falha ao extrair assinatura",
@@ -562,5 +566,36 @@
 	"actions.runners.create_runner.page_title": "Criar novo executor",
 	"actions.runners.edit_runner_button": "Editar executor",
 	"actions.runners.task_list_user": "Tarefas recentes deste usuário neste executor",
-	"actions.runners.task_list_admin": "Tarefas recentes neste executor"
+	"actions.runners.task_list_admin": "Tarefas recentes neste executor",
+	"repo.pulls.auto_merge.no_permission": "Você não tem permissão para cancelar a mesclagem automática deste pull request.",
+	"migrate.select.title": "Migrar repositório",
+	"admin.federation.federation": "Federação",
+	"admin.federation.hosts": "Hosts",
+	"admin.federation.hosts.title": "Hosts federados",
+	"admin.federation.hosts.manage_panel": "Gerenciar hosts federados",
+	"admin.federation.hosts.details_panel": "Detalhes dos hosts federados",
+	"admin.federation.hosts.show_details": "Mostrar detalhes do host",
+	"admin.federation.host.id": "ID",
+	"admin.federation.host.fqdn": "FQDN",
+	"admin.federation.host.schema": "Schema",
+	"admin.federation.host.port": "Porta",
+	"admin.federation.host.software_name": "Software",
+	"admin.federation.host.created": "Criado em",
+	"admin.federation.host.updated": "Atualizado em",
+	"admin.federation.host.latest_activity": "Última atividade",
+	"admin.federation.users": "Usuários",
+	"admin.federation.users.title": "Usuários federados",
+	"admin.federation.users.manage_panel": "Gerenciar usuários federados",
+	"admin.federation.users.show_local_user": "Mostrar detalhes do usuário local",
+	"admin.federation.user.id": "ID",
+	"admin.federation.user.user_id": "ID do usuário local",
+	"admin.federation.user.external_id": "ID do usuário externo",
+	"access_token.error.specified_repos_and_invalid_scope": "Tokens de acesso com repositórios especificados só podem ser usados com os escopos read:issue, write:issue, read:repository e write:repository.",
+	"actions.runners.uuid": "UUID",
+	"actions.runners.token": "Token",
+	"actions.runners.ephemeral": "Efêmero",
+	"actions.runners.version": "Versão",
+	"actions.runners.list_runners.edit_column": "Editar",
+	"actions.runners.list_runners.delete_column": "Remover",
+	"actions.runners.list_runners.delete_button": "Remover"
 }

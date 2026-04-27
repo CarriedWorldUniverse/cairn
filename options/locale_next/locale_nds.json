@@ -540,11 +540,8 @@
 	"settings.specific_repo_access": "Repositoriums-Togang",
 	"actions.runners.uuid": "UUID",
 	"actions.runners.token": "Teken",
-	"actions.runners.list_runners.details_column": "Mehr Informationen",
 	"actions.runners.list_runners.edit_column": "Bewarken",
 	"actions.runners.list_runners.delete_column": "Lösken",
-	"actions.runners.list_runners.details_button": "Mehr Informationen",
-	"actions.runners.list_runners.details_button_aria": "Mehr Informatioonen över %s wiesen",
 	"actions.runners.list_runners.delete_button": "Lösken",
 	"actions.runners.list_runners.delete_button_aria": "%s lösken",
 	"actions.runners.list_runners.edit_button": "Bewarken",
@@ -661,5 +658,9 @@
 	"user.activitypub_feed.is_empty": "Dien Fediversum-Schuuv is leeg.",
 	"user.activitypub_feed.hint": "Deeser Schuuv wiest Doon vun Fediversums-Konten, wat du nagahst, un ok verdeelte Kommentaren, wat di benöömt hebben.",
 	"user.activitypub_feed.posted_on": "Up %[1]s schreven",
-	"user.activitypub_feed.original_source": "Eerste Quell"
+	"user.activitypub_feed.original_source": "Eerste Quell",
+	"repo.files.caption": "Repositoriums-Dateien (lestes Kommitteren toeerst)",
+	"repo.files.filename": "Dateinaam",
+	"repo.files.last_commit_message": "Leste Kommitterens-Naricht",
+	"repo.files.last_commit_date": "Lestes Kommitterens-Datum"
 }
