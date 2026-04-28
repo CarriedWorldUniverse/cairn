@@ -4,7 +4,6 @@
 package auth_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -14,25 +13,20 @@ import (
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
-	gouuid "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func makeAuthorizedIntegration(t *testing.T) *auth_model.AuthorizedIntegration {
 	t.Helper()
-
 	ai := &auth_model.AuthorizedIntegration{
 		UserID:           2,
 		Scope:            auth_model.AccessTokenScopeAll,
 		ResourceAllRepos: true,
 		Issuer:           "https://example.org/",
-		Audience:         fmt.Sprintf("https://forgejo.example.org/api/actions/%s", gouuid.New().String()),
 		ClaimRules:       &auth_model.ClaimRules{},
 	}
-	_, err := db.GetEngine(t.Context()).Insert(ai)
-	require.NoError(t, err)
-
+	require.NoError(t, auth_model.InsertAuthorizedIntegration(t.Context(), ai))
 	return ai
 }
 
@@ -78,4 +72,35 @@ func TestAuthorizedIntegrationUpdateLastUsed(t *testing.T) {
 	require.NoError(t, ai.UpdateLastUsed(t.Context()))
 	assert.EqualValues(t, 1777131139, ai.UpdatedUnix)                                                                                // object field updated
 	assert.EqualValues(t, 1777131139, unittest.AssertExistsAndLoadBean(t, &auth_model.AuthorizedIntegration{ID: ai.ID}).UpdatedUnix) // database field updated
+}
+
+func TestNewAuthorizedIntegration(t *testing.T) {
+	ai := &auth_model.AuthorizedIntegration{
+		UserID:           2,
+		Scope:            auth_model.AccessTokenScopeAll,
+		ResourceAllRepos: true,
+		Issuer:           "https://example.org/",
+		ClaimRules:       &auth_model.ClaimRules{},
+	}
+	require.NoError(t, auth_model.InsertAuthorizedIntegration(t.Context(), ai))
+	assert.Contains(t, ai.Audience, "u:2:")
+
+	ai = &auth_model.AuthorizedIntegration{
+		UserID:           2,
+		Scope:            auth_model.AccessTokenScopeAll,
+		ResourceAllRepos: true,
+		Issuer:           "https://example.org/",
+		Audience:         "I made my own audience",
+		ClaimRules:       &auth_model.ClaimRules{},
+	}
+	require.ErrorContains(t, auth_model.InsertAuthorizedIntegration(t.Context(), ai), "audience cannot be provided")
+
+	ai = &auth_model.AuthorizedIntegration{
+		// Forgot to set UserID
+		Scope:            auth_model.AccessTokenScopeAll,
+		ResourceAllRepos: true,
+		Issuer:           "https://example.org/",
+		ClaimRules:       &auth_model.ClaimRules{},
+	}
+	require.ErrorContains(t, auth_model.InsertAuthorizedIntegration(t.Context(), ai), "UserID must be initialized")
 }

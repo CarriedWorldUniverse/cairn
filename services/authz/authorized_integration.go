@@ -31,3 +31,10 @@ func GetAuthorizationReducerForAuthorizedIntegration(ctx context.Context, ai *au
 	}
 	return &SpecificReposAuthorizationReducer{resourceRepos: iface}, nil
 }
+
+// Validate that an authorized integration's state is valid for creation.  For example, that it doesn't have a
+// conflicting set of resources (public-only and specific repositories), and other similar checks.
+func ValidateAuthorizedIntegration(ai *auth_model.AuthorizedIntegration, repoResources []*auth_model.AuthorizedIntegResourceRepo) error {
+	// Other validations may be added here in the future.
+	return validateRepositoryResource(ai.ResourceAllRepos, ai.Scope, len(repoResources))
+}
