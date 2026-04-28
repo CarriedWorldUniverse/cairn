@@ -112,7 +112,10 @@ func getArchiverByType(outType string) (archives.ArchiverAsync, error) {
 	var archiver archives.ArchiverAsync
 	switch outType {
 	case "zip":
-		archiver = archives.Zip{}
+		archiver = archives.Zip{
+			Compression:          8,
+			SelectiveCompression: false,
+		}
 	case "tar":
 		archiver = archives.Tar{}
 	case "tar.sz":
