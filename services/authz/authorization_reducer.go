@@ -9,6 +9,8 @@ import (
 
 // Defines an API for reducing available permissions to specific resources.  Typically associated with a fine-grained
 // access tokens and provides methods to reduce authorization that the access token provides down to specific resources.
+//
+//mockery:generate: true
 type AuthorizationReducer interface {
 	// Incorporate all the methods of [RepositoryAuthorizationReducer], which allows reducing permissions related to
 	// repositories specifically.

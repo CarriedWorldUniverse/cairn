@@ -4,6 +4,8 @@
 package method
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +17,7 @@ import (
 
 	auth_model "forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/cache"
 	"forgejo.org/modules/hostmatcher"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/jwtx"
@@ -42,6 +45,7 @@ var (
 		initHTTPClient.Do(initAuthorizedIntegrationHTTPClient)
 		return aiHTTPClient
 	}
+	getCache = cache.GetCache
 )
 
 // Restrict document size to prevent resource exhaustion attack with a malicious authorized integration; largest
@@ -126,8 +130,7 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 
 			issuerOIDCURL := issuerURL.JoinPath(".well-known/openid-configuration")
 			var oidcConfig openIDConfiguration
-			// TODO: cache external OIDC configuration, with a fixed timeout (not LRU/MRU)
-			if err := a.fetchJSON(issuerOIDCURL.String(), &oidcConfig); err != nil {
+			if err := authorizedIntegrationFetchJSON(issuerOIDCURL.String(), &oidcConfig); err != nil {
 				return nil, fmt.Errorf("error when fetching .well-known/openid-configuration from %s: %w", issuerOIDCURL, err)
 			}
 
@@ -149,8 +152,7 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 				return nil, fmt.Errorf("jwks_uri host mismatch: must be the same as issuer host %q, but was %q", issuerURL.Host, jwksURI.Host)
 			}
 			var keys openIDKeys
-			// TODO: cache JWKS, with a fixed timeout (not LRU/MRU)
-			if err := a.fetchJSON(oidcConfig.JwksURI, &keys); err != nil {
+			if err := authorizedIntegrationFetchJSON(oidcConfig.JwksURI, &keys); err != nil {
 				return nil, fmt.Errorf("error when fetching JWKS from %s: %w", oidcConfig.JwksURI, err)
 			}
 
@@ -247,7 +249,56 @@ func initAuthorizedIntegrationHTTPClient() {
 	}
 }
 
-func (a *AuthorizedIntegration) fetchJSON(urlString string, v any) error {
+func authorizedIntegrationCacheKey(urlString string) string {
+	return fmt.Sprintf("auth-int-remote:%s", urlString)
+}
+
+func authorizedIntegrationCacheGetJSON[K any](urlString string, v *K) bool {
+	conn := getCache()
+	if conn == nil {
+		return false
+	}
+
+	cachedAny := conn.Get(authorizedIntegrationCacheKey(urlString))
+	if cachedAny == nil {
+		return false
+	}
+	cachedBytes, ok := cachedAny.([]byte)
+	if !ok {
+		cachedString, ok := cachedAny.(string)
+		if !ok {
+			log.Error("cached content was not []byte or string, but was %T", cachedAny)
+			return false
+		}
+		cachedBytes = []byte(cachedString)
+	}
+
+	err := json.Unmarshal(cachedBytes, &v)
+	if err != nil {
+		// This error case shouldn't occur, as we only store data in the cache once we're sure we could unmarshal it.
+		// If it does occur, log and fallback to treating as uncached.
+		log.Error("failed to Unmarshal cached content: %s", err)
+		// Caller may reuse `v` in a future unmarshal/decode call, and failure here may have polluted it.
+		var zeroValue K
+		*v = zeroValue
+		return false
+	}
+
+	return true
+}
+
+func authorizedIntegrationCacheSetJSON(urlString string, buf []byte) {
+	conn := getCache()
+	if conn == nil {
+		return
+	}
+	err := conn.Put(authorizedIntegrationCacheKey(urlString), buf, int64(setting.AuthorizedIntegration.CacheTTL.Seconds()))
+	if err != nil {
+		log.Error("failed to put cache: %s", err)
+	}
+}
+
+func authorizedIntegrationFetchJSON[K any](urlString string, v *K) error {
 	parsedURL, err := url.Parse(urlString)
 	if err != nil {
 		return fmt.Errorf("failed parsing URL %q: %w", urlString, err)
@@ -257,6 +308,11 @@ func (a *AuthorizedIntegration) fetchJSON(urlString string, v any) error {
 	// being `file://` -- the HTTP client won't permit that, but, extra safety doesn't hurt.
 	if parsedURL.Scheme != "https" {
 		return fmt.Errorf("unsupported URL scheme: %q", parsedURL.String())
+	}
+
+	// Check our cache, save a remote HTTP interaction.
+	if authorizedIntegrationCacheGetJSON(urlString, v) {
+		return nil
 	}
 
 	resp, err := GetAuthorizedIntegrationHTTPClient().Get(parsedURL.String())
@@ -269,15 +325,24 @@ func (a *AuthorizedIntegration) fetchJSON(urlString string, v any) error {
 		return fmt.Errorf("non-OK response code: %s", resp.Status)
 	}
 
-	body := io.LimitReader(resp.Body, authorizedIntegrationRequestBodyLimit)
-	decoder := json.NewDecoder(body)
-	err = decoder.Decode(&v)
+	bodyReader := io.LimitReader(resp.Body, authorizedIntegrationRequestBodyLimit)
+	var buf bytes.Buffer
+	_, err = io.Copy(bufio.NewWriter(&buf), bodyReader)
+	if err != nil {
+		return fmt.Errorf("read from remote error: %w", err)
+	}
+
+	err = json.Unmarshal(buf.Bytes(), &v)
 	if err != nil {
 		// If a decoding error is hit, decorate with information about the limited body size so that it doesn't look
 		// like the remote server provided an incomplete response. err should be something like `io.UnexpectedEOF` in
 		// this case, but it actually isn't, so don't bother trying to detect precisely.
 		return fmt.Errorf("failed to decode (response body restricted to %d bytes): %w", authorizedIntegrationRequestBodyLimit, err)
 	}
+
+	// Successfully decoded the response -- cache the raw bytes for later access.
+	authorizedIntegrationCacheSetJSON(urlString, buf.Bytes())
+
 	return nil
 }
 
