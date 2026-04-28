@@ -14,14 +14,18 @@ import (
 
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
+	"forgejo.org/modules/cache"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/jwtx"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
 	"forgejo.org/services/auth"
 
+	mc "code.forgejo.org/go-chi/cache"
 	"github.com/golang-jwt/jwt/v5"
 	gouuid "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -556,6 +560,102 @@ func TestAuthorizedIntegration(t *testing.T) {
 		writeAdmin, err := scope.HasScope(auth_model.AccessTokenScopeWriteAdmin)
 		require.NoError(t, err)
 		assert.False(t, writeAdmin, "write:admin")
+	})
+
+	t.Run("cache", func(t *testing.T) {
+		t.Run("miss and store", func(t *testing.T) {
+			c := cache.NewMockCache(t)
+			defer test.MockVariableValue(&getCache, func() mc.Cache { return c })()
+			defer test.MockVariableValue(&setting.AuthorizedIntegration.CacheTTL, 10*time.Minute)()
+
+			var cacheKey string
+			c.On("Get", mock.AnythingOfType("string")).
+				Run(func(args mock.Arguments) {
+					key := args.Get(0).(string)
+					assert.True(t, strings.HasPrefix(key, "auth-int-remote:https://"), "key %s should have key prefix", key)
+					cacheKey = key
+				}).Return(nil)
+			c.On("Put", mock.Anything, mock.Anything, mock.Anything).
+				Once().
+				Run(func(args mock.Arguments) {
+					putKey := args.Get(0).(string)
+					assert.Equal(t, cacheKey, putKey)
+					putContents := args.Get(1).([]byte)
+					assert.Contains(t, string(putContents), "\"issuer\":")
+					assert.Contains(t, string(putContents), "\"jwks_uri\":")
+					assert.EqualValues(t, 600, args.Get(2))
+				}).Return(nil)
+			c.On("Put", mock.Anything, mock.Anything, mock.Anything).
+				Once().
+				Run(func(args mock.Arguments) {
+					putKey := args.Get(0).(string)
+					assert.Equal(t, cacheKey, putKey)
+					putContents := args.Get(1).([]byte)
+					assert.Contains(t, string(putContents), "\"alg\":\"RS256\"")
+					assert.Contains(t, string(putContents), "\"kty\":\"RSA\"")
+					assert.EqualValues(t, 600, args.Get(2))
+				}).Return(nil)
+
+			ait := newAITester(t)
+			defer ait.close()
+			output := ait.bearerRequest()
+			requireOutput[*auth.AuthenticationSuccess](t, output)
+		})
+
+		t.Run("hit", func(t *testing.T) {
+			var oidcMetadata []byte
+			var jwksData []byte
+			ait := newAITester(t,
+				openIDTweak(func(oi *openIDConfiguration, ait *AuthorizedIntegrationTester) {
+					var err error
+					oidcMetadata, err = json.Marshal(oi)
+					require.NoError(t, err)
+				}),
+				jwksTweak(func(oi *openIDKeys) {
+					var err error
+					jwksData, err = json.Marshal(oi)
+					require.NoError(t, err)
+				}),
+			)
+			defer ait.close()
+			ait.bearerRequest() // populate oidcMetadata & jwksData by making a request
+
+			t.Run("cache returns []byte", func(t *testing.T) {
+				c := cache.NewMockCache(t)
+				defer test.MockVariableValue(&getCache, func() mc.Cache { return c })()
+
+				c.On("Get",
+					mock.MatchedBy(func(key string) bool {
+						return strings.Contains(key, ".well-known/openid-configuration")
+					})).
+					Return(oidcMetadata)
+				c.On("Get",
+					mock.MatchedBy(func(key string) bool {
+						return strings.Contains(key, ".keys")
+					})).
+					Return(jwksData)
+
+				ait.bearerRequest()
+			})
+
+			t.Run("cache returns string", func(t *testing.T) {
+				c := cache.NewMockCache(t)
+				defer test.MockVariableValue(&getCache, func() mc.Cache { return c })()
+
+				c.On("Get",
+					mock.MatchedBy(func(key string) bool {
+						return strings.Contains(key, ".well-known/openid-configuration")
+					})).
+					Return(string(oidcMetadata))
+				c.On("Get",
+					mock.MatchedBy(func(key string) bool {
+						return strings.Contains(key, ".keys")
+					})).
+					Return(string(jwksData))
+
+				ait.bearerRequest()
+			})
+		})
 	})
 }
 
