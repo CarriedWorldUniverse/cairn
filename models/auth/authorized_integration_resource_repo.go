@@ -42,3 +42,15 @@ func GetRepositoriesAccessibleWithIntegration(ctx context.Context, aiID int64) (
 	}
 	return resources, nil
 }
+
+func InsertAuthorizedIntegrationResourceRepos(ctx context.Context, aiID int64, resources []*AuthorizedIntegResourceRepo) error {
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		for _, resourceRepo := range resources {
+			resourceRepo.IntegID = aiID
+			if err := db.Insert(ctx, resourceRepo); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}

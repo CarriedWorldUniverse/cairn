@@ -33,14 +33,11 @@ func GetAuthorizationReducerForAccessToken(ctx context.Context, token *auth_mode
 	return &SpecificReposAuthorizationReducer{resourceRepos: iface}, nil
 }
 
-// A locale lookup string for the error -- eg. `access_token.error.invalid_something`
-type AccessTokenValidationFailure string
-
 // Validate that an access token's state is valid for creation.  For example, that it doesn't have a conflicting set of
 // resources (public-only and specific repositories), and other similar checks.
 func ValidateAccessToken(token *auth_model.AccessToken, repoResources []*auth_model.AccessTokenResourceRepo) error {
 	// Other validations may be added here in the future.
-	return validateRepositoryResource(token, repoResources)
+	return validateRepositoryResource(token.ResourceAllRepos, token.Scope, len(repoResources))
 }
 
 var (
@@ -49,19 +46,19 @@ var (
 	ErrSpecifiedReposInvalidScope = errors.New("specified repository access token: invalid scope")
 )
 
-func validateRepositoryResource(token *auth_model.AccessToken, repoResources []*auth_model.AccessTokenResourceRepo) error {
+func validateRepositoryResource(resourceAllRepos bool, scope auth_model.AccessTokenScope, numRepoResources int) error {
 	// Access tokens with broad access to all resources don't have any relevant validation rules to apply.
-	if token.ResourceAllRepos {
+	if resourceAllRepos {
 		return nil
 	}
 
 	// Repo-specific access token must have at least one repository.
-	if len(repoResources) == 0 {
+	if numRepoResources == 0 {
 		return ErrSpecifiedReposNone
 	}
 
 	// Can't have public-only and specified repos -- that's a combination that doesn't make sense.
-	if publicOnly, err := token.Scope.PublicOnly(); err != nil {
+	if publicOnly, err := scope.PublicOnly(); err != nil {
 		return err
 	} else if publicOnly {
 		return ErrSpecifiedReposNoPublicOnly
@@ -71,7 +68,7 @@ func validateRepositoryResource(token *auth_model.AccessToken, repoResources []*
 	// support repositories as a resource.  For example, if you had a repo-specific token but then gave it
 	// `write:organization`, it would be able to do operations like delete an organization -- permission checks on the
 	// repository resources wouldn't be applicable to the organization resources.
-	for _, scope := range token.Scope.StringSlice() {
+	for _, scope := range scope.StringSlice() {
 		switch auth_model.AccessTokenScope(scope) {
 		case auth_model.AccessTokenScopeReadIssue,
 			auth_model.AccessTokenScopeWriteIssue,

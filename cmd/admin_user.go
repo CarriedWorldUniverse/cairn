@@ -17,6 +17,7 @@ func subcmdUser() *cli.Command {
 			microcmdUserChangePassword(),
 			microcmdUserDelete(),
 			microcmdUserGenerateAccessToken(),
+			microcmdUserCreateAuthorizedIntegration(),
 			microcmdUserMustChangePassword(),
 			microcmdUserResetMFA(),
 		},
