@@ -68,5 +68,17 @@
         "other": "%s allalaadimist"
     },
     "repo.settings.push_mirror.branch_filter.label": "Alamharude filter (kui soovid)",
-    "compare.branches.title": "Võrdle alamharusid"
+    "compare.branches.title": "Võrdle alamharusid",
+    "repo.issues.filter_poster.hint": "Filtreeri autori põhjal",
+    "repo.issues.filter_assignee.hint": "Filtreeri määratud kasutaja põjal",
+    "repo.issues.filter_reviewers.hint": "Filtreeri ülevaataja põhjal",
+    "repo.issues.filter_mention.hint": "Filtreeri mainitud kasutaja põhjal",
+    "repo.issues.filter_modified.hint": "Filter viimati muudetud kuupäeva põhjal",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sordi: %s",
+    "issues.updated": "uuendatud %s",
+    "repo.pulls.poster_trust_deny": "Keeldu",
+    "repo.pulls.poster_trust_deny.tooltip": "Töövood, mis ootavad heakskiitu, tühistatakse.",
+    "repo.pulls.poster_trust_once": "Luba üks kord",
+    "repo.pulls.poster_trust_always": "Luba alati",
+    "repo.pulls.poster_trust_revoke": "Tühista"
 }

@@ -249,5 +249,6 @@
     "editor.toggle_case": "Hoofdlettergevoeligheid in- of uitschakelen",
     "editor.toggle_regex": "Schakelen met behulp van reguliere expressies",
     "editor.toggle_whole_word": "Schakel het matchen van hele woorden in of uit",
-    "repo.issues.filter_sort.hint_with_placeholder": "Sorteer bij: %s"
+    "repo.issues.filter_sort.hint_with_placeholder": "Sorteer bij: %s",
+    "repo.pulls.auto_merge.no_permission": "U heeft niet de permissie om deze pull request auto merge uit te zetten."
 }

@@ -265,5 +265,7 @@
     "editor.toggle_regex": "Pārslēgt regulāro izteiksmju izmantošanu",
     "editor.toggle_whole_word": "Pārslēgt atbilstību veseliem vārdiem",
     "install.ssh_authorized_keys_inspection_error": "Neizdevās pārbaudīt esošu authorized_keys datni: %v",
-    "install.ssh_authorized_keys_unexpected_key": "SSH iespējošana Forgejo nesader ar datni, kas atrodas %s, kas satur esošas SSH atslēgas. Ieteikumi: Forgejo vajadzībām izmantot atsevišķu sistēmas lietotāju vai atspējot SSH."
+    "install.ssh_authorized_keys_unexpected_key": "SSH iespējošana Forgejo nesader ar datni, kas atrodas %s, kas satur esošas SSH atslēgas. Ieteikumi: Forgejo vajadzībām izmantot atsevišķu sistēmas lietotāju vai atspējot SSH.",
+    "repo.issues.filter_sort.hint_with_placeholder": "Kārtot pēc: %s",
+    "repo.pulls.auto_merge.no_permission": "Nav atļaujas atcelt šī izmaiņu pieprasījuma automātisko iekļaušanu."
 }

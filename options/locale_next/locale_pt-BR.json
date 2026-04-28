@@ -266,5 +266,6 @@
     "editor.replace_all": "Substituir todos",
     "editor.toggle_case": "Alternar sensibilidade a maiúsculas/minúsculas",
     "editor.toggle_regex": "Alternar o uso de expressões regulares",
-    "editor.toggle_whole_word": "Alternar correspondência completa de palavras"
+    "editor.toggle_whole_word": "Alternar correspondência completa de palavras",
+    "repo.pulls.auto_merge.no_permission": "Você não tem permissão para cancelar a mesclagem automática deste pull request."
 }

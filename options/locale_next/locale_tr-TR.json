@@ -1,19 +1,19 @@
 {
     "fork.n_forks": {
         "one": "%s çatal",
-        "other": "%s çatal"
+        "other": "%s çatallar"
     },
     "stars.n_stars": {
         "one": "%s yıldız",
-        "other": "%s yıldız"
+        "other": "%s yıldızlar"
     },
     "repo.pulls.merged_title_desc": {
-        "one": "%[4]s, <code>%[2]s</code> içindeki %[1]d katkıyı <code>%[3]s</code> ile birleştirdi",
-        "other": "%[4]s, <code>%[2]s</code> içindeki %[1]d katkıyı <code>%[3]s</code> ile birleştirdi"
+        "one": "<code>%[2]s</code> 'nden gelen %[1]d değişikliği(commit'i), <code>%[3]s</code> 'ine %[4]s olarak birleştirildi",
+        "other": "<code>%[2]s</code> 'nden gelen %[1]d değişiklikleri(commit'leri), <code>%[3]s</code> 'ine %[4]s olarak birleştirildi"
     },
     "repo.pulls.title_desc": {
-        "one": "<code>%[2]s</code> içindeki %[1]d katkıyı <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor",
-        "other": "<code>%[2]s</code> içindeki %[1]d katkıyı <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor"
+        "one": "<code>%[2]s</code> 'nden gelen %[1]d değişikliği(commit'i) <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor",
+        "other": "<code>%[2]s</code> 'nden gelen %[1]d değişiklikleri(commit'leri) <code id=\"%[4]s\">%[3]s</code> ile birleştirmek istiyor"
     },
     "search.milestone_kind": "Kilometre taşlarını ara…",
     "moderation.abuse_category.malware": "Kötü amaçlı yazılım",
@@ -27,13 +27,13 @@
     "migrate.codebase.description": "codebasehq.com'dan veri aktar.",
     "pulse.n_active_issues": {
         "one": "%s aktif sorun",
-        "other": "%s aktif sorun"
+        "other": "%s aktif sorunlar"
     },
     "pulse.n_active_prs": {
         "one": "%s aktif birleştirme isteği",
-        "other": "%s aktif birleştirme isteği"
+        "other": "%s aktif birleştirme istekleri"
     },
-    "home.welcome.no_activity": "Etkinlik yok",
+    "home.welcome.no_activity": "Etkinlik(aktivite) yok",
     "home.welcome.activity_hint": "Akışınızda henüz bir şey yok. Eylemleriniz ve izlediğiniz depolardaki etkinlikler burada gözükecek.",
     "home.explore_repos": "Depoları keşfet",
     "home.explore_users": "Kullanıcıları keşfet",
@@ -60,34 +60,34 @@
     "repo.form.cannot_create": "Depo oluşturabileceğiniz her yer, depo sınırlarına ulaştılar.",
     "migrate.form.error.url_credentials": "URL, kimlik bilgileri içeriyor; bu bilgileri sırasıyla kullanıcı adı ve şifre alanlarına koyunuz",
     "watch.n_watchers": {
-        "one": "%s izleyen",
-        "other": "%s izleyen"
+        "one": "%s izlemeye alan",
+        "other": "%s izlemeye alanlar"
     },
     "migrate.forgejo.description": "codeberg.org veya diğer Forgejo oluşumlarından veri aktar.",
     "repo.issue_indexer.title": "Sorun Endeksleyici",
     "relativetime.mins": {
         "one": "%d dakika önce",
-        "other": "%d dakika önce"
+        "other": "%d dakikalar önce"
     },
     "relativetime.hours": {
         "one": "%d saat önce",
-        "other": "%d saat önce"
+        "other": "%d saatler önce"
     },
     "relativetime.days": {
         "one": "%d gün önce",
-        "other": "%d gün önce"
+        "other": "%d günler önce"
     },
     "relativetime.weeks": {
         "one": "%d hafta önce",
-        "other": "%d hafta önce"
+        "other": "%d haftalar önce"
     },
     "relativetime.months": {
         "one": "%d ay önce",
-        "other": "%d ay önce"
+        "other": "%d aylar önce"
     },
     "relativetime.years": {
         "one": "%d yıl önce",
-        "other": "%d yıl önce"
+        "other": "%d yıllar önce"
     },
     "repo.settings.push_mirror.branch_filter.label": "Dal süzgeci (isteğe bağlı)",
     "repo.settings.push_mirror.branch_filter.description": "Yansıtılıcak dallar. Tüm dalları yansıtmak için boş bırakın. Sözdizimi için <a href=\"%[1]s\">$[2]s dokümantasyonuna</a> başvurun. Örneğin: <code>main, release/*</code>",
@@ -158,21 +158,21 @@
     "error.must_enable_2fa": "Bu Forgejo oluşumu, kullanıcıların hesaplarına erişebilmek için iki aşamalı girişi etkinleştirmelerini zorunlu kılıyor. Etkinleştirmek için: %s",
     "avatar.constraints_hint": "Özel profil resmi, boyut olarak %[1]s ve piksel olarak %[2]dx%[3]d sınırını aşmamalı",
     "user.ghost.tooltip": "Bu kullanıcı ya silinmiş ya da bulunamadı.",
-    "og.repo.summary_card.alt_description": "%[1]s deposunun -%[2]s açıklamalı- özet kartı",
+    "og.repo.summary_card.alt_description": "%[1]s deposunun özet kartı; açıklaması: %[2]s",
     "repo.commit.load_tags_failed": "Etiketlerin yüklenmesi dahili bir hata sebebiyle başarısız oldu",
     "compare.branches.title": "Dalları karşılaştır",
     "migrate.pagure.description": "pagure.io veya diğer Pagure oluşumlarından veri aktar.",
-    "migrate.pagure.incorrect_url": "Kaynak depo URL'si yanlış verilmiş",
-    "migrate.pagure.project_url": "Pagure proje URL'si",
-    "migrate.pagure.project_example": "Pagure proje URL'si, örneğin: https://pagure.io/pagure",
-    "migrate.pagure.token_label": "Pagure API Jetonu",
+    "migrate.pagure.incorrect_url": "Hatalı kaynak deposu URL'si girilmiş",
+    "migrate.pagure.project_url": "Pagure projesinin URL'si",
+    "migrate.pagure.project_example": "Pagure projesinin URL'si, örneğin https://pagure.io/pagure",
+    "migrate.pagure.token_label": "Pagure API Jetonu(Token)",
     "migrate.pagure.private_issues.summary": "Gizli Sorunlar (İsteğe Bağlı)",
-    "migrate.pagure.private_issues.description": "Bu özellik, Pagure projenizdeki gizli sorunları arşivlemek amacıyla onları ikinci bir depoya saklamak için tasarlandı. Öncelikle herkese açık olan tüm içerikleri içe aktarmak için normal bir aktarma yapın (jetonsuz). Sonrasında korumak istediğiniz gizli sorunlar var ise onları arşivlemek için bu jeton ayarını kullanarak ayrı bir depo oluşturun.",
-    "migrate.pagure.private_issues.warning": "Eğer gizli sorunları içe aktarmak için API anahtarı kullanıyorsanız yukarıda depo görünürlüğünü Gizli'ye alın. Bu, gizli içeriklerin kazara herkese açık bir depoda ifşa olmasını önler.",
-    "migrate.pagure.token.placeholder": "Sadece gizli sorunlar arşivi oluşturmak için",
+    "migrate.pagure.private_issues.description": "Bu özellik, arşivleme amacıyla Pagure projenizdeki yalnızca gizli sorunları içeren ikinci bir depo oluşturmak üzere tasarlanmıştır. Öncelikle, tüm genel içeriği içe aktarmak için (jeton(token) kullanmadan) normal bir aktarım işlemi gerçekleştirin. Ardından, saklamak istediğiniz özel sorunlar varsa, bu özel sorunları arşivlemek için bu jeton(token) seçeneğini kullanarak ayrı bir depo oluşturun.",
+    "migrate.pagure.private_issues.warning": "Özel sorunları içe aktarmak için API anahtarını kullanıyorsanız, yukarıdaki depo görünürlüğünü mutlaka \"Gizli\" olarak ayarlayın. Bu, gizli (ya da özel) içeriğin yanlışlıkla genel bir depoda ifşa edilmesini önler.",
+    "migrate.pagure.token.placeholder": "Yalnızca gizli sorun arşivi oluşturmak için",
     "release.n_downloads": {
-        "one": "%s indirme",
-        "other": "%s indirme"
+        "one": "indirme sayısı %s",
+        "other": "İndirmelerin sayısı %s"
     },
     "actions.runs.run_attempt_label": "Çalıştırma girişimi #%[1]s (%[2]s)",
     "actions.runs.viewing_out_of_date_run": "Bu işin %[1]s çalışmış olan eski bir çalıştırmasını görüntülüyorsun.",
@@ -182,5 +182,66 @@
     "actions.workflow.pre_execution_error": "Çalıştırma girişimini durduran bir hata sebebiyle iş akışı çalıştırılamadı.",
     "teams.add_all_repos.modal.header": "Tüm depoları ekle",
     "teams.remove_all_repos.modal.header": "Tüm depoları kaldır",
-    "meta.last_line": "Steve Jobs ile Nejat İşler'in kardeş olduğunu biliyor muydunuz."
+    "meta.last_line": "Steve Jobs ile Nejat İşler'in kardeş olduğunu biliyor muydunuz.",
+    "repo.issues.filter_poster.hint": "Yazara göre filtrele",
+    "repo.issues.filter_assignee.hint": "Atanan kullanıcıya göre filtrele",
+    "repo.issues.filter_reviewers.hint": "Yorum yapan kullanıcıya göre filtrele",
+    "repo.issues.filter_mention.hint": "Bahsedilen kullanıcıya göre filtrele",
+    "repo.issues.filter_modified.hint": "Son değiştirilme tarihine göre filtrele",
+    "repo.issues.filter_sort.hint_with_placeholder": "Sıralama: %s",
+    "issues.updated": "güncellenenler %s",
+    "repo.pulls.auto_merge.no_permission": "Bu çekme isteğinin otomatik birleştirilmesini iptal etme izniniz yok.",
+    "repo.pulls.poster_manage_approval": "Onay Yönetimi",
+    "repo.pulls.poster_requires_approval.tooltip": "Bu çekme isteğinin yazarı, çatallanmış bir depodan oluşturulan veya AGit ile oluşturulan bir çekme isteği tarafından tetiklenen iş akışlarını çalıştırma konusunda güvenilir bulunmamaktadır. `pull_request` olayıyla tetiklenen iş akışları, onaylanana kadar çalıştırılmayacaktır.",
+    "repo.pulls.poster_is_trusted.tooltip": "Bu çekme isteğinin yazarı, `pull_request` olayları tarafından tetiklenen iş akışlarını çalıştırma konusunda açıkça güvenilir kabul edilmektedir.",
+    "repo.pulls.poster_trust_deny": "Reddet (Kabul etme)",
+    "repo.pulls.poster_trust_deny.tooltip": "Onay bekleyen iş akışları iptal edilecektir.",
+    "repo.pulls.poster_trust_once": "Tek seferlik onayla",
+    "repo.pulls.poster_trust_once.tooltip": "Bir `pull_request` olayıyla tetiklenen iş akışları bu commit üzerinde çalışacak, ancak bu pull request'e gönderilecek tüm gelecekteki commit'ler için onaylanması gerekecektir.",
+    "repo.pulls.poster_trust_always": "Her zaman onayla",
+    "repo.pulls.poster_trust_always.tooltip": "Bir `pull_request` olayıyla tetiklenen iş akışları bu commit üzerinde çalışacak ve bu pull request'ten veya aynı kullanıcı tarafından oluşturulan gelecekteki pull request'lerden gelen çalıştırmaları onaylamaya gerek kalmayacaktır.",
+    "repo.pulls.poster_trust_revoke": "Geri al",
+    "repo.pulls.poster_trust_revoke.tooltip": "Bu çekme isteğinin yazarı, artık `pull_request` olayıyla tetiklenen iş akışlarını çalıştırma konusunda güvenilir kabul edilmeyecek; her çalıştırma işlemi manuel olarak onaylanmalıdır.",
+    "repo.view.gitmodules_too_large": ".gitmodules dosyası çok büyük ve (örneğin API çağrılarında) göz ardı edilecektir",
+    "search.syntax": "Arama sözdizimi",
+    "search.fuzzy": "Bulanık(belirsiz)",
+    "search.fuzzy_tooltip": "\"Sonuçları dahil et\" seçeneği, arama terimiyle yaklaşık eşleşmeleri gösterir",
+    "install.ssh_authorized_keys_inspection_error": "Mevcut authorized_keys dosyası incelenemedi: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Forgejo için SSH'yi etkinleştirmek, mevcut SSH anahtarlarını içeren %s konumundaki dosyayla çakışıyor. Öneriler: Forgejo için ayrı bir sistem kullanıcısı oluşturun veya SSH'yi devre dışı bırakın.",
+    "keys.verify.token.hint": "Bu jeton(token) sadece 1 dakika geçerlidir. <a href=\"%[1]s\">Süresi dolduysa yenisini alın</a>.",
+    "moderation.report.mark_as_handled": "\"Çözüldü\" olarak işaretle",
+    "moderation.report.mark_as_ignored": "\"Yoksay\" olarak işaretle",
+    "moderation.action.account.delete": "Hesabı sil",
+    "moderation.action.account.suspend": "Hesabı askıya al",
+    "moderation.action.repo.delete": "Depoyu sil",
+    "moderation.action.issue.delete": "Sorunu sil",
+    "moderation.action.comment.delete": "Yorumu sil",
+    "moderation.unknown_action": "Bilinmeyen eylem",
+    "moderation.users.cannot_suspend_self": "Kendinizi askıya alamazsınız.",
+    "moderation.users.cannot_suspend_admins": "Yönetici ayrıcalıklarına sahip kullanıcılar askıya alınamaz.",
+    "moderation.users.cannot_suspend_org": "Kuruluşlar(Organizasyonlar) askıya alınamaz.",
+    "moderation.users.already_suspended": "Kullanıcı hesabı zaten askıya alınmış durumda.",
+    "moderation.users.suspend_success": "Kullanıcı hesabı askıya alındı.",
+    "moderation.users.cannot_delete_admins": "Yönetici ayrıcalıklarına sahip kullanıcılar silinemez.",
+    "moderation.issue.deletion_success": "Bu Sorun silindi.",
+    "moderation.comment.deletion_success": "Yorum silindi.",
+    "admin.dashboard.actions_action_user": "Etkin olmayan kullanıcılar için Forgejo Actions güvenini iptal et",
+    "admin.dashboard.transfer_lingering_logs": "Tamamlanan işlerin eylem günlüklerini veritabanından depolama alanına aktarın",
+    "actions.workflow.persistent_incomplete_matrix": "Geçersiz bir `needs` ifadesi nedeniyle %[1]s işinin `strategy.matrix` öğesi değerlendirilemedi. Bu ifade, 'needs' listesinde bulunmayan bir işi (%[2]s) veya bu işlerden birinde mevcut olmayan bir çıktıyı referans alıyor olabilir.",
+    "actions.workflow.incomplete_matrix_missing_job": "%[1]s işinin `strategy.matrix` öğesi değerlendirilemiyor: %[2]s işi, %[1]s (%[3]s) işinin `needs` listesinde yer almıyor.",
+    "actions.workflow.incomplete_matrix_unknown_cause": "%[1]s işinin `strategy.matrix` öğesi değerlendirilemedi: bilinmeyen bir hata.",
+    "actions.workflow.incomplete_runson_missing_job": "%[1]s işinin `runs-on` öğesi değerlendirilemiyor: %[2]s işi, %[1]s (%[3]s) işinin `needs` listesinde yer almıyor.",
+    "actions.workflow.incomplete_runson_missing_matrix_dimension": "%[1]s işinin `runs-on` değeri değerlendirilemiyor: %[2]s boyutlu matris mevcut değil.",
+    "actions.workflow.incomplete_runson_unknown_cause": "%[1]s işinin `runs-on` değeri değerlendirilemedi: bilinmeyen bir hata.",
+    "admin.auths.oauth2_quota_group_claim_name": "Kota yönetimi için bu kaynağa ilişkin topluluk adlarını belirten bir ad tanımlayın. (İsteğe bağlı)",
+    "admin.auths.oauth2_quota_group_map": "Kümeleri kota kümelerine eşleştirin. (İsteğe bağlı – yukarıda bir eşleştirme adı belirtilmelidir)",
+    "admin.auths.oauth2_quota_group_map_removal": "Kullanıcı ilgili kümeye dahil değilse, senkronize edilen kota kümelerinden kullanıcıları kaldırın.",
+    "editor.search": "Ara",
+    "editor.find_previous": "Önceki bulgu",
+    "editor.find_next": "Sonraki bulgu",
+    "editor.replace": "Yer değiştir",
+    "editor.replace_all": "Tümünü yer değiştir",
+    "editor.toggle_case": "Büyük/küçük harf duyarlılığını aç/kapat",
+    "editor.toggle_regex": "Düzenli ifadeler kullanma özelliğini aç/kapat",
+    "editor.toggle_whole_word": "Tam kelime eşleştirme özelliğini aç/kapat"
 }

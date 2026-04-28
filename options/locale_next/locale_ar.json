@@ -1,11 +1,11 @@
 {
     "fork.n_forks": {
-        "one": "%s نسخة",
-        "other": "%s نُسَخ"
+        "one": "%s نُسَخ",
+        "other": ""
     },
     "stars.n_stars": {
-        "one": "%s نجمة",
-        "other": "%s نجوم"
+        "one": "%s نجوم",
+        "other": ""
     },
     "home.welcome.activity_hint": "لا يوجد شيء في موجزك حتى الآن. ستظهر هنا أفعالك ونشاطاتك من المستودعات التي تتابعها.",
     "home.welcome.no_activity": "لا يوجد نشاط",
@@ -164,10 +164,10 @@
     "migrate.form.error.url_credentials": "يحتوي عنوان الرابط على بيانات اعتماد، ضعها في حقلي اسم المستخدم وكلمة المرور على التوالي",
     "pulse.n_active_issues": {
         "one": "%s مسألة حالية",
-        "other": "%s مسألة حالية"
+        "other": ""
     },
     "pulse.n_active_prs": {
         "one": "%s طلب دمج حالي",
-        "other": "%s طلب دمج حالي"
+        "other": ""
     }
 }
