@@ -249,5 +249,8 @@
     "repo.pulls.auto_merge.no_permission": "No tens permís per a cancel·lar la fusió automàtica d'aquesta «pull request».",
     "repo.pulls.poster_requires_approval.tooltip": "A l'autor d'aquesta «pull request» no se li ha confiat l'execució de fluxos de treball disparats per una «pull request» creada desde un repositori bifurcat a amb AGit. Els fluxos de treball disparats per un event `pull_request` no s'executaran fins que siguin aprovats.",
     "repo.view.gitmodules_too_large": "L'arxiu .gitmodules es massa gran i serà ignorat (en crides a l'API per exemple)",
-    "install.ssh_authorized_keys_inspection_error": "Error a l'inspeccionar l'arxiu authorized_keys existent: %v"
+    "install.ssh_authorized_keys_inspection_error": "Error a l'inspeccionar l'arxiu authorized_keys existent: %v",
+    "install.ssh_authorized_keys_unexpected_key": "Activar l'SSH a Forgejo entra en conflicte amb el fitxer localitzat a %s que ja conté claus SSH. Consell: useu un usuari de sistema dedicat per a Forgejo, o bé desactiveu l'SSH.",
+    "moderation.users.cannot_suspend_self": "No podeu suspendre-us.",
+    "admin.dashboard.actions_action_user": "Anul·la la confiança del Forgejo Actions als usuaris inactius"
 }

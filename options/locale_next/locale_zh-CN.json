@@ -91,7 +91,7 @@
     "admin.auths.allow_username_change.description": "允许用户在个人设置中更改用户名",
     "admin.moderation.moderation_reports": "举报",
     "admin.moderation.reports": "举报",
-    "admin.moderation.no_open_reports": "目前没有打开的举报。",
+    "admin.moderation.no_open_reports": "暂无开启中的举报。",
     "admin.moderation.deleted_content_ref": "类型为%[1]v、ID为%[2]d的举报不存在",
     "repo.commit.load_tags_failed": "由于内部错误，无法加载标签",
     "admin.auths.allow_username_change": "允许更改用户名",
