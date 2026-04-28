@@ -5,7 +5,7 @@ branch-find-version: 'v(?P<version>\d+\.\d+)/forgejo'
 branch-to-version: '${version}.0'
 branch-from-version: 'v%[1]d.%[2]d/forgejo'
 tag-from-version: 'v%[1]d.%[2]d.%[3]d'
-supported-release-count: 3
+supported-release-count: 4
 branch-known:
   - 'v11.0/forgejo'
   - 'v15.0/forgejo'
