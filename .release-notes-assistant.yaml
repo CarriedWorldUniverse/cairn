@@ -5,10 +5,10 @@ branch-find-version: 'v(?P<version>\d+\.\d+)/forgejo'
 branch-to-version: '${version}.0'
 branch-from-version: 'v%[1]d.%[2]d/forgejo'
 tag-from-version: 'v%[1]d.%[2]d.%[3]d'
-supported-release-count: 4
+supported-release-count: 3
 branch-known:
+# replace with v15 when v11 becomes EOL
   - 'v11.0/forgejo'
-  - 'v15.0/forgejo'
 cleanup-line: 'sed -Ee "s/^(feat|fix):\s*//g" -e "s/^\[WIP\] //" -e "s/^WIP: //" -e "s;\[(UI|BUG|FEAT|v.*?/forgejo)\]\s*;;g"'
 render-header: |
 
