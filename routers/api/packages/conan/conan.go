@@ -119,8 +119,9 @@ func Authenticate(ctx *context.Context) {
 
 	// If there's an API scope, ensure it propagates.
 	scope := ctx.Authentication.Scope().ValueOrZeroValue()
+	exp := ctx.Authentication.ExpiresAt()
 
-	token, err := packages_service.CreateAuthorizationToken(ctx.Doer, scope)
+	token, err := packages_service.CreateAuthorizationToken(ctx.Doer, scope, exp)
 	if err != nil {
 		apiError(ctx, http.StatusInternalServerError, err)
 		return

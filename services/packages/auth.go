@@ -13,7 +13,9 @@ import (
 	auth_model "forgejo.org/models/auth"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/timeutil"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -24,12 +26,19 @@ type packageClaims struct {
 	Scope  auth_model.AccessTokenScope
 }
 
-func CreateAuthorizationToken(u *user_model.User, scope auth_model.AccessTokenScope) (string, error) {
+func CreateAuthorizationToken(u *user_model.User, scope auth_model.AccessTokenScope, maxExpiry optional.Option[timeutil.TimeStamp]) (string, error) {
 	now := time.Now()
+
+	// Don't allow package registry authentication to create a credential that exceeds the lifetime of whatever
+	// credential was used to authenticate; cap it at the incoming credential's expiry.
+	expiry := now.Add(24 * time.Hour)
+	if has, maxExp := maxExpiry.Get(); has && expiry.Unix() > maxExp.AsTime().Unix() {
+		expiry = maxExp.AsTime()
+	}
 
 	claims := packageClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(expiry),
 			NotBefore: jwt.NewNumericDate(now),
 		},
 		UserID: u.ID,

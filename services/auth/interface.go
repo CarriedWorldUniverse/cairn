@@ -11,6 +11,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/session"
+	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/services/authz"
 )
@@ -104,6 +105,10 @@ type AuthenticationResult interface {
 	// If authenticated as an Actions task (using ${{ forgejo.token }}), then indicates the specific task that performed
 	// the authentication.
 	ActionsTaskID() optional.Option[int64]
+
+	// If the authentication method used has a limited time validity, such as a JWT with an `exp` claim, that expiry
+	// time can be accessed through this method.  Otherwise, returns None.
+	ExpiresAt() optional.Option[timeutil.TimeStamp]
 }
 
 type BaseAuthenticationResult struct{}
@@ -130,6 +135,10 @@ func (*BaseAuthenticationResult) Reducer() authz.AuthorizationReducer {
 
 func (*BaseAuthenticationResult) Scope() optional.Option[auth_model.AccessTokenScope] {
 	return optional.None[auth_model.AccessTokenScope]()
+}
+
+func (*BaseAuthenticationResult) ExpiresAt() optional.Option[timeutil.TimeStamp] {
+	return optional.None[timeutil.TimeStamp]()
 }
 
 type UnauthenticatedResult struct {

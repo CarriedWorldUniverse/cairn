@@ -19,6 +19,7 @@ import (
 	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/test"
+	"forgejo.org/modules/timeutil"
 	"forgejo.org/services/auth"
 
 	mc "code.forgejo.org/go-chi/cache"
@@ -255,6 +256,8 @@ func TestAuthorizedIntegration(t *testing.T) {
 		assert.True(t, hasScope)
 		assert.Equal(t, auth_model.AccessTokenScopeAll, scope)
 		assert.NotNil(t, res.Reducer())
+		hasExpiry, _ := res.ExpiresAt().Get()
+		assert.False(t, hasExpiry)
 	})
 
 	t.Run("valid Basic JWT", func(t *testing.T) {
@@ -280,14 +283,30 @@ func TestAuthorizedIntegration(t *testing.T) {
 	})
 
 	t.Run("JWT expiry", func(t *testing.T) {
-		ait := newAITester(t,
-			claimTweak(func(rc *flexibleClaims) {
-				rc.ExpiresAt = jwt.NewNumericDate(time.Date(2026, time.January, 1, 12, 0, 0, 0, time.Local))
-			}))
-		defer ait.close()
-		output := ait.bearerRequest()
-		err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
-		require.ErrorContains(t, err, "token is expired")
+		t.Run("JWT expired", func(t *testing.T) {
+			ait := newAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.ExpiresAt = jwt.NewNumericDate(time.Date(2026, time.January, 1, 12, 0, 0, 0, time.Local))
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "token is expired")
+		})
+
+		t.Run("JWT will expire", func(t *testing.T) {
+			ait := newAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.ExpiresAt = jwt.NewNumericDate(time.Date(2026, time.January, 1, 20, 0, 0, 0, time.UTC))
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			success := requireOutput[*auth.AuthenticationSuccess](t, output)
+			res := success.Result
+			hasExpiry, expiry := res.ExpiresAt().Get()
+			assert.True(t, hasExpiry)
+			assert.Equal(t, timeutil.TimeStamp(1767297600), expiry)
+		})
 	})
 
 	t.Run("JWT issued at", func(t *testing.T) {
