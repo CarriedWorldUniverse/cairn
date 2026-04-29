@@ -417,9 +417,44 @@ func TestPackageAccess(t *testing.T) {
 			{limitedOrgNoMember, http.StatusOK},
 			{publicOrgNoMember, http.StatusOK},
 		} {
-			req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/packages/%s", target.Owner.Name)).
-				AddTokenAuth(tokenReadPackage)
-			MakeRequest(t, req, target.ExpectedStatus)
+			t.Run(target.Owner.Name, func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+				req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/packages/%s", target.Owner.Name)).
+					AddTokenAuth(tokenReadPackage)
+				MakeRequest(t, req, target.ExpectedStatus)
+			})
+		}
+	})
+
+	t.Run("Authorized Integration", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		ait := newAITester(t, func(ai *auth_model.AuthorizedIntegration) {
+			ai.Scope = auth_model.AccessTokenScopeReadPackage
+			ai.UserID = user.ID
+		})
+		defer ait.close()
+		token := ait.signedJWT()
+
+		for _, target := range []Target{
+			{admin, http.StatusOK},
+			{inactive, http.StatusOK},
+			{user, http.StatusOK},
+			{limitedUser, http.StatusOK},
+			{privateUser, http.StatusForbidden},
+			{privateOrgMember, http.StatusOK},
+			{limitedOrgMember, http.StatusOK},
+			{publicOrgMember, http.StatusOK},
+			{privateOrgNoMember, http.StatusForbidden},
+			{limitedOrgNoMember, http.StatusOK},
+			{publicOrgNoMember, http.StatusOK},
+		} {
+			t.Run(target.Owner.Name, func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+				req := NewRequest(t, "GET", fmt.Sprintf("/api/v1/packages/%s", target.Owner.Name)).
+					AddTokenAuth(token)
+				MakeRequest(t, req, target.ExpectedStatus)
+			})
 		}
 	})
 }

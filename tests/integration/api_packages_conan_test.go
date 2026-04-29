@@ -563,6 +563,45 @@ func TestPackageConan(t *testing.T) {
 			})
 		})
 
+		t.Run("Authorized Integration Authentication", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			testCase := func(t *testing.T, scope auth_model.AccessTokenScope, expectedStatusCode int) {
+				t.Helper()
+
+				ait := newAITester(t, func(ai *auth_model.AuthorizedIntegration) {
+					ai.Scope = scope
+				})
+				defer ait.close()
+				token := ait.signedJWT()
+
+				req := NewRequest(t, "GET", fmt.Sprintf("%s/v2/users/authenticate", url)).
+					AddTokenAuth(token)
+				resp := MakeRequest(t, req, http.StatusOK)
+
+				body := resp.Body.String()
+				assert.NotEmpty(t, body)
+
+				recipeURL := fmt.Sprintf("%s/v2/conans/%s/%s/%s/%s/revisions/%s", url, "TestScope", version1, "testing", channel1, revision1)
+
+				req = NewRequestWithBody(t, "PUT", fmt.Sprintf("%s/files/%s", recipeURL, conanfileName), strings.NewReader("Doesn't need to be valid")).
+					AddTokenAuth("Bearer " + body)
+				MakeRequest(t, req, expectedStatusCode)
+			}
+
+			t.Run("Read permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeReadPackage, http.StatusUnauthorized)
+			})
+
+			t.Run("Write permission", func(t *testing.T) {
+				defer tests.PrintCurrentTest(t)()
+
+				testCase(t, auth_model.AccessTokenScopeWritePackage, http.StatusCreated)
+			})
+		})
+
 		t.Run("Authenticate", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 

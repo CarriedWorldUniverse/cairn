@@ -22,8 +22,10 @@ import (
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/jwtx"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/optional"
 	"forgejo.org/modules/proxy"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/services/auth"
 	"forgejo.org/services/authz"
@@ -212,11 +214,19 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 		return &auth.AuthenticationError{Error: fmt.Errorf("authorized integration GetAuthorizationReducerForAuthorizedIntegration: %w", err)}
 	}
 
+	var optionalExp optional.Option[timeutil.TimeStamp]
+	if exp, err := parsedToken.Claims.GetExpirationTime(); err != nil {
+		return &auth.AuthenticationError{Error: fmt.Errorf("authorized integration GetExpirationTime: %w", err)}
+	} else if exp != nil {
+		optionalExp = optional.Some(timeutil.TimeStamp(exp.Unix()))
+	}
+
 	return &auth.AuthenticationSuccess{
 		Result: &authorizedIntegrationAuthenticationResult{
-			user:    u,
-			scope:   authorizedIntegration.Scope,
-			reducer: reducer,
+			user:      u,
+			scope:     authorizedIntegration.Scope,
+			reducer:   reducer,
+			expiresAt: optionalExp,
 		},
 	}
 }
