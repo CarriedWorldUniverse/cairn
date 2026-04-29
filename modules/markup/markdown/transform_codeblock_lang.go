@@ -11,6 +11,9 @@ import (
 )
 
 func (g *ASTTransformer) transformCodeblockLanguage(v *ast.FencedCodeBlock, reader text.Reader) {
+	if v.Info == nil {
+		return
+	}
 	src := reader.Source()
 	info := v.Info.Segment.Value(src)
 	// Strip language after commas

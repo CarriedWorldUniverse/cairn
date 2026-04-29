@@ -1511,4 +1511,12 @@ func TestCodeblockLanguageStripping(t *testing.T) {
 			"```",
 		`<pre class="code-block"><code class="chroma language-rust display"><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w">
 </span></code></pre>`)
+
+	// No language identifier
+	test(
+		"```\n"+
+			"fn main() {}\n"+
+			"```",
+		`<pre class="code-block"><code class="chroma language-text display">fn main() {}
+</code></pre>`)
 }
