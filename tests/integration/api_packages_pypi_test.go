@@ -17,6 +17,7 @@ import (
 	"forgejo.org/models/packages"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/json"
 	"forgejo.org/modules/packages/pypi"
 	"forgejo.org/tests"
 
@@ -211,18 +212,19 @@ func TestPackagePyPI(t *testing.T) {
 		assert.Equal(t, int64(2), pvs[0].DownloadCount)
 	})
 
-	t.Run("PackageMetadata", func(t *testing.T) {
+	hrefMatcher := regexp.MustCompile(fmt.Sprintf(`%s/files/%s/%s/test\..+#sha256=%s`, root, regexp.QuoteMeta(packageName), regexp.QuoteMeta(packageVersion), hashSHA256))
+
+	t.Run("PackageMetadataHTML", func(t *testing.T) {
 		defer tests.PrintCurrentTest(t)()
 
 		req := NewRequest(t, "GET", fmt.Sprintf("%s/simple/%s", root, packageName)).
 			AddBasicAuth(user.Name)
+		req.Header["Accept"] = []string{"application/vnd.pypi.simple.v1+html"}
 		resp := MakeRequest(t, req, http.StatusOK)
 
 		htmlDoc := NewHTMLParser(t, resp.Body)
 		nodes := htmlDoc.doc.Find("a").Nodes
 		assert.Len(t, nodes, 2)
-
-		hrefMatcher := regexp.MustCompile(fmt.Sprintf(`%s/files/%s/%s/test\..+#sha256=%s`, root, regexp.QuoteMeta(packageName), regexp.QuoteMeta(packageVersion), hashSHA256))
 
 		for _, a := range nodes {
 			for _, att := range a.Attr {
@@ -235,6 +237,26 @@ func TestPackagePyPI(t *testing.T) {
 					t.Fail()
 				}
 			}
+		}
+	})
+
+	t.Run("PackageMetadataJSON", func(t *testing.T) {
+		defer tests.PrintCurrentTest(t)()
+
+		req := NewRequest(t, "GET", fmt.Sprintf("%s/simple/%s", root, packageName)).
+			AddBasicAuth(user.Name)
+		req.Header["Accept"] = []string{"application/vnd.pypi.simple.v1+json"}
+		resp := MakeRequest(t, req, http.StatusOK)
+		assert.Greater(t, resp.Body.Len(), 3)
+		txt := make([]byte, resp.Body.Len())
+		resp.Body.Read(txt)
+		var obj pypi.PackageJSON
+		require.NoError(t, json.Unmarshal(txt, &obj))
+		assert.Equal(t, packageName, obj.Name)
+		assert.Equal(t, pypi.PackageMetaJSON{APIVersion: "1.4"}, obj.Meta)
+		for _, filed := range obj.Files {
+			hrefMatcher = regexp.MustCompile(fmt.Sprintf(`%s/files/%s/%s/test\.(tar\.gz)|(whl)`, root, regexp.QuoteMeta(packageName), regexp.QuoteMeta(packageVersion)))
+			assert.Regexp(t, hrefMatcher, filed.URL[21:])
 		}
 	})
 }
