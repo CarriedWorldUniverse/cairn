@@ -217,10 +217,15 @@ type CommitsByFileAndRangeOptions struct {
 	File     string
 	Not      string
 	Page     int
+	PageSize int
 }
 
 // CommitsByFileAndRange return the commits according revision file and the page
 func (repo *Repository) CommitsByFileAndRange(opts CommitsByFileAndRangeOptions) ([]*Commit, error) {
+	if opts.PageSize <= 0 {
+		opts.PageSize = setting.Git.CommitsRangeSize
+	}
+
 	skip := (opts.Page - 1) * setting.Git.CommitsRangeSize
 
 	stdoutReader, stdoutWriter := io.Pipe()
@@ -231,7 +236,7 @@ func (repo *Repository) CommitsByFileAndRange(opts CommitsByFileAndRangeOptions)
 	go func() {
 		stderr := strings.Builder{}
 		gitCmd := NewCommand(repo.Ctx, "rev-list").
-			AddOptionFormat("--max-count=%d", setting.Git.CommitsRangeSize).
+			AddOptionFormat("--max-count=%d", opts.PageSize).
 			AddOptionFormat("--skip=%d", skip)
 		gitCmd.AddDynamicArguments(opts.Revision)
 
