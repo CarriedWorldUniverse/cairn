@@ -783,6 +783,16 @@ func handleRefreshToken(ctx *context.Context, form forms.AccessTokenForm, server
 		})
 		return
 	}
+
+	// Reject tokens that are not refresh tokens (e.g. access tokens submitted as refresh tokens)
+	if token.Type != oauth2.TypeRefreshToken {
+		handleAccessTokenError(ctx, AccessTokenErrorResponse{
+			ErrorCode:        AccessTokenErrorCodeUnauthorizedClient,
+			ErrorDescription: "token is not a refresh token",
+		})
+		return
+	}
+
 	// get grant before increasing counter
 	grant, err := auth.GetOAuth2GrantByID(ctx, token.GrantID)
 	if err != nil || grant == nil {
