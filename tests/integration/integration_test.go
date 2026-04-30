@@ -713,7 +713,7 @@ func logUnexpectedResponse(t testing.TB, recorder *httptest.ResponseRecorder) {
 		}
 
 		return
-	} else if len(respBytes) < 500 {
+	} else if len(respBytes) < 2048 {
 		// if body is short, just log the whole thing
 		t.Log("Response: ", string(respBytes))
 		return
