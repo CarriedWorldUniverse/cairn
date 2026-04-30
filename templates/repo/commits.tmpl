@@ -10,6 +10,7 @@
 					{{svg "octicon-git-branch"}}
 					{{ctx.Locale.Tr "repo.commit_graph"}}
 				</a>
+				{{template "repo/filepath" .}}
 			</div>
 		</div>
 		{{template "repo/commits_table" .}}

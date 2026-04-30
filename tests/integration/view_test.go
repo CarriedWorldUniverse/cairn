@@ -139,7 +139,7 @@ func TestCommitListActions(t *testing.T) {
 			[]*files_service.ChangeRepoFile{
 				{
 					Operation:     "create",
-					TreePath:      "test.sh",
+					TreePath:      "test/test.sh",
 					ContentReader: strings.NewReader("Hello there!"),
 				},
 			},
@@ -162,7 +162,7 @@ func TestCommitListActions(t *testing.T) {
 			htmlDoc.AssertElement(t, fmt.Sprintf(".commit-list a[href^='/%s/src/commit/']", repo.FullName()), false)
 		})
 
-		fileDiffSelector := fmt.Sprintf(".commit-list a[href='/%s/commit/%s?files=test.sh']", repo.FullName(), commitID)
+		fileDiffSelector := fmt.Sprintf(".commit-list a[href='/%s/commit/%s?files=test/test.sh']", repo.FullName(), commitID)
 		t.Run("Commit list", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
@@ -177,12 +177,19 @@ func TestCommitListActions(t *testing.T) {
 		t.Run("File history", func(t *testing.T) {
 			defer tests.PrintCurrentTest(t)()
 
-			req := NewRequest(t, "GET", repo.Link()+"/commits/branch/main/test.sh")
+			req := NewRequest(t, "GET", repo.Link()+"/commits/branch/main/test/test.sh")
 			resp := session.MakeRequest(t, req, http.StatusOK)
 			htmlDoc := NewHTMLParser(t, resp.Body)
 
-			htmlDoc.AssertElement(t, fmt.Sprintf(".commit-list a[href='/%s/src/commit/%s/test.sh']", repo.FullName(), commitID), true)
+			htmlDoc.AssertElement(t, fmt.Sprintf(".commit-list a[href='/%s/src/commit/%s/test/test.sh']", repo.FullName(), commitID), true)
 			htmlDoc.AssertElement(t, fileDiffSelector, true)
+
+			htmlDoc.AssertElement(t, ".repo-path", true)
+			htmlDoc.AssertElement(t, fmt.Sprintf(".repo-path a[href='/%s/src/branch/main'][title='%s']", repo.FullName(), repo.Name), true)
+			assert.Equal(t, 2, htmlDoc.Find(".repo-path .breadcrumb-divider").Length())
+			htmlDoc.AssertElement(t, fmt.Sprintf(".repo-path .section a[href='/%s/src/branch/main/test'][title='test']", repo.FullName()), true)
+			htmlDoc.AssertElement(t, ".repo-path .active[title='test.sh']", true)
+			htmlDoc.AssertElement(t, ".repo-path button[data-clipboard-text='test/test.sh']", true)
 		})
 	})
 }
