@@ -34,6 +34,7 @@ func TestRepoCommits(t *testing.T) {
 	commitURL, exists := doc.doc.Find("#commits-table tbody tr td.sha a").Attr("href")
 	assert.True(t, exists)
 	assert.NotEmpty(t, commitURL)
+	doc.AssertElement(t, ".repo-path", false)
 }
 
 func doTestRepoCommitWithStatus(t *testing.T, state string, classes ...string) {

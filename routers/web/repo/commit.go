@@ -45,10 +45,19 @@ const (
 func RefCommits(ctx *context.Context) {
 	switch {
 	case len(ctx.Repo.TreePath) == 0:
+		ctx.Data["TreeNames"] = []string{}
 		Commits(ctx)
 	case ctx.Repo.TreePath == "search":
+		ctx.Data["TreeNames"] = []string{}
 		SearchCommits(ctx)
 	default:
+		treeNames := strings.Split(ctx.Repo.TreePath, "/")
+		paths := make([]string, len(treeNames))
+		for i := range treeNames {
+			paths[i] = strings.Join(treeNames[:i+1], "/")
+		}
+		ctx.Data["TreeNames"] = treeNames
+		ctx.Data["Paths"] = paths
 		FileHistory(ctx)
 	}
 }
@@ -271,6 +280,9 @@ func FileHistory(ctx *context.Context) {
 			break
 		}
 	}
+
+	branchLink := ctx.Repo.RepoLink + "/src/" + ctx.Repo.BranchNameSubURL()
+	ctx.Data["BranchLink"] = branchLink
 
 	ctx.Data["Commits"] = git_model.ParseCommitsWithStatus(ctx, commits, ctx.Repo.Repository)
 
