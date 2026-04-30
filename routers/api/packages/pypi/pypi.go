@@ -8,11 +8,14 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
 
 	packages_model "forgejo.org/models/packages"
+	"forgejo.org/modules/json"
+	"forgejo.org/modules/log"
 	packages_module "forgejo.org/modules/packages"
 	pypi_module "forgejo.org/modules/packages/pypi"
 	"forgejo.org/modules/setting"
@@ -44,8 +47,14 @@ func apiError(ctx *context.Context, status int, obj any) {
 	})
 }
 
-// PackageMetadata returns the metadata for a single package
-func PackageMetadata(ctx *context.Context) {
+func contentTypeSupported(ctyps []string, v string) bool {
+	return slices.ContainsFunc(ctyps, func(ctyp string) bool {
+		return strings.HasPrefix(ctyp, v)
+	})
+}
+
+// HTMLPackageMetadata returns the metadata for a single package in Simple HTML per PEP691
+func HTMLPackageMetadata(ctx *context.Context) {
 	packageName := normalizer.Replace(ctx.Params("id"))
 
 	pvs, err := packages_model.GetVersionsByPackageName(ctx, ctx.Package.Owner.ID, packages_model.TypePyPI, packageName)
@@ -72,7 +81,80 @@ func PackageMetadata(ctx *context.Context) {
 	ctx.Data["RegistryURL"] = setting.AppURL + "api/packages/" + ctx.Package.Owner.Name + "/pypi"
 	ctx.Data["PackageDescriptor"] = pds[0]
 	ctx.Data["PackageDescriptors"] = pds
+	// Content-Type headers need to be in this order for the page to show in the browser
+	ctx.Resp.Header().Set("Content-Type", "application/vnd.pypi.simple.v1+html")
+	ctx.Resp.Header().Add("Content-Type", "text/html")
 	ctx.HTML(http.StatusOK, "api/packages/pypi/simple")
+}
+
+// JSONPackageMetadata returns the metadata for a single package in Simple JSON per PEP691
+func JSONPackageMetadata(ctx *context.Context) {
+	packageName := normalizer.Replace(ctx.Params("id"))
+
+	pvs, err := packages_model.GetVersionsByPackageName(ctx, ctx.Package.Owner.ID, packages_model.TypePyPI, packageName)
+	if err != nil {
+		apiError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+	if len(pvs) == 0 {
+		apiError(ctx, http.StatusNotFound, err)
+		return
+	}
+
+	pds, err := packages_model.GetPackageDescriptors(ctx, pvs)
+	if err != nil {
+		apiError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	// sort package descriptors by version to mimic PyPI format
+	slices.SortFunc(pds, func(a, b *packages_model.PackageDescriptor) int {
+		return strings.Compare(a.Version.Version, b.Version.Version)
+	})
+	registryURL := setting.AppURL + "api/packages/" + ctx.Package.Owner.Name + "/pypi"
+	versions := make([]string, len(pvs))
+	for i, pv := range pvs {
+		versions[i] = pv.Version
+	}
+	var fileCounter int
+	for _, pd := range pds {
+		fileCounter += len(pd.Files)
+	}
+	files := make([]pypi_module.FileJSON, fileCounter)
+	var i int
+	for _, pd := range pds {
+		for _, file := range pd.Files {
+			files[i] = pypi_module.FileJSON{
+				Filename:       file.File.Name,
+				URL:            registryURL + "/files/" + pd.Package.LowerName + "/" + pd.Version.Version + "/" + file.File.Name,
+				RequiresPython: pd.Metadata.(*pypi_module.Metadata).RequiresPython,
+				Hashes:         pypi_module.FileHashesJSON{SHA256: file.Blob.HashSHA256},
+				Size:           file.Blob.Size,
+			}
+			i++
+		}
+	}
+	content := pypi_module.PackageJSON{
+		Name:     pds[0].Package.Name,
+		Meta:     pypi_module.PackageMetaJSON{APIVersion: "1.4"},
+		Versions: versions,
+		Files:    files,
+	}
+	ctx.Resp.Header().Set("Content-Type", "application/vnd.pypi.simple.v1+json")
+	ctx.Resp.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(ctx.Resp).Encode(content); err != nil {
+		log.Error("Render JSON failed: %v", err)
+		apiError(ctx, http.StatusInternalServerError, err)
+	}
+}
+
+func PackageMetadata(ctx *context.Context) {
+	ctyp := ctx.Req.Header["Accept"]
+	if contentTypeSupported(ctyp, "application/vnd.pypi.simple.v1+json") {
+		JSONPackageMetadata(ctx)
+	} else {
+		HTMLPackageMetadata(ctx)
+	}
 }
 
 // DownloadPackageFile serves the content of a package

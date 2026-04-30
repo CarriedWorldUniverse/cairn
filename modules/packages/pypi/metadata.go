@@ -13,3 +13,26 @@ type Metadata struct {
 	License         string `json:"license,omitempty"`
 	RequiresPython  string `json:"requires_python,omitempty"`
 }
+
+type FileHashesJSON struct {
+	SHA256 string `json:"sha256"`
+}
+
+type FileJSON struct {
+	Filename       string         `json:"filename"`
+	URL            string         `json:"url"`
+	Hashes         FileHashesJSON `json:"hashes"`
+	RequiresPython string         `json:"requires-python"`
+	Size           int64          `json:"size"`
+}
+
+type PackageMetaJSON struct {
+	APIVersion string `json:"api-version"`
+}
+
+type PackageJSON struct {
+	Name     string          `json:"name"`
+	Meta     PackageMetaJSON `json:"meta"`
+	Versions []string        `json:"versions"`
+	Files    []FileJSON      `json:"files"`
+}
