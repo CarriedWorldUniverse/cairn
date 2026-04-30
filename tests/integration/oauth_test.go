@@ -460,6 +460,18 @@ func TestRefreshTokenInvalidation(t *testing.T) {
 		"client_id":     "da7da3ba-9a13-4167-856f-3899de0b0138",
 		"client_secret": "4MK8Na6R55smdCY0WuCCumZ6hjRPnGY5saWVRHHjJiA=",
 		"redirect_uri":  "a",
+		"refresh_token": parsed.AccessToken,
+	})
+	resp = MakeRequest(t, req, http.StatusBadRequest)
+	require.NoError(t, json.Unmarshal(resp.Body.Bytes(), &parsedError))
+	assert.Equal(t, "unauthorized_client", string(parsedError.ErrorCode))
+	assert.Equal(t, "token is not a refresh token", parsedError.ErrorDescription)
+
+	req = NewRequestWithValues(t, "POST", "/login/oauth/access_token", map[string]string{
+		"grant_type":    "refresh_token",
+		"client_id":     "da7da3ba-9a13-4167-856f-3899de0b0138",
+		"client_secret": "4MK8Na6R55smdCY0WuCCumZ6hjRPnGY5saWVRHHjJiA=",
+		"redirect_uri":  "a",
 		"refresh_token": parsed.RefreshToken,
 	})
 
