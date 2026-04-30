@@ -135,7 +135,7 @@ func GetAllCommits(ctx *context.APIContext) {
 	//   type: integer
 	// - name: limit
 	//   in: query
-	//   description: page size of results (ignored if used with 'path')
+	//   description: page size of results
 	//   type: integer
 	// - name: not
 	//   in: query
@@ -244,6 +244,7 @@ func GetAllCommits(ctx *context.APIContext) {
 				File:     path,
 				Not:      not,
 				Page:     listOptions.Page,
+				PageSize: listOptions.PageSize,
 			})
 		if err != nil {
 			ctx.Error(http.StatusInternalServerError, "CommitsByFileAndRange", err)
