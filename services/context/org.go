@@ -64,6 +64,32 @@ func GetOrganizationByParams(ctx *Context) {
 	}
 }
 
+func ensureIsOrg(ctx *Context) bool {
+	switch {
+	// Getting Organization from params
+	case ctx.ContextUser == nil:
+		if ctx.Org.Organization == nil {
+			GetOrganizationByParams(ctx)
+		}
+		return !ctx.Written()
+	// Getting Organization from ContextUser
+	case ctx.ContextUser.IsOrganization():
+		if ctx.Org == nil {
+			ctx.Org = &Organization{}
+		}
+		ctx.Org.Organization = (*organization.Organization)(ctx.ContextUser)
+		return true
+	}
+	// ContextUser is an individual User
+	return false
+}
+
+func EnsureOrg() func(*Context) {
+	return func(ctx *Context) {
+		ensureIsOrg(ctx)
+	}
+}
+
 // HandleOrgAssignment handles organization assignment
 func HandleOrgAssignment(ctx *Context, args ...bool) {
 	var (
@@ -87,24 +113,9 @@ func HandleOrgAssignment(ctx *Context, args ...bool) {
 
 	var err error
 
-	if ctx.ContextUser == nil {
-		// if Organization is not defined, get it from params
-		if ctx.Org.Organization == nil {
-			GetOrganizationByParams(ctx)
-			if ctx.Written() {
-				return
-			}
-		}
-	} else if ctx.ContextUser.IsOrganization() {
-		if ctx.Org == nil {
-			ctx.Org = &Organization{}
-		}
-		ctx.Org.Organization = (*organization.Organization)(ctx.ContextUser)
-	} else {
-		// ContextUser is an individual User
+	if !ensureIsOrg(ctx) {
 		return
 	}
-
 	org := ctx.Org.Organization
 
 	// Handle Visibility
