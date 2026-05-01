@@ -110,14 +110,14 @@
 												</span>
 											</button>
 										{{else}}
-											{{$closeTranslationKey := "repo.issues.close"}}
+											{{$closeTranslation := ctx.Locale.Tr "repo.issues.close"}}
 											{{if .Issue.IsPull}}
-												{{$closeTranslationKey = "repo.pulls.close"}}
+												{{$closeTranslation = ctx.Locale.Tr "repo.pulls.close"}}
 											{{end}}
-											<button id="status-button" class="secondary button" data-status="{{ctx.Locale.Tr $closeTranslationKey}}" data-status-and-comment="{{ctx.Locale.Tr "repo.issues.close_comment_issue"}}" name="status" value="close">
+											<button id="status-button" class="secondary button" data-status="{{$closeTranslation}}" data-status-and-comment="{{ctx.Locale.Tr "repo.issues.close_comment_issue"}}" name="status" value="close">
 												{{svg "octicon-issue-closed"}}
 												<span>
-													{{ctx.Locale.Tr $closeTranslationKey}}
+													{{$closeTranslation}}
 												</span>
 											</button>
 										{{end}}

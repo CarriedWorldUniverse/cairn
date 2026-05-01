@@ -34,12 +34,14 @@ func (handler Handler) HandleGoTrBasicLit(fset *token.FileSet, argLit *ast.Basic
 }
 
 func (handler Handler) HandleGoTrArgument(fset *token.FileSet, n ast.Expr, prefix string) {
-	if argLit, ok := n.(*ast.BasicLit); ok {
-		handler.HandleGoTrBasicLit(fset, argLit, prefix)
-	} else if argBinExpr, ok := n.(*ast.BinaryExpr); ok {
-		if argBinExpr.Op != token.ADD {
+	switch n := n.(type) {
+	case *ast.BasicLit:
+		handler.HandleGoTrBasicLit(fset, n, prefix)
+
+	case *ast.BinaryExpr:
+		if n.Op != token.ADD {
 			// pass
-		} else if argLit, ok := argBinExpr.X.(*ast.BasicLit); ok && argLit.Kind == token.STRING {
+		} else if argLit, ok := n.X.(*ast.BasicLit); ok && argLit.Kind == token.STRING {
 			// extract string content
 			arg, err := strconv.Unquote(argLit.Value)
 			if err != nil {
@@ -52,6 +54,39 @@ func (handler Handler) HandleGoTrArgument(fset *token.FileSet, n ast.Expr, prefi
 				handler.OnWarning(fset, argLit.ValuePos, fmt.Sprintf("needed to truncate message id prefix: %s", arg))
 			}
 			handler.OnMsgidPrefix(fset, argLit.ValuePos, prep, trunc)
+		}
+
+	case *ast.CallExpr:
+		if selExpr, ok := n.Fun.(*ast.SelectorExpr); ok {
+			if xIdent, xok := selExpr.X.(*ast.Ident); !xok || xIdent.Name != "fmt" {
+				return
+			}
+			if selExpr.Sel.Name != "Sprintf" {
+				handler.OnWarning(fset, selExpr.Sel.NamePos, fmt.Sprintf("unexpected formatting function encountered: %s", selExpr.Sel.Name))
+				return
+			}
+			if len(n.Args) == 0 {
+				handler.OnWarning(fset, selExpr.Sel.NamePos, fmt.Sprintf("unexpected formatting function invocation (no arguments) of '%s'", selExpr.Sel.Name))
+				return
+			}
+
+			if argLit, ok := n.Args[0].(*ast.BasicLit); ok && argLit.Kind == token.STRING {
+				// extract string content
+				arg, err := strconv.Unquote(argLit.Value)
+				if err != nil {
+					return
+				}
+				if strings.Contains(arg, " ") {
+					handler.OnWarning(fset, argLit.ValuePos, fmt.Sprintf(
+						"formatting function invocation of '%s' with weird msgid format string: %s",
+						selExpr.Sel.Name,
+						arg,
+					))
+					return
+				}
+				// found interesting strings
+				handler.OnMsgidPattern(fset, argLit.ValuePos, prefix+arg)
+			}
 		}
 	}
 }

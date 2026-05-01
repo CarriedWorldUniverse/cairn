@@ -38,6 +38,8 @@ func init() {
 }
 
 // TrStr returns a translation format string.
+//
+//llu:returnsTrKey
 func (n *Notice) TrStr() string {
 	return fmt.Sprintf("admin.notices.type_%d", n.Type)
 }

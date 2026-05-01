@@ -150,16 +150,12 @@ func (handler Handler) handleTemplateMsgid(fset *token.FileSet, node tmplParser.
 			handler.OnMsgid(fset, stringPos, msgidPrefix, false)
 		} else {
 			if nodeIdent.Ident == "printf" {
-				parts := strings.SplitN(msgidPrefix, "%", 2)
-				if len(parts) != 2 {
-					handler.OnWarning(
-						fset,
-						stringPos,
-						fmt.Sprintf("unsupported invocation of locate function (format string doesn't match \"prefix%%smth\" pattern): %s", nodeString.String()),
-					)
+				// found interesting strings
+				if !(strings.HasSuffix(msgidPrefix, ".%s") && strings.Count(msgidPrefix, "%") == 1) {
+					handler.OnMsgidPattern(fset, stringPos, msgidPrefix)
 					return
 				}
-				msgidPrefix = parts[0]
+				msgidPrefix = strings.TrimSuffix(msgidPrefix, "%s")
 			}
 
 			msgidPrefixFin, truncated := PrepareMsgidPrefix(msgidPrefix)

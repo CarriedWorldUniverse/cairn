@@ -129,13 +129,13 @@
 			{{if ne .RefRepoID .Issue.RepoID}}
 				{{$refFrom = ctx.Locale.Tr "repo.issues.ref_from" .RefRepo.FullName}}
 			{{end}}
-			{{$refTr := "repo.issues.ref_issue_from"}}
+			{{$refTr := "issue"}}
 			{{if .Issue.IsPull}}
-				{{$refTr = "repo.issues.ref_pull_from"}}
+				{{$refTr = "pull"}}
 			{{else if eq .RefAction 1}}
-				{{$refTr = "repo.issues.ref_closing_from"}}
+				{{$refTr = "closing"}}
 			{{else if eq .RefAction 2}}
-				{{$refTr = "repo.issues.ref_reopening_from"}}
+				{{$refTr = "reopening"}}
 			{{end}}
 			<div class="timeline-item event" id="{{.HashTag}}">
 				<span class="badge">{{svg "octicon-bookmark"}}</span>
@@ -143,7 +143,7 @@
 				{{if eq .RefAction 3}}<del>{{end}}
 				<span class="text grey muted-links">
 					{{template "shared/user/authorlink" .Poster}}
-					{{ctx.Locale.Tr $refTr $createdStr (.RefCommentLink ctx) $refFrom}}
+					{{ctx.Locale.Tr (printf "repo.issues.ref_%s_from" $refTr) $createdStr (.RefCommentLink ctx) $refFrom}}
 				</span>
 				{{if eq .RefAction 3}}</del>{{end}}
 
