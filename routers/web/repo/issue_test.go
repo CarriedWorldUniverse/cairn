@@ -74,6 +74,9 @@ func TestNewIssueValidateProject(t *testing.T) {
 			contexttest.LoadUser(t, ctx, testCase.userID)
 			contexttest.LoadRepo(t, ctx, testCase.repoID)
 			contexttest.LoadGitRepo(t, ctx)
+			if ctx.Repo.Owner.IsOrganization() {
+				contexttest.LoadOrganization(t, ctx, ctx.Repo.Owner.ID)
+			}
 
 			NewIssue(ctx)
 

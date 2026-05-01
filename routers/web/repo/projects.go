@@ -400,7 +400,7 @@ func UpdateIssueProject(ctx *context.Context) {
 		return
 	}
 	if _, err := issues.LoadRepositories(ctx); err != nil {
-		ctx.ServerError("LoadProjects", err)
+		ctx.ServerError("LoadRepositories", err)
 		return
 	}
 
