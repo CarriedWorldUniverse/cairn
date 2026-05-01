@@ -253,6 +253,8 @@ github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/fxamacker/cbor/v2 v2.9.1 h1:2rWm8B193Ll4VdjsJY28jxs70IdDsHRWgQYAI80+rMQ=
 github.com/fxamacker/cbor/v2 v2.9.1/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
+github.com/gdgvda/cron v0.7.0 h1:LFPZUTbCb5ZpzYxavbQDDbjd6nwTwkiNUWyulOdlY2I=
+github.com/gdgvda/cron v0.7.0/go.mod h1:caBF+mzTZGtQqFE05T1m6u9OmCASY3EK51XAICf3wio=
 github.com/go-ap/activitypub v0.0.0-20260208110334-902f6cf8c2cc h1:yLe7YJhK+XNjNV4SqDxAjpWAgft+KU+XwKZS4AKEUV0=
 github.com/go-ap/activitypub v0.0.0-20260208110334-902f6cf8c2cc/go.mod h1:jUs8eczo1EAT4ByRpZ4mQmNvjarw9eNf7Nm5udpMRhY=
 github.com/go-ap/errors v0.0.0-20260208110149-e1b309365966 h1:tV+3kZgqFMKVUf+JPKBV400ISM8440+6y/SQCS0WZwQ=
