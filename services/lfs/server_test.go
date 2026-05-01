@@ -105,8 +105,6 @@ var cfgVariants = []namedCfg{
 }
 
 func TestAuthenticate(t *testing.T) {
-	// TODO: #11024
-	setting.InstallLock = true
 	for _, v := range cfgVariants {
 		cfg := iniCommon + v.cfg
 		t.Run(v.name, func(t *testing.T) { testAuthenticate(t, cfg) })

@@ -77,15 +77,12 @@ func loadLFSFrom(rootCfg ConfigProvider) error {
 		return nil
 	}
 
-	// TODO: #11024 check nil because settings loaded twice
-	if LFS.SigningKey == nil {
-		keyCfg, err := loadKeyCfg(rootCfg, "server", "LFS_JWT_", "HS256", "lfs/private.pem")
-		if err == nil {
-			LFS.SigningKey, err = jwtx.InitSigningKey(&keyCfg.Signing)
-		}
-		if err != nil {
-			return fmt.Errorf("lfs key initialization failed: %v", err)
-		}
+	keyCfg, err := loadKeyCfg(rootCfg, "server", "LFS_JWT_", "HS256", "lfs/private.pem")
+	if err == nil {
+		LFS.SigningKey, err = jwtx.InitSigningKey(&keyCfg.Signing)
+	}
+	if err != nil {
+		return fmt.Errorf("lfs key initialization failed: %v", err)
 	}
 
 	return nil
