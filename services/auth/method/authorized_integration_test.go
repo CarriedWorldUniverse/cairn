@@ -676,6 +676,89 @@ func TestAuthorizedIntegration(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("internal issuer", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t)
+			defer ait.close()
+			output := ait.bearerRequest()
+			requireOutput[*auth.AuthenticationSuccess](t, output)
+		})
+
+		t.Run("mismatched issuer app URL", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.Issuer = "https://example.org/fake-jwt-issuer" // correct suffix, incorrect prefix
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "matching authorized_integration not found")
+			ait.ii.ExpectedCalls = nil // InternalIssuer should have zero calls
+		})
+
+		t.Run("mismatched issuer URL suffix", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.Issuer = setting.AppURL + "/fake-jwt-issuer-123" // correct prefix, incorrect suffix
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "matching authorized_integration not found")
+			ait.ii.ExpectedCalls = nil // InternalIssuer should have zero calls
+		})
+
+		t.Run("mismatched DB issuer placeholder", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t,
+				aiDBTweak(func(ai *auth_model.AuthorizedIntegration) {
+					ai.Issuer = "urn:forgejo:authorized-issuer:internal:bad-choice-here"
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "matching authorized_integration not found")
+			ait.ii.ExpectedCalls = nil // InternalIssuer should have zero calls
+		})
+
+		t.Run("checks claim rules", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.other["custom-claim"] = "oops wrong claim"
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "claim \"custom-claim\" must be \"custom-claim-value\"")
+			ait.ii.ExpectedCalls = []*mock.Call{ait.ii.ExpectedCalls[0]} // drop call to SigningKey() -- won't occur due to claim mismatch
+		})
+
+		t.Run("JWT times checked", func(t *testing.T) {
+			ait := newInternalIssuerAITester(t,
+				claimTweak(func(rc *flexibleClaims) {
+					rc.ExpiresAt = jwt.NewNumericDate(time.Date(2026, time.January, 1, 12, 0, 0, 0, time.Local))
+				}))
+			defer ait.close()
+			output := ait.bearerRequest()
+			err := requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "token is expired")
+		})
+
+		t.Run("signed by incorrect JWT key", func(t *testing.T) {
+			keyPath := filepath.Join(t.TempDir(), "jwt-rsa-2048-bad-key.priv")
+			badSigningKey, err := jwtx.InitAsymmetricSigningKey(keyPath, "RS256")
+			require.NoError(t, err)
+
+			ait := newInternalIssuerAITester(t, jwtClientSignatureTweak(func() jwtx.SigningKey {
+				return badSigningKey
+			}))
+			defer ait.close()
+
+			output := ait.bearerRequest()
+			err = requireOutput[*auth.AuthenticationAttemptedIncorrectCredential](t, output).Error
+			require.ErrorContains(t, err, "crypto/rsa: verification error")
+		})
+	})
 }
 
 type AuthorizedIntegrationTester struct {
@@ -686,6 +769,7 @@ type AuthorizedIntegrationTester struct {
 	testServer      *httptest.Server
 	resetHTTPClient func()
 	tweaks          []tweak
+	ii              *MockInternalIssuer
 }
 
 func newAITester(t *testing.T, tweaks ...tweak) *AuthorizedIntegrationTester {
@@ -788,6 +872,25 @@ func newAITester(t *testing.T, tweaks ...tweak) *AuthorizedIntegrationTester {
 	return ait
 }
 
+func newInternalIssuerAITester(t *testing.T, tweaks ...tweak) *AuthorizedIntegrationTester {
+	innerTweaks := []tweak{
+		claimTweak(func(rc *flexibleClaims) {
+			rc.Issuer = setting.AppURL + "/fake-jwt-issuer"
+		}),
+		aiDBTweak(func(ai *auth_model.AuthorizedIntegration) {
+			ai.Issuer = "urn:forgejo:authorized-issuer:internal:test1"
+		}),
+	}
+	innerTweaks = append(innerTweaks, tweaks...)
+	ait := newAITester(t, innerTweaks...)
+	ii := NewMockInternalIssuer(t)
+	internalIssuers["/fake-jwt-issuer"] = ii
+	ii.On("IssuerPlaceholder").Return("urn:forgejo:authorized-issuer:internal:test1")
+	ii.On("SigningKey").Return(ait.jwtSigningKey)
+	ait.ii = ii
+	return ait
+}
+
 func (ait *AuthorizedIntegrationTester) signedJWT() string {
 	claims := flexibleClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -803,7 +906,13 @@ func (ait *AuthorizedIntegrationTester) signedJWT() string {
 			tweak(&claims)
 		}
 	}
-	signedToken, err := ait.jwtSigningKey.JWT(claims)
+	clientSigningKey := ait.jwtSigningKey
+	for _, tweak := range ait.tweaks {
+		if tweak, is := tweak.(jwtClientSignatureTweak); is {
+			clientSigningKey = tweak()
+		}
+	}
+	signedToken, err := clientSigningKey.JWT(claims)
 	require.NoError(ait.t, err)
 	return signedToken
 }
@@ -840,3 +949,5 @@ type jwksTweak func(*openIDKeys)
 type aiDBTweak func(*auth_model.AuthorizedIntegration)
 
 type jwtxKeyTweak func() jwtx.SigningKey
+
+type jwtClientSignatureTweak func() jwtx.SigningKey
