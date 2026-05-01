@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,7 +49,39 @@ var (
 		return aiHTTPClient
 	}
 	getCache = cache.GetCache
+
+	internalIssuers = make(map[string]InternalIssuer)
 )
+
+// Authorized Integrations can verify the signature of JWTs that the application itself generated without requiring
+// remote access, and in a manner that is flexible to changes in [setting.AppURL].
+//
+// For example, Forgejo Actions is often used to access Forgejo with a JWT, by setting `enable-openid-connect: true` in
+// a workflow.  Without any special support for this internal access situation, problems would occur:
+//
+// 1. Forgejo would need to make an HTTP request to itself to get the valid public key for the JWT, in order to validate
+// its signature.  This is a waste of resources, and introduces a self-DoS risk.
+//
+// 2. Forgejo would need to be available via TLS in order for Actions to make service calls to Forgejo with that JWT
+// (due to the TLS requirement for public key fetching).
+//
+// 3. Authorized Integrations would need to be saved with the `issuer` URL of Forgejo.  If Forgejo's own
+// [setting.AppURL] changed, all the persisted records in the database would become incorrect.
+//
+// Internal Issuers work by registering a URL suffix like "/api/actions".  When a JWT is received with an issuer
+// matching [setting.AppURL] and the registered URL suffix, then the [InternalIssuer] interface is used to access the
+// JWT public key, and the value to be saved in the Authorized Integrations table as the issuer.
+func RegisterInternalIssuer(urlSuffix string, internalIssuer InternalIssuer) {
+	internalIssuers[urlSuffix] = internalIssuer
+}
+
+//mockery:generate: true
+type InternalIssuer interface {
+	// Signing key used to validate a JWT from this internal issuer.
+	SigningKey() jwtx.SigningKey
+	// Value to store in [auth_model.AuthorizedIntegration]'s Issuer field to reflect the use of this internal issuer.
+	IssuerPlaceholder() string
+}
 
 // Restrict document size to prevent resource exhaustion attack with a malicious authorized integration; largest
 // real-world openid-configuration observed is about 1kB, largest JWKS is 6kB, so for both cases 16kB should be
@@ -111,7 +144,19 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 				return nil, fmt.Errorf("invalid `aud` claim: %q", audience)
 			}
 
-			authorizedIntegration, err = auth_model.GetAuthorizedIntegration(req.Context(), issuer, audience)
+			// Check if there's an internal issuer that matches the JWT's issuer, and if so, change `queryIssuer` to the
+			// internal issuer's placeholder, and store `internalIssuer` for later:
+			queryIssuer := issuer
+			var internalIssuer InternalIssuer
+			issuerSuffix := strings.TrimPrefix(issuer, setting.AppURL)
+			if issuer != issuerSuffix { // TrimPrefix will return a different string when the prefix was present
+				if ii, ok := internalIssuers[issuerSuffix]; ok {
+					internalIssuer = ii
+					queryIssuer = internalIssuer.IssuerPlaceholder()
+				}
+			}
+
+			authorizedIntegration, err = auth_model.GetAuthorizedIntegration(req.Context(), queryIssuer, audience)
 			if errors.Is(err, util.ErrNotExist) {
 				return nil, errors.New("matching authorized_integration not found")
 			} else if err != nil {
@@ -123,6 +168,14 @@ func (a *AuthorizedIntegration) Verify(req *http.Request, w http.ResponseWriter,
 			err = a.checkClaims(t.Claims.(*flexibleClaims), authorizedIntegration.ClaimRules)
 			if err != nil {
 				return nil, fmt.Errorf("claim mismatch: %w", err)
+			}
+
+			// If an internal issuer was found earlier, then we can skip the JWKS fetch and just use its in-memory
+			// signing key to validate the JWT.  It is critical we do this after the `checkClaims` above so that we
+			// don't miss important validation of the JWT.
+			if internalIssuer != nil {
+				key := internalIssuer.SigningKey().VerifyKey()
+				return key, nil
 			}
 
 			issuerURL, err := url.Parse(issuer)

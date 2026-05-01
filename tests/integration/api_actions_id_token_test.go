@@ -6,13 +6,16 @@ package integration
 import (
 	"crypto/rsa"
 	"encoding/base64"
+	"fmt"
 	"math/big"
 	"net/http"
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
+	"forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/modules/setting"
+	api "forgejo.org/modules/structs"
 	actions_service "forgejo.org/services/actions"
 	"forgejo.org/tests"
 
@@ -187,5 +190,38 @@ func TestActionsIDToken(t *testing.T) {
 		req = NewRequest(t, "GET", "/api/actions/_apis/pipelines/workflows/123/idtoken?placeholder=true&audience=testingAud").AddTokenAuth(token)
 		resp = MakeRequest(t, req, http.StatusBadRequest)
 		assert.Contains(t, resp.Body.String(), "run-id does not match")
+	})
+
+	t.Run("authorized integration internal issuer", func(t *testing.T) {
+		// Create an Authorized Integration which is set-up to be validated with the in-memory Actions' JWT signing key:
+		ai := &auth.AuthorizedIntegration{
+			UserID: 2,
+			Scope:  auth.AccessTokenScopeAll,
+			Issuer: "urn:forgejo:authorized-integrations:actions",
+			ClaimRules: &auth.ClaimRules{
+				Rules: []auth.ClaimRule{
+					{
+						Claim:      "sub",
+						Comparison: auth.ClaimEqual,
+						Value:      "repo:user5/repo4:ref:refs/heads/master",
+					},
+				},
+			},
+			ResourceAllRepos: true,
+		}
+		require.NoError(t, auth.InsertAuthorizedIntegration(t.Context(), ai))
+
+		// Create a JWT from the Actions system:
+		var getResponse getTokenResponse
+		req = NewRequest(t, "GET", fmt.Sprintf("/api/actions/_apis/pipelines/workflows/792/idtoken?placeholder=true&audience=%s", ai.Audience)).AddTokenAuth(token)
+		resp = MakeRequest(t, req, http.StatusOK)
+		DecodeJSON(t, resp, &getResponse)
+
+		// Should be able to make a Forgejo API call with the JWT, authenticated by the Authorized Integration:
+		req := NewRequest(t, "GET", "/api/v1/user").AddTokenAuth(getResponse.Value)
+		resp := MakeRequest(t, req, http.StatusOK)
+		var user api.User
+		DecodeJSON(t, resp, &user)
+		assert.Equal(t, "user2", user.LoginName)
 	})
 }

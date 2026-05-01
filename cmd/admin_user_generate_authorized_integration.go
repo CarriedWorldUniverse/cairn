@@ -23,8 +23,14 @@ import (
 
 func microcmdUserCreateAuthorizedIntegration() *cli.Command {
 	return &cli.Command{
-		Name:  "create-authorized-integration",
-		Usage: "Create an authorized integration for a specific user",
+		Name: "create-authorized-integration",
+		Description: `Creates an authorized integration. Authorized integrations allow Forgejo to
+receive JWTs from external sources, validate their claims against
+user-defined rules, and grant access to Forgejo's API on behalf of a user.
+
+The issuer may be set to "urn:forgejo:authorized-integrations:actions"
+to support JWTs from the local instance's Forgejo Actions, utilizing the
+enable-openid-connect flag in a workflow.`,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "username",
