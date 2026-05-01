@@ -22,7 +22,7 @@ import (
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	act_model "code.forgejo.org/forgejo/runner/v12/act/model"
-	"github.com/robfig/cron/v3"
+	"github.com/gdgvda/cron"
 	"xorm.io/builder"
 )
 
