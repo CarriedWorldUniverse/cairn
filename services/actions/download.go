@@ -15,7 +15,6 @@ import (
 	"forgejo.org/modules/httplib"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
 	"forgejo.org/services/context"
 )
 
@@ -51,7 +50,7 @@ func serveV4Artifact(base *context.Base, art *actions_model.ActionArtifact) erro
 	if err != nil {
 		return err
 	}
-	httplib.ServeContentByReadSeeker(base.Req, base.Resp, art.ArtifactName+".zip", util.ToPointer(art.UpdatedUnix.AsTime()), f)
+	httplib.ServeContentByReadSeeker(base.Req, base.Resp, art.ArtifactName+".zip", new(art.UpdatedUnix.AsTime()), f)
 	return nil
 }
 

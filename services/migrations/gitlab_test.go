@@ -57,14 +57,14 @@ func TestGitlabDownloadRepo(t *testing.T) {
 		{
 			Title:   "1.0.0",
 			Created: time.Date(2024, 9, 3, 13, 53, 8, 516000000, time.UTC),
-			Updated: timePtr(time.Date(2024, 9, 3, 20, 3, 57, 786000000, time.UTC)),
-			Closed:  timePtr(time.Date(2024, 9, 3, 20, 3, 57, 786000000, time.UTC)),
+			Updated: new(time.Date(2024, 9, 3, 20, 3, 57, 786000000, time.UTC)),
+			Closed:  new(time.Date(2024, 9, 3, 20, 3, 57, 786000000, time.UTC)),
 			State:   "closed",
 		},
 		{
 			Title:   "1.1.0",
 			Created: time.Date(2024, 9, 3, 13, 52, 48, 414000000, time.UTC),
-			Updated: timePtr(time.Date(2024, 9, 3, 14, 52, 14, 93000000, time.UTC)),
+			Updated: new(time.Date(2024, 9, 3, 14, 52, 14, 93000000, time.UTC)),
 			State:   "active",
 		},
 	}, milestones)
@@ -260,7 +260,7 @@ func TestGitlabDownloadRepo(t *testing.T) {
 					Content:  "hearts",
 				},
 			},
-			Closed: timePtr(time.Date(2024, 9, 3, 14, 43, 10, 906000000, time.UTC)),
+			Closed: new(time.Date(2024, 9, 3, 14, 43, 10, 906000000, time.UTC)),
 		},
 	}, issues)
 	issues, isEnd, err = downloader.GetIssues(2, 3)
@@ -297,7 +297,7 @@ func TestGitlabDownloadRepo(t *testing.T) {
 					Content:  "open_mouth",
 				},
 			},
-			Closed: timePtr(time.Date(2024, 9, 3, 14, 43, 10, 708000000, time.UTC)),
+			Closed: new(time.Date(2024, 9, 3, 14, 43, 10, 708000000, time.UTC)),
 		},
 	}, issues)
 
