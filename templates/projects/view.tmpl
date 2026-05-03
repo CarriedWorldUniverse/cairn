@@ -29,32 +29,31 @@
 					{{ctx.Locale.Tr "new_project_column"}}
 				</button>
 			</div>
-			<div class="ui small modal new-project-column-modal" id="new-project-column-item">
-				<div class="header">
-					{{ctx.Locale.Tr "repo.projects.column.new"}}
-				</div>
-				<div class="content">
+			<dialog id="new-project-column-item">
+				<article>
+					<header>{{ctx.Locale.Tr "repo.projects.column.new"}}</header>
 					<form class="ui form">
-						<div class="required field">
-							<label for="new_project_column">{{ctx.Locale.Tr "repo.projects.column.new_title"}}</label>
-							<input class="new-project-column" id="new_project_column" name="title" required>
-						</div>
+						<div class="content">
+							<div class="required field">
+								<label for="new_project_column">{{ctx.Locale.Tr "repo.projects.column.new_title"}}</label>
+								<input class="new-project-column" id="new_project_column" name="title" required>
+							</div>
 
-						<div class="field color-field">
-							<label for="new_project_column_color_picker">{{ctx.Locale.Tr "repo.projects.column.color"}}</label>
-							<div class="js-color-picker-input column">
-								<input maxlength="7" placeholder="#c320f6" id="new_project_column_color_picker" name="color">
-								{{template "repo/issue/label_precolors"}}
+							<div class="field color-field">
+								<label for="new_project_column_color_picker">{{ctx.Locale.Tr "repo.projects.column.color"}}</label>
+								<div class="js-color-picker-input column">
+									<input maxlength="7" placeholder="#c320f6" id="new_project_column_color_picker" name="color">
+									{{template "repo/issue/label_precolors"}}
+								</div>
 							</div>
 						</div>
-
-						<div class="text right actions">
-							<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+						<div class="actions">
+							<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 							<button data-url="{{$.Link}}" class="ui primary button" id="new_project_column_submit">{{ctx.Locale.Tr "repo.projects.column.new_submit"}}</button>
 						</div>
 					</form>
-				</div>
-			</div>
+				</article>
+			</dialog>
 		{{end}}
 	</div>
 
@@ -101,54 +100,54 @@
 									</a>
 								{{end}}
 
-								<div class="ui small modal edit-project-column-modal" id="edit-project-column-modal-{{.ID}}">
-									<div class="header">
-										{{ctx.Locale.Tr "repo.projects.column.edit"}}
-									</div>
-									<div class="content">
+								<dialog class="edit-project-column-modal" id="edit-project-column-modal-{{.ID}}">
+									<article>
+										<header>{{ctx.Locale.Tr "repo.projects.column.edit"}}</header>
 										<form class="ui form">
-											<div class="required field">
-												<label for="new_project_column_title">{{ctx.Locale.Tr "repo.projects.column.edit_title"}}</label>
-												<input class="project-column-title-input" id="new_project_column_title" name="title" value="{{.Title}}" required>
-											</div>
-
-											<div class="field color-field">
-												<label for="new_project_column_color">{{ctx.Locale.Tr "repo.projects.column.color"}}</label>
-												<div class="js-color-picker-input column">
-													<input maxlength="7" placeholder="#c320f6" id="new_project_column_color" name="color" value="{{.Color}}">
-													{{template "repo/issue/label_precolors"}}
+											<div class="content">
+												<div class="required field">
+													<label for="new_project_column_title">{{ctx.Locale.Tr "repo.projects.column.edit_title"}}</label>
+													<input class="project-column-title-input" id="new_project_column_title" name="title" value="{{.Title}}" required>
 												</div>
-											</div>
 
-											<div class="text right actions">
-												<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+												<div class="field color-field">
+													<label for="new_project_column_color">{{ctx.Locale.Tr "repo.projects.column.color"}}</label>
+													<div class="js-color-picker-input column">
+														<input maxlength="7" placeholder="#c320f6" id="new_project_column_color" name="color" value="{{.Color}}">
+														{{template "repo/issue/label_precolors"}}
+													</div>
+												</div>
+
+											</div>
+											<div class="actions">
+												<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 												<button data-url="{{$.Link}}/{{.ID}}" class="ui primary button edit-project-column-button">{{ctx.Locale.Tr "repo.projects.column.edit"}}</button>
 											</div>
 										</form>
-									</div>
-								</div>
+									</article>
+								</dialog>
 
-								<div class="ui g-modal-confirm modal default-project-column-modal" id="default-project-column-modal-{{.ID}}">
-									<div class="header">
-										<span id="default-project-column-header"></span>
-									</div>
-									<div class="content">
-										<label id="default-project-column-content"></label>
-									</div>
-									{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
-								</div>
+								<dialog class="default-project-column-modal" id="default-project-column-modal-{{.ID}}">
+									<article>
+										<header><span id="default-project-column-header"></span></header>
+										<div class="content">
+											<label id="default-project-column-content"></label>
+										</div>
+										{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
+									</article>
+								</dialog>
 
-								<div class="ui g-modal-confirm modal" id="delete-project-column-modal-{{.ID}}">
-									<div class="header">
-										{{ctx.Locale.Tr "repo.projects.column.delete"}}
-									</div>
-									<div class="content">
-										<label>
-											{{ctx.Locale.Tr "repo.projects.column.deletion_desc"}}
-										</label>
-									</div>
-									{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
-								</div>
+								<dialog id="delete-project-column-modal-{{.ID}}">
+									<article>
+										<header>{{ctx.Locale.Tr "repo.projects.column.delete"}}</header>
+										<div class="content">
+											<label>
+												{{ctx.Locale.Tr "repo.projects.column.deletion_desc"}}
+											</label>
+										</div>
+										{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
+									</article>
+								</dialog>
 							</div>
 						</div>
 					{{end}}

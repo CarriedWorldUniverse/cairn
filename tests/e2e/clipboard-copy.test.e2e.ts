@@ -16,8 +16,12 @@ test('copy src file path to clipboard', async ({page}) => {
   expect(response?.status()).toBe(200);
 
   await page.click('[data-clipboard-text]');
-  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-  expect(clipboardText).toContain('README.md');
+
+  await expect(async () => {
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain('README.md');
+  }).toPass();
+
   await expect(page.getByText('Copied')).toBeVisible();
   await screenshot(page, page.getByText('Copied'), 50);
 });
@@ -27,8 +31,12 @@ test('copy diff file path to clipboard', async ({page}) => {
   expect(response?.status()).toBe(200);
 
   await page.click('[data-clipboard-text]');
-  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-  expect(clipboardText).toContain('README.md');
+
+  await expect(async () => {
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain('README.md');
+  }).toPass();
+
   await expect(page.getByText('Copied')).toBeVisible();
   await screenshot(page, page.getByText('Copied'), 50);
 });

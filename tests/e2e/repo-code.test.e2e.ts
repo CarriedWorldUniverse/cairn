@@ -148,11 +148,13 @@ test('Copy line permalink', async ({page}) => {
   const response = await page.goto('/user2/repo1/src/branch/master/README.md?display=source#L1');
   expect(response?.status()).toBe(200);
 
-  await page.locator('.code-line-button').click();
-  // eslint-disable-next-line playwright/no-force-option
-  await page.locator('.tippy-box .copy-line-permalink').click({force: true});
-  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-  expect(clipboardText).toContain('README.md?display=source#L1');
+  await expect(async () => {
+    await page.locator('.code-line-button').click();
+    // eslint-disable-next-line playwright/no-force-option
+    await page.locator('.tippy-box .copy-line-permalink').click({force: true});
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain('README.md?display=source#L1');
+  }).toPass();
 });
 
 test('Line menu styles', async ({page}) => {

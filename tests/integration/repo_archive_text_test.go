@@ -63,7 +63,7 @@ func testRepoArchiveElements(t *testing.T, tr translation.Locale, doc *HTMLDoc, 
 
 	// Test modal
 	modal := doc.Find("#archive-repo-modal")
-	testRepoArchiveElement(t, tr, modal, ".header", opType+".header")
+	testRepoArchiveElement(t, tr, modal, "header", opType+".header")
 	testRepoArchiveElement(t, tr, modal, ".message", opType+".text")
 	testRepoArchiveElement(t, tr, modal, ".button.red", opType+".button")
 }

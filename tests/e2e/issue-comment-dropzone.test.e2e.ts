@@ -48,8 +48,10 @@ async function assertCopy(page: Page, startWith: string) {
   const copyLink = preview.locator('.octicon-copy').locator('..');
   await copyLink.click();
 
-  const clipboardContent = await page.evaluate(() => navigator.clipboard.readText());
-  expect(clipboardContent).toContain(startWith);
+  await expect(async () => {
+    const clipboardContent = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardContent).toContain(startWith);
+  }).toPass();
 }
 
 test('Paste image in new comment', async ({page}) => {

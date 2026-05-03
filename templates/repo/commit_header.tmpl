@@ -55,25 +55,28 @@
 								data-modal-cherry-pick-header="{{ctx.Locale.Tr "repo.commit.cherry-pick-header" (ShortSha .CommitID)}}"
 								data-modal-cherry-pick-content="{{ctx.Locale.Tr "repo.commit.cherry-pick-content"}}"
 								data-modal-cherry-pick-submit="{{ctx.Locale.Tr "repo.commit.cherry-pick"}}">{{ctx.Locale.Tr "repo.commit.cherry-pick"}}</div>
-							<div class="ui g-modal-confirm modal" id="cherry-pick-modal">
-								<div class="header">
-									<span id="cherry-pick-header"></span>
-								</div>
-								<div class="content">
-									<p id="cherry-pick-content" class="branch-dropdown"></p>
-									{{template "repo/branch_dropdown" dict "root" .
-										"noTag" true "disableCreateBranch" true
-										"branchForm" "branch-dropdown-form"
-										"branchURLPrefix" (printf "%s/_cherrypick/%s/" $.RepoLink .CommitID) "branchURLSuffix" ""
-										"setAction" true "submitForm" true}}
+							<dialog id="cherry-pick-modal">
+								<article>
+									<header><span id="cherry-pick-header"></span></header>
+									<div class="content">
+										<p id="cherry-pick-content" class="branch-dropdown"></p>
+										{{template "repo/branch_dropdown" dict "root" .
+											"noTag" true "disableCreateBranch" true
+											"branchForm" "branch-dropdown-form"
+											"branchURLPrefix" (printf "%s/_cherrypick/%s/" $.RepoLink .CommitID) "branchURLSuffix" ""
+											"setAction" true "submitForm" true}}
+									</div>
 									<form method="get" action="{{$.RepoLink}}/_cherrypick/{{.CommitID}}/{{PathEscapeSegments $.Repository.DefaultBranch}}" id="branch-dropdown-form">
 										<input type="hidden" name="ref" value="{{$.Repository.DefaultBranch}}">
 										<input type="hidden" name="refType" value="branch">
 										<input type="hidden" id="cherry-pick-type" name="cherry-pick-type"><br>
-										<button type="submit" id="cherry-pick-submit" class="ui primary button"></button>
+										<div class="actions">
+											<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+											<button type="submit" id="cherry-pick-submit" class="ui primary button"></button>
+										</div>
 									</form>
-								</div>
-							</div>
+								</article>
+							</dialog>
 							<dialog id="create-branch-modal">
 								<article>
 									<header>{{ctx.Locale.Tr "repo.branch.new_branch"}}</header>
@@ -284,20 +287,20 @@
 				<button id="commit-notes-edit-button" class="ui tiny primary button tw-py-[6px] tw-px-[10px]">{{ctx.Locale.Tr "edit"}}</button>
 				<button class="ui tiny button red show-modal tw-py-[6px] tw-px-[10px]" data-modal="#delete-note-modal">{{ctx.Locale.Tr "remove"}}</button>
 			</div>
-			<div class="ui small modal" id="delete-note-modal">
-				<div class="header">
-					{{ctx.Locale.Tr "repo.diff.git-notes.remove-header"}}
-				</div>
-				<div class="content">
-					<p>{{ctx.Locale.Tr "repo.diff.git-notes.remove-body"}}</p>
-					<div class="text right actions">
-						<form action="{{.Link}}/notes/remove" method="post">
+			<dialog id="delete-note-modal">
+				<article>
+					<header>{{ctx.Locale.Tr "repo.diff.git-notes.remove-header"}}</header>
+					<div class="content">
+						<p>{{ctx.Locale.Tr "repo.diff.git-notes.remove-body"}}</p>
+					</div>
+					<form action="{{.Link}}/notes/remove" method="post">
+						<div class="text right actions">
 							<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
 							<button type="submit" class="ui red button">{{ctx.Locale.Tr "remove"}}</button>
-						</form>
-					</div>
-				</div>
-			</div>
+						</div>
+					</form>
+				</article>
+			</dialog>
 		{{end}}
 	</div>
 	<div id="commit-notes-display-area" class="ui bottom attached info segment git-notes">

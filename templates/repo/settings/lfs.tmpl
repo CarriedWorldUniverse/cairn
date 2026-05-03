@@ -34,19 +34,17 @@
 		</table>
 		{{template "base/paginate" .}}
 		{{range .LFSFiles}}
-			<div class="ui g-modal-confirm modal" id="delete-{{.Oid}}">
-				<div class="header">
-					{{ctx.Locale.Tr "repo.settings.lfs_delete" .Oid}}
-				</div>
-				<div class="content">
-					<p>
-						{{ctx.Locale.Tr "repo.settings.lfs_delete_warning"}}
-					</p>
+			<dialog id="delete-{{.Oid}}">
+				<article>
+					<header>{{ctx.Locale.Tr "repo.settings.lfs_delete" .Oid}}</header>
+					<div class="content">
+						<p>{{ctx.Locale.Tr "repo.settings.lfs_delete_warning"}}</p>
+					</div>
 					<form class="ui form" action="{{$.Link}}/delete/{{.Oid}}" method="post">
 						{{template "base/modal_actions_confirm"}}
 					</form>
-				</div>
-			</div>
+				</article>
+			</dialog>
 		{{end}}
 	</div>
 {{template "repo/settings/layout_footer" .}}
