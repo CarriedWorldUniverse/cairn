@@ -204,7 +204,7 @@ func TestActionsIDToken(t *testing.T) {
 					{
 						Claim:      "sub",
 						Comparison: auth.ClaimEqual,
-						Value:      "repo:user5/repo4:ref:refs/heads/master",
+						Value:      "repo:user5-5/repo4-4:ref:refs/heads/master",
 					},
 				},
 			},
