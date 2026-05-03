@@ -11,6 +11,7 @@ import (
 	"time"
 
 	actions_model "forgejo.org/models/actions"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
@@ -30,21 +31,24 @@ type AuthorizationTokenClaims struct {
 }
 
 type IDTokenCustomClaims struct {
-	Actor           string `json:"actor"`
-	BaseRef         string `json:"base_ref"`
-	EventName       string `json:"event_name"`
-	HeadRef         string `json:"head_ref"`
-	Ref             string `json:"ref"`
-	RefProtected    string `json:"ref_protected"`
-	RefType         string `json:"ref_type"`
-	Repository      string `json:"repository"`
-	RepositoryOwner string `json:"repository_owner"`
-	RunAttempt      string `json:"run_attempt"`
-	RunID           string `json:"run_id"`
-	RunNumber       string `json:"run_number"`
-	Sha             string `json:"sha"`
-	Workflow        string `json:"workflow"`
-	WorkflowRef     string `json:"workflow_ref"`
+	Actor             string `json:"actor"`
+	ActorID           string `json:"actor_id"`
+	BaseRef           string `json:"base_ref"`
+	EventName         string `json:"event_name"`
+	HeadRef           string `json:"head_ref"`
+	Ref               string `json:"ref"`
+	RefProtected      string `json:"ref_protected"`
+	RefType           string `json:"ref_type"`
+	Repository        string `json:"repository"`
+	RepositoryID      string `json:"repository_id"`
+	RepositoryOwner   string `json:"repository_owner"`
+	RepositoryOwnerID string `json:"repository_owner_id"`
+	RunAttempt        string `json:"run_attempt"`
+	RunID             string `json:"run_id"`
+	RunNumber         string `json:"run_number"`
+	Sha               string `json:"sha"`
+	Workflow          string `json:"workflow"`
+	WorkflowRef       string `json:"workflow_ref"`
 }
 
 type actionsCacheScope struct {
@@ -59,7 +63,7 @@ const (
 	actionsCachePermissionWrite
 )
 
-func CreateAuthorizationToken(task *actions_model.ActionTask, gitGtx map[string]any, enableOpenIDConnect bool) (string, error) {
+func CreateAuthorizationToken(task *actions_model.ActionTask, gitGtx map[string]any, enableOpenIDConnect bool, actionsConfig *repo_model.ActionsConfig) (string, error) {
 	now := time.Now()
 	taskID := task.ID
 	runID := task.Job.RunID
@@ -96,7 +100,16 @@ func CreateAuthorizationToken(task *actions_model.ActionTask, gitGtx map[string]
 		}
 
 		claims.OIDCExtra = oidcExtra
-		claims.OIDCSub = generateOIDCSub(gitGtx)
+
+		switch actionsConfig.OIDCSubjectFormat {
+		case repo_model.OIDCSubjectFormatDefault:
+			claims.OIDCSub = generateOIDCSub(gitGtx)
+		case repo_model.OIDCSubjectFormatLegacyForgejo15:
+			claims.OIDCSub = legacyGenerateOIDCSub(gitGtx)
+		default:
+			return "", fmt.Errorf("unexpected oidc subject format: %q", actionsConfig.OIDCSubjectFormat)
+		}
+
 		claims.Scp = fmt.Sprintf("%s generate_id_token:%s", claims.Scp, runIDJobID)
 	}
 
@@ -120,21 +133,24 @@ func generateOIDCExtra(gitCtx map[string]any) (string, error) {
 	}
 
 	claims := IDTokenCustomClaims{
-		Actor:           ctxVal("actor"),
-		BaseRef:         ctxVal("base_ref"),
-		EventName:       ctxVal("event_name"),
-		HeadRef:         ctxVal("head_ref"),
-		Ref:             ctxVal("ref"),
-		RefProtected:    ctxVal("ref_protected"),
-		RefType:         ctxVal("ref_type"),
-		Repository:      ctxVal("repository"),
-		RepositoryOwner: ctxVal("repository_owner"),
-		RunAttempt:      ctxVal("run_attempt"),
-		RunID:           ctxVal("run_id"),
-		RunNumber:       ctxVal("run_number"),
-		Sha:             ctxVal("sha"),
-		Workflow:        ctxVal("workflow"),
-		WorkflowRef:     ctxVal("workflow_ref"),
+		Actor:             ctxVal("actor"),
+		ActorID:           ctxVal("actor_id"),
+		BaseRef:           ctxVal("base_ref"),
+		EventName:         ctxVal("event_name"),
+		HeadRef:           ctxVal("head_ref"),
+		Ref:               ctxVal("ref"),
+		RefProtected:      ctxVal("ref_protected"),
+		RefType:           ctxVal("ref_type"),
+		Repository:        ctxVal("repository"),
+		RepositoryID:      ctxVal("repository_id"),
+		RepositoryOwner:   ctxVal("repository_owner"),
+		RepositoryOwnerID: ctxVal("repository_owner_id"),
+		RunAttempt:        ctxVal("run_attempt"),
+		RunID:             ctxVal("run_id"),
+		RunNumber:         ctxVal("run_number"),
+		Sha:               ctxVal("sha"),
+		Workflow:          ctxVal("workflow"),
+		WorkflowRef:       ctxVal("workflow_ref"),
 	}
 
 	ret, err := json.Marshal(claims)
@@ -146,6 +162,17 @@ func generateOIDCExtra(gitCtx map[string]any) (string, error) {
 }
 
 func generateOIDCSub(gitCtx map[string]any) string {
+	nameParts := strings.SplitN(gitCtx["repository"].(string), "/", 2)
+	repoName := nameParts[1]
+	switch gitCtx["event_name"] {
+	case "pull_request":
+		return fmt.Sprintf("repo:%s-%s/%s-%s:pull_request", gitCtx["repository_owner"], gitCtx["repository_owner_id"], repoName, gitCtx["repository_id"])
+	default:
+		return fmt.Sprintf("repo:%s-%s/%s-%s:ref:%s", gitCtx["repository_owner"], gitCtx["repository_owner_id"], repoName, gitCtx["repository_id"], gitCtx["ref"])
+	}
+}
+
+func legacyGenerateOIDCSub(gitCtx map[string]any) string {
 	switch gitCtx["event_name"] {
 	case "pull_request":
 		return fmt.Sprintf("repo:%s:pull_request", gitCtx["repository"])

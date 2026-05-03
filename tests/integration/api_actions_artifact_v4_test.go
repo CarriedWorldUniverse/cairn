@@ -15,6 +15,7 @@ import (
 	"time"
 
 	actions_model "forgejo.org/models/actions"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/storage"
 	"forgejo.org/routers/api/actions"
 	actions_service "forgejo.org/services/actions"
@@ -43,7 +44,7 @@ func uploadArtifact(t *testing.T, body string) string {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -103,7 +104,7 @@ func TestActionsArtifactV4UploadSingleFileWrongChecksum(t *testing.T) {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -154,7 +155,7 @@ func TestActionsArtifactV4UploadSingleFileWithRetentionDays(t *testing.T) {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -209,7 +210,7 @@ func TestActionsArtifactV4UploadSingleFileWithPotentialHarmfulBlockID(t *testing
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -279,7 +280,7 @@ func TestActionsArtifactV4UploadSingleFileWithChunksOutOfOrder(t *testing.T) {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -351,7 +352,7 @@ func TestActionsArtifactV4DownloadSingle(t *testing.T) {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// acquire artifact upload url
@@ -419,7 +420,7 @@ func TestActionsArtifactV4Delete(t *testing.T) {
 			RunID: 792,
 		},
 	}
-	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := actions_service.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 
 	// delete artifact by name

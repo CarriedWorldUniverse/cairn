@@ -45,7 +45,12 @@ func TestActionsOIDC(t *testing.T) {
 	assert.Equal(t, setting.AppURL+"api/actions/.well-known/keys", config.JwksURI)
 	assert.Equal(t, []string{"public"}, config.SubjectTypesSupported)
 	assert.Equal(t, []string{"id_token"}, config.ResponseTypesSupported)
-	assert.Equal(t, []string{"sub", "aud", "exp", "iat", "iss", "nbf", "actor", "base_ref", "event_name", "head_ref", "ref", "ref_protected", "ref_type", "repository", "repository_owner", "run_attempt", "run_id", "run_number", "sha", "workflow", "workflow_ref"}, config.ClaimsSupported)
+	assert.Equal(t, []string{
+		"sub", "aud", "exp", "iat", "iss", "nbf", "actor", "actor_id", "base_ref", "event_name",
+		"head_ref", "ref", "ref_protected", "ref_type", "repository", "repository_id", "repository_owner",
+		"repository_owner_id", "run_attempt", "run_id", "run_number", "sha", "workflow", "workflow_ref",
+	},
+		config.ClaimsSupported)
 	assert.Equal(t, []string{"RS256"}, config.IDTokenSigningAlgValuesSupported)
 	assert.Equal(t, []string{"openid"}, config.ScopesSupported)
 
