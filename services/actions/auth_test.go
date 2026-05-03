@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/setting"
 
@@ -39,28 +40,32 @@ func TestCreateAuthorizationToken(t *testing.T) {
 			name:                "enableOpenIDConnect true",
 			enableOpenIDConnect: true,
 			gitCtx: map[string]any{
-				"actor":            "user1",
-				"base_ref":         "master",
-				"event_name":       "push",
-				"head_ref":         "master",
-				"ref":              "refs/heads/master",
-				"ref_protected":    "false",
-				"ref_type":         "branch",
-				"repository":       "mpminardi/testing",
-				"repository_owner": "mpminardi",
-				"run_attempt":      "1",
-				"run_id":           "1",
-				"run_number":       "1",
-				"sha":              "pretend-sha",
-				"workflow":         "test.yml",
-				"workflow_ref":     "pretend-ref",
+				"actor":               "user1",
+				"actor_id":            "123",
+				"base_ref":            "master",
+				"event_name":          "push",
+				"head_ref":            "master",
+				"ref":                 "refs/heads/master",
+				"ref_protected":       "false",
+				"ref_type":            "branch",
+				"repository":          "mpminardi/testing",
+				"repository_id":       "456",
+				"repository_owner":    "mpminardi",
+				"repository_owner_id": "789",
+				"run_attempt":         "1",
+				"run_id":              "1",
+				"run_number":          "1",
+				"sha":                 "pretend-sha",
+				"workflow":            "test.yml",
+				"workflow_ref":        "pretend-ref",
 			},
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			token, err := CreateAuthorizationToken(task, tc.gitCtx, tc.enableOpenIDConnect)
+			token, err := CreateAuthorizationToken(task, tc.gitCtx, tc.enableOpenIDConnect,
+				&repo_model.ActionsConfig{})
 			require.NoError(t, err)
 			assert.NotEmpty(t, token)
 			claims := jwt.MapClaims{}
@@ -87,12 +92,33 @@ func TestCreateAuthorizationToken(t *testing.T) {
 				assert.Contains(t, scp, "generate_id_token:1:2")
 				oidcSubClaim, ok := claims["oidc_sub"]
 				assert.True(t, ok, "Has oidc_sub claim in jwt token")
-				assert.Equal(t, "repo:mpminardi/testing:ref:refs/heads/master", oidcSubClaim)
+				assert.Equal(t, "repo:mpminardi-789/testing-456:ref:refs/heads/master", oidcSubClaim)
 				oidcExtraClaim, ok := claims["oidc_extra"]
 				assert.True(t, ok, "Has oidc_extra claim in jwt token")
 				val, err := json.Marshal(tc.gitCtx)
 				require.NoError(t, err)
 				assert.Equal(t, string(val), oidcExtraClaim)
+			} else {
+				assert.NotContains(t, scp, "generate_id_token")
+				_, ok := claims["oidc_sub"]
+				assert.False(t, ok, "Does not have oidc_sub claim in jwt token")
+				_, ok = claims["oidc_extra"]
+				assert.False(t, ok, "Does not have oidc_extra claim in jwt token")
+			}
+
+			token, err = CreateAuthorizationToken(task, tc.gitCtx, tc.enableOpenIDConnect,
+				&repo_model.ActionsConfig{OIDCSubjectFormat: repo_model.OIDCSubjectFormatLegacyForgejo15})
+			require.NoError(t, err)
+			assert.NotEmpty(t, token)
+			claims = jwt.MapClaims{}
+			_, err = jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) {
+				return setting.GetGeneralTokenSigningSecret(), nil
+			})
+			require.NoError(t, err)
+			if tc.enableOpenIDConnect {
+				oidcSubClaim, ok := claims["oidc_sub"]
+				assert.True(t, ok, "Has oidc_sub claim in jwt token")
+				assert.Equal(t, "repo:mpminardi/testing:ref:refs/heads/master", oidcSubClaim)
 			} else {
 				assert.NotContains(t, scp, "generate_id_token")
 				_, ok := claims["oidc_sub"]
@@ -112,7 +138,7 @@ func TestParseAuthorizationToken(t *testing.T) {
 			RunID: 1,
 		},
 	}
-	token, err := CreateAuthorizationToken(task, map[string]any{}, false)
+	token, err := CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 	headers := http.Header{}
@@ -133,23 +159,26 @@ func TestParseAuthorizationTokenClaims(t *testing.T) {
 		},
 	}
 	gitCtx := map[string]any{
-		"actor":            "user1",
-		"base_ref":         "master",
-		"event_name":       "push",
-		"head_ref":         "master",
-		"ref":              "refs/heads/master",
-		"ref_protected":    "false",
-		"ref_type":         "branch",
-		"repository":       "mpminardi/testing",
-		"repository_owner": "mpminardi",
-		"run_attempt":      "1",
-		"run_id":           "1",
-		"run_number":       "1",
-		"sha":              "pretend-sha",
-		"workflow":         "test.yml",
-		"workflow_ref":     "pretend-ref",
+		"actor":               "user1",
+		"actor_id":            "123",
+		"base_ref":            "master",
+		"event_name":          "push",
+		"head_ref":            "master",
+		"ref":                 "refs/heads/master",
+		"ref_protected":       "false",
+		"ref_type":            "branch",
+		"repository":          "mpminardi/testing",
+		"repository_id":       "456",
+		"repository_owner":    "mpminardi",
+		"repository_owner_id": "789",
+		"run_attempt":         "1",
+		"run_id":              "1",
+		"run_number":          "1",
+		"sha":                 "pretend-sha",
+		"workflow":            "test.yml",
+		"workflow_ref":        "pretend-ref",
 	}
-	token, err := CreateAuthorizationToken(task, gitCtx, true)
+	token, err := CreateAuthorizationToken(task, gitCtx, true, &repo_model.ActionsConfig{OIDCSubjectFormat: repo_model.OIDCSubjectFormatLegacyForgejo15})
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 	headers := http.Header{}
@@ -180,6 +209,32 @@ func TestParseAuthorizationTokenNoAuthHeader(t *testing.T) {
 func TestGenerateOIDCSub(t *testing.T) {
 	t.Run("pull_request event", func(t *testing.T) {
 		sub := generateOIDCSub(map[string]any{
+			"event_name":          "pull_request",
+			"repository":          "mpminardi/testing",
+			"ref":                 "refs/heads/master",
+			"repository_owner":    "mpminardi",
+			"repository_owner_id": "123",
+			"repository_id":       "456",
+		})
+		assert.Equal(t, "repo:mpminardi-123/testing-456:pull_request", sub)
+	})
+
+	t.Run("other event", func(t *testing.T) {
+		sub := generateOIDCSub(map[string]any{
+			"event_name":          "random",
+			"repository":          "mpminardi/testing",
+			"ref":                 "refs/heads/master",
+			"repository_owner":    "mpminardi",
+			"repository_owner_id": "123",
+			"repository_id":       "456",
+		})
+		assert.Equal(t, "repo:mpminardi-123/testing-456:ref:refs/heads/master", sub)
+	})
+}
+
+func TestLegacyGenerateOIDCSub(t *testing.T) {
+	t.Run("pull_request event", func(t *testing.T) {
+		sub := legacyGenerateOIDCSub(map[string]any{
 			"event_name": "pull_request",
 			"repository": "mpminardi/testing",
 			"ref":        "refs/heads/master",
@@ -189,7 +244,7 @@ func TestGenerateOIDCSub(t *testing.T) {
 	})
 
 	t.Run("other event", func(t *testing.T) {
-		sub := generateOIDCSub(map[string]any{
+		sub := legacyGenerateOIDCSub(map[string]any{
 			"event_name": "random",
 			"repository": "mpminardi/testing",
 			"ref":        "refs/heads/master",

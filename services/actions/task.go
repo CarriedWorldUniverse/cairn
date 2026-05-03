@@ -10,6 +10,8 @@ import (
 
 	actions_model "forgejo.org/models/actions"
 	"forgejo.org/models/db"
+	repo_model "forgejo.org/models/repo"
+	"forgejo.org/models/unit"
 	actions_module "forgejo.org/modules/actions"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
@@ -68,7 +70,12 @@ func PickTask(ctx context.Context, runner *actions_model.ActionRunner, requestKe
 			return fmt.Errorf("findTaskNeeds: %w", err)
 		}
 
-		taskContext, err := generateTaskContext(t)
+		unit, err := t.Job.Run.Repo.GetUnit(ctx, unit.TypeActions)
+		if err != nil {
+			return fmt.Errorf("GetUnit: %w", err)
+		}
+
+		taskContext, err := generateTaskContext(t, unit.ActionsConfig())
 		if err != nil {
 			return fmt.Errorf("generateTaskContext: %w", err)
 		}
@@ -128,7 +135,12 @@ func RecoverTasks(ctx context.Context, tasks []*actions_model.ActionTask) ([]*ru
 				return fmt.Errorf("findTaskNeeds: %w", err)
 			}
 
-			taskContext, err := generateTaskContext(t)
+			unit, err := t.Job.Run.Repo.GetUnit(ctx, unit.TypeActions)
+			if err != nil {
+				return fmt.Errorf("GetUnit: %w", err)
+			}
+
+			taskContext, err := generateTaskContext(t, unit.ActionsConfig())
 			if err != nil {
 				return fmt.Errorf("generateTaskContext: %w", err)
 			}
@@ -151,7 +163,7 @@ func RecoverTasks(ctx context.Context, tasks []*actions_model.ActionTask) ([]*ru
 	return retval, nil
 }
 
-func generateTaskContext(t *actions_model.ActionTask) (*structpb.Struct, error) {
+func generateTaskContext(t *actions_model.ActionTask, ac *repo_model.ActionsConfig) (*structpb.Struct, error) {
 	run := t.Job.Run
 	gitCtx, err := GenerateGiteaContext(run, t.Job)
 	if err != nil {
@@ -170,7 +182,7 @@ func generateTaskContext(t *actions_model.ActionTask) (*structpb.Struct, error) 
 		enableOpenIDConnect = false
 	}
 
-	giteaRuntimeToken, err := CreateAuthorizationToken(t, gitCtx, enableOpenIDConnect)
+	giteaRuntimeToken, err := CreateAuthorizationToken(t, gitCtx, enableOpenIDConnect, ac)
 	if err != nil {
 		return nil, err
 	}

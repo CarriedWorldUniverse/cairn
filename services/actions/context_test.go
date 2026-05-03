@@ -36,12 +36,13 @@ func TestFindTaskNeeds(t *testing.T) {
 
 func TestGenerateGiteaContext(t *testing.T) {
 	testUser := &user.User{
-		ID:   1,
+		ID:   123,
 		Name: "testuser",
 	}
 
 	testRepo := &repo.Repository{
-		ID:        1,
+		ID:        456,
+		OwnerID:   789,
 		OwnerName: "testowner",
 		Name:      "testrepo",
 	}
@@ -56,7 +57,9 @@ func TestGenerateGiteaContext(t *testing.T) {
 		run := &actions_model.ActionRun{
 			ID:                1,
 			Index:             42,
+			TriggerUserID:     testUser.ID,
 			TriggerUser:       testUser,
+			RepoID:            testRepo.ID,
 			Repo:              testRepo,
 			TriggerEvent:      "push",
 			Ref:               "refs/heads/main",
@@ -70,12 +73,15 @@ func TestGenerateGiteaContext(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, "testuser", context["actor"])
+		assert.Equal(t, "123", context["actor_id"])
 		assert.Equal(t, setting.AppURL+"api/v1", context["api_url"])
 		assert.Equal(t, "push", context["event_name"])
 		assert.Equal(t, "refs/heads/main", context["ref"])
 		assert.Equal(t, "main", context["ref_name"])
 		assert.Equal(t, "branch", context["ref_type"])
+		assert.Equal(t, "789", context["repository_owner_id"])
 		assert.Equal(t, "testowner/testrepo", context["repository"])
+		assert.Equal(t, "456", context["repository_id"])
 		assert.Equal(t, "testowner", context["repository_owner"])
 		assert.Equal(t, "abc123def456", context["sha"])
 		assert.Equal(t, "42", context["run_number"])

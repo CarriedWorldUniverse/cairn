@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	actions_model "forgejo.org/models/actions"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/services/actions"
@@ -31,7 +32,7 @@ func TestActionRuntimeTokenVerify(t *testing.T) {
 				RunID: 1,
 			},
 		}
-		token, err := actions.CreateAuthorizationToken(task, map[string]any{}, false)
+		token, err := actions.CreateAuthorizationToken(task, map[string]any{}, false, &repo_model.ActionsConfig{})
 		require.NoError(t, err)
 
 		req := http.Request{
