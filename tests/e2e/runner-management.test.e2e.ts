@@ -121,9 +121,12 @@ test.describe('Runners of user2', () => {
     await expect(page).toHaveTitle(/^Set up runner runner-991301 .*/);
     await expect(page.getByRole('heading', {name: 'Set up runner runner-991301'})).toBeVisible();
 
-    await page.getByRole('button', {name: 'Copy runner UUID'}).click();
-    const runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerUUID).toMatch(uuidPattern);
+    let runnerUUID;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner UUID'}).click();
+      runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerUUID).toMatch(uuidPattern);
+    }).toPass();
 
     let runnerToken;
     await expect(async () => {
@@ -230,14 +233,20 @@ test.describe('Runners of user2', () => {
     await expect(page).toHaveTitle(/^Set up runner runner-2 .*/);
     await expect(page.getByRole('heading', {name: 'Set up runner runner-2'})).toBeVisible();
 
-    await page.getByRole('button', {name: 'Copy runner UUID'}).click();
-    const runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerUUID).toEqual('3a20ad8d-d5d6-4b7b-ba55-841ac8264c17');
+    let runnerUUID;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner UUID'}).click();
+      runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerUUID).toEqual('3a20ad8d-d5d6-4b7b-ba55-841ac8264c17');
+    }).toPass();
 
-    await page.getByRole('button', {name: 'Copy runner token'}).click();
-    const runnerToken = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerToken).not.toEqual('9730f9d2c6c731f07582788d1a1fe72a6b999a17');
-    expect(runnerToken).toMatch(tokenPattern);
+    let runnerToken;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner token'}).click();
+      runnerToken = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerToken).not.toEqual('9730f9d2c6c731f07582788d1a1fe72a6b999a17');
+      expect(runnerToken).toMatch(tokenPattern);
+    }).toPass();
 
     await expect(page.getByRole('term')).toHaveText(['UUID', 'Token']);
     await expect(page.getByRole('definition')).toContainText([runnerUUID, runnerToken]);
@@ -427,13 +436,19 @@ test.describe('Global runners', () => {
     await expect(page).toHaveTitle(/^Set up runner runner-473465 .*/);
     await expect(page.getByRole('heading', {name: 'Set up runner runner-473465'})).toBeVisible();
 
-    await page.getByRole('button', {name: 'Copy runner UUID'}).click();
-    const runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerUUID).toMatch(uuidPattern);
+    let runnerUUID;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner UUID'}).click();
+      runnerUUID = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerUUID).toMatch(uuidPattern);
+    }).toPass();
 
-    await page.getByRole('button', {name: 'Copy runner token'}).click();
-    const runnerToken = await page.evaluate(() => navigator.clipboard.readText());
-    expect(runnerToken).toMatch(tokenPattern);
+    let runnerToken;
+    await expect(async () => {
+      await page.getByRole('button', {name: 'Copy runner token'}).click();
+      runnerToken = await page.evaluate(() => navigator.clipboard.readText());
+      expect(runnerToken).toMatch(tokenPattern);
+    }).toPass();
 
     await expect(page.getByRole('term')).toHaveText(['UUID', 'Token']);
     await expect(page.getByRole('definition')).toContainText([runnerUUID, runnerToken]);

@@ -15,27 +15,29 @@
 								<a href="#" class="ui muted icon tw-flex tw-items-center show-modal" data-tooltip-content="{{ctx.Locale.Tr "repo.issues.dismiss_review"}}" data-modal="#dismiss-review-modal-{{.Review.ID}}">
 									{{svg "octicon-x" 20}}
 								</a>
-								<div class="ui small modal" id="dismiss-review-modal-{{.Review.ID}}">
-									<div class="header">
-										{{ctx.Locale.Tr "repo.issues.dismiss_review"}}
-									</div>
-									<div class="content">
-										<div class="ui warning message">
-											{{ctx.Locale.Tr "repo.issues.dismiss_review_warning"}}
+								<dialog id="dismiss-review-modal-{{.Review.ID}}">
+									<article>
+										<header>{{ctx.Locale.Tr "repo.issues.dismiss_review"}}</header>
+										<div class="content">
+											<div class="ui warning message">
+												{{ctx.Locale.Tr "repo.issues.dismiss_review_warning"}}
+											</div>
 										</div>
 										<form class="ui form dismiss-review-form" id="dismiss-review-{{.Review.ID}}" action="{{$.RepoLink}}/issues/dismiss_review" method="post">
-											<input type="hidden" name="review_id" value="{{.Review.ID}}">
-											<div class="field">
-												<label for="message">{{ctx.Locale.Tr "action.review_dismissed_reason"}}</label>
-												<input id="message" name="message">
+											<div class="content">
+												<input type="hidden" name="review_id" value="{{.Review.ID}}">
+												<div class="field">
+													<label for="message">{{ctx.Locale.Tr "action.review_dismissed_reason"}}</label>
+													<input id="message" name="message">
+												</div>
 											</div>
-											<div class="text right actions">
-												<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
-												<button class="ui red button" type="submit">{{ctx.Locale.Tr "ok"}}</button>
+											<div class="actions">
+												<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+												<button type="submit" class="ui red button">{{ctx.Locale.Tr "ok"}}</button>
 											</div>
 										</form>
-									</div>
-								</div>
+									</article>
+								</dialog>
 							{{end}}
 							{{if .Review.Stale}}
 								<span data-tooltip-content="{{ctx.Locale.Tr "repo.issues.is_stale"}}">

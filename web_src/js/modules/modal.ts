@@ -3,8 +3,14 @@
 
 // showModal will show the given modal and run `onApprove` if the approve/ok/yes
 // button is pressed.
-export function showModal(modalID: string, onApprove: () => void) {
-  const modal = document.getElementById(modalID) as HTMLDialogElement;
+export function showModal(modalID: string | HTMLDialogElement, onApprove: () => void) {
+  let modal: HTMLDialogElement;
+  if (typeof modalID === 'string') {
+    modal = document.getElementById(modalID) as HTMLDialogElement;
+  } else {
+    modal = modalID;
+  }
+
   // Move the modal to `<body>`, to avoid inheriting any bad CSS or if the
   // parent becomes `display: hidden`.
   document.body.append(modal);
@@ -14,6 +20,9 @@ export function showModal(modalID: string, onApprove: () => void) {
     modal.close();
   }, {once: true, passive: true});
   modal.querySelector('.ok')?.addEventListener('click', onApprove, {passive: true});
+
+  // Call a `onShow` callback if one is registered for this element.
+  modal?.$modal?.onShow();
 
   // The modal is ready to be shown.
   modal.showModal();

@@ -27,7 +27,7 @@ import {attachRefIssueContextPopup} from './contextpopup.js';
 import {POST} from '../modules/fetch.js';
 import {MarkdownQuote} from '@github/quote-selection';
 import {toAbsoluteUrl} from '../utils.js';
-import {initDropzone, initGlobalShowModal, initDisabledInputs} from './common-global.js';
+import {initDropzone, initDisabledInputs} from './common-global.js';
 
 export function initRepoCommentForm() {
   const $commentForm = $('.comment.form');
@@ -385,8 +385,6 @@ async function onEditContent(event) {
     const tabEditor = editContentZone.querySelector('.combo-markdown-editor').querySelector('.switch > [data-tab-for=markdown-writer]');
     tabEditor?.click();
   }
-
-  initGlobalShowModal();
 
   // Show write/preview tab and copy raw content as needed
   showElem(editContentZone);

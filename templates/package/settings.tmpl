@@ -53,20 +53,20 @@
 					<div class="flex-item-trailing">
 						<button class="ui basic red show-modal button" data-modal="#delete-package-modal">{{ctx.Locale.Tr "packages.settings.delete"}}</button>
 					</div>
-					<div class="ui tiny modal" id="delete-package-modal">
-						<div class="header">
-							{{ctx.Locale.Tr "packages.settings.delete"}}
-						</div>
-						<div class="content">
-							<div class="ui warning message tw-break-anywhere">
-								{{ctx.Locale.Tr "packages.settings.delete.notice" .PackageDescriptor.Package.Name .PackageDescriptor.Version.Version}}
+					<dialog id="delete-package-modal">
+						<article>
+							<header>{{ctx.Locale.Tr "packages.settings.delete"}}</header>
+							<div class="content">
+								<div class="ui warning message tw-break-anywhere">
+									{{ctx.Locale.Tr "packages.settings.delete.notice" .PackageDescriptor.Package.Name .PackageDescriptor.Version.Version}}
+								</div>
 							</div>
 							<form class="ui form" action="{{.Link}}" method="post">
 								<input type="hidden" name="action" value="delete">
 								{{template "base/modal_actions_confirm" .}}
 							</form>
-						</div>
-					</div>
+						</article>
+					</dialog>
 				</div>
 			</div>
 		</div>

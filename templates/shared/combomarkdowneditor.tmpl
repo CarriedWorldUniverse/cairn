@@ -64,55 +64,57 @@ Template Attributes:
 		{{ctx.Locale.Tr "loading"}}
 	</div>
 
-	<div class="ui small modal tw-w-fit" data-modal-name="new-markdown-table">
-		<div class="header">{{ctx.Locale.Tr "editor.table_modal.header"}}</div>
+	<dialog data-modal-name="new-markdown-table">
+		<article>
+			<header>{{ctx.Locale.Tr "editor.table_modal.header"}}</header>
 
-		<div class="ui form content" data-selector-name="form">
-			<input type="hidden" name="table-header" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.header"}}" disabled>
-			<input type="hidden" name="table-content" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.content"}}" disabled>
-			<table>
-				<tbody>
-					<tr>
-						<td><label>{{ctx.Locale.Tr "editor.table_modal.label.rows"}}</label></td>
-						<td><input type="number" name="table-rows" class="js-enable" min="1" value="2" disabled required></td>
-					</tr>
-					<tr>
-						<td><label>{{ctx.Locale.Tr "editor.table_modal.label.columns"}}</label></td>
-						<td><input type="number" name="table-columns" class="js-enable" min="1" value="2" disabled required></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
+			<div class="ui form content" data-selector-name="form">
+				<input type="hidden" name="table-header" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.header"}}" disabled>
+				<input type="hidden" name="table-content" value="{{ctx.Locale.Tr "editor.table_modal.placeholder.content"}}" disabled>
+				<table>
+					<tbody>
+						<tr>
+							<td><label>{{ctx.Locale.Tr "editor.table_modal.label.rows"}}</label></td>
+							<td><input type="number" name="table-rows" class="js-enable" min="1" value="2" disabled required></td>
+						</tr>
+						<tr>
+							<td><label>{{ctx.Locale.Tr "editor.table_modal.label.columns"}}</label></td>
+							<td><input type="number" name="table-columns" class="js-enable" min="1" value="2" disabled required></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
-		<div class="text right actions">
-			<button class="ui cancel button" data-selector-name="cancel-button">{{ctx.Locale.Tr "cancel"}}</button>
-			<button class="ui primary button" data-selector-name="ok-button">{{ctx.Locale.Tr "ok"}}</button>
-		</div>
-	</div>
+			<div class="actions">
+				<button class="ui cancel button" data-selector-name="cancel-button">{{ctx.Locale.Tr "cancel"}}</button>
+				<button class="ui primary button" data-selector-name="ok-button">{{ctx.Locale.Tr "ok"}}</button>
+			</div>
+		</article>
+	</dialog>
 
-	<div class="ui small modal" data-modal-name="new-markdown-link">
-		<div class="header">{{ctx.Locale.Tr "editor.link_modal.header"}}</div>
-
-		<fieldset class="content">
+	<dialog data-modal-name="new-markdown-link">
+		<article>
+			<header>{{ctx.Locale.Tr "editor.link_modal.header"}}</header>
 			<div class="ui form" data-selector-name="form">
-				<label>
-					{{ctx.Locale.Tr "editor.link_modal.url"}}
-					<input name="link-url" class="js-enable" disabled required dir="auto" autocomplete="off">
-				</label>
-				<label>
-					{{ctx.Locale.Tr "editor.link_modal.description"}}
-					<input name="link-description" class="js-enable" disabled required dir="auto" autocomplete="off">
-				</label>
+				<div class="content">
+					<label>
+						{{ctx.Locale.Tr "editor.link_modal.url"}}
+						<input name="link-url" class="js-enable" disabled required dir="auto" autocomplete="off">
+					</label>
+					<label>
+						{{ctx.Locale.Tr "editor.link_modal.description"}}
+						<input name="link-description" class="js-enable" disabled required dir="auto" autocomplete="off">
+					</label>
 
-				<div class="help">
-					{{ctx.Locale.Tr "editor.link_modal.paste_reminder"}}
+					<div class="help">
+						{{ctx.Locale.Tr "editor.link_modal.paste_reminder"}}
+					</div>
 				</div>
-
 				<div class="text right actions">
 					<button class="ui cancel button" data-selector-name="cancel-button">{{ctx.Locale.Tr "cancel"}}</button>
 					<button class="ui primary button" data-selector-name="ok-button">{{ctx.Locale.Tr "ok"}}</button>
 				</div>
 			</div>
-		</fieldset>
-	</div>
+		</article>
+	</dialog>
 </div>

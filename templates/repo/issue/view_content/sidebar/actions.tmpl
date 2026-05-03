@@ -21,32 +21,32 @@
 		{{ctx.Locale.Tr "repo.issues.lock"}}
 	{{end}}
 </button>
-<div class="ui tiny modal" id="lock">
-	<div class="header">
-		{{if .Issue.IsLocked}}
-			{{ctx.Locale.Tr "repo.issues.unlock.title"}}
-		{{else}}
-			{{ctx.Locale.Tr "repo.issues.lock.title"}}
-		{{end}}
-	</div>
-	<div class="content">
-		<div class="ui warning message">
+<dialog class="tw-overflow-visible" id="lock">
+	<article>
+		<header>
 			{{if .Issue.IsLocked}}
-				{{ctx.Locale.Tr "repo.issues.unlock.notice_1"}}<br>
-				{{ctx.Locale.Tr "repo.issues.unlock.notice_2"}}<br>
+				{{ctx.Locale.Tr "repo.issues.unlock.title"}}
 			{{else}}
-				{{ctx.Locale.Tr "repo.issues.lock.notice_1"}}<br>
-				{{ctx.Locale.Tr "repo.issues.lock.notice_2"}}<br>
-				{{ctx.Locale.Tr "repo.issues.lock.notice_3"}}<br>
+				{{ctx.Locale.Tr "repo.issues.lock.title"}}
 			{{end}}
+		</header>
+		<div class="content">
+			<div class="ui warning message">
+				{{if .Issue.IsLocked}}
+					{{ctx.Locale.Tr "repo.issues.unlock.notice_1"}}<br>
+					{{ctx.Locale.Tr "repo.issues.unlock.notice_2"}}<br>
+				{{else}}
+					{{ctx.Locale.Tr "repo.issues.lock.notice_1"}}<br>
+					{{ctx.Locale.Tr "repo.issues.lock.notice_2"}}<br>
+					{{ctx.Locale.Tr "repo.issues.lock.notice_3"}}<br>
+				{{end}}
+			</div>
 		</div>
-
-		<form class="ui form form-fetch-action" action="{{.Issue.Link}}{{if .Issue.IsLocked}}/unlock{{else}}/lock{{end}}"
-			method="post">
-
+		<form class="ui form form-fetch-action" action="{{.Issue.Link}}{{if .Issue.IsLocked}}/unlock{{else}}/lock{{end}}" method="post">
+			<div class="content">
 			{{if not .Issue.IsLocked}}
 				<div class="field">
-					<strong> {{ctx.Locale.Tr "repo.issues.lock.reason"}} </strong>
+					<strong>{{ctx.Locale.Tr "repo.issues.lock.reason"}}</strong>
 				</div>
 
 				<div class="field">
@@ -70,10 +70,10 @@
 					</div>
 				</div>
 			{{end}}
-
-			<div class="text right actions">
-				<button class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
-				<button class="ui red button">
+			</div>
+			<div class="actions">
+				<button type="button" class="ui cancel button">{{ctx.Locale.Tr "settings.cancel"}}</button>
+				<button type="submit" class="ui red button">
 					{{if .Issue.IsLocked}}
 						{{ctx.Locale.Tr "repo.issues.unlock_confirm"}}
 					{{else}}
@@ -82,30 +82,32 @@
 				</button>
 			</div>
 		</form>
-	</div>
-</div>
+	</article>
+</dialog>
 <button class="tw-mt-1 fluid ui show-modal button" data-modal="#sidebar-delete-issue">
 	{{svg "octicon-trash"}}
 	{{ctx.Locale.Tr "repo.issues.delete"}}
 </button>
-<div class="ui g-modal-confirm modal" id="sidebar-delete-issue">
-	<div class="header">
-		{{if .Issue.IsPull}}
-			{{ctx.Locale.Tr "repo.pulls.delete.title"}}
-		{{else}}
-			{{ctx.Locale.Tr "repo.issues.delete.title"}}
-		{{end}}
-	</div>
-	<div class="content">
-		<p>
+<dialog id="sidebar-delete-issue">
+	<article>
+		<header>
 			{{if .Issue.IsPull}}
-				{{ctx.Locale.Tr "repo.pulls.delete.text"}}
+				{{ctx.Locale.Tr "repo.pulls.delete.title"}}
 			{{else}}
-				{{ctx.Locale.Tr "repo.issues.delete.text"}}
+				{{ctx.Locale.Tr "repo.issues.delete.title"}}
 			{{end}}
-		</p>
-	</div>
-	<form action="{{.Issue.Link}}/delete" method="post">
-		{{template "base/modal_actions_confirm" .}}
-	</form>
-</div>
+		</header>
+		<div class="content">
+			<p>
+				{{if .Issue.IsPull}}
+					{{ctx.Locale.Tr "repo.pulls.delete.text"}}
+				{{else}}
+					{{ctx.Locale.Tr "repo.issues.delete.text"}}
+				{{end}}
+			</p>
+		</div>
+		<form action="{{.Issue.Link}}/delete" method="post">
+			{{template "base/modal_actions_confirm" .}}
+		</form>
+	</article>
+</dialog>

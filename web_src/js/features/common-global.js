@@ -13,6 +13,7 @@ import {showErrorToast} from '../modules/toast.js';
 import {request, POST, GET} from '../modules/fetch.js';
 import '../htmx.js';
 import {initTab} from '../modules/tab.ts';
+import {initGlobalShowModal} from './show-modal.ts';
 
 const {appUrl, appSubUrl, i18n} = window.config;
 
@@ -436,53 +437,6 @@ export function initGlobalLinkActions() {
     } else {
       showDeletePopup(e);
     }
-  });
-}
-
-export function initGlobalShowModal() {
-  // A ".show-modal" button will show a modal dialog defined by its "data-modal" attribute.
-  // Each "data-modal-{target}" attribute will be filled to target element's value or text-content.
-  // * First, try to query '#target'
-  // * Then, try to query '.target'
-  // * Then, try to query 'target' as HTML tag
-  // If there is a ".{attr}" part like "data-modal-form.action", then the form's "action" attribute will be set.
-  $('.show-modal').on('click', function (e) {
-    e.preventDefault();
-    const modalSelector = this.getAttribute('data-modal');
-    const $modal = $(modalSelector);
-    if (!$modal.length) {
-      throw new Error('no modal for this action');
-    }
-    const modalAttrPrefix = 'data-modal-';
-    for (const attrib of this.attributes) {
-      if (!attrib.name.startsWith(modalAttrPrefix)) {
-        continue;
-      }
-
-      const attrTargetCombo = attrib.name.substring(modalAttrPrefix.length);
-      const [attrTargetName, attrTargetAttr] = attrTargetCombo.split('.');
-      // try to find target by: "#target" -> ".target" -> "target tag"
-      let $attrTarget = $modal.find(`#${attrTargetName}`);
-      if (!$attrTarget.length) $attrTarget = $modal.find(`.${attrTargetName}`);
-      if (!$attrTarget.length) $attrTarget = $modal.find(`${attrTargetName}`);
-      if (!$attrTarget.length) continue; // TODO: show errors in dev mode to remind developers that there is a bug
-
-      if (attrTargetAttr) {
-        $attrTarget[0][attrTargetAttr] = attrib.value;
-      } else if ($attrTarget[0].matches('input, textarea')) {
-        $attrTarget.val(attrib.value); // FIXME: add more supports like checkbox
-      } else {
-        $attrTarget.text(attrib.value); // FIXME: it should be more strict here, only handle div/span/p
-      }
-    }
-
-    $modal.modal('setting', {
-      onApprove: () => {
-        // "form-fetch-action" can handle network errors gracefully,
-        // so keep the modal dialog to make users can re-submit the form if anything wrong happens.
-        if ($modal.find('.form-fetch-action').length) return false;
-      },
-    }).modal('show');
   });
 }
 

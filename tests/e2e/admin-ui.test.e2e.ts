@@ -56,3 +56,29 @@ test('Admin email list', async ({page}) => {
     await expect(page.locator('[data-uid="9"] svg')).toHaveClass(/octicon-check/);
   }
 });
+
+test('Admin: delete a user', async ({page}) => {
+  const response = await page.goto('/admin/users/1/edit');
+  expect(response?.status()).toBe(200);
+
+  const modal = page.locator('#delete-user-modal');
+  const okButton = page.locator('#delete-user-modal .primary.button');
+
+  // Check that modal appears after clicking
+  await expect(modal).toBeHidden();
+  await expect(okButton).toBeHidden();
+  await page.locator('[data-modal="#delete-user-modal"]').click();
+  await expect(modal).toBeVisible();
+  await expect(okButton).toBeVisible();
+
+  // Agree with deletion
+  await okButton.click();
+
+  // Should have been redirected to /admin/users/1
+  await expect(page).toHaveURL(/\/admin\/users\/1$/);
+
+  // This test doesn't actually delete a user as it attempts to delete the doer and
+  // receives an error. This is enough to test that the request reaches the correct
+  // endpoint without causing e2e retry headache
+  await expect(page.locator('#flash-message')).toBeVisible();
+});
