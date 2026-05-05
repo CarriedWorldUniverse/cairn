@@ -38,6 +38,15 @@ enable-openid-connect flag in a workflow.`,
 				Usage:    "Username",
 				Required: true,
 			},
+			&cli.StringFlag{
+				Name:     "name",
+				Usage:    "Name of the authorized integration for later identification",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:  "description",
+				Usage: "Optional description for the authorized integration",
+			},
 
 			// JWT validation:
 			&cli.StringFlag{
@@ -92,7 +101,9 @@ func runCreateAuthorizedIntegration(ctx context.Context, c *cli.Command) error {
 	}
 
 	ai := &auth_model.AuthorizedIntegration{
-		UserID: user.ID,
+		UserID:      user.ID,
+		Name:        c.String("name"),
+		Description: c.String("description"),
 	}
 
 	var rules []auth_model.ClaimRule
@@ -171,14 +182,18 @@ func runCreateAuthorizedIntegration(ctx context.Context, c *cli.Command) error {
 		Value       string                     `json:"value"`
 	}
 	output := struct {
-		Message    string                 `json:"message"`
-		Issuer     string                 `json:"issuer"`
-		Audience   string                 `json:"audience"`
-		ClaimRules []ClaimRuleDescription `json:"claim_rules"`
+		Message     string                 `json:"message"`
+		Name        string                 `json:"name"`
+		Description string                 `json:"description,omitempty"`
+		Issuer      string                 `json:"issuer"`
+		Audience    string                 `json:"audience"`
+		ClaimRules  []ClaimRuleDescription `json:"claim_rules"`
 	}{
-		Message:  "Authorized integration was successfully created.",
-		Issuer:   ai.Issuer,
-		Audience: ai.Audience,
+		Message:     "Authorized integration was successfully created.",
+		Name:        ai.Name,
+		Description: ai.Description,
+		Issuer:      ai.Issuer,
+		Audience:    ai.Audience,
 	}
 	for _, cr := range ai.ClaimRules.Rules {
 		var description string
