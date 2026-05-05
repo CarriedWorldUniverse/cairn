@@ -30,8 +30,8 @@ code.forgejo.org/forgejo/levelqueue v1.0.0 h1:9krYpU6BM+j/1Ntj6m+VCAIu0UNnne1/Uf
 code.forgejo.org/forgejo/levelqueue v1.0.0/go.mod h1:fmG6zhVuqim2rxSFOoasgXO8V2W/k9U31VVYqLIRLhQ=
 code.forgejo.org/forgejo/reply v1.0.2 h1:dMhQCHV6/O3L5CLWNTol+dNzDAuyCK88z4J/lCdgFuQ=
 code.forgejo.org/forgejo/reply v1.0.2/go.mod h1:RyZUfzQLc+fuLIGjTSQWDAJWPiL4WtKXB/FifT5fM7U=
-code.forgejo.org/forgejo/runner/v12 v12.10.0 h1:FgUrG7cfaV/3HcbKYu+r8VY42XKpv44Q0ZcaZM3Eng0=
-code.forgejo.org/forgejo/runner/v12 v12.10.0/go.mod h1:NEQXUvam9ofsTeSTAMnJXMyCZxKLoyQhVG6DAYSpOKw=
+code.forgejo.org/forgejo/runner/v12 v12.10.1 h1:qRKjWItVDc2lEMl3jGlKyFpqgX4xHeOdEyl/irO/Nk8=
+code.forgejo.org/forgejo/runner/v12 v12.10.1/go.mod h1:A51GyZJlril5cIpVMvOn3NqE8upOE6ePjwC6s31kRHk=
 code.forgejo.org/forgejo/ssh v0.0.0-20241211213324-5fc306ca0616 h1:kEZL84+02jY9RxXM4zHBWZ3Fml0B09cmP1LGkDsCfIA=
 code.forgejo.org/forgejo/ssh v0.0.0-20241211213324-5fc306ca0616/go.mod h1:zpHEXBstFnQYtGnB8k8kQLol82umzn/2/snG7alWVD8=
 code.forgejo.org/go-chi/binding v1.0.1 h1:coKNI+X1NzRN7X85LlrpvBRqk0TXpJ+ja28vusQWEuY=
