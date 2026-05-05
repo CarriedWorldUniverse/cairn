@@ -180,6 +180,27 @@ __metadata:
 			},
 		},
 		{
+			name: "unblocked workflow call outer job with only skip",
+			jobs: actions_model.ActionJobList{
+				{ID: 1, JobID: "job1.innerjob1", Status: actions_model.StatusSkipped, Needs: []string{}},
+				{ID: 2, JobID: "job1.innerjob2", Status: actions_model.StatusSkipped, Needs: []string{}},
+				{ID: 3, JobID: "job1", Status: actions_model.StatusBlocked, Needs: []string{"job1.innerjob1", "job1.innerjob2"}, WorkflowPayload: []byte(
+					`
+name: test
+on: push
+jobs:
+  job2:
+    if: false
+    uses: ./.forgejo/workflows/reusable.yml
+__metadata:
+  workflow_call_id: b5a9f46f1f2513d7777fde50b169d323a6519e349cc175484c947ac315a209ed
+`)},
+			},
+			want: map[int64]actions_model.Status{
+				3: actions_model.StatusSkipped,
+			},
+		},
+		{
 			name: "unblocked workflow call outer job, incomplete `with`",
 			jobs: actions_model.ActionJobList{
 				{ID: 1, JobID: "job0", Status: actions_model.StatusSuccess, Needs: []string{}},

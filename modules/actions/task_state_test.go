@@ -156,6 +156,21 @@ func TestFullSteps(t *testing.T) {
 				{Name: postStepName, Status: actions_model.StatusSuccess, LogIndex: 90, LogLength: 10, Started: 10090, Stopped: 10100},
 			},
 		},
+		{
+			// situation occurs with a reusable workflow's outer job which has no steps
+			name: "skipped task w/ zero steps",
+			task: &actions_model.ActionTask{
+				Steps:     []*actions_model.ActionTaskStep{},
+				Status:    actions_model.StatusSkipped,
+				Started:   0,
+				Stopped:   0,
+				LogLength: 0,
+			},
+			want: []*actions_model.ActionTaskStep{
+				{Name: preStepName, Status: actions_model.StatusSkipped, LogIndex: 0, LogLength: 0, Started: 0, Stopped: 0},
+				{Name: postStepName, Status: actions_model.StatusSkipped, LogIndex: 0, LogLength: 0, Started: 0, Stopped: 0},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

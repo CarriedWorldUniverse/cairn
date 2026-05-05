@@ -77,7 +77,7 @@ func checkJobsOfRun(ctx context.Context, runID int64, recursionCount int) error 
 				job.Status = status
 				updateColumns := []string{"status"}
 
-				if status == actions_model.StatusWaiting {
+				if status.IsWaiting() {
 					behaviour, err := tryHandleIncompleteMatrix(ctx, job, jobs)
 					switch behaviour {
 					case behaviourError:
@@ -95,7 +95,7 @@ func checkJobsOfRun(ctx context.Context, runID int64, recursionCount int) error 
 						// Stop processing any other jobs in this run.
 						return nil
 					}
-				} else if status == actions_model.StatusSuccess || status == actions_model.StatusFailure {
+				} else if status.IsSuccess() || status.IsFailure() || status.IsSkipped() {
 					// Transition to these states can be triggered by workflow call outer jobs
 					additionalColumns, err := tryHandleWorkflowCallOuterJob(ctx, job)
 					if err != nil {
@@ -192,7 +192,7 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 		if status != actions_model.StatusBlocked {
 			continue
 		}
-		allDone, allSucceed, allSucceedOrSkip := true, true, true
+		allDone, allSucceed, allSucceedOrSkip, allSkip := true, true, true, true
 		for _, need := range r.needs[id] {
 			needStatus := r.statuses[need]
 			if !needStatus.IsDone() {
@@ -204,12 +204,15 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 			if needStatus.In(actions_model.StatusFailure, actions_model.StatusCancelled) {
 				allSucceedOrSkip = false
 			}
+			if !needStatus.IsSkipped() {
+				allSkip = false
+			}
 		}
 		if allDone {
 			if isWorkflowCallOuterJob, _ := r.jobMap[id].IsWorkflowCallOuterJob(); isWorkflowCallOuterJob {
 				// If the dependent job was a workflow call outer job, then options aren't waiting/skipped, but rather
-				// success/failure.  checkJobsOfRun will do additional work in these cases to "finish" the workflow call
-				// job as well.
+				// success/skip/failure.  checkJobsOfRun will do additional work in these cases to "finish" the workflow
+				// call job as well.
 				if allSucceedOrSkip {
 					isIncompleteMatrix, _, _ := r.jobMap[id].HasIncompleteMatrix()
 					isIncompleteWith, _, _, _ := r.jobMap[id].HasIncompleteWith()
@@ -221,6 +224,12 @@ func (r *jobStatusResolver) resolve() map[int64]actions_model.Status {
 						// `tryHandleIncompleteMatrix` to be reparsed, replaced with a full job definition, with new
 						// `needs` that contain its inner jobs:
 						ret[id] = actions_model.StatusWaiting
+					} else if allSkip {
+						// All of the inner jobs are skipped -- this most likely occurs because an outer job's `if:`
+						// condition was false, and that condition was populated to all the inner jobs.  Even if that's
+						// not the case, it's effectively true that the reusable workflow was skipped if all the inner
+						// jobs had their own `if:` conditions that were skipped.
+						ret[id] = actions_model.StatusSkipped
 					} else {
 						// This job is done by virtue of its inner jobs being done successfully.
 						ret[id] = actions_model.StatusSuccess

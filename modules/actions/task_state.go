@@ -111,6 +111,8 @@ func fullStepsOfEmptySteps(task *actions_model.ActionTask) []*actions_model.Acti
 		preStep.Status = task.Status
 		if preStep.Status.IsSuccess() {
 			postStep.Status = actions_model.StatusSuccess
+		} else if preStep.Status.IsSkipped() {
+			postStep.Status = actions_model.StatusSkipped
 		} else {
 			postStep.Status = actions_model.StatusCancelled
 		}
