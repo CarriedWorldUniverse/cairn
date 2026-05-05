@@ -30,6 +30,9 @@ type AuthorizedIntegration struct {
 	Scope            AccessTokenScope `xorm:"NOT NULL"`
 	ResourceAllRepos bool             `xorm:"NOT NULL"` // flag for whether AuthorizedIntegrationResourceRepo instances will limit the resources this access token can access (false) or won't limit them (true).
 
+	Name        string // short name for lists of authorized integrations
+	Description string `xorm:"LONGTEXT"` // long description, optional to document relevant details of the integration
+
 	// Exact-match `iss` claim of the JWT
 	Issuer string `xorm:"NOT NULL UNIQUE(s)"`
 	// Exact-match `aud` claim of the JWT
