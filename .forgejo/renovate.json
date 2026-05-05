@@ -139,6 +139,13 @@
       "automerge": true
     },
     {
+      "description": "Run end-to-end tests for some dependencies",
+      "matchPackageNames": [
+        "code.forgejo.org/forgejo/runner/**"
+      ],
+      "addLabels": ["run-end-to-end-tests"]
+    },
+    {
       "description": "Disable indirect updates for stable branches",
       "matchBaseBranches": ["/^v\\d+\\.\\d+\\/forgejo$/"],
       "matchManagers": ["gomod"],
