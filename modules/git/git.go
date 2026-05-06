@@ -203,7 +203,7 @@ func InitFull(ctx context.Context) (err error) {
 
 	err = InitDelegateHooks(HomeDir())
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return syncGitConfig()
