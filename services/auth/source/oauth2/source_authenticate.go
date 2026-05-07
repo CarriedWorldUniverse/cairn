@@ -6,8 +6,8 @@ package oauth2
 import (
 	"context"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/services/auth/source/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/db"
 )
 
 // Authenticate falls back to the db authenticator

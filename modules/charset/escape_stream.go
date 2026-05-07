@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	"golang.org/x/net/html"
 )

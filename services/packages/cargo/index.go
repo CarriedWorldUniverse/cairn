@@ -13,17 +13,17 @@ import (
 	"strconv"
 	"time"
 
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/json"
-	cargo_module "forgejo.org/modules/packages/cargo"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	repo_service "forgejo.org/services/repository"
-	files_service "forgejo.org/services/repository/files"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	cargo_module "github.com/CarriedWorldUniverse/cairn/modules/packages/cargo"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
 )
 
 const (

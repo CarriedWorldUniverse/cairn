@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/auth/password/hash"
-	"forgejo.org/modules/generate"
-	"forgejo.org/modules/jwtx"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/password/hash"
+	"github.com/CarriedWorldUniverse/cairn/modules/generate"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 var (

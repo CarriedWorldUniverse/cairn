@@ -8,12 +8,12 @@ import (
 	"errors"
 	"net/http"
 
-	actions_model "forgejo.org/models/actions"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/actions"
-	"forgejo.org/services/auth"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/actions"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 var _ auth.Method = &ActionRuntimeToken{}

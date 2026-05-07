@@ -6,7 +6,7 @@ package actions
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // ActionTaskOutput represents an output of ActionTask.

@@ -4,8 +4,8 @@
 package v1_21
 
 import (
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/setting"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

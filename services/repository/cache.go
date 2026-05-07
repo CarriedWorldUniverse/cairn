@@ -6,9 +6,9 @@ package repository
 import (
 	"context"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // CacheRef cachhe last commit information of the branch or the tag

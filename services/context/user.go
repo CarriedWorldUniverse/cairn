@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	redirect_service "forgejo.org/services/redirect"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	redirect_service "github.com/CarriedWorldUniverse/cairn/services/redirect"
 )
 
 // UserAssignmentWeb returns a middleware to handle context-user assignment for web routes

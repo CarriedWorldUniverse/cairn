@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"sort"
 
-	"forgejo.org/models/db"
-	access_model "forgejo.org/models/perm/access"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/services/stats"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/services/stats"
 
 	"xorm.io/builder"
 )

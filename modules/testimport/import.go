@@ -8,10 +8,10 @@ package testimport
 // is trying to figure out the ordering of foreign keys, for instance
 
 import ( //revive:disable:blank-imports
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/auth"
-	_ "forgejo.org/models/forgefed"
-	_ "forgejo.org/models/perm/access"
-	_ "forgejo.org/models/repo"
+	_ "github.com/CarriedWorldUniverse/cairn/models/actions"
+	_ "github.com/CarriedWorldUniverse/cairn/models/activities"
+	_ "github.com/CarriedWorldUniverse/cairn/models/auth"
+	_ "github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	_ "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	_ "github.com/CarriedWorldUniverse/cairn/models/repo"
 )

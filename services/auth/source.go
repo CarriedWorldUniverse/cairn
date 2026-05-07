@@ -6,9 +6,9 @@ package auth
 import (
 	"context"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 // DeleteSource deletes a AuthSource record in DB.

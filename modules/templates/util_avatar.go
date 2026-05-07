@@ -9,13 +9,13 @@ import (
 	"html"
 	"html/template"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/avatars"
-	"forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	gitea_html "forgejo.org/modules/html"
-	"forgejo.org/modules/setting"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/avatars"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	gitea_html "github.com/CarriedWorldUniverse/cairn/modules/html"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type AvatarUtils struct {

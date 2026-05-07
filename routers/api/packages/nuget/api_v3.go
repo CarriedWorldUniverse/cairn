@@ -7,8 +7,8 @@ import (
 	"sort"
 	"time"
 
-	packages_model "forgejo.org/models/packages"
-	nuget_module "forgejo.org/modules/packages/nuget"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	nuget_module "github.com/CarriedWorldUniverse/cairn/modules/packages/nuget"
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"

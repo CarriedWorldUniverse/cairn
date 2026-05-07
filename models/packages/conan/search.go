@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	"forgejo.org/modules/container"
-	conan_module "forgejo.org/modules/packages/conan"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	conan_module "github.com/CarriedWorldUniverse/cairn/modules/packages/conan"
 
 	"xorm.io/builder"
 )

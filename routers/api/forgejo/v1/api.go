@@ -4,8 +4,8 @@
 package v1
 
 import (
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/shared"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/shared"
 )
 
 func Routes() *web.Route {

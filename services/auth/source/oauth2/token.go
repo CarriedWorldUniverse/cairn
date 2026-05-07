@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/jwtx"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/golang-jwt/jwt/v5"
 )

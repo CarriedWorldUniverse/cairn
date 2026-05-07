@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/asymkey"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/templates"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // List all demo templates, they will be used for e2e tests for the UI components

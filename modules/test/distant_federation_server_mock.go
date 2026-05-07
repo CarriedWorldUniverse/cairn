@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"

@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"forgejo.org/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
 
 	"github.com/urfave/cli/v3"
 )

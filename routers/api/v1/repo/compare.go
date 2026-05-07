@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/gitrepo"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // CompareDiff compare two branches or commits

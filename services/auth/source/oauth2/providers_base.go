@@ -6,8 +6,8 @@ package oauth2
 import (
 	"html/template"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/svg"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
 )
 
 // BaseProvider represents a common base for Provider

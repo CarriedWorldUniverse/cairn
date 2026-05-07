@@ -8,14 +8,14 @@ import (
 	"net/url"
 	"time"
 
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
-	packages_service "forgejo.org/services/packages"
-	packages_cleanup_service "forgejo.org/services/packages/cleanup"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
+	packages_cleanup_service "github.com/CarriedWorldUniverse/cairn/services/packages/cleanup"
 )
 
 const (

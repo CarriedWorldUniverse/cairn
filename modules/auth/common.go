@@ -4,9 +4,9 @@
 package auth
 
 import (
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 func UnmarshalGroupTeamMapping(raw string) (map[string]map[string][]string, error) {

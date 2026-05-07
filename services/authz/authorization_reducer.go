@@ -4,7 +4,7 @@
 package authz
 
 import (
-	repo_model "forgejo.org/models/repo"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // Defines an API for reducing available permissions to specific resources.  Typically associated with a fine-grained

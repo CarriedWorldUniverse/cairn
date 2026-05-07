@@ -6,7 +6,7 @@ package doctor
 import (
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 
 	"github.com/stretchr/testify/assert"
 )

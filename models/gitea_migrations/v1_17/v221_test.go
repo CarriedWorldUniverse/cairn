@@ -7,7 +7,7 @@ import (
 	"encoding/base32"
 	"testing"
 
-	migration_tests "forgejo.org/models/gitea_migrations/test"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

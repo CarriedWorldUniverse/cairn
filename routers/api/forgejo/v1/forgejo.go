@@ -5,8 +5,8 @@ package v1
 import (
 	"net/http"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type Forgejo struct{}

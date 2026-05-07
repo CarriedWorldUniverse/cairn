@@ -7,7 +7,7 @@ import (
 	"context"
 	"strings"
 
-	giturl "forgejo.org/modules/git/url"
+	giturl "github.com/CarriedWorldUniverse/cairn/modules/git/url"
 )
 
 // GetRemoteAddress returns remote url of git repository in the repoPath with special remote name

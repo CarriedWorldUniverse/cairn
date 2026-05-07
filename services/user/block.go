@@ -5,11 +5,11 @@ package user
 import (
 	"context"
 
-	model "forgejo.org/models"
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	actions_service "forgejo.org/services/actions"
+	model "github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
 
 	"xorm.io/builder"
 )

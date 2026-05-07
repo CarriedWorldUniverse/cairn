@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/services/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 // Ensure the struct implements the interface.

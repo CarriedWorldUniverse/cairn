@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // hookNames is a list of Git server hooks' name that are supported.

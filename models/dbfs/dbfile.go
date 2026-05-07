@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 var defaultFileBlockSize int64 = 32 * 1024

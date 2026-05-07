@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	base "forgejo.org/modules/migration"
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/google/go-github/v81/github"
 	"golang.org/x/oauth2"

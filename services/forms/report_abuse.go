@@ -6,9 +6,9 @@ package forms
 import (
 	"net/http"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"code.forgejo.org/go-chi/binding"
 )

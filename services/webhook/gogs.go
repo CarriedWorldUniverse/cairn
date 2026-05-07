@@ -7,10 +7,10 @@ import (
 	"html/template"
 	"net/http"
 
-	webhook_model "forgejo.org/models/webhook"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/webhook/shared"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook/shared"
 )
 
 type gogsHandler struct{ defaultHandler }

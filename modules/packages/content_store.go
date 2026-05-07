@@ -9,9 +9,9 @@ import (
 	"path"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // BlobHash256Key is the key to address a blob content

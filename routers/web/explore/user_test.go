@@ -6,7 +6,7 @@ package explore
 import (
 	"testing"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 
 	"github.com/stretchr/testify/assert"
 )

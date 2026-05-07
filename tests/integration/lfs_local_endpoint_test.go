@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"forgejo.org/modules/lfs"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

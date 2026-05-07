@@ -6,12 +6,12 @@ package admin
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/webhook"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
-	webhook_service "forgejo.org/services/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	webhook_service "github.com/CarriedWorldUniverse/cairn/services/webhook"
 )
 
 const (

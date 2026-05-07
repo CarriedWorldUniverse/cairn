@@ -6,8 +6,8 @@ package util
 import (
 	"fmt"
 
-	forgejo_log "forgejo.org/modules/log"
-	"forgejo.org/modules/migration"
+	forgejo_log "github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/migration"
 
 	"code.forgejo.org/f3/gof3/v3/logger"
 )

@@ -9,12 +9,12 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	"forgejo.org/modules/log"
-	packages_module "forgejo.org/modules/packages"
-	nuget_module "forgejo.org/modules/packages/nuget"
-	packages_service "forgejo.org/services/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	nuget_module "github.com/CarriedWorldUniverse/cairn/modules/packages/nuget"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 
 	"xorm.io/builder"
 )

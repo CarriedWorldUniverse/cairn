@@ -6,10 +6,10 @@ package convert
 import (
 	"context"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	api "forgejo.org/modules/structs"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToNotificationThread convert a Notification to api.NotificationThread

@@ -6,7 +6,7 @@ package migrations
 import (
 	"context"
 
-	base "forgejo.org/modules/migration"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
 )
 
 var _ base.Downloader = &PlainGitDownloader{}

@@ -6,9 +6,9 @@ package convert
 import (
 	"context"
 
-	"forgejo.org/models/activities"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/activitypub"
+	"github.com/CarriedWorldUniverse/cairn/models/activities"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
 
 	ap "github.com/go-ap/activitypub"
 )

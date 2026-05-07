@@ -4,8 +4,8 @@
 package setting
 
 import (
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 type PwaConfig struct {

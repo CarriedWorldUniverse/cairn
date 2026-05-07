@@ -6,12 +6,12 @@ package issues
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	org_model "forgejo.org/models/organization"
-	project_model "forgejo.org/models/project"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // LoadProject load the project the issue was assigned to

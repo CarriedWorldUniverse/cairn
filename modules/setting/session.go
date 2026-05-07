@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // SessionConfig defines Session settings

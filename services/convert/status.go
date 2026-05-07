@@ -6,9 +6,9 @@ package convert
 import (
 	"context"
 
-	git_model "forgejo.org/models/git"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToCommitStatus converts git_model.CommitStatus to api.CommitStatus

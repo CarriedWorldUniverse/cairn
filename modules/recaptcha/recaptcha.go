@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // Response is the structure of JSON returned from API

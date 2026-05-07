@@ -6,10 +6,10 @@ package ldap
 import (
 	"strings"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/secret"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // .____     ________      _____ __________

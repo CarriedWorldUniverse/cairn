@@ -7,9 +7,9 @@ import (
 	"crypto/subtle"
 	"fmt"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/util"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	gouuid "github.com/google/uuid"
 )

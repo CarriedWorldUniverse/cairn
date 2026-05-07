@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func Test_FederationHostValidation(t *testing.T) {

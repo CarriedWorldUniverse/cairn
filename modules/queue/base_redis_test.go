@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"forgejo.org/modules/nosql"
-	queue_mock "forgejo.org/modules/queue/mock"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/nosql"
+	queue_mock "github.com/CarriedWorldUniverse/cairn/modules/queue/mock"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"

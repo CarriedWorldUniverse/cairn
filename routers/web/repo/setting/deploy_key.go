@@ -6,14 +6,14 @@ package setting
 import (
 	"net/http"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	asymkey_service "forgejo.org/services/asymkey"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // DeployKeys render the deploy keys list of a repository page

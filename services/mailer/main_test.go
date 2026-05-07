@@ -7,16 +7,16 @@ import (
 	"context"
 	"testing"
 
-	"forgejo.org/models/db"
-	org_model "forgejo.org/models/organization"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
-	_ "forgejo.org/modules/testimport"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/testimport"
 
 	"github.com/stretchr/testify/assert"
 )

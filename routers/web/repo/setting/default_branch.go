@@ -6,12 +6,12 @@ package setting
 import (
 	"net/http"
 
-	git_model "forgejo.org/models/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/routers/web/repo"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // SetDefaultBranchPost set default branch

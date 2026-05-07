@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"forgejo.org/models/forgefed"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/activitypub"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	ap "github.com/go-ap/activitypub"
 )

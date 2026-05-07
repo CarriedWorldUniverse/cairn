@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/routers"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"code.forgejo.org/go-chi/session"
 	"github.com/stretchr/testify/assert"

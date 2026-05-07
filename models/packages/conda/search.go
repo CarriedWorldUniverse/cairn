@@ -7,9 +7,9 @@ import (
 	"context"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	conda_module "forgejo.org/modules/packages/conda"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	conda_module "github.com/CarriedWorldUniverse/cairn/modules/packages/conda"
 
 	"xorm.io/builder"
 )

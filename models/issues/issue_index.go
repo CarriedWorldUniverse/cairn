@@ -6,7 +6,7 @@ package issues
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 func GetMaxIssueIndexForRepo(ctx context.Context, repoID int64) (int64, error) {

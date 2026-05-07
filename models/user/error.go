@@ -6,7 +6,7 @@ package user
 import (
 	"fmt"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrUserAlreadyExist represents a "user already exists" error.

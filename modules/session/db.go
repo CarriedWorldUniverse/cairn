@@ -7,9 +7,9 @@ import (
 	"log"
 	"sync"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"code.forgejo.org/go-chi/session"
 )

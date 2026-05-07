@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/options"
+	"github.com/CarriedWorldUniverse/cairn/modules/options"
 )
 
 type LicenseValues struct {

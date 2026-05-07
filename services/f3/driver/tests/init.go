@@ -5,7 +5,7 @@
 package tests
 
 import (
-	driver_options "forgejo.org/services/f3/driver/options"
+	driver_options "github.com/CarriedWorldUniverse/cairn/services/f3/driver/options"
 
 	tests_forge "code.forgejo.org/f3/gof3/v3/tree/tests/f3/forge"
 )

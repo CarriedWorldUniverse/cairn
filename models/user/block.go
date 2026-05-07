@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // ErrBlockedByUser defines an error stating that the user is not allowed to perform the action because they are blocked.

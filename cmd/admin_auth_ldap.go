@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/services/auth/source/ldap"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/ldap"
 
 	"github.com/urfave/cli/v3"
 )

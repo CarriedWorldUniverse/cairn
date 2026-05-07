@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
-	packages_model "forgejo.org/models/packages"
-	composer_module "forgejo.org/modules/packages/composer"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	composer_module "github.com/CarriedWorldUniverse/cairn/modules/packages/composer"
 )
 
 // ServiceIndexResponse contains registry endpoints

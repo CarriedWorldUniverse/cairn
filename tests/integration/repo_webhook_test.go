@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"testing"
 
-	app_context "forgejo.org/services/context"
-	"forgejo.org/services/webhook"
-	"forgejo.org/tests"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"

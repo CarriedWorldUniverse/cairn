@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/graceful/releasereopen"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful/releasereopen"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 type Options struct {

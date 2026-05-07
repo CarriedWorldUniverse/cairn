@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"codeberg.org/gusted/mcaptcha"
 )

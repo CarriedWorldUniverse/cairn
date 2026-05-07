@@ -6,7 +6,7 @@ package private
 import (
 	"context"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Email structure holds a data for sending general emails

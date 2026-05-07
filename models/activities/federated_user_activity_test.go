@@ -6,7 +6,7 @@ package activities
 import (
 	"testing"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func Test_FederatedUserActivityValidation(t *testing.T) {

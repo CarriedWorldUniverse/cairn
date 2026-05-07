@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/util"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"

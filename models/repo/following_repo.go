@@ -4,7 +4,7 @@
 package repo
 
 import (
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 // FollowingRepo represents a federated Repository Actor connected with a local Repo

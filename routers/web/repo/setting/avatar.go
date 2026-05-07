@@ -6,10 +6,10 @@ package setting
 import (
 	"fmt"
 
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	repo_service "forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // UpdateAvatarSetting update repo's avatar

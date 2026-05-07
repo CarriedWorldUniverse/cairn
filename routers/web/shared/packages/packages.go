@@ -8,17 +8,17 @@ import (
 	"fmt"
 	"net/http"
 
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	cargo_service "forgejo.org/services/packages/cargo"
-	cleanup_service "forgejo.org/services/packages/cleanup"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	cargo_service "github.com/CarriedWorldUniverse/cairn/services/packages/cargo"
+	cleanup_service "github.com/CarriedWorldUniverse/cairn/services/packages/cleanup"
 )
 
 func SetPackagesContext(ctx *context.Context, owner *user_model.User) {

@@ -8,14 +8,14 @@ import (
 	"context"
 	"errors"
 
-	"forgejo.org/models"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/services/f3/util"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/services/f3/util"
 
-	_ "forgejo.org/services/f3/driver" // register the driver
+	_ "github.com/CarriedWorldUniverse/cairn/services/f3/driver" // register the driver
 
 	f3_cmd "code.forgejo.org/f3/gof3/v3/cmd"
 	f3_logger "code.forgejo.org/f3/gof3/v3/logger"

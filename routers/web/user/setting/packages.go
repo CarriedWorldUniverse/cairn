@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	chef_module "forgejo.org/modules/packages/chef"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	shared "forgejo.org/routers/web/shared/packages"
-	"forgejo.org/services/context"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	chef_module "github.com/CarriedWorldUniverse/cairn/modules/packages/chef"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	shared "github.com/CarriedWorldUniverse/cairn/routers/web/shared/packages"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

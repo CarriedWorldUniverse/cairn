@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func Test_NodeInfoWellKnownUnmarshalJSON(t *testing.T) {

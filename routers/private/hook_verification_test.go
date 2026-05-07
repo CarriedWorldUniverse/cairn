@@ -6,8 +6,8 @@ package private
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 
 	"github.com/stretchr/testify/require"
 )

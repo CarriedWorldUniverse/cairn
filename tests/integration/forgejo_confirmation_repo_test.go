@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"forgejo.org/modules/translation"
-	app_context "forgejo.org/services/context"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

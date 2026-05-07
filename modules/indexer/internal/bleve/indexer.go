@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"forgejo.org/modules/indexer/internal"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/mapping"

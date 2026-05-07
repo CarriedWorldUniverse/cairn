@@ -8,12 +8,12 @@ import (
 	"errors"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/gitea_migrations"
-	system_model "forgejo.org/models/system"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/setting/config"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting/config"
 
 	"xorm.io/xorm"
 )

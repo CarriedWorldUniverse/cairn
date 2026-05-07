@@ -7,12 +7,12 @@ import (
 	"context"
 	"strconv"
 
-	actions_model "forgejo.org/models/actions"
-	issues_model "forgejo.org/models/issues"
-	packages_model "forgejo.org/models/packages"
-	quota_model "forgejo.org/models/quota"
-	repo_model "forgejo.org/models/repo"
-	api "forgejo.org/modules/structs"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 func ToQuotaRuleInfo(rule quota_model.Rule, withName bool) api.QuotaRuleInfo {

@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"forgejo.org/modules/generate"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/generate"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

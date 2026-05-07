@@ -6,9 +6,9 @@ package utils
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/setting"
-	webhook_service "forgejo.org/services/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	webhook_service "github.com/CarriedWorldUniverse/cairn/services/webhook"
 )
 
 func TestMain(m *testing.M) {

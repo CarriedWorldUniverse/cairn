@@ -7,17 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/attachment"
-	"forgejo.org/services/context"
-	"forgejo.org/services/context/upload"
-	"forgejo.org/services/convert"
-	issue_service "forgejo.org/services/issue"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/attachment"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/context/upload"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	issue_service "github.com/CarriedWorldUniverse/cairn/services/issue"
 )
 
 // GetIssueCommentAttachment gets a single attachment of the comment

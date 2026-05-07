@@ -6,14 +6,14 @@ package secrets
 import (
 	"errors"
 
-	"forgejo.org/models/db"
-	secret_model "forgejo.org/models/secret"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	secrets_service "forgejo.org/services/secrets"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	secret_model "github.com/CarriedWorldUniverse/cairn/models/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	secrets_service "github.com/CarriedWorldUniverse/cairn/services/secrets"
 )
 
 func SetSecretsContext(ctx *context.Context, ownerID, repoID int64) {

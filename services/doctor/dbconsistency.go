@@ -6,16 +6,16 @@ package doctor
 import (
 	"context"
 
-	actions_model "forgejo.org/models/actions"
-	activities_model "forgejo.org/models/activities"
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/models/gitea_migrations"
-	issues_model "forgejo.org/models/issues"
-	org_model "forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type consistencyCheck struct {

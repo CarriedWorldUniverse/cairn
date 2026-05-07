@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/avatars"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/avatars"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func cacheableRedirect(ctx *context.Context, location string) {

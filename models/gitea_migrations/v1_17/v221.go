@@ -7,7 +7,7 @@ import (
 	"encoding/base32"
 	"fmt"
 
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

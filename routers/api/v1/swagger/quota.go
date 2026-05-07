@@ -4,7 +4,7 @@
 package swagger
 
 import (
-	api "forgejo.org/modules/structs"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // QuotaInfo

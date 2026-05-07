@@ -7,8 +7,8 @@ import (
 	std_json "encoding/json" //nolint:depguard
 	"testing"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

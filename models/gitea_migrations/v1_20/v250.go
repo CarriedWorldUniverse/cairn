@@ -6,7 +6,7 @@ package v1_20
 import (
 	"strings"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"xorm.io/xorm"
 )

@@ -19,9 +19,9 @@ import (
 	_ "image/jpeg" // for processing jpeg images
 	_ "image/png"  // for processing png images
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"

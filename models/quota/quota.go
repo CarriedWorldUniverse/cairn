@@ -6,8 +6,8 @@ package quota
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func init() {

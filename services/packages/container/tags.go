@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	container_model "forgejo.org/models/packages/container"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	container_model "github.com/CarriedWorldUniverse/cairn/models/packages/container"
 )
 
 type TagList struct {

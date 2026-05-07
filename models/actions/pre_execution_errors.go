@@ -6,7 +6,7 @@ package actions
 import (
 	"fmt"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 type PreExecutionError int64

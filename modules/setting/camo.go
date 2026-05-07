@@ -6,7 +6,7 @@ package setting
 import (
 	"strconv"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 var Camo = struct {

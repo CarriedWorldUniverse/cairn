@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/auth"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"code.forgejo.org/go-chi/binding"
 	"github.com/gobwas/glob"

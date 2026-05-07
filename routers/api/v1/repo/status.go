@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	commitstatus_service "forgejo.org/services/repository/commitstatus"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	commitstatus_service "github.com/CarriedWorldUniverse/cairn/services/repository/commitstatus"
 )
 
 // NewCommitStatus creates a new CommitStatus

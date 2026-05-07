@@ -6,10 +6,10 @@ package misc
 import (
 	"net/http"
 
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // Shows a list of all Label templates

@@ -6,11 +6,11 @@ package v1_19
 import (
 	"testing"
 
-	migration_tests "forgejo.org/models/gitea_migrations/test"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/secret"
-	"forgejo.org/modules/setting"
-	webhook_module "forgejo.org/modules/webhook"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

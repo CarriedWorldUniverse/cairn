@@ -13,14 +13,14 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/models"
-	issues_model "forgejo.org/models/issues"
-	project_model "forgejo.org/models/project"
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"code.forgejo.org/go-chi/binding"
 )

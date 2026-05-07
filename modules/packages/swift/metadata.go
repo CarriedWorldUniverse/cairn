@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"github.com/hashicorp/go-version"
 )

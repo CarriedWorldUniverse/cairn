@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // Git settings

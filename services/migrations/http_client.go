@@ -7,9 +7,9 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"forgejo.org/modules/hostmatcher"
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/hostmatcher"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // NewMigrationHTTPClient returns a HTTP client for migration

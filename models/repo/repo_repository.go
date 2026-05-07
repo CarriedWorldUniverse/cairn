@@ -5,8 +5,8 @@ package repo
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func init() {

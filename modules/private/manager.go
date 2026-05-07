@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Shutdown calls the internal shutdown function

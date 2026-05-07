@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // ResourceIndex represents a resource index which could be used as issue/release and others

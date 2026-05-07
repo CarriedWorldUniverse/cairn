@@ -6,9 +6,9 @@ package user_test
 import (
 	"testing"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 )

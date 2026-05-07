@@ -6,7 +6,7 @@ package private
 import (
 	"context"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type GenerateTokenRequest struct {

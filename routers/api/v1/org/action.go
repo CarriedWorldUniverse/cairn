@@ -7,17 +7,17 @@ import (
 	"errors"
 	"net/http"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	secret_model "forgejo.org/models/secret"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/shared"
-	"forgejo.org/routers/api/v1/utils"
-	actions_service "forgejo.org/services/actions"
-	"forgejo.org/services/context"
-	secrets_service "forgejo.org/services/secrets"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	secret_model "github.com/CarriedWorldUniverse/cairn/models/secret"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/shared"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	secrets_service "github.com/CarriedWorldUniverse/cairn/services/secrets"
 )
 
 // ListActionsSecrets lists actions secrets of an organization

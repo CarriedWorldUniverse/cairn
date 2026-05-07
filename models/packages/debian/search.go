@@ -7,9 +7,9 @@ import (
 	"context"
 	"strconv"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	debian_module "forgejo.org/modules/packages/debian"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	debian_module "github.com/CarriedWorldUniverse/cairn/modules/packages/debian"
 
 	"xorm.io/builder"
 )

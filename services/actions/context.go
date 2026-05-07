@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strconv"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	actions_module "forgejo.org/modules/actions"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"code.forgejo.org/forgejo/runner/v12/act/model"
 )

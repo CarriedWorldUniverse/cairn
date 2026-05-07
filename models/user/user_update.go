@@ -6,7 +6,7 @@ package user
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 func IncrUserRepoNum(ctx context.Context, userID int64) error {

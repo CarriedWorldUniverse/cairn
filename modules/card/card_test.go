@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/stretchr/testify/assert"

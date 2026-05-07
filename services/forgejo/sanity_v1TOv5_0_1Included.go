@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/forgejo/semver"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/forgejo/semver"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/hashicorp/go-version"
 )

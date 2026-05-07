@@ -6,9 +6,9 @@ package webhook
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/hostmatcher"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/hostmatcher"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func TestMain(m *testing.M) {

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"strings"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 const (

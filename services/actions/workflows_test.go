@@ -7,9 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/repo"
-	"forgejo.org/modules/webhook"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	act_model "code.forgejo.org/forgejo/runner/v12/act/model"
 	"github.com/stretchr/testify/assert"

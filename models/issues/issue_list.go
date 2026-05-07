@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"slices"
 
-	"forgejo.org/models/db"
-	project_model "forgejo.org/models/project"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 
 	"xorm.io/builder"
 )

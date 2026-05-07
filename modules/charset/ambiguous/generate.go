@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"golang.org/x/text/unicode/rangetable"
 )

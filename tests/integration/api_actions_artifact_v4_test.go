@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	actions_model "forgejo.org/models/actions"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/storage"
-	"forgejo.org/routers/api/actions"
-	actions_service "forgejo.org/services/actions"
-	"forgejo.org/tests"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/actions"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

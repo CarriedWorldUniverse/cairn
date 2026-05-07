@@ -14,10 +14,10 @@ import (
 	"io"
 	"net/http"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/json"
-	api "forgejo.org/modules/structs"
-	webhook_module "forgejo.org/modules/webhook"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 )
 
 var ErrPayloadTypeNotSupported = errors.New("unsupported webhook event")

@@ -8,9 +8,9 @@ import (
 	"errors"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/auth/source/smtp"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/smtp"
 
 	"github.com/urfave/cli/v3"
 )

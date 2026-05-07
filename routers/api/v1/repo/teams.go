@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/organization"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	org_service "forgejo.org/services/org"
-	repo_service "forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	org_service "github.com/CarriedWorldUniverse/cairn/services/org"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // ListTeams list a repository's teams

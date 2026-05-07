@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"forgejo.org/modules/eventsource"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/routers/web/auth"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/eventsource"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Events listens for events

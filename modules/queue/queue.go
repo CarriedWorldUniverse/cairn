@@ -61,7 +61,7 @@
 //	 func handler(items ...*mypkg.QueueItem) []*mypkg.QueueItem { ... }
 package queue
 
-import "forgejo.org/modules/util"
+import "github.com/CarriedWorldUniverse/cairn/modules/util"
 
 type HandlerFuncT[T any] func(...T) (unhandled []T)
 

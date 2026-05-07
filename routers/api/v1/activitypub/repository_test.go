@@ -6,7 +6,7 @@ package activitypub
 import (
 	"testing"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func Test_UserEmailValidate(t *testing.T) {

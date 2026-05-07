@@ -6,12 +6,12 @@ package remote
 import (
 	"context"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/auth/source/oauth2"
-	remote_source "forgejo.org/services/auth/source/remote"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
+	remote_source "github.com/CarriedWorldUniverse/cairn/services/auth/source/remote"
 )
 
 type Reason int

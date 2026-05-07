@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // SetCacheControlInHeader sets suitable cache-control headers in the response

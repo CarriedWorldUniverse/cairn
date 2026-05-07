@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // CountBadSequences looks for broken sequences from recreate-table mistakes

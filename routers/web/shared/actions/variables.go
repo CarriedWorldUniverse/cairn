@@ -4,13 +4,13 @@
 package actions
 
 import (
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/web"
-	actions_service "forgejo.org/services/actions"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 func SetVariablesContext(ctx *context.Context, ownerID, repoID int64) {

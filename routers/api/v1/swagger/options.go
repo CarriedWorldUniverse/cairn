@@ -5,9 +5,9 @@
 package swagger
 
 import (
-	ffed "forgejo.org/modules/forgefed"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/forms"
+	ffed "github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // not actually a response, just a hack to get go-swagger to include definitions

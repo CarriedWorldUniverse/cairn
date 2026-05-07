@@ -6,9 +6,9 @@ package markdown
 import (
 	"fmt"
 
-	"forgejo.org/modules/markup"
-	mdutil "forgejo.org/modules/markup/markdown/util"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	mdutil "github.com/CarriedWorldUniverse/cairn/modules/markup/markdown/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"

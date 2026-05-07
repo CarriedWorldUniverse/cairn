@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"forgejo.org/modules/generate"
+	"github.com/CarriedWorldUniverse/cairn/modules/generate"
 
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v3"

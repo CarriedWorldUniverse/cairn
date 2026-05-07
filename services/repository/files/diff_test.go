@@ -6,12 +6,12 @@ package files
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/json"
-	"forgejo.org/services/contexttest"
-	"forgejo.org/services/gitdiff"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

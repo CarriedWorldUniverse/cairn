@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/gobwas/glob"
 	"github.com/stretchr/testify/assert"

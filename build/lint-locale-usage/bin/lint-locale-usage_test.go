@@ -7,7 +7,7 @@ import (
 	"go/token"
 	"testing"
 
-	llu "forgejo.org/build/lint-locale-usage"
+	llu "github.com/CarriedWorldUniverse/cairn/build/lint-locale-usage"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

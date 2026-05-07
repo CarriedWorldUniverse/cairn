@@ -7,10 +7,10 @@ package organization_test
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	"forgejo.org/models/perm"
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

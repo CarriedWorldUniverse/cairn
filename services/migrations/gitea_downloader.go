@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
-	base "forgejo.org/modules/migration"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	gitea_sdk "code.gitea.io/sdk/gitea"
 )

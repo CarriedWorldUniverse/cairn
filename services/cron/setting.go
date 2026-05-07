@@ -6,7 +6,7 @@ package cron
 import (
 	"time"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 // Config represents a basic configuration interface that cron task

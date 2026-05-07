@@ -6,8 +6,8 @@ package misc
 import (
 	"net/http"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // tplSwagger swagger page template

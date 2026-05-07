@@ -7,11 +7,11 @@ package packages_test
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"github.com/stretchr/testify/require"
 )

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	quota_model "forgejo.org/models/quota"
-	"forgejo.org/modules/base"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
 )
 
 type QuotaTargetType int

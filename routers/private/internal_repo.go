@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	app_context "forgejo.org/services/context"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // This file contains common functions relating to setting the Repository for the internal routes

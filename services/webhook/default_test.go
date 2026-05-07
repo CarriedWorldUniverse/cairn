@@ -6,9 +6,9 @@ package webhook
 import (
 	"testing"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/json"
-	webhook_module "forgejo.org/modules/webhook"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"

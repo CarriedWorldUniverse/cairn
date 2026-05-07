@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	shared_user "forgejo.org/routers/web/shared/user"
-	user_setting "forgejo.org/routers/web/user/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	shared_user "github.com/CarriedWorldUniverse/cairn/routers/web/shared/user"
+	user_setting "github.com/CarriedWorldUniverse/cairn/routers/web/user/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

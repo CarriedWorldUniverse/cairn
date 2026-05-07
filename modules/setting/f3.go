@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // Friendly Forge Format (F3) settings

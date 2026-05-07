@@ -6,11 +6,11 @@ package misc
 import (
 	"net/http"
 
-	"forgejo.org/modules/options"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/options"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Shows a list of all Gitignore templates

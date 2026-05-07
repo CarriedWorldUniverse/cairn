@@ -5,7 +5,7 @@ package semver
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 
 	"github.com/hashicorp/go-version"
 )

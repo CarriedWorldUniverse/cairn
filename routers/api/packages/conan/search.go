@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	conan_model "forgejo.org/models/packages/conan"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/json"
-	conan_module "forgejo.org/modules/packages/conan"
-	"forgejo.org/services/context"
+	conan_model "github.com/CarriedWorldUniverse/cairn/models/packages/conan"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	conan_module "github.com/CarriedWorldUniverse/cairn/modules/packages/conan"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // SearchResult contains the found recipe names

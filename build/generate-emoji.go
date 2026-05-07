@@ -20,7 +20,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 const (

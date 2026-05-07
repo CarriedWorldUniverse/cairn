@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func checkAuthorizedKeys(ctx context.Context, logger log.Logger, autofix bool) error {

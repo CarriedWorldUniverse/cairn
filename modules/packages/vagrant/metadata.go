@@ -9,8 +9,8 @@ import (
 	"io"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 const (

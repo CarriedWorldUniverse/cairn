@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/modules/test"
-	"forgejo.org/services/auth/source/oauth2"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

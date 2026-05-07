@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/eventsource"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/eventsource"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // IssueStopwatch creates or stops a stopwatch for the given issue.

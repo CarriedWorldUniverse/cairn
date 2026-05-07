@@ -6,14 +6,14 @@ package actions
 import (
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/models/user"
-	actions_module "forgejo.org/modules/actions"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
-	webhook_module "forgejo.org/modules/webhook"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

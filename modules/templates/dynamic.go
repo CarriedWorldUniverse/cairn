@@ -6,8 +6,8 @@
 package templates
 
 import (
-	"forgejo.org/modules/assetfs"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func BuiltinAssets() *assetfs.Layer {

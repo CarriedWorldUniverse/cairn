@@ -6,16 +6,16 @@ package indexer
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	code_indexer "forgejo.org/modules/indexer/code"
-	issue_indexer "forgejo.org/modules/indexer/issues"
-	stats_indexer "forgejo.org/modules/indexer/stats"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
-	notify_service "forgejo.org/services/notify"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	code_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/code"
+	issue_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/issues"
+	stats_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/stats"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 type indexerNotifier struct {

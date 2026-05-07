@@ -6,8 +6,8 @@ package issues
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 // IssueLockOptions defines options for locking and/or unlocking an issue/PR

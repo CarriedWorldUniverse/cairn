@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/base"
-	"forgejo.org/services/context"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

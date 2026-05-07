@@ -6,12 +6,12 @@ package user
 import (
 	"net/http"
 
-	"forgejo.org/modules/optional"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	user_service "forgejo.org/services/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // GetUserSettings returns doer's account settings

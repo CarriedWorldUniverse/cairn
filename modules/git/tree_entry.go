@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // TreeEntry the leaf in the git tree

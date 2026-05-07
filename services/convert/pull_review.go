@@ -7,9 +7,9 @@ import (
 	"context"
 	"strings"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToPullReview convert a review to api format

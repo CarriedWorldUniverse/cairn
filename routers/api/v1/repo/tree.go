@@ -6,8 +6,8 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/services/context"
-	files_service "forgejo.org/services/repository/files"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
 )
 
 // GetTree get the tree of a repository.

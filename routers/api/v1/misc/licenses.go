@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"net/url"
 
-	"forgejo.org/modules/options"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/options"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Returns a list of all License templates

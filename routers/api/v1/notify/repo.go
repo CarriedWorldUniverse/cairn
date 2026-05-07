@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 func statusStringToNotificationStatus(status string) activities_model.NotificationStatus {

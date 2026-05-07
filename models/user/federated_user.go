@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 type FederatedUser struct {

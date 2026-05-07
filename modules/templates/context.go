@@ -6,7 +6,7 @@ package templates
 import (
 	"context"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 type Context struct {

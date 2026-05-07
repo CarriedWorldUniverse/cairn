@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/setting"
-	app_context "forgejo.org/services/context"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func getBadgeURL(ctx *app_context.Context, label, text, color string) string {

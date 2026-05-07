@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"slices"
 
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	repo_module "forgejo.org/modules/repository"
-	api "forgejo.org/modules/structs"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // SyncFork syncs a branch of a fork with the base repo

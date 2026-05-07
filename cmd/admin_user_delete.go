@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/storage"
-	user_service "forgejo.org/services/user"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 
 	"github.com/urfave/cli/v3"
 )

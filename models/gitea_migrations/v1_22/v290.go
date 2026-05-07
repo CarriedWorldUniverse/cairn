@@ -4,8 +4,8 @@
 package v1_22
 
 import (
-	"forgejo.org/modules/timeutil"
-	webhook_module "forgejo.org/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"xorm.io/xorm"
 )

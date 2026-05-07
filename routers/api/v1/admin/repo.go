@@ -4,10 +4,10 @@
 package admin
 
 import (
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/repo"
-	"forgejo.org/services/context"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // CreateRepo api for creating a repository

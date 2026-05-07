@@ -7,8 +7,8 @@ import (
 	"context"
 	"sort"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
 	"github.com/gobwas/glob"
 )

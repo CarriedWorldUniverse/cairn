@@ -10,11 +10,11 @@ import (
 	"slices"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
-	webhook_module "forgejo.org/modules/webhook"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"code.forgejo.org/forgejo/runner/v12/act/model"

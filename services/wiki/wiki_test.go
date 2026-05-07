@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
 
-	_ "forgejo.org/modules/testimport"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/testimport"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

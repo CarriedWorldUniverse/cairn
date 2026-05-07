@@ -6,9 +6,9 @@ package issues_test
 import (
 	"testing"
 
-	"forgejo.org/models/issues"
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 )

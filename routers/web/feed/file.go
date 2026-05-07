@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"github.com/gorilla/feeds"
 )

@@ -4,9 +4,9 @@
 package common
 
 import (
-	"forgejo.org/modules/web/middleware"
-	auth_service "forgejo.org/services/auth"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	auth_service "github.com/CarriedWorldUniverse/cairn/services/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func AuthShared(ctx *context.Base, sessionStore auth_service.SessionStore, authMethod auth_service.Method) auth_service.MethodOutput {

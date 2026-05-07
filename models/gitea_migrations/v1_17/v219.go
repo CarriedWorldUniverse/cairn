@@ -6,8 +6,8 @@ package v1_17
 import (
 	"time"
 
-	"forgejo.org/models/repo"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

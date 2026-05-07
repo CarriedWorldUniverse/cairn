@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strconv"
 
-	system_model "forgejo.org/models/system"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/optional"
-	"forgejo.org/services/context"
-	user_service "forgejo.org/services/user"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // SetEditorconfigIfExists set editor config as render variable

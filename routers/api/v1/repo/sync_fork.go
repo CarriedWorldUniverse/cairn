@@ -6,9 +6,9 @@ package repo
 import (
 	"net/http"
 
-	git_model "forgejo.org/models/git"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 func getSyncForkInfo(ctx *context.APIContext, branch string) {

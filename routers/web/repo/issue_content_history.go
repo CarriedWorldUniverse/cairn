@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models/avatars"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/avatars"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )

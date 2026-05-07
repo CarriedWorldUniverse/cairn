@@ -6,7 +6,7 @@ package forgefed
 import (
 	"time"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
 )

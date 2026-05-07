@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"regexp"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func init() {

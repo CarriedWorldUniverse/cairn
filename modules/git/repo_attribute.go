@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 )
 
 var LinguistAttributes = []string{"linguist-vendored", "linguist-generated", "linguist-language", "gitlab-language", "linguist-documentation", "linguist-detectable"}

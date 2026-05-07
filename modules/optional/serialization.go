@@ -4,7 +4,7 @@
 package optional
 
 import (
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"go.yaml.in/yaml/v3"
 )

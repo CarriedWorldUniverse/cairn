@@ -6,7 +6,7 @@ package log
 import (
 	"io"
 
-	"forgejo.org/modules/util/rotatingfilewriter"
+	"github.com/CarriedWorldUniverse/cairn/modules/util/rotatingfilewriter"
 )
 
 type WriterFileOption struct {

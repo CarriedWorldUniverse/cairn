@@ -9,11 +9,11 @@ import (
 	"errors"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"connectrpc.com/connect"
 )

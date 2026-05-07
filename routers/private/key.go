@@ -6,10 +6,10 @@ package private
 import (
 	"net/http"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/services/context"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // UpdatePublicKeyInRepo update public key and deploy key updates

@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/git/pushoptions"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/pushoptions"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/urfave/cli/v3"
 )

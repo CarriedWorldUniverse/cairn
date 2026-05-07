@@ -4,7 +4,7 @@
 package repository
 
 import (
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // PushUpdateOptions defines the push update options

@@ -6,7 +6,7 @@ package actions
 import (
 	"testing"
 
-	webhook_module "forgejo.org/modules/webhook"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 )

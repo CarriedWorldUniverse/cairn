@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
 )
 
 // LoadPublicKeyContent will load the key from gpg

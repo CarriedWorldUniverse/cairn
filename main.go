@@ -10,16 +10,16 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/cmd"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/cmd"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	// register supported doc types
-	_ "forgejo.org/modules/markup/asciicast"
-	_ "forgejo.org/modules/markup/console"
-	_ "forgejo.org/modules/markup/csv"
-	_ "forgejo.org/modules/markup/markdown"
-	_ "forgejo.org/modules/markup/orgmode"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/markup/asciicast"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/markup/console"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/markup/csv"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/markup/orgmode"
 
 	"github.com/urfave/cli/v3"
 )

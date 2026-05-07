@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	auth_model "forgejo.org/models/auth"
-	org_model "forgejo.org/models/organization"
-	"forgejo.org/models/unittest"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/tests"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

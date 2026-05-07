@@ -9,14 +9,14 @@ import (
 	"net/http"
 	"time"
 
-	"forgejo.org/models/forgefed"
-	"forgejo.org/models/repo"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/activitypub"
-	fm "forgejo.org/modules/forgefed"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/validation"
-	app_context "forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
+	fm "github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 
 	ap "github.com/go-ap/activitypub"
 )

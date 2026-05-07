@@ -7,13 +7,13 @@ import (
 	"errors"
 	"net/http"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	moderation_service "forgejo.org/services/moderation"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	moderation_service "github.com/CarriedWorldUniverse/cairn/services/moderation"
 )
 
 const (

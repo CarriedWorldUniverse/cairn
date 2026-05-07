@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"forgejo.org/modules/auth/password/pwn"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/password/pwn"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 var ErrIsPwned = errors.New("password has been pwned")

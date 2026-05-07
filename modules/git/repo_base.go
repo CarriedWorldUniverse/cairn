@@ -10,7 +10,7 @@ import (
 	"errors"
 	"path/filepath"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // Repository represents a Git repository.

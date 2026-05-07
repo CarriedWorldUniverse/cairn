@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 // These flags define which text to prefix to each log entry generated

@@ -7,9 +7,9 @@ import (
 	"math"
 	"sync/atomic"
 
-	"forgejo.org/modules/generate"
-	"forgejo.org/modules/jwtx"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/generate"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // OAuth2UsernameType is enum describing the way gitea 'name' should be generated from oauth2 data
