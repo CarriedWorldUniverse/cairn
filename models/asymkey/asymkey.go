@@ -5,7 +5,7 @@ package asymkey
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // HasAsymKeyByUID returns true if the user has a GPG key or SSH key associated

@@ -9,11 +9,11 @@ import (
 	"net/url"
 	"time"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/git/pushoptions"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/pushoptions"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Git environment variables

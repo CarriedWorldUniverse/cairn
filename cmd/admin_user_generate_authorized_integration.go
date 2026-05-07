@@ -11,12 +11,12 @@ import (
 	"os"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/json"
-	"forgejo.org/services/authz"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/services/authz"
 
 	"github.com/urfave/cli/v3"
 )

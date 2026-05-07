@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	shared_user "forgejo.org/routers/web/shared/user"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	shared_user "github.com/CarriedWorldUniverse/cairn/routers/web/shared/user"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 type OAuth2CommonHandlers struct {

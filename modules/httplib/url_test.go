@@ -6,8 +6,8 @@ package httplib
 import (
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/assert"
 )

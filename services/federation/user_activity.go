@@ -6,12 +6,12 @@ package federation
 import (
 	"context"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/forgefed"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/convert"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"

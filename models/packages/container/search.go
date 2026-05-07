@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	user_model "forgejo.org/models/user"
-	container_module "forgejo.org/modules/packages/container"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	container_module "github.com/CarriedWorldUniverse/cairn/modules/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 )

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // QueueSettings represent the settings for a queue from the ini

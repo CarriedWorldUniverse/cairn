@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/contexttest"
-	"forgejo.org/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 
 	"github.com/stretchr/testify/assert"
 )

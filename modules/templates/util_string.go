@@ -8,8 +8,8 @@ import (
 	"html/template"
 	"strings"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 type StringUtils struct{}

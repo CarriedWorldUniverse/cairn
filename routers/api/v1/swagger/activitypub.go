@@ -4,8 +4,8 @@
 package swagger
 
 import (
-	"forgejo.org/modules/forgefed"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ActivityPub

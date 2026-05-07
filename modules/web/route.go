@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
 
 	"code.forgejo.org/go-chi/binding"
 	"github.com/go-chi/chi/v5"

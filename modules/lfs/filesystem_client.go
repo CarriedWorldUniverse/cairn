@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // FilesystemClient is used to read LFS data from a filesystem path

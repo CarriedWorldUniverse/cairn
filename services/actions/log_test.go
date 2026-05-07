@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	actions_model "forgejo.org/models/actions"
-	dbfs_model "forgejo.org/models/dbfs"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/timeutil"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	dbfs_model "github.com/CarriedWorldUniverse/cairn/models/dbfs"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

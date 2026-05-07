@@ -4,7 +4,7 @@
 package oauth2
 
 import (
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/azureadv2"

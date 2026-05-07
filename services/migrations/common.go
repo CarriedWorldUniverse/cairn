@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	system_model "forgejo.org/models/system"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	base "forgejo.org/modules/migration"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
 )
 
 // WarnAndNotice will log the provided message and send a repository notice

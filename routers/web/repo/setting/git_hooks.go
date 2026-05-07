@@ -6,8 +6,8 @@ package setting
 import (
 	"net/http"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // GitHooks hooks of a repository

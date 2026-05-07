@@ -14,8 +14,8 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"gopkg.in/ini.v1" //nolint:depguard // used to read .gitmodules
 )

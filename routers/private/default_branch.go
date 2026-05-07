@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/private"
-	app_context "forgejo.org/services/context"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // SetDefaultBranch updates the default branch

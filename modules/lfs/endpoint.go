@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // DetermineEndpoint determines an endpoint from the clone url or uses the specified LFS url.

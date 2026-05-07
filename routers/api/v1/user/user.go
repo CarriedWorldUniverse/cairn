@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"net/http"
 
-	activities_model "forgejo.org/models/activities"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/structs"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // Search search users

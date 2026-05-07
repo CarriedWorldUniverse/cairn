@@ -9,9 +9,9 @@ import (
 	"path"
 	"strings"
 
-	gitea_html "forgejo.org/modules/html"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/public"
+	gitea_html "github.com/CarriedWorldUniverse/cairn/modules/html"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/public"
 )
 
 var svgIcons map[string]string

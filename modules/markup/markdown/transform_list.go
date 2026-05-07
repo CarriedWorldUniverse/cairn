@@ -6,7 +6,7 @@ package markdown
 import (
 	"fmt"
 
-	"forgejo.org/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
 
 	"github.com/yuin/goldmark/ast"
 	east "github.com/yuin/goldmark/extension/ast"

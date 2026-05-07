@@ -6,9 +6,9 @@ package v1_6
 import (
 	"fmt"
 
-	"forgejo.org/models/gitea_migrations/base"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/xorm"
 )

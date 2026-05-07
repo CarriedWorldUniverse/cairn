@@ -4,7 +4,7 @@
 package v1_18
 
 import (
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

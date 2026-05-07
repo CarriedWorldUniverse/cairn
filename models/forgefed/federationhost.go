@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 // FederationHost data type

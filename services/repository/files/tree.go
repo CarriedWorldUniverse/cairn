@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"net/url"
 
-	"forgejo.org/models"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // GetTreeBySHA get the GitTreeResponse of a repository using a sha hash.

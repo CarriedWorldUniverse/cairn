@@ -6,7 +6,7 @@ package templates
 import (
 	"bytes"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 type JsonUtils struct{} //nolint:revive

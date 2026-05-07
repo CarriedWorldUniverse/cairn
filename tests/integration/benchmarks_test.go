@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	api "forgejo.org/modules/structs"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // StringWithCharset random string (from https://www.calhoun.io/creating-random-strings-in-go/)

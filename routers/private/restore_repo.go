@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/private"
-	app_context "forgejo.org/services/context"
-	"forgejo.org/services/migrations"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/migrations"
 )
 
 // RestoreRepo restore a repository from data

@@ -6,7 +6,7 @@ package foreachref_test
 import (
 	"testing"
 
-	"forgejo.org/modules/git/foreachref"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/foreachref"
 
 	"github.com/stretchr/testify/require"
 )

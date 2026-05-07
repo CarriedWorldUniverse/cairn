@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
-	webhook_module "forgejo.org/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"xorm.io/builder"
 )

@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/builder"
 )

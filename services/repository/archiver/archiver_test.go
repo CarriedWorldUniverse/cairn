@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

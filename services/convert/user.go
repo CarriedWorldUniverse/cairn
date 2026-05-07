@@ -6,9 +6,9 @@ package convert
 import (
 	"context"
 
-	"forgejo.org/models/perm"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToUser convert user_model.User to api.User

@@ -7,9 +7,9 @@ import (
 	"context"
 	"strconv"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // IssueData represents a trimmed down issue that is used for preserving

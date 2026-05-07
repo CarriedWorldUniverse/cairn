@@ -9,13 +9,13 @@ import (
 	"net/http"
 	"path"
 
-	"forgejo.org/modules/charset"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/typesniffer"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/charset"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/typesniffer"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // RenderFile renders a file by repos path

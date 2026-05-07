@@ -4,8 +4,8 @@
 package v1_17
 
 import (
-	"forgejo.org/models/pull"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/pull"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/forgefed"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"

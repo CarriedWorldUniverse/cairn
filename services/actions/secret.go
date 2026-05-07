@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 
-	actions_model "forgejo.org/models/actions"
-	secret_model "forgejo.org/models/secret"
-	actions_module "forgejo.org/modules/actions"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/structs"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	secret_model "github.com/CarriedWorldUniverse/cairn/models/secret"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 )

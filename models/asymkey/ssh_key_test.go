@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/42wim/sshsig"
 	"github.com/stretchr/testify/assert"

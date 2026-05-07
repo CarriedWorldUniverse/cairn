@@ -12,7 +12,7 @@ import (
 
 	_ "net/http/pprof" // Used for debugging if enabled and a web server is running
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func setPortEmptyCaseBad(port string) error {

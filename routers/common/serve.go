@@ -7,11 +7,11 @@ import (
 	"io"
 	"time"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/httplib"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // ServeBlob download a git.Blob

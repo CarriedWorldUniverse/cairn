@@ -10,7 +10,7 @@ import (
 	"io"
 	"strings"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // GetRefs returns all references of the repository.

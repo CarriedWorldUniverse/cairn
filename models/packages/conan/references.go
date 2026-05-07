@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	conan_module "forgejo.org/modules/packages/conan"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	conan_module "github.com/CarriedWorldUniverse/cairn/modules/packages/conan"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 )

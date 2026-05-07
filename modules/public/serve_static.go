@@ -8,8 +8,8 @@ package public
 import (
 	"time"
 
-	"forgejo.org/modules/assetfs"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // GlobalModTime provide a global mod time for embedded asset files

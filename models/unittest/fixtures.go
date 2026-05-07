@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/auth/password/hash"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/password/hash"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

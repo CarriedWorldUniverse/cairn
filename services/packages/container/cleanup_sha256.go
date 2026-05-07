@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	container_module "forgejo.org/modules/packages/container"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	container_module "github.com/CarriedWorldUniverse/cairn/modules/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 var (

@@ -7,8 +7,8 @@ package convert
 import (
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToCorrectPageSize makes sure page size is in allowed range.

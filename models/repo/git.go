@@ -6,7 +6,7 @@ package repo
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // MergeStyle represents the approach to merge commits into base branch.

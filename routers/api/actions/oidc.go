@@ -9,13 +9,13 @@ import (
 	"reflect"
 	"strings"
 
-	"forgejo.org/modules/jwtx"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	web_types "forgejo.org/modules/web/types"
-	actions_service "forgejo.org/services/actions"
-	auth_method "forgejo.org/services/auth/method"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	web_types "github.com/CarriedWorldUniverse/cairn/modules/web/types"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
+	auth_method "github.com/CarriedWorldUniverse/cairn/services/auth/method"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 type oidcRoutes struct {

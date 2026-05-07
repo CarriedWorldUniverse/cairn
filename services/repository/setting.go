@@ -7,11 +7,11 @@ import (
 	"context"
 	"slices"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/log"
-	actions_service "forgejo.org/services/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
 )
 
 // UpdateRepositoryUnits updates a repository's units

@@ -3,7 +3,7 @@
 
 package setting
 
-import "forgejo.org/modules/log"
+import "github.com/CarriedWorldUniverse/cairn/modules/log"
 
 type OtherConfig struct {
 	ShowFooterVersion          bool

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // ExternalMarkupRenderers represents the external markup renderers

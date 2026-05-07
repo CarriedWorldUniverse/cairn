@@ -6,7 +6,7 @@ package forgefed_test
 import (
 	"testing"
 
-	"forgejo.org/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

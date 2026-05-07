@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	xormlog "xorm.io/xorm/log"
 )

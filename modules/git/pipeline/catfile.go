@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // CatFileBatchCheck runs cat-file with --batch-check

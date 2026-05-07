@@ -6,10 +6,10 @@ package activitypub_test
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/activitypub"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

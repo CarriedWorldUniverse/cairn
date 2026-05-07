@@ -5,9 +5,9 @@ package redirect
 import (
 	"context"
 
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 // LookupRepoRedirect returns the repository ID if there's a redirect registered for

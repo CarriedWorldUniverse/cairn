@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 type nodeInfoLinks struct {

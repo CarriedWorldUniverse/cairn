@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"net/url"
 
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // LogAndProcessError logs an error and calls a custom callback with the processed error message.

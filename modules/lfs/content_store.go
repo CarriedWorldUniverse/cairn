@@ -11,8 +11,8 @@ import (
 	"io"
 	"os"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
 )
 
 var (

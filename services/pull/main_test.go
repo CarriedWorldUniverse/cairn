@@ -7,7 +7,7 @@ package pull
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 )
 
 func TestMain(m *testing.M) {

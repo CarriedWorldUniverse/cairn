@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/routers/web/healthcheck"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/healthcheck"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"code.forgejo.org/forgejo/runner/v12/act/model"

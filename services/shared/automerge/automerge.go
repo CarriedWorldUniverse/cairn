@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"strings"
 
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/queue"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
 )
 
 // PRAutoMergeQueue represents a queue to handle update pull request tests

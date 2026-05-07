@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 // AmbiguousTablesForLocale provides the table of ambiguous characters for this locale.

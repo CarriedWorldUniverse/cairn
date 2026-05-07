@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/system"
 
 	"github.com/hashicorp/go-version"
 )

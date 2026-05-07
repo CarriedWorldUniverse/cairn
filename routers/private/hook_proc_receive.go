@@ -6,12 +6,12 @@ package private
 import (
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/agit"
-	app_context "forgejo.org/services/context"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/agit"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // HookProcReceive proc-receive hook - only handles agit Proc-Receive requests at present

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"forgejo.org/modules/indexer/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
 
 	"github.com/olivere/elastic/v7"
 )

@@ -15,9 +15,9 @@ import (
 	"syscall"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/proxyprotocol"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxyprotocol"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // GetListener returns a net listener

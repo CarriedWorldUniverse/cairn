@@ -6,8 +6,8 @@ package rpm
 import (
 	"context"
 
-	packages_model "forgejo.org/models/packages"
-	rpm_module "forgejo.org/modules/packages/rpm"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	rpm_module "github.com/CarriedWorldUniverse/cairn/modules/packages/rpm"
 )
 
 // GetGroups gets all available groups

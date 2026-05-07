@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	pingv1 "code.forgejo.org/forgejo/actions-proto/ping/v1"
 	"code.forgejo.org/forgejo/actions-proto/ping/v1/pingv1connect"

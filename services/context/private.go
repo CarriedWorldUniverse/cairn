@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/web"
-	web_types "forgejo.org/modules/web/types"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	web_types "github.com/CarriedWorldUniverse/cairn/modules/web/types"
 )
 
 // PrivateContext represents a context for private routes

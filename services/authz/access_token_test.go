@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

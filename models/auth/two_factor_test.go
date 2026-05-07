@@ -5,7 +5,7 @@ package auth
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"

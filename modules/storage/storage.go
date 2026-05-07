@@ -11,8 +11,8 @@ import (
 	"net/url"
 	"os"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // ErrURLNotSupported represents url is not supported

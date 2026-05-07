@@ -6,10 +6,10 @@ package repo_test
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

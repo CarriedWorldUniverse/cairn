@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
 )
 
 // Actions settings

@@ -6,7 +6,7 @@ package db
 import (
 	"fmt"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrCancelled represents an error due to context cancellation

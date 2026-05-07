@@ -10,8 +10,8 @@ import (
 	"net/mail"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/gobwas/glob"
 )

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/gobwas/glob"
 	"github.com/stretchr/testify/assert"

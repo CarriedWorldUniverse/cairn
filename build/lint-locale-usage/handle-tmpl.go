@@ -12,8 +12,8 @@ import (
 	"text/template"
 	tmplParser "text/template/parse"
 
-	fjTemplates "forgejo.org/modules/templates"
-	"forgejo.org/modules/util"
+	fjTemplates "github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // derived from source: modules/templates/scopedtmpl/scopedtmpl.go, L169-L213

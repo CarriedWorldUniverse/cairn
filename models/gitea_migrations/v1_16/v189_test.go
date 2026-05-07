@@ -6,8 +6,8 @@ package v1_16
 import (
 	"testing"
 
-	migration_tests "forgejo.org/models/gitea_migrations/test"
-	"forgejo.org/modules/json"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	admin_model "forgejo.org/models/admin"
-	"forgejo.org/modules/json"
-	"forgejo.org/services/context"
+	admin_model "github.com/CarriedWorldUniverse/cairn/models/admin"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // TaskStatus returns task's status

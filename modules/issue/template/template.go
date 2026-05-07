@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/container"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"code.forgejo.org/go-chi/binding"
 )

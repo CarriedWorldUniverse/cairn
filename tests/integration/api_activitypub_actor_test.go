@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/routers"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"

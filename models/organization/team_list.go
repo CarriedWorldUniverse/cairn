@@ -7,10 +7,10 @@ import (
 	"context"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
 
 	"xorm.io/builder"
 )

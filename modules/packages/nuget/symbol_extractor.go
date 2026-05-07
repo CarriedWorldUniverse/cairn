@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/packages"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var (

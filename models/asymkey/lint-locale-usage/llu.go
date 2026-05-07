@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"go/token"
 
-	llu "forgejo.org/build/lint-locale-usage"
+	llu "github.com/CarriedWorldUniverse/cairn/build/lint-locale-usage"
 )
 
 // special case: models/asymkey/*.go,

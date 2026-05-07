@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
-	packages_model "forgejo.org/models/packages"
-	container_model "forgejo.org/models/packages/container"
-	"forgejo.org/modules/optional"
-	packages_service "forgejo.org/services/packages"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	container_model "github.com/CarriedWorldUniverse/cairn/models/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 
 	digest "github.com/opencontainers/go-digest"
 )

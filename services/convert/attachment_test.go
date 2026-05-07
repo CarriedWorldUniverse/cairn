@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

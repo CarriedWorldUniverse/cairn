@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	secret_model "forgejo.org/models/secret"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/secret"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	secret_model "github.com/CarriedWorldUniverse/cairn/models/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

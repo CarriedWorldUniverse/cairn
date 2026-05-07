@@ -6,9 +6,9 @@ package org_test
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/routers/web/org"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/org"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 )

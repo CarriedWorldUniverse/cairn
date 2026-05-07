@@ -10,9 +10,9 @@ import (
 	"html/template"
 	"reflect"
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func dictMerge(base map[string]any, arg any) bool {

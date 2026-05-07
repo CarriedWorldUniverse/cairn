@@ -7,11 +7,11 @@ import (
 	"errors"
 	"net/http"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	shared "forgejo.org/routers/web/shared/actions"
-	shared_user "forgejo.org/routers/web/shared/user"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	shared "github.com/CarriedWorldUniverse/cairn/routers/web/shared/actions"
+	shared_user "github.com/CarriedWorldUniverse/cairn/routers/web/shared/user"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

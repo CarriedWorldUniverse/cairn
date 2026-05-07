@@ -6,9 +6,9 @@ package misc
 import (
 	"net/http"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Version shows the version of the Gitea server

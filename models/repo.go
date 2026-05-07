@@ -11,13 +11,13 @@ import (
 
 	_ "image/jpeg" // Needed for jpeg support
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/stats"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/stats"
 
 	"xorm.io/builder"
 )

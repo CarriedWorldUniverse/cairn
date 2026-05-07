@@ -13,16 +13,16 @@ import (
 	"net/http"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	alpine_model "forgejo.org/models/packages/alpine"
-	"forgejo.org/modules/json"
-	packages_module "forgejo.org/modules/packages"
-	alpine_module "forgejo.org/modules/packages/alpine"
-	"forgejo.org/modules/util"
-	"forgejo.org/routers/api/packages/helper"
-	"forgejo.org/services/context"
-	packages_service "forgejo.org/services/packages"
-	alpine_service "forgejo.org/services/packages/alpine"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	alpine_model "github.com/CarriedWorldUniverse/cairn/models/packages/alpine"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	alpine_module "github.com/CarriedWorldUniverse/cairn/modules/packages/alpine"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/packages/helper"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
+	alpine_service "github.com/CarriedWorldUniverse/cairn/services/packages/alpine"
 )
 
 func apiError(ctx *context.Context, status int, obj any) {

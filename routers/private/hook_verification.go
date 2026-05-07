@@ -10,9 +10,9 @@ import (
 	"io"
 	"os"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // This file contains commit verification functions for refs passed across in hooks

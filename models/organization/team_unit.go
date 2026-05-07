@@ -6,9 +6,9 @@ package organization
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	"forgejo.org/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
 )
 
 // TeamUnit describes all units of a repository

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting/config"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting/config"
 )
 
 type PictureStruct struct {

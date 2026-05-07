@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"code.forgejo.org/go-chi/binding"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"

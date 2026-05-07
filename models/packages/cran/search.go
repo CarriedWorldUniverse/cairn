@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	cran_module "forgejo.org/modules/packages/cran"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	cran_module "github.com/CarriedWorldUniverse/cairn/modules/packages/cran"
 
 	"xorm.io/builder"
 )

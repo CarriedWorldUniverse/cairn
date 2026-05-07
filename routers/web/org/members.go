@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models"
-	"forgejo.org/models/organization"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	shared_user "forgejo.org/routers/web/shared/user"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	shared_user "github.com/CarriedWorldUniverse/cairn/routers/web/shared/user"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

@@ -6,7 +6,7 @@ package packages
 import (
 	"io"
 
-	"forgejo.org/modules/util/filebuffer"
+	"github.com/CarriedWorldUniverse/cairn/modules/util/filebuffer"
 )
 
 // HashedSizeReader provide methods to read, sum hashes and a Size method

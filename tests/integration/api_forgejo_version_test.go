@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/routers"
-	v1 "forgejo.org/routers/api/forgejo/v1"
-	"forgejo.org/tests"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	v1 "github.com/CarriedWorldUniverse/cairn/routers/api/forgejo/v1"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

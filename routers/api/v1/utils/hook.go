@@ -9,17 +9,17 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/models/webhook"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/context"
-	webhook_service "forgejo.org/services/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	webhook_service "github.com/CarriedWorldUniverse/cairn/services/webhook"
 )
 
 // ListOwnerHooks lists the webhooks of the provided owner

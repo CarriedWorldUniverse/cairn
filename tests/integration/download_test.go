@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

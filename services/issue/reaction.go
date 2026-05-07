@@ -5,8 +5,8 @@ package issue
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 // CreateIssueReaction creates a reaction on issue.

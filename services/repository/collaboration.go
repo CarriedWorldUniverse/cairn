@@ -7,10 +7,10 @@ package repository
 import (
 	"context"
 
-	"forgejo.org/models"
-	"forgejo.org/models/db"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // DeleteCollaboration removes collaboration relation between the user and repository.

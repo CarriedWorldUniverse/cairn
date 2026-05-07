@@ -11,7 +11,7 @@ import (
 	"text/template"
 	"time"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	shellquote "github.com/kballard/go-shellquote"
 )

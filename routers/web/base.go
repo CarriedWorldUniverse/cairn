@@ -11,12 +11,12 @@ import (
 	"path"
 	"strings"
 
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web/routing"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/routing"
 )
 
 func storageHandler(storageSetting *setting.Storage, prefix string, objStore storage.ObjectStorage) http.HandlerFunc {

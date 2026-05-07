@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/indexer/issues/internal"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 )
 
 func ToDBOptions(ctx context.Context, options *internal.SearchOptions) (*issues_model.IssuesOptions, error) {

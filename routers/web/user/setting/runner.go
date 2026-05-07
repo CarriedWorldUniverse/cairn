@@ -4,8 +4,8 @@
 package setting
 
 import (
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func RedirectToDefaultSetting(ctx *context.Context) {

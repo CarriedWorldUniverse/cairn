@@ -7,18 +7,18 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	"forgejo.org/models/webhook"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	webhook_service "forgejo.org/services/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	webhook_service "github.com/CarriedWorldUniverse/cairn/services/webhook"
 )
 
 // ListHooks list all hooks of a repository

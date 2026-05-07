@@ -8,11 +8,11 @@ import (
 	"io"
 	"testing"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	webhook_module "forgejo.org/modules/webhook"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

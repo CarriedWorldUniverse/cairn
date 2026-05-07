@@ -6,9 +6,9 @@ package user
 import (
 	"errors"
 
-	"forgejo.org/modules/optional"
-	"forgejo.org/services/authz"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/services/authz"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Translate errors from [ValidateAccessToken] into user-visible messages, if the error is expected as a user-facing

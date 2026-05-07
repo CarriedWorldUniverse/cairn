@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/graceful"
-	indexer_internal "forgejo.org/modules/indexer/internal"
-	inner_elasticsearch "forgejo.org/modules/indexer/internal/elasticsearch"
-	"forgejo.org/modules/indexer/issues/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	indexer_internal "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
+	inner_elasticsearch "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal/elasticsearch"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal"
 
 	"github.com/olivere/elastic/v7"
 )

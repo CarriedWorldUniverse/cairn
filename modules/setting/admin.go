@@ -4,7 +4,7 @@
 package setting
 
 import (
-	"forgejo.org/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 )
 
 // Admin settings

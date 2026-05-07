@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 type DateUtils struct{}

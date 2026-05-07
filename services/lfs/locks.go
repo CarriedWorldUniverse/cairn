@@ -8,16 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/json"
-	lfs_module "forgejo.org/modules/lfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	lfs_module "github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 func handleLockListOut(ctx *context.Context, repo *repo_model.Repository, lock *git_model.LFSLock, err error) {

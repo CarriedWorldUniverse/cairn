@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/validation"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/context"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"code.forgejo.org/go-chi/binding"
 )

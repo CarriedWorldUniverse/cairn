@@ -9,12 +9,12 @@ import (
 	"slices"
 	"testing"
 
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

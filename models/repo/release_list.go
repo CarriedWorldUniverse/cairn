@@ -6,7 +6,7 @@ package repo
 import (
 	"context"
 
-	user_model "forgejo.org/models/user"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 type ReleaseList []*Release

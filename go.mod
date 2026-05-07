@@ -1,4 +1,4 @@
-module forgejo.org
+module github.com/CarriedWorldUniverse/cairn
 
 go 1.26.0
 

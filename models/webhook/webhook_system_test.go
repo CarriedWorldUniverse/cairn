@@ -6,8 +6,8 @@ package webhook
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/require"
 	"xorm.io/builder"

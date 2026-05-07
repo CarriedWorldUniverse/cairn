@@ -4,7 +4,7 @@
 package v1_16
 
 import (
-	"forgejo.org/models/gitea_migrations/base"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/base"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

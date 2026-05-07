@@ -3,7 +3,7 @@
 
 package swagger
 
-import api "forgejo.org/modules/structs"
+import api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 // GeneralRepoSettings
 // swagger:response GeneralRepoSettings

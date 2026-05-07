@@ -9,12 +9,12 @@ import (
 	"net/url"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	git_model "forgejo.org/models/git"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/tests"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

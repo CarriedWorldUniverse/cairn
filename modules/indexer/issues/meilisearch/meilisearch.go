@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	indexer_internal "forgejo.org/modules/indexer/internal"
-	inner_meilisearch "forgejo.org/modules/indexer/internal/meilisearch"
-	"forgejo.org/modules/indexer/issues/internal"
+	indexer_internal "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
+	inner_meilisearch "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal/meilisearch"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal"
 
 	"github.com/meilisearch/meilisearch-go"
 )

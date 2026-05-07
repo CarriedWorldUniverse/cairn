@@ -4,7 +4,7 @@
 package setting
 
 import (
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"github.com/42wim/httpsig"
 )

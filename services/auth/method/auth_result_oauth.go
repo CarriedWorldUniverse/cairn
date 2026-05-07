@@ -4,10 +4,10 @@
 package method
 
 import (
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/optional"
-	"forgejo.org/services/auth"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 var _ auth.AuthenticationResult = &oAuth2JWTAuthenticationResult{}

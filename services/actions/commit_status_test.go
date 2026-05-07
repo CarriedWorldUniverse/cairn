@@ -6,11 +6,11 @@ package actions
 import (
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	git_model "forgejo.org/models/git"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/structs"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

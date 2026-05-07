@@ -6,10 +6,10 @@ package bleve
 import (
 	"context"
 
-	indexer_internal "forgejo.org/modules/indexer/internal"
-	inner_bleve "forgejo.org/modules/indexer/internal/bleve"
-	"forgejo.org/modules/indexer/issues/internal"
-	"forgejo.org/modules/optional"
+	indexer_internal "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
+	inner_bleve "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal/bleve"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/analysis/analyzer/custom"

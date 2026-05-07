@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 const metaFilename = "rupture_meta.json"

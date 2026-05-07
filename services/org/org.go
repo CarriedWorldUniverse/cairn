@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models"
-	"forgejo.org/models/db"
-	org_model "forgejo.org/models/organization"
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
-	repo_service "forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // DeleteOrganization completely and permanently deletes everything of organization.

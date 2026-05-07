@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/test"
-	webhook_module "forgejo.org/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -10,12 +10,12 @@ import (
 	"reflect"
 	"strconv"
 
-	issues_model "forgejo.org/models/issues"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	issue_service "forgejo.org/services/issue"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	issue_service "github.com/CarriedWorldUniverse/cairn/services/issue"
 )
 
 // ListIssueLabels list all the labels of an issue

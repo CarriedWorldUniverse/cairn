@@ -7,8 +7,8 @@ import (
 	"context"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/services/gitdiff"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
 )
 
 // GetDiffPreview produces and returns diff result of a file which is not yet committed.

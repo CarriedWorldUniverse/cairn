@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
 
 	"github.com/stretchr/testify/assert"
 )

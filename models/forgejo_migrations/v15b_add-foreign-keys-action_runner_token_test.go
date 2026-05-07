@@ -6,9 +6,9 @@ package forgejo_migrations
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	migration_tests "forgejo.org/models/gitea_migrations/test"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

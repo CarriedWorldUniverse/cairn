@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/build/codeformat"
+	"github.com/CarriedWorldUniverse/cairn/build/codeformat"
 )
 
 // Windows has a limitation for command line arguments, the size can not exceed 32KB.

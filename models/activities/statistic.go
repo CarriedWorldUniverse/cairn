@@ -6,18 +6,18 @@ package activities
 import (
 	"context"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/organization"
-	access_model "forgejo.org/models/perm/access"
-	project_model "forgejo.org/models/project"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/models/webhook"
-	"forgejo.org/modules/setting"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Statistic contains the database statistics

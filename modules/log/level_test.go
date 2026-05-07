@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"

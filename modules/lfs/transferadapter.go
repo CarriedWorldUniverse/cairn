@@ -9,8 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // TransferAdapter represents an adapter for downloading/uploading LFS objects.

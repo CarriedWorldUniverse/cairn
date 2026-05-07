@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	user_setting "forgejo.org/routers/web/user/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	user_setting "github.com/CarriedWorldUniverse/cairn/routers/web/user/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 var (

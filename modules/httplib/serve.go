@@ -17,13 +17,13 @@ import (
 	"strings"
 	"time"
 
-	charsetModule "forgejo.org/modules/charset"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/typesniffer"
-	"forgejo.org/modules/util"
+	charsetModule "github.com/CarriedWorldUniverse/cairn/modules/charset"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/typesniffer"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/klauspost/compress/gzhttp"
 )

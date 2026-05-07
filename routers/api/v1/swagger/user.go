@@ -4,8 +4,8 @@
 package swagger
 
 import (
-	activities_model "forgejo.org/models/activities"
-	api "forgejo.org/modules/structs"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // User

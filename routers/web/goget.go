@@ -11,10 +11,10 @@ import (
 	"path"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func goGet(ctx *context.Context) {

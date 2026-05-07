@@ -7,9 +7,9 @@ import (
 	"errors"
 	"net/http"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 const (

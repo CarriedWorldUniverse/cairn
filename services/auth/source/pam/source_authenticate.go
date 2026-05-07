@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/auth/pam"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/pam"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"github.com/google/uuid"
 )

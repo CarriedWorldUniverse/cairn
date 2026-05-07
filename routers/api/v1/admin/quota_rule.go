@@ -7,11 +7,11 @@ import (
 	"errors"
 	"net/http"
 
-	quota_model "forgejo.org/models/quota"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 func toLimitSubjects(subjStrings []string) (*quota_model.LimitSubjects, error) {

@@ -4,8 +4,8 @@
 package v1_12
 
 import (
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

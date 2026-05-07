@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	org_model "forgejo.org/models/organization"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"

@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/modules/util"
-	app_context "forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 type ContainedLinks struct { // TODO: better name?

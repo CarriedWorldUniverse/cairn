@@ -11,10 +11,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/pbkdf2"

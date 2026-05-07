@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	api "forgejo.org/modules/structs"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 )

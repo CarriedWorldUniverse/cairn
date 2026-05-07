@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/pull"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/pull"
 )
 
 // CherryPick cherrypicks or reverts a commit to the given repository

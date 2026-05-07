@@ -10,14 +10,14 @@ import (
 	"os"
 	"strings"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	base "forgejo.org/modules/migration"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/convert"
-	"forgejo.org/services/migrations"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	"github.com/CarriedWorldUniverse/cairn/services/migrations"
 
 	"github.com/urfave/cli/v3"
 )

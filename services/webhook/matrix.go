@@ -16,16 +16,16 @@ import (
 	"regexp"
 	"strings"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/svg"
-	"forgejo.org/modules/util"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/webhook/shared"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook/shared"
 )
 
 type matrixHandler struct{}

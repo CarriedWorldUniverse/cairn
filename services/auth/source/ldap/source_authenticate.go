@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	auth_module "forgejo.org/modules/auth"
-	"forgejo.org/modules/optional"
-	source_service "forgejo.org/services/auth/source"
-	user_service "forgejo.org/services/user"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	auth_module "github.com/CarriedWorldUniverse/cairn/modules/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	source_service "github.com/CarriedWorldUniverse/cairn/services/auth/source"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // Authenticate queries if login/password is valid against the LDAP directory pool,

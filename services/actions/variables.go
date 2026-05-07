@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/secret"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/secret"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 func CreateVariable(ctx context.Context, ownerID, repoID int64, name, data string) (*actions_model.ActionVariable, error) {

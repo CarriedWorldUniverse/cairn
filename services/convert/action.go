@@ -6,10 +6,10 @@ package convert
 import (
 	"context"
 
-	actions_model "forgejo.org/models/actions"
-	access_model "forgejo.org/models/perm/access"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToActionRun convert actions_model.User to api.ActionRun

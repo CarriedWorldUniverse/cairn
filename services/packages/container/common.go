@@ -7,9 +7,9 @@ import (
 	"context"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	user_model "forgejo.org/models/user"
-	container_module "forgejo.org/modules/packages/container"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	container_module "github.com/CarriedWorldUniverse/cairn/modules/packages/container"
 )
 
 // UpdateRepositoryNames updates the repository name property for all packages of the specific owner

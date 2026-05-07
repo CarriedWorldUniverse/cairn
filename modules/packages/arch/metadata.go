@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/packages"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"github.com/mholt/archives"
 )

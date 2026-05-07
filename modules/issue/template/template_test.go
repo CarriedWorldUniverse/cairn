@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"testing"
 
-	"forgejo.org/modules/json"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

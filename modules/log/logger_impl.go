@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 type LoggerImpl struct {

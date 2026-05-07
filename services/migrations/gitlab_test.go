@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/json"
-	base "forgejo.org/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

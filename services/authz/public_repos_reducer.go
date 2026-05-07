@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"xorm.io/builder"
 )

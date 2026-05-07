@@ -13,15 +13,15 @@ import (
 	"strings"
 	"time"
 
-	issues_model "forgejo.org/models/issues"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/references"
-	"forgejo.org/modules/repository"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/references"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
 )
 
 const (

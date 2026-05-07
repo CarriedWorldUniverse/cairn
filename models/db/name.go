@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var (

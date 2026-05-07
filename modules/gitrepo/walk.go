@@ -6,7 +6,7 @@ package gitrepo
 import (
 	"context"
 
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // WalkReferences walks all the references from the repository

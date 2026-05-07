@@ -4,9 +4,9 @@
 package setting
 
 import (
-	"forgejo.org/modules/base"
-	"forgejo.org/routers/web/shared"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/shared"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

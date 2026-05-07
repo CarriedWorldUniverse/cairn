@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/markup/common"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/common"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"

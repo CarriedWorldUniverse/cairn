@@ -6,8 +6,8 @@ package forgejo_migrations
 import (
 	"fmt"
 
-	"forgejo.org/models/gitea_migrations/base"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

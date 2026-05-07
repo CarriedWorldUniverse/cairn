@@ -7,8 +7,8 @@ import (
 	"encoding/xml"
 	"io"
 
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"golang.org/x/net/html/charset"
 )

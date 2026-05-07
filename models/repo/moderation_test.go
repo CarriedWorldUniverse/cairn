@@ -6,9 +6,9 @@ package repo_test
 import (
 	"testing"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/models/repo"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 )

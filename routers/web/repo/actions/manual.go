@@ -6,8 +6,8 @@ package actions
 import (
 	"net/url"
 
-	actions_service "forgejo.org/services/actions"
-	app_context "forgejo.org/services/context"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func ManualRunWorkflow(ctx *app_context.Context) {

@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/urfave/cli/v3"
 )

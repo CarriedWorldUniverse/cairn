@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	user_model "forgejo.org/models/user"
-	chef_module "forgejo.org/modules/packages/chef"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	chef_module "github.com/CarriedWorldUniverse/cairn/modules/packages/chef"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 const (

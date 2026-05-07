@@ -6,10 +6,10 @@ package repo
 import (
 	"net/http"
 
-	issues_model "forgejo.org/models/issues"
-	access_model "forgejo.org/models/perm/access"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // AddDependency adds new dependencies

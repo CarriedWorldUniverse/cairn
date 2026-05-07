@@ -9,9 +9,9 @@ import (
 	"slices"
 	"sync"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm/names"
 )

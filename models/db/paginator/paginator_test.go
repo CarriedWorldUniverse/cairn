@@ -6,8 +6,8 @@ package paginator
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -4,8 +4,8 @@
 package v1_22
 
 import (
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

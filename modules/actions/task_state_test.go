@@ -6,7 +6,7 @@ package actions
 import (
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
 
 	"github.com/stretchr/testify/assert"
 )

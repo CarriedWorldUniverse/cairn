@@ -7,10 +7,10 @@ import (
 	"context"
 	"net/http"
 
-	"forgejo.org/models/user"
-	"forgejo.org/modules/forgefed"
-	"forgejo.org/modules/log"
-	app_context "forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"

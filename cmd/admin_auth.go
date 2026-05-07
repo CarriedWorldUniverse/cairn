@@ -10,9 +10,9 @@ import (
 	"os"
 	"text/tabwriter"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	auth_service "forgejo.org/services/auth"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	auth_service "github.com/CarriedWorldUniverse/cairn/services/auth"
 
 	"github.com/urfave/cli/v3"
 )

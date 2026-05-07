@@ -6,8 +6,8 @@ package forgefed
 import (
 	"time"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/validation"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
 )

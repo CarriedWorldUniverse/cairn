@@ -7,12 +7,12 @@ import (
 	go_context "context"
 	"net/http"
 
-	"forgejo.org/models/db"
-	quota_model "forgejo.org/models/quota"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // ListQuotaGroups returns all the quota groups

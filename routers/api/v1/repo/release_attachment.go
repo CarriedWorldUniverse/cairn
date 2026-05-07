@@ -11,15 +11,15 @@ import (
 	"path"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/attachment"
-	"forgejo.org/services/context"
-	"forgejo.org/services/context/upload"
-	"forgejo.org/services/convert"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/attachment"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/context/upload"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 func checkReleaseMatchRepo(ctx *context.APIContext, releaseID int64) bool {

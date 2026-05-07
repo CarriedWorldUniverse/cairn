@@ -6,8 +6,8 @@ package convert
 import (
 	"time"
 
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToWikiCommit convert a git commit into a WikiCommit

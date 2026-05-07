@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // NameRevStdin runs name-rev --stdin

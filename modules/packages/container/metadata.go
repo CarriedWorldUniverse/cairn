@@ -8,9 +8,9 @@ import (
 	"io"
 	"strings"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/packages/container/helm"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/packages/container/helm"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )

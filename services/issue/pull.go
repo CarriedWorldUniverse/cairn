@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	issues_model "forgejo.org/models/issues"
-	org_model "forgejo.org/models/organization"
-	access_model "forgejo.org/models/perm/access"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type ReviewRequestNotifier struct {

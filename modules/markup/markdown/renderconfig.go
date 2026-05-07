@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
 
 	"github.com/yuin/goldmark/ast"
 	"go.yaml.in/yaml/v3"

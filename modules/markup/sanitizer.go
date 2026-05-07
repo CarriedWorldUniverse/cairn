@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"sync"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/microcosm-cc/bluemonday"
 )

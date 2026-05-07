@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"xorm.io/builder"
 )

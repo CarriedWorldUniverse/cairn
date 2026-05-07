@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	swagger_spec "github.com/go-openapi/spec"
 	"github.com/stretchr/testify/require"

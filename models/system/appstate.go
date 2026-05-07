@@ -6,7 +6,7 @@ package system
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // AppState represents a state record in database

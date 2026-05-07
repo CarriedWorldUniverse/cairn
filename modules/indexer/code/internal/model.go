@@ -3,7 +3,7 @@
 
 package internal
 
-import "forgejo.org/modules/timeutil"
+import "github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 type FileUpdate struct {
 	Filename string

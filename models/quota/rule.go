@@ -7,7 +7,7 @@ import (
 	"context"
 	"slices"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 type Rule struct {

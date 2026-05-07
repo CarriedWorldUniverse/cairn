@@ -7,8 +7,8 @@ import (
 	"go/ast"
 	"go/token"
 
-	llu "forgejo.org/build/lint-locale-usage"
-	"forgejo.org/modules/container"
+	llu "github.com/CarriedWorldUniverse/cairn/build/lint-locale-usage"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 )
 
 // special case: services/migrations/migrate.go

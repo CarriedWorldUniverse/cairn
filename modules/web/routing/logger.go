@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/web/types"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/types"
 )
 
 // NewLoggerHandler is a handler that will log routing to the router log taking account of

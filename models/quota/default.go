@@ -4,7 +4,7 @@
 package quota
 
 import (
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func EvaluateDefault(used Used, forSubject LimitSubject) bool {

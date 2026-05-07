@@ -6,7 +6,7 @@ package context
 import (
 	"slices"
 
-	"forgejo.org/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
 )
 
 // IsUserSiteAdmin returns true if current user is a site admin

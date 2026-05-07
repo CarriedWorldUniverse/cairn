@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	ap "github.com/go-ap/activitypub"
 )

@@ -6,10 +6,10 @@ package web
 import (
 	"net/http"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/web/repo"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func requireSignIn(ctx *context.Context) {

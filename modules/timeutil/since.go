@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 // Seconds-based time units

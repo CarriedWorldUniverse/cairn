@@ -7,8 +7,8 @@ import (
 	"mime"
 	"path/filepath"
 
-	repo_model "forgejo.org/models/repo"
-	api "forgejo.org/modules/structs"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 func WebAssetDownloadURL(repo *repo_model.Repository, attach *repo_model.Attachment) string {

@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	pwd "forgejo.org/modules/auth/password"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	pwd "github.com/CarriedWorldUniverse/cairn/modules/auth/password"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/urfave/cli/v3"
 )

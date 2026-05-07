@@ -9,12 +9,12 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/modules/web/routing"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/routing"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"code.forgejo.org/go-chi/session"
 	"github.com/chi-middleware/proxy"

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"golang.org/x/crypto/ssh"
 )

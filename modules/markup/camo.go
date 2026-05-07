@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // CamoEncode encodes a lnk to fit with the go-camo and camo proxy links. The purposes of camo-proxy are:

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	actions_model "forgejo.org/models/actions"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/golang-jwt/jwt/v5"
 )

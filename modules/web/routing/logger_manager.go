@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
 )
 
 // Event indicates when the printer is triggered

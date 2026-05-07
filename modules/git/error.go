@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrNotExist commit not exist error

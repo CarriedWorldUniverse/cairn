@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/modules/log"
-	session_module "forgejo.org/modules/session"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	session_module "github.com/CarriedWorldUniverse/cairn/modules/session"
 
 	chiSession "code.forgejo.org/go-chi/session"
 	"github.com/gorilla/sessions"

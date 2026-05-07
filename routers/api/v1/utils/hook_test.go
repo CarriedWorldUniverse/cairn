@@ -8,10 +8,10 @@ import (
 	"reflect"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/structs"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

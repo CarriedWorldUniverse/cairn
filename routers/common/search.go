@@ -4,9 +4,9 @@
 package common
 
 import (
-	code_indexer "forgejo.org/modules/indexer/code"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	code_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/code"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 type CodeSearchOptions struct {

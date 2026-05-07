@@ -10,7 +10,7 @@ import (
 	"path"
 	"time"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 /*

@@ -11,11 +11,11 @@ import (
 	"io"
 	"net/url"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/modules/httplib"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/services/context"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // ServeArtifact writes an artifact archive to the response. The given rows

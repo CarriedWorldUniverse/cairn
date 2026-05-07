@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates"
-	"forgejo.org/modules/test"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 )

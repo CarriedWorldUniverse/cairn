@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/setting"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	pingv1 "code.forgejo.org/forgejo/actions-proto/ping/v1"
 	"code.forgejo.org/forgejo/actions-proto/ping/v1/pingv1connect"

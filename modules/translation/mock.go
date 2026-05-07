@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"html/template"
 
-	"forgejo.org/modules/translation/i18n"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/i18n"
 )
 
 // MockLocale provides a mocked locale without any translations, other than those inserted into MockTranslations by a testcase

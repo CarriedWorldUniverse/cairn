@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"time"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/util"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // A token is a verifiable container describing an action.

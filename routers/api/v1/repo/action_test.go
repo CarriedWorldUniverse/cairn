@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 )

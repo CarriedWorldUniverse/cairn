@@ -14,11 +14,11 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/charset"
-	"forgejo.org/modules/highlight"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/charset"
+	"github.com/CarriedWorldUniverse/cairn/modules/highlight"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"

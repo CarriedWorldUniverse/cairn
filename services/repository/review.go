@@ -6,9 +6,9 @@ package repository
 import (
 	"context"
 
-	"forgejo.org/models/organization"
-	"forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // GetReviewerTeams get all teams can be requested to review

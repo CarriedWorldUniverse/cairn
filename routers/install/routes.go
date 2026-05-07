@@ -8,12 +8,12 @@ import (
 	"html"
 	"net/http"
 
-	"forgejo.org/modules/public"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/common"
-	"forgejo.org/routers/web/healthcheck"
-	"forgejo.org/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/modules/public"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/healthcheck"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // Routes registers the installation routes

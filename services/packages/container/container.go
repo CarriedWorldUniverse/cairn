@@ -8,11 +8,11 @@ import (
 	"errors"
 	"os"
 
-	packages_model "forgejo.org/models/packages"
-	container_model "forgejo.org/models/packages/container"
-	"forgejo.org/modules/log"
-	packages_module "forgejo.org/modules/packages"
-	"forgejo.org/modules/util"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	container_model "github.com/CarriedWorldUniverse/cairn/models/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // FIXME: Workaround to be removed in v1.20

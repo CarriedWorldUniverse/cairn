@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/git"
-	code_indexer "forgejo.org/modules/indexer/code"
-	"forgejo.org/modules/setting"
-	"forgejo.org/routers/common"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	code_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/code"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const tplSearch base.TplName = "repo/search"

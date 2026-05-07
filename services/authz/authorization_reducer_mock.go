@@ -7,8 +7,8 @@ package authz
 import (
 	"context"
 
-	"forgejo.org/models/perm"
-	"forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
 
 	mock "github.com/stretchr/testify/mock"
 	"xorm.io/builder"

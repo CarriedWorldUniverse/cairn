@@ -4,8 +4,8 @@
 package admin
 
 import (
-	"forgejo.org/routers/api/v1/shared"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/shared"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // GetRunnerRegistrationToken returns a token to register global runners

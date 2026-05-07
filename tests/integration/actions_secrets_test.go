@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	secret_model "forgejo.org/models/secret"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	app_context "forgejo.org/services/context"
-	"forgejo.org/tests"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	secret_model "github.com/CarriedWorldUniverse/cairn/models/secret"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

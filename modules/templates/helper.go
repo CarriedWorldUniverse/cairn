@@ -16,14 +16,14 @@ import (
 	"strings"
 	"time"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/svg"
-	"forgejo.org/modules/templates/eval"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/gitdiff"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates/eval"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
 )
 
 // NewFuncMap returns functions for injecting to templates

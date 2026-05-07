@@ -7,10 +7,10 @@ import (
 	"html/template"
 	"net/http"
 
-	quota_model "forgejo.org/models/quota"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // StorageOverview render a size overview of the user, as well as relevant

@@ -6,10 +6,10 @@ package quota
 import (
 	"context"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 
 	"xorm.io/builder"
 )

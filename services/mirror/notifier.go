@@ -6,10 +6,10 @@ package mirror
 import (
 	"context"
 
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/repository"
-	notify_service "forgejo.org/services/notify"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 func init() {

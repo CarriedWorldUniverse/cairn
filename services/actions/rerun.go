@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"slices"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/container"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 
 	"xorm.io/builder"
 )

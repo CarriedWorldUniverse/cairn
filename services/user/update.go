@@ -7,14 +7,14 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models"
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	password_module "forgejo.org/modules/auth/password"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/mailer"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	password_module "github.com/CarriedWorldUniverse/cairn/modules/auth/password"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/mailer"
 )
 
 type UpdateOptions struct {

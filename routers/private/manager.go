@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/graceful/releasereopen"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful/releasereopen"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // ReloadTemplates reloads all the templates

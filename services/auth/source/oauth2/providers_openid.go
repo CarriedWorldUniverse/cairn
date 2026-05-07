@@ -6,9 +6,9 @@ package oauth2
 import (
 	"html/template"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/svg"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
 
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/openidConnect"

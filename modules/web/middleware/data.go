@@ -8,7 +8,7 @@ import (
 	"maps"
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // ContextDataStore represents a data store

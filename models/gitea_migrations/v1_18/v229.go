@@ -6,7 +6,7 @@ package v1_18
 import (
 	"fmt"
 
-	"forgejo.org/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/issues"
 
 	"xorm.io/builder"
 	"xorm.io/xorm"

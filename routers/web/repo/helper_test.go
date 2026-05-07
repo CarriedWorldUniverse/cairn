@@ -6,7 +6,7 @@ package repo
 import (
 	"testing"
 
-	"forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"github.com/stretchr/testify/assert"
 )

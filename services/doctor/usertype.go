@@ -6,8 +6,8 @@ package doctor
 import (
 	"context"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 func checkUserType(ctx context.Context, logger log.Logger, autofix bool) error {

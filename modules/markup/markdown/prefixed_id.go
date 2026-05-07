@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/markup/common"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/common"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/yuin/goldmark/ast"
 )

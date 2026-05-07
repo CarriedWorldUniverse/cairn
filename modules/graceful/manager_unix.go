@@ -13,10 +13,10 @@ import (
 	"syscall"
 	"time"
 
-	"forgejo.org/modules/graceful/releasereopen"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful/releasereopen"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func pidMsg() systemdNotifyMsg {

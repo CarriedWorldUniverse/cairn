@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	auth_model "forgejo.org/models/auth"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
 )
 
 func GetAuthorizationReducerForAuthorizedIntegration(ctx context.Context, ai *auth_model.AuthorizedIntegration) (AuthorizationReducer, error) {

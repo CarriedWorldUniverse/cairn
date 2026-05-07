@@ -7,13 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	actions_model "forgejo.org/models/actions"
-	activities_model "forgejo.org/models/activities"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	notify_service "forgejo.org/services/notify"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 type mailNotifier struct {

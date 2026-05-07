@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

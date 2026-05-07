@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/require"
 )

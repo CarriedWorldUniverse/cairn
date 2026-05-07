@@ -6,11 +6,11 @@ package admin
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/forgefed"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

@@ -9,12 +9,12 @@ import (
 	"errors"
 	"fmt"
 
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/gobwas/glob"
 )

@@ -6,9 +6,9 @@ package quota_test
 import (
 	"testing"
 
-	quota_model "forgejo.org/models/quota"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/tests"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

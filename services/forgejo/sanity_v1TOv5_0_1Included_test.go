@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/forgejo/semver"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/forgejo/semver"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"github.com/stretchr/testify/require"
 )

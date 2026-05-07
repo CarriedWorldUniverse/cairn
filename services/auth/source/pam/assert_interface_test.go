@@ -4,9 +4,9 @@
 package pam_test
 
 import (
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/services/auth"
-	"forgejo.org/services/auth/source/pam"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/pam"
 )
 
 // This test file exists to assert that our Source exposes the interfaces that we expect

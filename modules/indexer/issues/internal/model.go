@@ -4,9 +4,9 @@
 package internal
 
 import (
-	"forgejo.org/models/db"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // IndexerData data stored in the issue indexer

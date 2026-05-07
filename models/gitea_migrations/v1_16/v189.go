@@ -7,8 +7,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"forgejo.org/models/gitea_migrations/base"
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"xorm.io/xorm"
 )

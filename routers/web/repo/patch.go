@@ -6,16 +6,16 @@ package repo
 import (
 	"strings"
 
-	"forgejo.org/models"
-	git_model "forgejo.org/models/git"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/repository/files"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/repository/files"
 )
 
 const (

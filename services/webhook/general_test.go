@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	api "forgejo.org/modules/structs"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 )

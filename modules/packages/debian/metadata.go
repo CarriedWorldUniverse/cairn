@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
-	"forgejo.org/modules/zstd"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/zstd"
 
 	"github.com/blakesmith/ar"
 	"github.com/ulikunitz/xz"

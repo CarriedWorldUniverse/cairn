@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/modules/setting"
-	asymkey_service "forgejo.org/services/asymkey"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"golang.org/x/crypto/ssh"
 )

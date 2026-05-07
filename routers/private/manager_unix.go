@@ -6,8 +6,8 @@ package private
 import (
 	"net/http"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Restart causes the server to perform a graceful restart

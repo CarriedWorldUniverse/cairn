@@ -7,8 +7,8 @@ import (
 	"errors"
 	"os"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/index/upsidedown"

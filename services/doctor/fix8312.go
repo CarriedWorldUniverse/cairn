@@ -6,11 +6,11 @@ package doctor
 import (
 	"context"
 
-	"forgejo.org/models"
-	"forgejo.org/models/db"
-	org_model "forgejo.org/models/organization"
-	"forgejo.org/models/perm"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"xorm.io/builder"
 )

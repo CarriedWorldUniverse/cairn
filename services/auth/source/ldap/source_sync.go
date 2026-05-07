@@ -8,16 +8,16 @@ import (
 	"fmt"
 	"strings"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	user_model "forgejo.org/models/user"
-	auth_module "forgejo.org/modules/auth"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	source_service "forgejo.org/services/auth/source"
-	user_service "forgejo.org/services/user"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	auth_module "github.com/CarriedWorldUniverse/cairn/modules/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	source_service "github.com/CarriedWorldUniverse/cairn/services/auth/source"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // Sync causes this ldap source to synchronize its users with the db

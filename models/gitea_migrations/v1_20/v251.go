@@ -4,7 +4,7 @@
 package v1_20
 
 import (
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"xorm.io/xorm"
 )

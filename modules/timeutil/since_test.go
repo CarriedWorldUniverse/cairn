@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"io"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
-	"forgejo.org/services/context/upload"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/services/context/upload"
 
 	"github.com/google/uuid"
 )

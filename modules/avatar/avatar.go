@@ -15,8 +15,8 @@ import (
 	_ "image/gif"  // for processing gif images
 	_ "image/jpeg" // for processing jpeg images
 
-	"forgejo.org/modules/avatar/identicon"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/avatar/identicon"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	exif_terminator "code.superseriousbusiness.org/exif-terminator"
 	"golang.org/x/image/draw"

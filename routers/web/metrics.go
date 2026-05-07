@@ -7,7 +7,7 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

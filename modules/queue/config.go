@@ -4,7 +4,7 @@
 package queue
 
 import (
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type BaseConfig struct {

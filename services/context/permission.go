@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"slices"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/log"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // RequireRepoAdmin returns a middleware for requiring repository admin permission

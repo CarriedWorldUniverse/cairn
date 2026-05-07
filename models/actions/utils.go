@@ -12,9 +12,9 @@ import (
 	"io"
 	"time"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 func generateSaltedToken() (string, string, string, string) {

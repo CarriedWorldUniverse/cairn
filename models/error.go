@@ -7,9 +7,9 @@ package models
 import (
 	"fmt"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/util"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrUserOwnRepos represents a "UserOwnRepos" kind of error.

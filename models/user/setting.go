@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/cache"
-	setting_module "forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	setting_module "github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 )

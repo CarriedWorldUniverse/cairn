@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func main() {

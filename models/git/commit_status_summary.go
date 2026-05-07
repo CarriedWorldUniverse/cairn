@@ -6,9 +6,9 @@ package git
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"xorm.io/builder"
 )

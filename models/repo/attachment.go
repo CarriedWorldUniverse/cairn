@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"path"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"xorm.io/builder"
 )

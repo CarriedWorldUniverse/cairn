@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 func checkOldArchives(ctx context.Context, logger log.Logger, autofix bool) error {

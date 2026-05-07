@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"github.com/urfave/cli/v3"
 )

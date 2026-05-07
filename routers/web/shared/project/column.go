@@ -4,9 +4,9 @@
 package project
 
 import (
-	project_model "forgejo.org/models/project"
-	"forgejo.org/modules/json"
-	"forgejo.org/services/context"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // MoveColumns moves or keeps columns in a project and sorts them inside that project

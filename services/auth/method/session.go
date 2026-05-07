@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 // Ensure the struct implements the interface.

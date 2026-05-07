@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/git/pipeline"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/pipeline"
 )
 
 // SearchPointerBlobs scans the whole repository for LFS pointer files

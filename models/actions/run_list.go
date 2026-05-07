@@ -7,12 +7,12 @@ import (
 	"context"
 	"slices"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/translation"
-	webhook_module "forgejo.org/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
