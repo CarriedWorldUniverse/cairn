@@ -28,6 +28,10 @@ type CommitData struct {
 	Signed      bool
 	Verified    bool
 	Diff        string
+	// OwnerUsername is the username of the agent's owning Forgejo user,
+	// resolved via the agent service. Empty for non-agent commits or when
+	// lookup failed; the template falls back to AuthorOwner (email domain).
+	OwnerUsername string
 }
 
 // RepoData carries the minimal repo context for path/url rendering.
@@ -60,18 +64,20 @@ func RenderCommit(w http.ResponseWriter, c CommitData, repo RepoData) error {
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 
 	data := struct {
-		Commit      CommitData
-		Repo        RepoData
-		IsAgent     bool
-		AgentSlug   string
-		AgentBadge  string
-		AuthorOwner string
+		Commit        CommitData
+		Repo          RepoData
+		IsAgent       bool
+		AgentSlug     string
+		AgentBadge    string
+		AuthorOwner   string
+		OwnerUsername string
 	}{
-		Commit:     c,
-		Repo:       repo,
-		IsAgent:    IsAgentAuthor(c.AuthorEmail),
-		AgentSlug:  AgentAuthorSlug(c.AuthorEmail),
-		AgentBadge: AgentAuthorBadge(c.AuthorEmail),
+		Commit:        c,
+		Repo:          repo,
+		IsAgent:       IsAgentAuthor(c.AuthorEmail),
+		AgentSlug:     AgentAuthorSlug(c.AuthorEmail),
+		AgentBadge:    AgentAuthorBadge(c.AuthorEmail),
+		OwnerUsername: c.OwnerUsername,
 	}
 	if data.IsAgent {
 		_, domain, _ := splitAgentEmail(c.AuthorEmail)

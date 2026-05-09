@@ -17,6 +17,7 @@
 package cairnforgejo
 
 import (
+	stdctx "context"
 	"io"
 	"strings"
 	"time"
@@ -24,11 +25,13 @@ import (
 	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
 	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
 	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 	"github.com/CarriedWorldUniverse/cairn/modules/git"
 	"github.com/CarriedWorldUniverse/cairn/modules/log"
 	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 	"github.com/CarriedWorldUniverse/cairn/modules/util"
 	cairnweb "github.com/CarriedWorldUniverse/cairn/routers/web/cairn"
+	"github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
@@ -80,6 +83,36 @@ func commitDataFromForgejo(c *git.Commit, signed, verified bool, diff string) Co
 		Verified:    verified,
 		Diff:        diff,
 	}
+}
+
+// resolveAgentOwnerUsername best-effort resolves the Forgejo username of
+// the user that owns the agent identified by the given email. Returns the
+// empty string on any failure (no agent service, non-agent email, agent
+// not found, user not found) — the renderer falls back to the email
+// domain in that case.
+func resolveAgentOwnerUsername(ctx stdctx.Context, email string) string {
+	if email == "" {
+		return ""
+	}
+	at := strings.IndexByte(email, '@')
+	if at <= 0 || !strings.HasPrefix(email, "nexus-") {
+		return ""
+	}
+	slug := email[len("nexus-"):at]
+	domain := email[at+1:]
+	svc := identity.GlobalAgentService()
+	if svc == nil {
+		return ""
+	}
+	agent, err := svc.GetByEmail(ctx, slug, domain)
+	if err != nil || agent == nil {
+		return ""
+	}
+	owner, err := user_model.GetUserByID(ctx, agent.UserID)
+	if err != nil || owner == nil {
+		return ""
+	}
+	return owner.Name
 }
 
 // issueCommentsFromForgejo filters comment events down to actual textual comments.
@@ -254,7 +287,9 @@ func MaybeRenderCommit(ctx *context.Context) bool {
 		}
 	}
 
-	if err := cairnweb.RenderCommit(ctx.Resp, commitDataFromForgejo(commit, signed, verified, diff), repoDataFromForgejo(ctx.Repo.Repository)); err != nil {
+	cd := commitDataFromForgejo(commit, signed, verified, diff)
+	cd.OwnerUsername = resolveAgentOwnerUsername(ctx, cd.AuthorEmail)
+	if err := cairnweb.RenderCommit(ctx.Resp, cd, repoDataFromForgejo(ctx.Repo.Repository)); err != nil {
 		log.Error("cairn: RenderCommit: %v", err)
 	}
 	return true
@@ -351,6 +386,7 @@ func MaybeRenderFile(ctx *context.Context) bool {
 	// fails so we still produce *some* markdown view.
 	if lastCommit, err := ctx.Repo.Commit.GetCommitByPath(ctx.Repo.TreePath); err == nil && lastCommit != nil {
 		fd.LastCommit = commitDataFromForgejo(lastCommit, false, false, "")
+		fd.LastCommit.OwnerUsername = resolveAgentOwnerUsername(ctx, fd.LastCommit.AuthorEmail)
 	}
 
 	if err := cairnweb.RenderFile(ctx.Resp, fd, repoDataFromForgejo(ctx.Repo.Repository)); err != nil {

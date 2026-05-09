@@ -38,9 +38,10 @@ func TestRenderCommit_AgentSigned(t *testing.T) {
 		Time:        time.Date(2026, 5, 10, 14, 23, 0, 0, time.UTC),
 		Subject:     "Add agent registration endpoint",
 		Body:        "",
-		Signed:      true,
-		Verified:    true,
-		Diff:        "diff --git a/foo b/foo\n+new line",
+		Signed:        true,
+		Verified:      true,
+		Diff:          "diff --git a/foo b/foo\n+new line",
+		OwnerUsername: "alice",
 	}
 	repo := RepoData{Owner: "alice", Name: "cairn"}
 
@@ -58,6 +59,7 @@ func TestRenderCommit_AgentSigned(t *testing.T) {
 		"# Commit abc123def456",
 		"nexus-plumb",
 		"agent:plumb",
+		"under alice",
 		"Signed:** verified",
 		"Add agent registration endpoint",
 		"```diff",

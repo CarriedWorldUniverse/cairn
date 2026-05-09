@@ -1,3 +1,6 @@
+// Package cairn — Cairn web UI augmentations.
+//
+// Cairn-specific code; AGPLv3. See LICENSING.md.
 package cairn
 
 import (
@@ -26,7 +29,7 @@ type Manifest struct {
 	DerivationInfoPrefix string         `json:"derivation_info_prefix"`
 	EmailConvention      string         `json:"email_convention"`
 	Trailers             []string       `json:"trailers"`
-	Endpoints            map[string]any `json:"endpoints"`
+	Endpoints            map[string]string `json:"endpoints"`
 	Features             map[string]any `json:"features"`
 }
 
@@ -50,7 +53,7 @@ func BuildManifest(instanceName, cairnVersion, forgejoVersion string, features m
 		DerivationInfoPrefix: "cairn-agent-v1:",
 		EmailConvention:      "nexus-{slug}@{domain}",
 		Trailers:             []string{"Agent-Id", "Agent-Owner", "Agent-Domain"},
-		Endpoints: map[string]any{
+		Endpoints: map[string]string{
 			"agents":         "/api/cairn/v1/agents",
 			"agent_identity": "/api/cairn/v1/agents/{fingerprint}/identity",
 			"manifest":       "/.well-known/cairn.json",
