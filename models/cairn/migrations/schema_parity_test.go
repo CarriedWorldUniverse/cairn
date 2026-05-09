@@ -232,6 +232,27 @@ func TestSchemaParity_PRSummaryTable(t *testing.T) {
 	}
 }
 
+func TestSchemaParity_ReviewPolicyTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V502CreateReviewPolicyTable(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_review_policy")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_review_policy").Sync2(new(cairn.ReviewPolicy)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_review_policy")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_review_policy columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_review_policy indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
 func columnsEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
