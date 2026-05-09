@@ -123,3 +123,16 @@ func TestBuildManifest_FeaturesPreserved(t *testing.T) {
 		t.Error("mcp_server not preserved")
 	}
 }
+
+func TestBuildManifest_AdvertisesSimplifier(t *testing.T) {
+	m := BuildManifest("test-instance", "0.0.0", "1.22.0", map[string]any{
+		"simplifier_enabled": true,
+	})
+	v, ok := m.Features["simplifier_enabled"]
+	if !ok {
+		t.Fatal("manifest missing simplifier_enabled feature")
+	}
+	if v != true {
+		t.Errorf("simplifier_enabled = %v, want true", v)
+	}
+}

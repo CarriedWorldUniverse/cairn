@@ -51,6 +51,7 @@ func repoDataFromForgejo(repo *repo_model.Repository) RepoData {
 		return RepoData{}
 	}
 	return RepoData{
+		ID:    repo.ID,
 		Owner: repo.OwnerName,
 		Name:  repo.Name,
 	}

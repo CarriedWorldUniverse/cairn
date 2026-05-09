@@ -6,6 +6,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
+	"github.com/CarriedWorldUniverse/cairn/models/cairn/cairntest"
+	"github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 )
 
 func TestWantsMarkdown_QueryParam(t *testing.T) {
@@ -221,6 +225,78 @@ func TestRenderPullRequest_NoComments(t *testing.T) {
 	}
 	if strings.Contains(body, "## Comments") {
 		t.Errorf("should not render Comments section for empty list\nbody=%s", body)
+	}
+}
+
+func TestRenderPullRequest_InlinesCachedSummary(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	svc := summarizer.NewService(eng, nil)
+	summarizer.SetGlobal(svc)
+	t.Cleanup(func() { summarizer.SetGlobal(nil) })
+
+	if _, err := eng.Insert(&cairnmodels.PRSummary{
+		RepoID:      42,
+		PRNumber:    7,
+		ContentHash: "h",
+		SummaryMD:   "the summary text",
+		ModelID:     "m",
+	}); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+
+	pr := PullRequestData{
+		Number:      7,
+		Title:       "x",
+		State:       "open",
+		Author:      "alice",
+		AuthorEmail: "nexus@darksoft.co.nz",
+		BaseBranch:  "main",
+		HeadBranch:  "feat/x",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	repo := RepoData{ID: 42, Owner: "o", Name: "r"}
+
+	w := httptest.NewRecorder()
+	if err := RenderPullRequest(w, pr, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	out := w.Body.String()
+	if !strings.Contains(out, "## Summary by cairn") {
+		t.Errorf("output missing summary header:\n%s", out)
+	}
+	if !strings.Contains(out, "the summary text") {
+		t.Errorf("output missing summary body:\n%s", out)
+	}
+	headerIdx := strings.Index(out, "## Summary by cairn")
+	prHeaderIdx := strings.Index(out, "# PR #7")
+	if headerIdx < 0 || prHeaderIdx < 0 || headerIdx > prHeaderIdx {
+		t.Errorf("summary block should appear before PR header (summary=%d, pr=%d)", headerIdx, prHeaderIdx)
+	}
+}
+
+func TestRenderPullRequest_NoSummaryWhenServiceNil(t *testing.T) {
+	summarizer.SetGlobal(nil)
+	pr := PullRequestData{
+		Number:      1,
+		Title:       "x",
+		State:       "open",
+		Author:      "alice",
+		AuthorEmail: "nexus@darksoft.co.nz",
+		BaseBranch:  "main",
+		HeadBranch:  "feat/x",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	repo := RepoData{ID: 1, Owner: "o", Name: "r"}
+
+	w := httptest.NewRecorder()
+	if err := RenderPullRequest(w, pr, repo); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(w.Body.String(), "Summary by cairn") {
+		t.Errorf("should not render summary block when service nil")
 	}
 }
 

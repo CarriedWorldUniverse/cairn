@@ -4,12 +4,15 @@
 package cairn
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 )
 
 //go:embed templates/md/*.tmpl
@@ -36,6 +39,7 @@ type CommitData struct {
 
 // RepoData carries the minimal repo context for path/url rendering.
 type RepoData struct {
+	ID    int64
 	Owner string
 	Name  string
 }
@@ -140,6 +144,11 @@ func RenderPullRequest(w http.ResponseWriter, pr PullRequestData, repo RepoData)
 		return fmt.Errorf("cairn markdown: parse pull_request.tmpl: %w", err)
 	}
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	if svc := summarizer.Global(); svc != nil {
+		if row, err := svc.GetCachedSummary(context.Background(), repo.ID, int64(pr.Number)); err == nil {
+			fmt.Fprintf(w, "## Summary by cairn\n\n%s\n\n---\n\n", row.SummaryMD)
+		}
+	}
 	data := struct {
 		PR   PullRequestData
 		Repo RepoData
