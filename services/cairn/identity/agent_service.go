@@ -172,6 +172,15 @@ func (s *AgentService) GetByFingerprint(ctx context.Context, fingerprint string)
 	return s.store.GetByFingerprint(ctx, fingerprint)
 }
 
+// GetByEmail looks up an agent by (slug, domain) — the components of
+// its nexus-{slug}@{domain} email. Returns ErrAgentNotFound if no
+// matching record exists. Convenience wrapper exposed on the service
+// so callers (notably the push-verification hook) don't have to reach
+// into the store directly.
+func (s *AgentService) GetByEmail(ctx context.Context, slug, domain string) (*cairn.Agent, error) {
+	return s.store.GetByEmail(ctx, slug, domain)
+}
+
 // IsBlocked reports whether the agent identified by fingerprint is
 // in the blocklist.
 func (s *AgentService) IsBlocked(ctx context.Context, fingerprint string) (bool, error) {
