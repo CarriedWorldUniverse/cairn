@@ -34,6 +34,6 @@ func loadCairnFrom(rootCfg ConfigProvider) {
 	Cairn.RejectOrphanAgents = sec.Key("reject_orphan_agents").MustBool(true)
 	Cairn.HMACKeyPath = sec.Key("hmac_key_path").MustString("/etc/cairn/instance-hmac.key")
 	Cairn.MarkdownEndpointsEnabled = sec.Key("markdown_endpoints_enabled").MustBool(true)
-	Cairn.SummarizerEnabled = sec.Key("SUMMARIZER_ENABLED").MustBool(true)
+	Cairn.SummarizerEnabled = sec.Key("summarizer_enabled").MustBool(true)
 	Cairn.WALCheckpointIntervalMinutes = sec.Key("wal_checkpoint_interval_minutes").MustInt(5)
 }

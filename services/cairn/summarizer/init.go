@@ -26,7 +26,10 @@ func Init(engine *xorm.Engine, hmacKeyPath string) error {
 		if err != nil {
 			return nil, nil, fmt.Errorf("summarizer: load config: %w", err)
 		}
-		if !has || !cfg.Enabled {
+		if !has {
+			return nil, nil, nil
+		}
+		if !cfg.Enabled {
 			return nil, cfg, nil
 		}
 		apiKey, err := DecryptCredential(hmacKey, cfg.CredentialsCipher)

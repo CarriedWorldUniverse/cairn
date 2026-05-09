@@ -85,6 +85,30 @@ func TestInit_ResolverReturnsNilClientForDisabled(t *testing.T) {
 	}
 }
 
+func TestInit_ResolverReturnsNilForMissingRow(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	dir := t.TempDir()
+	keyPath := filepath.Join(dir, "hmac.key")
+	if err := os.WriteFile(keyPath, []byte("test-hmac-key-32-bytes-long!!!ab"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Init(eng, keyPath); err != nil {
+		t.Fatal(err)
+	}
+	defer SetGlobal(nil)
+
+	client, cfg, err := Global().resolver(12345) // no row inserted
+	if err != nil {
+		t.Fatalf("resolver: %v", err)
+	}
+	if client != nil {
+		t.Error("expected nil client for missing row")
+	}
+	if cfg != nil {
+		t.Error("expected nil cfg for missing row")
+	}
+}
+
 func TestInit_MissingHMACKeyReturnsError(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	if err := Init(eng, "/nonexistent/path/hmac.key"); err == nil {
