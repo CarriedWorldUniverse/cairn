@@ -8,25 +8,34 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io"
+
+	"golang.org/x/crypto/hkdf"
 )
 
-// derivedAESKey returns a 32-byte AES key derived from the instance HMAC key.
-// HKDF-equivalent for a single output: SHA-256(hmacKey || "cairn-summarizer-v1").
-func derivedAESKey(hmacKey []byte) []byte {
-	h := sha256.New()
-	h.Write(hmacKey)
-	h.Write([]byte("cairn-summarizer-v1"))
-	return h.Sum(nil)
+// derivedAESKey returns a 32-byte AES key derived from the instance HMAC key
+// via HKDF-SHA-256 (RFC 5869) with empty salt and a feature-specific info string.
+func derivedAESKey(hmacKey []byte) ([]byte, error) {
+	r := hkdf.New(sha256.New, hmacKey, nil, []byte("cairn-summarizer-v1"))
+	key := make([]byte, 32)
+	if _, err := io.ReadFull(r, key); err != nil {
+		return nil, fmt.Errorf("summarizer: hkdf: %w", err)
+	}
+	return key, nil
 }
 
 // EncryptCredential AES-256-GCM-encrypts plaintext with a key derived from hmacKey.
 // Output format: nonce(12) || ciphertext.
 func EncryptCredential(hmacKey, plaintext []byte) ([]byte, error) {
-	if len(hmacKey) < 16 {
+	if len(hmacKey) < 32 {
 		return nil, errors.New("hmac key too short")
 	}
-	block, err := aes.NewCipher(derivedAESKey(hmacKey))
+	derived, err := derivedAESKey(hmacKey)
+	if err != nil {
+		return nil, err
+	}
+	block, err := aes.NewCipher(derived)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +57,14 @@ var ErrInvalidCiphertext = errors.New("summarizer: invalid ciphertext")
 
 // DecryptCredential reverses EncryptCredential.
 func DecryptCredential(hmacKey, ciphertext []byte) ([]byte, error) {
-	if len(hmacKey) < 16 {
+	if len(hmacKey) < 32 {
 		return nil, errors.New("hmac key too short")
 	}
-	block, err := aes.NewCipher(derivedAESKey(hmacKey))
+	derived, err := derivedAESKey(hmacKey)
+	if err != nil {
+		return nil, err
+	}
+	block, err := aes.NewCipher(derived)
 	if err != nil {
 		return nil, err
 	}
