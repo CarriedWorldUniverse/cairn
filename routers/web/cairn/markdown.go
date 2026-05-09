@@ -80,6 +80,84 @@ func RenderCommit(w http.ResponseWriter, c CommitData, repo RepoData) error {
 	return tmpl.Execute(w, data)
 }
 
+// CommentData carries the minimal attributes for rendering a single
+// PR or issue comment in markdown.
+type CommentData struct {
+	Author      string
+	AuthorEmail string
+	Body        string
+	CreatedAt   time.Time
+}
+
+// PullRequestData carries PR metadata + comments for markdown rendering.
+type PullRequestData struct {
+	Number      int
+	Title       string
+	State       string // "open" | "merged" | "closed"
+	Author      string
+	AuthorEmail string
+	BaseBranch  string
+	HeadBranch  string
+	Body        string
+	Comments    []CommentData
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// IssueData carries issue metadata + comments + labels.
+type IssueData struct {
+	Number      int
+	Title       string
+	State       string // "open" | "closed"
+	Author      string
+	AuthorEmail string
+	Body        string
+	Labels      []string
+	Comments    []CommentData
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// agentBadgeOf returns the badge string ("agent:slug") if the email
+// is agent-format, or empty otherwise. Tiny helper for templates.
+func agentBadgeOf(email string) string {
+	return AgentAuthorBadge(email)
+}
+
+// RenderPullRequest writes the PR as markdown to w.
+func RenderPullRequest(w http.ResponseWriter, pr PullRequestData, repo RepoData) error {
+	tmpl, err := template.New("pull_request.tmpl").Funcs(template.FuncMap{
+		"agentBadge": agentBadgeOf,
+		"isAgent":    IsAgentAuthor,
+	}).ParseFS(markdownTemplates, "templates/md/pull_request.tmpl")
+	if err != nil {
+		return fmt.Errorf("cairn markdown: parse pull_request.tmpl: %w", err)
+	}
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	data := struct {
+		PR   PullRequestData
+		Repo RepoData
+	}{PR: pr, Repo: repo}
+	return tmpl.ExecuteTemplate(w, "pull_request.tmpl", data)
+}
+
+// RenderIssue writes the issue as markdown to w.
+func RenderIssue(w http.ResponseWriter, issue IssueData, repo RepoData) error {
+	tmpl, err := template.New("issue.tmpl").Funcs(template.FuncMap{
+		"agentBadge": agentBadgeOf,
+		"isAgent":    IsAgentAuthor,
+	}).ParseFS(markdownTemplates, "templates/md/issue.tmpl")
+	if err != nil {
+		return fmt.Errorf("cairn markdown: parse issue.tmpl: %w", err)
+	}
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	data := struct {
+		Issue IssueData
+		Repo  RepoData
+	}{Issue: issue, Repo: repo}
+	return tmpl.ExecuteTemplate(w, "issue.tmpl", data)
+}
+
 // splitAgentEmail parses an agent email "nexus-{slug}@{domain}" into
 // its parts. Returns ok=false if the email isn't agent-shaped.
 func splitAgentEmail(email string) (slug, domain string, ok bool) {

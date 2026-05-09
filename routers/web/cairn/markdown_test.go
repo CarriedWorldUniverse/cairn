@@ -112,3 +112,112 @@ func TestRenderCommit_UnsignedAgent(t *testing.T) {
 		t.Errorf("expected unsigned indicator\nbody=%s", w.Body.String())
 	}
 }
+
+func TestRenderPullRequest_AgentAuthored(t *testing.T) {
+	pr := PullRequestData{
+		Number:      42,
+		Title:       "Add identity layer",
+		State:       "open",
+		Author:      "nexus-plumb",
+		AuthorEmail: "nexus-plumb@darksoft.co.nz",
+		BaseBranch:  "main",
+		HeadBranch:  "feat/identity",
+		Body:        "Implements the agent registration endpoint.",
+		Comments: []CommentData{
+			{
+				Author:      "Jacinta",
+				AuthorEmail: "nexus@darksoft.co.nz",
+				Body:        "LGTM, merging.",
+				CreatedAt:   time.Now(),
+			},
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderPullRequest(w, pr, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	for _, want := range []string{
+		"# PR #42: Add identity layer",
+		"State:** open",
+		"agent:plumb",
+		"main",
+		"feat/identity",
+		"Implements the agent registration endpoint.",
+		"Jacinta",
+		"LGTM, merging.",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q\nbody=%s", want, body)
+		}
+	}
+}
+
+func TestRenderIssue_HumanAuthored(t *testing.T) {
+	issue := IssueData{
+		Number:      7,
+		Title:       "Need better docs",
+		State:       "open",
+		Author:      "Jacinta",
+		AuthorEmail: "nexus@darksoft.co.nz",
+		Body:        "The README assumes too much.",
+		Labels:      []string{"docs", "good-first-issue"},
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderIssue(w, issue, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	if strings.Contains(body, "agent:") {
+		t.Error("human-authored issue should NOT include agent badge")
+	}
+	for _, want := range []string{
+		"# Issue #7: Need better docs",
+		"State:** open",
+		"docs, good-first-issue",
+		"The README assumes too much.",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q\nbody=%s", want, body)
+		}
+	}
+}
+
+func TestRenderPullRequest_NoComments(t *testing.T) {
+	pr := PullRequestData{
+		Number:      1,
+		Title:       "Initial",
+		State:       "merged",
+		Author:      "alice",
+		AuthorEmail: "nexus@darksoft.co.nz",
+		BaseBranch:  "main",
+		HeadBranch:  "init",
+		Body:        "",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderPullRequest(w, pr, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "_(no description)_") {
+		t.Errorf("expected '_(no description)_' for empty body\nbody=%s", body)
+	}
+	if strings.Contains(body, "## Comments") {
+		t.Errorf("should not render Comments section for empty list\nbody=%s", body)
+	}
+}

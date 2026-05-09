@@ -1,0 +1,20 @@
+# Issue #{{.Issue.Number}}: {{.Issue.Title}}
+
+**State:** {{.Issue.State}}
+**Author:** {{.Issue.Author}} <{{.Issue.AuthorEmail}}>{{if isAgent .Issue.AuthorEmail}} ({{agentBadge .Issue.AuthorEmail}}){{end}}
+{{if .Issue.Labels}}**Labels:** {{range $i, $l := .Issue.Labels}}{{if $i}}, {{end}}{{$l}}{{end}}
+{{end}}**Created:** {{.Issue.CreatedAt.UTC.Format "2006-01-02T15:04:05Z"}}
+**Updated:** {{.Issue.UpdatedAt.UTC.Format "2006-01-02T15:04:05Z"}}
+**Repo:** {{.Repo.Owner}}/{{.Repo.Name}}
+
+## Description
+
+{{if .Issue.Body}}{{.Issue.Body}}{{else}}_(no description)_{{end}}
+
+{{if .Issue.Comments}}## Comments
+{{range .Issue.Comments}}
+### {{.Author}} <{{.AuthorEmail}}>{{if isAgent .AuthorEmail}} ({{agentBadge .AuthorEmail}}){{end}}
+_{{.CreatedAt.UTC.Format "2006-01-02T15:04:05Z"}}_
+
+{{.Body}}
+{{end}}{{end}}
