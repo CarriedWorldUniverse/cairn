@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"github.com/CarriedWorldUniverse/cairn/services/cairn/hook"
 	casket "github.com/CarriedWorldUniverse/casket-go"
 )
 
@@ -36,11 +37,11 @@ func TestCommitSignHelper_ProducesValidSSHSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sig, err := parseSSHSignatureBlob(stdout.Bytes())
+	sig, err := hook.ParseSSHSignature(stdout.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := verifySSHSignedData(sshPub, []byte("commit blob to sign"), sig, "git"); err != nil {
+	if err := hook.VerifySSHSignedData(sshPub, []byte("commit blob to sign"), sig, "git"); err != nil {
 		t.Errorf("signature did not verify: %v", err)
 	}
 }
