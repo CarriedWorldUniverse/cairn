@@ -124,7 +124,10 @@ func (c *Client) Approve(ctx context.Context, fingerprint string) error {
 // Block adds an agent to the blocklist. Owner-only.
 func (c *Client) Block(ctx context.Context, fingerprint, reason string) error {
 	path := "/api/cairn/v1/agents/" + url.PathEscape(fingerprint) + "/block"
-	body, _ := json.Marshal(map[string]string{"reason": reason})
+	body, err := json.Marshal(map[string]string{"reason": reason})
+	if err != nil {
+		return err
+	}
 	return c.do(ctx, http.MethodPost, path, bytes.NewReader(body), nil)
 }
 

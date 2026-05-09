@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -140,6 +139,4 @@ func TestClient_ApproveAndBlock(t *testing.T) {
 	if calls[1] != "POST /api/cairn/v1/agents/cairn:test/block" {
 		t.Errorf("block call = %q", calls[1])
 	}
-
-	_ = hex.EncodeToString // keep import
 }
