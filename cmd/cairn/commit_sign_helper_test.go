@@ -45,6 +45,24 @@ func TestCommitSignHelper_ProducesValidSSHSignature(t *testing.T) {
 	}
 }
 
+func TestInferSlugFromKeyfile(t *testing.T) {
+	cases := []struct {
+		path string
+		want string
+	}{
+		{"/home/u/.config/cairn/host/plumb.key.pub", "plumb"},
+		{"/home/u/.config/cairn/host/anvil.pub", "anvil"},
+		{"/home/u/.config/cairn/host/forge.key", "forge"},
+		{"plumb", "plumb"},
+		{"", ""},
+	}
+	for _, tc := range cases {
+		if got := inferSlugFromKeyfile(tc.path); got != tc.want {
+			t.Errorf("inferSlugFromKeyfile(%q) = %q, want %q", tc.path, got, tc.want)
+		}
+	}
+}
+
 func TestCommitSignHelper_RequiresSeed(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)

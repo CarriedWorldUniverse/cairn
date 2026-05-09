@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -23,6 +24,14 @@ func AuthLogin(instanceURL, username, password, tokenName string) error {
 	paths, err := ResolvePaths(instanceURL)
 	if err != nil {
 		return err
+	}
+
+	// Scheme guard: refuse plaintext HTTP unless explicitly allowed
+	// or the host is localhost.
+	if u, _ := url.Parse(instanceURL); u != nil && u.Scheme == "http" {
+		if !isLocalhost(u.Host) && os.Getenv("CAIRN_INSECURE_HTTP") != "1" {
+			return fmt.Errorf("cairn auth: refusing to send password over http to %s; set CAIRN_INSECURE_HTTP=1 to override", u.Host)
+		}
 	}
 
 	body, err := json.Marshal(map[string]string{
@@ -69,4 +78,16 @@ func AuthLogin(instanceURL, username, password, tokenName string) error {
 	}
 
 	return paths.WriteToken(out.SHA1)
+}
+
+// isLocalhost returns true if host is a loopback address. Strips a
+// trailing port if present.
+func isLocalhost(host string) bool {
+	if host == "" {
+		return false
+	}
+	if idx := strings.IndexByte(host, ':'); idx >= 0 {
+		host = host[:idx]
+	}
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }

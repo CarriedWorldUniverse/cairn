@@ -5,9 +5,11 @@ package cairn
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
+	"golang.org/x/term"
 )
 
 // Commands returns the cairn subcommand group for registration with
@@ -51,15 +53,27 @@ func flagDomain() *cli.StringFlag { return &cli.StringFlag{Name: "domain", Requi
 func authLoginCmd() *cli.Command {
 	return &cli.Command{
 		Name:  "login",
-		Usage: "Obtain and store an API token",
+		Usage: "Obtain and store an API token. Password from $CAIRN_PASSWORD or interactive prompt.",
 		Flags: []cli.Flag{
 			flagInstance(),
 			&cli.StringFlag{Name: "username", Required: true},
-			&cli.StringFlag{Name: "password", Required: true},
 			&cli.StringFlag{Name: "token-name", Value: "cairn-cli"},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			return AuthLogin(c.String("instance"), c.String("username"), c.String("password"), c.String("token-name"))
+			password := os.Getenv("CAIRN_PASSWORD")
+			if password == "" {
+				if !term.IsTerminal(int(os.Stdin.Fd())) {
+					return fmt.Errorf("no password: set $CAIRN_PASSWORD or run interactively")
+				}
+				fmt.Fprint(os.Stderr, "Password: ")
+				pw, err := term.ReadPassword(int(os.Stdin.Fd()))
+				fmt.Fprintln(os.Stderr)
+				if err != nil {
+					return fmt.Errorf("read password: %w", err)
+				}
+				password = string(pw)
+			}
+			return AuthLogin(c.String("instance"), c.String("username"), password, c.String("token-name"))
 		},
 	}
 }
@@ -147,14 +161,48 @@ func agentsBlockCmd() *cli.Command {
 func commitSignHelperCmd() *cli.Command {
 	return &cli.Command{
 		Name:  "commit-sign-helper",
-		Usage: "Git ssh-signing helper (gpg.ssh.program)",
+		Usage: "Git ssh-signing helper (gpg.ssh.program). Compatible with ssh-keygen -Y sign argv.",
 		Flags: []cli.Flag{
-			flagInstance(),
-			flagSlug(),
+			// Cairn-specific: instance URL. Falls back to $CAIRN_INSTANCE
+			// since git's gpg.ssh.program flow can't easily pass our flags.
+			&cli.StringFlag{
+				Name:    "instance",
+				Sources: cli.EnvVars("CAIRN_INSTANCE"),
+				Usage:   "Cairn instance URL (or $CAIRN_INSTANCE)",
+			},
+			// Optional: explicit slug. If absent, inferred from -f keyfile.
+			&cli.StringFlag{Name: "slug", Usage: "Agent slug (else inferred from -f keyfile)"},
+			// ssh-keygen-compatible flags (git invokes us with these):
+			&cli.StringFlag{Name: "Y", Usage: "ssh-keygen mode (ignored; always sign)"},
+			&cli.StringFlag{Name: "n", Usage: "Signature namespace"},
+			&cli.StringFlag{Name: "f", Usage: "Key file path (slug inferred from filename)"},
+			// Legacy flag retained for direct invocation:
 			&cli.StringFlag{Name: "namespace", Value: "git"},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			return CommitSignHelper(c.String("instance"), c.String("slug"), c.String("namespace"), os.Stdin, os.Stdout)
+			instance := c.String("instance")
+			if instance == "" {
+				return fmt.Errorf("--instance or $CAIRN_INSTANCE required")
+			}
+
+			// Resolve slug: explicit --slug > inferred from -f keyfile.
+			slug := c.String("slug")
+			if slug == "" {
+				if keyfile := c.String("f"); keyfile != "" {
+					slug = inferSlugFromKeyfile(keyfile)
+				}
+			}
+			if slug == "" {
+				return fmt.Errorf("--slug or -f keyfile required")
+			}
+
+			// Resolve namespace: -n (git's flag) > --namespace (default "git").
+			namespace := c.String("n")
+			if namespace == "" {
+				namespace = c.String("namespace")
+			}
+
+			return CommitSignHelper(instance, slug, namespace, os.Stdin, os.Stdout)
 		},
 	}
 }

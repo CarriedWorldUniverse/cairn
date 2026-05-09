@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -64,6 +66,23 @@ func CommitSignHelper(instanceURL, slug, namespace string, in io.Reader, out io.
 	}
 	_, err = out.Write(armored)
 	return err
+}
+
+// inferSlugFromKeyfile takes a keyfile path like
+// "/home/user/.config/cairn/host/plumb.key.pub" and returns "plumb".
+// Strips ".key.pub", ".pub", or ".key" suffix from the basename. If
+// none match, returns the basename unchanged.
+func inferSlugFromKeyfile(path string) string {
+	if path == "" {
+		return ""
+	}
+	base := filepath.Base(path)
+	for _, suffix := range []string{".key.pub", ".pub", ".key"} {
+		if strings.HasSuffix(base, suffix) {
+			return strings.TrimSuffix(base, suffix)
+		}
+	}
+	return base
 }
 
 // signSSHSig produces an SSHSIG-armored signature over data per
