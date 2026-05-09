@@ -28,6 +28,15 @@ type AgentStore interface {
 
 // AgentBlocklistStore is the backend-agnostic data access for the
 // agent blocklist. Same connection-per-operation discipline.
+//
+// Block is idempotent — repeat calls for the same agent are no-ops
+// rather than producing duplicate rows.
+//
+// Unblock is intentionally out of scope for MVP. To rescind a block,
+// either delete the row directly via admin DB access, or rotate the
+// agent identity (deriving a fresh keypair under a different slug).
+// A first-class Unblock method may be added post-MVP if the team
+// workflow needs it.
 type AgentBlocklistStore interface {
 	Block(ctx context.Context, agentID int64, reason string) error
 	IsBlocked(ctx context.Context, agentID int64) (bool, error)

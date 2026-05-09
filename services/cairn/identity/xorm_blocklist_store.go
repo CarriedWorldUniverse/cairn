@@ -18,6 +18,17 @@ func NewXormBlocklistStore(engine *xorm.Engine) AgentBlocklistStore {
 }
 
 func (s *xormBlocklistStore) Block(ctx context.Context, agentID int64, reason string) error {
+	// Idempotent: if the agent is already blocked, return nil without
+	// inserting a duplicate row. MVP design — see AgentBlocklistStore
+	// interface doc for the no-Unblock-for-MVP stance.
+	already, err := s.IsBlocked(ctx, agentID)
+	if err != nil {
+		return err
+	}
+	if already {
+		return nil
+	}
+
 	sess := s.engine.NewSession()
 	defer sess.Close()
 	row := &cairn.AgentBlocklist{
@@ -25,7 +36,7 @@ func (s *xormBlocklistStore) Block(ctx context.Context, agentID int64, reason st
 		BlockedAt: time.Now(),
 		Reason:    reason,
 	}
-	_, err := sess.Context(ctx).Insert(row)
+	_, err = sess.Context(ctx).Insert(row)
 	return err
 }
 
