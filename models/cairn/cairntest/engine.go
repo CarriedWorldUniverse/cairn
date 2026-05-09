@@ -30,6 +30,10 @@ func NewEngine(t *testing.T) *xorm.Engine {
 		eng.Close()
 		t.Fatal(err)
 	}
+	if err := cairnmigrations.V501CreateSummarizerTables(eng); err != nil {
+		eng.Close()
+		t.Fatalf("V501: %v", err)
+	}
 	t.Cleanup(func() { _ = eng.Close() })
 	return eng
 }
