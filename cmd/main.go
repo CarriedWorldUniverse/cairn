@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	cairncmd "github.com/CarriedWorldUniverse/cairn/cmd/cairn"
 	"github.com/CarriedWorldUniverse/cairn/cmd/forgejo"
 	"github.com/CarriedWorldUniverse/cairn/modules/log"
 	"github.com/CarriedWorldUniverse/cairn/modules/setting"
@@ -190,6 +191,7 @@ func innerNewMainApp(version, versionExtra string, subCmdsStandaloneArgs, subCmd
 		cmdGenerate(),
 	}
 	subCmdStandalone = append(subCmdStandalone, subCmdsStandaloneArgs...)
+	subCmdStandalone = append(subCmdStandalone, cairncmd.Commands())
 
 	app.DefaultCommand = cmdWeb().Name
 
