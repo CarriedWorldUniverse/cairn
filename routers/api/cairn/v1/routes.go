@@ -38,6 +38,10 @@ func Init(_ context.Context, hmacKeyPath string, store cairnidentity.AgentStore,
 		}
 		globalService = cairnidentity.NewAgentService(key, store, blocklist, users)
 		globalHandler = NewHandler(globalService)
+		// Publish to the identity-package global so consumers outside
+		// the v1 API (e.g. the pre-receive hook) can reach the service
+		// without importing routers/api/cairn/v1.
+		cairnidentity.SetGlobal(globalService)
 	})
 	return initErr
 }

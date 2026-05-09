@@ -24,6 +24,8 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/private"
 	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	cairnhook "github.com/CarriedWorldUniverse/cairn/services/cairn/hook"
+	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
 	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
 	pull_service "github.com/CarriedWorldUniverse/cairn/services/pull"
 )
@@ -226,6 +228,24 @@ func HookPreReceive(ctx *app_context.PrivateContext) {
 		}
 		if ctx.Written() {
 			return
+		}
+
+		// Cairn agent-commit verification.
+		//
+		// Runs after Forgejo's existing branch-protection / push-limit
+		// checks have all accepted the ref update. Rejects the push if
+		// any newly-introduced commit looks like an agent commit (author
+		// nexus-{slug}@{domain}) but fails signature, ownership, status,
+		// blocklist, or trailer checks.
+		//
+		// Gated by setting.Cairn.Enabled (master switch) and
+		// setting.Cairn.EnforceSignatures (migration flag). Default
+		// EnforceSignatures=false makes this a strict no-op until the
+		// fleet is fully bootstrapped.
+		if setting.Cairn.Enabled && setting.Cairn.EnforceSignatures && refFullName.IsBranch() {
+			if err := runCairnVerify(ourCtx, oldCommitID, newCommitID); err != nil {
+				return
+			}
 		}
 	}
 
@@ -575,6 +595,59 @@ func generateGitEnv(opts *private.HookOptions) (env []string) {
 			private.GitQuarantinePath+"="+opts.GitQuarantinePath)
 	}
 	return env
+}
+
+// runCairnVerify is the bridge between the pre-receive hook and the
+// Cairn push-time verifier. It walks the new commits introduced by
+// the ref update, asks the global AgentService to validate each
+// agent-attributed commit, and writes an HTTP rejection on failure.
+//
+// Returns nil iff the push is accepted; on any error (including
+// rejection) returns the error after having written the response, so
+// the caller can early-return without writing again.
+//
+// Skips ref deletions (newCommitID == empty) — there are no new
+// commits to verify.
+func runCairnVerify(ctx *preReceiveContext, oldCommitID, newCommitID string) error {
+	objectFormat := ctx.Repo.GetObjectFormat()
+	if newCommitID == objectFormat.EmptyObjectID().String() {
+		return nil
+	}
+
+	svc := cairnidentity.GlobalAgentService()
+	if svc == nil {
+		// Cairn is enabled+enforcing but Init never ran. Fail closed.
+		log.Error("cairn enforce_signatures=true but AgentService not initialised")
+		ctx.JSON(http.StatusInternalServerError, private.Response{
+			Err: "cairn: agent service not initialised",
+		})
+		return fmt.Errorf("cairn agent service nil")
+	}
+
+	commits, err := cairnhook.BuildCommitList(
+		ctx,
+		ctx.Repo.GitRepo,
+		ctx.Repo.Repository.RepoPath(),
+		ctx.env,
+		oldCommitID,
+		newCommitID,
+	)
+	if err != nil {
+		log.Error("cairn: build commit list %s..%s in %-v: %v", oldCommitID, newCommitID, ctx.Repo.Repository, err)
+		ctx.JSON(http.StatusInternalServerError, private.Response{
+			Err: fmt.Sprintf("cairn: build commit list: %v", err),
+		})
+		return err
+	}
+
+	if err := cairnhook.VerifyAgentCommits(ctx, commits, svc, true); err != nil {
+		log.Warn("cairn: rejected push to %-v: %v", ctx.Repo.Repository, err)
+		ctx.JSON(http.StatusUnprocessableEntity, private.Response{
+			UserMsg: err.Error(),
+		})
+		return err
+	}
+	return nil
 }
 
 // loadPusherAndPermission returns false if an error occurs, and it writes the error response
