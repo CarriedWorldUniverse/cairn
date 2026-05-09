@@ -16,10 +16,11 @@ func TestFingerprint_Format(t *testing.T) {
 	if !strings.HasPrefix(fp, "cairn:") {
 		t.Errorf("fingerprint missing cairn: prefix: %q", fp)
 	}
-	// HMAC-SHA256 is 32 bytes; base64 with padding is 44 chars,
-	// without padding 43. Total with prefix: 49 or 50 chars.
-	if l := len(fp); l < 49 || l > 51 {
-		t.Errorf("fingerprint length unexpected: %d (%q)", l, fp)
+	// HMAC-SHA256 is 32 bytes; base64 URL-safe without padding is
+	// exactly 43 chars. Total with "cairn:" prefix: 49 chars.
+	const want = 49
+	if l := len(fp); l != want {
+		t.Errorf("fingerprint length = %d, want %d (%q)", l, want, fp)
 	}
 }
 
@@ -84,6 +85,27 @@ func TestParseAgentEmail_Valid(t *testing.T) {
 				t.Errorf("domain = %q, want %q", domain, tc.wantDomain)
 			}
 		})
+	}
+}
+
+func TestFingerprint_KnownVector(t *testing.T) {
+	// Frozen test vector. Catches accidental algorithm changes
+	// (HMAC variant, encoding variant, prefix). The fingerprint is
+	// part of the on-the-wire contract — see Fingerprint doc comment.
+	hmacKey := []byte("0123456789abcdef0123456789abcdef") // exactly 32 bytes
+	// Ed25519 public key built from a deterministic seed so this test
+	// doesn't depend on rand.
+	seed := [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+		17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
+	priv := ed25519.NewKeyFromSeed(seed[:])
+	pub := priv.Public().(ed25519.PublicKey)
+
+	got := Fingerprint(hmacKey, pub)
+
+	const expected = "cairn:QSUg1QlbLjpt1Nwczd8SlffOPyxMVN1kIQYJEvdUvHQ"
+
+	if got != expected {
+		t.Errorf("Fingerprint changed; got %q want %q", got, expected)
 	}
 }
 

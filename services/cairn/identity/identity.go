@@ -16,15 +16,21 @@ import (
 const fingerprintPrefix = "cairn:"
 
 // Fingerprint computes an agent's fingerprint as
-// "cairn:" + base64(HMAC-SHA256(instanceHMACKey, publicKey)).
+// "cairn:" + base64-url-no-padding(HMAC-SHA256(instanceHMACKey, publicKey)).
 // The HMAC binds the fingerprint to the issuing instance, providing
 // cross-instance unlinkability and resistance to fingerprint spoofing
 // without the instance key.
+//
+// Encoding is base64 URL-safe (RFC 4648 §5) without padding so the
+// fingerprint is safe to embed in URL paths and HTTP headers without
+// further encoding. This is part of the on-the-wire contract:
+// changing the encoding or HMAC algorithm invalidates every stored
+// fingerprint.
 func Fingerprint(instanceHMACKey []byte, publicKey ed25519.PublicKey) string {
 	mac := hmac.New(sha256.New, instanceHMACKey)
 	mac.Write(publicKey)
 	sum := mac.Sum(nil)
-	return fingerprintPrefix + base64.StdEncoding.EncodeToString(sum)
+	return fingerprintPrefix + base64.RawURLEncoding.EncodeToString(sum)
 }
 
 // agentEmailPattern matches "nexus-<slug>@<domain>" with slug consisting
