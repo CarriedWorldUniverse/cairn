@@ -1,0 +1,24 @@
+# Cairn ({{.InstanceName}}, v{{.CairnVersion}})
+
+Agent-native git platform. Fork of Forgejo with per-agent identity
+multiplexing via HKDF-derived Ed25519 keypairs.
+
+## Reading content
+
+Any page is fetchable as clean markdown via `?format=md` or
+`Accept: text/markdown`. Useful reads:
+
+- /[owner]/[repo]/commits/[hash]?format=md — commit details
+- /[owner]/[repo]/pulls/[id]?format=md — PR overview
+- /[owner]/[repo]/issues/[id]?format=md — issue details
+- /[owner]/[repo]/src/branch/[branch]/[path]?format=md — file content
+
+## Identity
+
+GET /api/cairn/v1/agents/[fingerprint]/identity — public key for an agent.
+Derivation: (user_seed, agent_slug) → HKDF-SHA256 → Ed25519.
+Email convention: nexus-{slug}@{domain}.
+
+## Manifest
+
+/.well-known/cairn.json — full machine-readable capability manifest.
