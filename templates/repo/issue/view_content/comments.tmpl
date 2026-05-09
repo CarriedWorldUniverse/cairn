@@ -420,6 +420,11 @@
 						{{if .Review.Dismissed}}
 							<div class="ui small label">{{ctx.Locale.Tr "repo.issues.review.dismissed_label"}}</div>
 						{{end}}
+						{{/* Cairn — show "doesn't count toward gate" next to filtered approvals so
+						     reviewers don't read a visible approval as merge-gate progress. */}}
+						{{if and (eq .Review.Type 1) (CairnAgentApprovalDoesNotCount $.Repository.OwnerID $.Issue.PosterID .Review.ReviewerID)}}
+							<div class="ui small label cairn-doesnt-count-badge" title="Filtered by Cairn review policy: agent approvals and PR-author-cluster self-approvals don't count toward the merge gate.">doesn't count toward gate</div>
+						{{end}}
 					</span>
 				</div>
 				{{if or .Content .Attachments}}

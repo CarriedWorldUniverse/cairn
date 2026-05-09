@@ -233,6 +233,11 @@ func NewFuncMap() template.FuncMap {
 		"CairnPRSummaryBlock": func(repoID, prNumber int64, canRegen bool, regenURL string) template.HTML {
 			return template.HTML(cairnweb.RenderPRSummaryBlock(repoID, prNumber, canRegen, regenURL))
 		},
+		// Cairn — "doesn't count toward gate" badge for filtered agent
+		// approvals on the PR page. See routers/web/cairn/agent_approval_badge.go.
+		"CairnAgentApprovalDoesNotCount": func(ownerID, prPosterID, reviewerID int64) bool {
+			return cairnweb.AgentApprovalDoesNotCount(context.Background(), ownerID, prPosterID, reviewerID)
+		},
 	}
 }
 
