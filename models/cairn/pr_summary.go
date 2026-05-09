@@ -7,8 +7,8 @@ package cairn
 // for audit (no automatic cleanup in MVP).
 type PRSummary struct {
 	ID            int64  `xorm:"pk autoincr"`
-	RepoID        int64  `xorm:"INDEX(repo_pr) NOT NULL"`
-	PRNumber      int64  `xorm:"INDEX(repo_pr) NOT NULL"`
+	RepoID        int64  `xorm:"INDEX(repo_pr) UNIQUE(repo_pr_hash) NOT NULL"`
+	PRNumber      int64  `xorm:"INDEX(repo_pr) UNIQUE(repo_pr_hash) NOT NULL"`
 	ContentHash   string `xorm:"VARCHAR(64) UNIQUE(repo_pr_hash) NOT NULL"`
 	SummaryMD     string `xorm:"TEXT NOT NULL"`
 	ModelID       string `xorm:"VARCHAR(255) NOT NULL"`
