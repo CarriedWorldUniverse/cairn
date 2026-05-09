@@ -29,6 +29,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/routers/common"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/admin"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/auth"
+	cairnweb "github.com/CarriedWorldUniverse/cairn/routers/web/cairn"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/demo"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/events"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/explore"
@@ -515,6 +516,20 @@ func registerRoutes(m *web.Route) {
 		m.Get("/change-password", func(ctx *context.Context) {
 			ctx.Redirect(setting.AppSubURL + "/user/settings/account")
 		})
+		// Cairn discovery endpoints — must be registered BEFORE the
+		// catchall /* below. Cairn-specific code; AGPLv3.
+		if setting.Cairn.Enabled {
+			cairnVersion := "0.1.0"
+			features := map[string]any{
+				"markdown_rendering": setting.Cairn.MarkdownEndpointsEnabled,
+				"agent_proposals":    true,
+				"mcp_server":         false,
+				"sdks":               []string{},
+			}
+			m.Get("/cairn.json", cairnweb.CairnManifestHandler(setting.AppName, cairnVersion, setting.AppVer, features))
+			m.Get("/llms.txt", cairnweb.LLMsTxtHandler(setting.AppName, cairnVersion))
+			m.Get("/security.txt", cairnweb.SecurityTxtHandler())
+		}
 		m.Methods("GET, HEAD", "/*", public.FileHandlerFunc())
 	}, optionsCorsHandler())
 

@@ -50,6 +50,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/svg"
 	"github.com/CarriedWorldUniverse/cairn/modules/typesniffer"
 	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	cairnforgejo "github.com/CarriedWorldUniverse/cairn/routers/web/cairn/forgejo"
 	"github.com/CarriedWorldUniverse/cairn/routers/web/feed"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
 	issue_service "github.com/CarriedWorldUniverse/cairn/services/issue"
@@ -810,6 +811,10 @@ func checkCitationFile(ctx *context.Context, entry *git.TreeEntry) {
 
 // Home render repository home page
 func Home(ctx *context.Context) {
+	// Cairn: short-circuit to markdown view of file content if requested. AGPLv3.
+	if cairnforgejo.MaybeRenderFile(ctx) {
+		return
+	}
 	if setting.Other.EnableFeed {
 		isFeed, _, showFeedType := feed.GetFeedType(ctx.Params(":reponame"), ctx.Req)
 		if isFeed {

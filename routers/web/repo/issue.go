@@ -49,6 +49,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 	"github.com/CarriedWorldUniverse/cairn/modules/util"
 	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	cairnforgejo "github.com/CarriedWorldUniverse/cairn/routers/web/cairn/forgejo"
 	"github.com/CarriedWorldUniverse/cairn/routers/utils"
 	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
@@ -1418,6 +1419,10 @@ func prepareHiddenCommentType(ctx *context.Context) {
 
 // ViewIssue render issue view page
 func ViewIssue(ctx *context.Context) {
+	// Cairn: short-circuit to markdown if requested. AGPLv3.
+	if cairnforgejo.MaybeRenderIssueOrPull(ctx) {
+		return
+	}
 	if ctx.Params(":type") == "issues" {
 		// If issue was requested we check if repo has external tracker and redirect
 		extIssueUnit, err := ctx.Repo.Repository.GetUnit(ctx, unit.TypeExternalTracker)

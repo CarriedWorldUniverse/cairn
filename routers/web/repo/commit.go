@@ -27,6 +27,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 	"github.com/CarriedWorldUniverse/cairn/modules/util"
 	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	cairnforgejo "github.com/CarriedWorldUniverse/cairn/routers/web/cairn/forgejo"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
 	"github.com/CarriedWorldUniverse/cairn/services/forms"
 	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
@@ -309,6 +310,10 @@ func LoadBranchesAndTags(ctx *context.Context) {
 
 // Diff show different from current commit to previous commit
 func Diff(ctx *context.Context) {
+	// Cairn: short-circuit to markdown if requested. AGPLv3.
+	if cairnforgejo.MaybeRenderCommit(ctx) {
+		return
+	}
 	ctx.Data["PageIsDiff"] = true
 
 	userName := ctx.Repo.Owner.Name
