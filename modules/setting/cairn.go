@@ -16,6 +16,7 @@ var Cairn = struct {
 	HMACKeyPath                  string
 	MarkdownEndpointsEnabled     bool
 	SummarizerEnabled            bool
+	ReviewPolicyEnabled          bool
 	WALCheckpointIntervalMinutes int
 }{
 	Enabled:                      true,
@@ -24,6 +25,7 @@ var Cairn = struct {
 	HMACKeyPath:                  "/etc/cairn/instance-hmac.key",
 	MarkdownEndpointsEnabled:     true,
 	SummarizerEnabled:            true,
+	ReviewPolicyEnabled:          true,
 	WALCheckpointIntervalMinutes: 5,
 }
 
@@ -35,5 +37,6 @@ func loadCairnFrom(rootCfg ConfigProvider) {
 	Cairn.HMACKeyPath = sec.Key("hmac_key_path").MustString("/etc/cairn/instance-hmac.key")
 	Cairn.MarkdownEndpointsEnabled = sec.Key("markdown_endpoints_enabled").MustBool(true)
 	Cairn.SummarizerEnabled = sec.Key("summarizer_enabled").MustBool(true)
+	Cairn.ReviewPolicyEnabled = sec.Key("review_policy_enabled").MustBool(true)
 	Cairn.WALCheckpointIntervalMinutes = sec.Key("wal_checkpoint_interval_minutes").MustInt(5)
 }

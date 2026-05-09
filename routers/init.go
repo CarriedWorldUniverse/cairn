@@ -306,5 +306,16 @@ func cairnRoutes() *web.Route {
 			})
 		})
 	}
+
+	// Review-policy endpoints (Plan 6 Task 3). Gated on ReviewPolicyEnabled
+	// for the same reason as the summarizer routes above: when the service
+	// is disabled, its global is nil and the handlers would 503 anyway —
+	// don't mount routes that can only fail.
+	if setting.Cairn.ReviewPolicyEnabled {
+		m.Group("/orgs/{owner}", func() {
+			m.Get("/review-policy", cairnv1.GetReviewPolicy)
+			m.Put("/review-policy", cairnv1.PutReviewPolicy)
+		})
+	}
 	return m
 }
