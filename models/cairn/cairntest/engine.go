@@ -15,7 +15,7 @@ import (
 
 // NewEngine returns an in-memory SQLite engine with the GonicMapper
 // configured (matching production at models/db/engine.go) and Cairn's
-// V500 migration applied.
+// V500 + V501 migrations applied.
 //
 // Engines returned from NewEngine are isolated per test (`:memory:`),
 // closed automatically via t.Cleanup. Tests should not share engines.

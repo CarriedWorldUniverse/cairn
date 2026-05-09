@@ -169,6 +169,69 @@ func TestSchemaParity_AgentBlocklistTable(t *testing.T) {
 	}
 }
 
+func TestSchemaParity_SummarizerConfigTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V501CreateSummarizerTables(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_summarizer_config")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_summarizer_config").Sync2(new(cairn.SummarizerConfig)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_summarizer_config")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_summarizer_config columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_summarizer_config indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
+func TestSchemaParity_SummarizerRepoConsentTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V501CreateSummarizerTables(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_summarizer_repo_consent")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_summarizer_repo_consent").Sync2(new(cairn.SummarizerRepoConsent)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_summarizer_repo_consent")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_summarizer_repo_consent columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_summarizer_repo_consent indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
+func TestSchemaParity_PRSummaryTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V501CreateSummarizerTables(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_pr_summary")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_pr_summary").Sync2(new(cairn.PRSummary)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_pr_summary")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_pr_summary columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_pr_summary indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
 func columnsEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
