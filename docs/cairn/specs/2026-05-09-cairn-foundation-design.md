@@ -640,6 +640,8 @@ Implementation order, each step landing as one or more PRs on the `cairn` branch
 
 Each step is independently reviewable and testable.
 
+**Deployment-runbook sync rule:** the deployment runbook at [`cairn/deploy/deployment-runbook.md`](../../../cairn/deploy/deployment-runbook.md) documents the operational consumer surface — CLI commands, config flags, endpoints, file paths, expected outputs. **Every build-sequence PR that changes any of those surfaces must update the runbook in the same change.** The runbook's §16 names exactly which surfaces it depends on; cross-reference it before merging any Cairn-specific feature.
+
 ---
 
 ## 15. Forward-compatibility (deferred items, named so they don't surprise us)
