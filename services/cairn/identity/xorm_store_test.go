@@ -2,35 +2,16 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
-	cairnmigrations "github.com/CarriedWorldUniverse/cairn/models/cairn/migrations"
-	_ "github.com/mattn/go-sqlite3"
-	"xorm.io/xorm"
-	"xorm.io/xorm/names"
+	"github.com/CarriedWorldUniverse/cairn/models/cairn/cairntest"
 )
 
-func newTestEngine(t *testing.T) *xorm.Engine {
-	t.Helper()
-	eng, err := xorm.NewEngine("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Match production engine config (models/db/engine.go) so column
-	// name mapping (UserID -> user_id, CreatedAt -> created_at) lines up
-	// with the runtime models.
-	eng.SetMapper(names.GonicMapper{})
-	if err := cairnmigrations.V500CreateAgentTables(eng); err != nil {
-		t.Fatal(err)
-	}
-	return eng
-}
-
 func TestXormAgentStore_RegisterAndGet(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
@@ -60,8 +41,7 @@ func TestXormAgentStore_RegisterAndGet(t *testing.T) {
 }
 
 func TestXormAgentStore_GetByEmail(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
@@ -88,8 +68,7 @@ func TestXormAgentStore_GetByEmail(t *testing.T) {
 }
 
 func TestXormAgentStore_NotFound(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	_, err := s.GetByFingerprint(context.Background(), "cairn:no-such-fp")
@@ -104,8 +83,7 @@ func TestXormAgentStore_NotFound(t *testing.T) {
 }
 
 func TestXormAgentStore_DuplicateRegister(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
@@ -133,8 +111,7 @@ func TestXormAgentStore_DuplicateRegister(t *testing.T) {
 }
 
 func TestXormAgentStore_ListByUser(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
@@ -164,8 +141,7 @@ func TestXormAgentStore_ListByUser(t *testing.T) {
 }
 
 func TestXormAgentStore_Approve(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
@@ -192,5 +168,50 @@ func TestXormAgentStore_Approve(t *testing.T) {
 	}
 	if got.ActivatedAt == nil || got.ActivatedAt.IsZero() {
 		t.Error("ActivatedAt not set after approve")
+	}
+}
+
+func TestXormAgentStore_DuplicateRegisterReturnsErrAgentExists(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	s := NewXormAgentStore(eng)
+
+	ctx := context.Background()
+	a := &cairn.Agent{
+		Fingerprint: "cairn:dup-test",
+		UserID:      1,
+		Slug:        "plumb",
+		Domain:      "darksoft.co.nz",
+		PublicKey:   []byte{1},
+		Status:      cairn.AgentStatusActive,
+		CreatedAt:   time.Now(),
+	}
+	if err := s.Register(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+
+	// Same (user_id, slug) — should return ErrAgentExists.
+	a2 := *a
+	a2.ID = 0
+	a2.Fingerprint = "cairn:dup-test-2"
+	err := s.Register(ctx, &a2)
+	if err == nil {
+		t.Fatal("expected error registering duplicate (user_id, slug)")
+	}
+	if !errors.Is(err, ErrAgentExists) {
+		t.Errorf("err = %v, want ErrAgentExists", err)
+	}
+
+	// Same fingerprint — should also return ErrAgentExists.
+	a3 := *a
+	a3.ID = 0
+	a3.UserID = 99
+	a3.Slug = "different"
+	// keep a3.Fingerprint == a.Fingerprint (the duplicate)
+	err = s.Register(ctx, &a3)
+	if err == nil {
+		t.Fatal("expected error registering duplicate fingerprint")
+	}
+	if !errors.Is(err, ErrAgentExists) {
+		t.Errorf("err = %v, want ErrAgentExists", err)
 	}
 }

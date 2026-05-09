@@ -3,11 +3,12 @@ package identity
 import (
 	"context"
 	"testing"
+
+	"github.com/CarriedWorldUniverse/cairn/models/cairn/cairntest"
 )
 
 func TestXormBlocklistStore_BlockAndIsBlocked(t *testing.T) {
-	eng := newTestEngine(t) // helper from xorm_store_test.go
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormBlocklistStore(eng)
 
 	ctx := context.Background()
@@ -35,8 +36,7 @@ func TestXormBlocklistStore_BlockAndIsBlocked(t *testing.T) {
 }
 
 func TestXormBlocklistStore_List(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormBlocklistStore(eng)
 
 	ctx := context.Background()
@@ -56,8 +56,7 @@ func TestXormBlocklistStore_List(t *testing.T) {
 }
 
 func TestXormBlocklistStore_BlockIsIdempotent(t *testing.T) {
-	eng := newTestEngine(t)
-	defer eng.Close()
+	eng := cairntest.NewEngine(t)
 	s := NewXormBlocklistStore(eng)
 
 	ctx := context.Background()
