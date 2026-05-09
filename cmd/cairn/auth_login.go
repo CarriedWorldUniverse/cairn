@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
 
 // AuthLogin obtains an API token from the Cairn instance using HTTP
@@ -22,12 +25,17 @@ func AuthLogin(instanceURL, username, password, tokenName string) error {
 		return err
 	}
 
-	body, _ := json.Marshal(map[string]string{
+	body, err := json.Marshal(map[string]string{
 		"name": tokenName,
 	})
+	if err != nil {
+		return err
+	}
 
 	endpoint := instanceURL + "/api/v1/users/" + url.PathEscape(username) + "/tokens"
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(body))
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -41,6 +49,12 @@ func AuthLogin(instanceURL, username, password, tokenName string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Read up to 1KB of the response body for diagnostic context.
+		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		snippet := strings.TrimSpace(string(bodyBytes))
+		if snippet != "" {
+			return fmt.Errorf("cairn auth: token creation failed: HTTP %d: %s", resp.StatusCode, snippet)
+		}
 		return fmt.Errorf("cairn auth: token creation failed: HTTP %d", resp.StatusCode)
 	}
 
