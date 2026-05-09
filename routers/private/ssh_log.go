@@ -6,10 +6,10 @@ package private
 import (
 	"net/http"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // SSHLog hook to response ssh log

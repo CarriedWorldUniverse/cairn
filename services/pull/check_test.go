@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -6,12 +6,12 @@ package admin
 import (
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/util"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // ListUnadoptedRepositories lists the unadopted repositories that match the provided names

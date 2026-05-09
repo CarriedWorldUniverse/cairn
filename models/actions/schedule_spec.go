@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/gdgvda/cron"
 )

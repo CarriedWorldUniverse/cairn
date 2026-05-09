@@ -6,9 +6,9 @@ package activitypub_test
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
-	_ "forgejo.org/modules/testimport"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/testimport"
 )
 
 func TestMain(m *testing.M) {

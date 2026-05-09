@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 //   __________________  ________   ____  __.

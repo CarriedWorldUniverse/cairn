@@ -7,15 +7,15 @@ import (
 	stdCtx "context"
 	"time"
 
-	"forgejo.org/models"
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // ToRepo converts a Repository to api.Repository

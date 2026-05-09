@@ -6,7 +6,7 @@ package donotpanic
 import (
 	"fmt"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 type FuncWithError func() error

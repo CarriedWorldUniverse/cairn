@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"strings"
 
-	git_model "forgejo.org/models/git"
-	"forgejo.org/models/organization"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 const (

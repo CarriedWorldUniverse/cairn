@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // lsFileLine is a Quadruplet struct (+error) representing a partially parsed line from ls-files

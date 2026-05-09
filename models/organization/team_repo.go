@@ -6,9 +6,9 @@ package organization
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 
 	"xorm.io/builder"
 )

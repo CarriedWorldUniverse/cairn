@@ -12,16 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
 )
 
 // ArchiveRequest defines the parameters of an archive request, which notably

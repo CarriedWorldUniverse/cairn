@@ -6,9 +6,9 @@ package actions
 import (
 	"net/http"
 
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/actions/ping"
-	"forgejo.org/routers/api/actions/runner"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/actions/ping"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/actions/runner"
 )
 
 func Routes(prefix string) *web.Route {

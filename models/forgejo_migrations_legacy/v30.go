@@ -6,10 +6,10 @@ package forgejo_migrations_legacy
 import (
 	"time"
 
-	"forgejo.org/models/gitea_migrations/base"
-	"forgejo.org/modules/forgefed"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

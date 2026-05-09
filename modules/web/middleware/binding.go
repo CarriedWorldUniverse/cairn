@@ -8,10 +8,10 @@ import (
 	"reflect"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"code.forgejo.org/go-chi/binding"
 )

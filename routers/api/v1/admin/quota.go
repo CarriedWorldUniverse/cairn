@@ -6,9 +6,9 @@ package admin
 import (
 	"net/http"
 
-	quota_model "forgejo.org/models/quota"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // GetUserQuota return information about a user's quota

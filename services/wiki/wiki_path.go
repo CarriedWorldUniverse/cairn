@@ -8,11 +8,11 @@ import (
 	"path"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/convert"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // To define the wiki related concepts:

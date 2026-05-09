@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrIssueStopwatchNotExist represents an error that stopwatch is not exist

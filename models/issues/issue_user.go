@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // IssueUser represents an issue-user relation.

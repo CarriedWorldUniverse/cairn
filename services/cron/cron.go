@@ -9,10 +9,10 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/sync"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/sync"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	"github.com/go-co-op/gocron"
 )

@@ -6,7 +6,7 @@ package setting
 import (
 	"time"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // DefaultUILocation is the location on the UI, so that we can display the time on UI.

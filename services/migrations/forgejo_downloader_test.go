@@ -6,7 +6,7 @@ package migrations
 import (
 	"testing"
 
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/require"
 )

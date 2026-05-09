@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	jpegstructure "code.superseriousbusiness.org/go-jpeg-image-structure/v2"
 	"github.com/dsoprea/go-exif/v3"

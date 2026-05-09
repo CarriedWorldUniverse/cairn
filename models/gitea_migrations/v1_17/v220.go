@@ -4,8 +4,8 @@
 package v1_17
 
 import (
-	packages_model "forgejo.org/models/packages"
-	container_module "forgejo.org/modules/packages/container"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	container_module "github.com/CarriedWorldUniverse/cairn/modules/packages/container"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

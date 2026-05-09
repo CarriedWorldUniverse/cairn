@@ -6,7 +6,7 @@ package meilisearch
 import (
 	"fmt"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // VersionedIndexName returns the full index name with version

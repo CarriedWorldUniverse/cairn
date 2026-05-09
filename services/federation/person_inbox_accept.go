@@ -6,7 +6,7 @@ package federation
 import (
 	"net/http"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	ap "github.com/go-ap/activitypub"
 )

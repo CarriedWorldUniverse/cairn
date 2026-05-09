@@ -6,7 +6,7 @@ package asymkey
 import (
 	"context"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 type GPGKeyList []*GPGKey

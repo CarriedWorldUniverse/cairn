@@ -6,11 +6,11 @@ package debian
 import (
 	"context"
 
-	packages_model "forgejo.org/models/packages"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	debian_module "forgejo.org/modules/packages/debian"
-	"forgejo.org/services/notify"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	debian_module "github.com/CarriedWorldUniverse/cairn/modules/packages/debian"
+	"github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 func init() {

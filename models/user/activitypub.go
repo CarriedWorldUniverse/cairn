@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // APActorID returns the IRI to the api endpoint of the user

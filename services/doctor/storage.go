@@ -9,16 +9,16 @@ import (
 	"io/fs"
 	"strings"
 
-	"forgejo.org/models/git"
-	"forgejo.org/models/packages"
-	"forgejo.org/models/repo"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	packages_module "forgejo.org/modules/packages"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 type commonStorageCheckOptions struct {

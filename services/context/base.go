@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/httplib"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
 
 	"github.com/go-chi/chi/v5"
 )

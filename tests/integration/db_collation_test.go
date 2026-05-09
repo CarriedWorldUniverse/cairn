@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

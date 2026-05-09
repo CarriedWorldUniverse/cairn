@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // UpdateRepositoryOwnerNames updates repository owner_names (this should only be used when the ownerName has changed case)

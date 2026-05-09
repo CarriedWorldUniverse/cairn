@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/golang-jwt/jwt/v5"
 )

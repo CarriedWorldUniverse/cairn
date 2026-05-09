@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // RestoreParams structure holds a data for restore repository

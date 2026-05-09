@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	packages_module "forgejo.org/modules/packages"
-	packages_service "forgejo.org/services/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

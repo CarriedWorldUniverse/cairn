@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/test"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

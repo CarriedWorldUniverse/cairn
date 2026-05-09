@@ -9,11 +9,11 @@ import (
 	"path"
 	"strconv"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/markup/markdown"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"go.yaml.in/yaml/v3"
 )

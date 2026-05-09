@@ -6,9 +6,9 @@ package feed
 import (
 	"time"
 
-	activities_model "forgejo.org/models/activities"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/services/context"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"github.com/gorilla/feeds"
 )

@@ -4,7 +4,7 @@
 package forgejo_migrations
 
 import (
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

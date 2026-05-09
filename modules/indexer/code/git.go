@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/indexer/code/internal"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func getDefaultBranchSha(ctx context.Context, repo *repo_model.Repository) (string, error) {

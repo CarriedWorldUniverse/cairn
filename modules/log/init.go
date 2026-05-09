@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/util/rotatingfilewriter"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/util/rotatingfilewriter"
 )
 
 var projectPackagePrefix string

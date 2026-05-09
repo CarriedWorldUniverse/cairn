@@ -6,11 +6,11 @@ package admin
 import (
 	"net/http"
 
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // GetAllEmails

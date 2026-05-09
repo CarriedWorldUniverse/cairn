@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 type recalcRequest struct {

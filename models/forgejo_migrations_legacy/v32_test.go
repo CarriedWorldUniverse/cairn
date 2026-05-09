@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	migration_tests "forgejo.org/models/gitea_migrations/test"
-	"forgejo.org/models/packages"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

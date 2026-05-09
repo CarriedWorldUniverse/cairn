@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/stretchr/testify/require"
 )

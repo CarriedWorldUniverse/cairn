@@ -4,7 +4,7 @@
 
 package migration
 
-import "forgejo.org/modules/structs"
+import "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 // MigrateOptions defines the way a repository gets migrated
 // this is for internal usage by migrations module and func who interact with it

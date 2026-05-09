@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/require"
 )

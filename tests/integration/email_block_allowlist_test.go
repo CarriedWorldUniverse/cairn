@@ -6,10 +6,10 @@ package integration
 import (
 	"testing"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/validation"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/gobwas/glob"
 	"github.com/stretchr/testify/assert"

@@ -6,9 +6,9 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/git"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"github.com/go-enry/go-enry/v2"
 )

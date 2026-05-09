@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"forgejo.org/modules/httplib"
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 // ResponseText is used to get the response as text, instead of parsing it as JSON.

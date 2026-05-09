@@ -6,8 +6,8 @@ package repo
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/services/contexttest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

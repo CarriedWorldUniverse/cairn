@@ -15,17 +15,17 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/card"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/card"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // drawUser draws a user avatar in a summary card

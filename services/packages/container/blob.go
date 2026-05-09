@@ -12,14 +12,14 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
-	container_model "forgejo.org/models/packages/container"
-	"forgejo.org/modules/log"
-	packages_module "forgejo.org/modules/packages"
-	container_module "forgejo.org/modules/packages/container"
-	"forgejo.org/modules/util"
-	packages_service "forgejo.org/services/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	container_model "github.com/CarriedWorldUniverse/cairn/models/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	container_module "github.com/CarriedWorldUniverse/cairn/modules/packages/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 
 	oci_digest "github.com/opencontainers/go-digest"
 )

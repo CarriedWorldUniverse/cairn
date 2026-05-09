@@ -6,7 +6,7 @@ package repo
 import (
 	"context"
 
-	"forgejo.org/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
 
 	"xorm.io/builder"
 )

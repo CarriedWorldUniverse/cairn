@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/routers/web/repo"
-	"forgejo.org/services/context"
-	"forgejo.org/services/contexttest"
-	files_service "forgejo.org/services/repository/files"
-	"forgejo.org/tests"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/routers/web/repo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/contexttest"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

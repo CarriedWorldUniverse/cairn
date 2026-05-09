@@ -6,9 +6,9 @@ package user
 import (
 	"net/http"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/services/context"
-	redirect_service "forgejo.org/services/redirect"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	redirect_service "github.com/CarriedWorldUniverse/cairn/services/redirect"
 )
 
 // GetUserByParamsName get user by name

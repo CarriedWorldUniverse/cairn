@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/httplib"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/proxyprotocol"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxyprotocol"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Response is used for internal request response (for user message and error message)

@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // DumpMemProfileForUsername dumps a memory profile at pprofDataPath as memprofile_<username>_<temporary id>

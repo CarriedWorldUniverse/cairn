@@ -11,14 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/models/db"
-	system_model "forgejo.org/models/system"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 var (

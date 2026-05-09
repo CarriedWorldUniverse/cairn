@@ -10,11 +10,11 @@ import (
 	"path"
 	"strings"
 
-	"forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/issue/template"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/issue/template"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"go.yaml.in/yaml/v3"
 )

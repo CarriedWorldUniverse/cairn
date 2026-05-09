@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 const (

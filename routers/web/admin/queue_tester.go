@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 var testQueueOnce sync.Once

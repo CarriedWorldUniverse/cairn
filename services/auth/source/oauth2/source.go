@@ -6,8 +6,8 @@ package oauth2
 import (
 	"strings"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 // Source holds configuration for the OAuth2 login source.

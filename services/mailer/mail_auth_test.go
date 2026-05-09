@@ -6,14 +6,14 @@ package mailer_test
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
-	"forgejo.org/services/mailer"
-	user_service "forgejo.org/services/user"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/services/mailer"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

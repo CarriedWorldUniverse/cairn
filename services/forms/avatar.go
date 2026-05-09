@@ -10,9 +10,9 @@ import (
 	"io"
 	"mime/multipart"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/typesniffer"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/typesniffer"
 )
 
 // ReadAvatar reads and validates an avatar from a multipart file header.

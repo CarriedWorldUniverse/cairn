@@ -6,12 +6,12 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/models"
-	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	release_service "forgejo.org/services/release"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	release_service "github.com/CarriedWorldUniverse/cairn/services/release"
 )
 
 // GetReleaseByTag get a single release of a repository by tag name

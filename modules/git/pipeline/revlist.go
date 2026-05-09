@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // RevListObjects run rev-list --objects from headSHA to baseSHA

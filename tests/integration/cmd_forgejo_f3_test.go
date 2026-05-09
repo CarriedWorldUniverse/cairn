@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"testing"
 
-	"forgejo.org/cmd/forgejo"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/services/f3/driver/options"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/cmd/forgejo"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/services/f3/driver/options"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
-	_ "forgejo.org/services/f3/driver"
-	_ "forgejo.org/services/f3/driver/tests"
+	_ "github.com/CarriedWorldUniverse/cairn/services/f3/driver"
+	_ "github.com/CarriedWorldUniverse/cairn/services/f3/driver/tests"
 
 	f3_filesystem_options "code.forgejo.org/f3/gof3/v3/forges/filesystem/options"
 	f3_logger "code.forgejo.org/f3/gof3/v3/logger"

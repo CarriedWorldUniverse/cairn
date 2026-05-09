@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
 )
 
 // AccessTokenScopeCategory represents the scope category for an access token

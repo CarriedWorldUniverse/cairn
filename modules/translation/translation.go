@@ -11,11 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/options"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation/i18n"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/options"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/i18n"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/dustin/go-humanize"
 	"golang.org/x/text/language"

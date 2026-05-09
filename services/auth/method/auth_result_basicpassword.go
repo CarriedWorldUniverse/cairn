@@ -4,8 +4,8 @@
 package method
 
 import (
-	user_model "forgejo.org/models/user"
-	"forgejo.org/services/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 )
 
 var _ auth.AuthenticationResult = &basicPaswordAuthenticationResult{}

@@ -6,9 +6,9 @@ package repo
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // RepoArchiveDownloadCount counts all archive downloads for a tag

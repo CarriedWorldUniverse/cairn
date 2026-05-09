@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/tests"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 )
 
 func TestChangeDefaultBranch(t *testing.T) {

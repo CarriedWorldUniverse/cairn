@@ -10,12 +10,12 @@ import (
 	"strings"
 	"unicode"
 
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/modules/log"
-	packages_module "forgejo.org/modules/packages"
-	"forgejo.org/routers/api/packages/helper"
-	"forgejo.org/services/context"
-	packages_service "forgejo.org/services/packages"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/packages/helper"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 )
 
 var (

@@ -6,7 +6,7 @@ package sync
 import (
 	"sync"
 
-	"forgejo.org/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 )
 
 // StatusTable is a table maintains true/false values.

@@ -7,10 +7,10 @@ import (
 	"database/sql"
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/forgefed"
-	"forgejo.org/models/user"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

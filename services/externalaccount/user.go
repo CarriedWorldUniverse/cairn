@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/auth"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/markbates/goth"
 )

@@ -9,11 +9,11 @@ import (
 	"path"
 	"testing"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/test"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

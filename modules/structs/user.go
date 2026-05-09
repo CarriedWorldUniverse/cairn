@@ -6,7 +6,7 @@ package structs
 import (
 	"time"
 
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 // User represents a user

@@ -6,9 +6,9 @@ package asymkey
 import (
 	"context"
 
-	"forgejo.org/models"
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // DeleteDeployKey deletes deploy key from its repository authorized_keys file if needed.

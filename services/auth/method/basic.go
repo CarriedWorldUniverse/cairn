@@ -10,15 +10,15 @@ import (
 	"net/http"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/auth"
-	"forgejo.org/services/auth/source/db"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/db"
 )
 
 // Ensure the struct implements the interface.

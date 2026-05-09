@@ -6,10 +6,10 @@ package repo
 import (
 	"net/http"
 
-	issues_model "forgejo.org/models/issues"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // PinIssue pins a issue

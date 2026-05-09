@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/git"
-	giturl "forgejo.org/modules/git/url"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	giturl "github.com/CarriedWorldUniverse/cairn/modules/git/url"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 )

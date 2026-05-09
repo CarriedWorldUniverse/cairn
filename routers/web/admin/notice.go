@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"forgejo.org/models/db"
-	system_model "forgejo.org/models/system"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

@@ -4,8 +4,8 @@
 package remote
 
 import (
-	"forgejo.org/models/auth"
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 )
 
 type Source struct {

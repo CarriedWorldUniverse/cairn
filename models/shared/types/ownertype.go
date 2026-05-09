@@ -3,7 +3,7 @@
 
 package types
 
-import "forgejo.org/modules/translation"
+import "github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 type OwnerType string
 

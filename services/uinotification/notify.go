@@ -6,16 +6,16 @@ package uinotification
 import (
 	"context"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/queue"
-	notify_service "forgejo.org/services/notify"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 type (

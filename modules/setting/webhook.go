@@ -6,7 +6,7 @@ package setting
 import (
 	"net/url"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // Webhook settings

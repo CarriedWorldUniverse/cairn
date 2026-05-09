@@ -17,9 +17,9 @@ import (
 	"sort"
 	"strings"
 
-	llu "forgejo.org/build/lint-locale-usage"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/translation/localeiter"
+	llu "github.com/CarriedWorldUniverse/cairn/build/lint-locale-usage"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/localeiter"
 )
 
 // this works by first gathering all valid source string IDs from `en-US` reference files

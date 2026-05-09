@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"

@@ -7,14 +7,14 @@ import (
 	"context"
 	"slices"
 
-	actions_model "forgejo.org/models/actions"
-	issues_model "forgejo.org/models/issues"
-	packages_model "forgejo.org/models/packages"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/repository"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
 )
 
 var notifiers []Notifier

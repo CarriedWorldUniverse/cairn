@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	org_model "forgejo.org/models/organization"
-	project_model "forgejo.org/models/project"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/tests"
+	org_model "github.com/CarriedWorldUniverse/cairn/models/organization"
+	project_model "github.com/CarriedWorldUniverse/cairn/models/project"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

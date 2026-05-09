@@ -4,12 +4,12 @@
 package explore
 
 import (
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Organizations render explore organizations page

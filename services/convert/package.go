@@ -6,10 +6,10 @@ package convert
 import (
 	"context"
 
-	"forgejo.org/models/packages"
-	access_model "forgejo.org/models/perm/access"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToPackage convert a packages.PackageDescriptor to api.Package

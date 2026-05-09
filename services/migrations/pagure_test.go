@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/unittest"
-	base "forgejo.org/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

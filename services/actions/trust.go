@@ -8,15 +8,15 @@ import (
 	"errors"
 	"fmt"
 
-	actions_model "forgejo.org/models/actions"
-	issues_model "forgejo.org/models/issues"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	actions_module "forgejo.org/modules/actions"
-	"forgejo.org/modules/log"
-	webhook_module "forgejo.org/modules/webhook"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
 )
 
 type TrustUpdate string

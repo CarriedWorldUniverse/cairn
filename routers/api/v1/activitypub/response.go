@@ -6,11 +6,11 @@ package activitypub
 import (
 	"net/http"
 
-	"forgejo.org/modules/activitypub"
-	"forgejo.org/modules/forgefed"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/context"
-	"forgejo.org/services/federation"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
+	"github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/federation"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/go-ap/jsonld"

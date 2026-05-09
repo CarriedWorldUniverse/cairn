@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/git/internal" //nolint:depguard // only this file can use the internal type CmdArg, other files and packages should use AddXxx functions
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/internal" //nolint:depguard // only this file can use the internal type CmdArg, other files and packages should use AddXxx functions
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // TrustedCmdArgs returns the trusted arguments for git command.

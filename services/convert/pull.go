@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // ToAPIPullRequest assumes following fields have been assigned with valid values:

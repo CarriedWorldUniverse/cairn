@@ -4,7 +4,7 @@
 package auth
 
 import (
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 
 	"xorm.io/builder"
 )

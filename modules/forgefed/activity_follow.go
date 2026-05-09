@@ -4,7 +4,7 @@
 package forgefed
 
 import (
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	ap "github.com/go-ap/activitypub"
 	"github.com/google/uuid"

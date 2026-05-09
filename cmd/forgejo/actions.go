@@ -12,10 +12,10 @@ import (
 	"os"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/setting"
-	private_routers "forgejo.org/routers/private"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	private_routers "github.com/CarriedWorldUniverse/cairn/routers/private"
 
 	"github.com/urfave/cli/v3"
 )

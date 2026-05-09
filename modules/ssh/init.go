@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/asymkey"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 var logger = log.GetManager().GetLogger("ssh")

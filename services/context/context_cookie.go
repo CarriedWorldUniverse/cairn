@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/web/middleware"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
 )
 
 const CookieNameFlash = "flash"

@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	activities_model "forgejo.org/models/activities"
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/tests"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

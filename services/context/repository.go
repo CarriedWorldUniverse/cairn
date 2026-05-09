@@ -6,7 +6,7 @@ package context
 import (
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // RepositoryIDAssignmentAPI returns a middleware to handle context-repo assignment for api routes

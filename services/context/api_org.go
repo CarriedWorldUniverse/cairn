@@ -3,7 +3,7 @@
 
 package context
 
-import "forgejo.org/models/organization"
+import "github.com/CarriedWorldUniverse/cairn/models/organization"
 
 // APIOrganization contains organization and team
 type APIOrganization struct {

@@ -6,9 +6,9 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

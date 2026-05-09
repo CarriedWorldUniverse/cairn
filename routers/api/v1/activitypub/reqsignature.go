@@ -6,10 +6,10 @@ package activitypub
 import (
 	"net/http"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	app_context "forgejo.org/services/context"
-	"forgejo.org/services/federation"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/federation"
 
 	"github.com/42wim/httpsig"
 )

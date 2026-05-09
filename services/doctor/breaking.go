@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"xorm.io/builder"
 )

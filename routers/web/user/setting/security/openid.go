@@ -6,13 +6,13 @@ package security
 import (
 	"net/http"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/auth/openid"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/openid"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // OpenIDPost response for change user's openid

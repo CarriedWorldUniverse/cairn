@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 
-	"forgejo.org/models"
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // TeamAddRepository adds new repository to team of organization.

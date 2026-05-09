@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/models/unittest"
-	packages_service "forgejo.org/services/packages"
-	packages_cleanup "forgejo.org/services/packages/cleanup"
-	"forgejo.org/tests"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
+	packages_cleanup "github.com/CarriedWorldUniverse/cairn/services/packages/cleanup"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

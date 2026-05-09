@@ -4,7 +4,7 @@
 package migrations
 
 import (
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 func init() {

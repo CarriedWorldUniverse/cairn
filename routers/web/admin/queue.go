@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func Queues(ctx *context.Context) {

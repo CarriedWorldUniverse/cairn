@@ -9,13 +9,13 @@ import (
 	"os"
 	"time"
 
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
-	asymkey_service "forgejo.org/services/asymkey"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
 )
 
 // initRepoCommit temporarily changes with work directory.

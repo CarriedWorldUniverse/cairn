@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/perm"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // AddPrincipalKey adds new principal to database and authorized_principals file.

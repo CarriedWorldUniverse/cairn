@@ -6,8 +6,8 @@ package actions
 import (
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/unittest"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

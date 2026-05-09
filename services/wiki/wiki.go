@@ -11,17 +11,17 @@ import (
 	"os"
 	"strings"
 
-	repo_model "forgejo.org/models/repo"
-	system_model "forgejo.org/models/system"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/sync"
-	asymkey_service "forgejo.org/services/asymkey"
-	repo_service "forgejo.org/services/repository"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/sync"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // TODO: use clustered lock (unique queue? or *abuse* cache)

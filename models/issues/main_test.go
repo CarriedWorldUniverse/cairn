@@ -6,8 +6,8 @@ package issues_test
 import (
 	"testing"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/unittest"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
 	"github.com/stretchr/testify/require"
 )

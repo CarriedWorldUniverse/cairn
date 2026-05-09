@@ -6,7 +6,7 @@ package forgefed_test
 import (
 	"fmt"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func validateAndCheckError(subject validation.Validateable, expectedError string) *string {

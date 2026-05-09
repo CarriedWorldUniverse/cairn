@@ -6,17 +6,17 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/organization"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/label"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
-	issue_service "forgejo.org/services/issue"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/label"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	issue_service "github.com/CarriedWorldUniverse/cairn/services/issue"
 )
 
 const (

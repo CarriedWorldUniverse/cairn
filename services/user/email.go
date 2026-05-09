@@ -9,13 +9,13 @@ import (
 	"errors"
 	"strings"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/validation"
-	"forgejo.org/services/mailer"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/services/mailer"
 )
 
 // AdminAddOrSetPrimaryEmailAddress is used by admins to add or set a user's primary email address

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/modules/indexer/issues/internal/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal/tests"
 
 	"github.com/stretchr/testify/require"
 )

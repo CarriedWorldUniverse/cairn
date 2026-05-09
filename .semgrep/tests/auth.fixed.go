@@ -7,13 +7,13 @@ package repo
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // ListForks list a repository's forks

@@ -8,17 +8,17 @@ import (
 	"fmt"
 	"strings"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/auth"
-	git_model "forgejo.org/models/git"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/setting"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 type signingMode string

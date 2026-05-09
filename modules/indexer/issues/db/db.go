@@ -6,11 +6,11 @@ package db
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	indexer_internal "forgejo.org/modules/indexer/internal"
-	inner_db "forgejo.org/modules/indexer/internal/db"
-	"forgejo.org/modules/indexer/issues/internal"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	indexer_internal "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
+	inner_db "github.com/CarriedWorldUniverse/cairn/modules/indexer/internal/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/issues/internal"
 
 	"xorm.io/builder"
 )

@@ -6,11 +6,11 @@ package models
 import (
 	"testing"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"github.com/stretchr/testify/require"
 )

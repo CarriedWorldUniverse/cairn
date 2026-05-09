@@ -19,12 +19,12 @@ import (
 	"sync/atomic"
 	texttemplate "text/template"
 
-	"forgejo.org/modules/assetfs"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates/scopedtmpl"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates/scopedtmpl"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 type TemplateExecutor scopedtmpl.TemplateExecutor

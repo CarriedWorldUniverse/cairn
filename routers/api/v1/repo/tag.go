@@ -9,17 +9,17 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models"
-	git_model "forgejo.org/models/git"
-	"forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
-	release_service "forgejo.org/services/release"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
+	release_service "github.com/CarriedWorldUniverse/cairn/services/release"
 )
 
 // ListTags list all the tags of a repository

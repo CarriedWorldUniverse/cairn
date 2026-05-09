@@ -6,11 +6,11 @@ package user
 import (
 	"net/http"
 
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	webhook_service "forgejo.org/services/webhook"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	webhook_service "github.com/CarriedWorldUniverse/cairn/services/webhook"
 )
 
 // ListHooks list the authenticated user's webhooks

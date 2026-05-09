@@ -7,17 +7,17 @@ import (
 	"fmt"
 	"net/http"
 
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/routers/common"
-	"forgejo.org/services/attachment"
-	"forgejo.org/services/context"
-	"forgejo.org/services/context/upload"
-	repo_service "forgejo.org/services/repository"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/services/attachment"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/context/upload"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // UploadIssueAttachment response for Issue/PR attachments

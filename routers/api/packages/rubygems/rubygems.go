@@ -13,14 +13,14 @@ import (
 	"net/http"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/modules/optional"
-	packages_module "forgejo.org/modules/packages"
-	rubygems_module "forgejo.org/modules/packages/rubygems"
-	"forgejo.org/modules/util"
-	"forgejo.org/routers/api/packages/helper"
-	"forgejo.org/services/context"
-	packages_service "forgejo.org/services/packages"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	rubygems_module "github.com/CarriedWorldUniverse/cairn/modules/packages/rubygems"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/packages/helper"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
 )
 
 const (

@@ -10,14 +10,14 @@ import (
 	"net/url"
 	"time"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/avatars"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/avatars"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // PushCommit represents a commit in a push operation.

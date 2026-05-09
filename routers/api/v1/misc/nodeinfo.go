@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/services/context"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const cacheKeyNodeInfoUsage = "API_NodeInfoUsage"

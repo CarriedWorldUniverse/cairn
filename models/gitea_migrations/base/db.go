@@ -10,9 +10,9 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

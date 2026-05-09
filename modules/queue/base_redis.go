@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/nosql"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/nosql"
 
 	"github.com/redis/go-redis/v9"
 )

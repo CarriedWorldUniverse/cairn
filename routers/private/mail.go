@@ -9,14 +9,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/context"
-	"forgejo.org/services/mailer"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/mailer"
 )
 
 // SendEmail pushes messages to mail queue

@@ -4,7 +4,7 @@
 package v1_23
 
 import (
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

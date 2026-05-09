@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	perm_model "forgejo.org/models/perm"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/authz"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	perm_model "github.com/CarriedWorldUniverse/cairn/models/perm"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/authz"
 )
 
 // Permission contains all the permissions related variables to a repository for a user

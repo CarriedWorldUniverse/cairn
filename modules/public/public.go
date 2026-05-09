@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/assetfs"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 func CustomAssets() *assetfs.Layer {

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/user"
 )
 
 var ForgejoVersion = "1.0.0"

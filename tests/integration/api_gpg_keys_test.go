@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	auth_model "forgejo.org/models/auth"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/test"
-	"forgejo.org/services/context"
-	"forgejo.org/tests"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"

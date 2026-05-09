@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	migration_tests "forgejo.org/models/gitea_migrations/test"
-	"forgejo.org/modules/log"
-	ft "forgejo.org/modules/test"
+	migration_tests "github.com/CarriedWorldUniverse/cairn/models/gitea_migrations/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	ft "github.com/CarriedWorldUniverse/cairn/modules/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

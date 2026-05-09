@@ -10,13 +10,13 @@ import (
 	"net/url"
 	"strings"
 
-	"forgejo.org/models/forgefed"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/activitypub"
-	fm "forgejo.org/modules/forgefed"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/activitypub"
+	fm "github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"github.com/google/uuid"
 )

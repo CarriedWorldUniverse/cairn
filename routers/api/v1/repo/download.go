@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/services/context"
-	archiver_service "forgejo.org/services/repository/archiver"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	archiver_service "github.com/CarriedWorldUniverse/cairn/services/repository/archiver"
 )
 
 func DownloadArchive(ctx *context.APIContext) {

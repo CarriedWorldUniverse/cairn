@@ -6,8 +6,8 @@ package stats
 import (
 	"context"
 
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // Queue a recalculation of the stats on a `Milestone` for a given milestone by its ID

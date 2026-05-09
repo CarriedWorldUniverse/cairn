@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strconv"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/label"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/label"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // ListLabels list all the labels of a repository

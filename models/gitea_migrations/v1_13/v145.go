@@ -6,7 +6,7 @@ package v1_13
 import (
 	"fmt"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

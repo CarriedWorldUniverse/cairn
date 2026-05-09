@@ -11,7 +11,7 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/jackc/pgx/v5/stdlib"
 	"xorm.io/xorm/dialects"

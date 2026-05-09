@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"forgejo.org/modules/session"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/session"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // SetRedirectToCookie convenience function to set the RedirectTo cookie consistently

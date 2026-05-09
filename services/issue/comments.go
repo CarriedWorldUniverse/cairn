@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/timeutil"
-	notify_service "forgejo.org/services/notify"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // CreateRefComment creates a commit reference comment to issue.

@@ -13,17 +13,17 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/lfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var stripExitStatus = regexp.MustCompile(`exit status \d+ - `)

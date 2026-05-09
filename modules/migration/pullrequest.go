@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // PullRequest defines a standard pull request information

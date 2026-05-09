@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"strings"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/perm"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // KeyAndOwner is the response from ServNoCommand

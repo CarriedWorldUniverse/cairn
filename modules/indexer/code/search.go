@@ -10,10 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/modules/highlight"
-	"forgejo.org/modules/indexer/code/internal"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/services/gitdiff"
+	"github.com/CarriedWorldUniverse/cairn/modules/highlight"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
 )
 
 // Result a search result to display

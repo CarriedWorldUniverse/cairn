@@ -4,10 +4,10 @@
 package indexer
 
 import (
-	code_indexer "forgejo.org/modules/indexer/code"
-	issue_indexer "forgejo.org/modules/indexer/issues"
-	stats_indexer "forgejo.org/modules/indexer/stats"
-	notify_service "forgejo.org/services/notify"
+	code_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/code"
+	issue_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/issues"
+	stats_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/stats"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // Init initialize the repo indexer

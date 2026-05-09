@@ -9,10 +9,10 @@ import (
 	"io"
 	"os"
 
-	packages_model "forgejo.org/models/packages"
-	packages_module "forgejo.org/modules/packages"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var (

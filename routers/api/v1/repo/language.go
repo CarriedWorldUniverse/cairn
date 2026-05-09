@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/context"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 type languageResponse []*repo_model.LanguageStat

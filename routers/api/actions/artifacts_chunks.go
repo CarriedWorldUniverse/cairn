@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
 )
 
 func saveUploadChunkBase(st storage.ObjectStorage, ctx *ArtifactContext,

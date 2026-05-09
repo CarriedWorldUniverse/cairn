@@ -6,10 +6,10 @@ package repository
 import (
 	"context"
 
-	"forgejo.org/models/repo"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/federation"
+	"github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/federation"
 )
 
 func StarRepoAndSendLikeActivities(ctx context.Context, doer user.User, repoID int64, star bool) error {

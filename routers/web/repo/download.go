@@ -7,15 +7,15 @@ package repo
 import (
 	"time"
 
-	git_model "forgejo.org/models/git"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/httpcache"
-	"forgejo.org/modules/lfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/routers/common"
-	"forgejo.org/services/context"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/httpcache"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // ServeBlobOrLFS download a git.Blob redirecting to LFS if necessary

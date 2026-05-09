@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

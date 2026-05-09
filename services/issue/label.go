@@ -6,10 +6,10 @@ package issue
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	notify_service "forgejo.org/services/notify"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // ClearLabels clears all of an issue's labels

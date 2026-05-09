@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"

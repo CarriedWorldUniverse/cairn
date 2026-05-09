@@ -7,11 +7,11 @@ import (
 	"context"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/models/user"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
-	_ "forgejo.org/modules/testimport"
+	_ "github.com/CarriedWorldUniverse/cairn/modules/testimport"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

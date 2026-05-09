@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/timeutil"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 func killRun(ctx context.Context, run *actions_model.ActionRun, newStatus actions_model.Status) error {

@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

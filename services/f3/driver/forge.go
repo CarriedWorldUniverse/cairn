@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	user_model "forgejo.org/models/user"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 
 	"code.forgejo.org/f3/gof3/v3/f3"
 	f3_id "code.forgejo.org/f3/gof3/v3/id"

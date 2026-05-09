@@ -6,13 +6,13 @@ package integration
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	webhook_model "forgejo.org/models/webhook"
-	repo_service "forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

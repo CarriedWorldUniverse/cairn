@@ -7,7 +7,7 @@ package migration
 import (
 	"context"
 
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // Downloader downloads the site repo information

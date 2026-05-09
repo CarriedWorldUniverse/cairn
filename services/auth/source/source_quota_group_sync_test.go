@@ -6,11 +6,11 @@ package source
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	quota_model "forgejo.org/models/quota"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	quota_model "github.com/CarriedWorldUniverse/cairn/models/quota"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

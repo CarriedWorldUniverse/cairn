@@ -18,12 +18,12 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/packages"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	arch_model "forgejo.org/modules/packages/arch"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	arch_model "github.com/CarriedWorldUniverse/cairn/modules/packages/arch"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"

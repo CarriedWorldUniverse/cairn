@@ -7,12 +7,12 @@ import (
 	"os"
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/indexer/code/bleve"
-	"forgejo.org/modules/indexer/code/elasticsearch"
-	"forgejo.org/modules/indexer/code/internal"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/bleve"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/elasticsearch"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/internal"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

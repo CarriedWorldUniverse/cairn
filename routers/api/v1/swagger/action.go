@@ -4,8 +4,8 @@
 package swagger
 
 import (
-	api "forgejo.org/modules/structs"
-	shared "forgejo.org/routers/api/v1/shared"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	shared "github.com/CarriedWorldUniverse/cairn/routers/api/v1/shared"
 )
 
 // SecretList

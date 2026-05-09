@@ -6,11 +6,11 @@ package avatars_test
 import (
 	"testing"
 
-	avatars_model "forgejo.org/models/avatars"
-	"forgejo.org/models/db"
-	system_model "forgejo.org/models/system"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/setting/config"
+	avatars_model "github.com/CarriedWorldUniverse/cairn/models/avatars"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

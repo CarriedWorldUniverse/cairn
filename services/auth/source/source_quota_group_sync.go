@@ -6,10 +6,10 @@ package source
 import (
 	"context"
 
-	"forgejo.org/models/quota"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/models/quota"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 func SyncGroupsToQuotaGroups(ctx context.Context, user *user_model.User, sourceUserGroups container.Set[string], sourceGroupQuotaGroupMapping map[string]container.Set[string], performRemoval bool) error {

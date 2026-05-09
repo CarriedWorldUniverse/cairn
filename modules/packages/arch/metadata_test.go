@@ -12,7 +12,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"forgejo.org/modules/packages"
+	"github.com/CarriedWorldUniverse/cairn/modules/packages"
 
 	"github.com/mholt/archives"
 	"github.com/stretchr/testify/require"

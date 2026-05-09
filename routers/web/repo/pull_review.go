@@ -8,17 +8,17 @@ import (
 	"fmt"
 	"net/http"
 
-	issues_model "forgejo.org/models/issues"
-	pull_model "forgejo.org/models/pull"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/context/upload"
-	"forgejo.org/services/forms"
-	pull_service "forgejo.org/services/pull"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	pull_model "github.com/CarriedWorldUniverse/cairn/models/pull"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/context/upload"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	pull_service "github.com/CarriedWorldUniverse/cairn/services/pull"
 )
 
 const (

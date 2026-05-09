@@ -13,16 +13,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forgejo.org/models"
-	repo_model "forgejo.org/models/repo"
-	system_model "forgejo.org/models/system"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/hostmatcher"
-	"forgejo.org/modules/log"
-	base "forgejo.org/modules/migration"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/hostmatcher"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // MigrateOptions is equal to base.MigrateOptions

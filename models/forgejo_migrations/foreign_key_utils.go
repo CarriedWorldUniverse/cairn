@@ -6,7 +6,7 @@ package forgejo_migrations
 import (
 	"fmt"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"xorm.io/builder"
 	"xorm.io/xorm"

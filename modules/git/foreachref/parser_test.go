@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/git/foreachref"
-	"forgejo.org/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/git/foreachref"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
 
 	"github.com/stretchr/testify/require"
 )

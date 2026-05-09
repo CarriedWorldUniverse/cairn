@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	files_service "forgejo.org/services/repository/files"
-	"forgejo.org/tests"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

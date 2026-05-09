@@ -6,7 +6,7 @@ package gitrepo
 import (
 	"context"
 
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // GetBranchesByPath returns a branch by its path

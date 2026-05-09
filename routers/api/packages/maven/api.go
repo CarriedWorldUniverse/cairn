@@ -7,8 +7,8 @@ import (
 	"encoding/xml"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	maven_module "forgejo.org/modules/packages/maven"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	maven_module "github.com/CarriedWorldUniverse/cairn/modules/packages/maven"
 )
 
 // MetadataResponse https://maven.apache.org/ref/3.2.5/maven-repository-metadata/repository-metadata.html

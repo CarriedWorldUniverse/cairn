@@ -8,8 +8,8 @@ import (
 	"slices"
 	"testing"
 
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/tests"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 )
 
 func TestOrgProjectAccess(t *testing.T) {

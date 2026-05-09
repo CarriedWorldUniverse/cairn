@@ -13,15 +13,15 @@ import (
 	"regexp"
 	"strings"
 
-	packages_model "forgejo.org/models/packages"
-	packages_module "forgejo.org/modules/packages"
-	arch_module "forgejo.org/modules/packages/arch"
-	"forgejo.org/modules/sync"
-	"forgejo.org/modules/util"
-	"forgejo.org/routers/api/packages/helper"
-	"forgejo.org/services/context"
-	packages_service "forgejo.org/services/packages"
-	arch_service "forgejo.org/services/packages/arch"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	arch_module "github.com/CarriedWorldUniverse/cairn/modules/packages/arch"
+	"github.com/CarriedWorldUniverse/cairn/modules/sync"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/packages/helper"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
+	arch_service "github.com/CarriedWorldUniverse/cairn/services/packages/arch"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
 )
 
 // LFS represents the server-side configuration for Git LFS.

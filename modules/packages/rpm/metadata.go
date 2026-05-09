@@ -8,8 +8,8 @@ import (
 	"io"
 	"strings"
 
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 	"code.forgejo.org/forgejo/go-rpmutils"
 )

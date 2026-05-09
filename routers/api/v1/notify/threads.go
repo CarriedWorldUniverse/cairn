@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"net/http"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // GetThread get notification by ID

@@ -6,15 +6,15 @@ package issue
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/organization"
-	"forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	notify_service "forgejo.org/services/notify"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // DeleteNotPassedAssignee deletes all assignees who aren't passed via the "assignees" array

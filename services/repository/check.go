@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	system_model "forgejo.org/models/system"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	system_model "github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 )

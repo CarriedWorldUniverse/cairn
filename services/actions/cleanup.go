@@ -10,13 +10,13 @@ import (
 	"os"
 	"time"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	actions_module "forgejo.org/modules/actions"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/timeutil"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/builder"
 )

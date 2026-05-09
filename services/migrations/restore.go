@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	base "forgejo.org/modules/migration"
+	base "github.com/CarriedWorldUniverse/cairn/modules/migration"
 
 	"go.yaml.in/yaml/v3"
 )

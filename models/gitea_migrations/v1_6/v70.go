@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"xorm.io/xorm"
 )

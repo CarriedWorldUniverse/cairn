@@ -6,9 +6,9 @@ package system
 import (
 	"context"
 
-	"forgejo.org/models/system"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/system"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // DBStore can be used to store app state items in local filesystem

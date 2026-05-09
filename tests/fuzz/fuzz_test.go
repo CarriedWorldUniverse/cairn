@@ -9,9 +9,9 @@ import (
 	"io"
 	"testing"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/markup/markdown"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 var renderContext = markup.RenderContext{

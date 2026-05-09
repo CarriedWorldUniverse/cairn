@@ -11,16 +11,16 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
-	packages_module "forgejo.org/modules/packages"
-	debian_module "forgejo.org/modules/packages/debian"
-	"forgejo.org/modules/util"
-	"forgejo.org/routers/api/packages/helper"
-	"forgejo.org/services/context"
-	notify_service "forgejo.org/services/notify"
-	packages_service "forgejo.org/services/packages"
-	debian_service "forgejo.org/services/packages/debian"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	packages_module "github.com/CarriedWorldUniverse/cairn/modules/packages"
+	debian_module "github.com/CarriedWorldUniverse/cairn/modules/packages/debian"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/packages/helper"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
+	packages_service "github.com/CarriedWorldUniverse/cairn/services/packages"
+	debian_service "github.com/CarriedWorldUniverse/cairn/services/packages/debian"
 )
 
 func apiError(ctx *context.Context, status int, obj any) {

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // cacheContext is a context that can be used to cache data in a request level context

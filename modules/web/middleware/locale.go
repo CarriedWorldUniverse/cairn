@@ -6,8 +6,8 @@ package middleware
 import (
 	"net/http"
 
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/translation/i18n"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/i18n"
 
 	"golang.org/x/text/language"
 )

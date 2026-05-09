@@ -8,10 +8,10 @@ import (
 	"context"
 	"errors"
 
-	issues_model "forgejo.org/models/issues"
-	access_model "forgejo.org/models/perm/access"
-	unit_model "forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 var ErrUserHasNoPermissionForAction = errors.New("user not allowed to do this action")

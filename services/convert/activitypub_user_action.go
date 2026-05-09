@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	activities_model "forgejo.org/models/activities"
-	issues_model "forgejo.org/models/issues"
-	fm "forgejo.org/modules/forgefed"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/markup/markdown"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	fm "github.com/CarriedWorldUniverse/cairn/modules/forgefed"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
 )
 
 func ActionToForgeUserActivity(ctx context.Context, action *activities_model.Action) (fm.ForgeUserActivity, error) {

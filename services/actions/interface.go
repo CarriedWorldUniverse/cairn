@@ -3,7 +3,7 @@
 
 package actions
 
-import "forgejo.org/services/context"
+import "github.com/CarriedWorldUniverse/cairn/services/context"
 
 // API for actions of a repository or organization
 type API interface {

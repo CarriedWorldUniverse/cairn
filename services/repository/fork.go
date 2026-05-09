@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	notify_service "forgejo.org/services/notify"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // ErrForkAlreadyExist represents a "ForkAlreadyExist" kind of error.

@@ -12,17 +12,17 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/lfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	asymkey_service "forgejo.org/services/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
 )
 
 // IdentityOptions for a person's identity like an author or committer

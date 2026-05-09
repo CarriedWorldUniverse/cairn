@@ -6,12 +6,12 @@ package mailer
 import (
 	"context"
 
-	activities_model "forgejo.org/models/activities"
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // MailParticipantsComment sends new comment emails to repository watchers and mentioned people.

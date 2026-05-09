@@ -10,12 +10,12 @@ import (
 	"path"
 	"strings"
 
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/lfs"
-	"forgejo.org/modules/setting"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // UploadRepoFileOptions contains the uploaded repository file options

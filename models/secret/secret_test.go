@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

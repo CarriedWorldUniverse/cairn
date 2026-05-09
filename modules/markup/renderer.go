@@ -14,10 +14,10 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/util/donotpanic"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util/donotpanic"
 
 	"github.com/yuin/goldmark/ast"
 )

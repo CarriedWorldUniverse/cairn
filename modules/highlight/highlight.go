@@ -15,10 +15,10 @@ import (
 	"strings"
 	"sync"
 
-	"forgejo.org/modules/analyze"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/analyze"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"

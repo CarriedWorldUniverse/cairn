@@ -14,15 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/setting"
-	asymkey_service "forgejo.org/services/asymkey"
-	"forgejo.org/services/gitdiff"
+	"github.com/CarriedWorldUniverse/cairn/models"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	asymkey_service "github.com/CarriedWorldUniverse/cairn/services/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
 )
 
 // TemporaryUploadRepository is a type to wrap our upload repositories as a shallow clone

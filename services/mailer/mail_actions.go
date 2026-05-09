@@ -5,11 +5,11 @@ package mailer
 import (
 	"bytes"
 
-	actions_model "forgejo.org/models/actions"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 )
 
 const (

@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/references"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/references"
 )
 
 type crossReference struct {

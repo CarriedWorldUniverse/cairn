@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	"forgejo.org/modules/indexer/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
 )
 
 // Indexer defines an interface to indexer issues contents

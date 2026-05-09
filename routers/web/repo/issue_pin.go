@@ -6,10 +6,10 @@ package repo
 import (
 	"net/http"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/services/context"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // IssuePinOrUnpin pin or unpin a Issue

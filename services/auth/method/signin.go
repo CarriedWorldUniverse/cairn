@@ -7,18 +7,18 @@ import (
 	"context"
 	"strings"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	auth_service "forgejo.org/services/auth"
-	"forgejo.org/services/auth/source/oauth2"
-	"forgejo.org/services/auth/source/smtp"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	auth_service "github.com/CarriedWorldUniverse/cairn/services/auth"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/smtp"
 
-	_ "forgejo.org/services/auth/source/db"   // register the sources (and below)
-	_ "forgejo.org/services/auth/source/ldap" // register the ldap source
-	_ "forgejo.org/services/auth/source/pam"  // register the pam source
+	_ "github.com/CarriedWorldUniverse/cairn/services/auth/source/db"   // register the sources (and below)
+	_ "github.com/CarriedWorldUniverse/cairn/services/auth/source/ldap" // register the ldap source
+	_ "github.com/CarriedWorldUniverse/cairn/services/auth/source/pam"  // register the pam source
 )
 
 // UserSignIn validates user name and password.

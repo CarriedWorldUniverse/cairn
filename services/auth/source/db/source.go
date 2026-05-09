@@ -6,8 +6,8 @@ package db
 import (
 	"context"
 
-	"forgejo.org/models/auth"
-	user_model "forgejo.org/models/user"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
 )
 
 // Source is a password authentication service

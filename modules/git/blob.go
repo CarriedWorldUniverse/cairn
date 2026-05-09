@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"io"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/typesniffer"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/typesniffer"
 )
 
 // Blob represents a Git object.

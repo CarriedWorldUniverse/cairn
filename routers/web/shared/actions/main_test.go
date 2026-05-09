@@ -6,10 +6,10 @@ package actions
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/forgefed"
+	_ "github.com/CarriedWorldUniverse/cairn/models"
+	_ "github.com/CarriedWorldUniverse/cairn/models/forgefed"
 )
 
 func TestMain(m *testing.M) {

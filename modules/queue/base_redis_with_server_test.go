@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/stretchr/testify/suite"
 )

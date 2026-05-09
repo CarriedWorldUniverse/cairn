@@ -6,9 +6,9 @@ package actions
 import (
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

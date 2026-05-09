@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 // ----------------------------- RepositoryID --------------------------------------------

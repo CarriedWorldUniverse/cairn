@@ -4,9 +4,9 @@
 package utils
 
 import (
-	"forgejo.org/models/db"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // GetListOptions returns list options using the page and limit parameters

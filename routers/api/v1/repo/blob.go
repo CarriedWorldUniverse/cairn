@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/services/context"
-	files_service "forgejo.org/services/repository/files"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
 )
 
 // GetBlobs gets multiple blobs of a repository.

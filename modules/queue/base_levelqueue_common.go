@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/nosql"
+	"github.com/CarriedWorldUniverse/cairn/modules/nosql"
 
 	"code.forgejo.org/forgejo/levelqueue"
 	"github.com/syndtr/goleveldb/leveldb"

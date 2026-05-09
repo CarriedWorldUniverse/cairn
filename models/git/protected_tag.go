@@ -9,9 +9,9 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/gobwas/glob"
 )

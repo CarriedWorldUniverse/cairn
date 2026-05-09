@@ -10,16 +10,16 @@ import (
 	"net/url"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/charset"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/highlight"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/templates"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
-	files_service "forgejo.org/services/repository/files"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/charset"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/highlight"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	files_service "github.com/CarriedWorldUniverse/cairn/services/repository/files"
 )
 
 type blameRow struct {

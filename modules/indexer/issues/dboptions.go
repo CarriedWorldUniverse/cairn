@@ -6,9 +6,9 @@ package issues
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 )
 
 func ToSearchOptions(ctx context.Context, keyword string, opts *issues_model.IssuesOptions) *SearchOptions {

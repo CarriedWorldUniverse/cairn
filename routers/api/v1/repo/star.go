@@ -6,11 +6,11 @@ package repo
 import (
 	"net/http"
 
-	repo_model "forgejo.org/models/repo"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/routers/api/v1/utils"
-	"forgejo.org/services/context"
-	"forgejo.org/services/convert"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/routers/api/v1/utils"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/convert"
 )
 
 // ListStargazers list a repository's stargazers

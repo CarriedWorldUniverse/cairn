@@ -4,8 +4,8 @@
 package options
 
 import (
-	"forgejo.org/modules/assetfs"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func CustomAssets() *assetfs.Layer {

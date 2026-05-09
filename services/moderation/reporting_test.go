@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/db"
-	moderation_model "forgejo.org/models/moderation"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	moderation_model "github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"github.com/stretchr/testify/require"
 )

@@ -6,9 +6,9 @@ package issue
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	notify_service "forgejo.org/services/notify"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // ChangeContent changes issue content, as the given user.

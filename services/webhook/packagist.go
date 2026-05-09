@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"net/url"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/webhook/shared"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook/shared"
 )
 
 type packagistHandler struct{}

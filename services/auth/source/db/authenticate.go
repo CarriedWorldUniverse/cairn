@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ErrUserPasswordNotSet represents a "ErrUserPasswordNotSet" kind of error.

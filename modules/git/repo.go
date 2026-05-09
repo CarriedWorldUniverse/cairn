@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // GPGSettings represents the default GPG settings for this repository

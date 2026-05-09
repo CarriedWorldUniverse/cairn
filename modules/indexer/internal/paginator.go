@@ -6,7 +6,7 @@ package internal
 import (
 	"math"
 
-	"forgejo.org/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 )
 
 // ParsePaginator parses a db.Paginator into a skip and limit

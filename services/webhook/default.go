@@ -11,14 +11,14 @@ import (
 	"net/url"
 	"strings"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/svg"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/webhook/shared"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook/shared"
 )
 
 var _ Handler = defaultHandler{}

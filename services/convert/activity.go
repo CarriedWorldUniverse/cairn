@@ -6,12 +6,12 @@ package convert
 import (
 	"context"
 
-	activities_model "forgejo.org/models/activities"
-	perm_model "forgejo.org/models/perm"
-	access_model "forgejo.org/models/perm/access"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	perm_model "github.com/CarriedWorldUniverse/cairn/models/perm"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 func ToActivity(ctx context.Context, ac *activities_model.Action, doer *user_model.User) *api.Activity {

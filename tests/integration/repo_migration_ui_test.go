@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/modules/translation"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"

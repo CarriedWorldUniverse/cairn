@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // awaitShutdown waits for the shutdown signal from the Manager

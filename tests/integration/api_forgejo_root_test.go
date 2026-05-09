@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

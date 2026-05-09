@@ -16,7 +16,7 @@ import (
 	"sort"
 	"strings"
 
-	"forgejo.org/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
 )
 
 // regexp is based on go-license, excluding README and NOTICE

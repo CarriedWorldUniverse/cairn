@@ -6,9 +6,9 @@ package metrics
 import (
 	"runtime"
 
-	activities_model "forgejo.org/models/activities"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/setting"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

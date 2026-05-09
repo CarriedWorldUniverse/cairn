@@ -13,8 +13,8 @@ package translation
 import (
 	"strings"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/translation/i18n"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/i18n"
 )
 
 // The constants refer to indices below in `PluralRules` and also in web_src/js/webcomponents/relative-time.js, keep them in sync!

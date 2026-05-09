@@ -5,7 +5,7 @@
 package method
 
 import (
-	"forgejo.org/modules/jwtx"
+	"github.com/CarriedWorldUniverse/cairn/modules/jwtx"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"slices"
 
-	"forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func MakeSelfOnTop(doer *user.User, users []*user.User) []*user.User {

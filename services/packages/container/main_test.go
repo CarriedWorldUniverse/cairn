@@ -6,13 +6,13 @@ package container
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
-	_ "forgejo.org/models"
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/forgefed"
-	_ "forgejo.org/models/packages"
+	_ "github.com/CarriedWorldUniverse/cairn/models"
+	_ "github.com/CarriedWorldUniverse/cairn/models/actions"
+	_ "github.com/CarriedWorldUniverse/cairn/models/activities"
+	_ "github.com/CarriedWorldUniverse/cairn/models/forgefed"
+	_ "github.com/CarriedWorldUniverse/cairn/models/packages"
 )
 
 func TestMain(m *testing.M) {

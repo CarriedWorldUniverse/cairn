@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	shared_user "forgejo.org/routers/web/shared/user"
-	"forgejo.org/services/context"
-	user_service "forgejo.org/services/user"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	shared_user "github.com/CarriedWorldUniverse/cairn/routers/web/shared/user"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 const tplBlockedUsers = "org/settings/blocked_users"

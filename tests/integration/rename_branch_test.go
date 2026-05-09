@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"testing"
 
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	app_context "forgejo.org/services/context"
-	"forgejo.org/tests"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	app_context "github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

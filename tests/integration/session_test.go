@@ -6,10 +6,10 @@ package integration
 import (
 	"testing"
 
-	"forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

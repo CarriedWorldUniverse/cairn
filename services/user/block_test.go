@@ -6,14 +6,14 @@ package user
 import (
 	"testing"
 
-	model "forgejo.org/models"
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	actions_module "forgejo.org/modules/actions"
+	model "github.com/CarriedWorldUniverse/cairn/models"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	actions_module "github.com/CarriedWorldUniverse/cairn/modules/actions"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

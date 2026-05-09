@@ -6,10 +6,10 @@ package utils
 import (
 	"net/http"
 
-	user_model "forgejo.org/models/user"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/services/context"
-	user_service "forgejo.org/services/user"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // ListUserBlockedUsers lists the blocked users of the provided doer.

@@ -6,8 +6,8 @@ package math
 import (
 	"bytes"
 
-	"forgejo.org/modules/markup"
-	markdownutil "forgejo.org/modules/markup/markdown/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	markdownutil "github.com/CarriedWorldUniverse/cairn/modules/markup/markdown/util"
 
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"

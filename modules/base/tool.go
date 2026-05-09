@@ -16,8 +16,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 
 	"github.com/dustin/go-humanize"
 )

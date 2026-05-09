@@ -11,17 +11,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/indexer/code/bleve"
-	"forgejo.org/modules/indexer/code/elasticsearch"
-	"forgejo.org/modules/indexer/code/internal"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/queue"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/bleve"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/elasticsearch"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/code/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var (

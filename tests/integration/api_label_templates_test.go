@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	repo_module "forgejo.org/modules/repository"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/tests"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

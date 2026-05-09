@@ -6,7 +6,7 @@ package actions
 import (
 	"slices"
 
-	"forgejo.org/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 
 	runnerv1 "code.forgejo.org/forgejo/actions-proto/runner/v1"
 )

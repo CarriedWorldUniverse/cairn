@@ -7,8 +7,8 @@ import (
 	"context"
 	"strings"
 
-	"forgejo.org/models/db"
-	packages_model "forgejo.org/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
 
 	"xorm.io/builder"
 )

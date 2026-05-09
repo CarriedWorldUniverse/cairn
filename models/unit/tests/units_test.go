@@ -6,8 +6,8 @@ package tests
 import (
 	"testing"
 
-	unit_model "forgejo.org/models/unit"
-	"forgejo.org/modules/setting"
+	unit_model "github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/stretchr/testify/assert"
 )

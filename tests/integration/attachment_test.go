@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/test"
-	"forgejo.org/tests"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

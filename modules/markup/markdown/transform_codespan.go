@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"forgejo.org/modules/markup"
-	mdutil "forgejo.org/modules/markup/markdown/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	mdutil "github.com/CarriedWorldUniverse/cairn/modules/markup/markdown/util"
 
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer/html"

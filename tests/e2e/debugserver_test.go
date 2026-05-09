@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"testing"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func TestDebugserver(t *testing.T) {

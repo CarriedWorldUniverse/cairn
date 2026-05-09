@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/webhook"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -10,11 +10,11 @@ import (
 	"regexp"
 	"strconv"
 
-	"forgejo.org/modules/csv"
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/csv"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 func init() {

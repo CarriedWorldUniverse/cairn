@@ -11,11 +11,11 @@ import (
 	"slices"
 	"strings"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/queue"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"xorm.io/builder"

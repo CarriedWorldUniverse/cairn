@@ -11,10 +11,10 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/names"

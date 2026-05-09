@@ -3,7 +3,7 @@
 
 package repo
 
-import "forgejo.org/models/db"
+import "github.com/CarriedWorldUniverse/cairn/models/db"
 
 // OrderByMap represents all possible search order
 var OrderByMap = map[string]map[string]db.SearchOrderBy{

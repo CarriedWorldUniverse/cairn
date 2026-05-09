@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	actions_service "forgejo.org/services/actions"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	actions_service "github.com/CarriedWorldUniverse/cairn/services/actions"
 )
 
 func initActionsTasks() {

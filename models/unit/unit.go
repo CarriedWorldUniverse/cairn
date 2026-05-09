@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"forgejo.org/models/perm"
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // Type is Unit's Type

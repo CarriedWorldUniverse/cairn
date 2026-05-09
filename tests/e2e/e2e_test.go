@@ -16,16 +16,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
-	"forgejo.org/modules/testlogger"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/modules/testlogger"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 )
 
 var testE2eWebRoutes *web.Route

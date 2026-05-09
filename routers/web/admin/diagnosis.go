@@ -13,8 +13,8 @@ import (
 	"runtime/trace"
 	"time"
 
-	"forgejo.org/modules/httplib"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 func MonitorDiagnosis(ctx *context.Context) {

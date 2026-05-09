@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/proxy"
-	"forgejo.org/modules/setting"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/proxy"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/42wim/httpsig"
 )

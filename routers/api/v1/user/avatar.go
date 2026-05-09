@@ -7,10 +7,10 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	user_service "forgejo.org/services/user"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // UpdateAvatar updates doer's avatar

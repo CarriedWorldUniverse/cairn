@@ -4,8 +4,8 @@
 package v1_19
 
 import (
-	"forgejo.org/models/db"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 
 	"xorm.io/xorm"
 )

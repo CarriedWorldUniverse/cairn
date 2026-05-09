@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"forgejo.org/models/organization"
-	packages_model "forgejo.org/models/packages"
-	"forgejo.org/models/perm"
-	"forgejo.org/models/unit"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/templates"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	"github.com/CarriedWorldUniverse/cairn/models/perm"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/templates"
 )
 
 // Package contains owner, access mode and optional the package descriptor

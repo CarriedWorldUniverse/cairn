@@ -6,11 +6,11 @@ package asymkey
 import (
 	"testing"
 
-	"forgejo.org/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
 
-	_ "forgejo.org/models/actions"
-	_ "forgejo.org/models/activities"
-	_ "forgejo.org/models/forgefed"
+	_ "github.com/CarriedWorldUniverse/cairn/models/actions"
+	_ "github.com/CarriedWorldUniverse/cairn/models/activities"
+	_ "github.com/CarriedWorldUniverse/cairn/models/forgefed"
 )
 
 func TestMain(m *testing.M) {

@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"time"
 
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/lfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/timeutil"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/lfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // GarbageCollectLFSMetaObjectsOptions provides options for GarbageCollectLFSMetaObjects function

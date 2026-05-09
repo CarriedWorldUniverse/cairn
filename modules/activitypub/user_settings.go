@@ -6,8 +6,8 @@ package activitypub
 import (
 	"context"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/util"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 const rsaBits = 3072

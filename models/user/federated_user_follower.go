@@ -3,7 +3,7 @@
 
 package user
 
-import "forgejo.org/modules/validation"
+import "github.com/CarriedWorldUniverse/cairn/modules/validation"
 
 type FederatedUserFollower struct {
 	ID              int64 `xorm:"pk autoincr"`

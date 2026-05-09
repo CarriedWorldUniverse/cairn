@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/tests"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

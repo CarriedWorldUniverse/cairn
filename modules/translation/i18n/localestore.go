@@ -9,10 +9,10 @@ import (
 	"html/template"
 	"slices"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/translation/localeiter"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/translation/localeiter"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // This file implements the static LocaleStore that will not watch for changes

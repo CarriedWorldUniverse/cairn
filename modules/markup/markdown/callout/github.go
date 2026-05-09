@@ -7,7 +7,7 @@ package callout
 import (
 	"strings"
 
-	"forgejo.org/modules/svg"
+	"github.com/CarriedWorldUniverse/cairn/modules/svg"
 
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"

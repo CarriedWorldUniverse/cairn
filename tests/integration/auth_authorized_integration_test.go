@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/tests"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

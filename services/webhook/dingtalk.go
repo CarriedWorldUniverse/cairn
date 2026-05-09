@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"strings"
 
-	webhook_model "forgejo.org/models/webhook"
-	"forgejo.org/modules/git"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
-	webhook_module "forgejo.org/modules/webhook"
-	"forgejo.org/services/forms"
-	"forgejo.org/services/webhook/shared"
+	webhook_model "github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	webhook_module "github.com/CarriedWorldUniverse/cairn/modules/webhook"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/services/webhook/shared"
 )
 
 type dingtalkHandler struct{}

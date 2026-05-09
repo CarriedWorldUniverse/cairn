@@ -6,10 +6,10 @@ package repository
 import (
 	"context"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/webhook"
-	"forgejo.org/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/webhook"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
 )
 
 // GenerateGitHooks generates git hooks from a template repository

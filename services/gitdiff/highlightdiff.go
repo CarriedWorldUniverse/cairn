@@ -6,7 +6,7 @@ package gitdiff
 import (
 	"strings"
 
-	"forgejo.org/modules/highlight"
+	"github.com/CarriedWorldUniverse/cairn/modules/highlight"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )

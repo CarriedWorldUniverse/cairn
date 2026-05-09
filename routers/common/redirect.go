@@ -6,7 +6,7 @@ package common
 import (
 	"net/http"
 
-	"forgejo.org/modules/httplib"
+	"github.com/CarriedWorldUniverse/cairn/modules/httplib"
 )
 
 // FetchRedirectDelegate helps the "fetch" requests to redirect to the correct location

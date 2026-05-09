@@ -8,10 +8,10 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
-	access_model "forgejo.org/models/perm/access"
-	repo_model "forgejo.org/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/organization"
+	access_model "github.com/CarriedWorldUniverse/cairn/models/perm/access"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
 
 // RemoveOrgUser removes user from given organization.

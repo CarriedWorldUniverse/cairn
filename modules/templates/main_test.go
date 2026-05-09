@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
 )
 
 func TestMain(m *testing.M) {

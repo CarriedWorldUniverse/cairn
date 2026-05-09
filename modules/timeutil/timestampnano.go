@@ -6,7 +6,7 @@ package timeutil
 import (
 	"time"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // TimeStampNano is for nano time in database, do not use it unless there is a real requirement.

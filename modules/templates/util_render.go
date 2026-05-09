@@ -15,14 +15,14 @@ import (
 	"strings"
 	"unicode"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/emoji"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/markup/markdown"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/emoji"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // RenderCommitMessage renders commit message with XSS-safe and special links.

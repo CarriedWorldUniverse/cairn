@@ -11,10 +11,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"forgejo.org/models/db"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/private"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/private"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/urfave/cli/v3"
 )

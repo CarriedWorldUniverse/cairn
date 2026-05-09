@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"testing"
 
-	"forgejo.org/modules/setting"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/test"
-	"forgejo.org/routers"
-	"forgejo.org/tests"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	"github.com/CarriedWorldUniverse/cairn/tests"
 
 	"github.com/stretchr/testify/assert"
 )

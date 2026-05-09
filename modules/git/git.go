@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/hashicorp/go-version"
 )

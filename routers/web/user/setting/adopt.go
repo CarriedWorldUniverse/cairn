@@ -6,12 +6,12 @@ package setting
 import (
 	"path/filepath"
 
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // AdoptOrDeleteRepository adopts or deletes a repository

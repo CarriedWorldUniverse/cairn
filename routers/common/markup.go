@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"strings"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/markup/markdown"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/markdown"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 
 	"mvdan.cc/xurls/v2"
 )

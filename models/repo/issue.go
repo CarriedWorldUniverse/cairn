@@ -6,9 +6,9 @@ package repo
 import (
 	"context"
 
-	"forgejo.org/models/unit"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/models/unit"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 // ___________.__             ___________                     __

@@ -6,8 +6,8 @@ package alpine
 import (
 	"context"
 
-	packages_model "forgejo.org/models/packages"
-	alpine_module "forgejo.org/modules/packages/alpine"
+	packages_model "github.com/CarriedWorldUniverse/cairn/models/packages"
+	alpine_module "github.com/CarriedWorldUniverse/cairn/modules/packages/alpine"
 )
 
 // GetBranches gets all available branches

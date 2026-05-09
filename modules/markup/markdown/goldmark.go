@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/markup/common"
-	markdownutil "forgejo.org/modules/markup/markdown/util"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup/common"
+	markdownutil "github.com/CarriedWorldUniverse/cairn/modules/markup/markdown/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"github.com/yuin/goldmark/ast"
 	east "github.com/yuin/goldmark/extension/ast"

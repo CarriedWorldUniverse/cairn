@@ -7,10 +7,10 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	repo_service "forgejo.org/services/repository"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	repo_service "github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 // UpdateVatar updates repo avatar

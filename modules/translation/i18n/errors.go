@@ -4,7 +4,7 @@
 package i18n
 
 import (
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 var (

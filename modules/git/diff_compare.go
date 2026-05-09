@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // CheckIfDiffDiffers returns if the diff of the newCommitID and

@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"reflect"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/web/routing"
-	"forgejo.org/modules/web/types"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/routing"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/types"
 )
 
 var responseStatusProviders = map[reflect.Type]func(req *http.Request) types.ResponseStatusProvider{}

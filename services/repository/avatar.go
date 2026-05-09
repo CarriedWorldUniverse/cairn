@@ -9,11 +9,11 @@ import (
 	"io"
 	"strconv"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/avatar"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/avatar"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
 )
 
 // UploadAvatar saves custom avatar for repository.

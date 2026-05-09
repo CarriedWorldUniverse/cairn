@@ -6,7 +6,7 @@ package db
 import (
 	"context"
 
-	"forgejo.org/modules/indexer/internal"
+	"github.com/CarriedWorldUniverse/cairn/modules/indexer/internal"
 )
 
 var _ internal.Indexer = &Indexer{}

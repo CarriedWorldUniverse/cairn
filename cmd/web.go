@@ -16,14 +16,14 @@ import (
 
 	_ "net/http/pprof" // Used for debugging if enabled and a web server is running
 
-	"forgejo.org/modules/container"
-	"forgejo.org/modules/graceful"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/process"
-	"forgejo.org/modules/public"
-	"forgejo.org/modules/setting"
-	"forgejo.org/routers"
-	"forgejo.org/routers/install"
+	"github.com/CarriedWorldUniverse/cairn/modules/container"
+	"github.com/CarriedWorldUniverse/cairn/modules/graceful"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/process"
+	"github.com/CarriedWorldUniverse/cairn/modules/public"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/routers"
+	"github.com/CarriedWorldUniverse/cairn/routers/install"
 
 	"github.com/felixge/fgprof"
 	"github.com/urfave/cli/v3"

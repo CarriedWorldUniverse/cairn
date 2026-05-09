@@ -6,13 +6,13 @@ package org
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/label"
-	repo_module "forgejo.org/modules/repository"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/label"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // RetrieveLabels find all the labels of an organization

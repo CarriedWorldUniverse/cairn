@@ -10,9 +10,9 @@ import (
 	"strings"
 	"unicode"
 
-	"forgejo.org/modules/analyze"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/analyze"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
 	"github.com/go-enry/go-enry/v2"
 )

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"xorm.io/builder"
 	"xorm.io/xorm"

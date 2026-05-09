@@ -9,11 +9,11 @@ import (
 	"slices"
 	"testing"
 
-	actions_model "forgejo.org/models/actions"
-	"forgejo.org/models/db"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/test"
-	notify_service "forgejo.org/services/notify"
+	actions_model "github.com/CarriedWorldUniverse/cairn/models/actions"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 
 	"code.forgejo.org/forgejo/runner/v12/act/jobparser"
 	"code.forgejo.org/forgejo/runner/v12/act/model"

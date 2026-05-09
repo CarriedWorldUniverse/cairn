@@ -8,8 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 
 	f3_kind "code.forgejo.org/f3/gof3/v3/kind"
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"

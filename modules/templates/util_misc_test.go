@@ -6,14 +6,14 @@ package templates
 import (
 	"testing"
 
-	activities_model "forgejo.org/models/activities"
-	asymkey_model "forgejo.org/models/asymkey"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/models/unittest"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/repository"
+	activities_model "github.com/CarriedWorldUniverse/cairn/models/activities"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/repository"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

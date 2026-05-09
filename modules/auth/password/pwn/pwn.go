@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 const passwordURL = "https://api.pwnedpasswords.com/range/"

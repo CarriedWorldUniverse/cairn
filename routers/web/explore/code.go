@@ -7,13 +7,13 @@ package explore
 import (
 	"net/http"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/base"
-	code_indexer "forgejo.org/modules/indexer/code"
-	"forgejo.org/modules/setting"
-	"forgejo.org/routers/common"
-	"forgejo.org/services/context"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	code_indexer "github.com/CarriedWorldUniverse/cairn/modules/indexer/code"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

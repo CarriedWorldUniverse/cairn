@@ -10,7 +10,7 @@ import (
 	"io"
 	"testing"
 
-	"forgejo.org/modules/zstd"
+	"github.com/CarriedWorldUniverse/cairn/modules/zstd"
 
 	"github.com/dsnet/compress/bzip2"
 	"github.com/stretchr/testify/assert"

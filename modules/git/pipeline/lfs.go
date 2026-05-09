@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"forgejo.org/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
 )
 
 // LFSResult represents commits found using a provided pointer file hash

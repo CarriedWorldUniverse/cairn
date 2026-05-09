@@ -6,12 +6,12 @@ package convert
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/util"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // ToAPIComment converts a issues_model.Comment to the api.Comment format for API usage

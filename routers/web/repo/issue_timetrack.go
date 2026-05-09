@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/util"
-	"forgejo.org/modules/web"
-	"forgejo.org/services/context"
-	"forgejo.org/services/forms"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
+	"github.com/CarriedWorldUniverse/cairn/services/forms"
 )
 
 // AddTimeManually tracks time manually

@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"slices"
 
-	"forgejo.org/modules/markup"
-	"forgejo.org/modules/setting"
-	giteautil "forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/modules/markup"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	giteautil "github.com/CarriedWorldUniverse/cairn/modules/util"
 
 	"github.com/yuin/goldmark/ast"
 )

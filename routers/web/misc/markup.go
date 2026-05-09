@@ -5,10 +5,10 @@
 package misc
 
 import (
-	api "forgejo.org/modules/structs"
-	"forgejo.org/modules/web"
-	"forgejo.org/routers/common"
-	"forgejo.org/services/context"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/web"
+	"github.com/CarriedWorldUniverse/cairn/routers/common"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 // Markup render markup document to HTML

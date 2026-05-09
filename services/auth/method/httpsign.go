@@ -11,12 +11,12 @@ import (
 	"net/http"
 	"strings"
 
-	asymkey_model "forgejo.org/models/asymkey"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/auth"
+	asymkey_model "github.com/CarriedWorldUniverse/cairn/models/asymkey"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
 
 	"github.com/42wim/httpsig"
 	"golang.org/x/crypto/ssh"

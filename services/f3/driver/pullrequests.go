@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
 
 	f3_tree "code.forgejo.org/f3/gof3/v3/tree/f3"
 	f3_tree_generic "code.forgejo.org/f3/gof3/v3/tree/generic"

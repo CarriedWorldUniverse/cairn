@@ -6,7 +6,7 @@
 package options
 
 import (
-	"forgejo.org/modules/assetfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/assetfs"
 )
 
 func BuiltinAssets() *assetfs.Layer {

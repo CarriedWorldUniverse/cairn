@@ -6,8 +6,8 @@ package queue
 import (
 	"testing"
 
-	"forgejo.org/modules/queue/lqinternal"
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/queue/lqinternal"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 
 	"code.forgejo.org/forgejo/levelqueue"
 	"github.com/stretchr/testify/assert"

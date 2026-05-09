@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"forgejo.org/models/db"
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/models/unittest"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/test"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/models/unittest"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/test"
 
-	_ "forgejo.org/cmd" // for TestPrimaryKeys
+	_ "github.com/CarriedWorldUniverse/cairn/cmd" // for TestPrimaryKeys
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,7 +70,7 @@ func TestPrimaryKeys(t *testing.T) {
 	//   https://github.com/go-gitea/gitea/issues/21086
 	//   https://github.com/go-gitea/gitea/issues/16802
 	// To avoid creating tables without primary key again, this test will check them.
-	// Import "forgejo.org/cmd" to make sure each db.RegisterModel in init functions has been called.
+	// Import "github.com/CarriedWorldUniverse/cairn/cmd" to make sure each db.RegisterModel in init functions has been called.
 
 	beans, err := db.NamesToBean()
 	if err != nil {

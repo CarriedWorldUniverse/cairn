@@ -9,17 +9,17 @@ import (
 	"fmt"
 	"slices"
 
-	"forgejo.org/models/db"
-	git_model "forgejo.org/models/git"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/cache"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/gitrepo"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/log"
-	api "forgejo.org/modules/structs"
-	shared_automerge "forgejo.org/services/shared/automerge"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/cache"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/gitrepo"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	api "github.com/CarriedWorldUniverse/cairn/modules/structs"
+	shared_automerge "github.com/CarriedWorldUniverse/cairn/services/shared/automerge"
 )
 
 func getCacheKey(repoID int64, branchName string) string {

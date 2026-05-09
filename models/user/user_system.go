@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"strings"
 
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
 )
 
 // IsSystem returns true if the user has a fixed

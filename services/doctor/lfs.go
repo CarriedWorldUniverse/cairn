@@ -8,9 +8,9 @@ import (
 	"errors"
 	"time"
 
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/repository"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/repository"
 )
 
 func init() {

@@ -10,7 +10,7 @@ import (
 	"encoding/json" //nolint:depguard
 	"fmt"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 func IterateMessagesContent(localeContent []byte, onMsgid func(string, string) error) error {

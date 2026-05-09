@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"forgejo.org/models/moderation"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/models/moderation"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
 )
 
 // RepositoryData represents a trimmed down repository that is used for preserving

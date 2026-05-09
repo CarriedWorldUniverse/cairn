@@ -6,10 +6,10 @@ package automerge
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/log"
-	notify_service "forgejo.org/services/notify"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 type automergeNotifier struct {

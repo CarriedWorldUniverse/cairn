@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	git_model "forgejo.org/models/git"
-	issues_model "forgejo.org/models/issues"
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
-	repo_module "forgejo.org/modules/repository"
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
 )
 
 // Temporary repos created here use standard branch names to help simplify

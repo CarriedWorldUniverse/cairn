@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"forgejo.org/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 )
 
 var externalTrackerRegex = regexp.MustCompile(`({?)(?:user|repo|index)+?(}?)`)

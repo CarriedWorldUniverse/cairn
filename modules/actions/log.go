@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"forgejo.org/models/dbfs"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/storage"
-	"forgejo.org/modules/zstd"
+	"github.com/CarriedWorldUniverse/cairn/models/dbfs"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/storage"
+	"github.com/CarriedWorldUniverse/cairn/modules/zstd"
 
 	runnerv1 "code.forgejo.org/forgejo/actions-proto/runner/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"

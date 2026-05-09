@@ -6,7 +6,7 @@ package repo
 import (
 	"testing"
 
-	"forgejo.org/modules/validation"
+	"github.com/CarriedWorldUniverse/cairn/modules/validation"
 )
 
 func Test_FollowingRepoValidation(t *testing.T) {

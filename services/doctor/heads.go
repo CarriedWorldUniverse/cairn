@@ -6,9 +6,9 @@ package doctor
 import (
 	"context"
 
-	repo_model "forgejo.org/models/repo"
-	"forgejo.org/modules/git"
-	"forgejo.org/modules/log"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	"github.com/CarriedWorldUniverse/cairn/modules/git"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 func synchronizeRepoHeads(ctx context.Context, logger log.Logger, autofix bool) error {

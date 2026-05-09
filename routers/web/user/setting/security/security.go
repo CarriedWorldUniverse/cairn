@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"sort"
 
-	auth_model "forgejo.org/models/auth"
-	"forgejo.org/models/db"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/base"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/setting"
-	"forgejo.org/services/auth/source/oauth2"
-	"forgejo.org/services/context"
+	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/base"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
+	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
 
 const (

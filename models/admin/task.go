@@ -8,15 +8,15 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"forgejo.org/models/db"
-	repo_model "forgejo.org/models/repo"
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/json"
-	"forgejo.org/modules/keying"
-	"forgejo.org/modules/migration"
-	"forgejo.org/modules/structs"
-	"forgejo.org/modules/timeutil"
-	"forgejo.org/modules/util"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/json"
+	"github.com/CarriedWorldUniverse/cairn/modules/keying"
+	"github.com/CarriedWorldUniverse/cairn/modules/migration"
+	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	"github.com/CarriedWorldUniverse/cairn/modules/timeutil"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 // Task represents a task

@@ -10,15 +10,15 @@ import (
 	"regexp"
 	"strings"
 
-	user_model "forgejo.org/models/user"
-	"forgejo.org/modules/auth/webauthn"
-	"forgejo.org/modules/log"
-	"forgejo.org/modules/optional"
-	"forgejo.org/modules/session"
-	"forgejo.org/modules/setting"
-	"forgejo.org/modules/web/middleware"
-	"forgejo.org/services/auth"
-	user_service "forgejo.org/services/user"
+	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/auth/webauthn"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/optional"
+	"github.com/CarriedWorldUniverse/cairn/modules/session"
+	"github.com/CarriedWorldUniverse/cairn/modules/setting"
+	"github.com/CarriedWorldUniverse/cairn/modules/web/middleware"
+	"github.com/CarriedWorldUniverse/cairn/services/auth"
+	user_service "github.com/CarriedWorldUniverse/cairn/services/user"
 )
 
 // Init should be called exactly once when the application starts to allow plugins

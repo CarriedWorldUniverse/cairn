@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"path"
 
-	"forgejo.org/modules/log"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
 )
 
 // API settings

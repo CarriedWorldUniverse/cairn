@@ -6,8 +6,8 @@ package payload
 import (
 	"context"
 
-	issues_model "forgejo.org/models/issues"
-	"forgejo.org/modules/util"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	"github.com/CarriedWorldUniverse/cairn/modules/util"
 )
 
 const replyPayloadVersion1 byte = 1
