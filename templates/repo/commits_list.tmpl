@@ -25,6 +25,9 @@
 									{{ctx.AvatarUtils.AvatarByEmail .Author.Email .Author.Name 28 "tw-mr-2"}}
 									<span class="author-wrapper">{{$userName}}</span>
 								{{end}}
+								{{if CairnIsAgentAuthor .Author.Email}}
+									<span class="cairn-agent-badge tw-ml-2" title="Cairn agent">{{CairnAgentAuthorBadge .Author.Email}}</span>
+								{{end}}
 							</div>
 						</td>
 						<td class="sha">

@@ -24,6 +24,8 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/templates/eval"
 	"github.com/CarriedWorldUniverse/cairn/modules/util"
 	"github.com/CarriedWorldUniverse/cairn/services/gitdiff"
+
+	cairnweb "github.com/CarriedWorldUniverse/cairn/routers/web/cairn"
 )
 
 // NewFuncMap returns functions for injecting to templates
@@ -221,6 +223,12 @@ func NewFuncMap() template.FuncMap {
 
 		"FilenameIsImage": FilenameIsImage,
 		"TabSizeClass":    TabSizeClass,
+
+		// -----------------------------------------------------------------
+		// Cairn — agent author rendering. See routers/web/cairn/agent_author.go.
+		"CairnIsAgentAuthor":    cairnweb.IsAgentAuthor,
+		"CairnAgentAuthorSlug":  cairnweb.AgentAuthorSlug,
+		"CairnAgentAuthorBadge": cairnweb.AgentAuthorBadge,
 	}
 }
 
