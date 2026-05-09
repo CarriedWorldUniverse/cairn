@@ -41,6 +41,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
 	"github.com/CarriedWorldUniverse/cairn/services/automerge"
 	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
+	cairnreviewpolicy "github.com/CarriedWorldUniverse/cairn/services/cairn/reviewpolicy"
 	cairnsummarizer "github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 	"github.com/CarriedWorldUniverse/cairn/services/cron"
 	federation_service "github.com/CarriedWorldUniverse/cairn/services/federation"
@@ -254,6 +255,13 @@ func initCairn(ctx context.Context) error {
 		if err := cairnsummarizer.Init(masterEng, setting.Cairn.HMACKeyPath); err != nil {
 			log.Error("cairn summarizer init: %v", err)
 		}
+	}
+	// Cairn review-policy init: registers the approval-count filter hook so
+	// agent approvals + owner-cluster self-approvals are dropped before the
+	// gate is evaluated. When ReviewPolicyEnabled is false the hook stays
+	// unregistered and approval counting is identical to vanilla Forgejo.
+	if setting.Cairn.ReviewPolicyEnabled {
+		cairnreviewpolicy.Init(masterEng)
 	}
 	return nil
 }

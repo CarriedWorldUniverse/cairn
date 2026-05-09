@@ -898,7 +898,33 @@ func HasEnoughApprovals(ctx context.Context, protectBranch *git_model.ProtectedB
 }
 
 // GetGrantedApprovalsCount returns the number of granted approvals for pr. A granted approval must be authored by a user in an approval whitelist.
+//
+// CAIRN: when the review-policy filter is registered (services/cairn/reviewpolicy
+// at init), the underlying reviews are fetched, run through the filter, and
+// then counted. Filter drops agent approvals + owner-cluster self-approvals
+// per the per-org review policy. When no filter is registered (Cairn disabled
+// or not initialised), this falls through to a plain COUNT(*) — identical to
+// vanilla Forgejo behaviour.
 func GetGrantedApprovalsCount(ctx context.Context, protectBranch *git_model.ProtectedBranch, pr *PullRequest) int64 {
+	// CAIRN: fast-path the unfiltered case so we don't pay for fetching
+	// review rows when no filter is registered.
+	if cairnApprovalFilter.Load() == nil {
+		sess := db.GetEngine(ctx).Where("issue_id = ?", pr.IssueID).
+			And("type = ?", ReviewTypeApprove).
+			And("official = ?", true).
+			And("dismissed = ?", false)
+		if protectBranch.IgnoreStaleApprovals {
+			sess = sess.And("stale = ?", false)
+		}
+		approvals, err := sess.Count(new(Review))
+		if err != nil {
+			log.Error("GetGrantedApprovalsCount: %v", err)
+			return 0
+		}
+		return approvals
+	}
+
+	// CAIRN: filter path — fetch reviewer IDs, drop filtered, return count.
 	sess := db.GetEngine(ctx).Where("issue_id = ?", pr.IssueID).
 		And("type = ?", ReviewTypeApprove).
 		And("official = ?", true).
@@ -906,13 +932,35 @@ func GetGrantedApprovalsCount(ctx context.Context, protectBranch *git_model.Prot
 	if protectBranch.IgnoreStaleApprovals {
 		sess = sess.And("stale = ?", false)
 	}
-	approvals, err := sess.Count(new(Review))
-	if err != nil {
+	var reviews []*Review
+	if err := sess.Cols("id", "reviewer_id").Find(&reviews); err != nil {
 		log.Error("GetGrantedApprovalsCount: %v", err)
 		return 0
 	}
+	if len(reviews) == 0 {
+		return 0
+	}
 
-	return approvals
+	ids := make([]int64, 0, len(reviews))
+	for _, r := range reviews {
+		ids = append(ids, r.ReviewerID)
+	}
+
+	// Resolve PR-author-cluster owner. Need Issue loaded for PosterID and
+	// BaseRepo loaded for OwnerID.
+	if err := pr.LoadIssue(ctx); err != nil {
+		log.Error("GetGrantedApprovalsCount: LoadIssue: %v", err)
+		return 0
+	}
+	if err := pr.LoadBaseRepo(ctx); err != nil {
+		log.Error("GetGrantedApprovalsCount: LoadBaseRepo: %v", err)
+		return 0
+	}
+	prAuthorClusterOwnerID := cairnResolvePRAuthorCluster(ctx, pr.Issue.PosterID)
+	repoOwnerID := pr.BaseRepo.OwnerID
+
+	filtered := cairnFilterReviewerIDs(ctx, repoOwnerID, prAuthorClusterOwnerID, ids)
+	return int64(len(filtered))
 }
 
 // MergeBlockedByRejectedReview returns true if merge is blocked by rejected reviews

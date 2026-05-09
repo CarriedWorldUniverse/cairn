@@ -59,3 +59,47 @@ func (s *Service) FilterApprovers(ctx context.Context, ownerID, prAuthorOwnerID 
 	}
 	return out
 }
+
+// FilterApproverIDs is the []int64 companion to FilterApprovers, used by
+// the approval-count integration in models/issues. Same semantics — drops
+// the PR-author-cluster owner and any agent user when RequireHumanOnly is
+// in effect for ownerID. Avoids loading user_model.User rows in the count
+// path; the count path only needs IDs.
+func (s *Service) FilterApproverIDs(ctx context.Context, ownerID, prAuthorOwnerID int64, ids []int64) []int64 {
+	if !s.RequireHumanOnly(ctx, ownerID) {
+		return ids
+	}
+	if s.agents == nil {
+		out := make([]int64, 0, len(ids))
+		for _, id := range ids {
+			if id == prAuthorOwnerID {
+				continue
+			}
+			out = append(out, id)
+		}
+		return out
+	}
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id == prAuthorOwnerID {
+			continue
+		}
+		isAgent, _ := s.agents.IsAgentUser(ctx, id)
+		if isAgent {
+			continue
+		}
+		out = append(out, id)
+	}
+	return out
+}
+
+// IsAgentUser exposes the underlying AgentLookup result. Used by the
+// PR-page badge helper (Plan 6 Task 6) and by the PR-author-cluster
+// resolver registered at init. Returns (false, 0) when no lookup is
+// configured.
+func (s *Service) IsAgentUser(ctx context.Context, userID int64) (bool, int64) {
+	if s.agents == nil {
+		return false, 0
+	}
+	return s.agents.IsAgentUser(ctx, userID)
+}

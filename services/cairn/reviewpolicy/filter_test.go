@@ -75,6 +75,75 @@ func TestFilterApprovers_PolicyDisabled(t *testing.T) {
 	}
 }
 
+func TestFilterApproverIDs_DropsAgentsAndOwnerCluster(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	lookup := &stubAgentLookup{agents: map[int64]int64{
+		100: 1, // agent owned by user 1
+	}}
+	svc := NewService(eng, lookup)
+
+	// PR authored by user-1's agent (PR-author-cluster owner = 1).
+	ids := []int64{
+		1,   // owner-cluster self-approver — drop
+		100, // agent — drop
+		5,   // human — keep
+	}
+	out := svc.FilterApproverIDs(context.Background(), 99, 1, ids)
+	if len(out) != 1 || out[0] != 5 {
+		t.Errorf("expected [5], got %v", out)
+	}
+}
+
+func TestFilterApproverIDs_PolicyDisabledPassesThrough(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	if _, err := eng.Insert(&cairnmodels.ReviewPolicy{OwnerID: 99, RequireHumanOnly: false}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	lookup := &stubAgentLookup{agents: map[int64]int64{100: 1}}
+	svc := NewService(eng, lookup)
+
+	ids := []int64{1, 100, 5}
+	out := svc.FilterApproverIDs(context.Background(), 99, 1, ids)
+	if len(out) != 3 {
+		t.Errorf("expected pass-through (3 IDs), got %v", out)
+	}
+}
+
+func TestFilterApproverIDs_NilLookupFiltersOnlyOwner(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	svc := NewService(eng, nil)
+
+	ids := []int64{1, 100, 5}
+	out := svc.FilterApproverIDs(context.Background(), 99, 1, ids)
+	if len(out) != 2 {
+		t.Fatalf("expected 2, got %v", out)
+	}
+	for _, id := range out {
+		if id == 1 {
+			t.Errorf("owner-cluster self-approver should have been dropped")
+		}
+	}
+}
+
+func TestService_IsAgentUser(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	lookup := &stubAgentLookup{agents: map[int64]int64{100: 7}}
+	svc := NewService(eng, lookup)
+
+	if isAgent, owner := svc.IsAgentUser(context.Background(), 100); !isAgent || owner != 7 {
+		t.Errorf("expected (true, 7); got (%v, %d)", isAgent, owner)
+	}
+	if isAgent, owner := svc.IsAgentUser(context.Background(), 5); isAgent || owner != 0 {
+		t.Errorf("expected (false, 0); got (%v, %d)", isAgent, owner)
+	}
+
+	// Service with nil lookup → always (false, 0).
+	svcNil := NewService(eng, nil)
+	if isAgent, owner := svcNil.IsAgentUser(context.Background(), 100); isAgent || owner != 0 {
+		t.Errorf("nil lookup: expected (false, 0); got (%v, %d)", isAgent, owner)
+	}
+}
+
 func TestFilterApprovers_NilLookupFiltersOnlyOwner(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	svc := NewService(eng, nil)
