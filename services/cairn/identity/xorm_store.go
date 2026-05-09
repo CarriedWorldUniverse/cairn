@@ -47,7 +47,7 @@ func isUniqueViolation(err error) bool {
 	msg := err.Error()
 	// SQLite: "UNIQUE constraint failed: ..." (mattn) or
 	//        "constraint failed: UNIQUE ..." (modernc).
-	// Postgres: pq driver wraps PG SQLSTATE 23505 in messages
+	// Postgres: pgx driver wraps PG SQLSTATE 23505 in messages
 	//           containing "duplicate key value".
 	switch {
 	case strings.Contains(msg, "UNIQUE constraint failed"):

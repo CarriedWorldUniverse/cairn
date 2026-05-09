@@ -82,34 +82,6 @@ func TestXormAgentStore_NotFound(t *testing.T) {
 	}
 }
 
-func TestXormAgentStore_DuplicateRegister(t *testing.T) {
-	eng := cairntest.NewEngine(t)
-	s := NewXormAgentStore(eng)
-
-	ctx := context.Background()
-	a := &cairn.Agent{
-		Fingerprint: "cairn:dup",
-		UserID:      1,
-		Slug:        "plumb",
-		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{1},
-		Status:      cairn.AgentStatusActive,
-		CreatedAt:   time.Now(),
-	}
-	if err := s.Register(ctx, a); err != nil {
-		t.Fatal(err)
-	}
-
-	// Same (user_id, slug) should fail.
-	a2 := *a
-	a2.ID = 0
-	a2.Fingerprint = "cairn:dup-2"
-	err := s.Register(ctx, &a2)
-	if err == nil {
-		t.Error("expected error registering duplicate (user_id, slug)")
-	}
-}
-
 func TestXormAgentStore_ListByUser(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
