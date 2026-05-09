@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/ed25519"
 	"errors"
+	"fmt"
+	"regexp"
 	"time"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
@@ -16,6 +18,33 @@ var ErrUserNotFound = errors.New("cairn identity: user not found")
 // ErrForbidden is returned when an authenticated caller attempts an
 // action that requires being the agent's owner (approve, block).
 var ErrForbidden = errors.New("cairn identity: forbidden")
+
+// ErrInvalidInput is returned when a Register request fails grammar-
+// level validation (slug or domain shape). Wrapped errors include the
+// specific rule that was violated; the message is safe to surface to
+// clients (it states the rule, not user-supplied data).
+var ErrInvalidInput = errors.New("cairn identity: invalid input")
+
+const (
+	maxSlugLen   = 64
+	maxDomainLen = 255
+)
+
+// slugPattern: lowercase alphanumeric + hyphen, must start with
+// alphanumeric. Matches the agentEmailPattern grammar from Plan 1.
+var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
+// validateRegisterRequest enforces slug grammar and domain length.
+// Returns nil on success, or an error wrapping ErrInvalidInput.
+func validateRegisterRequest(req RegisterRequest) error {
+	if req.Slug == "" || len(req.Slug) > maxSlugLen || !slugPattern.MatchString(req.Slug) {
+		return fmt.Errorf("%w: slug must match [a-z0-9][a-z0-9-]* and be 1-%d chars", ErrInvalidInput, maxSlugLen)
+	}
+	if req.Domain == "" || len(req.Domain) > maxDomainLen {
+		return fmt.Errorf("%w: domain must be 1-%d chars", ErrInvalidInput, maxDomainLen)
+	}
+	return nil
+}
 
 // UserResolver looks up Forgejo user records by username or id.
 // The API layer implements this against models/user; tests provide
@@ -73,6 +102,9 @@ func NewAgentService(hmacKey []byte, store AgentStore, blocklist AgentBlocklistS
 // Returns ErrUserNotFound if proposed_owner doesn't exist; ErrAgentExists
 // for duplicate (user_id, slug) or duplicate fingerprint.
 func (s *AgentService) Register(ctx context.Context, req RegisterRequest, caller *Caller) (*cairn.Agent, error) {
+	if err := validateRegisterRequest(req); err != nil {
+		return nil, err
+	}
 	ownerID, err := s.users.UserIDByUsername(ctx, req.ProposedOwner)
 	if err != nil {
 		return nil, err

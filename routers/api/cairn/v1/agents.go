@@ -93,6 +93,9 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, cairnidentity.ErrAgentExists):
 		writeError(w, http.StatusConflict, "agent_exists", "agent with this slug or fingerprint already exists")
 		return
+	case errors.Is(err, cairnidentity.ErrInvalidInput):
+		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		return
 	default:
 		log.Printf("cairn api v1: PostAgents: %v", err)
 		writeError(w, http.StatusInternalServerError, "internal_error", "")

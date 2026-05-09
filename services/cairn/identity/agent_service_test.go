@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"errors"
+	"strings"
 	"testing"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
@@ -279,6 +280,56 @@ func TestAgentService_Block_RejectsNonOwner(t *testing.T) {
 	}
 	if !errors.Is(err, ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
+	}
+}
+
+func TestAgentService_Register_RejectsInvalidSlug(t *testing.T) {
+	svc, _ := newTestService(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	cases := []struct{ name, slug string }{
+		{"empty", ""},
+		{"uppercase", "Plumb"},
+		{"leading-hyphen", "-plumb"},
+		{"underscore", "plum_b"},
+		{"space", "plu mb"},
+		{"too-long", strings.Repeat("a", 65)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.Register(context.Background(), RegisterRequest{
+				ProposedOwner: "alice",
+				Slug:          tc.slug,
+				Domain:        "darksoft.co.nz",
+				PublicKey:     pub,
+			}, &Caller{UserID: 1, Username: "alice"})
+			if !errors.Is(err, ErrInvalidInput) {
+				t.Errorf("err = %v, want ErrInvalidInput", err)
+			}
+		})
+	}
+}
+
+func TestAgentService_Register_RejectsInvalidDomain(t *testing.T) {
+	svc, _ := newTestService(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	cases := []struct{ name, domain string }{
+		{"empty", ""},
+		{"too-long", strings.Repeat("a", 256)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.Register(context.Background(), RegisterRequest{
+				ProposedOwner: "alice",
+				Slug:          "plumb",
+				Domain:        tc.domain,
+				PublicKey:     pub,
+			}, &Caller{UserID: 1, Username: "alice"})
+			if !errors.Is(err, ErrInvalidInput) {
+				t.Errorf("err = %v, want ErrInvalidInput", err)
+			}
+		})
 	}
 }
 
