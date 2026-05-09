@@ -16,6 +16,12 @@ import (
 	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
 )
 
+// maxRequestBodyBytes bounds the size of API request bodies. Protects
+// the anonymous POST /agents endpoint from DoS via huge payload.
+// Cairn's largest legitimate request is registration: ~200 bytes
+// (proposed_owner + slug + domain + 64-char hex pubkey).
+const maxRequestBodyBytes = 4096
+
 // Handler is the HTTP handler set for /api/cairn/v1.
 type Handler struct {
 	svc *cairnidentity.AgentService
@@ -47,6 +53,8 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "")
 		return
 	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 
 	var in RegisterRequestJSON
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -91,7 +99,7 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner)
+	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner, false)
 }
 
 // writeError writes a JSON error response.
@@ -102,7 +110,7 @@ func writeError(w http.ResponseWriter, code int, errorCode, message string) {
 }
 
 // writeAgent writes an agent as JSON with the given HTTP status code.
-func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName string) {
+func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName string, blocked bool) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	out := AgentJSON{
@@ -112,6 +120,7 @@ func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName strin
 		Domain:       a.Domain,
 		PublicKeyHex: hex.EncodeToString(a.PublicKey),
 		Status:       string(a.Status),
+		Blocked:      blocked,
 		CreatedAt:    a.CreatedAt.UTC().Format(time.RFC3339),
 	}
 	if a.ActivatedAt != nil {
@@ -172,8 +181,9 @@ func (h *Handler) PostApprove(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "")
 		return
 	}
+	blocked, _ := h.svc.IsBlocked(r.Context(), fp)
 	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
-	writeAgent(w, http.StatusOK, a, ownerName)
+	writeAgent(w, http.StatusOK, a, ownerName, blocked)
 }
 
 // PostBlock handles POST /api/cairn/v1/agents/:fingerprint/block.
@@ -192,6 +202,7 @@ func (h *Handler) PostBlock(w http.ResponseWriter, r *http.Request) {
 
 	var in BlockRequestJSON
 	if r.Body != nil && r.ContentLength != 0 {
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid_json", "could not decode JSON body")
 			return
@@ -201,9 +212,14 @@ func (h *Handler) PostBlock(w http.ResponseWriter, r *http.Request) {
 	err := h.svc.Block(r.Context(), fp, in.Reason, caller)
 	switch {
 	case err == nil:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "blocked"})
+		a, gerr := h.svc.GetByFingerprint(r.Context(), fp)
+		if gerr != nil {
+			log.Printf("cairn api v1: PostBlock readback: %v", gerr)
+			writeError(w, http.StatusInternalServerError, "internal_error", "")
+			return
+		}
+		ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
+		writeAgent(w, http.StatusOK, a, ownerName, true)
 		return
 	case errors.Is(err, cairnidentity.ErrAgentNotFound):
 		writeError(w, http.StatusNotFound, "agent_not_found", "")
@@ -236,8 +252,9 @@ func (h *Handler) GetIdentity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	blocked, _ := h.svc.IsBlocked(r.Context(), fp)
 	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
-	writeAgent(w, http.StatusOK, a, ownerName)
+	writeAgent(w, http.StatusOK, a, ownerName, blocked)
 }
 
 // GetAgents handles GET /api/cairn/v1/agents — list the authed user's
@@ -260,6 +277,7 @@ func (h *Handler) GetAgents(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]AgentJSON, 0, len(agents))
 	for _, a := range agents {
+		blocked, _ := h.svc.IsBlocked(r.Context(), a.Fingerprint)
 		ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
 		j := AgentJSON{
 			Fingerprint:  a.Fingerprint,
@@ -268,6 +286,7 @@ func (h *Handler) GetAgents(w http.ResponseWriter, r *http.Request) {
 			Domain:       a.Domain,
 			PublicKeyHex: hex.EncodeToString(a.PublicKey),
 			Status:       string(a.Status),
+			Blocked:      blocked,
 			CreatedAt:    a.CreatedAt.UTC().Format(time.RFC3339),
 		}
 		if a.ActivatedAt != nil {

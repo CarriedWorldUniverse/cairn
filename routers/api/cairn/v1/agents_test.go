@@ -572,3 +572,47 @@ func TestGetAgents_RequiresAuth(t *testing.T) {
 		t.Errorf("status = %d, want 401", listW.Code)
 	}
 }
+
+func TestPostBlock_BlockedFieldVisibleInIdentity(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Auto-approved registration.
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(WithCaller(req.Context(), &cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var a AgentJSON
+	if err := json.Unmarshal(w.Body.Bytes(), &a); err != nil {
+		t.Fatalf("decode register response: %v; body=%s", err, w.Body.String())
+	}
+
+	// Verify the registered agent is not blocked.
+	if a.Blocked {
+		t.Error("freshly registered agent reported blocked")
+	}
+
+	// Block via the service (simulating a PostBlock call).
+	if err := h.svc.Block(context.Background(), a.Fingerprint, "compromised", &cairnidentity.Caller{UserID: 1, Username: "alice"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// GET /identity should now show blocked=true.
+	idReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	idReq = WithFingerprintParam(idReq, a.Fingerprint)
+	idW := httptest.NewRecorder()
+	h.GetIdentity(idW, idReq)
+
+	var got AgentJSON
+	if err := json.Unmarshal(idW.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode identity response: %v; body=%s", err, idW.Body.String())
+	}
+	if !got.Blocked {
+		t.Error("blocked agent reported not blocked in GetIdentity response")
+	}
+}

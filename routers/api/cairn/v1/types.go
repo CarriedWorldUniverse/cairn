@@ -20,6 +20,7 @@ type AgentJSON struct {
 	Domain       string `json:"domain"`
 	PublicKeyHex string `json:"public_key"`
 	Status       string `json:"status"`
+	Blocked      bool   `json:"blocked"`
 	CreatedAt    string `json:"created_at"`
 	ActivatedAt  string `json:"activated_at,omitempty"`
 }
