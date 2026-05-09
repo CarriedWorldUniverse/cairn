@@ -31,7 +31,14 @@ func V500CreateAgentTables(x *xorm.Engine) error {
 		Reason    string    `xorm:"TEXT"`
 	}
 
-	if err := x.Sync2(new(Agent), new(AgentBlocklist)); err != nil {
+	// xorm's default mapper would name the tables after the local struct
+	// names (agent, agent_blocklist). We need cairn_agent / cairn_agent_-
+	// blocklist to match the runtime models, so pass explicit table names
+	// via Table().
+	if err := x.Table("cairn_agent").Sync2(new(Agent)); err != nil {
+		return err
+	}
+	if err := x.Table("cairn_agent_blocklist").Sync2(new(AgentBlocklist)); err != nil {
 		return err
 	}
 
