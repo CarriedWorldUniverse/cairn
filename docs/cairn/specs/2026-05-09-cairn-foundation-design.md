@@ -345,6 +345,31 @@ For each new commit:
 
 Each store call uses a short-lived session per the connection discipline.
 
+**Tag pushes** are out of scope for MVP signature enforcement.
+The pre-receive hook gates only `IsBranch()` ref updates.
+Annotated tags pointing at unsigned commits are accepted; the tag
+ref itself is not signed by the agent. This is a deliberate
+narrowing for MVP — agent commits flow primarily through branch
+PRs, and tag-signing has a different threat model (release-signing
+rather than per-commit attribution).
+
+Post-MVP, if tag-signing becomes a workflow requirement, the
+gate at `routers/private/hook_pre_receive.go` should extend to
+`refFullName.IsBranch() || refFullName.IsTag()`, and `BuildCommitList`
+already produces the right SHA range via `git rev-list oldSHA..newSHA`
+for the tagged commit chain.
+
+**Trailer presence is optional but consistency is enforced.**
+A commit with no Cairn trailers (Agent-Id / Agent-Owner / Agent-Domain)
+is accepted if its signature is valid — the cryptographic gate is
+the source of truth. A commit with present-but-mismatched Cairn
+trailers is rejected. This means: if you write the trailers, write
+them honestly; if you don't write them, the signature alone speaks
+for the commit.
+
+Future tightening: a `setting.Cairn.RequireTrailers` flag could make
+all three trailers mandatory. Currently no such flag exists.
+
 ### Auth model — git push vs. commit signing
 
 Two separate concerns, often confused:

@@ -33,26 +33,39 @@ type CommitToVerify struct {
 // If enforce is false, this is a no-op (returns nil). Used during
 // migration window when the [cairn] enforce_signatures flag is off.
 //
+// rejectOrphanAgents controls how unregistered agent-format authors
+// are handled: true (default) rejects with ErrOrphanAgent; false lets
+// them pass (treated as if non-agent for verification purposes), per
+// the [cairn] reject_orphan_agents setting.
+//
 // Returns the first commit-level failure with a wrapped rejection
-// reason; vanilla (non-agent) commits are skipped.
+// reason; vanilla (non-agent) commits are skipped. The loop honours
+// ctx cancellation between commits so a slow push of many commits
+// doesn't outrun the hook timeout.
 func VerifyAgentCommits(
 	ctx context.Context,
 	commits []CommitToVerify,
 	svc *cairnidentity.AgentService,
 	enforce bool,
+	rejectOrphanAgents bool,
 ) error {
 	if !enforce {
 		return nil
 	}
 	for _, c := range commits {
-		if err := verifyOne(ctx, c, svc); err != nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		if err := verifyOne(ctx, c, svc, rejectOrphanAgents); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentService) error {
+func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentService, rejectOrphanAgents bool) error {
 	slug, domain, isAgent := cairnidentity.ParseAgentEmail(c.AuthorEmail)
 	if !isAgent {
 		// Non-agent commit — vanilla Forgejo handles it; skip.
@@ -62,6 +75,10 @@ func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentSe
 	agent, err := svc.GetByEmail(ctx, slug, domain)
 	if err != nil {
 		if errors.Is(err, cairnidentity.ErrAgentNotFound) {
+			if !rejectOrphanAgents {
+				// Setting allows orphans; treat as non-agent and skip.
+				return nil
+			}
 			return fmt.Errorf("%w: commit %s author %s (slug=%s domain=%s)",
 				ErrOrphanAgent, c.SHA, c.AuthorEmail, slug, domain)
 		}

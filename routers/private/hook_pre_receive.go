@@ -640,7 +640,7 @@ func runCairnVerify(ctx *preReceiveContext, oldCommitID, newCommitID string) err
 		return err
 	}
 
-	if err := cairnhook.VerifyAgentCommits(ctx, commits, svc, true); err != nil {
+	if err := cairnhook.VerifyAgentCommits(ctx, commits, svc, true, setting.Cairn.RejectOrphanAgents); err != nil {
 		log.Warn("cairn: rejected push to %-v: %v", ctx.Repo.Repository, err)
 		ctx.JSON(http.StatusUnprocessableEntity, private.Response{
 			UserMsg: err.Error(),

@@ -46,7 +46,7 @@ func TestAgentAuthorBadge(t *testing.T) {
 		email string
 		want  string
 	}{
-		{"nexus-plumb@darksoft.co.nz", "🤖 plumb"},
+		{"nexus-plumb@darksoft.co.nz", "agent:plumb"},
 		{"nexus@darksoft.co.nz", ""},
 	}
 	for _, tc := range cases {

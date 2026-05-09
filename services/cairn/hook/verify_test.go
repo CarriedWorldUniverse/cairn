@@ -79,7 +79,7 @@ func TestVerifyAgentCommits_AllPass(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	if err := VerifyAgentCommits(ctx, commits, svc, true); err != nil {
+	if err := VerifyAgentCommits(ctx, commits, svc, true, true); err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}
 }
@@ -95,9 +95,32 @@ func TestVerifyAgentCommits_EnforceFalseSkips(t *testing.T) {
 		Raw:         []byte("no signature here either"),
 	}}
 
-	if err := VerifyAgentCommits(ctx, commits, svc, false); err != nil {
+	if err := VerifyAgentCommits(ctx, commits, svc, false, true); err != nil {
 		t.Errorf("expected nil with enforce=false, got %v", err)
 	}
+}
+
+func TestVerifyAgentCommits_OrphanAgentAllowedWhenFlagOff(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestSvc(t)
+
+	// Don't register the agent; signed commit by orphan.
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	signer, _ := ssh.NewSignerFromKey(priv)
+	body := "Test commit\n"
+	commit := buildSignedCommit(t, body, signer)
+	commits := []CommitToVerify{
+		{
+			SHA:         "abc123",
+			AuthorEmail: "nexus-ghost@darksoft.co.nz",
+			Message:     body,
+			Raw:         commit,
+		},
+	}
+	if err := VerifyAgentCommits(ctx, commits, svc, true /*enforce*/, false /*rejectOrphan*/); err != nil {
+		t.Errorf("expected nil with rejectOrphanAgents=false, got %v", err)
+	}
+	_ = pub
 }
 
 func TestVerifyAgentCommits_NonAgentEmailSkipped(t *testing.T) {
@@ -111,7 +134,7 @@ func TestVerifyAgentCommits_NonAgentEmailSkipped(t *testing.T) {
 		Raw:         []byte("doesn't matter"),
 	}}
 
-	if err := VerifyAgentCommits(ctx, commits, svc, true); err != nil {
+	if err := VerifyAgentCommits(ctx, commits, svc, true, true); err != nil {
 		t.Errorf("expected nil for non-agent email, got %v", err)
 	}
 }
@@ -127,7 +150,7 @@ func TestVerifyAgentCommits_OrphanAgent(t *testing.T) {
 		Raw:         []byte("anything"),
 	}}
 
-	err := VerifyAgentCommits(ctx, commits, svc, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrOrphanAgent) {
 		t.Errorf("err = %v, want ErrOrphanAgent", err)
 	}
@@ -159,7 +182,7 @@ func TestVerifyAgentCommits_PendingAgent(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	err = VerifyAgentCommits(ctx, commits, svc, true)
+	err = VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrAgentNotActive) {
 		t.Errorf("err = %v, want ErrAgentNotActive", err)
 	}
@@ -190,7 +213,7 @@ func TestVerifyAgentCommits_BlockedAgent(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	err = VerifyAgentCommits(ctx, commits, svc, true)
+	err = VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrAgentBlocked) {
 		t.Errorf("err = %v, want ErrAgentBlocked", err)
 	}
@@ -210,7 +233,7 @@ func TestVerifyAgentCommits_MissingSignature(t *testing.T) {
 		Raw:         unsigned,
 	}}
 
-	err := VerifyAgentCommits(ctx, commits, svc, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrSignatureMissing) {
 		t.Errorf("err = %v, want ErrSignatureMissing", err)
 	}
@@ -242,7 +265,7 @@ func TestVerifyAgentCommits_TamperedSignature(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	err := VerifyAgentCommits(ctx, commits, svc, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrInvalidSignature) {
 		t.Errorf("err = %v, want ErrInvalidSignature", err)
 	}
@@ -264,7 +287,7 @@ func TestVerifyAgentCommits_TrailerMismatch(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	err := VerifyAgentCommits(ctx, commits, svc, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, cairnidentity.ErrTrailerMismatch) {
 		t.Errorf("err = %v, want ErrTrailerMismatch", err)
 	}
@@ -299,7 +322,7 @@ func TestVerifyAgentCommits_StopsAtFirstFailure(t *testing.T) {
 		},
 	}
 
-	err := VerifyAgentCommits(ctx, commits, svc, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrOrphanAgent) {
 		t.Errorf("err = %v, want ErrOrphanAgent (from second commit)", err)
 	}

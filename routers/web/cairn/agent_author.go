@@ -25,14 +25,16 @@ func AgentAuthorSlug(email string) string {
 }
 
 // AgentAuthorBadge returns a short label suitable for inline display
-// alongside the author email — e.g. "🤖 plumb" — or empty string if
-// the email isn't agent-format. Templates SHOULD escape this on
+// alongside the author email — e.g. "agent:plumb" — or empty string
+// if the email isn't agent-format. Templates SHOULD escape this on
 // insertion (the slug grammar is already restricted to safe chars
-// but defensive practice).
+// but defensive practice). The template wraps the badge in a
+// `cairn-agent-badge` span so future CSS can style it visually
+// without committing to a specific glyph here.
 func AgentAuthorBadge(email string) string {
 	slug, _, ok := cairnidentity.ParseAgentEmail(email)
 	if !ok {
 		return ""
 	}
-	return "🤖 " + slug
+	return "agent:" + slug
 }
