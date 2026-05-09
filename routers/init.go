@@ -41,6 +41,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
 	"github.com/CarriedWorldUniverse/cairn/services/automerge"
 	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
+	cairnsummarizer "github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 	"github.com/CarriedWorldUniverse/cairn/services/cron"
 	federation_service "github.com/CarriedWorldUniverse/cairn/services/federation"
 	feed_service "github.com/CarriedWorldUniverse/cairn/services/feed"
@@ -238,13 +239,23 @@ func initCairn(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return cairnv1.Init(
+	if err := cairnv1.Init(
 		ctx,
 		setting.Cairn.HMACKeyPath,
 		cairnidentity.NewXormAgentStore(masterEng),
 		cairnidentity.NewXormBlocklistStore(masterEng),
 		cairnv1.NewForgejoUserResolver(),
-	)
+	); err != nil {
+		return err
+	}
+	// Cairn summarizer init: failure here is logged, not propagated, so
+	// the rest of Cairn keeps working if the summarizer fails to start.
+	if setting.Cairn.SummarizerEnabled {
+		if err := cairnsummarizer.Init(masterEng, setting.Cairn.HMACKeyPath); err != nil {
+			log.Error("cairn summarizer init: %v", err)
+		}
+	}
+	return nil
 }
 
 // cairnRoutes builds the /api/cairn/v1 sub-router. Mirrors the shape
