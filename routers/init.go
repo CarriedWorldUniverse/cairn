@@ -280,5 +280,23 @@ func cairnRoutes() *web.Route {
 	m := web.NewRoute()
 	m.Use(api_shared.Middlewares()...)
 	cairnv1.MountRoutes(cairnv1.NewForgejoRouteGroup(m))
+
+	// Summarizer endpoints (Plan 5 Task 6). These use Forgejo's
+	// *context.APIContext directly rather than the http.HandlerFunc
+	// adapter MountRoutes uses, because they need ctx.Doer + the
+	// shared API helpers (ctx.Error / ctx.JSON / ctx.Params) to
+	// match the surrounding apiv1 conventions.
+	m.Group("/orgs/{owner}", func() {
+		m.Get("/summarizer", cairnv1.GetSummarizerConfig)
+		m.Put("/summarizer", cairnv1.PutSummarizerConfig)
+	})
+	m.Group("/repos/{owner}/{repo}", func() {
+		m.Get("/summarizer", cairnv1.GetRepoConsent)
+		m.Put("/summarizer", cairnv1.PutRepoConsent)
+		m.Group("/pulls/{index}/summary", func() {
+			m.Get("", cairnv1.GetSummary)
+			m.Post("/regenerate", cairnv1.PostRegenerate)
+		})
+	})
 	return m
 }
