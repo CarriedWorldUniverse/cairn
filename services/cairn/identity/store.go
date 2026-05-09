@@ -25,3 +25,11 @@ type AgentStore interface {
 	ListByUser(ctx context.Context, userID int64, status cairn.AgentStatus) ([]*cairn.Agent, error)
 	Approve(ctx context.Context, fingerprint string) error
 }
+
+// AgentBlocklistStore is the backend-agnostic data access for the
+// agent blocklist. Same connection-per-operation discipline.
+type AgentBlocklistStore interface {
+	Block(ctx context.Context, agentID int64, reason string) error
+	IsBlocked(ctx context.Context, agentID int64) (bool, error)
+	List(ctx context.Context) ([]*cairn.AgentBlocklist, error)
+}
