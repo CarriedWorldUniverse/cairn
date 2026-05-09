@@ -22,6 +22,7 @@ import (
 	repo_module "github.com/CarriedWorldUniverse/cairn/modules/repository"
 	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 	"github.com/CarriedWorldUniverse/cairn/modules/structs"
+	reviewpolicy "github.com/CarriedWorldUniverse/cairn/services/cairn/reviewpolicy"
 	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 	pull_service "github.com/CarriedWorldUniverse/cairn/services/pull"
 )
@@ -45,6 +46,14 @@ func CreateRepository(ctx context.Context, doer, owner *user_model.User, opts Cr
 	if err != nil {
 		// No need to rollback here we should do this in CreateRepository...
 		return nil, err
+	}
+
+	// CAIRN: auto-apply default branch protection if org policy says human-review-required.
+	// Failure is logged not propagated — branch-protection auto-apply must not block repo creation.
+	if svc := reviewpolicy.Global(); svc != nil {
+		if err := svc.AutoApplyDefaultProtection(ctx, repo); err != nil {
+			log.Warn("cairn: auto-apply branch protection failed for repo %d: %v", repo.ID, err)
+		}
 	}
 
 	notify_service.CreateRepository(ctx, doer, owner, repo)

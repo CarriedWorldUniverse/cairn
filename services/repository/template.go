@@ -11,6 +11,8 @@ import (
 	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
 	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
+	"github.com/CarriedWorldUniverse/cairn/modules/log"
+	reviewpolicy "github.com/CarriedWorldUniverse/cairn/services/cairn/reviewpolicy"
 	notify_service "github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
@@ -127,6 +129,15 @@ func GenerateRepository(ctx context.Context, doer, owner *user_model.User, templ
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+
+	// CAIRN: auto-apply default branch protection if org policy says human-review-required.
+	// If the template's ProtectedBranch was copied this is a no-op (existing rule wins).
+	// Failure is logged not propagated — branch-protection auto-apply must not block repo creation.
+	if svc := reviewpolicy.Global(); svc != nil {
+		if err := svc.AutoApplyDefaultProtection(ctx, generateRepo); err != nil {
+			log.Warn("cairn: auto-apply branch protection failed for repo %d: %v", generateRepo.ID, err)
+		}
 	}
 
 	notify_service.CreateRepository(ctx, doer, owner, generateRepo)

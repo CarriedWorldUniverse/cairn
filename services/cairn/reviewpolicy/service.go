@@ -24,8 +24,9 @@ type AgentLookup interface {
 
 // Service loads ReviewPolicy rows and filters approver lists.
 type Service struct {
-	engine *xorm.Engine
-	agents AgentLookup
+	engine   *xorm.Engine
+	agents   AgentLookup
+	branches BranchProtector // optional; wired by Init via SetBranchProtector
 }
 
 // NewService constructs a Service. agents may be nil — in that case

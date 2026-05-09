@@ -12,8 +12,21 @@ import (
 
 	"xorm.io/xorm"
 
+	git_model "github.com/CarriedWorldUniverse/cairn/models/git"
 	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
+	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 )
+
+// productionBranchProtector wires BranchProtector to git_model.
+type productionBranchProtector struct{}
+
+func (productionBranchProtector) GetRule(ctx context.Context, repoID int64, ruleName string) (*git_model.ProtectedBranch, error) {
+	return git_model.GetProtectedBranchRuleByName(ctx, repoID, ruleName)
+}
+
+func (productionBranchProtector) CreateRule(ctx context.Context, repo *repo_model.Repository, rule *git_model.ProtectedBranch) error {
+	return git_model.UpdateProtectBranch(ctx, repo, rule, git_model.WhitelistOptions{})
+}
 
 // Init constructs the Service, sets it as global, and registers the
 // approval-count + PR-author-cluster hooks in models/issues.
@@ -22,6 +35,7 @@ import (
 func Init(engine *xorm.Engine) {
 	adapter := newProductionAdapter()
 	svc := NewService(engine, adapter)
+	svc.SetBranchProtector(productionBranchProtector{})
 	SetGlobal(svc)
 
 	// Register the approval-count filter hook. The hook closes over the
