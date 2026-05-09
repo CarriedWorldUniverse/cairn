@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/CarriedWorldUniverse/bridle"
 	"github.com/CarriedWorldUniverse/bridle/fake"
 
 	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
@@ -46,13 +47,14 @@ func TestNewSummarizerWithProvider_RejectsEmptyModel(t *testing.T) {
 
 func TestBuildBridleProviderFromConfig_DispatchesByProvider(t *testing.T) {
 	cases := []struct {
-		name    string
-		wantErr bool
+		name         string
+		wantErr      bool
+		wantProvider bridle.ProviderID
 	}{
-		{"claudecode", false},
-		{"openai-api", false},
-		{"unknown", true},
-		{"", true},
+		{"claude-code", false, "claude-code"},
+		{"openai-api", false, "openai-api"},
+		{"unknown", true, ""},
+		{"", true, ""},
 	}
 	for _, tc := range cases {
 		cfg := &cairnmodels.SummarizerConfig{
@@ -73,6 +75,10 @@ func TestBuildBridleProviderFromConfig_DispatchesByProvider(t *testing.T) {
 		}
 		if p == nil {
 			t.Errorf("provider=%q: nil provider with no error", tc.name)
+			continue
+		}
+		if got := p.Name(); got != tc.wantProvider {
+			t.Errorf("provider=%q: wrong identity: got %q want %q", tc.name, got, tc.wantProvider)
 		}
 	}
 }

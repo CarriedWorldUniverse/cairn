@@ -72,7 +72,7 @@ func BuildUserPrompt(c PRContext) string {
 // SelectFields returns a PRContext populated according to the data scope.
 // Source is the full PR data; the function strips fields not allowed by scope.
 func SelectFields(scope cairnmodels.DataScope, full PRContext) PRContext {
-	out := PRContext{Title: full.Title, Body: full.Body, BaseBranch: full.BaseBranch, HeadBranch: full.HeadBranch}
+	out := PRContext{Title: full.Title, Body: full.Body}
 	switch scope {
 	case cairnmodels.DataScopeFull:
 		return full

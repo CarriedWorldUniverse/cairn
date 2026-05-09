@@ -45,6 +45,22 @@ func TestSelectFields_MetadataExcludesContent(t *testing.T) {
 	}
 }
 
+func TestSelectFields_CommitMessagesExcludesBranchNames(t *testing.T) {
+	full := PRContext{Title: "T", BaseBranch: "main", HeadBranch: "feat", CommitMessages: []string{"c"}}
+	got := SelectFields(cairnmodels.DataScopeCommitMessages, full)
+	if got.BaseBranch != "" || got.HeadBranch != "" {
+		t.Errorf("commit-messages must not leak branch names: got base=%q head=%q", got.BaseBranch, got.HeadBranch)
+	}
+}
+
+func TestSelectFields_MetadataExcludesBranchNames(t *testing.T) {
+	full := PRContext{Title: "T", BaseBranch: "main", HeadBranch: "feat", FilePaths: []string{"a.go"}}
+	got := SelectFields(cairnmodels.DataScopeMetadata, full)
+	if got.BaseBranch != "" || got.HeadBranch != "" {
+		t.Errorf("metadata must not leak branch names: got base=%q head=%q", got.BaseBranch, got.HeadBranch)
+	}
+}
+
 func TestSelectFields_UnknownScopeDegradesToMetadata(t *testing.T) {
 	full := PRContext{Title: "T", Diff: "DIFF", CommitMessages: []string{"c1"}, FilePaths: []string{"a.go"}}
 	got := SelectFields(cairnmodels.DataScope("bogus"), full)

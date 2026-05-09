@@ -20,7 +20,7 @@ func (l LevelFlag) Has(target LevelFlag) bool { return l&target != 0 }
 // from the instance HMAC key.
 //
 // Provider names match bridle.ProviderID values: "claude-api", "openai-api",
-// "bedrock", "ollama-local", "claudecode".
+// "bedrock", "ollama-local", "claude-code".
 type SummarizerConfig struct {
 	OwnerID           int64     `xorm:"pk"`
 	Enabled           bool      `xorm:"NOT NULL DEFAULT false"`

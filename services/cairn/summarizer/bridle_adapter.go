@@ -96,8 +96,8 @@ func (noopToolRunner) Run(_ context.Context, call bridle.ToolCall) (json.RawMess
 //
 // MVP supports:
 //
-//   - "claudecode"  — Claude via the claude-code CLI subprocess
-//   - "openai-api"  — OpenAI-compatible chat completions
+//   - "claude-code"  — Claude via the claude-code CLI subprocess
+//   - "openai-api"   — OpenAI-compatible chat completions
 //
 // Other bridle providers (claude-api native, bedrock, ollama-local) are
 // recognized in cfg but not yet wired here; they will be enabled as their
@@ -109,11 +109,11 @@ func BuildBridleProviderFromConfig(cfg *cairnmodels.SummarizerConfig, apiKey []b
 	switch cfg.Provider {
 	case "":
 		return nil, errors.New("summarizer: no provider configured")
-	case "claudecode":
+	case "claude-code":
 		return claudecode.New(), nil
 	case "openai-api":
 		return openai.New(string(apiKey)), nil
 	default:
-		return nil, fmt.Errorf("summarizer: unsupported provider %q (MVP supports: claudecode, openai-api)", cfg.Provider)
+		return nil, fmt.Errorf("summarizer: unsupported provider %q (MVP supports: claude-code, openai-api)", cfg.Provider)
 	}
 }

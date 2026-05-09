@@ -4,7 +4,7 @@
 
 **Goal:** Build the per-org-configurable AI summarization feature that turns AI-authored PRs into scrutable summaries for human reviewers.
 
-**Architecture:** Server-side worker that calls a per-org-configured AI provider via **bridle**. The org picks a bridle provider (claudecode / openai-api / claude-api / bedrock / ollama-local) and supplies model + credentials; cairn constructs a one-shot bridle harness per summarization (no tools, single user message) and stores the result. Summaries cached per PR-content-hash; rendered into the PR HTML page, the `?format=md` PR view, and an API endpoint. The simplifier posts as the system actor `cairn` (not as an agent identity). Public repos auto-enable when the org has a service configured; private repos require explicit per-repo opt-in with a data-scope picker.
+**Architecture:** Server-side worker that calls a per-org-configured AI provider via **bridle**. The org picks a bridle provider (claude-code / openai-api / claude-api / bedrock / ollama-local) and supplies model + credentials; cairn constructs a one-shot bridle harness per summarization (no tools, single user message) and stores the result. Summaries cached per PR-content-hash; rendered into the PR HTML page, the `?format=md` PR view, and an API endpoint. The simplifier posts as the system actor `cairn` (not as an agent identity). Public repos auto-enable when the org has a service configured; private repos require explicit per-repo opt-in with a data-scope picker.
 
 **Tech Stack:**
 - Go 1.25+, xorm ORM, SQLite (Forgejo substrate)
@@ -14,9 +14,9 @@
 - `routers/web/cairn/` for HTML rendering (matches Plan 4 markdown style)
 - `crypto/aes` GCM for credential encryption-at-rest, key derived from instance HMAC key
 - Event listener pattern via Forgejo's `notification` package (PR open/sync events)
-- **`github.com/nexus-cw/bridle`** for the AI provider abstraction — bridle handles per-provider details (claude-api, openai-api, bedrock, ollama-local, claudecode) and exposes a unified `Provider.RunTurn` surface. Cairn does not write its own HTTP client; it constructs a bridle harness with one provider and runs a single no-tools turn per summarization. Reuses the team's tested AI substrate; consistent with how other aspects make AI calls.
+- **`github.com/nexus-cw/bridle`** for the AI provider abstraction — bridle handles per-provider details (claude-api, openai-api, bedrock, ollama-local, claude-code) and exposes a unified `Provider.RunTurn` surface. Cairn does not write its own HTTP client; it constructs a bridle harness with one provider and runs a single no-tools turn per summarization. Reuses the team's tested AI substrate; consistent with how other aspects make AI calls.
   - **Note on import path:** bridle's module is currently `github.com/nexus-cw/bridle`; the org migration to `CarriedWorldUniverse` is pending for that repo. Implementer verifies the actual path from `~/Source/bridle/go.mod` at Task 3 start; if migrated, use the new path.
-  - **Provider readiness:** bridle's harness + `claudecode` provider have passing tests; `claude`/`openai`/`bedrock`/`ollama` providers are scaffolded but unverified. MVP needs `claudecode` (Jacinta's actual deploy uses Claude via her subscription) and `openai` (most common self-hoster path). Implementer surfaces NEEDS_CONTEXT if any required provider is non-functional.
+  - **Provider readiness:** bridle's harness + `claude-code` provider have passing tests; `claude`/`openai`/`bedrock`/`ollama` providers are scaffolded but unverified. MVP needs `claude-code` (Jacinta's actual deploy uses Claude via her subscription) and `openai` (most common self-hoster path). Implementer surfaces NEEDS_CONTEXT if any required provider is non-functional.
 
 **Spec reference:** [`docs/cairn/specs/2026-05-10-cairn-ai-native-amendment.md`](../specs/2026-05-10-cairn-ai-native-amendment.md) §3.
 
@@ -144,14 +144,14 @@ func (l LevelFlag) Has(target LevelFlag) bool { return l&target != 0 }
 // from the instance HMAC key.
 //
 // Provider names match bridle.ProviderID values: "claude-api", "openai-api",
-// "bedrock", "ollama-local", "claudecode".
+// "bedrock", "ollama-local", "claude-code".
 type SummarizerConfig struct {
 	OwnerID            int64     `xorm:"pk"`
 	Enabled            bool      `xorm:"NOT NULL DEFAULT false"`
 	Provider           string    `xorm:"VARCHAR(64) NOT NULL DEFAULT ''"` // bridle.ProviderID as string
 	EndpointURL        string    `xorm:"VARCHAR(1024) NOT NULL DEFAULT ''"` // optional; for openai-compat self-hosted, ollama
 	ModelID            string    `xorm:"VARCHAR(255) NOT NULL DEFAULT ''"`
-	CredentialsCipher  []byte    `xorm:"BLOB"`                              // API key for claude/openai; AWS profile name for bedrock; binary path for claudecode
+	CredentialsCipher  []byte    `xorm:"BLOB"`                              // API key for claude/openai; AWS profile name for bedrock; binary path for claude-code
 	LevelsEnabled      LevelFlag `xorm:"NOT NULL DEFAULT 1"`                 // PR by default
 	CreatedUnix        int64     `xorm:"created"`
 	UpdatedUnix        int64     `xorm:"updated"`
@@ -543,7 +543,7 @@ func TestBuildBridleProviderFromConfig_DispatchesByProvider(t *testing.T) {
 		name    string
 		wantErr bool
 	}{
-		{"claudecode", false}, // primary MVP path
+		{"claude-code", false}, // primary MVP path
 		{"openai-api", false}, // primary MVP path
 		{"unknown", true},
 	}
@@ -658,14 +658,14 @@ func (s *Summarizer) Complete(ctx context.Context, systemPrompt, userPrompt stri
 // (or whatever credential the provider needs) through.
 //
 // Supported providers in MVP:
-//   - "claudecode"  — runs Claude via Claude Code subprocess (Jacinta's path)
+//   - "claude-code"  — runs Claude via Claude Code subprocess (Jacinta's path)
 //   - "openai-api"  — OpenAI-compatible chat completions (self-hoster path)
 //
 // Other bridle providers (claude-api native, bedrock, ollama-local) will be
 // wired post-MVP as they become production-ready in bridle.
 func BuildBridleProviderFromConfig(cfg *cairnmodels.SummarizerConfig, apiKey []byte) (bridle.Provider, error) {
 	switch cfg.Provider {
-	case "claudecode":
+	case "claude-code":
 		// claudecode provider config: see ~/Source/bridle/provider/claudecode
 		// for the actual constructor signature; adapt as needed.
 		return claudecode.NewProvider(claudecode.Config{
@@ -681,7 +681,7 @@ func BuildBridleProviderFromConfig(cfg *cairnmodels.SummarizerConfig, apiKey []b
 	case "":
 		return nil, errors.New("summarizer: no provider configured")
 	default:
-		return nil, fmt.Errorf("summarizer: unsupported provider %q (MVP supports: claudecode, openai-api)", cfg.Provider)
+		return nil, fmt.Errorf("summarizer: unsupported provider %q (MVP supports: claude-code, openai-api)", cfg.Provider)
 	}
 }
 ```
@@ -852,7 +852,7 @@ git commit -m "feat(cairn): simplifier bridle adapter + standardized prompt
 
 Wraps a bridle harness for one no-tools turn per summarization.
 BuildBridleProviderFromConfig dispatches on Config.Provider to
-construct the right bridle.Provider (claudecode + openai-api in MVP;
+construct the right bridle.Provider (claude-code + openai-api in MVP;
 claude-api / bedrock / ollama-local follow as bridle providers
 become production-ready). Cairn does not write its own HTTP client;
 all AI calls go through bridle.
@@ -1423,7 +1423,7 @@ const maxConfigBody = 4096
 
 type configRequest struct {
 	Enabled       bool   `json:"enabled"`
-	Provider      string `json:"provider"`     // bridle ProviderID: claudecode | openai-api | claude-api | bedrock | ollama-local
+	Provider      string `json:"provider"`     // bridle ProviderID: claude-code | openai-api | claude-api | bedrock | ollama-local
 	EndpointURL   string `json:"endpoint_url"` // optional; required for openai-api self-hosted, ollama
 	ModelID       string `json:"model_id"`
 	APIKey        string `json:"api_key"`      // write-only; never returned
