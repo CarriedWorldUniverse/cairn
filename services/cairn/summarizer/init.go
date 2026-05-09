@@ -4,11 +4,30 @@ package summarizer
 import (
 	"fmt"
 	"os"
+	"sync/atomic"
 
 	"xorm.io/xorm"
 
 	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
 )
+
+// hmacKeyForEncrypt caches the HMAC key bytes loaded by Init so the API
+// handlers can encrypt new credentials without re-reading from disk on
+// every PUT. atomic.Pointer keeps the read lock-free; SetGlobal-style
+// reload would re-store here.
+var hmacKeyForEncrypt atomic.Pointer[[]byte]
+
+// HMACKey returns the bytes loaded by Init, or nil if Init hasn't run.
+// API handlers use this to keep the encrypt path consistent with the
+// init-time decrypt path (single source of truth for the key, no disk
+// I/O on the hot path, no rotation asymmetry).
+func HMACKey() []byte {
+	p := hmacKeyForEncrypt.Load()
+	if p == nil {
+		return nil
+	}
+	return *p
+}
 
 // Init constructs the production Service and registers it as global.
 // Called from routers/init.go at startup. hmacKeyPath is the path to the
@@ -19,6 +38,8 @@ func Init(engine *xorm.Engine, hmacKeyPath string) error {
 	if err != nil {
 		return fmt.Errorf("summarizer: read hmac key: %w", err)
 	}
+	keyCopy := append([]byte(nil), hmacKey...)
+	hmacKeyForEncrypt.Store(&keyCopy)
 
 	resolver := func(ownerID int64) (AIClient, *cairnmodels.SummarizerConfig, error) {
 		cfg := &cairnmodels.SummarizerConfig{}

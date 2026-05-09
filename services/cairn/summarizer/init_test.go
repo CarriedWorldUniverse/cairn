@@ -3,6 +3,7 @@
 package summarizer
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,44 @@ import (
 	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	"github.com/CarriedWorldUniverse/cairn/models/cairn/cairntest"
 )
+
+// TestInit_HMACKeyAccessorReturnsLoadedBytes is the sentinel that
+// guarantees the encrypt path in routers/api/cairn/v1 sees the same
+// bytes the resolver decrypts with. If this drifts, PUT-encrypted
+// credentials become unreadable on next decrypt.
+func TestInit_HMACKeyAccessorReturnsLoadedBytes(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	dir := t.TempDir()
+	keyPath := filepath.Join(dir, "hmac.key")
+	want := []byte("test-hmac-key-32-bytes-long!!!ab")
+	if err := os.WriteFile(keyPath, want, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Init(eng, keyPath); err != nil {
+		t.Fatal(err)
+	}
+	defer SetGlobal(nil)
+
+	got := HMACKey()
+	if !bytes.Equal(got, want) {
+		t.Errorf("HMACKey() = %q, want %q", got, want)
+	}
+}
+
+// TestHMACKey_NilBeforeInit guards the "summarizer not initialized"
+// branch in PutSummarizerConfig — if a caller hits PUT before Init has
+// run, HMACKey must return nil so the handler can 503 instead of
+// encrypting with garbage.
+func TestHMACKey_NilBeforeInit(t *testing.T) {
+	// Reset the cached pointer for this test; restore on exit.
+	prev := hmacKeyForEncrypt.Load()
+	hmacKeyForEncrypt.Store(nil)
+	defer hmacKeyForEncrypt.Store(prev)
+
+	if got := HMACKey(); got != nil {
+		t.Errorf("HMACKey() = %v before Init, want nil", got)
+	}
+}
 
 func TestInit_ResolverDecryptsCredential(t *testing.T) {
 	eng := cairntest.NewEngine(t)

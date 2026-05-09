@@ -6,13 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/CarriedWorldUniverse/cairn/models/db"
 	"github.com/CarriedWorldUniverse/cairn/models/perm/access"
 	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
-	"github.com/CarriedWorldUniverse/cairn/modules/setting"
 	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	"github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
@@ -158,9 +156,9 @@ func PutSummarizerConfig(ctx *context.APIContext) {
 	}
 
 	if req.APIKey != "" {
-		hmacKey, err := os.ReadFile(setting.Cairn.HMACKeyPath)
-		if err != nil {
-			ctx.Error(http.StatusInternalServerError, "read hmac", err)
+		hmacKey := summarizer.HMACKey()
+		if hmacKey == nil {
+			ctx.Error(http.StatusServiceUnavailable, "summarizer not initialized", nil)
 			return
 		}
 		cipher, err := summarizer.EncryptCredential(hmacKey, []byte(req.APIKey))
@@ -176,7 +174,7 @@ func PutSummarizerConfig(ctx *context.APIContext) {
 	if has {
 		// AllCols ensures zero-valued booleans (Enabled=false) actually
 		// write through xorm's update path.
-		if _, err := db.GetEngine(ctx).Where("owner_id = ?", owner.ID).AllCols().Update(cfg); err != nil {
+		if _, err := db.GetEngine(ctx).ID(owner.ID).AllCols().Update(cfg); err != nil {
 			ctx.Error(http.StatusInternalServerError, "update", err)
 			return
 		}
@@ -216,17 +214,24 @@ func resolveRepoForConsent(ctx *context.APIContext) *repo_model.Repository {
 		ctx.Error(http.StatusInternalServerError, "GetRepositoryByName", err)
 		return nil
 	}
-	if !repo.IsPrivate {
-		ctx.Error(http.StatusBadRequest, "consent only applies to private repos", nil)
-		return nil
-	}
+	// Permission check FIRST — non-admins must not learn whether a
+	// repo is private vs public vs nonexistent. Returning 400
+	// "consent only applies to private repos" before checking the
+	// caller's access leaked the IsPrivate bit to anyone who could
+	// guess a repo name. Forgejo's standard non-disclosure pattern
+	// is 404 for unauthorized callers regardless of repo visibility;
+	// only admins reach the IsPrivate gate below.
 	perm, err := access.GetUserRepoPermission(ctx, repo, ctx.Doer)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "GetUserRepoPermission", err)
 		return nil
 	}
 	if !perm.IsAdmin() && !ctx.Doer.IsAdmin {
-		ctx.Error(http.StatusForbidden, "repo admin required", nil)
+		ctx.Error(http.StatusNotFound, "repo not found", nil)
+		return nil
+	}
+	if !repo.IsPrivate {
+		ctx.Error(http.StatusBadRequest, "consent only applies to private repos", nil)
 		return nil
 	}
 	return repo
@@ -287,7 +292,7 @@ func PutRepoConsent(ctx *context.APIContext) {
 		return
 	}
 	if has {
-		_, err = db.GetEngine(ctx).Where("repo_id = ?", repo.ID).AllCols().Update(consent)
+		_, err = db.GetEngine(ctx).ID(repo.ID).AllCols().Update(consent)
 	} else {
 		_, err = db.GetEngine(ctx).Insert(consent)
 	}
@@ -303,7 +308,17 @@ func PutRepoConsent(ctx *context.APIContext) {
 
 // resolveRepoForRead loads the repo named in :owner/:repo and enforces
 // read permission. Used for the cached-summary GET endpoint.
+//
+// The explicit ctx.Doer == nil guard distinguishes "anonymous" from
+// "wrong repo" for clients (otherwise both collapse to 404 via
+// HasAccess on private repos). PostRegenerate has the same guard at
+// its top level — keeping it here too means future callers can't
+// bypass authentication by reusing this resolver.
 func resolveRepoForRead(ctx *context.APIContext) *repo_model.Repository {
+	if ctx.Doer == nil {
+		ctx.Error(http.StatusUnauthorized, "authentication required", nil)
+		return nil
+	}
 	owner, err := user_model.GetUserByName(ctx, ctx.Params(":owner"))
 	if err != nil {
 		if user_model.IsErrUserNotExist(err) {
