@@ -144,6 +144,29 @@ func TestAgentService_Register_RejectsUnknownOwner(t *testing.T) {
 	}
 }
 
+func TestAgentService_Register_DoesNotAutoApproveZeroUserID(t *testing.T) {
+	svc, _ := newTestService(t)
+	ctx := context.Background()
+
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Caller with UserID 0 (should never happen in production but
+	// defends against a future auth middleware bug).
+	got, err := svc.Register(ctx, RegisterRequest{
+		ProposedOwner: "alice",
+		Slug:          "plumb",
+		Domain:        "darksoft.co.nz",
+		PublicKey:     pub,
+	}, &Caller{UserID: 0, Username: "spoofed"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Status != cairn.AgentStatusPending {
+		t.Errorf("status = %q, want pending (zero UserID must not auto-approve)", got.Status)
+	}
+}
+
 func TestAgentService_Register_RejectsDuplicate(t *testing.T) {
 	svc, _ := newTestService(t)
 	ctx := context.Background()

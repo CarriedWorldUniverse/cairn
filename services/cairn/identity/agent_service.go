@@ -20,6 +20,10 @@ var ErrForbidden = errors.New("cairn identity: forbidden")
 // UserResolver looks up Forgejo user records by username or id.
 // The API layer implements this against models/user; tests provide
 // a fake.
+//
+// Implementations MUST return ErrUserNotFound (the sentinel defined
+// in this package) when the requested user does not exist.
+// Other errors are surfaced as-is.
 type UserResolver interface {
 	UserIDByUsername(ctx context.Context, name string) (int64, error)
 	UsernameByID(ctx context.Context, id int64) (string, error)
@@ -74,7 +78,7 @@ func (s *AgentService) Register(ctx context.Context, req RegisterRequest, caller
 		return nil, err
 	}
 
-	autoApprove := caller != nil && caller.UserID == ownerID
+	autoApprove := caller != nil && caller.UserID > 0 && caller.UserID == ownerID
 
 	now := time.Now()
 	agent := &cairn.Agent{
@@ -101,7 +105,7 @@ func (s *AgentService) Register(ctx context.Context, req RegisterRequest, caller
 // Approve transitions an agent from pending to active. Caller must be
 // the agent's owner.
 func (s *AgentService) Approve(ctx context.Context, fingerprint string, caller *Caller) error {
-	if caller == nil {
+	if caller == nil || caller.UserID <= 0 {
 		return ErrForbidden
 	}
 	a, err := s.store.GetByFingerprint(ctx, fingerprint)
@@ -117,7 +121,7 @@ func (s *AgentService) Approve(ctx context.Context, fingerprint string, caller *
 // Block adds the agent to the blocklist. Caller must be the agent's
 // owner.
 func (s *AgentService) Block(ctx context.Context, fingerprint, reason string, caller *Caller) error {
-	if caller == nil {
+	if caller == nil || caller.UserID <= 0 {
 		return ErrForbidden
 	}
 	a, err := s.store.GetByFingerprint(ctx, fingerprint)
@@ -152,9 +156,10 @@ func (s *AgentService) ListByUser(ctx context.Context, userID int64, status cair
 	return s.store.ListByUser(ctx, userID, status)
 }
 
-// UserResolverUsername returns the username for a user id, or empty
-// string on lookup failure (caller decides whether that's an error).
-// Convenience wrapper used by the API layer.
-func (s *AgentService) UserResolverUsername(ctx context.Context, userID int64) (string, error) {
+// UsernameByID returns the username for a user id, via the configured
+// UserResolver. Convenience wrapper used by the API layer to render
+// owner names on list/detail pages without holding its own resolver
+// reference.
+func (s *AgentService) UsernameByID(ctx context.Context, userID int64) (string, error) {
 	return s.users.UsernameByID(ctx, userID)
 }
