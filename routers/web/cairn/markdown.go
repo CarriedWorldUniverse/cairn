@@ -158,6 +158,78 @@ func RenderIssue(w http.ResponseWriter, issue IssueData, repo RepoData) error {
 	return tmpl.ExecuteTemplate(w, "issue.tmpl", data)
 }
 
+// FileData carries file-content + metadata for markdown rendering.
+type FileData struct {
+	Path       string
+	Branch     string
+	Size       int64
+	IsBinary   bool
+	Content    []byte // empty if IsBinary
+	LastCommit CommitData // last commit that touched the file
+}
+
+// RenderFile writes a file-content markdown view to w.
+func RenderFile(w http.ResponseWriter, f FileData, repo RepoData) error {
+	tmpl, err := template.New("file.tmpl").Funcs(template.FuncMap{
+		"agentBadge":     agentBadgeOf,
+		"isAgent":        IsAgentAuthor,
+		"languageOfFile": languageOfFile,
+	}).ParseFS(markdownTemplates, "templates/md/file.tmpl")
+	if err != nil {
+		return fmt.Errorf("cairn markdown: parse file.tmpl: %w", err)
+	}
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+
+	data := struct {
+		File FileData
+		Repo RepoData
+	}{File: f, Repo: repo}
+	return tmpl.ExecuteTemplate(w, "file.tmpl", data)
+}
+
+// languageOfFile maps file extensions to fenced-code-block language
+// hints. Defaults to "text" for unknown extensions.
+func languageOfFile(path string) string {
+	idx := strings.LastIndexByte(path, '.')
+	if idx < 0 || idx == len(path)-1 {
+		return "text"
+	}
+	ext := path[idx+1:]
+	switch ext {
+	case "go":
+		return "go"
+	case "js", "mjs":
+		return "javascript"
+	case "ts":
+		return "typescript"
+	case "py":
+		return "python"
+	case "rs":
+		return "rust"
+	case "rb":
+		return "ruby"
+	case "sh", "bash":
+		return "bash"
+	case "json":
+		return "json"
+	case "yaml", "yml":
+		return "yaml"
+	case "toml":
+		return "toml"
+	case "md":
+		return "markdown"
+	case "html":
+		return "html"
+	case "css":
+		return "css"
+	case "sql":
+		return "sql"
+	case "tmpl":
+		return "go-template"
+	}
+	return "text"
+}
+
 // splitAgentEmail parses an agent email "nexus-{slug}@{domain}" into
 // its parts. Returns ok=false if the email isn't agent-shaped.
 func splitAgentEmail(email string) (slug, domain string, ok bool) {

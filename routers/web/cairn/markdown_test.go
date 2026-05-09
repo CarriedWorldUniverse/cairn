@@ -221,3 +221,98 @@ func TestRenderPullRequest_NoComments(t *testing.T) {
 		t.Errorf("should not render Comments section for empty list\nbody=%s", body)
 	}
 }
+
+func TestRenderFile_TextWithAgentLastCommit(t *testing.T) {
+	f := FileData{
+		Path:     "services/cairn/identity/agent_service.go",
+		Branch:   "main",
+		Size:     1234,
+		IsBinary: false,
+		Content:  []byte("package identity\n\nfunc Hello() {}\n"),
+		LastCommit: CommitData{
+			SHA:         "abc123",
+			AuthorName:  "nexus-plumb",
+			AuthorEmail: "nexus-plumb@darksoft.co.nz",
+			Time:        time.Now(),
+			Subject:     "Add identity primitives",
+		},
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderFile(w, f, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	for _, want := range []string{
+		"# services/cairn/identity/agent_service.go",
+		"Branch:** main",
+		"Size:** 1234 bytes",
+		"agent:plumb",
+		"```go",
+		"package identity",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q\nbody=%s", want, body)
+		}
+	}
+}
+
+func TestRenderFile_BinaryFile(t *testing.T) {
+	f := FileData{
+		Path:     "logo.png",
+		Branch:   "main",
+		Size:     8192,
+		IsBinary: true,
+		LastCommit: CommitData{
+			SHA:         "fed",
+			AuthorName:  "Jacinta",
+			AuthorEmail: "nexus@darksoft.co.nz",
+			Time:        time.Now(),
+			Subject:     "Add logo",
+		},
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderFile(w, f, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "_(binary file, 8192 bytes)_") {
+		t.Errorf("expected binary placeholder\nbody=%s", body)
+	}
+	if strings.Contains(body, "```png") {
+		t.Errorf("binary file should not produce a code fence\nbody=%s", body)
+	}
+}
+
+func TestRenderFile_UnknownExtension(t *testing.T) {
+	f := FileData{
+		Path:     "Makefile",
+		Branch:   "main",
+		Size:     200,
+		IsBinary: false,
+		Content:  []byte("all:\n\techo hi\n"),
+		LastCommit: CommitData{
+			SHA:         "xyz",
+			AuthorName:  "Jacinta",
+			AuthorEmail: "nexus@darksoft.co.nz",
+			Time:        time.Now(),
+			Subject:     "Add Makefile",
+		},
+	}
+	repo := RepoData{Owner: "alice", Name: "cairn"}
+
+	w := httptest.NewRecorder()
+	if err := RenderFile(w, f, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	body := w.Body.String()
+	if !strings.Contains(body, "```text") {
+		t.Errorf("expected fallback to text language\nbody=%s", body)
+	}
+}

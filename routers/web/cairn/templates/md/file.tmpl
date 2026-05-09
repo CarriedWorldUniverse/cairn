@@ -1,0 +1,18 @@
+# {{.File.Path}}
+
+**Branch:** {{.File.Branch}}
+**Size:** {{.File.Size}} bytes
+**Repo:** {{.Repo.Owner}}/{{.Repo.Name}}
+
+## Last commit
+
+**SHA:** {{.File.LastCommit.SHA}}
+**Author:** {{.File.LastCommit.AuthorName}} <{{.File.LastCommit.AuthorEmail}}>{{if isAgent .File.LastCommit.AuthorEmail}} ({{agentBadge .File.LastCommit.AuthorEmail}}){{end}}
+**Date:** {{.File.LastCommit.Time.UTC.Format "2006-01-02T15:04:05Z"}}
+**Subject:** {{.File.LastCommit.Subject}}
+
+## Content
+
+{{if .File.IsBinary}}_(binary file, {{.File.Size}} bytes)_{{else}}```{{languageOfFile .File.Path}}
+{{printf "%s" .File.Content}}
+```{{end}}
