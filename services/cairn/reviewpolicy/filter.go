@@ -69,24 +69,24 @@ func (s *Service) FilterApproverIDs(ctx context.Context, ownerID, prAuthorOwnerI
 	if !s.RequireHumanOnly(ctx, ownerID) {
 		return ids
 	}
-	if s.agents == nil {
-		out := make([]int64, 0, len(ids))
-		for _, id := range ids {
-			if id == prAuthorOwnerID {
-				continue
-			}
-			out = append(out, id)
-		}
-		return out
-	}
+	// Dedupe: Forgejo doesn't enforce uniqueness on (issue_id, reviewer_id)
+	// for review rows, so a single reviewer with multiple review rows must
+	// still count as one. Without dedup, the filter path would diverge from
+	// the fast Count(*) path in GetGrantedApprovalsCount.
+	seen := make(map[int64]struct{}, len(ids))
 	out := make([]int64, 0, len(ids))
 	for _, id := range ids {
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
 		if id == prAuthorOwnerID {
 			continue
 		}
-		isAgent, _ := s.agents.IsAgentUser(ctx, id)
-		if isAgent {
-			continue
+		if s.agents != nil {
+			if isAgent, _ := s.agents.IsAgentUser(ctx, id); isAgent {
+				continue
+			}
 		}
 		out = append(out, id)
 	}

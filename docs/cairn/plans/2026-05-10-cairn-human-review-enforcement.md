@@ -961,3 +961,26 @@ Save location: `docs/cairn/plans/2026-05-10-cairn-human-review-enforcement.md` (
 
 1. **Subagent-Driven** (matches Plans 1-5 cadence) — recommended.
 2. **Inline Execution** — also viable.
+
+---
+
+## Deferred to follow-up + Plan 7 verification checklist
+
+These items surfaced in the Plan 6 holistic review.
+
+### Documentation items (Plan 7 runbook)
+
+- **`RequireHumanOnly` field naming**: spec §4.3/§4.6 names the field `require_human_only_approval`; the implementation uses `RequireHumanOnly` (DB column `require_human_only`, API `require_human_only`). Deliberate simplification; document in runbook so future readers don't "correct" the abbreviation.
+- **Org-admin auth gap (inherited from Plan 5)**: API auth checks `ctx.Doer.IsAdmin || ctx.Doer.ID == owner.ID`. When owner is an org (not a personal user), only site admins pass. For single-tenant deploy this is fine; document for any future multi-org expansion.
+- **Branch-protection rule timing**: rules are applied to `main`/`master` regardless of whether those branches actually exist in the new repo. Forgejo's branch-protection model matches by name not live ref, so the rule activates when the branch is created. Standard behavior; flag for runbook clarity.
+
+### Plan 7 deploy-time smoke tests
+
+These exercise behavior that's hard to unit-test:
+
+1. **Reviewer-ID dedup parity** (post Fix 1): `GetGrantedApprovalsCount` fast path (Count(*)) and filter path return the same count on a normal PR with one approver.
+2. **Empty-repo branch protection**: `CreateRepository` with AutoInit=false → verify rule exists in DB → push to `main` → verify push is blocked without approval.
+3. **PushCreateRepo branch protection**: push-create a repo → verify rule in Forgejo branch settings UI after first push.
+4. **Review-policy org API**: site admin can GET/PUT `/api/cairn/v1/orgs/{owner}/review-policy`; non-admin gets 403.
+5. **Filter live-PR**: agent approves a PR → granted-approval count stays 0 → human approves → count becomes 1 → PR is mergeable.
+6. **Manifest advertisement**: `.well-known/cairn.json` shows `review_policy_enabled` matching the configured setting.

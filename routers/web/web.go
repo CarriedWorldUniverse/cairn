@@ -525,7 +525,8 @@ func registerRoutes(m *web.Route) {
 				"agent_proposals":    true,
 				"mcp_server":         false,
 				"sdks":               []string{},
-				"simplifier_enabled": setting.Cairn.Enabled && setting.Cairn.SummarizerEnabled,
+				"simplifier_enabled":    setting.Cairn.Enabled && setting.Cairn.SummarizerEnabled,
+				"review_policy_enabled": setting.Cairn.Enabled && setting.Cairn.ReviewPolicyEnabled,
 			}
 			m.Get("/cairn.json", cairnweb.CairnManifestHandler(setting.AppName, cairnVersion, setting.AppVer, features))
 			m.Get("/llms.txt", cairnweb.LLMsTxtHandler(setting.AppName, cairnVersion))

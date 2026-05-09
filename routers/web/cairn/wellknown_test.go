@@ -136,3 +136,16 @@ func TestBuildManifest_AdvertisesSimplifier(t *testing.T) {
 		t.Errorf("simplifier_enabled = %v, want true", v)
 	}
 }
+
+func TestBuildManifest_AdvertisesReviewPolicy(t *testing.T) {
+	m := BuildManifest("test-instance", "0.0.0", "1.22.0", map[string]any{
+		"review_policy_enabled": true,
+	})
+	v, ok := m.Features["review_policy_enabled"]
+	if !ok {
+		t.Fatal("manifest missing review_policy_enabled feature")
+	}
+	if v != true {
+		t.Errorf("review_policy_enabled = %v, want true", v)
+	}
+}

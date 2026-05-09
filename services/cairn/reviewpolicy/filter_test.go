@@ -125,6 +125,20 @@ func TestFilterApproverIDs_NilLookupFiltersOnlyOwner(t *testing.T) {
 	}
 }
 
+func TestFilterApproverIDs_DedupesDuplicates(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	lookup := &stubAgentLookup{agents: map[int64]int64{}}
+	svc := NewService(eng, lookup)
+
+	// Forgejo doesn't enforce uniqueness on (issue_id, reviewer_id), so the
+	// same reviewer can appear multiple times. Dedup keeps the filter path
+	// in agreement with the fast Count(*) path.
+	out := svc.FilterApproverIDs(context.Background(), 99, 0, []int64{5, 5, 5, 7})
+	if len(out) != 2 {
+		t.Errorf("expected 2 unique IDs, got %d (%v)", len(out), out)
+	}
+}
+
 func TestService_IsAgentUser(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	lookup := &stubAgentLookup{agents: map[int64]int64{100: 7}}
