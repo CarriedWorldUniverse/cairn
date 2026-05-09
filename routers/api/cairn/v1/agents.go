@@ -119,3 +119,59 @@ func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName strin
 	}
 	_ = json.NewEncoder(w).Encode(out)
 }
+
+// fingerprintKey is the context key for the URL :fingerprint path param.
+type fingerprintKey struct{}
+
+// WithFingerprintParam attaches the URL :fingerprint param to the
+// request context. Test injection helper; production wiring uses the
+// router's path-param extraction.
+func WithFingerprintParam(r *http.Request, fp string) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), fingerprintKey{}, fp))
+}
+
+// fingerprintFromCtx returns the :fingerprint URL param.
+func fingerprintFromCtx(ctx context.Context) string {
+	fp, _ := ctx.Value(fingerprintKey{}).(string)
+	return fp
+}
+
+// PostApprove handles POST /api/cairn/v1/agents/:fingerprint/approve.
+func (h *Handler) PostApprove(w http.ResponseWriter, r *http.Request) {
+	caller := callerFromCtx(r.Context())
+	if caller == nil {
+		writeError(w, http.StatusUnauthorized, "unauthenticated", "")
+		return
+	}
+
+	fp := fingerprintFromCtx(r.Context())
+	if fp == "" {
+		writeError(w, http.StatusBadRequest, "missing_fingerprint", "")
+		return
+	}
+
+	err := h.svc.Approve(r.Context(), fp, caller)
+	switch {
+	case err == nil:
+		// fall through to load + return updated agent
+	case errors.Is(err, cairnidentity.ErrAgentNotFound):
+		writeError(w, http.StatusNotFound, "agent_not_found", "")
+		return
+	case errors.Is(err, cairnidentity.ErrForbidden):
+		writeError(w, http.StatusForbidden, "forbidden", "only the agent's owner may approve")
+		return
+	default:
+		log.Printf("cairn api v1: PostApprove: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
+		return
+	}
+
+	a, err := h.svc.GetByFingerprint(r.Context(), fp)
+	if err != nil {
+		log.Printf("cairn api v1: PostApprove readback: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
+		return
+	}
+	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
+	writeAgent(w, http.StatusOK, a, ownerName)
+}

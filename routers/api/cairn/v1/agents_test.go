@@ -203,3 +203,96 @@ func TestPostAgents_RejectsWrongPubkeyLength(t *testing.T) {
 		t.Errorf("status = %d, want 400", w.Code)
 	}
 }
+
+func TestPostApprove_OwnerCanApprove(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Step 1: register anonymously → pending.
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("register status = %d", w.Code)
+	}
+	var pending AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &pending)
+
+	// Step 2: owner approves.
+	approveReq := httptest.NewRequest(http.MethodPost,
+		"/api/cairn/v1/agents/"+pending.Fingerprint+"/approve", nil)
+	approveReq = approveReq.WithContext(WithCaller(approveReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	approveReq = WithFingerprintParam(approveReq, pending.Fingerprint)
+	approveW := httptest.NewRecorder()
+	h.PostApprove(approveW, approveReq)
+
+	if approveW.Code != http.StatusOK {
+		t.Fatalf("approve status = %d, want 200; body=%s", approveW.Code, approveW.Body.String())
+	}
+	var got AgentJSON
+	json.Unmarshal(approveW.Body.Bytes(), &got)
+	if got.Status != string(cairn.AgentStatusActive) {
+		t.Errorf("status = %q, want active", got.Status)
+	}
+}
+
+func TestPostApprove_NonOwnerForbidden(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var pending AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &pending)
+
+	approveReq := httptest.NewRequest(http.MethodPost, "/", nil)
+	approveReq = approveReq.WithContext(WithCaller(approveReq.Context(),
+		&cairnidentity.Caller{UserID: 2, Username: "bob"}))
+	approveReq = WithFingerprintParam(approveReq, pending.Fingerprint)
+	approveW := httptest.NewRecorder()
+	h.PostApprove(approveW, approveReq)
+
+	if approveW.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", approveW.Code)
+	}
+}
+
+func TestPostApprove_UnauthenticatedUnauthorized(t *testing.T) {
+	h := newTestHandler(t)
+
+	approveReq := httptest.NewRequest(http.MethodPost, "/", nil)
+	approveReq = WithFingerprintParam(approveReq, "cairn:does-not-matter")
+	approveW := httptest.NewRecorder()
+	h.PostApprove(approveW, approveReq)
+
+	if approveW.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", approveW.Code)
+	}
+}
+
+func TestPostApprove_NotFound(t *testing.T) {
+	h := newTestHandler(t)
+
+	approveReq := httptest.NewRequest(http.MethodPost, "/", nil)
+	approveReq = approveReq.WithContext(WithCaller(approveReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	approveReq = WithFingerprintParam(approveReq, "cairn:does-not-exist")
+	approveW := httptest.NewRecorder()
+	h.PostApprove(approveW, approveReq)
+
+	if approveW.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", approveW.Code)
+	}
+}
