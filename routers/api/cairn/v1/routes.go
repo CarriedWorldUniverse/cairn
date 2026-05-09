@@ -24,6 +24,11 @@ var (
 // Caller is responsible for ensuring this runs after the database
 // engine is initialized but before the HTTP server starts accepting
 // connections.
+//
+// Init is once-only per process: subsequent calls are no-ops returning
+// the result of the first call (success or error). If the configuration
+// changes at runtime (e.g. a different HMAC key path is desired),
+// the process must be restarted.
 func Init(_ context.Context, hmacKeyPath string, store cairnidentity.AgentStore, blocklist cairnidentity.AgentBlocklistStore, users cairnidentity.UserResolver) error {
 	initOnce.Do(func() {
 		key, err := cairnidentity.LoadInstanceHMACKey(hmacKeyPath)

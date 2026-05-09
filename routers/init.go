@@ -228,6 +228,8 @@ func initCairn(ctx context.Context) error {
 	// session (*xorm.Session), which GetMasterEngine cannot unwrap.
 	// Pull the master Engine from db.DefaultContext (set by
 	// SetDefaultEngine during InitDBEngine) instead.
+	// (This idiom is used by Forgejo's own db.GetEngine implementation —
+	// see models/db/context.go:81. Stable across Forgejo versions.)
 	engined, ok := db.DefaultContext.(db.Engined)
 	if !ok {
 		return errors.New("cairn: db.DefaultContext is not db.Engined")
@@ -249,6 +251,18 @@ func initCairn(ctx context.Context) error {
 // of apiv1.Routes() — applies shared API middleware (which populates
 // the APIContext + Doer) and then mounts Cairn's handlers via the
 // RouteGroup adapter.
+//
+// AUTH POSTURE: this reuses Forgejo's standard API middleware stack
+// (api_shared.Middlewares()), which includes verifyAuthWithOptions
+// honouring [service] REQUIRE_SIGNIN_VIEW. On instances that require
+// signin for all views, the public Cairn endpoint
+// GET /agents/{fingerprint}/identity will incorrectly require auth.
+//
+// For Cairn's MVP team-only deployment (RequireSignInView=false), this
+// is fine. If/when Cairn is exposed publicly with RequireSignInView=true,
+// either set service-level signin requirement appropriately or split
+// Cairn's public endpoints onto a Cairn-specific middleware stack that
+// skips verifyAuthWithOptions.
 //
 // Cairn-specific code; AGPLv3. See LICENSING.md.
 func cairnRoutes() *web.Route {
