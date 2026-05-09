@@ -98,7 +98,7 @@ This makes the data-exposure decision explicit and per-repo for content the org 
 `forgejo` table conventions; Cairn-prefix all new tables.
 
 - **`cairn_summarizer_config`** — per-org row:
-  - `owner_id` (FK to user/org), `enabled` (bool), `endpoint_url` (text), `credentials` (encrypted), `levels_enabled` (bitfield: PR | commit | file), `created_at`, `updated_at`
+  - `owner_id` (FK to user/org), `enabled` (bool), `provider` (bridle ProviderID string: claudecode | openai-api | claude-api | bedrock | ollama-local), `endpoint_url` (text, optional), `model_id` (text), `credentials` (encrypted), `levels_enabled` (bitfield: PR | commit | file), `created_at`, `updated_at`
 - **`cairn_summarizer_repo_consent`** — per-repo row, only relevant when repo is private:
   - `repo_id` (FK), `enabled` (bool, default false), `data_scope` (enum: full / commit-messages / metadata), `created_at`, `updated_at`
 - **`cairn_pr_summary`** — cache:
