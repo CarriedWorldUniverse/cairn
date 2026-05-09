@@ -5,28 +5,30 @@
 package migrations
 
 import (
+	"time"
+
 	"xorm.io/xorm"
 )
 
 // V500CreateAgentTables creates cairn_agent and cairn_agent_blocklist.
 func V500CreateAgentTables(x *xorm.Engine) error {
 	type Agent struct {
-		ID          int64  `xorm:"pk autoincr"`
-		Fingerprint string `xorm:"VARCHAR(80) NOT NULL UNIQUE"`
-		UserID      int64  `xorm:"NOT NULL INDEX"`
-		Slug        string `xorm:"VARCHAR(64) NOT NULL"`
-		Domain      string `xorm:"VARCHAR(255) NOT NULL"`
-		PublicKey   []byte `xorm:"BLOB NOT NULL"`
-		Status      string `xorm:"VARCHAR(16) NOT NULL DEFAULT 'pending'"`
-		CreatedAt   int64  `xorm:"NOT NULL"`
-		ActivatedAt int64
+		ID          int64     `xorm:"pk autoincr"`
+		Fingerprint string    `xorm:"VARCHAR(80) NOT NULL UNIQUE"`
+		UserID      int64     `xorm:"NOT NULL INDEX"`
+		Slug        string    `xorm:"VARCHAR(64) NOT NULL"`
+		Domain      string    `xorm:"VARCHAR(255) NOT NULL"`
+		PublicKey   []byte    `xorm:"BLOB NOT NULL"`
+		Status      string    `xorm:"VARCHAR(16) NOT NULL DEFAULT 'pending'"`
+		CreatedAt   time.Time `xorm:"NOT NULL"`
+		ActivatedAt *time.Time
 	}
 
 	type AgentBlocklist struct {
-		ID        int64  `xorm:"pk autoincr"`
-		AgentID   int64  `xorm:"NOT NULL INDEX"`
-		BlockedAt int64  `xorm:"NOT NULL"`
-		Reason    string `xorm:"TEXT"`
+		ID        int64     `xorm:"pk autoincr"`
+		AgentID   int64     `xorm:"NOT NULL INDEX"`
+		BlockedAt time.Time `xorm:"NOT NULL"`
+		Reason    string    `xorm:"TEXT"`
 	}
 
 	if err := x.Sync2(new(Agent), new(AgentBlocklist)); err != nil {
