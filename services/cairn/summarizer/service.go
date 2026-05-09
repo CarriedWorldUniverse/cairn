@@ -61,7 +61,7 @@ func (s *Service) EnsureSummary(ctx context.Context, repoID, prNumber, ownerID i
 	hash := HashPRContext(scoped)
 
 	cached := &cairnmodels.PRSummary{}
-	has, err := s.engine.Where("repo_id = ? AND pr_number = ? AND content_hash = ?", repoID, prNumber, hash).Get(cached)
+	has, err := s.engine.Context(ctx).Where("repo_id = ? AND pr_number = ? AND content_hash = ?", repoID, prNumber, hash).Get(cached)
 	if err != nil {
 		return nil, fmt.Errorf("summarizer: cache lookup: %w", err)
 	}
@@ -93,14 +93,37 @@ func (s *Service) EnsureSummary(ctx context.Context, repoID, prNumber, ownerID i
 		ModelID:     resp.ModelID,
 		TokenCount:  resp.TokenCount,
 	}
-	if _, err := s.engine.Insert(row); err != nil {
+	if _, err := s.engine.Context(ctx).Insert(row); err != nil {
+		if isUniqueViolation(err) {
+			// Lost the race — another goroutine inserted the same
+			// (repo_id, pr_number, content_hash) row between our cache
+			// check and insert. Re-read and return the winner's row.
+			existing := &cairnmodels.PRSummary{}
+			has, getErr := s.engine.Context(ctx).Where("repo_id = ? AND pr_number = ? AND content_hash = ?", repoID, prNumber, hash).Get(existing)
+			if getErr != nil {
+				return nil, fmt.Errorf("summarizer: post-race lookup: %w", getErr)
+			}
+			if has {
+				return existing, nil
+			}
+			// Fall through if the row really didn't exist (shouldn't happen).
+		}
 		return nil, fmt.Errorf("summarizer: insert: %w", err)
 	}
 	return row, nil
 }
 
 // RegenerateSummary forces a new generation regardless of cache state. The
-// new row is inserted; old rows for the same PR are kept for audit.
+// new row is inserted; old rows for the same PR (different content hashes)
+// are kept for audit.
+//
+// Note on UNIQUE(repo_id, pr_number, content_hash): if regeneration is
+// requested for content identical to an already-cached row (e.g. the user
+// clicks regenerate without any PR change), the insert will hit the
+// composite unique constraint. In that case we return the existing row.
+// Practically, the user sees a fresh AI call's result on the winning side
+// and the previously-cached row on the losing/duplicate side; either way
+// they get one valid summary for that content hash.
 func (s *Service) RegenerateSummary(ctx context.Context, repoID, prNumber, ownerID int64, prCtx PRContext, scope cairnmodels.DataScope) (*cairnmodels.PRSummary, error) {
 	if s.resolver == nil {
 		return nil, ErrNotConfigured
@@ -127,7 +150,19 @@ func (s *Service) RegenerateSummary(ctx context.Context, repoID, prNumber, owner
 		ModelID:     resp.ModelID,
 		TokenCount:  resp.TokenCount,
 	}
-	if _, err := s.engine.Insert(row); err != nil {
+	if _, err := s.engine.Context(ctx).Insert(row); err != nil {
+		if isUniqueViolation(err) {
+			// A row already exists for this exact content hash (either
+			// pre-existing or inserted by a concurrent caller). Return it.
+			existing := &cairnmodels.PRSummary{}
+			has, getErr := s.engine.Context(ctx).Where("repo_id = ? AND pr_number = ? AND content_hash = ?", repoID, prNumber, hash).Get(existing)
+			if getErr != nil {
+				return nil, fmt.Errorf("summarizer: post-race lookup: %w", getErr)
+			}
+			if has {
+				return existing, nil
+			}
+		}
 		return nil, fmt.Errorf("summarizer: insert: %w", err)
 	}
 	return row, nil
@@ -135,9 +170,9 @@ func (s *Service) RegenerateSummary(ctx context.Context, repoID, prNumber, owner
 
 // GetCachedSummary returns the most-recent cached summary for a PR (any
 // content hash). Returns ErrNoSummary if none exists.
-func (s *Service) GetCachedSummary(_ context.Context, repoID, prNumber int64) (*cairnmodels.PRSummary, error) {
+func (s *Service) GetCachedSummary(ctx context.Context, repoID, prNumber int64) (*cairnmodels.PRSummary, error) {
 	row := &cairnmodels.PRSummary{}
-	has, err := s.engine.Where("repo_id = ? AND pr_number = ?", repoID, prNumber).Desc("generated_unix").Get(row)
+	has, err := s.engine.Context(ctx).Where("repo_id = ? AND pr_number = ?", repoID, prNumber).Desc("generated_unix").Get(row)
 	if err != nil {
 		return nil, fmt.Errorf("summarizer: cache lookup: %w", err)
 	}

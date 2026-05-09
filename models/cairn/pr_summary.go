@@ -13,7 +13,7 @@ type PRSummary struct {
 	SummaryMD     string `xorm:"TEXT NOT NULL"`
 	ModelID       string `xorm:"VARCHAR(255) NOT NULL"`
 	TokenCount    int    `xorm:"NOT NULL DEFAULT 0"`
-	GeneratedUnix int64  `xorm:"created"`
+	GeneratedUnix int64  `xorm:"'generated_unix' created"`
 }
 
 func (PRSummary) TableName() string { return "cairn_pr_summary" }
