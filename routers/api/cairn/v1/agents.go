@@ -175,3 +175,42 @@ func (h *Handler) PostApprove(w http.ResponseWriter, r *http.Request) {
 	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
 	writeAgent(w, http.StatusOK, a, ownerName)
 }
+
+// PostBlock handles POST /api/cairn/v1/agents/:fingerprint/block.
+func (h *Handler) PostBlock(w http.ResponseWriter, r *http.Request) {
+	caller := callerFromCtx(r.Context())
+	if caller == nil {
+		writeError(w, http.StatusUnauthorized, "unauthenticated", "")
+		return
+	}
+
+	fp := fingerprintFromCtx(r.Context())
+	if fp == "" {
+		writeError(w, http.StatusBadRequest, "missing_fingerprint", "")
+		return
+	}
+
+	var in BlockRequestJSON
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_json", "could not decode JSON body")
+			return
+		}
+	}
+
+	err := h.svc.Block(r.Context(), fp, in.Reason, caller)
+	switch {
+	case err == nil:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "blocked"})
+		return
+	case errors.Is(err, cairnidentity.ErrAgentNotFound):
+		writeError(w, http.StatusNotFound, "agent_not_found", "")
+	case errors.Is(err, cairnidentity.ErrForbidden):
+		writeError(w, http.StatusForbidden, "forbidden", "only the agent's owner may block")
+	default:
+		log.Printf("cairn api v1: PostBlock: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
+	}
+}

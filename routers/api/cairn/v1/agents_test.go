@@ -334,3 +334,100 @@ func TestPostApprove_AlreadyActiveIsIdempotent(t *testing.T) {
 		t.Errorf("status after re-approve = %q, want active", got.Status)
 	}
 }
+
+func TestPostBlock_OwnerCanBlock(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(WithCaller(req.Context(), &cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var a AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	blockBody, _ := json.Marshal(BlockRequestJSON{Reason: "key compromised"})
+	blockReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(blockBody))
+	blockReq.Header.Set("Content-Type", "application/json")
+	blockReq = blockReq.WithContext(WithCaller(blockReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	blockReq = WithFingerprintParam(blockReq, a.Fingerprint)
+	blockW := httptest.NewRecorder()
+	h.PostBlock(blockW, blockReq)
+
+	if blockW.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200; body=%s", blockW.Code, blockW.Body.String())
+	}
+
+	blocked, err := h.svc.IsBlocked(context.Background(), a.Fingerprint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !blocked {
+		t.Error("agent not blocked after PostBlock")
+	}
+}
+
+func TestPostBlock_NonOwnerForbidden(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(WithCaller(req.Context(), &cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var a AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	blockReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(`{"reason":"x"}`)))
+	blockReq.Header.Set("Content-Type", "application/json")
+	blockReq = blockReq.WithContext(WithCaller(blockReq.Context(),
+		&cairnidentity.Caller{UserID: 2, Username: "bob"}))
+	blockReq = WithFingerprintParam(blockReq, a.Fingerprint)
+	blockW := httptest.NewRecorder()
+	h.PostBlock(blockW, blockReq)
+
+	if blockW.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", blockW.Code)
+	}
+}
+
+func TestPostBlock_UnauthenticatedUnauthorized(t *testing.T) {
+	h := newTestHandler(t)
+
+	blockReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(`{"reason":"x"}`)))
+	blockReq.Header.Set("Content-Type", "application/json")
+	blockReq = WithFingerprintParam(blockReq, "cairn:any")
+	blockW := httptest.NewRecorder()
+	h.PostBlock(blockW, blockReq)
+
+	if blockW.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", blockW.Code)
+	}
+}
+
+func TestPostBlock_NotFound(t *testing.T) {
+	h := newTestHandler(t)
+
+	blockReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(`{"reason":"x"}`)))
+	blockReq.Header.Set("Content-Type", "application/json")
+	blockReq = blockReq.WithContext(WithCaller(blockReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	blockReq = WithFingerprintParam(blockReq, "cairn:does-not-exist")
+	blockW := httptest.NewRecorder()
+	h.PostBlock(blockW, blockReq)
+
+	if blockW.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", blockW.Code)
+	}
+}
