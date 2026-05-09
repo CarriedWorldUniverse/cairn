@@ -214,3 +214,69 @@ func (h *Handler) PostBlock(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "")
 	}
 }
+
+// GetIdentity handles GET /api/cairn/v1/agents/:fingerprint/identity.
+// Returns the agent's public key + metadata. Public — no auth required
+// (the public key is, by definition, public).
+func (h *Handler) GetIdentity(w http.ResponseWriter, r *http.Request) {
+	fp := fingerprintFromCtx(r.Context())
+	if fp == "" {
+		writeError(w, http.StatusBadRequest, "missing_fingerprint", "")
+		return
+	}
+
+	a, err := h.svc.GetByFingerprint(r.Context(), fp)
+	if err != nil {
+		if errors.Is(err, cairnidentity.ErrAgentNotFound) {
+			writeError(w, http.StatusNotFound, "agent_not_found", "")
+			return
+		}
+		log.Printf("cairn api v1: GetIdentity: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
+		return
+	}
+
+	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
+	writeAgent(w, http.StatusOK, a, ownerName)
+}
+
+// GetAgents handles GET /api/cairn/v1/agents — list the authed user's
+// own agents. Optional ?status= filter accepts "pending" or "active".
+func (h *Handler) GetAgents(w http.ResponseWriter, r *http.Request) {
+	caller := callerFromCtx(r.Context())
+	if caller == nil {
+		writeError(w, http.StatusUnauthorized, "unauthenticated", "")
+		return
+	}
+
+	status := cairn.AgentStatus(r.URL.Query().Get("status"))
+
+	agents, err := h.svc.ListByUser(r.Context(), caller.UserID, status)
+	if err != nil {
+		log.Printf("cairn api v1: GetAgents: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
+		return
+	}
+
+	out := make([]AgentJSON, 0, len(agents))
+	for _, a := range agents {
+		ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
+		j := AgentJSON{
+			Fingerprint:  a.Fingerprint,
+			OwnerName:    ownerName,
+			Slug:         a.Slug,
+			Domain:       a.Domain,
+			PublicKeyHex: hex.EncodeToString(a.PublicKey),
+			Status:       string(a.Status),
+			CreatedAt:    a.CreatedAt.UTC().Format(time.RFC3339),
+		}
+		if a.ActivatedAt != nil {
+			j.ActivatedAt = a.ActivatedAt.UTC().Format(time.RFC3339)
+		}
+		out = append(out, j)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(out)
+}

@@ -431,3 +431,144 @@ func TestPostBlock_NotFound(t *testing.T) {
 		t.Errorf("status = %d, want 404", blockW.Code)
 	}
 }
+
+func TestGetIdentity_ReturnsPublicKey(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(WithCaller(req.Context(), &cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var a AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &a)
+
+	idReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	idReq = WithFingerprintParam(idReq, a.Fingerprint)
+	idW := httptest.NewRecorder()
+	h.GetIdentity(idW, idReq)
+
+	if idW.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", idW.Code)
+	}
+
+	var got AgentJSON
+	json.Unmarshal(idW.Body.Bytes(), &got)
+	if got.PublicKeyHex != hex.EncodeToString(pub) {
+		t.Errorf("public_key = %q, want %q", got.PublicKeyHex, hex.EncodeToString(pub))
+	}
+	if got.Slug != "plumb" {
+		t.Errorf("slug = %q, want plumb", got.Slug)
+	}
+}
+
+func TestGetIdentity_NotFound(t *testing.T) {
+	h := newTestHandler(t)
+
+	idReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	idReq = WithFingerprintParam(idReq, "cairn:does-not-exist")
+	idW := httptest.NewRecorder()
+	h.GetIdentity(idW, idReq)
+
+	if idW.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", idW.Code)
+	}
+}
+
+func TestGetAgents_ListsCurrentUsersAgents(t *testing.T) {
+	h := newTestHandler(t)
+
+	for _, slug := range []string{"plumb", "anvil", "forge"} {
+		pub, _, _ := ed25519.GenerateKey(rand.Reader)
+		body, _ := json.Marshal(RegisterRequestJSON{
+			ProposedOwner: "alice", Slug: slug, Domain: "darksoft.co.nz",
+			PublicKeyHex: hex.EncodeToString(pub),
+		})
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(WithCaller(req.Context(),
+			&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+		w := httptest.NewRecorder()
+		h.PostAgents(w, req)
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/cairn/v1/agents", nil)
+	listReq = listReq.WithContext(WithCaller(listReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	listW := httptest.NewRecorder()
+	h.GetAgents(listW, listReq)
+
+	if listW.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", listW.Code)
+	}
+
+	var got []AgentJSON
+	if err := json.Unmarshal(listW.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Errorf("len = %d, want 3", len(got))
+	}
+}
+
+func TestGetAgents_StatusFilter(t *testing.T) {
+	h := newTestHandler(t)
+
+	pub1, _, _ := ed25519.GenerateKey(rand.Reader)
+	body1, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub1),
+	})
+	req1 := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body1))
+	req1.Header.Set("Content-Type", "application/json")
+	req1 = req1.WithContext(WithCaller(req1.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w1 := httptest.NewRecorder()
+	h.PostAgents(w1, req1)
+
+	pub2, _, _ := ed25519.GenerateKey(rand.Reader)
+	body2, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "anvil", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub2),
+	})
+	req2 := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	h.PostAgents(w2, req2)
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/cairn/v1/agents?status=active", nil)
+	listReq = listReq.WithContext(WithCaller(listReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	listW := httptest.NewRecorder()
+	h.GetAgents(listW, listReq)
+
+	if listW.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", listW.Code)
+	}
+
+	var got []AgentJSON
+	json.Unmarshal(listW.Body.Bytes(), &got)
+	if len(got) != 1 {
+		t.Errorf("active filter len = %d, want 1", len(got))
+	}
+	if got[0].Slug != "plumb" {
+		t.Errorf("slug = %q, want plumb", got[0].Slug)
+	}
+}
+
+func TestGetAgents_RequiresAuth(t *testing.T) {
+	h := newTestHandler(t)
+
+	listReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	listW := httptest.NewRecorder()
+	h.GetAgents(listW, listReq)
+
+	if listW.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", listW.Code)
+	}
+}
