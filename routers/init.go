@@ -5,11 +5,13 @@ package routers
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"runtime"
 
 	"github.com/CarriedWorldUniverse/cairn/models"
 	auth_model "github.com/CarriedWorldUniverse/cairn/models/auth"
+	"github.com/CarriedWorldUniverse/cairn/models/db"
 	"github.com/CarriedWorldUniverse/cairn/modules/cache"
 	"github.com/CarriedWorldUniverse/cairn/modules/eventsource"
 	"github.com/CarriedWorldUniverse/cairn/modules/git"
@@ -26,8 +28,10 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/modules/translation"
 	"github.com/CarriedWorldUniverse/cairn/modules/web"
 	actions_router "github.com/CarriedWorldUniverse/cairn/routers/api/actions"
+	cairnv1 "github.com/CarriedWorldUniverse/cairn/routers/api/cairn/v1"
 	forgejo "github.com/CarriedWorldUniverse/cairn/routers/api/forgejo/v1"
 	packages_router "github.com/CarriedWorldUniverse/cairn/routers/api/packages"
+	api_shared "github.com/CarriedWorldUniverse/cairn/routers/api/shared"
 	apiv1 "github.com/CarriedWorldUniverse/cairn/routers/api/v1"
 	"github.com/CarriedWorldUniverse/cairn/routers/common"
 	"github.com/CarriedWorldUniverse/cairn/routers/private"
@@ -36,6 +40,7 @@ import (
 	auth_method "github.com/CarriedWorldUniverse/cairn/services/auth/method"
 	"github.com/CarriedWorldUniverse/cairn/services/auth/source/oauth2"
 	"github.com/CarriedWorldUniverse/cairn/services/automerge"
+	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
 	"github.com/CarriedWorldUniverse/cairn/services/cron"
 	federation_service "github.com/CarriedWorldUniverse/cairn/services/federation"
 	feed_service "github.com/CarriedWorldUniverse/cairn/services/feed"
@@ -142,6 +147,10 @@ func InitWebInstalled(ctx context.Context) {
 	mustInitCtx(ctx, auth_model.Init)
 	mustInitCtx(ctx, repo_service.Init)
 
+	if setting.Cairn.Enabled {
+		mustInitCtx(ctx, initCairn)
+	}
+
 	// Booting long running goroutines.
 	mustInit(indexer_service.Init)
 
@@ -181,6 +190,10 @@ func NormalRoutes() *web.Route {
 	r.Mount("/api/forgejo/v1", forgejo.Routes())
 	r.Mount("/api/internal", private.Routes())
 
+	if setting.Cairn.Enabled {
+		r.Mount("/api/cairn/v1", cairnRoutes())
+	}
+
 	r.Post("/-/fetch-redirect", common.FetchRedirectDelegate)
 
 	if setting.Packages.Enabled {
@@ -204,4 +217,43 @@ func NormalRoutes() *web.Route {
 	}
 
 	return r
+}
+
+// initCairn loads the instance HMAC key and constructs the Cairn
+// AgentService. Runs after models.Init so the xorm engine is live.
+//
+// Cairn-specific code; AGPLv3. See LICENSING.md.
+func initCairn(ctx context.Context) error {
+	// db.GetEngine(ctx) wraps the master engine into a per-context
+	// session (*xorm.Session), which GetMasterEngine cannot unwrap.
+	// Pull the master Engine from db.DefaultContext (set by
+	// SetDefaultEngine during InitDBEngine) instead.
+	engined, ok := db.DefaultContext.(db.Engined)
+	if !ok {
+		return errors.New("cairn: db.DefaultContext is not db.Engined")
+	}
+	masterEng, err := db.GetMasterEngine(engined.Engine())
+	if err != nil {
+		return err
+	}
+	return cairnv1.Init(
+		ctx,
+		setting.Cairn.HMACKeyPath,
+		cairnidentity.NewXormAgentStore(masterEng),
+		cairnidentity.NewXormBlocklistStore(masterEng),
+		cairnv1.NewForgejoUserResolver(),
+	)
+}
+
+// cairnRoutes builds the /api/cairn/v1 sub-router. Mirrors the shape
+// of apiv1.Routes() — applies shared API middleware (which populates
+// the APIContext + Doer) and then mounts Cairn's handlers via the
+// RouteGroup adapter.
+//
+// Cairn-specific code; AGPLv3. See LICENSING.md.
+func cairnRoutes() *web.Route {
+	m := web.NewRoute()
+	m.Use(api_shared.Middlewares()...)
+	cairnv1.MountRoutes(cairnv1.NewForgejoRouteGroup(m))
+	return m
 }
