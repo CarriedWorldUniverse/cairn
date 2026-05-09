@@ -76,3 +76,41 @@ func TestGenerateInstanceHMACKey_Random(t *testing.T) {
 		t.Error("two calls returned identical keys (vanishingly unlikely)")
 	}
 }
+
+func TestLoadInstanceHMACKey_RejectsInsecureMode(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "instance-hmac.key")
+
+	// Pre-write a valid 32-byte file with too-loose mode 0644.
+	if err := os.WriteFile(path, make([]byte, 32), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := LoadInstanceHMACKey(path)
+	if err == nil {
+		t.Error("expected error for mode-0644 key file")
+	}
+}
+
+func TestLoadInstanceHMACKey_RaceLosesGracefully(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "instance-hmac.key")
+
+	// Simulate a winner: pre-write a valid key file with correct mode.
+	winnerKey := make([]byte, 32)
+	for i := range winnerKey {
+		winnerKey[i] = byte(i)
+	}
+	if err := os.WriteFile(path, winnerKey, 0400); err != nil {
+		t.Fatal(err)
+	}
+
+	// Loser path: O_EXCL fails with EEXIST, falls through to read.
+	got, err := LoadInstanceHMACKey(path)
+	if err != nil {
+		t.Fatalf("loser-path read failed: %v", err)
+	}
+	if string(got) != string(winnerKey) {
+		t.Error("loser returned different key than winner persisted")
+	}
+}
