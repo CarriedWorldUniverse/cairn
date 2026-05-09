@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"sync/atomic"
+	"time"
 
 	"xorm.io/xorm"
 
 	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
+	"github.com/CarriedWorldUniverse/cairn/services/notify"
 )
 
 // hmacKeyForEncrypt caches the HMAC key bytes loaded by Init so the API
@@ -69,5 +71,8 @@ func Init(engine *xorm.Engine, hmacKeyPath string) error {
 	}
 
 	SetGlobal(NewService(engine, resolver))
+
+	q := newQueue(Global(), 5*time.Second)
+	notify.RegisterNotifier(&prNotifier{queue: q})
 	return nil
 }
