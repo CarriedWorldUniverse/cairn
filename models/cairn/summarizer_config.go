@@ -35,8 +35,4 @@ type SummarizerConfig struct {
 
 func (SummarizerConfig) TableName() string { return "cairn_summarizer_config" }
 
-func (c *SummarizerConfig) IsConfigured() bool {
-	return c != nil && c.Enabled && c.EndpointURL != "" && len(c.CredentialsCipher) > 0
-}
-
 func (c *SummarizerConfig) UpdatedAt() time.Time { return time.Unix(c.UpdatedUnix, 0) }

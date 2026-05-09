@@ -286,17 +286,25 @@ func cairnRoutes() *web.Route {
 	// adapter MountRoutes uses, because they need ctx.Doer + the
 	// shared API helpers (ctx.Error / ctx.JSON / ctx.Params) to
 	// match the surrounding apiv1 conventions.
-	m.Group("/orgs/{owner}", func() {
-		m.Get("/summarizer", cairnv1.GetSummarizerConfig)
-		m.Put("/summarizer", cairnv1.PutSummarizerConfig)
-	})
-	m.Group("/repos/{owner}/{repo}", func() {
-		m.Get("/summarizer", cairnv1.GetRepoConsent)
-		m.Put("/summarizer", cairnv1.PutRepoConsent)
-		m.Group("/pulls/{index}/summary", func() {
-			m.Get("", cairnv1.GetSummary)
-			m.Post("/regenerate", cairnv1.PostRegenerate)
+	//
+	// Gated on SummarizerEnabled: when summarizer is disabled, the
+	// service Init is skipped (see Run() above), so config GET/PUT
+	// and consent GET/PUT must not be mounted either — otherwise
+	// they would still hit the database and return real responses
+	// while the summarizer pipeline is dark.
+	if setting.Cairn.SummarizerEnabled {
+		m.Group("/orgs/{owner}", func() {
+			m.Get("/summarizer", cairnv1.GetSummarizerConfig)
+			m.Put("/summarizer", cairnv1.PutSummarizerConfig)
 		})
-	})
+		m.Group("/repos/{owner}/{repo}", func() {
+			m.Get("/summarizer", cairnv1.GetRepoConsent)
+			m.Put("/summarizer", cairnv1.PutRepoConsent)
+			m.Group("/pulls/{index}/summary", func() {
+				m.Get("", cairnv1.GetSummary)
+				m.Post("/regenerate", cairnv1.PostRegenerate)
+			})
+		})
+	}
 	return m
 }

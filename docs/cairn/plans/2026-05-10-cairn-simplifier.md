@@ -2279,3 +2279,37 @@ Save location: `docs/cairn/plans/2026-05-10-cairn-simplifier.md` (in-repo); mirr
 2. **Inline Execution** — execute in this session via `superpowers:executing-plans`, batched checkpoints.
 
 Plans 1–4 used Subagent-Driven; recommend the same here for consistency.
+
+---
+
+## Deferred to follow-up (out of Plan 5 scope)
+
+These items surfaced in the Plan 5 holistic review and are explicitly deferred. Plan 6 (Human-review enforcement) and Plan 7 (Deploy AI-native Cairn) should pick these up as appropriate.
+
+### Generating-state failure-recovery
+
+When the auto-summarize background worker fails silently (AI service timeout, provider misconfigured), the cache row never lands and the PR-summary block renders perpetually as "summary generating…" with no recovery affordance. Spec §3.7 says failure mode should show "summary unavailable" with admin-debug link. Fix path: write a failure-sentinel row with empty `SummaryMD` and a populated `model_id` like `"<failed: <err>>"` so `GetCachedSummary` returns it and the template renders the `unavailable` state. Or: allow the regenerate button to appear in the generating state for repo admins. **Plan 6 or post-Plan-6 follow-up.**
+
+### Commit-level + file-level orchestration
+
+`LevelFlag` (PR | Commit | File) is in the schema and `LevelsEnabled` is read/written via the API, but only PR-level orchestration ships in MVP. Setting `LevelCommit | LevelFile` in org config does nothing today. Either add validation in `PutSummarizerConfig` to reject unsupported levels (cleanest), or document the operators-expectation gap. **Post-Plan-7 follow-up; not blocking deploy.**
+
+### Admin UI for summarizer config
+
+Spec §3.8 references "org settings → AI summarizer panel" and "private repo settings → Enable summarization panel". MVP ships API-only; admins must use the API directly to configure. **Plan 7 deployment runbook must document the curl-based config workflow.**
+
+### Debounce goroutine + global Service mismatch
+
+`prNotifier`'s queue captures the original `*Service` at first Init via `q.svc`. If `Init` is ever called again (hot-reload, key rotation), the old queue still points at the old service with the old `hmacKey`. `prNotifier.handle` re-reads `Global()` correctly, but the queue worker uses `q.svc` directly. Not a bug for the single-Init MVP lifecycle. **Fix when hot-reload is added; flag in the runbook as "single-Init only — restart server for config changes."**
+
+### Unbounded `cairn_pr_summary` row growth
+
+By MVP design, old summary rows are kept for audit. For Jacinta's single-org deploy with low PR volume this is fine indefinitely. Should the table grow problematic, add a periodic cleanup that keeps only the most-recent N rows per (repo, pr). **Runbook maintenance note for Plan 7.**
+
+### `levels_enabled` operator UX
+
+`PutSummarizerConfig` accepts any int for `levels_enabled`. Setting bits for unsupported levels (commit, file) appears to succeed but has no effect. Plan 6 or post-Plan-7: either add validation rejecting unsupported bits, or surface a warning in the response.
+
+### `notifierRegistered` process-global flag — test isolation gap
+
+The atomic.Bool gate in `services/cairn/summarizer/init.go` is process-global and never reset, so the regression test only weakly verifies the gate (asserts the flag is true after Init, not that the notifier was registered exactly once). Production runs one Init so this is acceptable. **Plan 7 verify**: confirm `notify.RegisterNotifier` is not called before `initCairn` in any Forgejo test harness that also runs the summarizer package.
