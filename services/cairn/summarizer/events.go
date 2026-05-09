@@ -81,7 +81,7 @@ func (q *queue) enqueue(j Job) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		if _, err := svc.EnsureSummary(ctx, jobCopy.RepoID, jobCopy.PRNumber, jobCopy.OwnerID, jobCopy.Context, jobCopy.Scope); err != nil {
-			log.Warn("cairn summarizer: auto-run failed for repo=%d pr=%d: %v", jobCopy.RepoID, jobCopy.PRNumber, err)
+			log.Warn("summarizer: auto-run failed for repo=%d pr=%d: %v", jobCopy.RepoID, jobCopy.PRNumber, err)
 		}
 	}()
 }
@@ -138,14 +138,14 @@ func BuildPRContextFromForgejo(ctx context.Context, repo *repo_model.Repository,
 
 	mergeBase, err := gitRepo.GetMergeBaseSimple(pr.BaseBranch, pr.HeadBranch)
 	if err != nil {
-		log.Warn("cairn summarizer: merge base for repo=%d pr=%d: %v", repo.ID, pr.Index, err)
+		log.Warn("summarizer: merge base for repo=%d pr=%d: %v", repo.ID, pr.Index, err)
 		return out, nil
 	}
 
 	if files, ferr := gitRepo.GetFilesChangedBetween(mergeBase, pr.HeadBranch); ferr == nil {
 		out.FilePaths = files
 	} else {
-		log.Warn("cairn summarizer: list changed files for repo=%d pr=%d: %v", repo.ID, pr.Index, ferr)
+		log.Warn("summarizer: list changed files for repo=%d pr=%d: %v", repo.ID, pr.Index, ferr)
 	}
 
 	if scope == cairnmodels.DataScopeCommitMessages || scope == cairnmodels.DataScopeFull {
@@ -157,7 +157,7 @@ func BuildPRContextFromForgejo(ctx context.Context, repo *repo_model.Repository,
 						out.CommitMessages = append(out.CommitMessages, c.CommitMessage)
 					}
 				} else {
-					log.Warn("cairn summarizer: commits between for repo=%d pr=%d: %v", repo.ID, pr.Index, cerr)
+					log.Warn("summarizer: commits between for repo=%d pr=%d: %v", repo.ID, pr.Index, cerr)
 				}
 			}
 		}
@@ -170,8 +170,13 @@ func BuildPRContextFromForgejo(ctx context.Context, repo *repo_model.Repository,
 			if lw.truncated {
 				out.Diff += "\n\n[diff truncated at 512 KB]\n"
 			}
+		} else if lw.w.Len() > 0 {
+			// Partial bytes already buffered before the error; surface them
+			// with a marker rather than discarding so the summarizer still
+			// gets useful context on a transient git failure.
+			out.Diff = lw.w.String() + fmt.Sprintf("\n\n[diff incomplete: %v]", derr)
 		} else {
-			log.Warn("cairn summarizer: diff for repo=%d pr=%d: %v", repo.ID, pr.Index, derr)
+			log.Warn("summarizer: diff for repo=%d pr=%d: %v", repo.ID, pr.Index, derr)
 		}
 	}
 
@@ -199,11 +204,11 @@ func (n *prNotifier) handle(ctx context.Context, pr *issues_model.PullRequest) {
 		return
 	}
 	if err := pr.LoadIssue(ctx); err != nil {
-		log.Warn("cairn summarizer: LoadIssue: %v", err)
+		log.Warn("summarizer: LoadIssue: %v", err)
 		return
 	}
 	if err := pr.LoadBaseRepo(ctx); err != nil {
-		log.Warn("cairn summarizer: LoadBaseRepo: %v", err)
+		log.Warn("summarizer: LoadBaseRepo: %v", err)
 		return
 	}
 	repo := pr.BaseRepo
@@ -213,7 +218,7 @@ func (n *prNotifier) handle(ctx context.Context, pr *issues_model.PullRequest) {
 
 	_, cfg, err := svc.resolver(repo.OwnerID)
 	if err != nil {
-		log.Warn("cairn summarizer: resolve owner=%d: %v", repo.OwnerID, err)
+		log.Warn("summarizer: resolve owner=%d: %v", repo.OwnerID, err)
 		return
 	}
 	if cfg == nil || !cfg.Enabled {
@@ -225,7 +230,7 @@ func (n *prNotifier) handle(ctx context.Context, pr *issues_model.PullRequest) {
 		consent := &cairnmodels.SummarizerRepoConsent{}
 		has, cerr := svc.engine.Context(ctx).Where("repo_id = ?", repo.ID).Get(consent)
 		if cerr != nil {
-			log.Warn("cairn summarizer: load consent repo=%d: %v", repo.ID, cerr)
+			log.Warn("summarizer: load consent repo=%d: %v", repo.ID, cerr)
 			return
 		}
 		if !has || !consent.Enabled {
@@ -239,7 +244,7 @@ func (n *prNotifier) handle(ctx context.Context, pr *issues_model.PullRequest) {
 
 	prCtx, err := BuildPRContextFromForgejo(ctx, repo, pr, pr.Issue, scope)
 	if err != nil {
-		log.Warn("cairn summarizer: build context repo=%d pr=%d: %v", repo.ID, pr.Index, err)
+		log.Warn("summarizer: build context repo=%d pr=%d: %v", repo.ID, pr.Index, err)
 		return
 	}
 

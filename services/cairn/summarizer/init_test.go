@@ -148,6 +148,41 @@ func TestInit_ResolverReturnsNilForMissingRow(t *testing.T) {
 	}
 }
 
+// TestInit_NotifierRegisteredOnlyOnce guards Fix 1: repeat Init calls
+// (tests, hot-reload paths) must not stack duplicate prNotifier instances
+// onto the global notify dispatcher. The atomic.Bool gate is the
+// load-bearing change; this test confirms the gate flips on first Init
+// and stays set across a second Init without erroring.
+//
+// Limitation: notify.RegisterNotifier is opaque from this package, so we
+// can't directly count registered notifiers. The CompareAndSwap in Init
+// is the actual fix; this test checks the gate's observable state.
+func TestInit_NotifierRegisteredOnlyOnce(t *testing.T) {
+	eng := cairntest.NewEngine(t)
+	dir := t.TempDir()
+	keyPath := filepath.Join(dir, "hmac.key")
+	if err := os.WriteFile(keyPath, []byte("test-hmac-key-32-bytes-long!!!ab"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Note: notifierRegistered is a process-global; once any earlier test
+	// in this package called Init successfully, it's already true. That's
+	// fine — the assertion is that Init remains a no-op on the notifier
+	// path and doesn't error.
+	if err := Init(eng, keyPath); err != nil {
+		t.Fatal(err)
+	}
+	defer SetGlobal(nil)
+
+	if err := Init(eng, keyPath); err != nil {
+		t.Fatalf("second Init must not error: %v", err)
+	}
+
+	if !notifierRegistered.Load() {
+		t.Error("expected notifierRegistered=true after Init")
+	}
+}
+
 func TestInit_MissingHMACKeyReturnsError(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	if err := Init(eng, "/nonexistent/path/hmac.key"); err == nil {

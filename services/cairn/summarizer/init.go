@@ -19,6 +19,13 @@ import (
 // reload would re-store here.
 var hmacKeyForEncrypt atomic.Pointer[[]byte]
 
+// notifierRegistered gates notify.RegisterNotifier so repeat Init calls
+// (tests, hot-reload paths) don't stack duplicate prNotifier instances and
+// double-fire summarization on every PR event. CompareAndSwap means only
+// the first Init wires the notifier; subsequent calls still refresh the
+// HMAC key + Service global but skip the registration step.
+var notifierRegistered atomic.Bool
+
 // HMACKey returns the bytes loaded by Init, or nil if Init hasn't run.
 // API handlers use this to keep the encrypt path consistent with the
 // init-time decrypt path (single source of truth for the key, no disk
@@ -72,7 +79,9 @@ func Init(engine *xorm.Engine, hmacKeyPath string) error {
 
 	SetGlobal(NewService(engine, resolver))
 
-	q := newQueue(Global(), 5*time.Second)
-	notify.RegisterNotifier(&prNotifier{queue: q})
+	if notifierRegistered.CompareAndSwap(false, true) {
+		q := newQueue(Global(), 5*time.Second)
+		notify.RegisterNotifier(&prNotifier{queue: q})
+	}
 	return nil
 }
