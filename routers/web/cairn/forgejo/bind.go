@@ -17,6 +17,7 @@
 package cairnforgejo
 
 import (
+	"io"
 	"strings"
 	"time"
 
@@ -179,6 +180,39 @@ func shouldShortCircuit(ctx *context.Context) bool {
 	return cairnweb.WantsMarkdown(ctx.Req)
 }
 
+// maxDiffBytes caps the buffered diff output for MaybeRenderCommit. Matches
+// the file blob cap used in MaybeRenderFile. Anything beyond this is dropped
+// and a truncation marker is appended.
+const maxDiffBytes = 512 * 1024
+
+// limitWriter wraps an io.Writer and stops forwarding once `remaining` bytes
+// have been written, marking itself truncated. Subsequent writes are silently
+// discarded (reported as successful) so upstream producers don't error out.
+type limitWriter struct {
+	w         io.Writer
+	remaining int
+	truncated bool
+}
+
+func (lw *limitWriter) Write(p []byte) (int, error) {
+	if lw.remaining <= 0 {
+		lw.truncated = true
+		return len(p), nil // discard, but report success so GetRawDiff doesn't error
+	}
+	if len(p) > lw.remaining {
+		n, err := lw.w.Write(p[:lw.remaining])
+		lw.remaining = 0
+		lw.truncated = true
+		if err != nil {
+			return n, err
+		}
+		return len(p), nil
+	}
+	n, err := lw.w.Write(p)
+	lw.remaining -= n
+	return n, err
+}
+
 // MaybeRenderCommit renders a commit as markdown if the caller asked for it.
 // Returns true if it handled the response (handler should return immediately).
 //
@@ -211,8 +245,12 @@ func MaybeRenderCommit(ctx *context.Context) bool {
 	var diff string
 	if commit.ParentCount() > 0 {
 		var buf strings.Builder
-		if err := git.GetRawDiff(ctx.Repo.GitRepo, commit.ID.String(), git.RawDiffNormal, &buf); err == nil {
+		lw := &limitWriter{w: &buf, remaining: maxDiffBytes}
+		if err := git.GetRawDiff(ctx.Repo.GitRepo, commit.ID.String(), git.RawDiffNormal, lw); err == nil {
 			diff = buf.String()
+			if lw.truncated {
+				diff += "\n\n[diff truncated at 512 KB]\n"
+			}
 		}
 	}
 
@@ -266,7 +304,7 @@ func MaybeRenderFile(ctx *context.Context) bool {
 	if !shouldShortCircuit(ctx) {
 		return false
 	}
-	if ctx.Repo == nil || ctx.Repo.Commit == nil || ctx.Repo.TreePath == "" {
+	if ctx.Repo == nil || ctx.Repo.GitRepo == nil || ctx.Repo.Commit == nil || ctx.Repo.TreePath == "" {
 		return false
 	}
 	blob, err := ctx.Repo.Commit.GetBlobByPath(ctx.Repo.TreePath)
@@ -311,7 +349,7 @@ func MaybeRenderFile(ctx *context.Context) bool {
 	}
 	// Last-commit-that-touched-the-file is best-effort; skip if the lookup
 	// fails so we still produce *some* markdown view.
-	if lastCommit, err := ctx.Repo.GitRepo.GetCommitByPath(ctx.Repo.TreePath); err == nil && lastCommit != nil {
+	if lastCommit, err := ctx.Repo.Commit.GetCommitByPath(ctx.Repo.TreePath); err == nil && lastCommit != nil {
 		fd.LastCommit = commitDataFromForgejo(lastCommit, false, false, "")
 	}
 
