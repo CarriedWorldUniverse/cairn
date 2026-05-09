@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -49,7 +50,7 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 
 	var in RegisterRequestJSON
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_json", err.Error())
+		writeError(w, http.StatusBadRequest, "invalid_json", "could not decode JSON body")
 		return
 	}
 
@@ -85,12 +86,12 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "agent_exists", "agent with this slug or fingerprint already exists")
 		return
 	default:
-		writeError(w, http.StatusInternalServerError, "internal_error", err.Error())
+		log.Printf("cairn api v1: PostAgents: %v", err)
+		writeError(w, http.StatusInternalServerError, "internal_error", "")
 		return
 	}
 
-	ownerName, _ := h.svc.UsernameByID(r.Context(), agent.UserID)
-	writeAgent(w, http.StatusCreated, agent, ownerName)
+	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner)
 }
 
 // writeError writes a JSON error response.
