@@ -296,3 +296,41 @@ func TestPostApprove_NotFound(t *testing.T) {
 		t.Errorf("status = %d, want 404", approveW.Code)
 	}
 }
+
+func TestPostApprove_AlreadyActiveIsIdempotent(t *testing.T) {
+	h := newTestHandler(t)
+	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Auto-approve as owner → already active.
+	body, _ := json.Marshal(RegisterRequestJSON{
+		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PublicKeyHex: hex.EncodeToString(pub),
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(WithCaller(req.Context(), &cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	w := httptest.NewRecorder()
+	h.PostAgents(w, req)
+	var a AgentJSON
+	json.Unmarshal(w.Body.Bytes(), &a)
+	if a.Status != string(cairn.AgentStatusActive) {
+		t.Fatalf("setup: expected active, got %q", a.Status)
+	}
+
+	// Re-approve. Should succeed (200) and remain active.
+	approveReq := httptest.NewRequest(http.MethodPost, "/", nil)
+	approveReq = approveReq.WithContext(WithCaller(approveReq.Context(),
+		&cairnidentity.Caller{UserID: 1, Username: "alice"}))
+	approveReq = WithFingerprintParam(approveReq, a.Fingerprint)
+	approveW := httptest.NewRecorder()
+	h.PostApprove(approveW, approveReq)
+
+	if approveW.Code != http.StatusOK {
+		t.Errorf("re-approve status = %d, want 200 (idempotent)", approveW.Code)
+	}
+	var got AgentJSON
+	json.Unmarshal(approveW.Body.Bytes(), &got)
+	if got.Status != string(cairn.AgentStatusActive) {
+		t.Errorf("status after re-approve = %q, want active", got.Status)
+	}
+}
