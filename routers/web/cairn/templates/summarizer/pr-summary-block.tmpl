@@ -1,0 +1,20 @@
+{{- if .Available -}}
+<div class="cairn-pr-summary cairn-summary-{{.State}}">
+  <div class="cairn-summary-header">
+    <span class="cairn-summary-by">by cairn</span>
+    {{- if eq .State "ready" -}}
+      <span class="cairn-summary-meta">{{.ModelID}} · generated {{.GeneratedAt}}</span>
+      {{- if .RegenerateURL -}}
+        <button class="cairn-summary-regen" data-url="{{.RegenerateURL}}">regenerate</button>
+      {{- end -}}
+    {{- end -}}
+  </div>
+  {{- if eq .State "ready" -}}
+    <div class="cairn-summary-body">{{.SummaryHTML | safeHTML}}</div>
+  {{- else if eq .State "generating" -}}
+    <div class="cairn-summary-body cairn-summary-pending">summary generating…</div>
+  {{- else -}}
+    <div class="cairn-summary-body cairn-summary-error">summary unavailable</div>
+  {{- end -}}
+</div>
+{{- end -}}

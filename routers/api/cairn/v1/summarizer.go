@@ -7,11 +7,12 @@ import (
 	"errors"
 	"net/http"
 
+	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	"github.com/CarriedWorldUniverse/cairn/models/db"
+	issues_model "github.com/CarriedWorldUniverse/cairn/models/issues"
 	"github.com/CarriedWorldUniverse/cairn/models/perm/access"
 	repo_model "github.com/CarriedWorldUniverse/cairn/models/repo"
 	user_model "github.com/CarriedWorldUniverse/cairn/models/user"
-	cairnmodels "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	"github.com/CarriedWorldUniverse/cairn/services/cairn/summarizer"
 	"github.com/CarriedWorldUniverse/cairn/services/context"
 )
@@ -383,12 +384,9 @@ func GetSummary(ctx *context.APIContext) {
 
 // PostRegenerate — POST /api/cairn/v1/repos/{owner}/{repo}/pulls/{index}/summary/regenerate.
 //
-// MVP stub: returns 501. The endpoint exists so route registration
-// works and clients can discover it; actual regeneration wiring lands
-// in Task 8 alongside the PRContext builder. Auth still runs: callers
-// without write permission receive 403, not 501 — exposing whether the
-// feature is implemented is fine, exposing repo existence to readers
-// without write is not.
+// Forces a fresh summary generation. Public repos run with DataScopeFull;
+// private repos require enabled SummarizerRepoConsent and use the consent's
+// data scope. 503 if the simplifier service is not initialized.
 func PostRegenerate(ctx *context.APIContext) {
 	if ctx.Doer == nil {
 		ctx.Error(http.StatusUnauthorized, "unauthenticated", nil)
@@ -407,7 +405,74 @@ func PostRegenerate(ctx *context.APIContext) {
 		ctx.Error(http.StatusForbidden, "write permission required", nil)
 		return
 	}
-	ctx.JSON(http.StatusNotImplemented, map[string]string{
-		"error": "manual regeneration arrives in Task 8",
+
+	prNumber := ctx.ParamsInt64(":index")
+	if prNumber <= 0 {
+		ctx.Error(http.StatusBadRequest, "invalid pr number", nil)
+		return
+	}
+
+	svc := summarizer.Global()
+	if svc == nil {
+		ctx.Error(http.StatusServiceUnavailable, "simplifier disabled", nil)
+		return
+	}
+
+	issue, err := issues_model.GetIssueByIndex(ctx, repo.ID, prNumber)
+	if err != nil {
+		if issues_model.IsErrIssueNotExist(err) {
+			ctx.Error(http.StatusNotFound, "pr not found", nil)
+			return
+		}
+		ctx.Error(http.StatusInternalServerError, "GetIssueByIndex", err)
+		return
+	}
+	if !issue.IsPull {
+		ctx.Error(http.StatusBadRequest, "not a pull request", nil)
+		return
+	}
+	if err := issue.LoadPullRequest(ctx); err != nil {
+		ctx.Error(http.StatusInternalServerError, "LoadPullRequest", err)
+		return
+	}
+
+	scope := cairnmodels.DataScopeFull
+	if repo.IsPrivate {
+		consent := &cairnmodels.SummarizerRepoConsent{}
+		has, cerr := db.GetEngine(ctx).Where("repo_id = ?", repo.ID).Get(consent)
+		if cerr != nil {
+			ctx.Error(http.StatusInternalServerError, "load consent", cerr)
+			return
+		}
+		if !has || !consent.Enabled {
+			ctx.Error(http.StatusBadRequest, "private repo summarization not enabled", nil)
+			return
+		}
+		scope = consent.DataScope
+		if !scope.IsValid() {
+			scope = cairnmodels.DataScopeMetadata
+		}
+	}
+
+	prCtx, err := summarizer.BuildPRContextFromForgejo(ctx, repo, issue.PullRequest, issue, scope)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "BuildPRContextFromForgejo", err)
+		return
+	}
+
+	row, err := svc.RegenerateSummary(ctx, repo.ID, prNumber, repo.OwnerID, prCtx, scope)
+	if err != nil {
+		if errors.Is(err, summarizer.ErrNotConfigured) {
+			ctx.Error(http.StatusServiceUnavailable, "simplifier disabled", nil)
+			return
+		}
+		ctx.Error(http.StatusInternalServerError, "regenerate", err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, SummaryResponse{
+		SummaryMD:   row.SummaryMD,
+		ModelID:     row.ModelID,
+		GeneratedAt: row.GeneratedUnix,
 	})
 }

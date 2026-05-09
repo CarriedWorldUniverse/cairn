@@ -229,6 +229,10 @@ func NewFuncMap() template.FuncMap {
 		"CairnIsAgentAuthor":    cairnweb.IsAgentAuthor,
 		"CairnAgentAuthorSlug":  cairnweb.AgentAuthorSlug,
 		"CairnAgentAuthorBadge": cairnweb.AgentAuthorBadge,
+		// Cairn — PR summary block. See routers/web/cairn/summarizer_pr_block.go.
+		"CairnPRSummaryBlock": func(repoID, prNumber int64, canRegen bool, regenURL string) template.HTML {
+			return template.HTML(cairnweb.RenderPRSummaryBlock(repoID, prNumber, canRegen, regenURL))
+		},
 	}
 }
 

@@ -5,6 +5,8 @@
 	<input type="hidden" id="repoId" value="{{.Repository.ID}}">
 	<input type="hidden" id="issueIndex" value="{{.Issue.Index}}">
 	<input type="hidden" id="type" value="{{.IssueType}}">
+	{{/* Cairn — per-PR AI summary block. See routers/web/cairn/summarizer_pr_block.go. */}}
+	{{if .Issue.IsPull}}{{CairnPRSummaryBlock .Repository.ID .Issue.Index .IsRepoAdmin (printf "/api/cairn/v1/repos/%s/%s/pulls/%d/summary/regenerate" .Repository.OwnerName .Repository.Name .Issue.Index)}}{{end}}
 
 	{{$createdStr:= DateUtils.TimeSince .Issue.CreatedUnix}}
 	<div class="issue-content-left comment-list prevent-before-timeline">
