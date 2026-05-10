@@ -1,8 +1,13 @@
-# Cairn — EC2 Deployment Runbook
+# Cairn — EC2 Deployment Runbook (AI-native MVP)
 
 **Audience:** an AI agent (or human operator) executing a first-time Cairn deployment on `nexus-cw-ec2`.
-**Goal:** A running Cairn instance, with the carried-world team's repos migrated, agents registered, signature enforcement enabled, and end-to-end commit-signing verified.
-**Refs:** [`docs/cairn/specs/2026-05-09-cairn-foundation-design.md`](../../docs/cairn/specs/2026-05-09-cairn-foundation-design.md) (the design this runbook implements).
+**Goal:** A running Cairn instance with: the carried-world team's repos migrated; agents registered; signature enforcement enabled; end-to-end commit-signing verified; **server-side AI PR summarization (the "simplifier") configured per-org**; and **review-policy enforcement (filter agent approvals from the gate, auto-apply default branch protection) configured per-org**. The simplifier and review-policy are MVP-scope features added by the AI-native amendment — see refs below.
+**Deployment ceiling:** "personal substrate" per `project_cairn_deployment_ceiling`. This runbook targets a **single-tenant** instance (Jacinta's owner-cluster only). Open-source release is the escape hatch for other operators; **public hosting is a separate future commitment**, not in this runbook's scope.
+**Refs:**
+- [`docs/cairn/specs/2026-05-09-cairn-foundation-design.md`](../../docs/cairn/specs/2026-05-09-cairn-foundation-design.md) — original agent-native foundation design (Plans 1-4).
+- [`docs/cairn/specs/2026-05-10-cairn-ai-native-amendment.md`](../../docs/cairn/specs/2026-05-10-cairn-ai-native-amendment.md) — the AI-native pivot spec (adds simplifier + review-policy).
+- [`docs/cairn/plans/2026-05-10-cairn-simplifier.md`](../../docs/cairn/plans/2026-05-10-cairn-simplifier.md) — Plan 5 (Simplifier).
+- [`docs/cairn/plans/2026-05-10-cairn-human-review-enforcement.md`](../../docs/cairn/plans/2026-05-10-cairn-human-review-enforcement.md) — Plan 6 (Review enforcement).
 
 This runbook is **state-aware and step-gated**: each phase ends with verification commands. Do not proceed to the next phase if a verification fails. Recovery procedures are at the end.
 
@@ -330,11 +335,15 @@ DEFAULT_INTERVAL = 8h
 
 [cairn]
 enabled = true
-enforce_signatures = false
+enforce_signatures = false           ; flip to true after migration window
 reject_orphan_agents = true
 hmac_key_path = /etc/cairn/instance-hmac.key
 markdown_endpoints_enabled = true
 wal_checkpoint_interval_minutes = 5
+
+; AI-native MVP additions (Plans 5 + 6):
+summarizer_enabled = true            ; default true; per-org config via API (Phase 7.5)
+review_policy_enabled = true         ; default true; per-org RequireHumanOnly toggle (Phase 7.6)
 
 EOF
 
@@ -507,6 +516,119 @@ Have Jacinta log in via the web UI and:
 
 ---
 
+## 7.5 Phase 6.5 — Configure simplifier (per-org)
+
+The simplifier is server-side AI summarization of PRs. Per-org configuration
+opts each org in to a specific AI provider + credentials. Cairn ships with
+two MVP providers via bridle: `claude-code` (subprocess) and `openai-api`.
+
+For Jacinta's deploy, `claude-code` is the natural fit (claudecode runs as
+a subprocess via her Claude subscription).
+
+There is no admin web UI in MVP — operators configure via the API directly.
+
+### 7.5.1 Configure the org's AI provider
+
+```bash
+TOKEN=<your-admin-token>   # from Phase 6 admin user; site-admin required
+INSTANCE=https://$INSTANCE_DOMAIN
+
+curl -X PUT $INSTANCE/api/cairn/v1/orgs/alice/summarizer \
+    -H "Authorization: token $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "enabled": true,
+        "provider": "claude-code",
+        "endpoint_url": "",
+        "model_id": "claude-sonnet-4-5",
+        "api_key": "<claude-code-binary-path-or-empty>",
+        "levels_enabled": 1
+    }'
+```
+
+`provider`: `"claude-code"` for Claude Code subprocess (Jacinta's primary
+path) OR `"openai-api"` for OpenAI-compatible endpoints. Only these two
+providers are MVP. Spec gap (logged in Plan 5 deferrals): bridle's openai
+provider doesn't take a custom endpoint, so OpenAI-compatible self-hosted
+endpoints (LM Studio, vLLM, etc.) aren't supported until bridle adds the
+endpoint param.
+
+`levels_enabled`: bitmask. `1`=PR-only (default), `3`=PR+commit,
+`7`=PR+commit+file. Plan 5 deferral: only PR-level orchestration ships in
+MVP; commit/file levels are stored but not dispatched. Setting bits 2 or 4
+has no effect today.
+
+### 7.5.2 Verify
+
+```bash
+curl $INSTANCE/api/cairn/v1/orgs/alice/summarizer \
+    -H "Authorization: token $TOKEN"
+# Expect: {"enabled":true,"provider":"claude-code",...,"credentials_set":true,"levels_enabled":1}
+```
+
+Note: credentials are never returned in responses; only the
+`credentials_set` boolean is exposed.
+
+### 7.5.3 Per-repo opt-in for private repos
+
+Public repos auto-summarize once the org config is in place. Private repos
+require explicit per-repo consent with a data-scope choice:
+
+```bash
+curl -X PUT $INSTANCE/api/cairn/v1/repos/alice/<repo>/summarizer \
+    -H "Authorization: token $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"enabled": true, "data_scope": "metadata"}'
+```
+
+`data_scope` values:
+
+- `full` — title + body + full diff + commit messages (most useful, most exposed)
+- `commit-messages` — title + body + commit messages, no diff
+- `metadata` — title + body + file paths only (most restrictive, default)
+
+The summarizer will not run on a private repo until consent.enabled=true.
+
+---
+
+## 7.6 Phase 6.6 — Configure review policy (per-org)
+
+Cairn's review policy filters AI-agent approvals from the "X approving
+reviews required" gate, blocks owner-cluster self-approval (alice cannot
+approve her own agents' PRs), and auto-applies branch protection on
+main/master to new repos.
+
+### 7.6.1 Confirm the policy
+
+Default for AI-native deploys is `require_human_only: true`. Verify:
+
+```bash
+curl $INSTANCE/api/cairn/v1/orgs/alice/review-policy \
+    -H "Authorization: token $TOKEN"
+# Expect: {"require_human_only": true}
+```
+
+### 7.6.2 Toggle if needed
+
+```bash
+curl -X PUT $INSTANCE/api/cairn/v1/orgs/alice/review-policy \
+    -H "Authorization: token $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"require_human_only": true}'
+```
+
+### 7.6.3 Default branch-protection auto-apply
+
+When `require_human_only: true`, every new repo created in this org
+automatically gets a branch-protection rule on `main`/`master` requiring
+1 approving review. Existing rules on existing repos are NOT touched.
+The rule activates the moment the named branch is created (Forgejo's
+standard behavior — rules match by name, not live ref); this also covers
+empty repos created with `auto_init: false` and repos created via
+push-create.
+
+---
+
 ## 8. Phase 7 — Smoke tests
 
 Before any repo migration, verify the Cairn-specific endpoints work:
@@ -543,6 +665,36 @@ If the schema is missing, the Cairn migrations didn't run. Check the journal for
 ```bash
 sudo journalctl -u cairn --since '10 minutes ago' --no-pager | grep -i 'migrat\|cairn\|error'
 ```
+
+### 8.5 Simplifier smoke tests
+
+Defer the PR-level checks until at least one repo has been migrated
+(Phase 8) and an open PR exists. The org-config check works immediately.
+
+- `curl $INSTANCE/api/cairn/v1/orgs/alice/summarizer -H "Authorization: token $TOKEN"` → returns config with `credentials_set: true`
+- Open a PR on any opted-in repo; wait ~10s for debounce + AI call; `curl $INSTANCE/api/cairn/v1/repos/alice/<repo>/pulls/1/summary` → returns generated markdown
+- Open the PR's `$INSTANCE/api/cairn/v1/repos/alice/<repo>/pulls/1.md?format=md` → markdown view starts with `## Summary by cairn`
+- Open the PR HTML page; verify "by cairn" block at top with summary text
+- POST regenerate manually (`POST .../pulls/1/summary/regenerate`); verify a fresh row appears in `cairn_pr_summary`
+
+### 8.6 Review-policy smoke tests
+
+- `curl https://$INSTANCE_DOMAIN/.well-known/cairn.json` → manifest shows `features.review_policy_enabled: true` AND `features.simplifier_enabled: true`
+- Create a new repo `test-protection`; verify `main` branch protection rule exists with `required_approvals: 1`
+- Have an agent user approve a PR; verify the PR shows the "doesn't count toward gate" badge
+- Verify granted-approval count stays 0 with only agent approvals
+- Have a non-agent user approve; verify count goes to 1 and PR is mergeable
+
+### 8.7 Smoke tests from Plan 5/6 deferred sections
+
+(Cross-reference Plan 5 "Deferred to follow-up" and Plan 6 "Plan 7 verification checklist".)
+
+- Reviewer-ID dedup parity: `COUNT(*)` and filter path match for normal single-approver PR
+- Empty-repo branch protection timing: `auto_init=false` repo, push to `main`, verify protection blocks
+- PushCreateRepo: push-create a repo, verify protection rule appears in branch settings UI
+- Review-policy org API: site admin can GET/PUT, non-admin gets 403
+- Manifest `review_policy` advertisement (already in 8.6)
+- Simplifier with summarizer disabled flag: set `summarizer_enabled = false` in `app.ini`, restart, verify `/api/cairn/v1/orgs/.../summarizer` returns 404 or 503 (per Plan 5 final cleanup)
 
 ---
 
@@ -819,6 +971,55 @@ Cairn is now the team's primary git platform. GitHub remains as DR via push-mirr
 
 ---
 
+## 15.5 Known operator-facing gaps (MVP)
+
+These items surfaced during Plans 5 and 6 implementation reviews. They
+are explicit MVP deferrals; the deployment is fully functional without
+them.
+
+**Admin UI**: there is no web UI for simplifier or review-policy
+configuration in MVP. Operators use the API directly (per Phase 7.5 and
+7.6 above). UI deferred to post-Plan-7.
+
+**Org admin can't configure their own org**: API auth checks
+`Doer.IsAdmin || Doer.ID == owner.ID`. When owner is an org, only site
+admins pass. For single-tenant personal-substrate this is fine. Document
+for any future multi-org expansion.
+
+**Simplifier failure UX**: if the AI service fails silently, the PR-page
+summary block stays in "generating" state perpetually. Spec §3.7 calls
+for "Summary unavailable" with admin-debug link; not yet wired. Operators
+who notice perpetual generating-state should check `journalctl -u cairn`
+for AI-call errors and use the regenerate button to retry.
+
+**Custom OpenAI endpoint**: bridle's openai provider doesn't take a custom
+endpoint, so OpenAI-compatible self-hosted endpoints (LM Studio, vLLM,
+etc.) aren't supported until bridle adds the param.
+
+**Custom claude binary path**: bridle's claudecode provider doesn't accept
+a binary path; uses `claude` on PATH.
+
+**Hot-reload**: changing `[cairn]` config in `app.ini` requires a server
+restart. The simplifier's HMAC key is read once at Init; the review-policy
+notifier is registered idempotently. No hot-reload path.
+
+**`cairn_pr_summary` row growth**: by MVP design, old summary rows are
+kept for audit. For low-volume single-org deploys this is fine
+indefinitely. If the table grows problematic (likely thousands of rows
+for heavy-use multi-year deploys), consider a periodic cleanup that keeps
+only the most-recent N rows per (repo, pr).
+
+**`levels_enabled` UI**: `PutSummarizerConfig` accepts any int. Setting
+bits for unsupported levels (commit=2, file=4) has no effect — only
+PR-level orchestration ships in MVP. Set `1` (PR-only) for now.
+
+**`RequireHumanOnly` field naming**: spec says
+`require_human_only_approval`; implementation uses `RequireHumanOnly`
+(DB column `require_human_only`, API `require_human_only`). Deliberate
+simplification.
+
+---
+
 ## 16. Build-surfaces this runbook depends on
 
 These are the parts of the Cairn binary's behaviour that this runbook assumes work as documented. If any of these change during build, **this runbook must be updated in the same PR**:
@@ -839,7 +1040,7 @@ These are the parts of the Cairn binary's behaviour that this runbook assumes wo
 
 ### Config surfaces (referenced in §4)
 
-- `[cairn]` section in `app.ini` with flags: `enabled`, `enforce_signatures`, `reject_orphan_agents`, `hmac_key_path`, `markdown_endpoints_enabled`, `wal_checkpoint_interval_minutes`
+- `[cairn]` section in `app.ini` with flags: `enabled`, `enforce_signatures`, `reject_orphan_agents`, `hmac_key_path`, `markdown_endpoints_enabled`, `wal_checkpoint_interval_minutes`, `summarizer_enabled` (Plan 5), `review_policy_enabled` (Plan 6)
 - `[mirror] ENABLED = true` to enable push-mirror per repo
 - `[security] INSTALL_LOCK = true` to disable the web installer after first-run
 
@@ -875,8 +1076,30 @@ The structure of `.well-known/cairn.json` documented in design spec §7 (subsect
 
 If a build PR adds a new Cairn-specific surface (e.g., new CLI subcommand, new endpoint, new config flag), add it to the appropriate subsection above and reference it from the relevant runbook phase.
 
+### Plan 5 (Simplifier) surfaces
+
+- `[cairn] summarizer_enabled` config key (default true) — `modules/setting/cairn.go`
+- API: `GET/PUT /api/cairn/v1/orgs/{owner}/summarizer`
+- API: `GET/PUT /api/cairn/v1/repos/{owner}/{repo}/summarizer` (private only)
+- API: `GET /api/cairn/v1/repos/{owner}/{repo}/pulls/{index}/summary`
+- API: `POST /api/cairn/v1/repos/{owner}/{repo}/pulls/{index}/summary/regenerate`
+- Manifest: `.well-known/cairn.json` `features.simplifier_enabled`
+- Provider via bridle: `claude-code` and `openai-api` only in MVP
+- Database: `cairn_summarizer_config`, `cairn_summarizer_repo_consent`, `cairn_pr_summary`
+
+### Plan 6 (Review enforcement) surfaces
+
+- `[cairn] review_policy_enabled` config key (default true)
+- API: `GET/PUT /api/cairn/v1/orgs/{owner}/review-policy`
+- Manifest: `.well-known/cairn.json` `features.review_policy_enabled`
+- Filter hook: `models/issues/cairn_review_filter.go` (`atomic.Pointer`)
+- Branch-protection auto-apply: `services/repository/{repository,template}.go`
+- PR-page badge: `cairnAgentApprovalDoesNotCount` template helper
+- Database: `cairn_review_policy`
+
 ---
 
 ## Changelog
 
 - **2026-05-09 (initial draft):** matches design spec `2026-05-09-cairn-foundation-design.md`. No build has landed yet; runbook is forward-looking.
+- **2026-05-10 (AI-native MVP amendment):** added Phase 6.5 (simplifier per-org config), Phase 6.6 (review-policy per-org config), §8.5/8.6/8.7 (smoke tests for simplifier, review-policy, and Plan 5/6 deferred items), §15.5 (known operator-facing gaps). Updated front matter for AI-native MVP scope and personal-substrate ceiling, §4 `app.ini` example to include `summarizer_enabled` and `review_policy_enabled`, and §16 build-surfaces to include Plan 5/6 CLI/API surfaces.
