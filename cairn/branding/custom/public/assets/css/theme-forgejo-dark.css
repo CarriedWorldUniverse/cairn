@@ -1,0 +1,354 @@
+/* Cairn dark theme — overrides Forgejo's default dark theme.
+ *
+ * Strategy: keep Forgejo's component shapes; remap its --color-* variables
+ * onto the --cairn-* stone scale + mark accent. Selector :root[data-theme=...]
+ * matches Forgejo's theme-loading approach so this file replaces the default
+ * forgejo-dark theme entirely when dropped in custom/public/assets/css/.
+ *
+ * See cairn/branding/README.md for the deploy procedure and Maren's
+ * docs/ui/2026-05-09-cairn-public-ui.md for the design rationale.
+ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/Inter-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/Inter-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/Inter-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}
+
+:root,
+:root[data-theme="forgejo-dark"],
+:root[data-theme="forgejo-auto"] {
+  color-scheme: dark;
+
+  /* Stone scale — see Maren's doc */
+  --cairn-stone-0: #0e0f11;
+  --cairn-stone-1: #161719;
+  --cairn-stone-2: #1e2023;
+  --cairn-stone-3: #2a2d31;
+  --cairn-stone-4: #3a3e44;
+  --cairn-stone-5: #555b63;
+  --cairn-stone-6: #8c95a0;
+  --cairn-stone-7: #c8cdd4;
+  --cairn-stone-8: #e8ecf0;
+  --cairn-stone-9: #f5f7f9;
+
+  /* Accent */
+  --cairn-mark: #5c80a8;
+  --cairn-mark-dim: #3d5a7a;
+  --cairn-mark-glow: #5c80a819;
+
+  /* Status */
+  --cairn-pass: #5a8f6e;
+  --cairn-fail: #a04040;
+  --cairn-warn: #9a7a2a;
+  --cairn-muted: #3a4048;
+
+  /* Typography */
+  --fonts-proportional: "Inter", -apple-system, system-ui, sans-serif;
+  --fonts-monospace: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fonts-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+
+  /* --- Map cairn -> forgejo --- */
+
+  /* Primary (links, focus, active tabs) */
+  --color-primary: var(--cairn-mark);
+  --color-primary-contrast: var(--cairn-stone-9);
+  --color-primary-dark-1: #6e90b6;
+  --color-primary-dark-2: #80a0c2;
+  --color-primary-dark-3: #93b0cf;
+  --color-primary-dark-4: #a6bfdb;
+  --color-primary-dark-5: #b9cfe7;
+  --color-primary-dark-6: #ccdef2;
+  --color-primary-dark-7: #e0eefc;
+  --color-primary-light-1: #4d6f95;
+  --color-primary-light-2: var(--cairn-mark-dim);
+  --color-primary-light-3: #314b66;
+  --color-primary-light-4: #263c52;
+  --color-primary-light-5: #1b2c3e;
+  --color-primary-light-6: #131f2c;
+  --color-primary-light-7: #0a1119;
+  --color-primary-alpha-10: #5c80a819;
+  --color-primary-alpha-20: #5c80a833;
+  --color-primary-alpha-30: #5c80a84b;
+  --color-primary-alpha-40: #5c80a866;
+  --color-primary-alpha-50: #5c80a880;
+  --color-primary-alpha-60: #5c80a899;
+  --color-primary-alpha-70: #5c80a8b3;
+  --color-primary-alpha-80: #5c80a8cc;
+  --color-primary-alpha-90: #5c80a8e1;
+  --color-primary-hover: var(--cairn-mark);
+  --color-primary-active: var(--cairn-mark-dim);
+
+  /* Secondary (chrome) */
+  --color-secondary: var(--cairn-stone-3);
+  --color-secondary-dark-1: var(--cairn-stone-4);
+  --color-secondary-dark-2: var(--cairn-stone-4);
+  --color-secondary-dark-3: var(--cairn-stone-5);
+  --color-secondary-dark-4: var(--cairn-stone-5);
+  --color-secondary-dark-5: var(--cairn-stone-6);
+  --color-secondary-dark-6: var(--cairn-stone-6);
+  --color-secondary-dark-7: var(--cairn-stone-7);
+  --color-secondary-dark-8: var(--cairn-stone-7);
+  --color-secondary-dark-9: var(--cairn-stone-8);
+  --color-secondary-dark-10: var(--cairn-stone-8);
+  --color-secondary-dark-11: var(--cairn-stone-9);
+  --color-secondary-dark-12: var(--cairn-stone-9);
+  --color-secondary-dark-13: var(--cairn-stone-9);
+  --color-secondary-light-1: var(--cairn-stone-2);
+  --color-secondary-light-2: var(--cairn-stone-2);
+  --color-secondary-light-3: var(--cairn-stone-1);
+  --color-secondary-light-4: var(--cairn-stone-0);
+  --color-secondary-alpha-10: #2a2d3119;
+  --color-secondary-alpha-20: #2a2d3133;
+  --color-secondary-alpha-30: #2a2d314b;
+  --color-secondary-alpha-40: #2a2d3166;
+  --color-secondary-alpha-50: #2a2d3180;
+  --color-secondary-alpha-60: #2a2d3199;
+  --color-secondary-alpha-70: #2a2d31b3;
+  --color-secondary-alpha-80: #2a2d31cc;
+  --color-secondary-alpha-90: #2a2d31e1;
+  --color-secondary-button: var(--cairn-stone-3);
+  --color-secondary-hover: var(--cairn-stone-4);
+  --color-secondary-active: var(--cairn-stone-5);
+
+  /* Surfaces */
+  --color-body: var(--cairn-stone-1);
+  --color-box-header: var(--cairn-stone-2);
+  --color-box-body: var(--cairn-stone-2);
+  --color-box-body-highlight: var(--cairn-stone-3);
+  --color-text-dark: var(--cairn-stone-9);
+  --color-text: var(--cairn-stone-7);
+  --color-text-light: var(--cairn-stone-6);
+  --color-text-light-1: var(--cairn-stone-6);
+  --color-text-light-2: var(--cairn-stone-5);
+  --color-text-light-3: var(--cairn-stone-5);
+  --color-text-focus: var(--cairn-stone-9);
+  --color-footer: var(--cairn-stone-0);
+
+  /* Inputs */
+  --color-input-text: var(--cairn-stone-8);
+  --color-input-background: var(--cairn-stone-2);
+  --color-input-toggle-background: var(--cairn-stone-2);
+  --color-input-border: var(--cairn-stone-3);
+  --color-input-border-hover: var(--cairn-stone-4);
+
+  /* Nav / menus / buttons */
+  --color-menu: var(--cairn-stone-2);
+  --color-button: var(--cairn-stone-3);
+  --color-nav-bg: var(--cairn-stone-0);
+  --color-nav-hover-bg: var(--cairn-stone-3);
+  --color-active-line: var(--cairn-mark);
+
+  /* Borders / dividers */
+  --color-light-border: var(--cairn-stone-3);
+  --color-light-mimic-enabled: var(--cairn-stone-3);
+  --color-light: var(--cairn-stone-2);
+  --color-light-hover: var(--cairn-stone-3);
+  --color-hover: var(--cairn-stone-3);
+  --color-active: var(--cairn-stone-3);
+  --color-shadow: rgba(0, 0, 0, 0.55);
+
+  /* Status colours used by Forgejo components */
+  --color-green: var(--cairn-pass);
+  --color-green-light: #74a78a;
+  --color-green-dark-1: #4c7e60;
+  --color-green-dark-2: #3f6c50;
+  --color-red: var(--cairn-fail);
+  --color-red-light: #b86060;
+  --color-red-dark-1: #8d3838;
+  --color-red-dark-2: #7c3030;
+  --color-yellow: var(--cairn-warn);
+  --color-yellow-light: #b59542;
+  --color-yellow-dark-1: #836820;
+  --color-yellow-dark-2: #6f581b;
+  --color-orange: var(--cairn-warn);
+  --color-blue: var(--cairn-mark);
+  --color-blue-light: #7a9ec2;
+  --color-blue-dark-1: #4d6f95;
+  --color-blue-dark-2: #3d5a7a;
+  --color-purple: #8a6fa8;
+  --color-teal: #5a8f8a;
+  --color-grey: var(--cairn-stone-5);
+  --color-grey-light: var(--cairn-stone-6);
+  --color-grey-dark-1: var(--cairn-stone-4);
+
+  /* Diff highlights */
+  --color-diff-added-row-bg: rgba(90, 143, 110, 0.10);
+  --color-diff-added-word-bg: rgba(90, 143, 110, 0.30);
+  --color-diff-removed-row-bg: rgba(160, 64, 64, 0.10);
+  --color-diff-removed-word-bg: rgba(160, 64, 64, 0.30);
+
+  /* CI / signature pills */
+  --color-success: var(--cairn-pass);
+  --color-error: var(--cairn-fail);
+  --color-warning: var(--cairn-warn);
+  --color-info: var(--cairn-mark);
+}
+
+/* Soften the marketing-grade banner Forgejo shows for unverified instances */
+:root[data-theme="forgejo-dark"] body,
+:root body {
+  font-family: var(--fonts-proportional);
+  background: var(--cairn-stone-1);
+  color: var(--cairn-stone-7);
+}
+
+code, pre, kbd, samp, .monospace, .commit-id, .sha {
+  font-family: var(--fonts-monospace);
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+}
+
+/* --- Cairn agent badge (rendered by templates/repo/commits_list.tmpl override) --- */
+
+.cairn-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--cairn-mark-dim);
+  color: var(--cairn-stone-9);
+  font-family: var(--fonts-monospace);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.cairn-sig-mark {
+  display: inline-flex;
+  margin-left: 6px;
+  font-family: var(--fonts-monospace);
+  font-size: 12px;
+}
+.cairn-sig-mark.cairn-sig-pass { color: var(--cairn-pass); }
+.cairn-sig-mark.cairn-sig-warn { color: var(--cairn-warn); }
+.cairn-sig-mark.cairn-sig-fail { color: var(--cairn-fail); }
+
+/* --- Cairn home page (templates/home.tmpl override) --- */
+
+.cairn-home {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 3fr;
+  gap: 3rem;
+  max-width: 1100px;
+  margin: 4rem auto;
+  padding: 0 2rem;
+}
+@media (max-width: 720px) {
+  .cairn-home {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin: 2rem auto;
+  }
+}
+
+.cairn-home__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cairn-home__mark-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.cairn-home__mark {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  margin-top: -2px; /* mark sits slightly above cap-height */
+}
+.cairn-home__wordmark {
+  font-family: var(--fonts-proportional);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0.04em; /* Inter ~ +20 in tracking units */
+  color: var(--cairn-stone-8);
+}
+.cairn-home__tagline {
+  color: var(--cairn-stone-6);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+.cairn-home__links {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cairn-home__links a {
+  color: var(--cairn-stone-7);
+  text-decoration: none;
+  font-size: 14px;
+}
+.cairn-home__links a:hover {
+  color: var(--cairn-mark);
+}
+
+.cairn-home__activity h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cairn-stone-6);
+  font-weight: 500;
+  margin: 0 0 1rem;
+}
+.cairn-home__activity-empty {
+  color: var(--cairn-stone-5);
+  font-size: 14px;
+  border-left: 2px solid var(--cairn-stone-3);
+  padding-left: 1rem;
+}
+.cairn-home__activity-empty a {
+  color: var(--cairn-mark);
+}
+
+/* --- Cairn footer override styling (templates/base/footer_content.tmpl) --- */
+
+.cairn-footer-attribution {
+  color: var(--cairn-stone-5);
+  font-size: 12px;
+}
+.cairn-footer-attribution a {
+  color: var(--cairn-stone-6);
+}
+.cairn-footer-attribution a:hover {
+  color: var(--cairn-mark);
+}
