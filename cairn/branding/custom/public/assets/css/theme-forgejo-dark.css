@@ -352,3 +352,23 @@ h1, h2, h3 {
 .cairn-footer-attribution a:hover {
   color: var(--cairn-mark);
 }
+
+/* --- Cairn wordmark next to navbar logo --- */
+/* Pseudo-content is decorative; the navbar link already carries aria-label
+   so screen readers get "Home"/"Dashboard" regardless of this visual mark. */
+#navbar-logo::after {
+  content: "cairn";
+  font-family: var(--fonts-proportional);
+  font-weight: 500;
+  font-size: 18px;
+  margin-left: 0.5rem;
+  color: var(--cairn-stone-8);
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  text-transform: lowercase;
+}
+@media (max-width: 480px) {
+  #navbar-logo::after {
+    display: none;
+  }
+}
