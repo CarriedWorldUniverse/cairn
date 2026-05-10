@@ -21,7 +21,7 @@ The executing agent needs:
 
 - AWS CLI configured with profile `nexus-cw` (for AWS API operations against `nexus-cw-ec2`) — see `~/.aws/config`
 - AWS Session Manager Plugin (or SSH keypair) for shell access into the EC2 instance
-- A locally-built Cairn binary (linux/amd64), built from the `cairn` branch's `cairn/lock-day-one`-merged tip. Built on <server-host>-Linux, Jacinta's laptop, or wherever — **not on the EC2** (t3.micro RAM is insufficient for a Forgejo/Cairn build)
+- A locally-built Cairn binary (linux/amd64), built from the `cairn` branch's `cairn/lock-day-one`-merged tip. Built on <server-host>-Linux, Jacinta's laptop, or wherever — **not on the EC2** (t3.micro RAM is insufficient for a Forgejo/Cairn build). See §0.1 below for the build procedure — the order matters.
 - The org's repos already migrated to module path `github.com/CarriedWorldUniverse/*` (verified by the 2026-05-07 nexus-cw rename — `casket-go`, `bridle`, `interchange`, `nexus`, `vessel`, `cairn`)
 - The owner's identity seed file (32+ bytes of high-entropy material) ready to be transferred to the EC2 — Jacinta provides
 - An offsite backup destination ready (S3 bucket or AWS Secrets Manager) for the `instance-hmac.key` and SQLite snapshots
@@ -42,6 +42,47 @@ aws --profile nexus-cw ec2 describe-instances \
 ```
 
 If any check fails, stop and surface to the operator before continuing.
+
+### 0.1 Build the binary (off-host)
+
+Three steps in this order — getting it wrong silently produces a binary missing assets or migration data.
+
+```bash
+cd ~/Source/cairn
+
+# Step 1 — frontend assets (webpack build into public/)
+# REQUIRED before bindata. Skipping → empty embedded assets → 404 on /assets/* at runtime.
+make frontend
+
+# Step 2 — bindata regeneration (embeds public/, options/, templates/ into Go)
+# REQUIRED before go build. Skipping → "undefined: Assets" compile errors with the bindata tag.
+go generate -tags 'bindata sqlite sqlite_unlock_notify' ./...
+
+# Step 3 — cross-compile via zig (macOS arm → linux amd64)
+# zig provides cgo cross-compilation for mattn/go-sqlite3.
+# Install zig project-local: ~/Source/.tools/zig-macos-aarch64-X.Y.Z/zig
+# Use -target x86_64-linux-musl for true static linking (gnu silently links dynamic against zig SDK).
+ZIG=~/Source/.tools/zig-macos-aarch64-0.14.0/zig
+CC="$ZIG cc -target x86_64-linux-musl" \
+CXX="$ZIG c++ -target x86_64-linux-musl" \
+GOOS=linux GOARCH=amd64 CGO_ENABLED=1 \
+go build \
+    -tags 'bindata timetzdata sqlite sqlite_unlock_notify netgo osusergo' \
+    -ldflags '-linkmode external -extldflags "-static"' \
+    -trimpath \
+    -o /tmp/cairn-build/forgejo \
+    .
+
+# Verify (must show "statically linked", no PT_INTERP):
+file /tmp/cairn-build/forgejo
+shasum -a 256 /tmp/cairn-build/forgejo
+```
+
+**Common failures and fixes:**
+- `make frontend` skipped → runtime 404 on `/assets/js/index.js` etc. Recover by tarring `public/` and extracting to `/var/lib/forgejo/custom/public/` on the host (Forgejo serves custom/public ahead of bindata).
+- `go generate` skipped → compile error `undefined: Assets`. No recovery; rebuild.
+- `-target x86_64-linux-gnu` instead of `-musl` → binary appears static but has `PT_INTERP=/lib64/ld-linux-x86-64.so.2`. Verify with `file` output containing literally "statically linked".
+- Build-flag `-X main.Version=...` not set → Forgejo reports version "development" at runtime. Cosmetic; not a runtime failure.
 
 ---
 
