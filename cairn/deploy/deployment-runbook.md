@@ -1059,6 +1059,64 @@ PR-level orchestration ships in MVP. Set `1` (PR-only) for now.
 (DB column `require_human_only`, API `require_human_only`). Deliberate
 simplification.
 
+### 15.5.1 First-deploy bugs surfaced 2026-05-10
+
+Three bugs hit during the first live deploy. Documenting so the next deploy doesn't re-discover them.
+
+**1. V501/V502 migrations were not registered in the production migration runner.**
+Plans 5 (Task 1) and 6 (Task 1) added `V501CreateSummarizerTables` and `V502CreateReviewPolicyTable` to the test harness (`cairntest.NewEngine`) but did NOT add the matching `registerMigration(&Migration{Upgrade: ...})` shim files in `models/forgejo_migrations/`. Result: the binary started, ran V500 (`cairn_agent` + `cairn_agent_blocklist`) but skipped V501/V502 — so `cairn_summarizer_config`, `cairn_summarizer_repo_consent`, `cairn_pr_summary`, `cairn_review_policy` were absent. Symptom: API config calls returned `{"message":"no such table: cairn_summarizer_config"}`. **Fix:** added `models/forgejo_migrations/v501a_cairn_create_summarizer_tables.go` and `v502a_cairn_create_review_policy_table.go` mirroring v500a's shim pattern (commit `<hash>`). The current EC2 has the tables applied via manual SQL (see runbook §15.5.1.1 below); future fresh deploys with the post-fix binary will get them via the migration runner automatically.
+
+**2. Tailscale-vs-SSM-agent DNS race at boot.**
+On Amazon Linux 2023 with both `tailscaled` and `amazon-ssm-agent` running, Tailscale claims `/etc/resolv.conf` (with its 100.100.100.100 / fd7a:115c:a1e0::53 nameservers) before SSM agent's first registration call. SSM agent then fails to resolve `ssm.<region>.amazonaws.com` and enters hibernation. Symptom: `aws ssm send-command` returns `Status: Failed, StatusDetails: Undeliverable`; `aws ssm describe-instance-information` shows `ConnectionLost`. **Workaround applied to running host:** `sudo tailscale up --accept-dns=false --reset` then `sudo systemctl restart amazon-ssm-agent`. **Persistent fix needed:** `--accept-dns=false` should be in the Tailscale boot configuration so SSM survives reboots — currently this setting reverts on next `tailscale up`. Track for the next maintenance window.
+
+**3. Frontend asset bundling.**
+The build sequence in §0.1 must run `make frontend` BEFORE `go generate -tags bindata`. We hit this on the first deploy: frontend was skipped, bindata embedded an empty `public/`, runtime returned 404 on `/assets/js/index.js`. **Recovery without rebuilding the binary:** build `public/` locally, tar it, extract to `/var/lib/forgejo/custom/public/` on the host. Forgejo serves `custom/public/` ahead of the bindata-embedded path. The current EC2 has `/var/lib/forgejo/custom/public/` populated this way; on the next binary rebuild with proper `make frontend`, the custom dir can be removed (or kept as a safe override).
+
+#### 15.5.1.1 If V501/V502 tables are missing on a Cairn instance
+
+If the instance was deployed pre-fix (before the v501a/v502a shim commits) and the simplifier API returns `no such table: cairn_summarizer_config`, apply the schema directly with sqlite3:
+
+```sql
+CREATE TABLE IF NOT EXISTS cairn_summarizer_config (
+    owner_id INTEGER PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    provider VARCHAR(64) NOT NULL DEFAULT '',
+    endpoint_url VARCHAR(1024) NOT NULL DEFAULT '',
+    model_id VARCHAR(255) NOT NULL DEFAULT '',
+    credentials_cipher BLOB,
+    levels_enabled INTEGER NOT NULL DEFAULT 1,
+    created_unix INTEGER NULL,
+    updated_unix INTEGER NULL
+);
+CREATE TABLE IF NOT EXISTS cairn_summarizer_repo_consent (
+    repo_id INTEGER PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    data_scope VARCHAR(32) NOT NULL DEFAULT 'metadata',
+    created_unix INTEGER NULL,
+    updated_unix INTEGER NULL
+);
+CREATE TABLE IF NOT EXISTS cairn_pr_summary (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    repo_id INTEGER NOT NULL,
+    pr_number INTEGER NOT NULL,
+    content_hash VARCHAR(64) NOT NULL,
+    summary_md TEXT NOT NULL,
+    model_id VARCHAR(255) NOT NULL,
+    token_count INTEGER NOT NULL DEFAULT 0,
+    generated_unix INTEGER NULL
+);
+CREATE INDEX IF NOT EXISTS IDX_cairn_pr_summary_repo_pr ON cairn_pr_summary (repo_id, pr_number);
+CREATE UNIQUE INDEX IF NOT EXISTS UQE_cairn_pr_summary_repo_pr_hash ON cairn_pr_summary (repo_id, pr_number, content_hash);
+CREATE TABLE IF NOT EXISTS cairn_review_policy (
+    owner_id INTEGER PRIMARY KEY,
+    require_human_only INTEGER NOT NULL DEFAULT 1,
+    created_unix INTEGER NULL,
+    updated_unix INTEGER NULL
+);
+```
+
+Apply with: `sudo systemctl stop forgejo && sudo -u git sqlite3 /var/lib/forgejo/data/forgejo.db < migrate.sql && sudo systemctl start forgejo`.
+
 ---
 
 ## 16. Build-surfaces this runbook depends on
