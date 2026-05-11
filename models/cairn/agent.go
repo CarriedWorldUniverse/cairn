@@ -27,11 +27,17 @@ const (
 // is "nexus-{Slug}@{Domain}". See docs/cairn/specs/2026-05-09-cairn-
 // foundation-design.md §5 and §6.
 type Agent struct {
-	ID          int64       `xorm:"pk autoincr"`
-	Fingerprint string      `xorm:"VARCHAR(80) NOT NULL UNIQUE"`
-	UserID      int64       `xorm:"NOT NULL INDEX UNIQUE(user_slug)"`
-	Slug        string      `xorm:"VARCHAR(64) NOT NULL INDEX(email_lookup) UNIQUE(user_slug)"`
-	Domain      string      `xorm:"VARCHAR(255) NOT NULL INDEX(email_lookup)"`
+	ID int64 `xorm:"pk autoincr"`
+	// Deprecated: embedded fingerprint is moving to the cairn_agent_pubkey
+	// join table. V503 drops the SQL column; Task 2 removes this field and
+	// all callers. Do not add new readers.
+	Fingerprint string `xorm:"VARCHAR(80) NOT NULL UNIQUE"`
+	UserID      int64  `xorm:"NOT NULL INDEX UNIQUE(user_slug)"`
+	Slug        string `xorm:"VARCHAR(64) NOT NULL INDEX(email_lookup) UNIQUE(user_slug)"`
+	Domain      string `xorm:"VARCHAR(255) NOT NULL INDEX(email_lookup)"`
+	// Deprecated: embedded pubkey is moving to Forgejo's public_key table,
+	// joined via cairn_agent_pubkey. V503 drops the SQL column; Task 2
+	// removes this field and all callers. Do not add new readers.
 	PublicKey   []byte      `xorm:"BLOB NOT NULL"`
 	Status      AgentStatus `xorm:"VARCHAR(16) NOT NULL DEFAULT 'pending'"`
 	CreatedAt   time.Time   `xorm:"NOT NULL"`

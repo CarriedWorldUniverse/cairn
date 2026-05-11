@@ -253,6 +253,54 @@ func TestSchemaParity_ReviewPolicyTable(t *testing.T) {
 	}
 }
 
+func TestSchemaParity_AttachmentRequestTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V500CreateAgentTables(engA); err != nil {
+		t.Fatalf("V500: %v", err)
+	}
+	if err := V503RefactorIdentity(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_attachment_request")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_attachment_request").Sync2(new(cairn.AttachmentRequest)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_attachment_request")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_attachment_request columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_attachment_request indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
+func TestSchemaParity_AgentPubkeyTable(t *testing.T) {
+	engA := newEngine(t)
+	if err := V500CreateAgentTables(engA); err != nil {
+		t.Fatalf("V500: %v", err)
+	}
+	if err := V503RefactorIdentity(engA); err != nil {
+		t.Fatalf("migration: %v", err)
+	}
+	snapA := snapshotTable(t, engA, "cairn_agent_pubkey")
+
+	engB := newEngine(t)
+	if err := engB.Table("cairn_agent_pubkey").Sync2(new(cairn.AgentPubkey)); err != nil {
+		t.Fatalf("Sync2: %v", err)
+	}
+	snapB := snapshotTable(t, engB, "cairn_agent_pubkey")
+
+	if !columnsEqual(snapA.columns, snapB.columns) {
+		t.Errorf("cairn_agent_pubkey columns differ\nmigration: %v\nsync2: %v", snapA.columns, snapB.columns)
+	}
+	if !columnsEqual(snapA.indexes, snapB.indexes) {
+		t.Errorf("cairn_agent_pubkey indexes differ\nmigration: %v\nsync2: %v", snapA.indexes, snapB.indexes)
+	}
+}
+
 func columnsEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
