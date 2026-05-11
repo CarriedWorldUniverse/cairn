@@ -4,9 +4,7 @@ package identity
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/ed25519"
 	"fmt"
 	"strings"
 
@@ -20,25 +18,36 @@ import (
 // the attachment-request flow where the agent submits its key as text
 // (rather than raw ed25519 bytes).
 //
-// The fingerprint is HMAC-SHA256 of the raw SSH wire-format key bytes
-// (ssh.PublicKey.Marshal()) under the instance HMAC key. For ed25519
-// agents this matches Fingerprint(hmacKey, ed25519PublicKey) because
-// the SSH wire format of an ed25519 key embeds the same 32-byte
-// public component plus a fixed prefix.
+// Canonically equivalent to Fingerprint(instanceHMACKey, rawEd25519Pub):
+// this helper parses the OpenSSH wire format to extract the raw 32-byte
+// ed25519 public component, then delegates to Fingerprint. Both
+// registration paths (Register with raw bytes, CreateAttachmentRequest
+// with OpenSSH text) therefore produce identical fingerprints for the
+// same logical key.
 //
-// Note: Fingerprint(hmacKey, ed25519Pub) hashes the bare 32 ed25519
-// bytes; FingerprintFromContent hashes the full SSH wire format. They
-// are intentionally different inputs producing different outputs — the
-// attachment-request flow consistently uses the wire-format flavour.
+// Only ed25519 keys are supported; other algorithms return
+// ErrInvalidInput.
 func FingerprintFromContent(instanceHMACKey []byte, pubkeyContent string) (string, error) {
 	pub, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubkeyContent))
 	if err != nil {
 		return "", fmt.Errorf("%w: parse pubkey: %v", ErrInvalidInput, err)
 	}
-	mac := hmac.New(sha256.New, instanceHMACKey)
-	mac.Write(pub.Marshal())
-	sum := mac.Sum(nil)
-	return fingerprintPrefix + base64.RawURLEncoding.EncodeToString(sum), nil
+	if pub.Type() != ssh.KeyAlgoED25519 {
+		return "", fmt.Errorf("%w: unsupported key type %q (only ed25519)", ErrInvalidInput, pub.Type())
+	}
+	// ssh.PublicKey.Marshal() returns the SSH wire format:
+	//   4-byte BE length of "ssh-ed25519" (= 11)
+	//   11 bytes "ssh-ed25519"
+	//   4-byte BE length of raw pubkey (= 32)
+	//   32 bytes raw ed25519 public key
+	// Total: 4 + 11 + 4 + 32 = 51 bytes.
+	marshaled := pub.Marshal()
+	const ed25519MarshaledLen = 4 + len(ssh.KeyAlgoED25519) + 4 + ed25519.PublicKeySize
+	if len(marshaled) < ed25519MarshaledLen {
+		return "", fmt.Errorf("%w: ed25519 marshaled key truncated (%d bytes)", ErrInvalidInput, len(marshaled))
+	}
+	rawPub := ed25519.PublicKey(marshaled[ed25519MarshaledLen-ed25519.PublicKeySize : ed25519MarshaledLen])
+	return Fingerprint(instanceHMACKey, rawPub), nil
 }
 
 // CreateAttachmentRequest records a new pending attachment-request from

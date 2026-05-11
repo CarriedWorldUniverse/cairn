@@ -3,6 +3,7 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -13,6 +14,36 @@ import (
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
 )
+
+// TestFingerprint_BothPathsAgree pins the invariant that the
+// raw-ed25519 path (Fingerprint) and the OpenSSH-text path
+// (FingerprintFromContent) produce identical fingerprints for the same
+// logical key. If they ever diverge, cross-path lookups (e.g. signature
+// verification finding an agent registered via attachment-request) fail
+// silently.
+func TestFingerprint_BothPathsAgree(t *testing.T) {
+	hmacKey := bytes.Repeat([]byte{0xab}, 32)
+	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fpA := Fingerprint(hmacKey, pub)
+
+	sshKey, err := ssh.NewPublicKey(pub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authorizedKey := ssh.MarshalAuthorizedKey(sshKey)
+	fpB, err := FingerprintFromContent(hmacKey, string(authorizedKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fpA != fpB {
+		t.Errorf("paths disagree:\n  raw-bytes path:    %s\n  openssh-text path: %s", fpA, fpB)
+	}
+}
 
 func marshalPubForTest(t *testing.T, pub ed25519.PublicKey) string {
 	t.Helper()
