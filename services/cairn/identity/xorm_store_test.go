@@ -4,34 +4,40 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	"github.com/CarriedWorldUniverse/cairn/models/cairn/cairntest"
 )
 
-func TestXormAgentStore_RegisterAndGet(t *testing.T) {
+func TestXormAgentStore_FindOrCreateAndGet(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
-	a := &cairn.Agent{
-		Fingerprint: "cairn:abc123",
-		UserID:      1,
-		Slug:        "plumb",
-		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{1, 2, 3, 4},
-		Status:      cairn.AgentStatusActive,
-		CreatedAt:   time.Now(),
-	}
-	if err := s.Register(ctx, a); err != nil {
+	a, created, err := s.FindOrCreateByUserSlug(ctx, 1, "plumb", "darksoft.co.nz")
+	if err != nil {
 		t.Fatal(err)
 	}
+	if !created {
+		t.Error("expected created=true on first insert")
+	}
 	if a.ID == 0 {
-		t.Error("ID not populated after Register")
+		t.Error("ID not populated after create")
 	}
 
-	got, err := s.GetByFingerprint(ctx, "cairn:abc123")
+	// Re-call returns the same row, created=false.
+	again, created, err := s.FindOrCreateByUserSlug(ctx, 1, "plumb", "darksoft.co.nz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created {
+		t.Error("expected created=false on second call")
+	}
+	if again.ID != a.ID {
+		t.Errorf("ID = %d, want %d", again.ID, a.ID)
+	}
+
+	got, err := s.GetByID(ctx, a.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,16 +51,7 @@ func TestXormAgentStore_GetByEmail(t *testing.T) {
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
-	a := &cairn.Agent{
-		Fingerprint: "cairn:def456",
-		UserID:      1,
-		Slug:        "plumb",
-		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{5, 6, 7, 8},
-		Status:      cairn.AgentStatusActive,
-		CreatedAt:   time.Now(),
-	}
-	if err := s.Register(ctx, a); err != nil {
+	if _, _, err := s.FindOrCreateByUserSlug(ctx, 1, "plumb", "darksoft.co.nz"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,8 +59,8 @@ func TestXormAgentStore_GetByEmail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Fingerprint != "cairn:def456" {
-		t.Errorf("Fingerprint = %q, want %q", got.Fingerprint, "cairn:def456")
+	if got.Domain != "darksoft.co.nz" {
+		t.Errorf("Domain = %q, want %q", got.Domain, "darksoft.co.nz")
 	}
 }
 
@@ -71,13 +68,13 @@ func TestXormAgentStore_NotFound(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
-	_, err := s.GetByFingerprint(context.Background(), "cairn:no-such-fp")
-	if err != ErrAgentNotFound {
+	_, err := s.GetByID(context.Background(), 9999)
+	if !errors.Is(err, ErrAgentNotFound) {
 		t.Errorf("err = %v, want %v", err, ErrAgentNotFound)
 	}
 
 	_, err = s.GetByEmail(context.Background(), "ghost", "example.com")
-	if err != ErrAgentNotFound {
+	if !errors.Is(err, ErrAgentNotFound) {
 		t.Errorf("err = %v, want %v", err, ErrAgentNotFound)
 	}
 }
@@ -87,18 +84,12 @@ func TestXormAgentStore_ListByUser(t *testing.T) {
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
-	now := time.Now()
-	for i, slug := range []string{"plumb", "anvil", "forge"} {
-		a := &cairn.Agent{
-			Fingerprint: "cairn:fp" + slug,
-			UserID:      1,
-			Slug:        slug,
-			Domain:      "darksoft.co.nz",
-			PublicKey:   []byte{byte(i)},
-			Status:      cairn.AgentStatusActive,
-			CreatedAt:   now,
+	for _, slug := range []string{"plumb", "anvil", "forge"} {
+		a, _, err := s.FindOrCreateByUserSlug(ctx, 1, slug, "darksoft.co.nz")
+		if err != nil {
+			t.Fatal(err)
 		}
-		if err := s.Register(ctx, a); err != nil {
+		if err := s.SetStatus(ctx, a.ID, cairn.AgentStatusActive); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -112,78 +103,28 @@ func TestXormAgentStore_ListByUser(t *testing.T) {
 	}
 }
 
-func TestXormAgentStore_Approve(t *testing.T) {
+func TestXormAgentStore_SetStatus_StampsActivatedAt(t *testing.T) {
 	eng := cairntest.NewEngine(t)
 	s := NewXormAgentStore(eng)
 
 	ctx := context.Background()
-	a := &cairn.Agent{
-		Fingerprint: "cairn:pending",
-		UserID:      1,
-		Slug:        "plumb",
-		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{1},
-		Status:      cairn.AgentStatusPending,
-		CreatedAt:   time.Now(),
+	a, _, err := s.FindOrCreateByUserSlug(ctx, 1, "plumb", "darksoft.co.nz")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if err := s.Register(ctx, a); err != nil {
+	if a.Status != cairn.AgentStatusPending {
+		t.Fatalf("setup: status = %q, want pending", a.Status)
+	}
+
+	if err := s.SetStatus(ctx, a.ID, cairn.AgentStatusActive); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := s.Approve(ctx, "cairn:pending"); err != nil {
-		t.Fatal(err)
-	}
-
-	got, _ := s.GetByFingerprint(ctx, "cairn:pending")
+	got, _ := s.GetByID(ctx, a.ID)
 	if got.Status != cairn.AgentStatusActive {
 		t.Errorf("Status = %q, want %q", got.Status, cairn.AgentStatusActive)
 	}
 	if got.ActivatedAt == nil || got.ActivatedAt.IsZero() {
-		t.Error("ActivatedAt not set after approve")
-	}
-}
-
-func TestXormAgentStore_DuplicateRegisterReturnsErrAgentExists(t *testing.T) {
-	eng := cairntest.NewEngine(t)
-	s := NewXormAgentStore(eng)
-
-	ctx := context.Background()
-	a := &cairn.Agent{
-		Fingerprint: "cairn:dup-test",
-		UserID:      1,
-		Slug:        "plumb",
-		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{1},
-		Status:      cairn.AgentStatusActive,
-		CreatedAt:   time.Now(),
-	}
-	if err := s.Register(ctx, a); err != nil {
-		t.Fatal(err)
-	}
-
-	// Same (user_id, slug) — should return ErrAgentExists.
-	a2 := *a
-	a2.ID = 0
-	a2.Fingerprint = "cairn:dup-test-2"
-	err := s.Register(ctx, &a2)
-	if err == nil {
-		t.Fatal("expected error registering duplicate (user_id, slug)")
-	}
-	if !errors.Is(err, ErrAgentExists) {
-		t.Errorf("err = %v, want ErrAgentExists", err)
-	}
-
-	// Same fingerprint — should also return ErrAgentExists.
-	a3 := *a
-	a3.ID = 0
-	a3.UserID = 99
-	a3.Slug = "different"
-	// keep a3.Fingerprint == a.Fingerprint (the duplicate)
-	err = s.Register(ctx, &a3)
-	if err == nil {
-		t.Fatal("expected error registering duplicate fingerprint")
-	}
-	if !errors.Is(err, ErrAgentExists) {
-		t.Errorf("err = %v, want ErrAgentExists", err)
+		t.Error("ActivatedAt not set after SetStatus(active)")
 	}
 }

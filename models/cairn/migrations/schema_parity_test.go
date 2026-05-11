@@ -126,10 +126,14 @@ func newEngine(t *testing.T) *xorm.Engine {
 }
 
 func TestSchemaParity_AgentTable(t *testing.T) {
-	// Path A: migration.
+	// Path A: migration. V500 creates the table; V503 drops the
+	// embedded-pubkey columns so the runtime model lines up.
 	engA := newEngine(t)
 	if err := V500CreateAgentTables(engA); err != nil {
-		t.Fatalf("migration: %v", err)
+		t.Fatalf("migration V500: %v", err)
+	}
+	if err := V503RefactorIdentity(engA); err != nil {
+		t.Fatalf("migration V503: %v", err)
 	}
 	snapA := snapshotTable(t, engA, "cairn_agent")
 

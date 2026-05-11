@@ -29,14 +29,23 @@ var (
 // the result of the first call (success or error). If the configuration
 // changes at runtime (e.g. a different HMAC key path is desired),
 // the process must be restarted.
-func Init(_ context.Context, hmacKeyPath string, store cairnidentity.AgentStore, blocklist cairnidentity.AgentBlocklistStore, users cairnidentity.UserResolver) error {
+func Init(
+	_ context.Context,
+	hmacKeyPath string,
+	store cairnidentity.AgentStore,
+	pubkeys cairnidentity.AgentPubkeyStore,
+	requests cairnidentity.AttachmentRequestStore,
+	blocklist cairnidentity.AgentBlocklistStore,
+	users cairnidentity.UserResolver,
+	registrar cairnidentity.AgentUserRegistrar,
+) error {
 	initOnce.Do(func() {
 		key, err := cairnidentity.LoadInstanceHMACKey(hmacKeyPath)
 		if err != nil {
 			initErr = err
 			return
 		}
-		globalService = cairnidentity.NewAgentService(key, store, blocklist, users)
+		globalService = cairnidentity.NewAgentService(key, store, pubkeys, requests, blocklist, users, registrar)
 		globalHandler = NewHandler(globalService)
 		// Publish to the identity-package global so consumers outside
 		// the v1 API (e.g. the pre-receive hook) can reach the service

@@ -44,17 +44,15 @@ func TestAgent_IsActive(t *testing.T) {
 func TestAgent_RequiredFields(t *testing.T) {
 	now := time.Now()
 	a := Agent{
-		Fingerprint: "cairn:abc123",
 		UserID:      42,
 		Slug:        "plumb",
 		Domain:      "darksoft.co.nz",
-		PublicKey:   []byte{1, 2, 3, 4},
 		Status:      AgentStatusActive,
 		CreatedAt:   now,
 		ActivatedAt: &now,
 	}
 	// Sanity: every required field is set without compile error.
-	if a.Fingerprint == "" || a.UserID == 0 || a.Slug == "" {
+	if a.UserID == 0 || a.Slug == "" || a.Domain == "" {
 		t.Error("required fields zero")
 	}
 }

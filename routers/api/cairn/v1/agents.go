@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/crypto/ssh"
+
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
 	cairnidentity "github.com/CarriedWorldUniverse/cairn/services/cairn/identity"
 )
@@ -48,6 +50,12 @@ func callerFromCtx(ctx context.Context) *cairnidentity.Caller {
 }
 
 // PostAgents handles POST /api/cairn/v1/agents.
+//
+// Backward-compat surface for the pre-V503 single-shot register flow.
+// Internally maps to AgentService.Register, which now also writes a
+// cairn_agent_pubkey row + Forgejo public_key via the configured
+// AgentUserRegistrar. Plan 8 Task 4 will replace this with the
+// attachment-request endpoints.
 func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "")
@@ -77,11 +85,12 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	pub := ed25519.PublicKey(pubBytes)
 	agent, err := h.svc.Register(r.Context(), cairnidentity.RegisterRequest{
 		ProposedOwner: in.ProposedOwner,
 		Slug:          in.Slug,
 		Domain:        in.Domain,
-		PublicKey:     ed25519.PublicKey(pubBytes),
+		PublicKey:     pub,
 	}, callerFromCtx(r.Context()))
 
 	switch {
@@ -93,6 +102,9 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, cairnidentity.ErrAgentExists):
 		writeError(w, http.StatusConflict, "agent_exists", "agent with this slug or fingerprint already exists")
 		return
+	case errors.Is(err, cairnidentity.ErrPubkeyAlreadyClaimed):
+		writeError(w, http.StatusConflict, "pubkey_already_claimed", "this public key is already bound to another agent")
+		return
 	case errors.Is(err, cairnidentity.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		return
@@ -102,7 +114,8 @@ func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner, false)
+	fp := h.svc.FingerprintEd25519(pub)
+	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner, false, fp, in.PublicKeyHex)
 }
 
 // writeError writes a JSON error response.
@@ -113,15 +126,19 @@ func writeError(w http.ResponseWriter, code int, errorCode, message string) {
 }
 
 // writeAgent writes an agent as JSON with the given HTTP status code.
-func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName string, blocked bool) {
+//
+// Post-V503 the Agent struct no longer carries Fingerprint / PublicKey
+// directly. The caller passes the values it derived from the join
+// (cairn_agent_pubkey + Forgejo public_key) or recomputed.
+func writeAgent(w http.ResponseWriter, code int, a *cairn.Agent, ownerName string, blocked bool, fingerprint, publicKeyHex string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	out := AgentJSON{
-		Fingerprint:  a.Fingerprint,
+		Fingerprint:  fingerprint,
 		OwnerName:    ownerName,
 		Slug:         a.Slug,
 		Domain:       a.Domain,
-		PublicKeyHex: hex.EncodeToString(a.PublicKey),
+		PublicKeyHex: publicKeyHex,
 		Status:       string(a.Status),
 		Blocked:      blocked,
 		CreatedAt:    a.CreatedAt.UTC().Format(time.RFC3339),
@@ -186,7 +203,8 @@ func (h *Handler) PostApprove(w http.ResponseWriter, r *http.Request) {
 	}
 	blocked, _ := h.svc.IsBlocked(r.Context(), fp)
 	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
-	writeAgent(w, http.StatusOK, a, ownerName, blocked)
+	pubHex, _ := h.pubkeyHexForFingerprint(r.Context(), fp)
+	writeAgent(w, http.StatusOK, a, ownerName, blocked, fp, pubHex)
 }
 
 // PostBlock handles POST /api/cairn/v1/agents/:fingerprint/block.
@@ -222,7 +240,8 @@ func (h *Handler) PostBlock(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
-		writeAgent(w, http.StatusOK, a, ownerName, true)
+		pubHex, _ := h.pubkeyHexForFingerprint(r.Context(), fp)
+		writeAgent(w, http.StatusOK, a, ownerName, true, fp, pubHex)
 		return
 	case errors.Is(err, cairnidentity.ErrAgentNotFound):
 		writeError(w, http.StatusNotFound, "agent_not_found", "")
@@ -257,7 +276,8 @@ func (h *Handler) GetIdentity(w http.ResponseWriter, r *http.Request) {
 
 	blocked, _ := h.svc.IsBlocked(r.Context(), fp)
 	ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
-	writeAgent(w, http.StatusOK, a, ownerName, blocked)
+	pubHex, _ := h.pubkeyHexForFingerprint(r.Context(), fp)
+	writeAgent(w, http.StatusOK, a, ownerName, blocked, fp, pubHex)
 }
 
 // GetAgents handles GET /api/cairn/v1/agents — list the authed user's
@@ -280,14 +300,26 @@ func (h *Handler) GetAgents(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]AgentJSON, 0, len(agents))
 	for _, a := range agents {
-		blocked, _ := h.svc.IsBlocked(r.Context(), a.Fingerprint)
+		// Pick the first registered pubkey for the listing. Multi-host
+		// agents expose all of theirs via the per-agent detail endpoint
+		// (added in Task 4).
+		pubkeys, _ := h.svc.ListAgentPubkeys(r.Context(), a.ID)
+		var fp, pubHex string
+		blocked := false
+		if len(pubkeys) > 0 {
+			fp = pubkeys[0].Fingerprint
+			blocked, _ = h.svc.IsBlocked(r.Context(), fp)
+			if content, err := h.svc.PubkeyContentForAgent(r.Context(), a.ID); err == nil {
+				pubHex = pubkeyHexFromContent(content)
+			}
+		}
 		ownerName, _ := h.svc.UsernameByID(r.Context(), a.UserID)
 		j := AgentJSON{
-			Fingerprint:  a.Fingerprint,
+			Fingerprint:  fp,
 			OwnerName:    ownerName,
 			Slug:         a.Slug,
 			Domain:       a.Domain,
-			PublicKeyHex: hex.EncodeToString(a.PublicKey),
+			PublicKeyHex: pubHex,
 			Status:       string(a.Status),
 			Blocked:      blocked,
 			CreatedAt:    a.CreatedAt.UTC().Format(time.RFC3339),
@@ -301,4 +333,37 @@ func (h *Handler) GetAgents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(out)
+}
+
+// pubkeyHexForFingerprint loads the OpenSSH-format pubkey content for
+// the given fingerprint and returns its raw ed25519 bytes hex-encoded
+// (matching the pre-V503 wire format for AgentJSON.PublicKeyHex).
+// Returns empty string + the underlying error on failure; callers that
+// don't care about the error log it and degrade gracefully.
+func (h *Handler) pubkeyHexForFingerprint(ctx context.Context, fp string) (string, error) {
+	content, err := h.svc.PubkeyContentForFingerprint(ctx, fp)
+	if err != nil {
+		return "", err
+	}
+	return pubkeyHexFromContent(content), nil
+}
+
+// pubkeyHexFromContent extracts the raw ed25519 bytes from an OpenSSH
+// authorized_keys line (e.g. "ssh-ed25519 AAAA...") and hex-encodes
+// them. Best-effort: returns empty on parse failure or non-ed25519
+// key types.
+func pubkeyHexFromContent(content string) string {
+	pub, _, _, _, err := ssh.ParseAuthorizedKey([]byte(content))
+	if err != nil {
+		return ""
+	}
+	cpk, ok := pub.(ssh.CryptoPublicKey)
+	if !ok {
+		return ""
+	}
+	ed, ok := cpk.CryptoPublicKey().(ed25519.PublicKey)
+	if !ok {
+		return ""
+	}
+	return hex.EncodeToString(ed)
 }

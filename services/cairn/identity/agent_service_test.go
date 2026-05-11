@@ -5,7 +5,9 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
@@ -34,12 +36,60 @@ func (f *fakeUserResolver) UsernameByID(ctx context.Context, id int64) (string, 
 	return "", ErrUserNotFound
 }
 
+// fakeRegistrar implements AgentUserRegistrar entirely in-memory.
+// Agent users are addressed by their nexus-{slug} login; pubkeys by
+// monotonically assigned ids. Content lookups round-trip the OpenSSH
+// text the test handed us.
+type fakeRegistrar struct {
+	nextUserID    atomic.Int64
+	nextPubkeyID  atomic.Int64
+	usersByLogin  map[string]int64
+	pubkeyContent map[int64]string
+}
+
+func newFakeRegistrar() *fakeRegistrar {
+	r := &fakeRegistrar{
+		usersByLogin:  map[string]int64{},
+		pubkeyContent: map[int64]string{},
+	}
+	// Start ids at 1000 to avoid collision with the human user ids
+	// used in fakeUserResolver (which range 1-99).
+	r.nextUserID.Store(1000)
+	return r
+}
+
+func (r *fakeRegistrar) FindOrCreateAgentUser(ctx context.Context, slug, domain string) (int64, error) {
+	login := "nexus-" + slug
+	if id, ok := r.usersByLogin[login]; ok {
+		return id, nil
+	}
+	id := r.nextUserID.Add(1)
+	r.usersByLogin[login] = id
+	return id, nil
+}
+
+func (r *fakeRegistrar) RegisterPubkey(ctx context.Context, userID int64, pubkeyContent, name string) (int64, error) {
+	id := r.nextPubkeyID.Add(1)
+	r.pubkeyContent[id] = pubkeyContent
+	return id, nil
+}
+
+func (r *fakeRegistrar) GetPubkeyContent(ctx context.Context, publicKeyID int64) (string, error) {
+	c, ok := r.pubkeyContent[publicKeyID]
+	if !ok {
+		return "", fmt.Errorf("no pubkey content for id %d", publicKeyID)
+	}
+	return c, nil
+}
+
 const testHMACKey = "0123456789abcdef0123456789abcdef" // 32 bytes
 
-func newTestService(t *testing.T) (*AgentService, *fakeUserResolver) {
+func newTestService(t *testing.T) (*AgentService, *fakeUserResolver, *fakeRegistrar) {
 	t.Helper()
 	eng := cairntest.NewEngine(t)
 	store := NewXormAgentStore(eng)
+	pubkeys := NewXormAgentPubkeyStore(eng)
+	requests := NewXormAttachmentRequestStore(eng)
 	blocklist := NewXormBlocklistStore(eng)
 	users := &fakeUserResolver{
 		usernameToID: map[string]int64{
@@ -47,12 +97,13 @@ func newTestService(t *testing.T) (*AgentService, *fakeUserResolver) {
 			"bob":     2,
 		},
 	}
-	svc := NewAgentService([]byte(testHMACKey), store, blocklist, users)
-	return svc, users
+	registrar := newFakeRegistrar()
+	svc := NewAgentService([]byte(testHMACKey), store, pubkeys, requests, blocklist, users, registrar)
+	return svc, users, registrar
 }
 
 func TestAgentService_Register_AutoApproveWhenProposerIsOwner(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
@@ -73,18 +124,26 @@ func TestAgentService_Register_AutoApproveWhenProposerIsOwner(t *testing.T) {
 	if got.ActivatedAt == nil || got.ActivatedAt.IsZero() {
 		t.Error("ActivatedAt not set on auto-approved agent")
 	}
-	if got.Fingerprint == "" {
-		t.Error("Fingerprint not populated")
+	// The agent's fingerprint is recoverable via the join.
+	fp := svc.FingerprintEd25519(pub)
+	if fp == "" {
+		t.Error("Fingerprint not computable")
+	}
+	lookedUp, err := svc.LookupAgentByFingerprint(ctx, fp)
+	if err != nil {
+		t.Fatalf("lookup by fingerprint: %v", err)
+	}
+	if lookedUp.ID != got.ID {
+		t.Errorf("lookup ID = %d, want %d", lookedUp.ID, got.ID)
 	}
 }
 
 func TestAgentService_Register_PendingWhenProposerIsNotOwner(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
-	// Bob proposes a Plumb-as-alice-agent — not auto-approved.
 	got, err := svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice",
 		Slug:          "plumb",
@@ -104,12 +163,11 @@ func TestAgentService_Register_PendingWhenProposerIsNotOwner(t *testing.T) {
 }
 
 func TestAgentService_Register_PendingWhenAnonymous(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
-	// No caller (anonymous proposal — agent on a remote machine).
 	got, err := svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice",
 		Slug:          "plumb",
@@ -126,7 +184,7 @@ func TestAgentService_Register_PendingWhenAnonymous(t *testing.T) {
 }
 
 func TestAgentService_Register_RejectsUnknownOwner(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
@@ -146,13 +204,11 @@ func TestAgentService_Register_RejectsUnknownOwner(t *testing.T) {
 }
 
 func TestAgentService_Register_DoesNotAutoApproveZeroUserID(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
-	// Caller with UserID 0 (should never happen in production but
-	// defends against a future auth middleware bug).
 	got, err := svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice",
 		Slug:          "plumb",
@@ -168,8 +224,8 @@ func TestAgentService_Register_DoesNotAutoApproveZeroUserID(t *testing.T) {
 	}
 }
 
-func TestAgentService_Register_RejectsDuplicate(t *testing.T) {
-	svc, _ := newTestService(t)
+func TestAgentService_Register_RejectsDuplicatePubkey(t *testing.T) {
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
@@ -184,22 +240,24 @@ func TestAgentService_Register_RejectsDuplicate(t *testing.T) {
 	if _, err := svc.Register(ctx, req, caller); err != nil {
 		t.Fatal(err)
 	}
+	// Re-registering the same pubkey collides on cairn_agent_pubkey
+	// uniqueness (the fingerprint).
 	_, err := svc.Register(ctx, req, caller)
 	if err == nil {
 		t.Fatal("expected duplicate error")
 	}
-	if !errors.Is(err, ErrAgentExists) {
-		t.Errorf("err = %v, want ErrAgentExists", err)
+	if !errors.Is(err, ErrPubkeyAlreadyClaimed) {
+		t.Errorf("err = %v, want ErrPubkeyAlreadyClaimed", err)
 	}
 }
 
 func TestAgentService_Register_FingerprintIsDeterministic(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
-	got1, err := svc.Register(ctx, RegisterRequest{
+	_, err := svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice",
 		Slug:          "plumb",
 		Domain:        "darksoft.co.nz",
@@ -209,20 +267,22 @@ func TestAgentService_Register_FingerprintIsDeterministic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Compute the expected fingerprint independently and verify match.
 	want := Fingerprint([]byte(testHMACKey), pub)
-	if got1.Fingerprint != want {
-		t.Errorf("Fingerprint = %q, want %q", got1.Fingerprint, want)
+	got, err := svc.LookupAgentByFingerprint(ctx, want)
+	if err != nil {
+		t.Fatalf("lookup by computed fingerprint: %v", err)
+	}
+	if got.Slug != "plumb" {
+		t.Errorf("got.Slug = %q, want plumb", got.Slug)
 	}
 }
 
 func TestAgentService_Approve_TransitionsPendingToActive(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
-	// Anonymous proposal -> pending.
 	pending, err := svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice",
 		Slug:          "plumb",
@@ -232,13 +292,16 @@ func TestAgentService_Approve_TransitionsPendingToActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if pending.Status != cairn.AgentStatusPending {
+		t.Fatalf("setup: status = %q, want pending", pending.Status)
+	}
 
-	// Owner approves.
-	if err := svc.Approve(ctx, pending.Fingerprint, &Caller{UserID: 1, Username: "alice"}); err != nil {
+	fp := svc.FingerprintEd25519(pub)
+	if err := svc.Approve(ctx, fp, &Caller{UserID: 1, Username: "alice"}); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := svc.GetByFingerprint(ctx, pending.Fingerprint)
+	got, err := svc.GetByFingerprint(ctx, fp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,15 +311,16 @@ func TestAgentService_Approve_TransitionsPendingToActive(t *testing.T) {
 }
 
 func TestAgentService_Approve_RejectsNonOwner(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
-	pending, _ := svc.Register(ctx, RegisterRequest{
+	_, _ = svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
 	}, nil)
 
-	err := svc.Approve(ctx, pending.Fingerprint, &Caller{UserID: 2, Username: "bob"})
+	fp := svc.FingerprintEd25519(pub)
+	err := svc.Approve(ctx, fp, &Caller{UserID: 2, Username: "bob"})
 	if err == nil {
 		t.Fatal("expected error when non-owner approves")
 	}
@@ -266,15 +330,16 @@ func TestAgentService_Approve_RejectsNonOwner(t *testing.T) {
 }
 
 func TestAgentService_Block_RejectsNonOwner(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
-	a, _ := svc.Register(ctx, RegisterRequest{
+	_, _ = svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
 	}, &Caller{UserID: 1, Username: "alice"})
 
-	err := svc.Block(ctx, a.Fingerprint, "test", &Caller{UserID: 2, Username: "bob"})
+	fp := svc.FingerprintEd25519(pub)
+	err := svc.Block(ctx, fp, "test", &Caller{UserID: 2, Username: "bob"})
 	if err == nil {
 		t.Fatal("expected error when non-owner blocks")
 	}
@@ -284,7 +349,7 @@ func TestAgentService_Block_RejectsNonOwner(t *testing.T) {
 }
 
 func TestAgentService_Register_RejectsInvalidSlug(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
 	cases := []struct{ name, slug string }{
@@ -311,7 +376,7 @@ func TestAgentService_Register_RejectsInvalidSlug(t *testing.T) {
 }
 
 func TestAgentService_Register_RejectsInvalidDomain(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
 
 	cases := []struct{ name, domain string }{
@@ -334,19 +399,20 @@ func TestAgentService_Register_RejectsInvalidDomain(t *testing.T) {
 }
 
 func TestAgentService_Block_OwnerCanBlock(t *testing.T) {
-	svc, _ := newTestService(t)
+	svc, _, _ := newTestService(t)
 	ctx := context.Background()
 
 	pub, _, _ := ed25519.GenerateKey(rand.Reader)
-	a, _ := svc.Register(ctx, RegisterRequest{
+	_, _ = svc.Register(ctx, RegisterRequest{
 		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
 	}, &Caller{UserID: 1, Username: "alice"})
 
-	if err := svc.Block(ctx, a.Fingerprint, "key compromised", &Caller{UserID: 1, Username: "alice"}); err != nil {
+	fp := svc.FingerprintEd25519(pub)
+	if err := svc.Block(ctx, fp, "key compromised", &Caller{UserID: 1, Username: "alice"}); err != nil {
 		t.Fatal(err)
 	}
 
-	blocked, err := svc.IsBlocked(ctx, a.Fingerprint)
+	blocked, err := svc.IsBlocked(ctx, fp)
 	if err != nil {
 		t.Fatal(err)
 	}

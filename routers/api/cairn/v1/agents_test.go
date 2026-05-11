@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -39,10 +40,55 @@ func (f *fakeUserResolver) UsernameByID(ctx context.Context, id int64) (string, 
 
 const testHMACKey = "0123456789abcdef0123456789abcdef"
 
+// fakeRegistrar is an in-memory AgentUserRegistrar for handler tests.
+// Mirrors the implementations in services/cairn/identity and
+// services/cairn/hook (cannot import either's test package, hence the
+// duplication).
+type fakeRegistrar struct {
+	users         map[string]int64
+	nextUserID    int64
+	pubkeyContent map[int64]string
+	nextPubkeyID  int64
+}
+
+func newFakeRegistrar() *fakeRegistrar {
+	return &fakeRegistrar{
+		users:         map[string]int64{},
+		nextUserID:    1000,
+		pubkeyContent: map[int64]string{},
+	}
+}
+
+func (r *fakeRegistrar) FindOrCreateAgentUser(ctx context.Context, slug, domain string) (int64, error) {
+	login := "nexus-" + slug
+	if id, ok := r.users[login]; ok {
+		return id, nil
+	}
+	r.nextUserID++
+	r.users[login] = r.nextUserID
+	return r.nextUserID, nil
+}
+
+func (r *fakeRegistrar) RegisterPubkey(ctx context.Context, userID int64, content, name string) (int64, error) {
+	r.nextPubkeyID++
+	r.pubkeyContent[r.nextPubkeyID] = content
+	return r.nextPubkeyID, nil
+}
+
+func (r *fakeRegistrar) GetPubkeyContent(ctx context.Context, id int64) (string, error) {
+	c, ok := r.pubkeyContent[id]
+	if !ok {
+		return "", errors.New("no content")
+	}
+	return c, nil
+}
+
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	eng := cairntest.NewEngine(t)
 	store := cairnidentity.NewXormAgentStore(eng)
+	pubkeys := cairnidentity.NewXormAgentPubkeyStore(eng)
+	requests := cairnidentity.NewXormAttachmentRequestStore(eng)
 	blocklist := cairnidentity.NewXormBlocklistStore(eng)
 	users := &fakeUserResolver{
 		usernameToID: map[string]int64{
@@ -50,7 +96,8 @@ func newTestHandler(t *testing.T) *Handler {
 			"bob":     2,
 		},
 	}
-	svc := cairnidentity.NewAgentService([]byte(testHMACKey), store, blocklist, users)
+	registrar := newFakeRegistrar()
+	svc := cairnidentity.NewAgentService([]byte(testHMACKey), store, pubkeys, requests, blocklist, users, registrar)
 	return NewHandler(svc)
 }
 

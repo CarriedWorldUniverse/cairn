@@ -22,23 +22,18 @@ const (
 
 // Agent is the registered identity of a Cairn agent under a human owner.
 //
-// Fingerprint is HMAC-SHA256(instance_hmac_key, public_key), formatted as
-// "cairn:" + base64. Slug uniqueness is scoped per UserID. Email convention
-// is "nexus-{Slug}@{Domain}". See docs/cairn/specs/2026-05-09-cairn-
-// foundation-design.md §5 and §6.
+// As of V503 (Plan 8), agent pubkeys live in Forgejo's public_key table
+// joined via cairn_agent_pubkey. The embedded Fingerprint/PublicKey
+// columns and Go fields are gone. To look up an agent by fingerprint,
+// query cairn_agent_pubkey first then load the agent by AgentID.
+// Slug uniqueness is scoped per UserID. Email convention is
+// "nexus-{Slug}@{Domain}". See docs/cairn/specs/2026-05-11-cairn-
+// instance-rooted-identity.md.
 type Agent struct {
-	ID int64 `xorm:"pk autoincr"`
-	// Deprecated: embedded fingerprint is moving to the cairn_agent_pubkey
-	// join table. V503 drops the SQL column; Task 2 removes this field and
-	// all callers. Do not add new readers.
-	Fingerprint string `xorm:"VARCHAR(80) NOT NULL UNIQUE"`
-	UserID      int64  `xorm:"NOT NULL INDEX UNIQUE(user_slug)"`
-	Slug        string `xorm:"VARCHAR(64) NOT NULL INDEX(email_lookup) UNIQUE(user_slug)"`
-	Domain      string `xorm:"VARCHAR(255) NOT NULL INDEX(email_lookup)"`
-	// Deprecated: embedded pubkey is moving to Forgejo's public_key table,
-	// joined via cairn_agent_pubkey. V503 drops the SQL column; Task 2
-	// removes this field and all callers. Do not add new readers.
-	PublicKey   []byte      `xorm:"BLOB NOT NULL"`
+	ID          int64       `xorm:"pk autoincr"`
+	UserID      int64       `xorm:"NOT NULL INDEX UNIQUE(user_slug)"`
+	Slug        string      `xorm:"VARCHAR(64) NOT NULL INDEX(email_lookup) UNIQUE(user_slug)"`
+	Domain      string      `xorm:"VARCHAR(255) NOT NULL INDEX(email_lookup)"`
 	Status      AgentStatus `xorm:"VARCHAR(16) NOT NULL DEFAULT 'pending'"`
 	CreatedAt   time.Time   `xorm:"NOT NULL"`
 	ActivatedAt *time.Time

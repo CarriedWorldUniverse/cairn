@@ -5,6 +5,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"errors"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"golang.org/x/crypto/ssh"
@@ -35,13 +37,62 @@ func (f *fakeUserResolver) UsernameByID(ctx context.Context, id int64) (string, 
 	return "", cairnidentity.ErrUserNotFound
 }
 
+// fakeRegistrar implements AgentUserRegistrar in-memory for hook tests.
+// Mirrors the identity-package fake but redefined here to avoid the
+// circular import.
+type fakeRegistrar struct {
+	nextUserID    atomic.Int64
+	nextPubkeyID  atomic.Int64
+	usersByLogin  map[string]int64
+	pubkeyContent map[int64]string
+}
+
+func newFakeRegistrar() *fakeRegistrar {
+	r := &fakeRegistrar{
+		usersByLogin:  map[string]int64{},
+		pubkeyContent: map[int64]string{},
+	}
+	r.nextUserID.Store(1000)
+	return r
+}
+
+func (r *fakeRegistrar) FindOrCreateAgentUser(ctx context.Context, slug, domain string) (int64, error) {
+	login := "nexus-" + slug
+	if id, ok := r.usersByLogin[login]; ok {
+		return id, nil
+	}
+	id := r.nextUserID.Add(1)
+	r.usersByLogin[login] = id
+	return id, nil
+}
+
+func (r *fakeRegistrar) RegisterPubkey(ctx context.Context, userID int64, pubkeyContent, name string) (int64, error) {
+	id := r.nextPubkeyID.Add(1)
+	r.pubkeyContent[id] = pubkeyContent
+	return id, nil
+}
+
+func (r *fakeRegistrar) GetPubkeyContent(ctx context.Context, publicKeyID int64) (string, error) {
+	c, ok := r.pubkeyContent[publicKeyID]
+	if !ok {
+		return "", fmt.Errorf("no pubkey content for id %d", publicKeyID)
+	}
+	return c, nil
+}
+
 func newTestSvc(t *testing.T) *cairnidentity.AgentService {
 	t.Helper()
 	eng := cairntest.NewEngine(t)
 	store := cairnidentity.NewXormAgentStore(eng)
+	pubkeys := cairnidentity.NewXormAgentPubkeyStore(eng)
+	requests := cairnidentity.NewXormAttachmentRequestStore(eng)
 	blocklist := cairnidentity.NewXormBlocklistStore(eng)
 	users := &fakeUserResolver{usernameToID: map[string]int64{"alice": 1, "bob": 2}}
-	return cairnidentity.NewAgentService([]byte("0123456789abcdef0123456789abcdef"), store, blocklist, users)
+	registrar := newFakeRegistrar()
+	return cairnidentity.NewAgentService(
+		[]byte("0123456789abcdef0123456789abcdef"),
+		store, pubkeys, requests, blocklist, users, registrar,
+	)
 }
 
 const happyTrailers = "Test commit\n\nAgent-Id: plumb\nAgent-Owner: alice\nAgent-Domain: darksoft.co.nz\n"
@@ -90,7 +141,7 @@ func TestVerifyAgentCommits_EnforceFalseSkips(t *testing.T) {
 
 	commits := []CommitToVerify{{
 		SHA:         "abc123",
-		AuthorEmail: "nexus-ghost@darksoft.co.nz", // unregistered, would fail if enforced
+		AuthorEmail: "nexus-ghost@darksoft.co.nz",
 		Message:     "no trailers\n",
 		Raw:         []byte("no signature here either"),
 	}}
@@ -104,7 +155,6 @@ func TestVerifyAgentCommits_OrphanAgentAllowedWhenFlagOff(t *testing.T) {
 	ctx := context.Background()
 	svc := newTestSvc(t)
 
-	// Don't register the agent; signed commit by orphan.
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	signer, _ := ssh.NewSignerFromKey(priv)
 	body := "Test commit\n"
@@ -129,7 +179,7 @@ func TestVerifyAgentCommits_NonAgentEmailSkipped(t *testing.T) {
 
 	commits := []CommitToVerify{{
 		SHA:         "abc123",
-		AuthorEmail: "nexus@darksoft.co.nz", // no nexus- prefix
+		AuthorEmail: "nexus@darksoft.co.nz",
 		Message:     "human commit\n",
 		Raw:         []byte("doesn't matter"),
 	}}
@@ -160,7 +210,6 @@ func TestVerifyAgentCommits_PendingAgent(t *testing.T) {
 	ctx := context.Background()
 	svc := newTestSvc(t)
 
-	// Anonymous proposal -> pending.
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	_, err := svc.Register(ctx, cairnidentity.RegisterRequest{
 		ProposedOwner: "alice",
@@ -193,13 +242,14 @@ func TestVerifyAgentCommits_BlockedAgent(t *testing.T) {
 	svc := newTestSvc(t)
 
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	a, err := svc.Register(ctx, cairnidentity.RegisterRequest{
+	_, err := svc.Register(ctx, cairnidentity.RegisterRequest{
 		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
 	}, &cairnidentity.Caller{UserID: 1, Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := svc.Block(ctx, a.Fingerprint, "key compromised", &cairnidentity.Caller{UserID: 1, Username: "alice"}); err != nil {
+	fp := svc.FingerprintEd25519(pub)
+	if err := svc.Block(ctx, fp, "key compromised", &cairnidentity.Caller{UserID: 1, Username: "alice"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -247,7 +297,6 @@ func TestVerifyAgentCommits_TamperedSignature(t *testing.T) {
 	signer, _ := ssh.NewSignerFromKey(priv)
 	commit := buildSignedCommit(t, happyTrailers, signer)
 
-	// Tamper with the body after signing.
 	for i := range commit {
 		if commit[i] == 'T' && i+4 < len(commit) && string(commit[i:i+4]) == "Test" {
 			commit[i] = 'E'

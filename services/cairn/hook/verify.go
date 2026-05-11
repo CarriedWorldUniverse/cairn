@@ -90,23 +90,32 @@ func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentSe
 			ErrAgentNotActive, c.SHA, c.AuthorEmail, agent.Status)
 	}
 
-	blocked, err := svc.IsBlocked(ctx, agent.Fingerprint)
+	blocked, err := svc.IsAgentBlocked(ctx, agent.ID)
 	if err != nil {
-		return fmt.Errorf("cairn hook: check blocklist for %s: %w", agent.Fingerprint, err)
+		return fmt.Errorf("cairn hook: check blocklist for agent %d: %w", agent.ID, err)
 	}
 	if blocked {
-		return fmt.Errorf("%w: commit %s by %s (fingerprint=%s)",
-			ErrAgentBlocked, c.SHA, c.AuthorEmail, agent.Fingerprint)
+		return fmt.Errorf("%w: commit %s by %s (agent_id=%d)",
+			ErrAgentBlocked, c.SHA, c.AuthorEmail, agent.ID)
 	}
 
-	if err := VerifyAgentSignature(c.Raw, agent.PublicKey); err != nil {
-		// VerifyAgentSignature returns ErrSignatureMissing or ErrInvalidSignature.
+	// Load the agent's pubkey content (OpenSSH format) from Forgejo's
+	// public_key table via the cairn_agent_pubkey FK. Multi-host agents
+	// have multiple bound pubkeys; PubkeyContentForAgent returns the
+	// first. For multi-host enforcement (verify against any bound
+	// pubkey) a future revision can iterate ListAgentPubkeys.
+	pubContent, err := svc.PubkeyContentForAgent(ctx, agent.ID)
+	if err != nil {
+		return fmt.Errorf("cairn hook: load pubkey for agent %d: %w", agent.ID, err)
+	}
+	if err := VerifyAgentSignatureSSH(c.Raw, pubContent); err != nil {
+		// VerifyAgentSignatureSSH returns ErrSignatureMissing or ErrInvalidSignature.
 		return fmt.Errorf("%w: commit %s", err, c.SHA)
 	}
 
 	ownerUsername, err := svc.UsernameByID(ctx, agent.UserID)
 	if err != nil {
-		return fmt.Errorf("cairn hook: resolve owner for %s: %w", agent.Fingerprint, err)
+		return fmt.Errorf("cairn hook: resolve owner for agent %d: %w", agent.ID, err)
 	}
 	if err := cairnidentity.VerifyTrailers(c.Message, agent, ownerUsername); err != nil {
 		return fmt.Errorf("%w: commit %s", err, c.SHA)

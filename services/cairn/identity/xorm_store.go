@@ -21,19 +21,47 @@ func NewXormAgentStore(engine *xorm.Engine) AgentStore {
 	return &xormAgentStore{engine: engine}
 }
 
-func (s *xormAgentStore) Register(ctx context.Context, a *cairn.Agent) error {
+func (s *xormAgentStore) FindOrCreateByUserSlug(ctx context.Context, userID int64, slug, domain string) (*cairn.Agent, bool, error) {
 	sess := s.engine.NewSession()
 	defer sess.Close()
-	if a.CreatedAt.IsZero() {
-		a.CreatedAt = time.Now()
+	var a cairn.Agent
+	has, err := sess.Context(ctx).
+		Where("user_id = ? AND slug = ?", userID, slug).
+		Get(&a)
+	if err != nil {
+		return nil, false, err
 	}
-	if _, err := sess.Context(ctx).Insert(a); err != nil {
+	if has {
+		return &a, false, nil
+	}
+	a = cairn.Agent{
+		UserID:    userID,
+		Slug:      slug,
+		Domain:    domain,
+		Status:    cairn.AgentStatusPending,
+		CreatedAt: time.Now(),
+	}
+	if _, err := sess.Context(ctx).Insert(&a); err != nil {
 		if isUniqueViolation(err) {
-			return ErrAgentExists
+			return nil, false, ErrAgentExists
 		}
-		return err
+		return nil, false, err
 	}
-	return nil
+	return &a, true, nil
+}
+
+func (s *xormAgentStore) GetByID(ctx context.Context, id int64) (*cairn.Agent, error) {
+	sess := s.engine.NewSession()
+	defer sess.Close()
+	var a cairn.Agent
+	has, err := sess.Context(ctx).ID(id).Get(&a)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, ErrAgentNotFound
+	}
+	return &a, nil
 }
 
 // isUniqueViolation reports whether err is a database-driver unique-
@@ -45,10 +73,6 @@ func isUniqueViolation(err error) bool {
 		return false
 	}
 	msg := err.Error()
-	// SQLite: "UNIQUE constraint failed: ..." (mattn) or
-	//        "constraint failed: UNIQUE ..." (modernc).
-	// Postgres: pgx driver wraps PG SQLSTATE 23505 in messages
-	//           containing "duplicate key value".
 	switch {
 	case strings.Contains(msg, "UNIQUE constraint failed"):
 		return true
@@ -58,20 +82,6 @@ func isUniqueViolation(err error) bool {
 		return true
 	}
 	return false
-}
-
-func (s *xormAgentStore) GetByFingerprint(ctx context.Context, fingerprint string) (*cairn.Agent, error) {
-	sess := s.engine.NewSession()
-	defer sess.Close()
-	var a cairn.Agent
-	has, err := sess.Context(ctx).Where("fingerprint = ?", fingerprint).Get(&a)
-	if err != nil {
-		return nil, err
-	}
-	if !has {
-		return nil, ErrAgentNotFound
-	}
-	return &a, nil
 }
 
 func (s *xormAgentStore) GetByEmail(ctx context.Context, slug, domain string) (*cairn.Agent, error) {
@@ -104,17 +114,17 @@ func (s *xormAgentStore) ListByUser(ctx context.Context, userID int64, status ca
 	return out, nil
 }
 
-func (s *xormAgentStore) Approve(ctx context.Context, fingerprint string) error {
+func (s *xormAgentStore) SetStatus(ctx context.Context, agentID int64, status cairn.AgentStatus) error {
 	sess := s.engine.NewSession()
 	defer sess.Close()
-	now := time.Now()
-	count, err := sess.Context(ctx).
-		Where("fingerprint = ?", fingerprint).
-		Cols("status", "activated_at").
-		Update(&cairn.Agent{
-			Status:      cairn.AgentStatusActive,
-			ActivatedAt: &now,
-		})
+	upd := &cairn.Agent{Status: status}
+	cols := []string{"status"}
+	if status == cairn.AgentStatusActive {
+		now := time.Now()
+		upd.ActivatedAt = &now
+		cols = append(cols, "activated_at")
+	}
+	count, err := sess.Context(ctx).ID(agentID).Cols(cols...).Update(upd)
 	if err != nil {
 		return err
 	}

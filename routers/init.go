@@ -244,8 +244,11 @@ func initCairn(ctx context.Context) error {
 		ctx,
 		setting.Cairn.HMACKeyPath,
 		cairnidentity.NewXormAgentStore(masterEng),
+		cairnidentity.NewXormAgentPubkeyStore(masterEng),
+		cairnidentity.NewXormAttachmentRequestStore(masterEng),
 		cairnidentity.NewXormBlocklistStore(masterEng),
 		cairnv1.NewForgejoUserResolver(),
+		cairnv1.NewForgejoRegistrar(),
 	); err != nil {
 		return err
 	}

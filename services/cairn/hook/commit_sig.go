@@ -90,6 +90,29 @@ func ExtractSignedCommitData(commitRaw []byte) (signedPayload, signatureBlock []
 // Returns ErrInvalidSignature if verification fails.
 // Returns other errors for malformed inputs.
 func VerifyAgentSignature(commitRaw []byte, agentPubKey ed25519.PublicKey) error {
+	sshPub, err := ssh.NewPublicKey(agentPubKey)
+	if err != nil {
+		return err
+	}
+	return verifyAgainstSSHKey(commitRaw, sshPub)
+}
+
+// VerifyAgentSignatureSSH is the post-V503 entry point: verifies a
+// commit signature against an OpenSSH-format public-key text (e.g.
+// "ssh-ed25519 AAAA...") loaded from Forgejo's public_key table.
+//
+// Returns ErrSignatureMissing if the commit has no gpgsig.
+// Returns ErrInvalidSignature if verification fails.
+// Returns other errors for malformed inputs.
+func VerifyAgentSignatureSSH(commitRaw []byte, pubkeyContent string) error {
+	sshPub, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubkeyContent))
+	if err != nil {
+		return fmt.Errorf("cairn hook: parse pubkey: %w", err)
+	}
+	return verifyAgainstSSHKey(commitRaw, sshPub)
+}
+
+func verifyAgainstSSHKey(commitRaw []byte, sshPub ssh.PublicKey) error {
 	signed, armored, err := ExtractSignedCommitData(commitRaw)
 	if err != nil {
 		return err
@@ -97,10 +120,6 @@ func VerifyAgentSignature(commitRaw []byte, agentPubKey ed25519.PublicKey) error
 	sig, err := ParseSSHSignature(armored)
 	if err != nil {
 		return fmt.Errorf("cairn hook: parse signature: %w", err)
-	}
-	sshPub, err := ssh.NewPublicKey(agentPubKey)
-	if err != nil {
-		return err
 	}
 	if err := VerifySSHSignedData(sshPub, signed, sig, "git"); err != nil {
 		return ErrInvalidSignature
