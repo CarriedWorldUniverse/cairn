@@ -92,6 +92,25 @@ func (s *AgentService) ListPendingForOwner(ctx context.Context, ownerUsername st
 	return s.requests.ListPendingByOwner(ctx, ownerUsername)
 }
 
+// ListForOwner returns attachment requests for the named owner,
+// optionally filtered by status. Empty status returns all statuses.
+func (s *AgentService) ListForOwner(ctx context.Context, ownerUsername string, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error) {
+	return s.requests.ListByOwner(ctx, ownerUsername, status)
+}
+
+// ListAllAttachmentRequests returns every attachment request,
+// optionally filtered by status. Empty status returns all statuses.
+// Used by the site-admin listing endpoint.
+func (s *AgentService) ListAllAttachmentRequests(ctx context.Context, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error) {
+	return s.requests.ListAll(ctx, status)
+}
+
+// GetAttachmentRequest loads a single attachment request by id.
+// Returns ErrAttachmentRequestNotFound when no such row exists.
+func (s *AgentService) GetAttachmentRequest(ctx context.Context, id int64) (*cairn.AttachmentRequest, error) {
+	return s.requests.GetByID(ctx, id)
+}
+
 // ApproveAttachmentRequest is the atomic approval flow. It:
 //
 //  1. Loads the request; ensures status=pending (else ErrAlreadyDecided).

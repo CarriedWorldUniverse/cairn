@@ -59,6 +59,14 @@ type AttachmentRequestStore interface {
 	Insert(ctx context.Context, req *cairn.AttachmentRequest) error
 	GetByID(ctx context.Context, id int64) (*cairn.AttachmentRequest, error)
 	ListPendingByOwner(ctx context.Context, ownerUsername string) ([]*cairn.AttachmentRequest, error)
+	// ListByOwner returns attachment requests for the named owner.
+	// Empty status returns all statuses; otherwise filters to the
+	// supplied status.
+	ListByOwner(ctx context.Context, ownerUsername string, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error)
+	// ListAll returns every attachment request, optionally filtered by
+	// status. Empty status returns all statuses. Used for the admin
+	// listing endpoint.
+	ListAll(ctx context.Context, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error)
 	UpdateDecision(ctx context.Context, id int64, status cairn.AttachmentRequestStatus, decidedByUserID int64) error
 }
 

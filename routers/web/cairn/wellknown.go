@@ -56,6 +56,7 @@ func BuildManifest(instanceName, cairnVersion, forgejoVersion string, features m
 		Endpoints: map[string]string{
 			"agents":         "/api/cairn/v1/agents",
 			"agent_identity": "/api/cairn/v1/agents/{fingerprint}/identity",
+			"attach":         "/api/cairn/v1/agents/attachment-requests",
 			"manifest":       "/.well-known/cairn.json",
 			"llms_txt":       "/.well-known/llms.txt",
 		},

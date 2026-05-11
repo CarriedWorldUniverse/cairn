@@ -19,9 +19,10 @@ import (
 )
 
 // maxRequestBodyBytes bounds the size of API request bodies. Protects
-// the anonymous POST /agents endpoint from DoS via huge payload.
-// Cairn's largest legitimate request is registration: ~200 bytes
-// (proposed_owner + slug + domain + 64-char hex pubkey).
+// anonymously-callable endpoints (attachment-request submission, block
+// reason, etc.) from DoS via huge payload. An OpenSSH ed25519
+// authorized_keys line is ~80 bytes; 4 KiB leaves comfortable headroom
+// for JSON wrapping and slug/domain/owner fields.
 const maxRequestBodyBytes = 4096
 
 // Handler is the HTTP handler set for /api/cairn/v1.
@@ -47,75 +48,6 @@ func WithCaller(ctx context.Context, c *cairnidentity.Caller) context.Context {
 func callerFromCtx(ctx context.Context) *cairnidentity.Caller {
 	c, _ := ctx.Value(callerKey{}).(*cairnidentity.Caller)
 	return c
-}
-
-// PostAgents handles POST /api/cairn/v1/agents.
-//
-// Backward-compat surface for the pre-V503 single-shot register flow.
-// Internally maps to AgentService.Register, which now also writes a
-// cairn_agent_pubkey row + Forgejo public_key via the configured
-// AgentUserRegistrar. Plan 8 Task 4 will replace this with the
-// attachment-request endpoints.
-func (h *Handler) PostAgents(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "")
-		return
-	}
-
-	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
-
-	var in RegisterRequestJSON
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_json", "could not decode JSON body")
-		return
-	}
-
-	if in.ProposedOwner == "" || in.Slug == "" || in.Domain == "" || in.PublicKeyHex == "" {
-		writeError(w, http.StatusBadRequest, "missing_fields", "proposed_owner, slug, domain, and public_key are required")
-		return
-	}
-
-	pubBytes, err := hex.DecodeString(in.PublicKeyHex)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_public_key_hex", err.Error())
-		return
-	}
-	if len(pubBytes) != ed25519.PublicKeySize {
-		writeError(w, http.StatusBadRequest, "invalid_public_key_size", "expected 32 bytes")
-		return
-	}
-
-	pub := ed25519.PublicKey(pubBytes)
-	agent, err := h.svc.Register(r.Context(), cairnidentity.RegisterRequest{
-		ProposedOwner: in.ProposedOwner,
-		Slug:          in.Slug,
-		Domain:        in.Domain,
-		PublicKey:     pub,
-	}, callerFromCtx(r.Context()))
-
-	switch {
-	case err == nil:
-		// continue below
-	case errors.Is(err, cairnidentity.ErrUserNotFound):
-		writeError(w, http.StatusNotFound, "owner_not_found", "")
-		return
-	case errors.Is(err, cairnidentity.ErrAgentExists):
-		writeError(w, http.StatusConflict, "agent_exists", "agent with this slug or fingerprint already exists")
-		return
-	case errors.Is(err, cairnidentity.ErrPubkeyAlreadyClaimed):
-		writeError(w, http.StatusConflict, "pubkey_already_claimed", "this public key is already bound to another agent")
-		return
-	case errors.Is(err, cairnidentity.ErrInvalidInput):
-		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		return
-	default:
-		log.Printf("cairn api v1: PostAgents: %v", err)
-		writeError(w, http.StatusInternalServerError, "internal_error", "")
-		return
-	}
-
-	fp := h.svc.FingerprintEd25519(pub)
-	writeAgent(w, http.StatusCreated, agent, in.ProposedOwner, false, fp, in.PublicKeyHex)
 }
 
 // writeError writes a JSON error response.

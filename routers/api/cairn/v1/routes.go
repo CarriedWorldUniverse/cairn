@@ -100,9 +100,21 @@ func MountRoutes(group RouteGroup) {
 		}
 	}
 
-	group.Post("/agents", withCaller(globalHandler.PostAgents))
+	withReqID := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			id := parseRequestIDParam(urlParam(r, "id"))
+			r = WithRequestIDParam(r, id)
+			next(w, r)
+		}
+	}
+
 	group.Get("/agents", withCaller(globalHandler.GetAgents))
 	group.Get("/agents/{fingerprint}/identity", withFP(globalHandler.GetIdentity))
 	group.Post("/agents/{fingerprint}/approve", withFP(withCaller(globalHandler.PostApprove)))
 	group.Post("/agents/{fingerprint}/block", withFP(withCaller(globalHandler.PostBlock)))
+	group.Post("/agents/attachment-requests", withCaller(globalHandler.PostAttachmentRequest))
+	group.Get("/agents/attachment-requests", withCaller(globalHandler.GetAttachmentRequests))
+	group.Post("/agents/attachment-requests/{id}/approve", withReqID(withCaller(globalHandler.PostApproveAttachmentRequest)))
+	group.Post("/agents/attachment-requests/{id}/reject", withReqID(withCaller(globalHandler.PostRejectAttachmentRequest)))
+	group.Get("/users/me/pending-attachment-requests", withCaller(globalHandler.GetMyPendingAttachmentRequests))
 }

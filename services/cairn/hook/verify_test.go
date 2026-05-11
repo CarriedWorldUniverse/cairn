@@ -97,19 +97,26 @@ func newTestSvc(t *testing.T) *cairnidentity.AgentService {
 
 const happyTrailers = "Test commit\n\nAgent-Id: plumb\nAgent-Owner: alice\nAgent-Domain: darksoft.co.nz\n"
 
+// registerActivePlumb provisions an active "plumb" agent via the
+// attachment-request flow (Plan 8). Returns the raw keypair so the
+// caller can sign test commits.
 func registerActivePlumb(t *testing.T, svc *cairnidentity.AgentService) (ed25519.PublicKey, ed25519.PrivateKey) {
 	t.Helper()
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = svc.Register(context.Background(), cairnidentity.RegisterRequest{
-		ProposedOwner: "alice",
-		Slug:          "plumb",
-		Domain:        "darksoft.co.nz",
-		PublicKey:     pub,
-	}, &cairnidentity.Caller{UserID: 1, Username: "alice"})
+	sshKey, err := ssh.NewPublicKey(pub)
 	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(ssh.MarshalAuthorizedKey(sshKey))
+	ctx := context.Background()
+	req, err := svc.CreateAttachmentRequest(ctx, "alice", "plumb", "darksoft.co.nz", content)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ApproveAttachmentRequest(ctx, req.ID, 1); err != nil {
 		t.Fatal(err)
 	}
 	return pub, priv
@@ -206,49 +213,23 @@ func TestVerifyAgentCommits_OrphanAgent(t *testing.T) {
 	}
 }
 
+// TestVerifyAgentCommits_PendingAgent: in the Plan 8 attachment-request
+// model the cairn_agent row is only created at approval time and is
+// activated atomically — a pending-status cairn_agent is no longer
+// reachable through the public service surface. The verifier's
+// status-gate (ErrAgentNotActive) remains in place defensively; this
+// test is intentionally skipped because the reachable state space no
+// longer produces it through the supported flows.
 func TestVerifyAgentCommits_PendingAgent(t *testing.T) {
-	ctx := context.Background()
-	svc := newTestSvc(t)
-
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	_, err := svc.Register(ctx, cairnidentity.RegisterRequest{
-		ProposedOwner: "alice",
-		Slug:          "plumb",
-		Domain:        "darksoft.co.nz",
-		PublicKey:     pub,
-	}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	signer, _ := ssh.NewSignerFromKey(priv)
-	commit := buildSignedCommit(t, happyTrailers, signer)
-
-	commits := []CommitToVerify{{
-		SHA:         "abc123",
-		AuthorEmail: "nexus-plumb@darksoft.co.nz",
-		Message:     happyTrailers,
-		Raw:         commit,
-	}}
-
-	err = VerifyAgentCommits(ctx, commits, svc, true, true)
-	if !errors.Is(err, ErrAgentNotActive) {
-		t.Errorf("err = %v, want ErrAgentNotActive", err)
-	}
+	t.Skip("pending-status cairn_agent unreachable post Plan 8; verifier gate retained defensively")
 }
 
 func TestVerifyAgentCommits_BlockedAgent(t *testing.T) {
 	ctx := context.Background()
 	svc := newTestSvc(t)
 
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	_, err := svc.Register(ctx, cairnidentity.RegisterRequest{
-		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
-	}, &cairnidentity.Caller{UserID: 1, Username: "alice"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	fp := svc.FingerprintEd25519(pub)
+	pub, priv := registerActivePlumb(t, svc)
+	fp := cairnidentity.Fingerprint([]byte("0123456789abcdef0123456789abcdef"), pub)
 	if err := svc.Block(ctx, fp, "key compromised", &cairnidentity.Caller{UserID: 1, Username: "alice"}); err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +244,7 @@ func TestVerifyAgentCommits_BlockedAgent(t *testing.T) {
 		Raw:         commit,
 	}}
 
-	err = VerifyAgentCommits(ctx, commits, svc, true, true)
+	err := VerifyAgentCommits(ctx, commits, svc, true, true)
 	if !errors.Is(err, ErrAgentBlocked) {
 		t.Errorf("err = %v, want ErrAgentBlocked", err)
 	}

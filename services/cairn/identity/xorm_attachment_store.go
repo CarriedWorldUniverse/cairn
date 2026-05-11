@@ -55,6 +55,34 @@ func (s *xormAttachmentRequestStore) ListPendingByOwner(ctx context.Context, own
 	return out, nil
 }
 
+func (s *xormAttachmentRequestStore) ListByOwner(ctx context.Context, ownerUsername string, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error) {
+	sess := s.engine.NewSession()
+	defer sess.Close()
+	var out []*cairn.AttachmentRequest
+	q := sess.Context(ctx).Where("owner_username = ?", ownerUsername)
+	if status != "" {
+		q = q.And("status = ?", string(status))
+	}
+	if err := q.Find(&out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *xormAttachmentRequestStore) ListAll(ctx context.Context, status cairn.AttachmentRequestStatus) ([]*cairn.AttachmentRequest, error) {
+	sess := s.engine.NewSession()
+	defer sess.Close()
+	var out []*cairn.AttachmentRequest
+	qb := sess.Context(ctx)
+	if status != "" {
+		qb = qb.Where("status = ?", string(status))
+	}
+	if err := qb.Find(&out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *xormAttachmentRequestStore) UpdateDecision(ctx context.Context, id int64, status cairn.AttachmentRequestStatus, decidedByUserID int64) error {
 	sess := s.engine.NewSession()
 	defer sess.Close()

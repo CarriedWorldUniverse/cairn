@@ -2,13 +2,10 @@ package identity
 
 import (
 	"context"
-	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"regexp"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 
 	cairn "github.com/CarriedWorldUniverse/cairn/models/cairn"
 )
@@ -61,20 +58,11 @@ type UserResolver interface {
 }
 
 // Caller represents the authenticated user making a request, or nil
-// for anonymous requests.
+// for anonymous requests. IsAdmin mirrors the Forgejo site-admin flag.
 type Caller struct {
 	UserID   int64
 	Username string
-}
-
-// RegisterRequest is the input to AgentService.Register. PublicKey is
-// the agent's ed25519 public key (32 bytes); the service marshals it
-// to OpenSSH-format text before handing to the registrar.
-type RegisterRequest struct {
-	ProposedOwner string            // username
-	Slug          string            // bare slug, e.g. "plumb"
-	Domain        string            // e.g. "darksoft.co.nz"
-	PublicKey     ed25519.PublicKey // 32 bytes
+	IsAdmin  bool
 }
 
 // AgentService orchestrates the registration / approval / blocking
@@ -112,51 +100,6 @@ func NewAgentService(
 		users:     users,
 		registrar: registrar,
 	}
-}
-
-// marshalEd25519 turns a raw ed25519 public key into OpenSSH-format
-// authorized_keys text (e.g. "ssh-ed25519 AAAAC3...").
-func marshalEd25519(pub ed25519.PublicKey) (string, error) {
-	sshPub, err := ssh.NewPublicKey(pub)
-	if err != nil {
-		return "", err
-	}
-	return string(ssh.MarshalAuthorizedKey(sshPub)), nil
-}
-
-// Fingerprint returns the Cairn fingerprint for the given raw ed25519
-// public key under the service's instance HMAC key. Exposed so handlers
-// that need to surface a fingerprint to the wire format (without doing
-// a join lookup) can recompute it locally.
-func (s *AgentService) FingerprintEd25519(pub ed25519.PublicKey) string {
-	return Fingerprint(s.hmacKey, pub)
-}
-
-// Register is the unified registration flow. If caller is the proposed
-// owner (caller.UserID == proposed owner's id), the agent is created
-// active. Otherwise (different user, or anonymous) the agent is pending.
-//
-// Returns ErrUserNotFound if proposed_owner doesn't exist; ErrAgentExists
-// for duplicate (user_id, slug); ErrPubkeyAlreadyClaimed if the pubkey
-// fingerprint is already bound to another agent.
-func (s *AgentService) Register(ctx context.Context, req RegisterRequest, caller *Caller) (*cairn.Agent, error) {
-	if err := validateSlugDomain(req.Slug, req.Domain); err != nil {
-		return nil, err
-	}
-	ownerID, err := s.users.UserIDByUsername(ctx, req.ProposedOwner)
-	if err != nil {
-		return nil, err
-	}
-
-	autoApprove := caller != nil && caller.UserID > 0 && caller.UserID == ownerID
-
-	pubContent, err := marshalEd25519(req.PublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("%w: marshal pubkey: %v", ErrInvalidInput, err)
-	}
-	fp := Fingerprint(s.hmacKey, req.PublicKey)
-
-	return s.registerCore(ctx, ownerID, req.Slug, req.Domain, pubContent, fp, autoApprove)
 }
 
 // registerCore performs the full agent-registration sequence: ensure

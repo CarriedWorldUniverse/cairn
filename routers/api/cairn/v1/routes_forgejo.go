@@ -35,6 +35,7 @@ func extractForgejoUser(r *http.Request) (out *cairnidentity.Caller) {
 	return &cairnidentity.Caller{
 		UserID:   apiCtx.Doer.ID,
 		Username: apiCtx.Doer.Name,
+		IsAdmin:  apiCtx.Doer.IsAdmin,
 	}
 }
 
