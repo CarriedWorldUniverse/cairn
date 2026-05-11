@@ -259,6 +259,71 @@ func TestAgentService_AttachmentRequest_RejectsDuplicatePubkey(t *testing.T) {
 	}
 }
 
+// TestAgentService_PubkeyContentsForAgent_ReturnsAllBoundKeys exercises
+// the multi-host pubkey accessor used by the push hook. After approving
+// two attachment-requests for the same (owner, slug, domain) with
+// distinct pubkeys, both pubkey contents must be returned.
+func TestAgentService_PubkeyContentsForAgent_ReturnsAllBoundKeys(t *testing.T) {
+	svc, _, _ := newTestService(t)
+	ctx := context.Background()
+
+	// Host A.
+	pubA, _, _ := ed25519.GenerateKey(rand.Reader)
+	sshKeyA, _ := ssh.NewPublicKey(pubA)
+	contentA := strings.TrimRight(string(ssh.MarshalAuthorizedKey(sshKeyA)), "\n")
+	reqA, err := svc.CreateAttachmentRequest(ctx, "alice", "plumb", "darksoft.co.nz", contentA+"\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	agent, err := svc.ApproveAttachmentRequest(ctx, reqA.ID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Host B — second pubkey on the same agent.
+	pubB, _, _ := ed25519.GenerateKey(rand.Reader)
+	sshKeyB, _ := ssh.NewPublicKey(pubB)
+	contentB := strings.TrimRight(string(ssh.MarshalAuthorizedKey(sshKeyB)), "\n")
+	reqB, err := svc.CreateAttachmentRequest(ctx, "alice", "plumb", "darksoft.co.nz", contentB+"\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ApproveAttachmentRequest(ctx, reqB.ID, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	contents, err := svc.PubkeyContentsForAgent(ctx, agent.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(contents) != 2 {
+		t.Fatalf("len(contents) = %d, want 2", len(contents))
+	}
+	// Order is the ListByAgent order — test for presence, not position.
+	gotA, gotB := false, false
+	for _, c := range contents {
+		trimmed := strings.TrimRight(c, "\n")
+		if trimmed == contentA {
+			gotA = true
+		}
+		if trimmed == contentB {
+			gotB = true
+		}
+	}
+	if !gotA || !gotB {
+		t.Errorf("missing pubkey content: gotA=%v gotB=%v", gotA, gotB)
+	}
+}
+
+func TestAgentService_PubkeyContentsForAgent_NoBindingsErrors(t *testing.T) {
+	svc, _, _ := newTestService(t)
+	ctx := context.Background()
+	_, err := svc.PubkeyContentsForAgent(ctx, 9999)
+	if !errors.Is(err, ErrAgentNotFound) {
+		t.Errorf("err = %v, want ErrAgentNotFound", err)
+	}
+}
+
 func TestAgentService_Block_OwnerCanBlock(t *testing.T) {
 	svc, _, _ := newTestService(t)
 	_, _, fp := registerTestAgent(t, svc, "alice", "plumb", "darksoft.co.nz", 1)

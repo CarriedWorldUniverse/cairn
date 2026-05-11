@@ -257,8 +257,12 @@ func (s *AgentService) PubkeyContentForFingerprint(ctx context.Context, fingerpr
 
 // PubkeyContentForAgent returns the OpenSSH-format pubkey content for
 // any pubkey bound to agentID. If multiple are bound (multi-host case),
-// the first registered is returned. Used by the push hook when the
-// commit author identifies the agent by email rather than fingerprint.
+// the first registered is returned. Used by API readback paths where a
+// representative pubkey is sufficient.
+//
+// Prefer PubkeyContentsForAgent when verifying signatures so multi-host
+// agents work correctly: a commit signed on host B must still verify
+// even though host A's pubkey was registered first.
 func (s *AgentService) PubkeyContentForAgent(ctx context.Context, agentID int64) (string, error) {
 	rows, err := s.pubkeys.ListByAgent(ctx, agentID)
 	if err != nil {
@@ -268,6 +272,34 @@ func (s *AgentService) PubkeyContentForAgent(ctx context.Context, agentID int64)
 		return "", ErrAgentNotFound
 	}
 	return s.registrar.GetPubkeyContent(ctx, rows[0].PublicKeyID)
+}
+
+// PubkeyContentsForAgent returns the OpenSSH-format pubkey content for
+// every pubkey bound to agentID (one per registered host). Used by the
+// push hook to verify a commit signature against any of an agent's
+// bound keys — multi-host agents must accept signatures from any host.
+//
+// Returns an empty slice and ErrAgentNotFound if no bindings exist.
+// If any underlying GetPubkeyContent lookup fails, the error is returned
+// eagerly — that indicates a broken FK from cairn_agent_pubkey to
+// public_key (corruption), not a per-host failure to be papered over.
+func (s *AgentService) PubkeyContentsForAgent(ctx context.Context, agentID int64) ([]string, error) {
+	rows, err := s.pubkeys.ListByAgent(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, ErrAgentNotFound
+	}
+	contents := make([]string, 0, len(rows))
+	for _, ap := range rows {
+		c, err := s.registrar.GetPubkeyContent(ctx, ap.PublicKeyID)
+		if err != nil {
+			return nil, err
+		}
+		contents = append(contents, c)
+	}
+	return contents, nil
 }
 
 // UsernameByID returns the username for a user id, via the configured

@@ -323,6 +323,63 @@ func TestVerifyAgentCommits_TrailerMismatch(t *testing.T) {
 	}
 }
 
+// TestVerifyAgentCommits_MultiHostAccepted exercises the multi-host
+// promise from the instance-rooted-identity spec: an agent may register
+// pubkeys from multiple hosts, and a commit signed by any of those keys
+// must verify.
+//
+// Setup: register plumb via the standard attachment-request flow (host A),
+// then submit + approve a second attachment-request for the same
+// (owner, slug, domain) with a fresh keypair (host B). registerCore is
+// find-or-create on cairn_agent and insert-on cairn_agent_pubkey, so
+// approval idempotently attaches the second pubkey to the existing
+// agent. The test signs a commit with host B's key and expects verify
+// to accept it.
+func TestVerifyAgentCommits_MultiHostAccepted(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestSvc(t)
+
+	// Host A — primary registration.
+	registerActivePlumb(t, svc)
+
+	// Host B — second pubkey for the same agent. Approve another
+	// attachment-request with a fresh keypair under the same
+	// (owner, slug, domain).
+	pubB, privB, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sshKeyB, err := ssh.NewPublicKey(pubB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contentB := string(ssh.MarshalAuthorizedKey(sshKeyB))
+	reqB, err := svc.CreateAttachmentRequest(ctx, "alice", "plumb", "darksoft.co.nz", contentB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ApproveAttachmentRequest(ctx, reqB.ID, 1); err != nil {
+		t.Fatalf("second attachment approval failed (multi-host idempotency broken?): %v", err)
+	}
+
+	// Sign a commit with host B's key — must verify.
+	signerB, err := ssh.NewSignerFromKey(privB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commit := buildSignedCommit(t, happyTrailers, signerB)
+	commits := []CommitToVerify{{
+		SHA:         "hostBcommit",
+		AuthorEmail: "nexus-plumb@darksoft.co.nz",
+		Message:     happyTrailers,
+		Raw:         commit,
+	}}
+
+	if err := VerifyAgentCommits(ctx, commits, svc, true, true); err != nil {
+		t.Errorf("expected nil for host-B-signed commit, got %v", err)
+	}
+}
+
 func TestVerifyAgentCommits_StopsAtFirstFailure(t *testing.T) {
 	ctx := context.Background()
 	svc := newTestSvc(t)

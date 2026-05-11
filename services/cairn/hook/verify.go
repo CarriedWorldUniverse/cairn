@@ -99,18 +99,41 @@ func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentSe
 			ErrAgentBlocked, c.SHA, c.AuthorEmail, agent.ID)
 	}
 
-	// Load the agent's pubkey content (OpenSSH format) from Forgejo's
-	// public_key table via the cairn_agent_pubkey FK. Multi-host agents
-	// have multiple bound pubkeys; PubkeyContentForAgent returns the
-	// first. For multi-host enforcement (verify against any bound
-	// pubkey) a future revision can iterate ListAgentPubkeys.
-	pubContent, err := svc.PubkeyContentForAgent(ctx, agent.ID)
+	// Load all of the agent's bound pubkeys (one per registered host)
+	// from Forgejo's public_key table via the cairn_agent_pubkey FK.
+	// A commit signed on any host the agent has registered must verify.
+	pubContents, err := svc.PubkeyContentsForAgent(ctx, agent.ID)
 	if err != nil {
-		return fmt.Errorf("cairn hook: load pubkey for agent %d: %w", agent.ID, err)
+		return fmt.Errorf("cairn hook: load pubkeys for agent %d: %w", agent.ID, err)
 	}
-	if err := VerifyAgentSignatureSSH(c.Raw, pubContent); err != nil {
+	if len(pubContents) == 0 {
+		// Defensive: GetByEmail succeeded, so the agent row exists, but
+		// no pubkeys are bound. Treat as "agent not found" — equivalent
+		// to an unregistered agent post-attachment.
+		return fmt.Errorf("cairn hook: load pubkeys for agent %d: %w", agent.ID, cairnidentity.ErrAgentNotFound)
+	}
+	var sigErr error
+	verified := false
+	for _, pubContent := range pubContents {
+		err := VerifyAgentSignatureSSH(c.Raw, pubContent)
+		if err == nil {
+			verified = true
+			break
+		}
+		// ErrSignatureMissing is a property of the commit (no gpgsig
+		// header), not of any one key — trying additional keys can't
+		// change the outcome. Short-circuit.
+		if errors.Is(err, ErrSignatureMissing) {
+			sigErr = err
+			break
+		}
+		// Track the most recent ErrInvalidSignature; if all keys fail
+		// with it, that's the error we return.
+		sigErr = err
+	}
+	if !verified {
 		// VerifyAgentSignatureSSH returns ErrSignatureMissing or ErrInvalidSignature.
-		return fmt.Errorf("%w: commit %s", err, c.SHA)
+		return fmt.Errorf("%w: commit %s", sigErr, c.SHA)
 	}
 
 	ownerUsername, err := svc.UsernameByID(ctx, agent.UserID)
