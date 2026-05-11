@@ -104,13 +104,18 @@ func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentSe
 	// A commit signed on any host the agent has registered must verify.
 	pubContents, err := svc.PubkeyContentsForAgent(ctx, agent.ID)
 	if err != nil {
+		if errors.Is(err, cairnidentity.ErrAgentNotFound) {
+			return fmt.Errorf("%w: commit %s by %s (agent_id=%d, no_pubkeys)",
+				ErrOrphanAgent, c.SHA, c.AuthorEmail, agent.ID)
+		}
 		return fmt.Errorf("cairn hook: load pubkeys for agent %d: %w", agent.ID, err)
 	}
 	if len(pubContents) == 0 {
 		// Defensive: GetByEmail succeeded, so the agent row exists, but
-		// no pubkeys are bound. Treat as "agent not found" — equivalent
-		// to an unregistered agent post-attachment.
-		return fmt.Errorf("cairn hook: load pubkeys for agent %d: %w", agent.ID, cairnidentity.ErrAgentNotFound)
+		// no pubkeys are bound. Same semantic failure as orphan agent —
+		// no usable identity material — so map to ErrOrphanAgent.
+		return fmt.Errorf("%w: commit %s by %s (agent_id=%d, no_pubkeys)",
+			ErrOrphanAgent, c.SHA, c.AuthorEmail, agent.ID)
 	}
 	var sigErr error
 	verified := false
@@ -133,6 +138,9 @@ func verifyOne(ctx context.Context, c CommitToVerify, svc *cairnidentity.AgentSe
 	}
 	if !verified {
 		// VerifyAgentSignatureSSH returns ErrSignatureMissing or ErrInvalidSignature.
+		if errors.Is(sigErr, ErrInvalidSignature) && len(pubContents) > 1 {
+			return fmt.Errorf("%w: commit %s (tried %d keys)", sigErr, c.SHA, len(pubContents))
+		}
 		return fmt.Errorf("%w: commit %s", sigErr, c.SHA)
 	}
 

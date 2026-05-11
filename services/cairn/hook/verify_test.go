@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -377,6 +378,62 @@ func TestVerifyAgentCommits_MultiHostAccepted(t *testing.T) {
 
 	if err := VerifyAgentCommits(ctx, commits, svc, true, true); err != nil {
 		t.Errorf("expected nil for host-B-signed commit, got %v", err)
+	}
+}
+
+// TestVerifyAgentCommits_MultiHostAllKeysFail registers an agent with two
+// pubkeys (host A + host B) and signs a commit with a third, unregistered
+// keypair. The verifier should try both registered keys, fail both, and
+// return ErrInvalidSignature with a "(tried 2 keys)" diagnostic so
+// operators can distinguish "wrong key" from "no keys at all".
+func TestVerifyAgentCommits_MultiHostAllKeysFail(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestSvc(t)
+
+	// Host A — primary registration.
+	registerActivePlumb(t, svc)
+
+	// Host B — second pubkey for the same agent.
+	pubB, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sshKeyB, err := ssh.NewPublicKey(pubB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contentB := string(ssh.MarshalAuthorizedKey(sshKeyB))
+	reqB, err := svc.CreateAttachmentRequest(ctx, "alice", "plumb", "darksoft.co.nz", contentB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ApproveAttachmentRequest(ctx, reqB.ID, 1); err != nil {
+		t.Fatalf("second attachment approval failed: %v", err)
+	}
+
+	// Third, never-registered keypair — sign with this.
+	_, privC, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signerC, err := ssh.NewSignerFromKey(privC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commit := buildSignedCommit(t, happyTrailers, signerC)
+	commits := []CommitToVerify{{
+		SHA:         "rogueKeyCommit",
+		AuthorEmail: "nexus-plumb@darksoft.co.nz",
+		Message:     happyTrailers,
+		Raw:         commit,
+	}}
+
+	err = VerifyAgentCommits(ctx, commits, svc, true, true)
+	if !errors.Is(err, ErrInvalidSignature) {
+		t.Fatalf("err = %v, want ErrInvalidSignature", err)
+	}
+	if !strings.Contains(err.Error(), "tried 2 keys") {
+		t.Errorf("expected error to contain 'tried 2 keys' diagnostic, got %q", err.Error())
 	}
 }
 
