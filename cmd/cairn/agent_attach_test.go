@@ -118,6 +118,44 @@ func TestAgentAttach_RequiresPubkeyFile(t *testing.T) {
 	}
 }
 
+func TestAgentAttach_RejectsMalformedPubkey(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "garbage.pub")
+	if err := os.WriteFile(path, []byte("this is not a valid ssh pubkey at all\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out := &bytes.Buffer{}
+	err := AgentAttach("https://cairn.example.com", "alice", "plumb", "darksoft.co.nz", path, "", out)
+	if err == nil {
+		t.Fatal("expected error for malformed pubkey")
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Errorf("error did not mention path %q: %v", path, err)
+	}
+}
+
+func TestAgentAttach_RejectsNonEd25519Pubkey(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "rsa.pub")
+	// Literal RSA pubkey line. If ParseAuthorizedKey rejects this
+	// truncated fixture before the type check, that's also acceptable —
+	// the assertion below only requires some parse/validation error.
+	rsaLine := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ8d3+TgL5wxjP4nNUq2bX9d4hY2sJ8eYUv2gK9MZc1B5w7XJ2nQpL3vT8r9aH5sK6mN0pQ7eR test@example\n"
+	if err := os.WriteFile(path, []byte(rsaLine), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out := &bytes.Buffer{}
+	err := AgentAttach("https://cairn.example.com", "alice", "plumb", "darksoft.co.nz", path, "", out)
+	if err == nil {
+		t.Fatal("expected error for non-ed25519 pubkey")
+	}
+	// Accept either the type-check rejection or an earlier parse error.
+	msg := err.Error()
+	if !strings.Contains(msg, "not ed25519") && !strings.Contains(msg, "parse pubkey") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestAgentAttach_MissingFileErrors(t *testing.T) {
 	dir := t.TempDir()
 	out := &bytes.Buffer{}

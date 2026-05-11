@@ -39,8 +39,8 @@ func CommitSignHelper(instanceURL, slug, namespace string, in io.Reader, out io.
 	if err != nil {
 		return fmt.Errorf("cairn commit-sign-helper: stat key %q: %w", keyFile, err)
 	}
-	if perm := info.Mode().Perm(); perm != 0600 {
-		return fmt.Errorf("cairn commit-sign-helper: key %q has insecure mode %#o (want 0600)", keyFile, perm)
+	if perm := info.Mode().Perm(); perm&0077 != 0 {
+		return fmt.Errorf("cairn cli: private key %q has group/other bits set (mode %#o)", keyFile, perm)
 	}
 	keyBytes, err := os.ReadFile(keyFile)
 	if err != nil {

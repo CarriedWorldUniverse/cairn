@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // Client is a thin wrapper around the Cairn /api/cairn/v1/ endpoints.
@@ -18,15 +19,17 @@ import (
 type Client struct {
 	BaseURL string
 	Token   string
-	HTTP    *http.Client
+	// HTTP carries a 30s request timeout by default so a hung server
+	// can't pin the CLI indefinitely.
+	HTTP *http.Client
 }
 
-// NewClient constructs a Client. Use *http.DefaultClient by default.
+// NewClient constructs a Client with a 30s HTTP timeout.
 func NewClient(baseURL, token string) *Client {
 	return &Client{
 		BaseURL: baseURL,
 		Token:   token,
-		HTTP:    http.DefaultClient,
+		HTTP:    &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

@@ -91,20 +91,24 @@ func TestCommitSignHelper_RequiresKeyFile(t *testing.T) {
 }
 
 func TestCommitSignHelper_RejectsInsecurePerms(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", dir)
-	paths, _ := ResolvePaths("https://cairn.example.com")
-	writeTestAgentKey(t, paths, "plumb")
-	// Loosen perms — should be rejected.
-	if err := os.Chmod(paths.KeyFile("plumb"), 0644); err != nil {
-		t.Fatal(err)
-	}
+	for _, mode := range []os.FileMode{0644, 0666, 0640, 0604} {
+		mode := mode
+		t.Run(mode.String(), func(t *testing.T) {
+			dir := t.TempDir()
+			t.Setenv("XDG_CONFIG_HOME", dir)
+			paths, _ := ResolvePaths("https://cairn.example.com")
+			writeTestAgentKey(t, paths, "plumb")
+			if err := os.Chmod(paths.KeyFile("plumb"), mode); err != nil {
+				t.Fatal(err)
+			}
 
-	stdin := bytes.NewReader([]byte("data"))
-	stdout := &bytes.Buffer{}
-	err := CommitSignHelper("https://cairn.example.com", "plumb", "git", stdin, stdout)
-	if err == nil || !strings.Contains(err.Error(), "insecure mode") {
-		t.Errorf("expected insecure-mode rejection, got %v", err)
+			stdin := bytes.NewReader([]byte("data"))
+			stdout := &bytes.Buffer{}
+			err := CommitSignHelper("https://cairn.example.com", "plumb", "git", stdin, stdout)
+			if err == nil || !strings.Contains(err.Error(), "group/other bits set") {
+				t.Errorf("expected group/other rejection for mode %#o, got %v", mode, err)
+			}
+		})
 	}
 }
 

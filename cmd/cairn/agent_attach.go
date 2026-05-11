@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // AgentAttach posts an attachment request for an agent-generated keypair
@@ -40,6 +42,13 @@ func AgentAttach(instanceURL, owner, slug, domain, pubkeyFile, token string, out
 	pubkeyContent := strings.TrimRight(string(content), "\r\n")
 	if pubkeyContent == "" {
 		return fmt.Errorf("cairn agent attach: pubkey file %q is empty", pubkeyFile)
+	}
+	parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubkeyContent))
+	if err != nil {
+		return fmt.Errorf("cairn agent attach: parse pubkey %s: %w", pubkeyFile, err)
+	}
+	if parsed.Type() != ssh.KeyAlgoED25519 {
+		return fmt.Errorf("cairn agent attach: pubkey at %s is not ed25519 (got %s)", pubkeyFile, parsed.Type())
 	}
 
 	c := NewClient(instanceURL, token)
