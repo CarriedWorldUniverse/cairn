@@ -3,8 +3,6 @@ package cairn
 import (
 	"bytes"
 	"context"
-	"crypto/ed25519"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,30 +60,41 @@ type AgentResponse struct {
 	ActivatedAt  string `json:"activated_at,omitempty"`
 }
 
-// PostAgentRequest is the input to the registration endpoint.
-type PostAgentRequest struct {
-	ProposedOwner string
+// PostAttachmentRequestInput is the input to the attachment-request
+// endpoint. PubkeyContent is the full OpenSSH-format text line, e.g.
+// "ssh-ed25519 AAAA... comment".
+type PostAttachmentRequestInput struct {
+	OwnerUsername string
 	Slug          string
 	Domain        string
-	PublicKey     ed25519.PublicKey
+	PubkeyContent string
 }
 
-// PostAgent registers an agent. Returns the server's response on
-// success; *APIError on non-2xx; other errors for transport/JSON
-// failures.
-func (c *Client) PostAgent(ctx context.Context, in PostAgentRequest) (*AgentResponse, error) {
+// AttachmentRequestResponse is the wire shape returned by
+// POST /api/cairn/v1/agents/attachment-requests.
+type AttachmentRequestResponse struct {
+	ID          int64  `json:"id"`
+	Fingerprint string `json:"fingerprint"`
+	Status      string `json:"status"`
+}
+
+// PostAttachmentRequest submits an attachment request. With an
+// authenticated owner-matching token, the server may auto-approve and
+// return status="active"; otherwise the response carries status="pending"
+// awaiting owner approval. Returns *APIError on non-2xx.
+func (c *Client) PostAttachmentRequest(ctx context.Context, in PostAttachmentRequestInput) (*AttachmentRequestResponse, error) {
 	body, err := json.Marshal(map[string]string{
-		"proposed_owner": in.ProposedOwner,
+		"owner_username": in.OwnerUsername,
 		"slug":           in.Slug,
 		"domain":         in.Domain,
-		"public_key":     hex.EncodeToString(in.PublicKey),
+		"pubkey_content": in.PubkeyContent,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var out AgentResponse
-	if err := c.do(ctx, http.MethodPost, "/api/cairn/v1/agents", bytes.NewReader(body), &out); err != nil {
+	var out AttachmentRequestResponse
+	if err := c.do(ctx, http.MethodPost, "/api/cairn/v1/agents/attachment-requests", bytes.NewReader(body), &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

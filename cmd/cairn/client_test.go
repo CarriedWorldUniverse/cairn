@@ -2,20 +2,16 @@ package cairn
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func TestClient_PostAgents(t *testing.T) {
-	pub, _, _ := ed25519.GenerateKey(rand.Reader)
-
+func TestClient_PostAttachmentRequest(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/cairn/v1/agents" {
-			t.Errorf("path = %q, want /api/cairn/v1/agents", r.URL.Path)
+		if r.URL.Path != "/api/cairn/v1/agents/attachment-requests" {
+			t.Errorf("path = %q, want /api/cairn/v1/agents/attachment-requests", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("method = %q, want POST", r.Method)
@@ -26,50 +22,62 @@ func TestClient_PostAgents(t *testing.T) {
 
 		var body map[string]any
 		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body["proposed_owner"] != "alice" {
-			t.Errorf("proposed_owner = %v, want alice", body["proposed_owner"])
+		if body["owner_username"] != "alice" {
+			t.Errorf("owner_username = %v, want alice", body["owner_username"])
+		}
+		if body["slug"] != "plumb" {
+			t.Errorf("slug = %v, want plumb", body["slug"])
+		}
+		if body["pubkey_content"] != "ssh-ed25519 AAAA comment" {
+			t.Errorf("pubkey_content = %v", body["pubkey_content"])
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":          int64(99),
 			"fingerprint": "cairn:test-fp",
-			"slug":        "plumb",
-			"status":      "active",
+			"status":      "pending",
 		})
 	}))
 	defer srv.Close()
 
 	c := NewClient(srv.URL, "test-tok")
-	got, err := c.PostAgent(context.Background(), PostAgentRequest{
-		ProposedOwner: "alice",
+	got, err := c.PostAttachmentRequest(context.Background(), PostAttachmentRequestInput{
+		OwnerUsername: "alice",
 		Slug:          "plumb",
 		Domain:        "darksoft.co.nz",
-		PublicKey:     pub,
+		PubkeyContent: "ssh-ed25519 AAAA comment",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	if got.ID != 99 {
+		t.Errorf("ID = %d, want 99", got.ID)
+	}
 	if got.Fingerprint != "cairn:test-fp" {
 		t.Errorf("Fingerprint = %q", got.Fingerprint)
 	}
+	if got.Status != "pending" {
+		t.Errorf("Status = %q, want pending", got.Status)
+	}
 }
 
-func TestClient_PostAgents_Error(t *testing.T) {
+func TestClient_PostAttachmentRequest_Error(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error":   "agent_exists",
+			"error":   "pubkey_already_claimed",
 			"message": "duplicate",
 		})
 	}))
 	defer srv.Close()
 
 	c := NewClient(srv.URL, "test-tok")
-	pub, _, _ := ed25519.GenerateKey(rand.Reader)
-	_, err := c.PostAgent(context.Background(), PostAgentRequest{
-		ProposedOwner: "alice", Slug: "plumb", Domain: "darksoft.co.nz", PublicKey: pub,
+	_, err := c.PostAttachmentRequest(context.Background(), PostAttachmentRequestInput{
+		OwnerUsername: "alice", Slug: "plumb", Domain: "darksoft.co.nz",
+		PubkeyContent: "ssh-ed25519 AAAA comment",
 	})
 	if err == nil {
 		t.Fatal("expected error on 409")
@@ -81,8 +89,8 @@ func TestClient_PostAgents_Error(t *testing.T) {
 	if apiErr.StatusCode != http.StatusConflict {
 		t.Errorf("StatusCode = %d, want 409", apiErr.StatusCode)
 	}
-	if apiErr.ErrorCode != "agent_exists" {
-		t.Errorf("ErrorCode = %q, want agent_exists", apiErr.ErrorCode)
+	if apiErr.ErrorCode != "pubkey_already_claimed" {
+		t.Errorf("ErrorCode = %q, want pubkey_already_claimed", apiErr.ErrorCode)
 	}
 }
 

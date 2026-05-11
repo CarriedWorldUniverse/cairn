@@ -1,28 +1,29 @@
 package cairn
 
 import (
+	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
 
-	casket "github.com/CarriedWorldUniverse/casket-go"
 	"github.com/CarriedWorldUniverse/cairn/services/cairn/hook"
 )
 
-// CommitSignHelper reads data from stdin, derives the agent's keypair
-// from the owner's seed file via casket.DeriveAgentKey(seed, slug),
-// produces an SSH-format signature in the given namespace (typically
-// "git"), and writes the PEM-armored result to stdout.
+// CommitSignHelper reads data from stdin, loads the agent's
+// OpenSSH-format ed25519 private key from <HostDir>/<slug>.key (mode
+// 0600), produces an SSH-format signature in the given namespace
+// (typically "git"), and writes the PEM-armored result to stdout.
 //
 // This is the function git invokes when configured with
 //
 //	gpg.format       = ssh
 //	gpg.ssh.program  = cairn commit-sign-helper --slug <slug>
 //
-// The private key is never persisted to disk — it is derived on each
-// signing call and discarded when the function returns.
+// The agent generates and owns its keypair on disk; this helper only
+// reads it. Keys whose underlying type is not ed25519 are rejected.
 func CommitSignHelper(instanceURL, slug, namespace string, in io.Reader, out io.Writer) error {
 	if namespace == "" {
 		namespace = "git"
@@ -32,18 +33,27 @@ func CommitSignHelper(instanceURL, slug, namespace string, in io.Reader, out io.
 	if err != nil {
 		return err
 	}
-	seed, err := paths.ReadSeed()
+	keyFile := paths.KeyFile(slug)
+
+	info, err := os.Stat(keyFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("cairn commit-sign-helper: stat key %q: %w", keyFile, err)
+	}
+	if perm := info.Mode().Perm(); perm != 0600 {
+		return fmt.Errorf("cairn commit-sign-helper: key %q has insecure mode %#o (want 0600)", keyFile, perm)
+	}
+	keyBytes, err := os.ReadFile(keyFile)
+	if err != nil {
+		return fmt.Errorf("cairn commit-sign-helper: read key %q: %w", keyFile, err)
 	}
 
-	priv, _, err := casket.DeriveAgentKey(seed, slug)
+	signer, err := ssh.ParsePrivateKey(keyBytes)
 	if err != nil {
-		return err
+		return fmt.Errorf("cairn commit-sign-helper: parse key %q: %w", keyFile, err)
 	}
-	signer, err := ssh.NewSignerFromKey(priv)
-	if err != nil {
-		return err
+	if signer.PublicKey().Type() != ssh.KeyAlgoED25519 {
+		return fmt.Errorf("cairn commit-sign-helper: key %q has type %q, only ed25519 supported",
+			keyFile, signer.PublicKey().Type())
 	}
 
 	data, err := io.ReadAll(in)
@@ -75,3 +85,4 @@ func inferSlugFromKeyfile(path string) string {
 	}
 	return base
 }
+

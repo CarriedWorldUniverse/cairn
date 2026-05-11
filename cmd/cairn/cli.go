@@ -27,7 +27,7 @@ func Commands() *cli.Command {
 			{
 				Name:     "agent",
 				Usage:    "Per-agent operations",
-				Commands: []*cli.Command{agentInitCmd(), agentSubmitCmd()},
+				Commands: []*cli.Command{agentAttachCmd()},
 			},
 			{
 				Name:     "agents",
@@ -78,33 +78,28 @@ func authLoginCmd() *cli.Command {
 	}
 }
 
-func agentInitCmd() *cli.Command {
+func agentAttachCmd() *cli.Command {
 	return &cli.Command{
-		Name:  "init",
-		Usage: "Generate an agent keypair locally",
-		Flags: []cli.Flag{flagInstance(), flagSlug(), flagDomain()},
-		Action: func(ctx context.Context, c *cli.Command) error {
-			return AgentInit(c.String("instance"), c.String("slug"), c.String("domain"), os.Stdout)
-		},
-	}
-}
-
-func agentSubmitCmd() *cli.Command {
-	return &cli.Command{
-		Name:  "submit",
-		Usage: "Register an agent with Cairn",
+		Name:  "attach",
+		Usage: "Submit an attachment request for an agent-generated keypair",
 		Flags: []cli.Flag{
 			flagInstance(),
-			&cli.StringFlag{Name: "owner", Required: true},
+			&cli.StringFlag{Name: "owner", Required: true, Usage: "Proposed owner username"},
 			flagSlug(),
 			flagDomain(),
-			&cli.BoolFlag{Name: "anonymous", Usage: "Submit without a token (lands in pending status)"},
+			&cli.StringFlag{Name: "pubkey", Required: true, Usage: "Path to the agent's OpenSSH-format public key file (e.g. <slug>.key.pub)"},
+			&cli.StringFlag{Name: "token", Usage: "Optional API token; if omitted the request is anonymous and lands in pending status"},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			if c.Bool("anonymous") {
-				return AgentSubmitAnonymous(c.String("instance"), c.String("owner"), c.String("slug"), c.String("domain"), os.Stdout)
-			}
-			return AgentSubmit(c.String("instance"), c.String("owner"), c.String("slug"), c.String("domain"), os.Stdout)
+			return AgentAttach(
+				c.String("instance"),
+				c.String("owner"),
+				c.String("slug"),
+				c.String("domain"),
+				c.String("pubkey"),
+				c.String("token"),
+				os.Stdout,
+			)
 		},
 	}
 }

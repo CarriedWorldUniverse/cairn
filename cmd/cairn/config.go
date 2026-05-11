@@ -13,15 +13,13 @@ import (
 // Layout:
 //
 //	$XDG_CONFIG_HOME/cairn/             ← config root (or $HOME/.config/cairn/)
-//	   seed                             ← owner's HKDF seed (mode 0600)
 //	   <host>/                          ← per-instance, mode 0700
 //	     token                          ← API auth token (mode 0600)
-//	     <slug>.key                     ← cached agent keypair (mode 0600)
+//	     <slug>.key                     ← agent private key, OpenSSH format (mode 0600)
 //	     <slug>.key.pub                 ← agent public key (mode 0644)
 type Paths struct {
 	ConfigRoot string // $XDG_CONFIG_HOME/cairn or $HOME/.config/cairn
 	HostDir    string // ConfigRoot/<host>
-	SeedFile   string // ConfigRoot/seed (shared across hosts)
 	TokenFile  string // HostDir/token
 }
 
@@ -53,13 +51,13 @@ func ResolvePaths(instanceURL string) (*Paths, error) {
 	return &Paths{
 		ConfigRoot: cfgRoot,
 		HostDir:    hostDir,
-		SeedFile:   filepath.Join(cfgRoot, "seed"),
 		TokenFile:  filepath.Join(hostDir, "token"),
 	}, nil
 }
 
 // KeyFile returns the per-agent private-key file path under HostDir.
-// (Currently used as a cache; commit-sign-helper derives on demand.)
+// The file is expected to be an OpenSSH-format ed25519 private key with
+// mode 0600; commit-sign-helper reads it on each signing call.
 func (p *Paths) KeyFile(slug string) string {
 	return filepath.Join(p.HostDir, slug+".key")
 }
@@ -67,19 +65,6 @@ func (p *Paths) KeyFile(slug string) string {
 // EnsureHostDir creates the per-host config directory with mode 0700.
 func (p *Paths) EnsureHostDir() error {
 	return os.MkdirAll(p.HostDir, 0700)
-}
-
-// ReadSeed reads the owner's seed file. Returns an error if the file
-// is missing or has insecure permissions.
-func (p *Paths) ReadSeed() ([]byte, error) {
-	info, err := os.Stat(p.SeedFile)
-	if err != nil {
-		return nil, fmt.Errorf("cairn cli: stat seed %q: %w", p.SeedFile, err)
-	}
-	if perm := info.Mode().Perm(); perm != 0600 {
-		return nil, fmt.Errorf("cairn cli: seed %q has insecure mode %#o (want 0600)", p.SeedFile, perm)
-	}
-	return os.ReadFile(p.SeedFile)
 }
 
 // WriteToken stores the API token at TokenFile with mode 0600.

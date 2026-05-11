@@ -21,9 +21,6 @@ func TestConfigPaths_FromXDGConfigHome(t *testing.T) {
 	if c.HostDir != wantHostDir {
 		t.Errorf("HostDir = %q, want %q", c.HostDir, wantHostDir)
 	}
-	if c.SeedFile != filepath.Join(dir, "cairn", "seed") {
-		t.Errorf("SeedFile = %q, want under cairn root", c.SeedFile)
-	}
 	if c.TokenFile != filepath.Join(c.HostDir, "token") {
 		t.Errorf("TokenFile = %q, want HostDir/token", c.TokenFile)
 	}
