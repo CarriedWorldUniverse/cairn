@@ -370,6 +370,32 @@ func TestPostRejectAttachmentRequest_NonOwnerForbidden(t *testing.T) {
 	}
 }
 
+func TestPostRejectAttachmentRequest_Unauthenticated(t *testing.T) {
+	h := newTestHandler(t)
+	r := createReqForTest(t, h, "alice", "plumb", "darksoft.co.nz")
+	w := doReject(t, h, r.ID, nil)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", w.Code)
+	}
+}
+
+func TestPostRejectAttachmentRequest_AdminRejects(t *testing.T) {
+	h := newTestHandler(t)
+	r := createReqForTest(t, h, "alice", "plumb", "darksoft.co.nz")
+
+	w := doReject(t, h, r.ID, &cairnidentity.Caller{UserID: 3, Username: "admin", IsAdmin: true})
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("admin reject status = %d, want 204; body=%s", w.Code, w.Body.String())
+	}
+	got, err := h.svc.GetAttachmentRequest(context.Background(), r.ID)
+	if err != nil {
+		t.Fatalf("GetAttachmentRequest after admin reject: %v", err)
+	}
+	if got.Status != cairn.AttachmentRequestRejected {
+		t.Errorf("status = %q, want rejected", got.Status)
+	}
+}
+
 func TestParseRequestIDParam(t *testing.T) {
 	cases := []struct {
 		in   string

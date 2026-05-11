@@ -252,9 +252,18 @@ func (h *Handler) PostApproveAttachmentRequest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	blocked, _ := h.svc.IsBlocked(r.Context(), req.Fingerprint)
-	ownerName, _ := h.svc.UsernameByID(r.Context(), agent.UserID)
-	pubHex, _ := h.pubkeyHexForFingerprint(r.Context(), req.Fingerprint)
+	blocked, err := h.svc.IsBlocked(r.Context(), req.Fingerprint)
+	if err != nil {
+		log.Printf("cairn api v1: approve readback IsBlocked: %v", err)
+	}
+	ownerName, err := h.svc.UsernameByID(r.Context(), agent.UserID)
+	if err != nil {
+		log.Printf("cairn api v1: approve readback UsernameByID: %v", err)
+	}
+	pubHex, err := h.pubkeyHexForFingerprint(r.Context(), req.Fingerprint)
+	if err != nil {
+		log.Printf("cairn api v1: approve readback pubkeyHex: %v", err)
+	}
 	writeAgent(w, http.StatusOK, agent, ownerName, blocked, req.Fingerprint, pubHex)
 }
 
