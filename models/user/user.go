@@ -101,7 +101,16 @@ type User struct {
 	LoginSource int64 `xorm:"NOT NULL DEFAULT 0"`
 	LoginName   string
 	Type        UserType
-	Location    string
+	// ParentUserID links a Type=UserTypeBot aspect to its owning human
+	// user (Cairn AI-first identity layer). 0 = standalone (human user,
+	// or bot without a parent — e.g. a CI runner). Non-zero on a bot
+	// row means the bot acts as a derived aspect of the referenced
+	// human; UI surfaces this as "<aspect> (acting for <human>)" and
+	// the service layer scopes permissions transitively.
+	//
+	// Migration: cairn v504_add_user_parent.
+	ParentUserID int64 `xorm:"INDEX NOT NULL DEFAULT 0"`
+	Location     string
 	Website     string
 	Pronouns    string
 	Rands       string `xorm:"VARCHAR(32)"`
@@ -467,6 +476,14 @@ func (u *User) IsUser() bool {
 // IsBot returns whether or not the user is of type bot
 func (u *User) IsBot() bool {
 	return u.Type == UserTypeBot
+}
+
+// IsAspect reports whether the user is a bot derived from a human
+// owner (Cairn AI-first identity layer). Aspects are bots with a
+// non-zero ParentUserID; standalone bots (e.g. CI runners) return
+// false even though IsBot returns true.
+func (u *User) IsAspect() bool {
+	return u.Type == UserTypeBot && u.ParentUserID != 0
 }
 
 func (u *User) IsRemote() bool {
