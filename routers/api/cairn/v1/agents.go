@@ -28,11 +28,28 @@ const maxRequestBodyBytes = 4096
 // Handler is the HTTP handler set for /api/cairn/v1.
 type Handler struct {
 	svc *cairnidentity.AgentService
+
+	// aspectProvisioner mints aspect users + access tokens for the
+	// Phase 1 AI-first identity layer (POST /users/me/aspects). nil
+	// until WithAspectProvisioner is called; PostMintAspect returns
+	// 503 when unwired so the surface fails closed by default.
+	aspectProvisioner AspectProvisioner
 }
 
 // NewHandler returns a Handler bound to the given service.
 func NewHandler(svc *cairnidentity.AgentService) *Handler {
 	return &Handler{svc: svc}
+}
+
+// WithAspectProvisioner returns a copy of h with the given aspect
+// provisioner attached. Production wiring builds the provisioner
+// (backed by forgejo's user_model.CreateUser + auth_model.
+// NewAccessToken) once at boot and threads it through this setter;
+// tests inject fakes the same way.
+func (h *Handler) WithAspectProvisioner(p AspectProvisioner) *Handler {
+	cp := *h
+	cp.aspectProvisioner = p
+	return &cp
 }
 
 // callerKey is the context key for the authenticated Caller.

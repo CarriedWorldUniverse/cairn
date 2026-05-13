@@ -46,7 +46,8 @@ func Init(
 			return
 		}
 		globalService = cairnidentity.NewAgentService(key, store, pubkeys, requests, blocklist, users, registrar)
-		globalHandler = NewHandler(globalService)
+		globalHandler = NewHandler(globalService).
+			WithAspectProvisioner(NewForgejoAspectProvisioner())
 		// Publish to the identity-package global so consumers outside
 		// the v1 API (e.g. the pre-receive hook) can reach the service
 		// without importing routers/api/cairn/v1.
@@ -117,4 +118,5 @@ func MountRoutes(group RouteGroup) {
 	group.Post("/agents/attachment-requests/{id}/approve", withReqID(withCaller(globalHandler.PostApproveAttachmentRequest)))
 	group.Post("/agents/attachment-requests/{id}/reject", withReqID(withCaller(globalHandler.PostRejectAttachmentRequest)))
 	group.Get("/users/me/pending-attachment-requests", withCaller(globalHandler.GetMyPendingAttachmentRequests))
+	group.Post("/users/me/aspects", withCaller(globalHandler.PostMintAspect))
 }
