@@ -173,3 +173,80 @@ func runGit(t *testing.T, dir string, env []string, args ...string) {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
 }
+
+func TestSSHForcePushToDefaultRejected(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	ctx := context.Background()
+	dir := t.TempDir()
+	// The pre-receive subcommand reads these from the environment; the SSH
+	// session's git-receive-pack inherits the server process env.
+	t.Setenv("CAIRN_DB", filepath.Join(dir, "cairn.db"))
+	t.Setenv("CAIRN_REPO_ROOT", filepath.Join(dir, "repos"))
+	core, _ := repo.Open(filepath.Join(dir, "cairn.db"), filepath.Join(dir, "repos"))
+	t.Cleanup(func() { _ = core.Close() })
+
+	// Wire the same pre-receive hook the binary installs, pointing at a built
+	// cairn-server binary so the hook can shell back in.
+	bin := buildCairnBinary(t)
+	core.SetHookInstaller(func(repoID, hooksDir string) error {
+		if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+			return err
+		}
+		body := "#!/bin/sh\nexec " + bin + " pre-receive " + repoID + "\n"
+		return os.WriteFile(filepath.Join(hooksDir, "pre-receive"), []byte(body), 0o755)
+	})
+
+	r, _ := core.CreateRepo(ctx, "org-1", "widgets")
+	keyPath, builder := writeCasketKey(t, dir, "agent-builder", "org-1", []string{"repo:read", "repo:write"})
+	agents := herald.NewFakeAgents()
+	agents.Add(builder)
+	addr, knownHosts := bootServer(t, core, agents)
+	host, port, _ := net.SplitHostPort(addr)
+	url := "ssh://git@" + host + ":" + port + "/org-1/widgets.git"
+
+	// Seed main with two commits, push (creates main), then rewrite history and
+	// force-push — which must be rejected.
+	work := filepath.Join(dir, "work")
+	if out, err := exec.Command("git", "init", work).CombinedOutput(); err != nil {
+		t.Fatalf("init: %v\n%s", err, out)
+	}
+	g := func(args ...string) *exec.Cmd {
+		c := exec.Command("git", append([]string{"-C", work}, args...)...)
+		c.Env = gitEnv(keyPath, knownHosts)
+		return c
+	}
+	mustRun(t, g("checkout", "-b", "main"))
+	mustRun(t, g("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "c1"))
+	mustRun(t, g("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "c2"))
+	mustRun(t, g("remote", "add", "origin", url))
+	mustRun(t, g("push", "origin", "main"))
+	_ = r
+	// Rewrite: drop the last commit and add a different one => non-fast-forward.
+	mustRun(t, g("reset", "--hard", "HEAD~1"))
+	mustRun(t, g("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "c2-prime"))
+	out, err := g("push", "--force", "origin", "main").CombinedOutput()
+	if err == nil {
+		t.Fatalf("force-push to default should be rejected:\n%s", out)
+	}
+}
+
+func mustRun(t *testing.T, c *exec.Cmd) {
+	t.Helper()
+	if out, err := c.CombinedOutput(); err != nil {
+		t.Fatalf("%v: %v\n%s", c.Args, err, out)
+	}
+}
+
+// buildCairnBinary compiles cmd/cairn-server into the test's temp dir and
+// returns the path. The pre-receive hook shells back into it.
+func buildCairnBinary(t *testing.T) string {
+	t.Helper()
+	out := filepath.Join(t.TempDir(), "cairn-server")
+	c := exec.Command("go", "build", "-o", out, "github.com/CarriedWorldUniverse/cairn/cmd/cairn-server")
+	if o, err := c.CombinedOutput(); err != nil {
+		t.Fatalf("build cairn-server: %v\n%s", err, o)
+	}
+	return out
+}

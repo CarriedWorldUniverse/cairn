@@ -22,16 +22,23 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/herald"
 	"github.com/CarriedWorldUniverse/cairn/internal/httpd"
+	"github.com/CarriedWorldUniverse/cairn/internal/protect"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	"github.com/CarriedWorldUniverse/cairn/internal/sshd"
 	gossh "golang.org/x/crypto/ssh"
 )
 
 func main() {
+	// Hidden subcommand invoked by the per-repo pre-receive hook.
+	if len(os.Args) >= 3 && os.Args[1] == "pre-receive" {
+		os.Exit(runPreReceive(os.Args[2]))
+	}
+
 	httpAddr := env("CAIRN_HTTP_ADDR", ":8100")
 	dbPath := env("CAIRN_DB", "/var/lib/nexus/cairn.db")
 	repoRoot := env("CAIRN_REPO_ROOT", "/var/lib/nexus/repos")
@@ -41,6 +48,20 @@ func main() {
 		log.Fatalf("cairn: open core: %v", err)
 	}
 	defer core.Close()
+
+	// Install the per-repo pre-receive protection hook at repo creation. The
+	// hook shells back into this same binary's pre-receive subcommand.
+	selfPath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("cairn: resolve own path: %v", err)
+	}
+	core.SetHookInstaller(func(repoID, hooksDir string) error {
+		if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+			return err
+		}
+		hook := filepath.Join(hooksDir, "pre-receive")
+		return os.WriteFile(hook, []byte(protect.HookScript(selfPath, repoID)), 0o755)
+	})
 
 	// herald identity for the SSH path: real NEX-412 client behind a short-TTL
 	// cache. Until NEX-412 is deployed this resolves nothing (404 -> auth fail);
