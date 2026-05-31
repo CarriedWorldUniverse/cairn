@@ -1,5 +1,0 @@
--
- id: 1001
- uid: 10
- lookup_key: unique
- purpose: user_activation

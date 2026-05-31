@@ -1,4 +1,0 @@
-# Raw per-run outputs land here — gitignored to avoid committing every
-# A/B comparison's text dumps. The summary stays in results.md.
-runs/*
-!runs/.gitkeep
