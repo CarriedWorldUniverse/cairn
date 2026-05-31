@@ -38,6 +38,26 @@ type Repo struct {
 	UpdatedAt     time.Time
 }
 
+// PullStateOpen is the only state this build writes; merged/closed are reserved.
+const PullStateOpen = "open"
+
+// ErrPullNotFound is returned when no pull request matches.
+var ErrPullNotFound = errors.New("repo: pull request not found")
+
+// Pull is a row in the pull_request catalogue: a source→target proposal bound
+// to a ledger tracking issue.
+type Pull struct {
+	ID             string
+	RepoID         string
+	Source         string
+	Target         string
+	Title          string
+	LedgerIssueKey string
+	State          string
+	OpenedBy       string
+	CreatedAt      time.Time
+}
+
 // Ref is a single git reference (branch/tag) in a repo.
 type Ref struct {
 	Name string // full ref, e.g. refs/heads/main
@@ -150,6 +170,67 @@ func (s *Service) CreateRepo(ctx context.Context, orgID, slug string) (Repo, err
 		}
 	}
 	return r, nil
+}
+
+// CreatePull inserts an open pull request. The partial-unique index rejects a
+// second open PR for the same (repo, source, target). Populates p.ID/State.
+func (s *Service) CreatePull(ctx context.Context, p *Pull) error {
+	if p.RepoID == "" || p.Source == "" || p.Target == "" || p.Title == "" || p.LedgerIssueKey == "" {
+		return errors.New("repo.CreatePull: repo, source, target, title, ledger_issue_key required")
+	}
+	p.ID = newID()
+	p.State = PullStateOpen
+	p.CreatedAt = time.Now().UTC()
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO pull_request(id, repo_id, source_ref, target_ref, title, ledger_issue_key, state, opened_by, created_at)
+		 VALUES(?,?,?,?,?,?,?,?,?)`,
+		p.ID, p.RepoID, p.Source, p.Target, p.Title, p.LedgerIssueKey, p.State, p.OpenedBy,
+		p.CreatedAt.Format(time.RFC3339))
+	if err != nil {
+		return fmt.Errorf("repo.CreatePull: %w", err)
+	}
+	return nil
+}
+
+const pullCols = `id, repo_id, source_ref, target_ref, title, ledger_issue_key, state, opened_by, created_at`
+
+func scanPull(row interface{ Scan(...any) error }) (Pull, error) {
+	var p Pull
+	var created string
+	if err := row.Scan(&p.ID, &p.RepoID, &p.Source, &p.Target, &p.Title,
+		&p.LedgerIssueKey, &p.State, &p.OpenedBy, &created); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Pull{}, ErrPullNotFound
+		}
+		return Pull{}, err
+	}
+	p.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	return p, nil
+}
+
+// GetPull loads a pull request by (repo, id).
+func (s *Service) GetPull(ctx context.Context, repoID, id string) (Pull, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT `+pullCols+` FROM pull_request WHERE repo_id=? AND id=?`, repoID, id)
+	p, err := scanPull(row)
+	if err != nil {
+		return Pull{}, fmt.Errorf("repo.GetPull: %w", err)
+	}
+	return p, nil
+}
+
+// FindOpenPull returns the open pull request for (repo, source, target), or
+// ErrPullNotFound. Used for idempotent open.
+func (s *Service) FindOpenPull(ctx context.Context, repoID, source, target string) (Pull, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT `+pullCols+` FROM pull_request
+		 WHERE repo_id=? AND source_ref=? AND target_ref=? AND state='open'`,
+		repoID, source, target)
+	p, err := scanPull(row)
+	if err != nil {
+		return Pull{}, fmt.Errorf("repo.FindOpenPull: %w", err)
+	}
+	return p, nil
 }
 
 func scanRepo(row interface{ Scan(...any) error }) (Repo, error) {
