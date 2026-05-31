@@ -203,6 +203,10 @@ func (s *Server) handleOrgPurge(w http.ResponseWriter, r *http.Request) {
 		httpErr(w, http.StatusForbidden, "missing scope org:purge")
 		return
 	}
+	if id.Org == "" {
+		httpErr(w, http.StatusBadRequest, "missing org")
+		return
+	}
 	repos, err := s.cfg.Core.ListRepos(r.Context(), id.Org)
 	if err != nil {
 		httpErr(w, http.StatusInternalServerError, "list repos failed")

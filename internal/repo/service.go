@@ -356,15 +356,32 @@ func (s *Service) ListRepos(ctx context.Context, orgID string) ([]Repo, error) {
 	return out, rows.Err()
 }
 
-// DeleteRepo removes the catalogue row (cascading push_events) and the on-disk
-// bare repo.
+// DeleteRepo removes all dependent rows (pull_request, push_event) and the
+// catalogue row in a single transaction, then removes on-disk storage.
+// Dependent rows are deleted explicitly rather than relying on ON DELETE CASCADE
+// because the SQLite connection pool does not inherit the PRAGMA foreign_keys=ON
+// that the schema DDL sets; cascade is unreliable across pool connections.
 func (s *Service) DeleteRepo(ctx context.Context, id string) error {
 	r, err := s.GetRepoByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM repo WHERE id=?`, id); err != nil {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("repo.DeleteRepo: begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM pull_request WHERE repo_id=?`, id); err != nil {
+		return fmt.Errorf("repo.DeleteRepo: pull_request: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM push_event WHERE repo_id=?`, id); err != nil {
+		return fmt.Errorf("repo.DeleteRepo: push_event: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM repo WHERE id=?`, id); err != nil {
 		return fmt.Errorf("repo.DeleteRepo: delete row: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("repo.DeleteRepo: commit: %w", err)
 	}
 	if err := os.RemoveAll(r.StoragePath); err != nil {
 		return fmt.Errorf("repo.DeleteRepo: remove storage: %w", err)
