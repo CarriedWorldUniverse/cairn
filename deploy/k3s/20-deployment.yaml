@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cairn
+  namespace: cwb
+  labels:
+    app: cairn
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate            # single PVC; no rolling (RWO + on-disk repos)
+  selector:
+    matchLabels:
+      app: cairn
+  template:
+    metadata:
+      labels:
+        app: cairn
+    spec:
+      containers:
+        - name: cairn
+          image: localhost/cairn:dev
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8100
+            - name: ssh
+              containerPort: 2222
+          env:
+            - name: CAIRN_HTTP_ADDR
+              value: ":8100"
+            - name: CAIRN_SSH_ADDR
+              value: ":2222"
+            - name: CAIRN_DB
+              value: "/var/lib/nexus/cairn.db"
+            - name: CAIRN_REPO_ROOT
+              value: "/var/lib/nexus/repos"
+            # herald base for the SSH-path NEX-412 lookup. In-cluster ClusterIP;
+            # the SSH path resolves casket fingerprints here once NEX-412 ships.
+            - name: HERALD_BASE_URL
+              value: "http://herald.cwb.svc:8099"
+            - name: CAIRN_HOST_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cairn-secrets
+                  key: ssh_host_key
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/nexus
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: cairn-data

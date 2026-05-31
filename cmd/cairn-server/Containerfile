@@ -1,0 +1,21 @@
+# cairn container — static Go binary on a minimal alpine that carries `git`
+# (cairn shells out to git for pack transfer + the pre-receive hook).
+# Build from the cairn repo root:
+#   podman build -f cmd/cairn-server/Containerfile -t cairn:dev .
+#   podman save cairn:dev | sudo k3s ctr images import -
+#
+# Runtime config via env (see cmd/cairn-server/main.go):
+#   CAIRN_HTTP_ADDR, CAIRN_SSH_ADDR, CAIRN_DB, CAIRN_REPO_ROOT,
+#   CAIRN_HOST_KEY (base64 ed25519 private), HERALD_BASE_URL
+FROM docker.io/library/golang:1.26 AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/cairn-server ./cmd/cairn-server
+
+FROM docker.io/library/alpine:3.20
+RUN apk add --no-cache git
+COPY --from=build /out/cairn-server /usr/local/bin/cairn-server
+EXPOSE 8100 2222
+ENTRYPOINT ["/usr/local/bin/cairn-server"]
