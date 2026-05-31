@@ -7,6 +7,7 @@
 package httpd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,13 +17,23 @@ import (
 	"regexp"
 	"strings"
 
+	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 )
 
+// IssueCreator is the slice of ledger cairn needs: open a tracking issue on
+// behalf of a caller (identity forwarded via fwd). *ledger.Client satisfies it;
+// tests use a fake.
+type IssueCreator interface {
+	CreateIssue(ctx context.Context, fwd http.Header, in ledgerclient.IssueInput) (ledgerclient.IssueResult, error)
+}
+
 // Config configures the HTTP ingress.
 type Config struct {
-	Core    *repo.Service
-	GitPath string // path to the git binary; defaults to "git" on PATH
+	Core       *repo.Service
+	GitPath    string       // path to the git binary; defaults to "git" on PATH
+	Ledger     IssueCreator // outbound ledger client for PR-as-issue
+	PublicBase string       // optional public base URL for ExternalRef.url; "" omits it
 }
 
 // Server is cairn's HTTP git host.
@@ -58,6 +69,8 @@ func (s *Server) Handler() http.Handler {
 		_, _ = w.Write([]byte(`{"status":"ok","service":"cairn"}`))
 	})
 	mux.HandleFunc("POST /api/orgs/{org}/repos", s.handleCreateRepo)
+	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls", s.handleOpenPull)
+	mux.HandleFunc("GET /api/orgs/{org}/repos/{slug}/pulls/{id}", s.handleGetPull)
 	// Everything else: Smart-HTTP git, matched by the .git path shape.
 	mux.HandleFunc("/", s.handleGit)
 	return mux
