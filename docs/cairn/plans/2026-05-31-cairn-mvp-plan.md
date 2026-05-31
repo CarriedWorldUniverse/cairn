@@ -10,15 +10,34 @@
 
 ---
 
-## Module layout decision (spec §8, resolved)
+## Module layout decision (spec §8 / operator 2026-05-31: "native becomes cairn, retire the forgejo tree")
 
-This MVP is a **green-field go-git rewrite**, not an edit of the existing Forgejo fork at `/Users/jacinta/Source/cairn` (module `github.com/CarriedWorldUniverse/cairn`). That tree carries the entire Forgejo dependency graph and a `replace github.com/gliderlabs/ssh => code.forgejo.org/forgejo/ssh ...` directive that would actively fight the clean `gliderlabs/ssh` usage this MVP needs. Reusing it would mean dragging in Gitea's storage, web, and SSH stack — the opposite of a walking skeleton.
+This MVP is a **green-field go-git rewrite that REPLACES the Forgejo fork in place.** The `cairn` repo currently *is* the Forgejo/Gitea fork (module `github.com/CarriedWorldUniverse/cairn`) — carrying the whole Forgejo dependency graph and a `replace github.com/gliderlabs/ssh => code.forgejo.org/forgejo/ssh ...` directive that actively fights the clean `gliderlabs/ssh` usage this MVP needs. Per the operator's decision, the native build **reclaims** the `cairn` repo + module path `github.com/CarriedWorldUniverse/cairn` with a **fresh `go.mod`**; the Forgejo tree is retired (it's preserved on the `forgejo` / `v15.0/forgejo` branches, so it's recoverable from history).
 
-**Decision:** the MVP lives in a **fresh, standalone module** rooted at `/Users/jacinta/Source/cairn-server`, module path `github.com/CarriedWorldUniverse/cairn-server`, one binary per repo exactly like the herald/ledger/interchange siblings. Layout:
+### Task 0 — Retire the Forgejo tree (do this first)
+
+- [ ] **Step 0.1:** Confirm the Forgejo state is captured on a preserved branch: `cd /Users/jacinta/Source/cairn && git branch -a | grep -E 'forgejo'` — expect `forgejo` and/or `v15.0/forgejo`. (Optionally `git tag forgejo-archive <forgejo-branch-sha>` to pin it.)
+- [ ] **Step 0.2:** Create the native branch from an empty tree (don't inherit Forgejo files):
+
+```sh
+cd /Users/jacinta/Source/cairn
+git checkout --orphan native-mvp
+git rm -rf . >/dev/null 2>&1 || true   # clear the Forgejo working tree (history stays on forgejo branch)
+```
+
+- [ ] **Step 0.3:** Restore the docs we want to keep (the cairn-native + MVP spec/plan live in docs/):
+
+```sh
+git checkout docs/cairn-mvp-spec -- docs/cairn/specs/2026-05-31-cairn-mvp-spec.md docs/cairn/plans/2026-05-31-cairn-mvp-plan.md docs/cairn/specs/2026-05-31-cairn-native-spec.md 2>/dev/null || true
+```
+
+- [ ] **Step 0.4:** Commit the clean slate: `git add -A && git commit -m "nex-384: retire Forgejo tree; native cairn reclaims the repo (Forgejo preserved on forgejo branch)"`. The native module is built from here; this branch becomes the default once the MVP lands.
+
+**Decision:** the MVP lives in the `cairn` repo, module path `github.com/CarriedWorldUniverse/cairn`, fresh `go.mod`, one binary per repo exactly like the herald/ledger/interchange siblings. (The `cmd/cairn-server` binary-dir name below is cosmetic — `cmd/cairn` is equally fine.) Layout:
 
 ```
-/Users/jacinta/Source/cairn-server/
-  go.mod                       # module github.com/CarriedWorldUniverse/cairn-server
+/Users/jacinta/Source/cairn/
+  go.mod                       # module github.com/CarriedWorldUniverse/cairn
   go.sum
   cmd/cairn-server/
     main.go                    # wiring: store + core + SSH ingress + HTTP ingress
@@ -50,7 +69,7 @@ This MVP is a **green-field go-git rewrite**, not an edit of the existing Forgej
     README.md
 ```
 
-The doc you are reading stays at `/Users/jacinta/Source/cairn/docs/cairn/plans/` (the design/spec home), but **all code paths below are absolute under `/Users/jacinta/Source/cairn-server`.** If the operator later prefers the code to live inside the existing cairn repo on a clean branch, only the module path and absolute prefixes change; the task content is identical.
+The doc you are reading stays at `/Users/jacinta/Source/cairn/docs/cairn/plans/` (the design/spec home), but **all code paths below are absolute under `/Users/jacinta/Source/cairn`.** If the operator later prefers the code to live inside the existing cairn repo on a clean branch, only the module path and absolute prefixes change; the task content is identical.
 
 **Scope cut from the broader native design (NEX-384):** this plan implements NEX-386 (core), NEX-387 (SSH), NEX-388 (HTTP), the minimal subset of NEX-391 (branch protection), NEX-392 (deploy), and the cairn conformance layer. It explicitly does **not** include NEX-389 (web UI) or NEX-390 (PR-as-ledger-issue), nor the delayed-public-projection — those are sequenced after (spec §7).
 
@@ -84,7 +103,7 @@ All five internal packages build + vet clean together under `go 1.26.2`. The exa
 
 - **TDD loop where it applies:** write a failing test → run it, expect a specific failure → write complete compile-ready Go (no placeholders, no TODO, no "add error handling later") → run, expect pass → commit.
 - **Commits:** real `git commit -m "<prefix>: <subject>"` with the per-task NEX prefix shown in each task header. One logical step per commit. Do NOT push or open a PR — the operator handles git remote operations.
-- **Working directory:** all `go` commands run from `/Users/jacinta/Source/cairn-server` unless the task says otherwise (Task 6 is in `/Users/jacinta/Source/cwb-conformance`). Use absolute `-C` paths; agent threads reset cwd between shells.
+- **Working directory:** all `go` commands run from `/Users/jacinta/Source/cairn` unless the task says otherwise (Task 6 is in `/Users/jacinta/Source/cwb-conformance`). Use absolute `-C` paths; agent threads reset cwd between shells.
 - **Expected-output prefixes:** each `go test` step states the prefix you should see (`ok  ` / `FAIL` / `--- FAIL`). If you see anything else, stop and debug (superpowers:systematic-debugging).
 
 ---
@@ -101,25 +120,25 @@ All five internal packages build + vet clean together under `go 1.26.2`. The exa
 
 - [ ] Create the module root and init the module:
   ```sh
-  mkdir -p /Users/jacinta/Source/cairn-server/cmd/cairn-server \
-           /Users/jacinta/Source/cairn-server/internal/repo
-  go -C /Users/jacinta/Source/cairn-server mod init github.com/CarriedWorldUniverse/cairn-server
+  mkdir -p /Users/jacinta/Source/cairn/cmd/cairn-server \
+           /Users/jacinta/Source/cairn/internal/repo
+  go -C /Users/jacinta/Source/cairn mod init github.com/CarriedWorldUniverse/cairn
   ```
   Expect: `go.mod` written. Confirm:
   ```sh
-  head -1 /Users/jacinta/Source/cairn-server/go.mod
+  head -1 /Users/jacinta/Source/cairn/go.mod
   ```
-  Expect output: `module github.com/CarriedWorldUniverse/cairn-server`
+  Expect output: `module github.com/CarriedWorldUniverse/cairn`
 - [ ] Add the core dependencies (downloads into the module cache; these are NOT yet in the local cache):
   ```sh
-  go -C /Users/jacinta/Source/cairn-server get github.com/go-git/go-git/v5@v5.13.2
-  go -C /Users/jacinta/Source/cairn-server get modernc.org/sqlite@v1.34.4
+  go -C /Users/jacinta/Source/cairn get github.com/go-git/go-git/v5@v5.13.2
+  go -C /Users/jacinta/Source/cairn get modernc.org/sqlite@v1.34.4
   ```
   Expect: `go: added github.com/go-git/go-git/v5 ...` and `go: added modernc.org/sqlite ...`. (Pin these exact versions; they are the latest known-good as of the plan date and avoid the cgo sqlite driver.)
 - [ ] `git init` the new repo so commits land:
   ```sh
-  git -C /Users/jacinta/Source/cairn-server init
-  printf '/cairn-server\n*.db\n*.db-*\n' > /Users/jacinta/Source/cairn-server/.gitignore
+  git -C /Users/jacinta/Source/cairn init
+  printf '/cairn-server\n*.db\n*.db-*\n' > /Users/jacinta/Source/cairn/.gitignore
   ```
 - [ ] Commit: `nex-386: init cairn-server module (go-git + modernc sqlite)`.
 
@@ -127,7 +146,7 @@ All five internal packages build + vet clean together under `go 1.26.2`. The exa
 
 The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_event` (audit). go-git owns the object/ref storage on disk; SQLite owns the catalogue + audit.
 
-- [ ] Write the schema at `/Users/jacinta/Source/cairn-server/internal/repo/schema.sql`:
+- [ ] Write the schema at `/Users/jacinta/Source/cairn/internal/repo/schema.sql`:
   ```sql
   -- cairn MVP metadata: the repo catalogue + the push audit log.
   -- go-git owns object/ref storage on disk; this owns discovery + audit.
@@ -163,7 +182,7 @@ The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_ev
 
 ### 1.3 — Domain types + the failing service test (write test FIRST)
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/repo/service_test.go` with the first failing test. It exercises create → get → list → ref listing on a freshly initialised bare repo seeded with one commit:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/repo/service_test.go` with the first failing test. It exercises create → get → list → ref listing on a freshly initialised bare repo seeded with one commit:
   ```go
   package repo
 
@@ -262,13 +281,13 @@ The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_ev
   ```
 - [ ] Run, expect compile failure (no `Service`, `Open`, `seedCommit` yet):
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/repo/
+  go -C /Users/jacinta/Source/cairn test ./internal/repo/
   ```
-  Expect prefix: `# github.com/CarriedWorldUniverse/cairn-server/internal/repo [build failed]` (undefined: Open / Service / seedCommit).
+  Expect prefix: `# github.com/CarriedWorldUniverse/cairn/internal/repo [build failed]` (undefined: Open / Service / seedCommit).
 
 ### 1.4 — Implement the service (make it compile + pass)
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/repo/service.go`. This is the full core: open store + repo root, CRUD repos, list/get refs via go-git, delete, and record push events. go-git's `PlainInit(path, true)` creates the bare repo; refs come from the repo's `References()` iterator.
+- [ ] Write `/Users/jacinta/Source/cairn/internal/repo/service.go`. This is the full core: open store + repo root, CRUD repos, list/get refs via go-git, delete, and record push events. go-git's `PlainInit(path, true)` creates the bare repo; refs come from the repo's `References()` iterator.
   ```go
   // Package repo is cairn's repo + ref core: the one engine both ingresses
   // (SSH, HTTP) call. go-git owns on-disk object/ref storage for each bare
@@ -551,7 +570,7 @@ The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_ev
   	return nil
   }
   ```
-- [ ] Write the test helper `seedCommit` at `/Users/jacinta/Source/cairn-server/internal/repo/seed_test.go` (kept out of the production build; uses go-git's in-memory worktree trick — clone-less commit into a bare repo via a temp non-bare clone is heavy, so seed by committing objects directly):
+- [ ] Write the test helper `seedCommit` at `/Users/jacinta/Source/cairn/internal/repo/seed_test.go` (kept out of the production build; uses go-git's in-memory worktree trick — clone-less commit into a bare repo via a temp non-bare clone is heavy, so seed by committing objects directly):
   ```go
   package repo
 
@@ -634,9 +653,9 @@ The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_ev
   ```
 - [ ] Run, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/repo/
+  go -C /Users/jacinta/Source/cairn test ./internal/repo/
   ```
-  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn-server/internal/repo`
+  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn/internal/repo`
 - [ ] Add a focused test for `DeleteRepo` and `RecordPush` round-trip at the bottom of `service_test.go`:
   ```go
   func TestDeleteRepoRemovesStorage(t *testing.T) {
@@ -679,7 +698,7 @@ The data model is spec §5: `repo` (with minimal `protection` JSON) and `push_ev
 
 A minimal main that reads config from env, opens the core, and serves `/healthz`. The ingresses (Tasks 2, 3) bolt onto this. Mirrors herald's env-config + `/healthz` shape.
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/cmd/cairn-server/main.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/cmd/cairn-server/main.go`:
   ```go
   // Command cairn-server is cairn's agent-git host: a go-git-backed git server
   // with two herald-authed ingresses — SSH (casket identity) and HTTP Smart-HTTP
@@ -701,7 +720,7 @@ A minimal main that reads config from env, opens the core, and serves `/healthz`
   	"net/http"
   	"os"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   )
 
   func main() {
@@ -736,14 +755,14 @@ A minimal main that reads config from env, opens the core, and serves `/healthz`
   ```
 - [ ] Build + vet:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server build ./...
-  go -C /Users/jacinta/Source/cairn-server vet ./...
+  go -C /Users/jacinta/Source/cairn build ./...
+  go -C /Users/jacinta/Source/cairn vet ./...
   ```
   Expect: no output (success).
 - [ ] Smoke the skeleton:
   ```sh
   CAIRN_DB=/tmp/cairn-smoke.db CAIRN_REPO_ROOT=/tmp/cairn-smoke-repos \
-    /Users/jacinta/Source/cairn-server/cairn-server &
+    /Users/jacinta/Source/cairn/cairn-server &
   # then in the same or another shell:
   curl -sS http://localhost:8100/healthz
   ```
@@ -774,7 +793,7 @@ This means: **Task 2 merges and stays green on its own; the SSH ingress only goe
 
 ### 2.1 — The `heraldAgents` interface, the resolved-agent type, and the fake (test FIRST)
 
-- [ ] Create the package dir and write the failing test at `/Users/jacinta/Source/cairn-server/internal/herald/agents_test.go`:
+- [ ] Create the package dir and write the failing test at `/Users/jacinta/Source/cairn/internal/herald/agents_test.go`:
   ```go
   package herald
 
@@ -850,13 +869,13 @@ This means: **Task 2 merges and stays green on its own; the SSH ingress only goe
   ```
 - [ ] Run, expect compile failure:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/herald/
+  go -C /Users/jacinta/Source/cairn test ./internal/herald/
   ```
-  Expect prefix: `# github.com/CarriedWorldUniverse/cairn-server/internal/herald [build failed]` (undefined: Agent / NewFakeAgents / ErrAgentNotFound / NewCachedAgents).
+  Expect prefix: `# github.com/CarriedWorldUniverse/cairn/internal/herald [build failed]` (undefined: Agent / NewFakeAgents / ErrAgentNotFound / NewCachedAgents).
 
 ### 2.2 — Implement the interface, the agent type, the cache, and the fake
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/herald/agents.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/herald/agents.go`:
   ```go
   // Package herald is cairn's consumer-side view of the herald identity
   // authority for the SSH path: it maps a casket-key fingerprint to a herald
@@ -958,7 +977,7 @@ This means: **Task 2 merges and stays green on its own; the SSH ingress only goe
   	c.mu.Unlock()
   }
   ```
-- [ ] Write the fake at `/Users/jacinta/Source/cairn-server/internal/herald/fake.go`:
+- [ ] Write the fake at `/Users/jacinta/Source/cairn/internal/herald/fake.go`:
   ```go
   package herald
 
@@ -1002,16 +1021,16 @@ This means: **Task 2 merges and stays green on its own; the SSH ingress only goe
   > Note: `calls` is read in the cache test without locking only because tests are single-goroutine; the field exists purely for assertion. Production code never touches it.
 - [ ] Run, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/herald/
+  go -C /Users/jacinta/Source/cairn test ./internal/herald/
   ```
-  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn-server/internal/herald`
+  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn/internal/herald`
 - [ ] Commit: `nex-387: heraldAgents interface + short-ttl cache + fake`.
 
 ### 2.3 — The real NEX-412 HTTP client (compiled now, live when NEX-412 ships)
 
 NEX-412's contract (the thin exposure of herald's existing `GetAgentByFingerprint`): `GET {herald}/api/agents/by-fingerprint/{fp}` → `200` JSON `{ "id", "org", "active", "scopes": [...] }`, or `404` when unknown. We code against that and test it with an `httptest` server, so the day NEX-412 deploys this works unchanged.
 
-- [ ] Add the client test to `/Users/jacinta/Source/cairn-server/internal/herald/agents_test.go`:
+- [ ] Add the client test to `/Users/jacinta/Source/cairn/internal/herald/agents_test.go`:
   ```go
   func TestHeraldClientLookup(t *testing.T) {
   	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1046,7 +1065,7 @@ NEX-412's contract (the thin exposure of herald's existing `GetAgentByFingerprin
   ```
   Add the imports `"net/http"`, `"net/http/httptest"`, `"strings"` to the test file's import block.
 - [ ] Run, expect compile failure (undefined: NewHeraldClient).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/herald/client.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/herald/client.go`:
   ```go
   package herald
 
@@ -1123,7 +1142,7 @@ NEX-412's contract (the thin exposure of herald's existing `GetAgentByFingerprin
 
 cairn computes the fingerprint of an SSH public key the same way herald does over the raw Ed25519 public key: `base64url(sha256(pubkey)[:16])`. gliderlabs/ssh hands us a `ssh.PublicKey`; we recover the raw Ed25519 32-byte key from it.
 
-- [ ] Write the failing test at `/Users/jacinta/Source/cairn-server/internal/sshd/fingerprint_test.go`:
+- [ ] Write the failing test at `/Users/jacinta/Source/cairn/internal/sshd/fingerprint_test.go`:
   ```go
   package sshd
 
@@ -1173,11 +1192,11 @@ cairn computes the fingerprint of an SSH public key the same way herald does ove
   ```
 - [ ] Run, expect compile failure (undefined: Fingerprint). First add deps:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server get github.com/gliderlabs/ssh@v0.3.8
-  go -C /Users/jacinta/Source/cairn-server get golang.org/x/crypto@v0.36.0
+  go -C /Users/jacinta/Source/cairn get github.com/gliderlabs/ssh@v0.3.8
+  go -C /Users/jacinta/Source/cairn get golang.org/x/crypto@v0.36.0
   ```
   Expect: `go: added ...` for each. Then run the test — expect `[build failed]` (undefined: Fingerprint).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/sshd/fingerprint.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/sshd/fingerprint.go`:
   ```go
   package sshd
 
@@ -1214,7 +1233,7 @@ cairn computes the fingerprint of an SSH public key the same way herald does ove
 
 A git-over-SSH client runs `git-upload-pack '/org/slug.git'` (or `receive-pack`). We parse the command into (verb, org, slug).
 
-- [ ] Write the failing test `/Users/jacinta/Source/cairn-server/internal/sshd/command_test.go`:
+- [ ] Write the failing test `/Users/jacinta/Source/cairn/internal/sshd/command_test.go`:
   ```go
   package sshd
 
@@ -1252,7 +1271,7 @@ A git-over-SSH client runs `git-upload-pack '/org/slug.git'` (or `receive-pack`)
   }
   ```
 - [ ] Run, expect compile failure (undefined: ParseGitCommand).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/sshd/command.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/sshd/command.go`:
   ```go
   package sshd
 
@@ -1300,7 +1319,7 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
 
 > **Design choice (pinned per spec §8):** for the pack transfer over SSH we shell out to the system `git` binary's `git-upload-pack`/`git-receive-pack` against the bare repo path, streaming stdin/stdout/stderr over the SSH channel. This is the battle-tested, protocol-exact path; go-git's own server transport is used for the HTTP Smart-HTTP path in Task 3 where we control the HTTP framing. cairn's container ships the `git` binary for this (noted in Task 5). The auth + routing is all cairn; the byte-pump is `git`.
 
-- [ ] Write the failing end-to-end test `/Users/jacinta/Source/cairn-server/internal/sshd/server_test.go`. It boots the server on a random port with a fake herald, then drives a real `git` clone/push over `ssh://` using a generated casket key:
+- [ ] Write the failing end-to-end test `/Users/jacinta/Source/cairn/internal/sshd/server_test.go`. It boots the server on a random port with a fake herald, then drives a real `git` clone/push over `ssh://` using a generated casket key:
   ```go
   package sshd
 
@@ -1313,8 +1332,8 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
   	"path/filepath"
   	"testing"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/herald"
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/herald"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   	gossh "golang.org/x/crypto/ssh"
   )
 
@@ -1486,7 +1505,7 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
   ```
   with `type pemBlock = pem.Block` and imports `"encoding/pem"`. (`gossh.MarshalPrivateKey` returns `*pem.Block`.)
 - [ ] Run, expect compile failure (undefined: New / Config / Server.Serve).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/sshd/server.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/sshd/server.go`:
   ```go
   // Package sshd is cairn's SSH ingress: it authenticates a connecting aspect by
   // its casket public key (fingerprint -> herald agent), enforces repo scope,
@@ -1501,8 +1520,8 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
   	"net"
   	"os/exec"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/herald"
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/herald"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   	glssh "github.com/gliderlabs/ssh"
   	gossh "golang.org/x/crypto/ssh"
   )
@@ -1608,14 +1627,14 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
   > **Branch-protection hook (Task 4) note:** receive-pack protection (default-branch scope + no force-push) is layered on top of this in Task 4 via a pre-receive check; Task 2 enforces only the coarse `repo:write` gate. The `TestSSHReaderCannotPush` test here proves the coarse gate; Task 4 adds the fine-grained ref rules and their own tests.
 - [ ] Run, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/sshd/
+  go -C /Users/jacinta/Source/cairn test ./internal/sshd/
   ```
-  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn-server/internal/sshd`. (If `git` is absent the e2e tests `t.Skip` — fingerprint/command tests still run.)
+  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn/internal/sshd`. (If `git` is absent the e2e tests `t.Skip` — fingerprint/command tests still run.)
 - [ ] Commit: `nex-387: ssh ingress — casket auth + scope-gated pack dispatch`.
 
 ### 2.7 — Wire SSH into `cmd/cairn-server`
 
-- [ ] Edit `/Users/jacinta/Source/cairn-server/cmd/cairn-server/main.go` to load the host key, build the herald client wrapped in the cache, start the SSH listener alongside HTTP. Add to the imports `"crypto/ed25519"`, `"encoding/base64"`, `"net"`, `"time"`, the sshd + herald packages, and `gossh "golang.org/x/crypto/ssh"`. Insert after the `core` is opened:
+- [ ] Edit `/Users/jacinta/Source/cairn/cmd/cairn-server/main.go` to load the host key, build the herald client wrapped in the cache, start the SSH listener alongside HTTP. Add to the imports `"crypto/ed25519"`, `"encoding/base64"`, `"net"`, `"time"`, the sshd + herald packages, and `gossh "golang.org/x/crypto/ssh"`. Insert after the `core` is opened:
   ```go
   	// herald identity for the SSH path: real NEX-412 client behind a short-TTL
   	// cache. Until NEX-412 is deployed this resolves nothing (404 -> auth fail);
@@ -1661,8 +1680,8 @@ This is the meat: a `gliderlabs/ssh` server whose `PublicKeyHandler` resolves th
   Add `"errors"` and `"fmt"` to imports.
 - [ ] Build + vet:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server build ./...
-  go -C /Users/jacinta/Source/cairn-server vet ./...
+  go -C /Users/jacinta/Source/cairn build ./...
+  go -C /Users/jacinta/Source/cairn vet ./...
   ```
   Expect: no output.
 - [ ] Commit: `nex-387: wire ssh ingress + cached herald client into cairn-server`.
@@ -1689,7 +1708,7 @@ Do not blur these. The HTTP path never calls NEX-412; the SSH path never reads `
 
 ### 3.1 — The X-CWB-* identity reader (test FIRST)
 
-- [ ] Create `/Users/jacinta/Source/cairn-server/internal/httpd/` and write the failing test `identity_test.go`:
+- [ ] Create `/Users/jacinta/Source/cairn/internal/httpd/` and write the failing test `identity_test.go`:
   ```go
   package httpd
 
@@ -1725,7 +1744,7 @@ Do not blur these. The HTTP path never calls NEX-412; the SSH path never reads `
   }
   ```
 - [ ] Run, expect compile failure (undefined: identityFromHeaders).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/httpd/identity.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/httpd/identity.go`:
   ```go
   package httpd
 
@@ -1782,7 +1801,7 @@ go-git's `transport/server` plus `transport/http` give a Smart-HTTP server, but 
 
 backed by `git http-backend` (the canonical CGI), with cairn enforcing scope before delegating. Plus the admin endpoint `POST /api/orgs/{org}/repos`.
 
-- [ ] Write the failing test `/Users/jacinta/Source/cairn-server/internal/httpd/server_test.go`:
+- [ ] Write the failing test `/Users/jacinta/Source/cairn/internal/httpd/server_test.go`:
   ```go
   package httpd
 
@@ -1794,7 +1813,7 @@ backed by `git http-backend` (the canonical CGI), with cairn enforcing scope bef
   	"path/filepath"
   	"testing"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   )
 
   // boot starts an httptest server in front of the cairn HTTP handler with the
@@ -1949,7 +1968,7 @@ backed by `git http-backend` (the canonical CGI), with cairn enforcing scope bef
   ```
   with imports `"net/http"` and `"strings"`.
 - [ ] Run, expect compile failure (undefined: New / Config / Handler).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/httpd/server.go`. It mounts the Smart-HTTP endpoints (delegated to `git http-backend`) and the admin API, enforcing scope from the trusted identity before delegating:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/httpd/server.go`. It mounts the Smart-HTTP endpoints (delegated to `git http-backend`) and the admin API, enforcing scope from the trusted identity before delegating:
   ```go
   // Package httpd is cairn's HTTP ingress: Smart-HTTPv2 git plus a small
   // repo-admin API, reached THROUGH interchange-gateway. It trusts the
@@ -1969,7 +1988,7 @@ backed by `git http-backend` (the canonical CGI), with cairn enforcing scope bef
   	"regexp"
   	"strings"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   )
 
   // ProtectionChecker is the receive-pack gate (Task 4 implements the real one;
@@ -2135,14 +2154,14 @@ backed by `git http-backend` (the canonical CGI), with cairn enforcing scope bef
   > **Why `git http-backend` + CGI:** it's the reference Smart-HTTPv2 server, identical to what production git hosts use, and `net/http/cgi` is stdlib. cairn keeps full control of auth/routing (the scope gate runs before delegation) and only hands off the pack byte protocol. The container ships `git` (Task 5). The `GIT_PROJECT_ROOT`+`PATH_INFO` rewrite maps the public `/org/slug.git` URL onto the on-disk `<id>.git` directory, so storage layout is decoupled from URL.
 - [ ] Run, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/httpd/
+  go -C /Users/jacinta/Source/cairn test ./internal/httpd/
   ```
-  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn-server/internal/httpd`. (git-dependent tests skip if `git` is absent; identity + create-repo tests still run.)
+  Expect prefix: `ok  	github.com/CarriedWorldUniverse/cairn/internal/httpd`. (git-dependent tests skip if `git` is absent; identity + create-repo tests still run.)
 - [ ] Commit: `nex-388: smart-http ingress (git http-backend) + create-repo api, X-CWB-* trust`.
 
 ### 3.3 — Wire HTTP into `cmd/cairn-server`
 
-- [ ] Edit `/Users/jacinta/Source/cairn-server/cmd/cairn-server/main.go`: replace the inline `/healthz`-only mux with the `httpd.Server` handler (which carries `/healthz`, the admin API, and Smart-HTTP). Import the `httpd` package; change the listen block to:
+- [ ] Edit `/Users/jacinta/Source/cairn/cmd/cairn-server/main.go`: replace the inline `/healthz`-only mux with the `httpd.Server` handler (which carries `/healthz`, the admin API, and Smart-HTTP). Import the `httpd` package; change the listen block to:
   ```go
   	httpSrv := httpd.New(httpd.Config{Core: core})
   	log.Printf("cairn http listening on %s (db=%s, repos=%s)", httpAddr, dbPath, repoRoot)
@@ -2153,8 +2172,8 @@ backed by `git http-backend` (the canonical CGI), with cairn enforcing scope bef
   Remove the now-unused inline `mux` block.
 - [ ] Build + vet:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server build ./...
-  go -C /Users/jacinta/Source/cairn-server vet ./...
+  go -C /Users/jacinta/Source/cairn build ./...
+  go -C /Users/jacinta/Source/cairn vet ./...
   ```
   Expect: no output.
 - [ ] Commit: `nex-388: serve httpd handler (smart-http + api + healthz) from cairn-server`.
@@ -2181,7 +2200,7 @@ The force-push (non-fast-forward) test: an update is a force-push iff `old-sha` 
 
 ### 4.1 — The protection decision (pure, test FIRST)
 
-- [ ] Create `/Users/jacinta/Source/cairn-server/internal/protect/` and write the failing test `protect_test.go`:
+- [ ] Create `/Users/jacinta/Source/cairn/internal/protect/` and write the failing test `protect_test.go`:
   ```go
   package protect
 
@@ -2214,7 +2233,7 @@ The force-push (non-fast-forward) test: an update is a force-push iff `old-sha` 
   }
   ```
 - [ ] Run, expect compile failure (undefined: Allow / Rule / Update).
-- [ ] Write `/Users/jacinta/Source/cairn-server/internal/protect/protect.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/internal/protect/protect.go`:
   ```go
   // Package protect is cairn's MINIMAL branch protection: the single
   // default-branch safety rule (no force-push, no delete on the default branch).
@@ -2279,7 +2298,7 @@ The force-push (non-fast-forward) test: an update is a force-push iff `old-sha` 
 
 cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receive <repo-id>` it reads update lines from stdin, looks up the repo's rule, computes ancestry via `git merge-base --is-ancestor` in the bare repo, and exits non-zero (printing the reason) if any update is rejected. The hook script in each bare repo invokes it.
 
-- [ ] Write the failing test `/Users/jacinta/Source/cairn-server/internal/protect/hook_test.go`:
+- [ ] Write the failing test `/Users/jacinta/Source/cairn/internal/protect/hook_test.go`:
   ```go
   package protect
 
@@ -2307,7 +2326,7 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   }
   ```
 - [ ] Run, expect compile failure (undefined: HookScript).
-- [ ] Add to `/Users/jacinta/Source/cairn-server/internal/protect/protect.go`:
+- [ ] Add to `/Users/jacinta/Source/cairn/internal/protect/protect.go`:
   ```go
   // HookScript returns the pre-receive hook body for a repo. It pipes stdin
   // (the ref updates) into the cairn-server pre-receive subcommand, which holds
@@ -2317,7 +2336,7 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   }
   ```
 - [ ] Run, expect pass (`ok ` prefix).
-- [ ] Install the hook at repo creation. Edit `/Users/jacinta/Source/cairn-server/internal/repo/service.go` — extend `CreateRepo` to write the hook. The repo package must not import `protect` (to avoid a cycle if protect ever needs repo); instead accept the hook content via a package-level installer hook the binary wires. Simpler + acyclic: give `repo.Service` an optional `HookInstaller`:
+- [ ] Install the hook at repo creation. Edit `/Users/jacinta/Source/cairn/internal/repo/service.go` — extend `CreateRepo` to write the hook. The repo package must not import `protect` (to avoid a cycle if protect ever needs repo); instead accept the hook content via a package-level installer hook the binary wires. Simpler + acyclic: give `repo.Service` an optional `HookInstaller`:
   ```go
   // HookInstaller writes server-side hooks into a freshly created bare repo's
   // hooks dir. The binary wires the pre-receive protection hook here; tests and
@@ -2354,14 +2373,14 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   ```
 - [ ] Run both packages, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/repo/ ./internal/protect/
+  go -C /Users/jacinta/Source/cairn test ./internal/repo/ ./internal/protect/
   ```
   Expect `ok ` for both.
 - [ ] Commit: `nex-391: pre-receive hook script + repo hook-installer seam`.
 
 ### 4.3 — The `pre-receive` subcommand in the binary + ancestry check
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/cmd/cairn-server/prereceive.go`:
+- [ ] Write `/Users/jacinta/Source/cairn/cmd/cairn-server/prereceive.go`:
   ```go
   package main
 
@@ -2373,8 +2392,8 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   	"os"
   	"os/exec"
 
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/protect"
-  	"github.com/CarriedWorldUniverse/cairn-server/internal/repo"
+  	"github.com/CarriedWorldUniverse/cairn/internal/protect"
+  	"github.com/CarriedWorldUniverse/cairn/internal/repo"
   )
 
   // runPreReceive is invoked as `cairn-server pre-receive <repo-id>` by the
@@ -2430,7 +2449,7 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   	return cmd.Run() == nil // exit 0 => old IS an ancestor of new
   }
   ```
-- [ ] Edit `/Users/jacinta/Source/cairn-server/cmd/cairn-server/main.go`: at the very top of `main()`, branch to the subcommand and wire the hook installer. Add before reading config:
+- [ ] Edit `/Users/jacinta/Source/cairn/cmd/cairn-server/main.go`: at the very top of `main()`, branch to the subcommand and wire the hook installer. Add before reading config:
   ```go
   	// Hidden subcommand invoked by the per-repo pre-receive hook.
   	if len(os.Args) >= 3 && os.Args[1] == "pre-receive" {
@@ -2457,11 +2476,11 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   Add imports `"path/filepath"` and the `protect` package.
 - [ ] Build + vet:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server build ./...
-  go -C /Users/jacinta/Source/cairn-server vet ./...
+  go -C /Users/jacinta/Source/cairn build ./...
+  go -C /Users/jacinta/Source/cairn vet ./...
   ```
   Expect: no output.
-- [ ] Add an end-to-end force-push rejection test in `/Users/jacinta/Source/cairn-server/internal/sshd/server_test.go` (it exercises the whole stack: the hook is installed by the binary's installer, so this test wires a real installer mirroring the binary). Append:
+- [ ] Add an end-to-end force-push rejection test in `/Users/jacinta/Source/cairn/internal/sshd/server_test.go` (it exercises the whole stack: the hook is installed by the binary's installer, so this test wires a real installer mirroring the binary). Append:
   ```go
   func TestSSHForcePushToDefaultRejected(t *testing.T) {
   	if _, err := exec.LookPath("git"); err != nil {
@@ -2530,7 +2549,7 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   func buildCairnBinary(t *testing.T) string {
   	t.Helper()
   	out := filepath.Join(t.TempDir(), "cairn-server")
-  	c := exec.Command("go", "build", "-o", out, "github.com/CarriedWorldUniverse/cairn-server/cmd/cairn-server")
+  	c := exec.Command("go", "build", "-o", out, "github.com/CarriedWorldUniverse/cairn/cmd/cairn-server")
   	if o, err := c.CombinedOutput(); err != nil {
   		t.Fatalf("build cairn-server: %v\n%s", err, o)
   	}
@@ -2540,7 +2559,7 @@ cairn-server gains a hidden subcommand: when invoked as `cairn-server pre-receiv
   > The pre-receive subcommand reads `CAIRN_DB`/`CAIRN_REPO_ROOT` from the environment; the SSH session inherits the server process env, so set those in the test before `bootServer` (add `t.Setenv("CAIRN_DB", filepath.Join(dir,"cairn.db"))` and `t.Setenv("CAIRN_REPO_ROOT", filepath.Join(dir,"repos"))` at the top of this test, matching the `repo.Open` paths).
 - [ ] Run, expect pass:
   ```sh
-  go -C /Users/jacinta/Source/cairn-server test ./internal/sshd/ -run ForcePush
+  go -C /Users/jacinta/Source/cairn test ./internal/sshd/ -run ForcePush
   ```
   Expect `ok ` (or skip if no `git`).
 - [ ] Commit: `nex-391: pre-receive subcommand + force-push-to-default rejection (e2e)`.
@@ -2563,7 +2582,7 @@ herald is a pure-`scratch` image because it's a self-contained Go binary. cairn 
 
 ### 5.1 — Containerfile
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/cmd/cairn-server/Containerfile`:
+- [ ] Write `/Users/jacinta/Source/cairn/cmd/cairn-server/Containerfile`:
   ```dockerfile
   # cairn container — static Go binary on a minimal alpine that carries `git`
   # (cairn shells out to git for pack transfer + the pre-receive hook).
@@ -2590,7 +2609,7 @@ herald is a pure-`scratch` image because it's a self-contained Go binary. cairn 
   > `cairn-server` is installed at `/usr/local/bin/cairn-server` so the pre-receive hook's `os.Executable()` path resolves to a stable in-container location across restarts.
 - [ ] Verify the build context locally (does not need k3s):
   ```sh
-  go -C /Users/jacinta/Source/cairn-server build -o /tmp/cairn-server-static ./cmd/cairn-server
+  go -C /Users/jacinta/Source/cairn build -o /tmp/cairn-server-static ./cmd/cairn-server
   ```
   Expect: no output (the static build the Containerfile performs succeeds locally).
 - [ ] Commit: `nex-392: Containerfile (static build + git on alpine)`.
@@ -2599,7 +2618,7 @@ herald is a pure-`scratch` image because it's a self-contained Go binary. cairn 
 
 Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, README. Two services because cairn has two ingresses: HTTP (ClusterIP, gateway-fronted) and SSH (LoadBalancer for external port-22 reach).
 
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/00-namespace.yaml`:
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/00-namespace.yaml`:
   ```yaml
   apiVersion: v1
   kind: Namespace
@@ -2608,7 +2627,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
     labels:
       name: cwb
   ```
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/10-pvc.yaml`:
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/10-pvc.yaml`:
   ```yaml
   apiVersion: v1
   kind: PersistentVolumeClaim
@@ -2622,7 +2641,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
       requests:
         storage: 5Gi
   ```
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/20-deployment.yaml`:
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/20-deployment.yaml`:
   ```yaml
   apiVersion: apps/v1
   kind: Deployment
@@ -2690,7 +2709,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
             persistentVolumeClaim:
               claimName: cairn-data
   ```
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/30-service-http.yaml` (ClusterIP — internal, gateway-fronted, mTLS hop):
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/30-service-http.yaml` (ClusterIP — internal, gateway-fronted, mTLS hop):
   ```yaml
   apiVersion: v1
   kind: Service
@@ -2709,7 +2728,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
         targetPort: http
         protocol: TCP
   ```
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/31-service-ssh.yaml` (LoadBalancer — port 22 needs external reach; SSH is the parallel, non-gateway-fronted ingress):
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/31-service-ssh.yaml` (LoadBalancer — port 22 needs external reach; SSH is the parallel, non-gateway-fronted ingress):
   ```yaml
   apiVersion: v1
   kind: Service
@@ -2731,7 +2750,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
         targetPort: ssh     # container :2222
         protocol: TCP
   ```
-- [ ] Write `/Users/jacinta/Source/cairn-server/deploy/k3s/README.md`:
+- [ ] Write `/Users/jacinta/Source/cairn/deploy/k3s/README.md`:
   ```markdown
   # cairn — k3s manifests
 
@@ -2795,7 +2814,7 @@ Mirror herald's `deploy/k3s/` layout: namespace, PVC, deployment, services, READ
   ```
 - [ ] Validate the YAML parses (client-side dry run; needs `kubectl`, else skip with a note):
   ```sh
-  kubectl apply --dry-run=client -f /Users/jacinta/Source/cairn-server/deploy/k3s/ 2>&1 | head
+  kubectl apply --dry-run=client -f /Users/jacinta/Source/cairn/deploy/k3s/ 2>&1 | head
   ```
   Expect: `... created (dry run)` lines, or skip if no cluster/kubectl is configured (the manifests mirror herald's validated shapes).
 - [ ] Commit: `nex-392: k3s manifests (ns, pvc, deployment, http+ssh services, README)`.
@@ -3208,7 +3227,7 @@ Every MVP spec §2 scope item and §6 build-sequence step maps to a task:
 Spec §8 open questions resolved in this plan:
 - **SSH lib:** `gliderlabs/ssh` (Task 2.6) — pinned.
 - **fingerprint→agent caching:** 30s positive-only TTL + explicit `Invalidate` block-hook (Task 2.2).
-- **Module layout:** fresh standalone module `github.com/CarriedWorldUniverse/cairn-server` (module-layout decision section) — sidesteps the Forgejo go.mod.
+- **Module layout:** fresh standalone module `github.com/CarriedWorldUniverse/cairn` (module-layout decision section) — sidesteps the Forgejo go.mod.
 - **HTTP credential-helper shape:** `git -c http.extraHeader=Authorization: Bearer <tok>` through the gateway (Task 6.2) — the gateway's bearer reader accepts it.
 - **Exact `repo:*` scope strings:** `repo:read`, `repo:write` (verified-facts section; herald schema uses `repo:write` as its example).
 
@@ -3226,7 +3245,7 @@ Explicitly OUT (spec §7, not in any task): web UI (NEX-389), PR-as-ledger-issue
 
 ## Open issues / assumptions for the operator
 
-1. **Module home (biggest assumption).** The plan creates a **new** module `github.com/CarriedWorldUniverse/cairn-server` at `/Users/jacinta/Source/cairn-server` rather than editing the existing Forgejo fork at `/Users/jacinta/Source/cairn`. The existing tree's go.mod (full Gitea graph + a `gliderlabs/ssh` replace) is incompatible with a clean walking skeleton. If the operator wants the code inside the existing cairn repo instead, it must be a fresh module path on a clean branch (e.g. `.../cairn/server/`), not an edit of the Forgejo module — the task content is otherwise unchanged.
+1. **Module home (biggest assumption).** The plan creates a **new** module `github.com/CarriedWorldUniverse/cairn` at `/Users/jacinta/Source/cairn` rather than editing the existing Forgejo fork at `/Users/jacinta/Source/cairn`. The existing tree's go.mod (full Gitea graph + a `gliderlabs/ssh` replace) is incompatible with a clean walking skeleton. If the operator wants the code inside the existing cairn repo instead, it must be a fresh module path on a clean branch (e.g. `.../cairn/server/`), not an edit of the Forgejo module — the task content is otherwise unchanged.
 2. **The referenced `2026-05-31-cairn-native-plan.md` (NEX-386..392, 7-story) does not exist** in the cairn repo (only 2026-05-09/10/11 plans for the Forgejo-era cairn). Task content was therefore self-derived from the MVP spec + the live herald/interchange/ledger reference repos + the conformance design, not reused from a native plan. The NEX keys are taken from the task brief.
 3. **NEX-412 is handled as buildable-now-with-fake** (Task 2): the SSH path depends only on the `herald.HeraldAgents` interface; a `FakeAgents` backs all tests; the real `HeraldClient` calls NEX-412 and is unit-tested against an httptest stub of its contract. **SSH auth goes live only when NEX-412 is deployed** and `HERALD_BASE_URL` points at it — a config flip, no code change. herald already has the domain method (`GetAgentByFingerprint`), so NEX-412 is a thin HTTP exposure.
 4. **`git` shell-out for pack transfer** (Tasks 2, 3) and the pre-receive hook (Task 4): chosen over go-git's native server transport for protocol exactness. Consequence: the runtime image carries `git` (Task 5 deviates from herald's pure-scratch to a minimal alpine+git). A later task could move to go-git's `transport/server` and return to scratch.
