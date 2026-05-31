@@ -11,6 +11,8 @@
 //	CAIRN_REPO_ROOT   bare-repo storage dir (default /var/lib/nexus/repos)
 //	CAIRN_HOST_KEY    base64(std) Ed25519 private host key for SSH (required for SSH)
 //	HERALD_BASE_URL   herald base URL for the by-fingerprint lookup (NEX-412)
+//	LEDGER_BASE_URL   ledger base URL for PR-as-issue (default http://ledger.cwb.svc:8081)
+//	CAIRN_PUBLIC_BASE optional public base URL for PR/ExternalRef links ("" omits)
 package main
 
 import (
@@ -27,6 +29,7 @@ import (
 
 	"github.com/CarriedWorldUniverse/cairn/internal/herald"
 	"github.com/CarriedWorldUniverse/cairn/internal/httpd"
+	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/protect"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	"github.com/CarriedWorldUniverse/cairn/internal/sshd"
@@ -87,7 +90,13 @@ func main() {
 		}
 	}()
 
-	httpSrv := httpd.New(httpd.Config{Core: core})
+	// ledger client for PR-as-issue: cairn opens a tracking issue on PR open,
+	// forwarding the opener's identity. In-cluster, like the herald client.
+	ledgerBase := env("LEDGER_BASE_URL", "http://ledger.cwb.svc:8081")
+	ledgerCli := ledgerclient.NewClient(ledgerBase, nil)
+	publicBase := env("CAIRN_PUBLIC_BASE", "") // optional; "" omits ExternalRef.url
+
+	httpSrv := httpd.New(httpd.Config{Core: core, Ledger: ledgerCli, PublicBase: publicBase})
 	log.Printf("cairn http listening on %s (db=%s, repos=%s)", httpAddr, dbPath, repoRoot)
 	if err := http.ListenAndServe(httpAddr, httpSrv.Handler()); err != nil {
 		log.Fatalf("cairn: %v", err)

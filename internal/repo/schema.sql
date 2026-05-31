@@ -27,3 +27,19 @@ CREATE TABLE IF NOT EXISTS push_event (
 );
 
 CREATE INDEX IF NOT EXISTS idx_push_event_repo ON push_event(repo_id, at);
+
+CREATE TABLE IF NOT EXISTS pull_request (
+  id               TEXT PRIMARY KEY,            -- 16-byte hex
+  repo_id          TEXT NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
+  source_ref       TEXT NOT NULL,               -- branch name, e.g. "feature"
+  target_ref       TEXT NOT NULL,               -- branch name, e.g. "main"
+  title            TEXT NOT NULL,
+  ledger_issue_key TEXT NOT NULL,               -- e.g. "ACME-7"
+  state            TEXT NOT NULL DEFAULT 'open', -- 'open' | 'merged' | 'closed'
+  opened_by        TEXT NOT NULL,               -- X-CWB-Subject of the opener
+  created_at       TEXT NOT NULL                -- RFC3339
+);
+
+-- At most one OPEN pr per (repo, source, target).
+CREATE UNIQUE INDEX IF NOT EXISTS pr_open_uniq
+  ON pull_request(repo_id, source_ref, target_ref) WHERE state = 'open';

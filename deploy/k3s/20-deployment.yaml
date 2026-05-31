@@ -39,6 +39,10 @@ spec:
             # the SSH path resolves casket fingerprints here once NEX-412 ships.
             - name: HERALD_BASE_URL
               value: "http://herald.cwb.svc:8099"
+            # ledger base for PR-as-issue: opening a PR creates a tracking issue
+            # on behalf of the opener (in-cluster ClusterIP, X-CWB-* forwarded).
+            - name: LEDGER_BASE_URL
+              value: "http://ledger.cwb.svc:8081"
             - name: CAIRN_HOST_KEY
               valueFrom:
                 secretKeyRef:
