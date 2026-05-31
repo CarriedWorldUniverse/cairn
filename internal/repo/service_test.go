@@ -4,6 +4,9 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // newTestService gives each test an isolated on-disk store + repo root.
@@ -16,6 +19,31 @@ func newTestService(t *testing.T) *Service {
 	}
 	t.Cleanup(func() { _ = svc.Close() })
 	return svc
+}
+
+// TestCreateRepoHEADMatchesDefaultBranch guards the fix for the clone-checks-
+// out-nothing bug: a freshly created bare repo's symbolic HEAD must point at the
+// declared default branch ("main"), not go-git's PlainInit default ("master").
+// Otherwise a client that pushes "main" leaves HEAD dangling and `git clone`
+// checks out an unborn branch. (Caught by the cwb-conformance cairn layer.)
+func TestCreateRepoHEADMatchesDefaultBranch(t *testing.T) {
+	svc := newTestService(t)
+	r, err := svc.CreateRepo(context.Background(), "org-1", "headcheck")
+	if err != nil {
+		t.Fatalf("CreateRepo: %v", err)
+	}
+	g, err := git.PlainOpen(r.StoragePath)
+	if err != nil {
+		t.Fatalf("PlainOpen: %v", err)
+	}
+	head, err := g.Reference(plumbing.HEAD, false) // false: do NOT resolve — want the symref target
+	if err != nil {
+		t.Fatalf("read HEAD: %v", err)
+	}
+	want := plumbing.NewBranchReferenceName(r.DefaultBranch)
+	if head.Target() != want {
+		t.Fatalf("HEAD -> %q, want %q", head.Target(), want)
+	}
 }
 
 func TestCreateGetListRepo(t *testing.T) {

@@ -120,10 +120,20 @@ func (s *Service) CreateRepo(ctx context.Context, orgID, slug string) (Repo, err
 	}
 	r.StoragePath = s.storagePath(r.ID)
 
-	if _, err := git.PlainInit(r.StoragePath, true); err != nil {
+	g, err := git.PlainInit(r.StoragePath, true)
+	if err != nil {
 		return Repo{}, fmt.Errorf("repo.CreateRepo: git init: %w", err)
 	}
-	_, err := s.db.ExecContext(ctx,
+	// go-git's PlainInit points HEAD at refs/heads/master. cairn's default
+	// branch is "main", so without this a client that pushes "main" leaves the
+	// bare repo's HEAD dangling at the unborn "master" — and a fresh `git clone`
+	// then checks out nothing. Point HEAD at the declared default branch.
+	headRef := plumbing.NewSymbolicReference(plumbing.HEAD, plumbing.NewBranchReferenceName(r.DefaultBranch))
+	if err := g.Storer.SetReference(headRef); err != nil {
+		_ = os.RemoveAll(r.StoragePath)
+		return Repo{}, fmt.Errorf("repo.CreateRepo: set HEAD: %w", err)
+	}
+	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO repo(id, org_id, slug, default_branch, protection, storage_path, created_at, updated_at)
 		 VALUES(?,?,?,?,?,?,?,?)`,
 		r.ID, r.OrgID, r.Slug, r.DefaultBranch, r.Protection, r.StoragePath,
