@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cairn
+  namespace: cwb
+  labels:
+    app: cairn
+spec:
+  type: ClusterIP
+  selector:
+    app: cairn
+  ports:
+    - name: http
+      port: 8100
+      targetPort: http
+      protocol: TCP

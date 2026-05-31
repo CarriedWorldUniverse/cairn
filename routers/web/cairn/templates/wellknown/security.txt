@@ -1,3 +1,0 @@
-Contact: mailto:security@darksoft.co.nz
-Expires: 2027-12-31T00:00:00Z
-Preferred-Languages: en
