@@ -15,7 +15,9 @@ COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/cairn-server ./cmd/cairn-server
 
 FROM docker.io/library/alpine:3.20
-RUN apk add --no-cache git
+# git-daemon provides git-http-backend (the Smart-HTTP CGI cairn shells out to);
+# Alpine splits it out of the base git package.
+RUN apk add --no-cache git git-daemon
 COPY --from=build /out/cairn-server /usr/local/bin/cairn-server
 EXPOSE 8100 2222
 ENTRYPOINT ["/usr/local/bin/cairn-server"]
