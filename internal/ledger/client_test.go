@@ -62,3 +62,42 @@ func TestCreateIssue_Non2xxIsAPIError(t *testing.T) {
 		t.Fatalf("status = %d, want 403", apiErr.Status)
 	}
 }
+
+func TestCommentIssue_ForwardsIdentityAndPostsBody(t *testing.T) {
+	var gotPath, gotSub string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotSub = r.Header.Get("X-CWB-Subject")
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, nil)
+	fwd := http.Header{"X-Cwb-Subject": {"agent-1"}}
+	if err := c.CommentIssue(context.Background(), fwd, "WID-1", "merged feature into main"); err != nil {
+		t.Fatalf("CommentIssue: %v", err)
+	}
+	if gotPath != "/api/issues/WID-1/comments" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if gotSub != "agent-1" {
+		t.Fatalf("subject not forwarded: %q", gotSub)
+	}
+	if gotBody["body"] != "merged feature into main" {
+		t.Fatalf("body = %v", gotBody)
+	}
+}
+
+func TestCommentIssue_Non2xxIsAPIError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+	c := NewClient(srv.URL, nil)
+	var apiErr *APIError
+	if err := c.CommentIssue(context.Background(), http.Header{}, "WID-1", "x"); !errors.As(err, &apiErr) {
+		t.Fatalf("err = %v, want *APIError", err)
+	}
+}

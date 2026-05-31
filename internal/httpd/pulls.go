@@ -184,3 +184,77 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
+
+type mergeResponse struct {
+	ID                 string `json:"id"`
+	State              string `json:"state"`
+	Target             string `json:"target"`
+	MergedSHA          string `json:"merged_sha"`
+	LedgerCommentError string `json:"ledger_comment_error,omitempty"`
+}
+
+// handleMergePull fast-forward-merges an open PR's source into its target, marks
+// the PR merged, and best-effort comments the linked ledger issue. See spec §4.
+func (s *Server) handleMergePull(w http.ResponseWriter, r *http.Request) {
+	id, ok := identityFromHeaders(r)
+	if !ok {
+		httpErr(w, http.StatusUnauthorized, "missing identity")
+		return
+	}
+	org := r.PathValue("org")
+	slug := r.PathValue("slug")
+	if id.Org != org {
+		httpErr(w, http.StatusForbidden, "org mismatch")
+		return
+	}
+	if !id.HasScope("repo:write") {
+		httpErr(w, http.StatusForbidden, "missing scope repo:write")
+		return
+	}
+
+	rp, err := s.cfg.Core.GetRepo(r.Context(), org, slug)
+	if err != nil {
+		httpErr(w, http.StatusNotFound, "repo not found")
+		return
+	}
+	pull, err := s.cfg.Core.GetPull(r.Context(), rp.ID, r.PathValue("id"))
+	if err != nil {
+		httpErr(w, http.StatusNotFound, "pull not found")
+		return
+	}
+	if pull.State != repo.PullStateOpen {
+		httpErr(w, http.StatusConflict, "pull is not open")
+		return
+	}
+
+	mergedSHA, ffErr := s.cfg.Core.FastForward(r.Context(), rp.ID, pull.Source, pull.Target)
+	switch {
+	case errors.Is(ffErr, repo.ErrAlreadyUpToDate):
+		// already merged content; fall through to mark merged.
+	case errors.Is(ffErr, repo.ErrNotFastForward):
+		httpErr(w, http.StatusConflict, "not fast-forwardable; rebase "+pull.Source+" onto "+pull.Target)
+		return
+	case errors.Is(ffErr, repo.ErrNotFound):
+		httpErr(w, http.StatusConflict, "source or target branch missing")
+		return
+	case ffErr != nil:
+		httpErr(w, http.StatusInternalServerError, "merge: "+ffErr.Error())
+		return
+	}
+
+	if err := s.cfg.Core.SetPullState(r.Context(), rp.ID, pull.ID, "merged"); err != nil {
+		httpErr(w, http.StatusInternalServerError, "set state: "+err.Error())
+		return
+	}
+
+	resp := mergeResponse{ID: pull.ID, State: "merged", Target: pull.Target, MergedSHA: mergedSHA}
+	sha12 := mergedSHA
+	if len(sha12) > 12 {
+		sha12 = sha12[:12]
+	}
+	body := "merged " + pull.Source + " into " + pull.Target + " @ " + sha12
+	if cErr := s.cfg.Ledger.CommentIssue(r.Context(), forwardCWB(r), pull.LedgerIssueKey, body); cErr != nil {
+		resp.LedgerCommentError = cErr.Error()
+	}
+	writeJSON(w, http.StatusOK, resp)
+}

@@ -44,6 +44,14 @@ const PullStateOpen = "open"
 // ErrPullNotFound is returned when no pull request matches.
 var ErrPullNotFound = errors.New("repo: pull request not found")
 
+// ErrNotFastForward means source and target have diverged; a fast-forward merge
+// is impossible (the caller should rebase). ErrAlreadyUpToDate means target
+// already contains source (no ref change needed).
+var (
+	ErrNotFastForward  = errors.New("repo: not a fast-forward")
+	ErrAlreadyUpToDate = errors.New("repo: already up to date")
+)
+
 // Pull is a row in the pull_request catalogue: a source→target proposal bound
 // to a ledger tracking issue.
 type Pull struct {
@@ -231,6 +239,62 @@ func (s *Service) FindOpenPull(ctx context.Context, repoID, source, target strin
 		return Pull{}, fmt.Errorf("repo.FindOpenPull: %w", err)
 	}
 	return p, nil
+}
+
+// FastForward advances refs/heads/<target> to the tip of refs/heads/<source>
+// when target is an ancestor of source. Returns the resulting target sha.
+//   - target already contains source     → ErrAlreadyUpToDate (no change)
+//   - target is a strict ancestor of src  → advance target, return src sha
+//   - diverged                             → ErrNotFastForward
+// A missing branch returns a wrapped ErrNotFound.
+func (s *Service) FastForward(ctx context.Context, repoID, source, target string) (string, error) {
+	g, err := s.openGit(ctx, repoID)
+	if err != nil {
+		return "", err
+	}
+	srcRef, err := g.Reference(plumbing.NewBranchReferenceName(source), true)
+	if err != nil {
+		return "", fmt.Errorf("repo.FastForward: source %q: %w: %w", source, ErrNotFound, err)
+	}
+	tgtRef, err := g.Reference(plumbing.NewBranchReferenceName(target), true)
+	if err != nil {
+		return "", fmt.Errorf("repo.FastForward: target %q: %w: %w", target, ErrNotFound, err)
+	}
+	if srcRef.Hash() == tgtRef.Hash() {
+		return tgtRef.Hash().String(), ErrAlreadyUpToDate
+	}
+	srcCommit, err := g.CommitObject(srcRef.Hash())
+	if err != nil {
+		return "", fmt.Errorf("repo.FastForward: load source commit: %w", err)
+	}
+	tgtCommit, err := g.CommitObject(tgtRef.Hash())
+	if err != nil {
+		return "", fmt.Errorf("repo.FastForward: load target commit: %w", err)
+	}
+	if ok, _ := srcCommit.IsAncestor(tgtCommit); ok {
+		return tgtRef.Hash().String(), ErrAlreadyUpToDate
+	}
+	if ok, _ := tgtCommit.IsAncestor(srcCommit); ok {
+		newRef := plumbing.NewHashReference(plumbing.NewBranchReferenceName(target), srcRef.Hash())
+		if err := g.Storer.SetReference(newRef); err != nil {
+			return "", fmt.Errorf("repo.FastForward: advance target: %w", err)
+		}
+		return srcRef.Hash().String(), nil
+	}
+	return "", ErrNotFastForward
+}
+
+// SetPullState updates a pull request's state (e.g. to "merged").
+func (s *Service) SetPullState(ctx context.Context, repoID, id, state string) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE pull_request SET state=? WHERE repo_id=? AND id=?`, state, repoID, id)
+	if err != nil {
+		return fmt.Errorf("repo.SetPullState: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrPullNotFound
+	}
+	return nil
 }
 
 func scanRepo(row interface{ Scan(...any) error }) (Repo, error) {

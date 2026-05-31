@@ -101,3 +101,34 @@ func (c *Client) CreateIssue(ctx context.Context, fwd http.Header, in IssueInput
 	}
 	return out, nil
 }
+
+// CommentIssue POSTs a comment to /api/issues/{key}/comments with the forwarded
+// identity. A non-2xx response is *APIError; a transport failure a wrapped error.
+// Callers (the merge handler) treat both as best-effort.
+func (c *Client) CommentIssue(ctx context.Context, fwd http.Header, key, body string) error {
+	payload, err := json.Marshal(map[string]string{"body": body})
+	if err != nil {
+		return fmt.Errorf("ledger.CommentIssue: marshal: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		c.baseURL+"/api/issues/"+key+"/comments", bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("ledger.CommentIssue: build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for _, h := range cwbHeaders {
+		if v := fwd.Get(h); v != "" {
+			req.Header.Set(h, v)
+		}
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("ledger.CommentIssue: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode/100 != 2 {
+		return &APIError{Status: resp.StatusCode, Body: string(raw)}
+	}
+	return nil
+}
