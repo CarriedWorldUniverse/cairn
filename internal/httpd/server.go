@@ -73,6 +73,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls", s.handleOpenPull)
 	mux.HandleFunc("GET /api/orgs/{org}/repos/{slug}/pulls/{id}", s.handleGetPull)
 	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls/{id}/merge", s.handleMergePull)
+	mux.HandleFunc("DELETE /api/org", s.handleOrgPurge)
 	// Everything else: Smart-HTTP git, matched by the .git path shape.
 	mux.HandleFunc("/", s.handleGit)
 	return mux
@@ -187,6 +188,38 @@ func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, rp repo.Re
 		},
 	}
 	h.ServeHTTP(w, r)
+}
+
+// handleOrgPurge deletes ALL repos for the caller's org (X-CWB-Org), gated by
+// the org:purge scope — herald's cross-org wipe (NEX-402). Org-bound: no org in
+// the path. Idempotent: zero repos → 200.
+func (s *Server) handleOrgPurge(w http.ResponseWriter, r *http.Request) {
+	id, ok := identityFromHeaders(r)
+	if !ok {
+		httpErr(w, http.StatusUnauthorized, "missing identity")
+		return
+	}
+	if !id.HasScope("org:purge") {
+		httpErr(w, http.StatusForbidden, "missing scope org:purge")
+		return
+	}
+	if id.Org == "" {
+		httpErr(w, http.StatusBadRequest, "missing org")
+		return
+	}
+	repos, err := s.cfg.Core.ListRepos(r.Context(), id.Org)
+	if err != nil {
+		httpErr(w, http.StatusInternalServerError, "list repos failed")
+		return
+	}
+	for _, rp := range repos {
+		if err := s.cfg.Core.DeleteRepo(r.Context(), rp.ID); err != nil {
+			httpErr(w, http.StatusInternalServerError, "delete repo failed: "+err.Error())
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"purged": id.Org, "repos": len(repos)})
 }
 
 func httpErr(w http.ResponseWriter, code int, msg string) {

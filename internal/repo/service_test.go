@@ -154,6 +154,68 @@ func TestRecordPush(t *testing.T) {
 	}
 }
 
+func TestDeleteRepo_RemovesDependentRows(t *testing.T) {
+	svc := newTestService(t)
+	ctx := context.Background()
+
+	r, err := svc.CreateRepo(ctx, "org-1", "to-be-wiped")
+	if err != nil {
+		t.Fatalf("CreateRepo: %v", err)
+	}
+
+	// Insert a push_event via the service method.
+	if err := svc.RecordPush(ctx, PushEvent{
+		RepoID:        r.ID,
+		Ref:           "refs/heads/main",
+		OldSHA:        "0000000000000000000000000000000000000000",
+		NewSHA:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		PusherAgentID: "agent-1",
+		Forced:        false,
+	}); err != nil {
+		t.Fatalf("RecordPush: %v", err)
+	}
+
+	// Insert a pull_request via the service method.
+	pr := &Pull{
+		RepoID:         r.ID,
+		Source:         "feature",
+		Target:         "main",
+		Title:          "Test PR",
+		LedgerIssueKey: "NEX-999",
+		OpenedBy:       "agent-1",
+	}
+	if err := svc.CreatePull(ctx, pr); err != nil {
+		t.Fatalf("CreatePull: %v", err)
+	}
+
+	// Delete the repo.
+	if err := svc.DeleteRepo(ctx, r.ID); err != nil {
+		t.Fatalf("DeleteRepo: %v", err)
+	}
+
+	// Assert no push_event rows remain for r.ID.
+	var pushCount int
+	if err := svc.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM push_event WHERE repo_id=?`, r.ID,
+	).Scan(&pushCount); err != nil {
+		t.Fatalf("count push_event: %v", err)
+	}
+	if pushCount != 0 {
+		t.Fatalf("push_event rows remaining: got %d, want 0", pushCount)
+	}
+
+	// Assert no pull_request rows remain for r.ID.
+	var prCount int
+	if err := svc.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM pull_request WHERE repo_id=?`, r.ID,
+	).Scan(&prCount); err != nil {
+		t.Fatalf("count pull_request: %v", err)
+	}
+	if prCount != 0 {
+		t.Fatalf("pull_request rows remaining: got %d, want 0", prCount)
+	}
+}
+
 func TestCreateRepoRunsHookInstaller(t *testing.T) {
 	svc := newTestService(t)
 	var gotID, gotDir string
