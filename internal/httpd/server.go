@@ -26,6 +26,7 @@ import (
 // tests use a fake.
 type IssueCreator interface {
 	CreateIssue(ctx context.Context, fwd http.Header, in ledgerclient.IssueInput) (ledgerclient.IssueResult, error)
+	CommentIssue(ctx context.Context, fwd http.Header, key, body string) error
 }
 
 // Config configures the HTTP ingress.
@@ -71,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/orgs/{org}/repos", s.handleCreateRepo)
 	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls", s.handleOpenPull)
 	mux.HandleFunc("GET /api/orgs/{org}/repos/{slug}/pulls/{id}", s.handleGetPull)
+	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls/{id}/merge", s.handleMergePull)
 	// Everything else: Smart-HTTP git, matched by the .git path shape.
 	mux.HandleFunc("/", s.handleGit)
 	return mux

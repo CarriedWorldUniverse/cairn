@@ -20,17 +20,26 @@ import (
 
 // fakeLedger records the last CreateIssue call and returns a scripted result.
 type fakeLedger struct {
-	calls  int
-	gotFwd http.Header
-	gotIn  ledgerclient.IssueInput
-	result ledgerclient.IssueResult
-	err    error
+	calls         int
+	gotFwd        http.Header
+	gotIn         ledgerclient.IssueInput
+	result        ledgerclient.IssueResult
+	err           error
+	commentCalls  int
+	commentErr    error
+	gotCommentKey string
 }
 
 func (f *fakeLedger) CreateIssue(_ context.Context, fwd http.Header, in ledgerclient.IssueInput) (ledgerclient.IssueResult, error) {
 	f.calls++
 	f.gotFwd, f.gotIn = fwd, in
 	return f.result, f.err
+}
+
+func (f *fakeLedger) CommentIssue(_ context.Context, fwd http.Header, key, body string) error {
+	f.commentCalls++
+	f.gotCommentKey = key
+	return f.commentErr
 }
 
 func newTestServer(t *testing.T, led IssueCreator) (*Server, *repo.Service) {
@@ -216,5 +225,162 @@ func TestGetPull(t *testing.T) {
 	s.handleGetPull(grec, greq)
 	if grec.Code != http.StatusOK {
 		t.Fatalf("GET pull = %d, want 200: %s", grec.Code, grec.Body.String())
+	}
+}
+
+// seedFFRepo creates a repo where feature descends from main (a ff is possible)
+// and returns the repo + the feature head sha.
+func seedFFRepo(t *testing.T, core *repo.Service, org, slug string) (repo.Repo, string) {
+	t.Helper()
+	r, err := core.CreateRepo(context.Background(), org, slug)
+	if err != nil {
+		t.Fatalf("CreateRepo: %v", err)
+	}
+	g, err := git.PlainOpen(r.StoragePath)
+	if err != nil {
+		t.Fatalf("PlainOpen: %v", err)
+	}
+	a := writeHTTPDCommit(t, g, "A")
+	b := writeHTTPDCommit(t, g, "B", a)
+	setHTTPDBranch(t, g, "main", a)
+	setHTTPDBranch(t, g, "feature", b)
+	return r, b.String()
+}
+
+func writeHTTPDCommit(t *testing.T, g *git.Repository, msg string, parents ...plumbing.Hash) plumbing.Hash {
+	t.Helper()
+	c := &object.Commit{
+		Author:       object.Signature{Name: "t", Email: "t@t", When: time.Unix(0, 0).UTC()},
+		Committer:    object.Signature{Name: "t", Email: "t@t", When: time.Unix(0, 0).UTC()},
+		Message:      msg, TreeHash: plumbing.ZeroHash, ParentHashes: parents,
+	}
+	enc := g.Storer.NewEncodedObject()
+	if err := c.Encode(enc); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	h, err := g.Storer.SetEncodedObject(enc)
+	if err != nil {
+		t.Fatalf("set object: %v", err)
+	}
+	return h
+}
+
+func setHTTPDBranch(t *testing.T, g *git.Repository, name string, h plumbing.Hash) {
+	t.Helper()
+	if err := g.Storer.SetReference(plumbing.NewHashReference(plumbing.NewBranchReferenceName(name), h)); err != nil {
+		t.Fatalf("set ref: %v", err)
+	}
+}
+
+func mergeReq(org, slug, id, scopes string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/api/orgs/"+org+"/repos/"+slug+"/pulls/"+id+"/merge", nil)
+	req.Header.Set("X-CWB-Subject", "agent-1")
+	req.Header.Set("X-CWB-Org", org)
+	req.Header.Set("X-CWB-Scopes", scopes)
+	req.SetPathValue("org", org)
+	req.SetPathValue("slug", slug)
+	req.SetPathValue("id", id)
+	return req
+}
+
+func seedOpenPull(t *testing.T, core *repo.Service, repoID string) repo.Pull {
+	t.Helper()
+	p := repo.Pull{RepoID: repoID, Source: "feature", Target: "main", Title: "Add X", LedgerIssueKey: "WID-1", OpenedBy: "agent-1"}
+	if err := core.CreatePull(context.Background(), &p); err != nil {
+		t.Fatalf("CreatePull: %v", err)
+	}
+	return p
+}
+
+func TestMergePull_FastForward(t *testing.T) {
+	led := &fakeLedger{}
+	s, core := newTestServer(t, led)
+	r, featSHA := seedFFRepo(t, core, "org-1", "widgets")
+	p := seedOpenPull(t, core, r.ID)
+
+	rec := httptest.NewRecorder()
+	s.handleMergePull(rec, mergeReq("org-1", "widgets", p.ID, "repo:write"))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	ref, _ := core.GetRef(context.Background(), r.ID, "refs/heads/main")
+	if ref.Hash != featSHA {
+		t.Fatalf("main = %s, want %s", ref.Hash, featSHA)
+	}
+	got, _ := core.GetPull(context.Background(), r.ID, p.ID)
+	if got.State != "merged" {
+		t.Fatalf("state = %q, want merged", got.State)
+	}
+	if led.commentCalls != 1 || led.gotCommentKey != "WID-1" {
+		t.Fatalf("comment calls=%d key=%q", led.commentCalls, led.gotCommentKey)
+	}
+}
+
+func TestMergePull_NotOpen(t *testing.T) {
+	led := &fakeLedger{}
+	s, core := newTestServer(t, led)
+	r, _ := seedFFRepo(t, core, "org-1", "widgets")
+	p := seedOpenPull(t, core, r.ID)
+	_ = core.SetPullState(context.Background(), r.ID, p.ID, "merged")
+
+	rec := httptest.NewRecorder()
+	s.handleMergePull(rec, mergeReq("org-1", "widgets", p.ID, "repo:write"))
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", rec.Code)
+	}
+}
+
+func TestMergePull_Diverged(t *testing.T) {
+	led := &fakeLedger{}
+	s, core := newTestServer(t, led)
+	r, err := core.CreateRepo(context.Background(), "org-1", "widgets")
+	if err != nil {
+		t.Fatalf("CreateRepo: %v", err)
+	}
+	g, _ := git.PlainOpen(r.StoragePath)
+	main := writeHTTPDCommit(t, g, "main-root")
+	feat := writeHTTPDCommit(t, g, "feat-root") // independent root
+	setHTTPDBranch(t, g, "main", main)
+	setHTTPDBranch(t, g, "feature", feat)
+	p := seedOpenPull(t, core, r.ID)
+
+	rec := httptest.NewRecorder()
+	s.handleMergePull(rec, mergeReq("org-1", "widgets", p.ID, "repo:write"))
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("diverged status = %d, want 409: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestMergePull_NoRepoWrite(t *testing.T) {
+	led := &fakeLedger{}
+	s, core := newTestServer(t, led)
+	r, _ := seedFFRepo(t, core, "org-1", "widgets")
+	p := seedOpenPull(t, core, r.ID)
+	rec := httptest.NewRecorder()
+	s.handleMergePull(rec, mergeReq("org-1", "widgets", p.ID, "repo:read"))
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", rec.Code)
+	}
+}
+
+func TestMergePull_LedgerCommentFailureStillMerges(t *testing.T) {
+	led := &fakeLedger{commentErr: &ledgerclient.APIError{Status: 500, Body: "boom"}}
+	s, core := newTestServer(t, led)
+	r, featSHA := seedFFRepo(t, core, "org-1", "widgets")
+	p := seedOpenPull(t, core, r.ID)
+
+	rec := httptest.NewRecorder()
+	s.handleMergePull(rec, mergeReq("org-1", "widgets", p.ID, "repo:write"))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (merge stands): %s", rec.Code, rec.Body.String())
+	}
+	ref, _ := core.GetRef(context.Background(), r.ID, "refs/heads/main")
+	if ref.Hash != featSHA {
+		t.Fatalf("main not advanced despite comment failure")
+	}
+	var out map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if out["ledger_comment_error"] == "" {
+		t.Fatalf("expected ledger_comment_error to be populated: %v", out)
 	}
 }
