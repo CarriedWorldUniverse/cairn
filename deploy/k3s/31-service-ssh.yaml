@@ -6,14 +6,16 @@ metadata:
   labels:
     app: cairn
 spec:
-  # LoadBalancer so git-over-ssh clients reach port 22 externally. On a
-  # single-node k3s the built-in servicelb maps it to the node IP; switch to
-  # NodePort if servicelb is disabled.
+  # LoadBalancer so git-over-ssh clients reach cairn externally. On single-node
+  # k3s the built-in servicelb (klipper-lb) binds this port on the NODE — so it
+  # must NOT be 22 (that collides with the dMon host sshd). Use 2222 externally
+  # too; clients clone with ssh://git@<node>:2222/... . Switch to NodePort if
+  # servicelb is disabled.
   type: LoadBalancer
   selector:
     app: cairn
   ports:
     - name: ssh
-      port: 22            # external git ssh port
+      port: 2222          # external git ssh port (NOT 22 — host sshd owns 22)
       targetPort: ssh     # container :2222
       protocol: TCP
