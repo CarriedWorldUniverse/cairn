@@ -39,10 +39,16 @@ spec:
             # the SSH path resolves casket fingerprints here once NEX-412 ships.
             - name: HERALD_BASE_URL
               value: "http://herald.cwb.svc:8099"
-            # ledger base for PR-as-issue: opening a PR creates a tracking issue
-            # on behalf of the opener (in-cluster ClusterIP, X-CWB-* forwarded).
-            - name: LEDGER_BASE_URL
-              value: "http://ledger.cwb.svc:8081"
+            # gRPC address for the ledger client (PR-as-issue, Phase 2).
+            # cairn uses mTLS with cairn-client-tls when dialling this address.
+            - name: LEDGER_GRPC_ADDR
+              value: "ledger.cwb.svc:8081"
+            - name: CAIRN_TLS_CERT
+              value: "/etc/cwb/tls/tls.crt"
+            - name: CAIRN_TLS_KEY
+              value: "/etc/cwb/tls/tls.key"
+            - name: CAIRN_TLS_CA
+              value: "/etc/cwb/tls/ca.crt"
             - name: CAIRN_HOST_KEY
               valueFrom:
                 secretKeyRef:
@@ -51,6 +57,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/nexus
+            - name: tls
+              mountPath: /etc/cwb/tls
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /healthz
@@ -67,3 +76,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: cairn-data
+        - name: tls
+          secret:
+            secretName: cairn-client-tls
