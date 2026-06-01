@@ -3,7 +3,7 @@ module github.com/CarriedWorldUniverse/cairn
 go 1.26.3
 
 require (
-	github.com/CarriedWorldUniverse/cwb-proto v0.0.0-20260601030337-cbe868da23f6
+	github.com/CarriedWorldUniverse/cwb-proto v0.0.0-20260601231922-69da6cb8a346
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-git/go-git/v5 v5.13.2
 	golang.org/x/crypto v0.49.0

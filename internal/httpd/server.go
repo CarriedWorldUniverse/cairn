@@ -1,14 +1,16 @@
-// Package httpd is cairn's HTTP ingress: Smart-HTTPv2 git plus a small
-// repo-admin API, reached THROUGH interchange-gateway. It trusts the
-// gateway-injected X-CWB-* identity (the gateway already ran herald
-// verification) over the mTLS hop and does NOT re-verify. The Smart-HTTP byte
-// protocol is served by the system `git http-backend` CGI; cairn owns auth +
-// routing and delegates the pack streaming.
+// Package httpd is cairn's Smart-HTTPv2 git ingress, reached THROUGH
+// interchange-gateway. It trusts the gateway-injected X-CWB-* identity (the
+// gateway already ran herald verification) over the reverse-proxy hop and does
+// NOT re-verify. The Smart-HTTP byte protocol is served by the system
+// `git http-backend` CGI; cairn owns auth + routing and delegates the pack
+// streaming.
+//
+// The repo-admin JSON API (create-repo, pulls, org-purge) moved to gRPC in
+// Phase 3 — see internal/grpcapi. This package now serves ONLY git + /healthz,
+// because git cannot be gRPC and must stay on its byte transport.
 package httpd
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/cgi"
@@ -17,24 +19,13 @@ import (
 	"regexp"
 	"strings"
 
-	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 )
 
-// IssueCreator is the slice of ledger cairn needs: open a tracking issue on
-// behalf of a caller (identity forwarded via fwd). *ledger.Client satisfies it;
-// tests use a fake.
-type IssueCreator interface {
-	CreateIssue(ctx context.Context, fwd http.Header, in ledgerclient.IssueInput) (ledgerclient.IssueResult, error)
-	CommentIssue(ctx context.Context, fwd http.Header, key, body string) error
-}
-
-// Config configures the HTTP ingress.
+// Config configures the git ingress.
 type Config struct {
-	Core       *repo.Service
-	GitPath    string       // path to the git binary; defaults to "git" on PATH
-	Ledger     IssueCreator // outbound ledger client for PR-as-issue
-	PublicBase string       // optional public base URL for ExternalRef.url; "" omits it
+	Core    *repo.Service
+	GitPath string // path to the git binary; defaults to "git" on PATH
 }
 
 // Server is cairn's HTTP git host.
@@ -62,54 +53,16 @@ func New(cfg Config) *Server {
 // pathRe matches /{org}/{slug}.git/<rest> capturing org, slug, rest.
 var pathRe = regexp.MustCompile(`^/([^/]+)/([^/]+)\.git(/.*)?$`)
 
-// Handler returns the HTTP mux.
+// Handler returns the HTTP mux: /healthz plus Smart-HTTP git for any .git path.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok","service":"cairn"}`))
 	})
-	mux.HandleFunc("POST /api/orgs/{org}/repos", s.handleCreateRepo)
-	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls", s.handleOpenPull)
-	mux.HandleFunc("GET /api/orgs/{org}/repos/{slug}/pulls/{id}", s.handleGetPull)
-	mux.HandleFunc("POST /api/orgs/{org}/repos/{slug}/pulls/{id}/merge", s.handleMergePull)
-	mux.HandleFunc("DELETE /api/org", s.handleOrgPurge)
 	// Everything else: Smart-HTTP git, matched by the .git path shape.
 	mux.HandleFunc("/", s.handleGit)
 	return mux
-}
-
-func (s *Server) handleCreateRepo(w http.ResponseWriter, r *http.Request) {
-	id, ok := identityFromHeaders(r)
-	if !ok {
-		httpErr(w, http.StatusUnauthorized, "missing identity")
-		return
-	}
-	org := r.PathValue("org")
-	if id.Org != org {
-		httpErr(w, http.StatusForbidden, "org mismatch")
-		return
-	}
-	if !id.HasScope("repo:write") {
-		httpErr(w, http.StatusForbidden, "missing scope repo:write")
-		return
-	}
-	var body struct {
-		Slug string `json:"slug"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Slug == "" {
-		httpErr(w, http.StatusBadRequest, "slug required")
-		return
-	}
-	rp, err := s.cfg.Core.CreateRepo(r.Context(), org, body.Slug)
-	if err != nil {
-		httpErr(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"id": rp.ID, "org": rp.OrgID, "slug": rp.Slug, "default_branch": rp.DefaultBranch,
-	})
 }
 
 // handleGit routes a Smart-HTTP request: enforce scope from the trusted
@@ -167,7 +120,7 @@ func isWriteRequest(rest, rawQuery string) bool {
 // serveBackend runs `git http-backend` as a CGI handler over the bare repo.
 // GIT_PROJECT_ROOT points at the repo's parent dir; PATH_INFO is /<id>.git/<rest>.
 func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, rp repo.Repo) {
-	root := filepath.Dir(rp.StoragePath) // repoRoot
+	root := filepath.Dir(rp.StoragePath)  // repoRoot
 	base := filepath.Base(rp.StoragePath) // <id>.git
 	m := pathRe.FindStringSubmatch(r.URL.Path)
 	rest := ""
@@ -188,38 +141,6 @@ func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, rp repo.Re
 		},
 	}
 	h.ServeHTTP(w, r)
-}
-
-// handleOrgPurge deletes ALL repos for the caller's org (X-CWB-Org), gated by
-// the org:purge scope — herald's cross-org wipe (NEX-402). Org-bound: no org in
-// the path. Idempotent: zero repos → 200.
-func (s *Server) handleOrgPurge(w http.ResponseWriter, r *http.Request) {
-	id, ok := identityFromHeaders(r)
-	if !ok {
-		httpErr(w, http.StatusUnauthorized, "missing identity")
-		return
-	}
-	if !id.HasScope("org:purge") {
-		httpErr(w, http.StatusForbidden, "missing scope org:purge")
-		return
-	}
-	if id.Org == "" {
-		httpErr(w, http.StatusBadRequest, "missing org")
-		return
-	}
-	repos, err := s.cfg.Core.ListRepos(r.Context(), id.Org)
-	if err != nil {
-		httpErr(w, http.StatusInternalServerError, "list repos failed")
-		return
-	}
-	for _, rp := range repos {
-		if err := s.cfg.Core.DeleteRepo(r.Context(), rp.ID); err != nil {
-			httpErr(w, http.StatusInternalServerError, "delete repo failed: "+err.Error())
-			return
-		}
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"purged": id.Org, "repos": len(repos)})
 }
 
 func httpErr(w http.ResponseWriter, code int, msg string) {

@@ -2,12 +2,10 @@ package httpd
 
 import (
 	"context"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
@@ -120,40 +118,5 @@ func TestHTTPReaderCannotPush(t *testing.T) {
 	}
 }
 
-func TestCreateRepoAPI(t *testing.T) {
-	ctx := context.Background()
-	dir := t.TempDir()
-	core, _ := repo.Open(filepath.Join(dir, "cairn.db"), filepath.Join(dir, "repos"))
-	t.Cleanup(func() { _ = core.Close() })
-	srv := boot(t, core)
-
-	body := `{"slug":"created-via-api"}`
-	resp := doJSON(t, srv.URL+"/api/orgs/org-1/repos", body, map[string]string{
-		"X-CWB-Subject": "agent-builder", "X-CWB-Org": "org-1",
-		"X-CWB-Kind": "agent", "X-CWB-Scopes": "repo:read repo:write",
-	})
-	if resp != 200 {
-		t.Fatalf("create repo status = %d, want 200", resp)
-	}
-	if _, err := core.GetRepo(ctx, "org-1", "created-via-api"); err != nil {
-		t.Fatalf("repo not created: %v", err)
-	}
-}
-
-func doJSON(t *testing.T, url, body string, headers map[string]string) int {
-	t.Helper()
-	req, err := http.NewRequest("POST", url, strings.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	return resp.StatusCode
-}
+// (Repo-admin API tests moved to internal/grpcapi with the handlers; this file
+// now covers only the Smart-HTTP git ingress.)

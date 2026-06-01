@@ -5,21 +5,34 @@
 //
 // Config (env):
 //
-//	CAIRN_HTTP_ADDR   HTTP listen address (default :8100)
+//	CAIRN_HTTP_ADDR   HTTP listen address for Smart-HTTP git (default :8100)
+//	CAIRN_GRPC_ADDR   gRPC listen address for the JSON API behind interchange (default :8102)
 //	CAIRN_SSH_ADDR    SSH listen address  (default :2222)
 //	CAIRN_DB          sqlite catalogue path (default /var/lib/nexus/cairn.db)
 //	CAIRN_REPO_ROOT   bare-repo storage dir (default /var/lib/nexus/repos)
 //	CAIRN_HOST_KEY    base64(std) Ed25519 private host key for SSH (required for SSH)
 //	HERALD_BASE_URL   herald base URL for the by-fingerprint lookup (NEX-412)
 //	LEDGER_GRPC_ADDR  ledger gRPC address for PR-as-issue (default ledger.cwb.svc:8081)
-//	CAIRN_TLS_CERT    path to cairn's client TLS certificate (PEM)
-//	CAIRN_TLS_KEY     path to cairn's client TLS private key (PEM)
-//	CAIRN_TLS_CA      path to the cwb-ca certificate (PEM) for ledger mTLS
+//	CAIRN_TLS_CERT    cairn's TLS certificate (PEM) — BOTH the gRPC API server
+//	                  cert (presented to interchange) AND the client cert dialing
+//	                  ledger; the cert needs server+client auth usages
+//	CAIRN_TLS_KEY     cairn's TLS private key (PEM)
+//	CAIRN_TLS_CA      cwb-ca certificate (PEM) — verifies ledger's server cert
+//	                  (client side) AND interchange's client cert (server side)
+//	CAIRN_DEV_INSECURE "1" to run the gRPC API WITHOUT mTLS (local dev only;
+//	                  fatal if certs unset and this is not set)
 //	CAIRN_PUBLIC_BASE optional public base URL for PR/ExternalRef links ("" omits)
+//
+// cairn is intentionally dual-transport: the Smart-HTTP git server (:8100)
+// stays plain HTTP behind interchange's reverse-proxy (header-trust) and SSH is
+// unchanged, while the JSON API moved to gRPC (:8102) over mTLS. git cannot be
+// gRPC, so its transports are untouched.
 package main
 
 import (
 	"crypto/ed25519"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -30,12 +43,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/grpcapi"
 	"github.com/CarriedWorldUniverse/cairn/internal/herald"
 	"github.com/CarriedWorldUniverse/cairn/internal/httpd"
 	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/protect"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	"github.com/CarriedWorldUniverse/cairn/internal/sshd"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/health"
+	grpc_health_v1 "google.golang.org/grpc/health/grpc_health_v1"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -93,24 +111,85 @@ func main() {
 		}
 	}()
 
+	// TLS material: one cert serves both roles — the client cert dialing
+	// ledger, and the server cert for cairn's own gRPC API.
+	tlsCert := env("CAIRN_TLS_CERT", "/etc/cairn/tls/tls.crt")
+	tlsKey := env("CAIRN_TLS_KEY", "/etc/cairn/tls/tls.key")
+	tlsCA := env("CAIRN_TLS_CA", "/etc/cairn/tls/ca.crt")
+
 	// ledger client for PR-as-issue: cairn opens a tracking issue on PR open,
 	// forwarding the opener's identity as cwb-* gRPC metadata over mTLS.
 	ledgerAddr := env("LEDGER_GRPC_ADDR", "ledger.cwb.svc:8081")
-	ledgerCert := env("CAIRN_TLS_CERT", "/etc/cairn/tls/tls.crt")
-	ledgerKey := env("CAIRN_TLS_KEY", "/etc/cairn/tls/tls.key")
-	ledgerCA := env("CAIRN_TLS_CA", "/etc/cairn/tls/ca.crt")
-	ledgerCli, err := ledgerclient.NewClient(ledgerAddr, ledgerCert, ledgerKey, ledgerCA)
+	ledgerCli, err := ledgerclient.NewClient(ledgerAddr, tlsCert, tlsKey, tlsCA)
 	if err != nil {
 		log.Fatalf("cairn: ledger client: %v", err)
 	}
 	defer ledgerCli.Close()
 	publicBase := env("CAIRN_PUBLIC_BASE", "") // optional; "" omits ExternalRef.url
 
-	httpSrv := httpd.New(httpd.Config{Core: core, Ledger: ledgerCli, PublicBase: publicBase})
-	log.Printf("cairn http listening on %s (db=%s, repos=%s)", httpAddr, dbPath, repoRoot)
+	// gRPC JSON API (repos/pulls/org) behind interchange over mTLS — the
+	// Phase 3 successor to the HTTP API handlers.
+	grpcAddr := env("CAIRN_GRPC_ADDR", ":8102")
+	grpcSrv := grpc.NewServer(grpcServerOptions()...)
+	grpcapi.New(core, ledgerCli, publicBase).Register(grpcSrv)
+	healthSrv := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcSrv, healthSrv)
+	for _, svc := range []string{"cwb.cairn.v1.RepoService", "cwb.cairn.v1.PullService", "cwb.cairn.v1.OrgService"} {
+		healthSrv.SetServingStatus(svc, grpc_health_v1.HealthCheckResponse_SERVING)
+	}
+	grpcLn, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		log.Fatalf("cairn: grpc listen %s: %v", grpcAddr, err)
+	}
+	go func() {
+		log.Printf("cairn grpc API listening on %s", grpcAddr)
+		if err := grpcSrv.Serve(grpcLn); err != nil {
+			log.Fatalf("cairn: grpc: %v", err)
+		}
+	}()
+
+	// Smart-HTTP git ingress — git-only now; the JSON API moved to gRPC above.
+	httpSrv := httpd.New(httpd.Config{Core: core})
+	log.Printf("cairn http (git) listening on %s (db=%s, repos=%s)", httpAddr, dbPath, repoRoot)
 	if err := http.ListenAndServe(httpAddr, httpSrv.Handler()); err != nil {
 		log.Fatalf("cairn: %v", err)
 	}
+}
+
+// grpcServerOptions builds the gRPC server options for cairn's API. With the
+// CAIRN_TLS_* env set the server enforces mTLS (RequireAndVerifyClientCert
+// against the cwb-ca). Insecure mode requires an explicit CAIRN_DEV_INSECURE=1
+// opt-in; missing certs without it are fatal — mirrors ledger/commonplace.
+func grpcServerOptions() []grpc.ServerOption {
+	certFile := os.Getenv("CAIRN_TLS_CERT")
+	keyFile := os.Getenv("CAIRN_TLS_KEY")
+	caFile := os.Getenv("CAIRN_TLS_CA")
+	if certFile == "" || keyFile == "" || caFile == "" {
+		if os.Getenv("CAIRN_DEV_INSECURE") == "1" {
+			log.Printf("cairn: CAIRN_DEV_INSECURE=1 — gRPC API WITHOUT mTLS (dev only)")
+			return nil
+		}
+		log.Fatalf("cairn: gRPC mTLS required — set CAIRN_TLS_CERT/_KEY/_CA (or CAIRN_DEV_INSECURE=1 for local dev)")
+	}
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatalf("cairn: tls: load cert/key: %v", err)
+	}
+	caPEM, err := os.ReadFile(caFile)
+	if err != nil {
+		log.Fatalf("cairn: tls: read CA: %v", err)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caPEM) {
+		log.Fatalf("cairn: tls: no certs parsed from CA file %s", caFile)
+	}
+	tlsCfg := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    pool,
+		MinVersion:   tls.VersionTLS13,
+	}
+	return []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsCfg))}
 }
 
 // loadHostKey loads cairn's Ed25519 SSH host key from CAIRN_HOST_KEY
