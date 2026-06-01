@@ -1,3 +1,7 @@
+# cairn's one TLS identity, used for BOTH roles (Phase 3):
+#   - client auth: dialling ledger's gRPC (PR-as-issue, Phase 2)
+#   - server auth: serving cairn's own gRPC JSON API on :8102, which interchange
+#     dials at cairn.cwb.svc:8102 and verifies the SAN against — hence dnsNames.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -6,7 +10,12 @@ metadata:
 spec:
   secretName: cairn-client-tls
   commonName: cairn
+  dnsNames:
+    - cairn.cwb.svc
+    - cairn.cwb.svc.cluster.local
+    - cairn
   usages:
+    - server auth
     - client auth
   privateKey:
     algorithm: ECDSA

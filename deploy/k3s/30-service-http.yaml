@@ -14,3 +14,8 @@ spec:
       port: 8100
       targetPort: http
       protocol: TCP
+    # gRPC JSON API (mTLS) — interchange dials cairn.cwb.svc:8102.
+    - name: grpc
+      port: 8102
+      targetPort: grpc
+      protocol: TCP

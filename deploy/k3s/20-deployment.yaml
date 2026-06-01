@@ -24,11 +24,16 @@ spec:
           ports:
             - name: http
               containerPort: 8100
+            - name: grpc
+              containerPort: 8102
             - name: ssh
               containerPort: 2222
           env:
             - name: CAIRN_HTTP_ADDR
               value: ":8100"
+            # gRPC JSON API behind interchange (mTLS); git stays on :8100/SSH.
+            - name: CAIRN_GRPC_ADDR
+              value: ":8102"
             - name: CAIRN_SSH_ADDR
               value: ":2222"
             - name: CAIRN_DB
