@@ -1,103 +1,191 @@
-package ledger
+package ledger_test
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	cwbv1 "github.com/CarriedWorldUniverse/cwb-proto/gen/go/cwb/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/ledger"
 )
 
-func TestCreateIssue_ForwardsIdentityAndReturnsKey(t *testing.T) {
-	var gotSub, gotScopes, gotCT string
-	var gotBody map[string]any
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotSub = r.Header.Get("X-CWB-Subject")
-		gotScopes = r.Header.Get("X-CWB-Scopes")
-		gotCT = r.Header.Get("Content-Type")
-		_ = json.NewDecoder(r.Body).Decode(&gotBody)
-		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"key":"WID-7"}`))
-	}))
-	defer srv.Close()
+// stubIssueServer is a minimal in-process IssueServiceServer for testing.
+// It records the last request and incoming metadata.
+type stubIssueServer struct {
+	cwbv1.UnimplementedIssueServiceServer
 
-	c := NewClient(srv.URL, nil)
-	fwd := http.Header{"X-Cwb-Subject": {"agent-1"}, "X-Cwb-Org": {"org-1"}, "X-Cwb-Scopes": {"repo:write issue:write"}}
-	res, err := c.CreateIssue(context.Background(), fwd, IssueInput{
-		Project: "WID", Type: "Story", Summary: "Add X",
-		ExternalRefs: []ExternalRef{{Tracker: "cairn", Key: "org-1/widgets@feature"}},
+	gotCreateReq *cwbv1.CreateIssueRequest
+	gotCreateMD  metadata.MD
+	replyKey     string
+
+	gotCommentReq *cwbv1.CommentIssueRequest
+	gotCommentMD  metadata.MD
+}
+
+func (s *stubIssueServer) CreateIssue(ctx context.Context, req *cwbv1.CreateIssueRequest) (*cwbv1.CreateIssueResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.gotCreateMD = md
+	s.gotCreateReq = req
+	return &cwbv1.CreateIssueResponse{
+		Issue: &cwbv1.Issue{Key: s.replyKey},
+	}, nil
+}
+
+func (s *stubIssueServer) CommentIssue(ctx context.Context, req *cwbv1.CommentIssueRequest) (*cwbv1.CommentIssueResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.gotCommentMD = md
+	s.gotCommentReq = req
+	return &cwbv1.CommentIssueResponse{}, nil
+}
+
+// startStub launches the stub gRPC server on a loopback port and returns the
+// *Client wired against it (via NewClientWithConn) plus a cleanup function.
+func startStub(t *testing.T, stub *stubIssueServer) (*ledger.Client, func()) {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	srv := grpc.NewServer()
+	cwbv1.RegisterIssueServiceServer(srv, stub)
+	go srv.Serve(ln) //nolint:errcheck
+
+	conn, err := grpc.NewClient(ln.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial stub: %v", err)
+	}
+
+	cli := ledger.NewClientWithConn(conn)
+	return cli, func() {
+		conn.Close()
+		srv.Stop()
+	}
+}
+
+func TestCreateIssue_ForwardsMetadataAndReturnsKey(t *testing.T) {
+	stub := &stubIssueServer{replyKey: "CWB-42"}
+	cli, cleanup := startStub(t, stub)
+	defer cleanup()
+
+	fwd := http.Header{}
+	fwd.Set("X-Cwb-Org", "acme")
+	fwd.Set("X-Cwb-Subject", "agent:shadow")
+	fwd.Set("X-Cwb-Kind", "agent")
+	fwd.Set("X-Cwb-Scopes", "repo:write issue:write")
+
+	res, err := cli.CreateIssue(context.Background(), fwd, ledger.IssueInput{
+		Project:          "CWB",
+		Type:             "Story",
+		Summary:          "test PR",
+		Description:      "desc",
+		DefinitionOfDone: "green",
+		ExternalRefs: []ledger.ExternalRef{
+			{Tracker: "cairn", Key: "acme/repo@feat", URL: "https://x", Description: "feat->main"},
+		},
 	})
 	if err != nil {
 		t.Fatalf("CreateIssue: %v", err)
 	}
-	if res.Key != "WID-7" {
-		t.Fatalf("key = %q, want WID-7", res.Key)
+	if res.Key != "CWB-42" {
+		t.Errorf("key: got %q, want %q", res.Key, "CWB-42")
 	}
-	if gotSub != "agent-1" || gotScopes != "repo:write issue:write" {
-		t.Fatalf("identity not forwarded: sub=%q scopes=%q", gotSub, gotScopes)
+
+	// Verify forwarded metadata arrived at the stub.
+	md := stub.gotCreateMD
+	assertMD(t, md, "cwb-org", "acme")
+	assertMD(t, md, "cwb-subject", "agent:shadow")
+	assertMD(t, md, "cwb-kind", "agent")
+	assertMD(t, md, "cwb-scopes", "repo:write issue:write")
+
+	// Verify request fields.
+	req := stub.gotCreateReq
+	if req.Project != "CWB" {
+		t.Errorf("project: got %q, want %q", req.Project, "CWB")
 	}
-	if gotCT != "application/json" {
-		t.Fatalf("content-type = %q", gotCT)
+	if req.Summary != "test PR" {
+		t.Errorf("summary: got %q", req.Summary)
 	}
-	if gotBody["project"] != "WID" || gotBody["summary"] != "Add X" {
-		t.Fatalf("body = %v", gotBody)
+	if len(req.ExternalRefs) != 1 || req.ExternalRefs[0].Key != "acme/repo@feat" {
+		t.Errorf("external_refs: %+v", req.ExternalRefs)
 	}
 }
 
-func TestCreateIssue_Non2xxIsAPIError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(`{"error":"insufficient_scope"}`))
-	}))
-	defer srv.Close()
+func TestCreateIssue_NoSpuriousMetadata(t *testing.T) {
+	// X-Cwb-Responsible-Human is empty — must not appear in outgoing metadata.
+	stub := &stubIssueServer{replyKey: "CWB-1"}
+	cli, cleanup := startStub(t, stub)
+	defer cleanup()
 
-	c := NewClient(srv.URL, nil)
-	_, err := c.CreateIssue(context.Background(), http.Header{}, IssueInput{Project: "WID", Summary: "x"})
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("err = %v, want *APIError", err)
+	fwd := http.Header{}
+	fwd.Set("X-Cwb-Org", "acme")
+	fwd.Set("X-Cwb-Subject", "agent:shadow")
+	// X-Cwb-Responsible-Human intentionally absent.
+
+	_, err := cli.CreateIssue(context.Background(), fwd, ledger.IssueInput{
+		Project: "CWB", Type: "Story", Summary: "s",
+	})
+	if err != nil {
+		t.Fatalf("CreateIssue: %v", err)
 	}
-	if apiErr.Status != http.StatusForbidden {
-		t.Fatalf("status = %d, want 403", apiErr.Status)
+
+	md := stub.gotCreateMD
+	if vals := md.Get("cwb-responsible-human"); len(vals) > 0 {
+		t.Errorf("expected no cwb-responsible-human in metadata, got %v", vals)
 	}
 }
 
-func TestCommentIssue_ForwardsIdentityAndPostsBody(t *testing.T) {
-	var gotPath, gotSub string
-	var gotBody map[string]any
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
-		gotSub = r.Header.Get("X-CWB-Subject")
-		_ = json.NewDecoder(r.Body).Decode(&gotBody)
-		w.WriteHeader(http.StatusCreated)
-	}))
-	defer srv.Close()
+func TestCommentIssue_ForwardsMetadata(t *testing.T) {
+	stub := &stubIssueServer{}
+	cli, cleanup := startStub(t, stub)
+	defer cleanup()
 
-	c := NewClient(srv.URL, nil)
-	fwd := http.Header{"X-Cwb-Subject": {"agent-1"}}
-	if err := c.CommentIssue(context.Background(), fwd, "WID-1", "merged feature into main"); err != nil {
+	fwd := http.Header{}
+	fwd.Set("X-Cwb-Org", "nexus")
+	fwd.Set("X-Cwb-Subject", "agent:keel")
+	fwd.Set("X-Cwb-Responsible-Human", "jacinta")
+
+	err := cli.CommentIssue(context.Background(), fwd, "CWB-99", "merged feat into main @ abc123def456")
+	if err != nil {
 		t.Fatalf("CommentIssue: %v", err)
 	}
-	if gotPath != "/api/issues/WID-1/comments" {
-		t.Fatalf("path = %q", gotPath)
+
+	md := stub.gotCommentMD
+	assertMD(t, md, "cwb-org", "nexus")
+	assertMD(t, md, "cwb-subject", "agent:keel")
+	assertMD(t, md, "cwb-responsible-human", "jacinta")
+
+	req := stub.gotCommentReq
+	if req.Key != "CWB-99" {
+		t.Errorf("key: got %q, want %q", req.Key, "CWB-99")
 	}
-	if gotSub != "agent-1" {
-		t.Fatalf("subject not forwarded: %q", gotSub)
-	}
-	if gotBody["body"] != "merged feature into main" {
-		t.Fatalf("body = %v", gotBody)
+	if req.Body != "merged feat into main @ abc123def456" {
+		t.Errorf("body: got %q", req.Body)
 	}
 }
 
-func TestCommentIssue_Non2xxIsAPIError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-	}))
-	defer srv.Close()
-	c := NewClient(srv.URL, nil)
-	var apiErr *APIError
-	if err := c.CommentIssue(context.Background(), http.Header{}, "WID-1", "x"); !errors.As(err, &apiErr) {
-		t.Fatalf("err = %v, want *APIError", err)
+// assertMD checks that a metadata key has exactly one value matching want.
+func assertMD(t *testing.T, md metadata.MD, key, want string) {
+	t.Helper()
+	vals := md.Get(key)
+	if len(vals) == 0 {
+		t.Errorf("metadata %q: not found (got keys %v)", key, metaKeys(md))
+		return
 	}
+	if vals[0] != want {
+		t.Errorf("metadata %q: got %q, want %q", key, vals[0], want)
+	}
+}
+
+func metaKeys(md metadata.MD) []string {
+	keys := make([]string, 0, len(md))
+	for k := range md {
+		keys = append(keys, k)
+	}
+	return keys
 }

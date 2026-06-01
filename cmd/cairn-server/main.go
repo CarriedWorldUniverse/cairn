@@ -11,7 +11,10 @@
 //	CAIRN_REPO_ROOT   bare-repo storage dir (default /var/lib/nexus/repos)
 //	CAIRN_HOST_KEY    base64(std) Ed25519 private host key for SSH (required for SSH)
 //	HERALD_BASE_URL   herald base URL for the by-fingerprint lookup (NEX-412)
-//	LEDGER_BASE_URL   ledger base URL for PR-as-issue (default http://ledger.cwb.svc:8081)
+//	LEDGER_GRPC_ADDR  ledger gRPC address for PR-as-issue (default ledger.cwb.svc:8081)
+//	CAIRN_TLS_CERT    path to cairn's client TLS certificate (PEM)
+//	CAIRN_TLS_KEY     path to cairn's client TLS private key (PEM)
+//	CAIRN_TLS_CA      path to the cwb-ca certificate (PEM) for ledger mTLS
 //	CAIRN_PUBLIC_BASE optional public base URL for PR/ExternalRef links ("" omits)
 package main
 
@@ -91,9 +94,16 @@ func main() {
 	}()
 
 	// ledger client for PR-as-issue: cairn opens a tracking issue on PR open,
-	// forwarding the opener's identity. In-cluster, like the herald client.
-	ledgerBase := env("LEDGER_BASE_URL", "http://ledger.cwb.svc:8081")
-	ledgerCli := ledgerclient.NewClient(ledgerBase, nil)
+	// forwarding the opener's identity as cwb-* gRPC metadata over mTLS.
+	ledgerAddr := env("LEDGER_GRPC_ADDR", "ledger.cwb.svc:8081")
+	ledgerCert := env("CAIRN_TLS_CERT", "/etc/cairn/tls/tls.crt")
+	ledgerKey := env("CAIRN_TLS_KEY", "/etc/cairn/tls/tls.key")
+	ledgerCA := env("CAIRN_TLS_CA", "/etc/cairn/tls/ca.crt")
+	ledgerCli, err := ledgerclient.NewClient(ledgerAddr, ledgerCert, ledgerKey, ledgerCA)
+	if err != nil {
+		log.Fatalf("cairn: ledger client: %v", err)
+	}
+	defer ledgerCli.Close()
 	publicBase := env("CAIRN_PUBLIC_BASE", "") // optional; "" omits ExternalRef.url
 
 	httpSrv := httpd.New(httpd.Config{Core: core, Ledger: ledgerCli, PublicBase: publicBase})
