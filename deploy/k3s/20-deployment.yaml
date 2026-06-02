@@ -40,10 +40,11 @@ spec:
               value: "/var/lib/nexus/cairn.db"
             - name: CAIRN_REPO_ROOT
               value: "/var/lib/nexus/repos"
-            # herald base for the SSH-path NEX-412 lookup. In-cluster ClusterIP;
-            # the SSH path resolves casket fingerprints here once NEX-412 ships.
-            - name: HERALD_BASE_URL
-              value: "http://herald.cwb.svc:8099"
+            # herald gRPC for the SSH-path by-fingerprint lookup over mTLS
+            # (Phase 4) — dialed directly in-cluster with the cwb-ca client cert
+            # (CAIRN_TLS_* below); the SSH flow has a pubkey, not a token.
+            - name: HERALD_GRPC_ADDR
+              value: "herald.cwb.svc:8098"
             # gRPC address for the ledger client (PR-as-issue, Phase 2).
             # cairn uses mTLS with cairn-client-tls when dialling this address.
             - name: LEDGER_GRPC_ADDR
