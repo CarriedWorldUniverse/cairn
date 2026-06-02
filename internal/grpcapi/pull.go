@@ -108,6 +108,26 @@ func (p *pullServer) GetPull(ctx context.Context, req *cairnv1.GetPullRequest) (
 	return &cairnv1.GetPullResponse{Pull: toProtoPull(pull, req.Slug, p.s.publicBase, req.Org)}, nil
 }
 
+// ListPulls lists a repo's pulls (scope repo:read; optional state filter).
+func (p *pullServer) ListPulls(ctx context.Context, req *cairnv1.ListPullsRequest) (*cairnv1.ListPullsResponse, error) {
+	if _, err := authed(ctx, req.Org, "repo:read"); err != nil {
+		return nil, err
+	}
+	rp, err := p.s.core.GetRepo(ctx, req.Org, req.Slug)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "repo not found")
+	}
+	pulls, err := p.s.core.ListPulls(ctx, rp.ID, req.State)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	out := make([]*cairnv1.Pull, 0, len(pulls))
+	for _, pl := range pulls {
+		out = append(out, toProtoPull(pl, req.Slug, p.s.publicBase, req.Org))
+	}
+	return &cairnv1.ListPullsResponse{Pulls: out}, nil
+}
+
 // MergePull mirrors POST .../pulls/{id}/merge: fast-forward-only merge, mark
 // merged, best-effort comment the linked ledger issue.
 func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullRequest) (*cairnv1.MergePullResponse, error) {

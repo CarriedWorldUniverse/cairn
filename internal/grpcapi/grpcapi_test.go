@@ -249,6 +249,61 @@ func TestMergePull_Errors(t *testing.T) {
 	}
 }
 
+// --- ListRepos ---
+
+func TestListRepos(t *testing.T) {
+	c, core := newTest(t, &fakeLedger{})
+	seedRepoWithBranch(t, core, "org-1", "widgets", "feature")
+	seedRepoWithBranch(t, core, "org-1", "gadgets", "feature")
+
+	resp, err := c.repo.ListRepos(mdCtx("org-1", "repo:read"), &cairnv1.ListReposRequest{Org: "org-1"})
+	if err != nil {
+		t.Fatalf("ListRepos: %v", err)
+	}
+	if len(resp.Repos) != 2 {
+		t.Fatalf("want 2 repos, got %d", len(resp.Repos))
+	}
+	for _, rp := range resp.Repos {
+		if rp.GetOrg() != "org-1" || rp.GetSlug() == "" || rp.GetId() == "" || rp.GetDefaultBranch() == "" {
+			t.Fatalf("unexpected repo fields: %+v", rp)
+		}
+	}
+
+	// Wrong scope -> PermissionDenied.
+	if _, err := c.repo.ListRepos(mdCtx("org-1", "knowledge:read"), &cairnv1.ListReposRequest{Org: "org-1"}); code(err) != codes.PermissionDenied {
+		t.Fatalf("scopeless ListRepos err = %v, want PermissionDenied", err)
+	}
+}
+
+// --- ListPulls ---
+
+func TestListPulls(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedRepoWithBranch(t, core, "org-1", "widgets", "feature")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+
+	resp, err := c.pull.ListPulls(mdCtx("org-1", "repo:read"), &cairnv1.ListPullsRequest{Org: "org-1", Slug: "widgets", State: "all"})
+	if err != nil {
+		t.Fatalf("ListPulls: %v", err)
+	}
+	if len(resp.Pulls) != 1 {
+		t.Fatalf("want 1 pull, got %d", len(resp.Pulls))
+	}
+	if resp.Pulls[0].GetId() != open.Pull.GetId() || resp.Pulls[0].GetState() != "open" {
+		t.Fatalf("unexpected pull: %+v", resp.Pulls[0])
+	}
+
+	// Unknown repo -> NotFound.
+	if _, err := c.pull.ListPulls(mdCtx("org-1", "repo:read"), &cairnv1.ListPullsRequest{Org: "org-1", Slug: "nope"}); code(err) != codes.NotFound {
+		t.Fatalf("ListPulls unknown repo err = %v, want NotFound", err)
+	}
+}
+
 // --- PurgeOrg ---
 
 func TestPurgeOrg(t *testing.T) {

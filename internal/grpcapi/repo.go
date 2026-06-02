@@ -34,3 +34,19 @@ func (r *repoServer) CreateRepo(ctx context.Context, req *cairnv1.CreateRepoRequ
 		DefaultBranch: rp.DefaultBranch,
 	}}, nil
 }
+
+// ListRepos lists the caller-org's repos (scope repo:read).
+func (r *repoServer) ListRepos(ctx context.Context, req *cairnv1.ListReposRequest) (*cairnv1.ListReposResponse, error) {
+	if _, err := authed(ctx, req.Org, "repo:read"); err != nil {
+		return nil, err
+	}
+	repos, err := r.s.core.ListRepos(ctx, req.Org)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	out := make([]*cairnv1.Repo, 0, len(repos))
+	for _, rp := range repos {
+		out = append(out, &cairnv1.Repo{Id: rp.ID, Org: rp.OrgID, Slug: rp.Slug, DefaultBranch: rp.DefaultBranch})
+	}
+	return &cairnv1.ListReposResponse{Repos: out}, nil
+}
