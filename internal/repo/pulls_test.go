@@ -53,3 +53,39 @@ func TestCreateGetFindOpenPull(t *testing.T) {
 		t.Fatal("CreatePull duplicate open PR: want error, got nil")
 	}
 }
+
+func TestListPulls(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestService(t)
+	r, _ := svc.CreateRepo(ctx, "org-1", "widgets")
+
+	mk := func(src string) Pull {
+		p := Pull{RepoID: r.ID, Source: src, Target: "main", Title: src, LedgerIssueKey: "K-" + src}
+		if err := svc.CreatePull(ctx, &p); err != nil {
+			t.Fatalf("CreatePull %s: %v", src, err)
+		}
+		return p
+	}
+	a := mk("feat-a")
+	b := mk("feat-b")
+	if err := svc.SetPullState(ctx, r.ID, b.ID, "merged"); err != nil {
+		t.Fatalf("SetPullState: %v", err)
+	}
+
+	all, err := svc.ListPulls(ctx, r.ID, "all")
+	if err != nil || len(all) != 2 {
+		t.Fatalf("ListPulls all: %v len=%d", err, len(all))
+	}
+	open, err := svc.ListPulls(ctx, r.ID, "open")
+	if err != nil || len(open) != 1 || open[0].ID != a.ID {
+		t.Fatalf("ListPulls open: %v %+v", err, open)
+	}
+	merged, _ := svc.ListPulls(ctx, r.ID, "merged")
+	if len(merged) != 1 || merged[0].ID != b.ID {
+		t.Fatalf("ListPulls merged: %+v", merged)
+	}
+	// "" behaves like "all".
+	if blank, _ := svc.ListPulls(ctx, r.ID, ""); len(blank) != 2 {
+		t.Fatalf("ListPulls \"\": want 2, got %d", len(blank))
+	}
+}

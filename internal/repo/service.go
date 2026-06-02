@@ -227,6 +227,32 @@ func (s *Service) GetPull(ctx context.Context, repoID, id string) (Pull, error) 
 	return p, nil
 }
 
+// ListPulls returns the repo's pull requests, newest first. state "" or "all"
+// returns every state; otherwise filters by exact state ("open"|"merged"|"closed").
+func (s *Service) ListPulls(ctx context.Context, repoID, state string) ([]Pull, error) {
+	q := `SELECT ` + pullCols + ` FROM pull_request WHERE repo_id=?`
+	args := []any{repoID}
+	if state != "" && state != "all" {
+		q += ` AND state=?`
+		args = append(args, state)
+	}
+	q += ` ORDER BY created_at DESC`
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("repo.ListPulls: %w", err)
+	}
+	defer rows.Close()
+	var out []Pull
+	for rows.Next() {
+		p, err := scanPull(rows)
+		if err != nil {
+			return nil, fmt.Errorf("repo.ListPulls: scan: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // FindOpenPull returns the open pull request for (repo, source, target), or
 // ErrPullNotFound. Used for idempotent open.
 func (s *Service) FindOpenPull(ctx context.Context, repoID, source, target string) (Pull, error) {
