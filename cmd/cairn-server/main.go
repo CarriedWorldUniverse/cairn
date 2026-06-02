@@ -11,7 +11,8 @@
 //	CAIRN_DB          sqlite catalogue path (default /var/lib/nexus/cairn.db)
 //	CAIRN_REPO_ROOT   bare-repo storage dir (default /var/lib/nexus/repos)
 //	CAIRN_HOST_KEY    base64(std) Ed25519 private host key for SSH (required for SSH)
-//	HERALD_BASE_URL   herald base URL for the by-fingerprint lookup (NEX-412)
+//	HERALD_GRPC_ADDR  herald gRPC address for the by-fingerprint lookup over mTLS
+//	                  (default herald.cwb.svc:8098; uses the CAIRN_TLS_* cwb-ca pair)
 //	LEDGER_GRPC_ADDR  ledger gRPC address for PR-as-issue (default ledger.cwb.svc:8081)
 //	CAIRN_TLS_CERT    cairn's TLS certificate (PEM) — BOTH the gRPC API server
 //	                  cert (presented to interchange) AND the client cert dialing
@@ -87,11 +88,24 @@ func main() {
 		return os.WriteFile(hook, []byte(protect.HookScript(selfPath, repoID)), 0o755)
 	})
 
-	// herald identity for the SSH path: real NEX-412 client behind a short-TTL
-	// cache. Until NEX-412 is deployed this resolves nothing (404 -> auth fail);
-	// point HERALD_BASE_URL at herald once NEX-412 ships.
-	heraldBase := env("HERALD_BASE_URL", "http://herald.cwb.svc:8099")
-	agents := herald.NewCachedAgents(herald.NewHeraldClient(heraldBase, nil), 30*time.Second)
+	// TLS material (cwb-ca mTLS): one cert serves every role — the client cert
+	// dialing herald (by-fingerprint) + ledger (PR-as-issue), and the server
+	// cert for cairn's own gRPC API.
+	tlsCert := env("CAIRN_TLS_CERT", "/etc/cairn/tls/tls.crt")
+	tlsKey := env("CAIRN_TLS_KEY", "/etc/cairn/tls/tls.key")
+	tlsCA := env("CAIRN_TLS_CA", "/etc/cairn/tls/ca.crt")
+
+	// herald identity for the SSH path: resolve a casket fingerprint -> agent via
+	// herald's gRPC AgentService over mTLS, dialed DIRECTLY in-cluster (the SSH
+	// flow has a pubkey, not a token, so it's an mTLS service call — NOT the JWT
+	// gateway edge). Wrapped in a short-TTL cache.
+	heraldGRPC := env("HERALD_GRPC_ADDR", "herald.cwb.svc:8098")
+	heraldCli, err := herald.NewGRPCClient(heraldGRPC, tlsCert, tlsKey, tlsCA)
+	if err != nil {
+		log.Fatalf("cairn: herald client: %v", err)
+	}
+	defer heraldCli.Close()
+	agents := herald.NewCachedAgents(heraldCli, 30*time.Second)
 
 	// SSH ingress (parallel, not gateway-fronted).
 	sshAddr := env("CAIRN_SSH_ADDR", ":2222")
@@ -110,12 +124,6 @@ func main() {
 			log.Fatalf("cairn: ssh: %v", err)
 		}
 	}()
-
-	// TLS material: one cert serves both roles — the client cert dialing
-	// ledger, and the server cert for cairn's own gRPC API.
-	tlsCert := env("CAIRN_TLS_CERT", "/etc/cairn/tls/tls.crt")
-	tlsKey := env("CAIRN_TLS_KEY", "/etc/cairn/tls/tls.key")
-	tlsCA := env("CAIRN_TLS_CA", "/etc/cairn/tls/ca.crt")
 
 	// ledger client for PR-as-issue: cairn opens a tracking issue on PR open,
 	// forwarding the opener's identity as cwb-* gRPC metadata over mTLS.
