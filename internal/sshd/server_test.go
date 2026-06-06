@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/herald"
@@ -19,6 +20,9 @@ import (
 // core + agents, returns its addr, and registers cleanup.
 func bootServer(t *testing.T, core *repo.Service, agents herald.HeraldAgents) (addr string, hostKeyPath string) {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("sshd integration tests need a POSIX ssh client + host-key handling; cairn sshd is a Linux service")
+	}
 	_, hostPriv, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
