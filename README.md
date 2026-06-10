@@ -1,14 +1,14 @@
 # Cairn
 
-**Cairn — agent-native git platform. Soft-fork of Forgejo.**
+**Cairn — agent-native git platform. Native [`go-git`](https://github.com/go-git/go-git) core.**
 
 Cairn is the git pillar of the [Carried World Builder (CWB)](https://github.com/CarriedWorldUniverse) platform: a git host where **aspects (AI agents) are first-class, accountable git identities**, each linked to a responsible human through the CWB identity authority. Aspects clone, push, and open pull requests on their *own* cryptographic identities — no human in the per-action loop, full per-agent attribution.
 
-Cairn descends from [Forgejo](https://forgejo.org/) (itself a Gitea fork). The current default branch (`cairn`) is a focused, green-field [`go-git`](https://github.com/go-git/go-git) rewrite that reclaims the repo and module path for the agent-native core; the inherited Forgejo tree is preserved on the `forgejo` branch and remains recoverable from history. See [Lineage](#lineage) below.
+The live core is a single static Go binary (`cmd/cairn-server`) built directly on [`go-git`](https://github.com/go-git/go-git) — the protocol and storage engine — with herald-authed SSH and HTTP ingresses, a gRPC API, and server-side merge. Cairn began as a Forgejo deployment, but the current default branch is not a Forgejo fork: the inherited Forgejo tree is preserved on the archived `forgejo` (and `v15.0/forgejo`) branches only. See [Lineage](#lineage) below.
 
-## What cairn adds over Forgejo
+## What cairn is
 
-Cairn keeps git's lineage but rebuilds the front door around agent identity:
+A native go-git agent-git host, rebuilt around agent identity:
 
 - **Aspects as accountable identities.** The actor on every clone/push/PR is a *herald agent id*, not a flat username. Identity is anchored to a casket key (SSH) or a gateway-verified subject (HTTP), and herald links each agent back to a responsible human.
 - **herald-backed auth, no local accounts.** Cairn holds no password/account store of its own. Two ingresses both terminate at a **herald identity**:
@@ -16,14 +16,15 @@ Cairn keeps git's lineage but rebuilds the front door around agent identity:
   - **HTTP** (Smart-HTTPv2) — sits **behind the interchange gateway**, which runs herald verification and injects trusted `X-CWB-*` identity headers over an mTLS hop. Cairn trusts those over that hop and does not re-verify.
 - **Scope-gated access.** `repo:read` gates clone/fetch; `repo:write` gates push. Drawn from herald's cross-service scope vocabulary.
 - **Minimal branch protection.** The default branch requires `repo:write` and disallows force-push by default.
-- **Pull-request → ledger issue.** Opening a PR forwards the opener's identity to the CWB **ledger** (issues/tracker) over gRPC + mTLS, opening a tracking issue on their behalf.
+- **Pull requests over the gRPC API.** The Repo / Pull / Org services (over mTLS behind interchange) cover create/list repos and open/get/list pull requests. Opening a PR forwards the opener's identity to the CWB **ledger** (issues/tracker) over gRPC + mTLS, opening a linked tracking issue on their behalf (idempotent per `(repo, source, target)` while open).
+- **Server-side merge.** Merging a PR is a **fast-forward-only** advance of the target branch to the source tip — a pure go-git ref update, no working tree — after which the PR is marked `merged` and the linked ledger issue gets a best-effort comment. Diverged branches are rejected (rebase first).
 - **CWB-native deployment.** A single static Go binary, containerised and deployed to k3s in the `cwb` namespace alongside the other CWB pillars.
 
 ## Lineage
 
-- Forked from **Forgejo** (Gitea lineage). As a Forgejo derivative, cairn is **AGPL-licensed** (GNU Affero General Public License v3) — the license carried by the Forgejo/Gitea codebase from which this project descends.
-- The default `cairn` branch is a clean `go-git` rebuild; its `go.mod` carries no Forgejo dependency graph. The original Forgejo soft-fork is retained on the `forgejo` (and `v15.0/forgejo`) branches.
-- **Upstream Forgejo documentation still applies** for general git-server operation and concepts not specific to cairn. This README documents only what is *cairn-specific*; it deliberately does not re-document Forgejo.
+- Cairn began as a Forgejo (Gitea-lineage) deployment; the live default branch is a native [`go-git`](https://github.com/go-git/go-git) core, **not a Forgejo fork**. Its `go.mod` carries no Forgejo dependency graph.
+- The inherited Forgejo tree is preserved on the archived `forgejo` (and `v15.0/forgejo`) branches only, recoverable from history.
+- Cairn is **AGPL-licensed** ([GNU Affero General Public License v3](LICENSE)) to honour that Forgejo/Gitea lineage's copyleft.
 
 ## Layout
 
@@ -34,7 +35,7 @@ internal/httpd/     Smart-HTTP git ingress; reads gateway-injected X-CWB-* ident
 internal/sshd/      SSH ingress (gliderlabs/ssh); casket public-key auth + fingerprinting
 internal/repo/      repo/ref core over go-git; SQLite metadata catalogue (schema.sql)
 internal/protect/   branch-protection rules (write-scope, force-push policy)
-internal/grpcapi/   JSON-over-gRPC API (repo/org/pull) served behind interchange over mTLS
+internal/grpcapi/   JSON-over-gRPC API (Repo/Pull/Org incl. open + server-side merge) behind interchange over mTLS
 internal/ledger/    outbound client — opens a ledger tracking issue on PR-open
 deploy/k3s/         k3s manifests (namespace, cert, PVC, deployment, HTTP/SSH services)
 docs/cairn/         specs and plans for cairn's design
