@@ -66,6 +66,11 @@ func (e *Engine) FoldLine(lineID string) error {
 		ts, lineID); err != nil {
 		return fmt.Errorf("change.FoldLine: %w", err)
 	}
+	if _, err := tx.Exec(
+		`UPDATE change SET status='folded', updated_at=? WHERE line_id=? AND status='open'`,
+		ts, lineID); err != nil {
+		return fmt.Errorf("change.FoldLine: %w", err)
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.FoldLine: commit tx: %w", err)
 	}

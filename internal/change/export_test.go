@@ -44,3 +44,47 @@ func TestExportRefs(t *testing.T) {
 		t.Fatalf("change ref = %v (err %v), want %s", cref, err, r.HeadCommit)
 	}
 }
+
+func TestExportAbandonedLineNotExported(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	exp, _ := e.CreateLine("exp", main.ID)
+	ch, _ := e.CreateChange(exp.ID, "e")
+	e.Commit(ch.ID, map[string][]byte{"x.txt": []byte("x\n")})
+	if err := e.AbandonLine(exp.ID); err != nil {
+		t.Fatalf("AbandonLine: %v", err)
+	}
+	if err := e.Export(); err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	if _, err := e.git.Reference(plumbing.NewBranchReferenceName("exp"), true); err == nil {
+		t.Fatal("refs/heads/exp must not exist for an abandoned line")
+	}
+}
+
+func TestExportFoldedLineNotExported(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	seedLineTip(t, e, main.ID, map[string][]byte{"a.txt": []byte("a\n")})
+	exp, _ := e.CreateLine("exp", main.ID)
+	ch, _ := e.CreateChange(exp.ID, "e")
+	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")})
+	if err := e.FoldLine(exp.ID); err != nil {
+		t.Fatalf("FoldLine: %v", err)
+	}
+	if err := e.Export(); err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	// folded line's branch ref dropped
+	if _, err := e.git.Reference(plumbing.NewBranchReferenceName("exp"), true); err == nil {
+		t.Fatal("refs/heads/exp must not exist for a folded line")
+	}
+	// folded line's change ref dropped (change marked folded)
+	if _, err := e.git.Reference(plumbing.ReferenceName("refs/cairn/change/"+ch.ID), true); err == nil {
+		t.Fatal("refs/cairn/change/<id> must not exist for a folded line's change")
+	}
+	// main still exported and now contains n.txt (the fold fast-forwarded it)
+	if _, err := e.git.Reference(plumbing.NewBranchReferenceName("main"), true); err != nil {
+		t.Fatalf("refs/heads/main missing: %v", err)
+	}
+}

@@ -24,10 +24,11 @@ func (e *Engine) Export() error {
 	return nil
 }
 
-// exportLines projects non-abandoned lines with a tip onto refs/heads/<name>.
+// exportLines projects open lines with a tip onto refs/heads/<name>. Folded and
+// abandoned lines are not projected: a folded line's history lives in its parent.
 func (e *Engine) exportLines() error {
 	rows, err := e.db.Query(
-		`SELECT name, tip_commit FROM line WHERE status != 'abandoned' AND tip_commit != ''`)
+		`SELECT name, tip_commit FROM line WHERE status = 'open' AND tip_commit != ''`)
 	if err != nil {
 		return fmt.Errorf("change.Export: %w", err)
 	}
