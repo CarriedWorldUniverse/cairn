@@ -30,3 +30,9 @@ func TestCLIInitExpressCommit(t *testing.T) {
 		t.Fatalf("no exp folder: %v", err)
 	}
 }
+
+func TestRunUnknownSubcommand(t *testing.T) {
+	if err := run([]string{"bogus"}); err == nil {
+		t.Fatal("expected error for unknown subcommand")
+	}
+}

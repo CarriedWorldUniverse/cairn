@@ -16,6 +16,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
@@ -43,7 +44,7 @@ subcommands:
   status [branch]           report a branch's state (default main)
   tree                      print the line tree
   ls                        list expressed branches
-  resolve <path>            resolve a conflict (--branch <branch>)
+  resolve <branch> <path>   resolve a conflict on a branch
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -95,8 +96,7 @@ func defaultAuthor() string {
 	return "cairn"
 }
 
-// openRepo wires the common --repo/--author flags onto fs and opens the repo.
-// Call after fs.Parse.
+// openRepo opens a Repo from already-parsed flag values.
 func openRepo(repo, author string) (*worktree.Repo, error) {
 	return worktree.Open(repo, author)
 }
@@ -292,8 +292,14 @@ func cmdLs(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	for branch, entry := range r.Ls() {
-		fmt.Printf("%s  %s\n", branch, entry.ChangeID)
+	entries := r.Ls()
+	branches := make([]string, 0, len(entries))
+	for branch := range entries {
+		branches = append(branches, branch)
+	}
+	sort.Strings(branches)
+	for _, branch := range branches {
+		fmt.Printf("%s  %s\n", branch, entries[branch].ChangeID)
 	}
 	return nil
 }
@@ -301,19 +307,20 @@ func cmdLs(args []string) error {
 func cmdResolve(args []string) error {
 	fs := flag.NewFlagSet("resolve", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	branch := fs.String("branch", change.RootLineName, "branch to resolve on")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if fs.NArg() < 1 {
-		return errors.New("path required")
+	if fs.NArg() < 2 {
+		return errors.New("usage: cairn resolve <branch> <path>")
 	}
+	branch := fs.Arg(0)
+	path := fs.Arg(1)
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.Resolve(*branch, fs.Arg(0)))
+	return mapErr(r.Resolve(branch, path))
 }
 
 // mapErr translates change-engine sentinels into operator-facing messages.

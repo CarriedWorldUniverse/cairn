@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -298,6 +299,7 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for name := range r.st.Expressed {
 		expressed = append(expressed, name)
 	}
+	sort.Strings(expressed)
 	return StatusInfo{
 		Branch:    branch,
 		Lineage:   names,
