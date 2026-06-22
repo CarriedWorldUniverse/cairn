@@ -320,17 +320,7 @@ myrepo/
   - `cairn status` (inside a folder) → "you are on `exp-idea/idea2` ← `exp-idea` ← `main`; adopted main@<sha>; N ahead of exp-idea."
   - each expressed folder carries a tiny `.cairn` stamp (line id, parent chain, base commit) so a tool/agent reads "where am I" with **no server call**.
 - **Runs with or without a server.** `cairn init` makes a working repo in a folder with **no origin** (fully local, like `git init`). A remote is optional and can be **either a cairn server** (multi-agent collaboration) **or a plain git remote** (GitHub/GitLab — §6).
-- **CLI verbs:**
-  - `cairn init` — create a local repo (no server, no origin).
-  - `cairn clone <url>` — from a cairn server **or** a standard git URL (§6 import).
-  - `cairn push [remote]` — to a cairn server **or** a standard git remote (§6 push; respects privacy).
-  - `cairn express <branch>` / `cairn unexpress <branch>` — materialise / remove a branch folder (line created off the chosen parent if new; history stays in the store on unexpress).
-  - `cairn commit` — the trigger: (check origin + update parent to latest, if an origin exists) → commit → merge-forward.
-  - `cairn fold <branch>` — explicit merge-back (fast-forward into parent).
-  - `cairn abandon <branch>` — throw the experiment away; parent untouched.
-  - `cairn private <path|commit>` / `cairn disclose <path|commit>` — set/clear folder/file/commit privacy (enforced at the publish boundary; Phase 3).
-  - `cairn tree` / `cairn status` / `cairn tag` — lineage + tagging.
-  - `cairn version` — print the derived version (consumed by CI/publish; never hand-typed). `cairn release` — atomic tag + manifest-stamp + publish to npm/NuGet/PyPI/… (§12).
+- **CLI verbs:** the working-copy lifecycle is `cairn express` / `unexpress` / `commit` / `fold` / `abandon`; the **complete command surface is the authoritative reference in §13.**
 
 **Phase-1 implication (the only thing Phase 1 must honour):** the git-compat export (§6) must make `.git` a clean, plain-git-readable store — lines ⇒ `refs/heads/*`, tags ⇒ `refs/tags/*`, change refs under `refs/cairn/change/*`, lineage recorded — so this layout and the CLI build on top in Phase 2 without reworking the core. No CLI or mount code in Phase 1.
 
@@ -366,7 +356,71 @@ The *same logical version* is published everywhere — no per-registry hand-edit
 
 ---
 
-## 13. Open questions for the plan (small, non-blocking)
+## 13. CLI command reference (complete surface)
+
+**Design rules:**
+- **git-compatible verbs where the concept matches** (`clone`, `commit`, `branch`, `tag`, `log`, `diff`, `status`, `push`, `pull`, `fetch`, `remote`, `config`) — agents/humans already know them. **New verbs only for new concepts** (`express`, `unexpress`, `fold`, `abandon`, `tree`, `op`, `undo`, `private`, `disclose`, `release`).
+- **Tier tags:** ⬤ works **local, no server** · ◐ works **over a plain git origin** · ◯ **needs a cairn server**.
+- Every command is a thin shell over a §7 engine API call (engine = the library).
+- Naming: `cairn --version` = the CLI binary's own version; **`cairn version` = the derived *project* version** (§12).
+
+### Repo & remotes
+- `cairn init [path]` ⬤ — create a local repo (`.git` + change-graph), no origin.
+- `cairn clone <url> [path]` ◐◯ — clone from a cairn server **or** a standard git URL; imports branches→lines, commits→changes, tags→tags (§6); auto-expresses the default branch.
+- `cairn remote add|remove|list|set-url <name> [url]` ⬤ — manage origins (cairn server or git remote).
+- `cairn config <key> [value]` ⬤ — get/set config (incl. `cairn.version` rules, §12).
+
+### Working copy — express/unexpress (§11)
+- `cairn express <branch>` ⬤ — materialise a branch as a flat sibling folder (OverlayFS CoW); creates the line off its parent if new.
+- `cairn unexpress <branch>` ⬤ — remove the folder; line + history stay in the store.
+- `cairn ls` ⬤ — list lines and which are currently expressed.
+
+### Branches / lines
+- `cairn branch <name> [--from <parent>] [--no-express]` ⬤ — create a line off a parent (default parent = current line; expresses it unless `--no-express`). → `CreateLine`.
+- `cairn tree` ⬤ — the line forest with ahead/behind per edge (lineage at a glance). → `GetLineTree`.
+- `cairn status` ⬤ — current line, lineage chain (`idea2 ← exp-idea ← main`), adopted base, ahead/behind, open conflicts, expressed?
+- `cairn fold <branch>` ⬤ — explicit merge-back: fast-forward the parent to this line (rejected if conflicts open). → `FoldLine`.
+- `cairn abandon <branch>` ⬤ — drop the line + its changes; parent untouched. → `AbandonLine`.
+
+### Commit — the convergence trigger (§4)
+- `cairn commit [-m <msg>]` ⬤◐◯ — the trigger: *(if origin: check origin + fast-forward parent to latest)* → snapshot the working folder → merge-forward (adopt parent). → (sync) + `Commit`.
+- `cairn amend [-m <msg>]` ⬤ — reshape the current change in place (re-snapshot, same change_id). *(jj-style; included.)*
+
+### Conflicts (§4 collision path)
+- `cairn conflicts` ⬤ — list open conflict objects on the current line / repo.
+- `cairn conflict show <path>` ⬤ — show the three sides (base / parent / change).
+- `cairn resolve <path> [--using ours|theirs|<file>]` ⬤ — clear a conflict (default: take the edited diff3-marked file). → `ResolveConflict`.
+
+### History, op-log, undo (§3)
+- `cairn log [<line>]` ⬤ — change/commit history of a line.
+- `cairn diff [<a> [<b>]]` ⬤ — diff (working vs base, or between commits/lines).
+- `cairn op log` ⬤ — the operation log (every move). → `GetOperationLog`.
+- `cairn undo` ⬤ — undo the last operation (appends an undo op). → `Undo(last)`.
+- `cairn op restore <op>` ⬤ — restore the whole repo view to a prior operation (jj op-restore).
+
+### Tags & versioning (§12)
+- `cairn tag <name> [<commit>]` ⬤ — create a tag. `cairn tags` ⬤ — list. → `Tag` / `ListTags`.
+- `cairn version` ⬤ — print the **derived** project version (CI consumes this; never hand-typed).
+- `cairn version bump major|minor|patch` ⬤ — record explicit bump intent for the next release.
+- `cairn release [--target npm|nuget|pypi|oci|…] [--dry-run]` ◐◯ — atomic: tag + stamp manifest + publish, with collision / monotonicity / dirty-state guards (§12).
+
+### Sync & publish (remotes)
+- `cairn sync [remote]` ◐◯ — explicit origin check + update-to-latest (what `commit` does automatically).
+- `cairn fetch [remote]` ◐◯ — fetch without integrating.
+- `cairn pull [remote]` ◐◯ — fetch + merge-forward.
+- `cairn push [remote] [branch]` ◐◯ — push to a cairn server **or** standard git remote; **respects privacy** (private bytes never leave; §6).
+
+### Privacy & disclosure (§6 — flag anywhere, *enforced* only by a cairn server)
+- `cairn private <path|commit>` ⬤(flag) ◯(enforce) — flag a folder / file / commit private.
+- `cairn disclose <path|commit>` ◯ — lift an embargo / un-private (advances the public projection).
+- `cairn private ls` ⬤ — list current privacy flags.
+
+### Meta
+- `cairn help [command]` ⬤ · `cairn --version` ⬤ (CLI binary version) · `cairn doctor` ⬤◐◯ (check repo / origin / server health).
+
+---
+
+## 14. Open questions for the plan (small, non-blocking)
 
 - **diff3 library vs hand-rolled** — pin a small reviewed diff3 implementation vs implement directly. Lean toward a vetted small lib, pinned.
 - **Lineage export mechanism** — `Cairn-Parent:` commit trailer (Phase-1 default) vs a dedicated `refs/cairn/lineage/*` namespace so lineage travels to arbitrary plain-git clones. Pin in step 2/9.
