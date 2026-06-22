@@ -107,6 +107,7 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 		return err
 	}
 
+	before := e.viewMap()
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	tx, err := e.db.Begin()
 	if err != nil {
@@ -176,6 +177,9 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.ResolveConflict: commit tx: %w", err)
+	}
+	if err := e.recordOp("resolve", ch.Author, before, e.viewMap()); err != nil {
+		return err
 	}
 	return nil
 }

@@ -33,6 +33,7 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	if err != nil {
 		return Line{}, err
 	}
+	before := e.viewMap()
 	l := Line{
 		ID:         newID(),
 		Name:       name,
@@ -48,6 +49,9 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 		l.ID, l.Name, l.ParentLine, l.TipCommit, l.BaseCommit, l.Status, now, now)
 	if err != nil {
 		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
+	}
+	if err := e.recordOp("branch", "system", before, e.viewMap()); err != nil {
+		return Line{}, err
 	}
 	return l, nil
 }
