@@ -20,10 +20,11 @@ type Change struct {
 	HasConflict bool
 }
 
-// CommitResult is the outcome of a Commit. A later task adds a Conflicts field
-// when merge-forward lands; this snapshot-only result reports just the head.
+// CommitResult is the outcome of a Commit: the final head commit (after merge-
+// forward) and any per-path conflicts recorded while adopting the parent line.
 type CommitResult struct {
 	HeadCommit string
+	Conflicts  []Conflict
 }
 
 // reverseHexAlphabet renders nibbles in jj-style reverse hex so change-ids are
@@ -96,22 +97,52 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 	var parents []string
 	if ch.HeadCommit != "" {
 		parents = []string{ch.HeadCommit}
+	} else {
+		// First snapshot on this change: parent it on the line's current tip so
+		// the snapshot shares git ancestry with the fork point. This gives
+		// merge-forward a real common ancestor (mergeBase) with the parent line,
+		// so a change that didn't touch a file the parent kept unchanged adopts
+		// cleanly instead of colliding against an empty base.
+		if line, lerr := e.lineByID(ch.LineID); lerr == nil && line.TipCommit != "" {
+			parents = []string{line.TipCommit}
+		}
 	}
 	head, err := e.writeCommit(tree.String(), ch.ID, ch.Author, parents)
 	if err != nil {
 		return CommitResult{}, err
 	}
+
+	// Rebase the snapshot onto the line's parent-line tip (adopt the parent),
+	// recording any conflicts as data. If the merge produced a tree different
+	// from the snapshot's own, re-commit on it so the change's head reflects the
+	// adopted state. (A root line, or one whose merge changed nothing, keeps the
+	// snapshot as head.)
+	merged, conflicts, err := e.mergeForward(ch.ID, head)
+	if err != nil {
+		return CommitResult{}, err
+	}
+	if merged != "" && merged != tree.String() {
+		head, err = e.writeCommit(merged, ch.ID, ch.Author, []string{head})
+		if err != nil {
+			return CommitResult{}, err
+		}
+	}
+	hasConflict := 0
+	if len(conflicts) > 0 {
+		hasConflict = 1
+	}
+
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	if _, err := e.db.Exec(
-		`UPDATE change SET head_commit=?, updated_at=? WHERE id=?`,
-		head, ts, ch.ID); err != nil {
+		`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`,
+		head, hasConflict, ts, ch.ID); err != nil {
 		return CommitResult{}, fmt.Errorf("change.Commit: %w", err)
 	}
-	// advance the owning line's tip to this change's new head.
+	// advance the owning line's tip to this change's FINAL (post-merge) head.
 	// Phase-1 simplification: with multiple concurrent changes on one line, the
 	// tip simply reflects the most recent commit.
 	if _, err := e.db.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, ch.LineID); err != nil {
 		return CommitResult{}, err
 	}
-	return CommitResult{HeadCommit: head}, nil
+	return CommitResult{HeadCommit: head, Conflicts: conflicts}, nil
 }

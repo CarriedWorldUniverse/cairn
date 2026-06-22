@@ -154,6 +154,39 @@ func (e *Engine) writeCommit(treeSha, changeID, author string, parents []string)
 	return h.String(), nil
 }
 
+// commitTree returns the hex tree hash of the given commit.
+func (e *Engine) commitTree(commitSha string) (string, error) {
+	c, err := e.git.CommitObject(plumbing.NewHash(commitSha))
+	if err != nil {
+		return "", fmt.Errorf("change.commitTree: %w", err)
+	}
+	return c.TreeHash.String(), nil
+}
+
+// mergeBase returns the hex sha of the best common ancestor of commits a and b,
+// or "" if either input is empty or no common ancestor exists.
+func (e *Engine) mergeBase(a, b string) (string, error) {
+	if a == "" || b == "" {
+		return "", nil
+	}
+	ca, err := e.git.CommitObject(plumbing.NewHash(a))
+	if err != nil {
+		return "", fmt.Errorf("change.mergeBase: commit %s: %w", a, err)
+	}
+	cb, err := e.git.CommitObject(plumbing.NewHash(b))
+	if err != nil {
+		return "", fmt.Errorf("change.mergeBase: commit %s: %w", b, err)
+	}
+	bases, err := ca.MergeBase(cb)
+	if err != nil {
+		return "", fmt.Errorf("change.mergeBase: %w", err)
+	}
+	if len(bases) == 0 {
+		return "", nil
+	}
+	return bases[0].Hash.String(), nil
+}
+
 // readTree reads a tree (recursively) into a flat path->bytes map keyed by the
 // full "/"-separated path of each file.
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
