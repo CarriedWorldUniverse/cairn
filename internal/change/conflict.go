@@ -107,8 +107,34 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 		return err
 	}
 
+	ts := e.now().UTC().Format(time.RFC3339Nano)
+	tx, err := e.db.Begin()
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// Gate everything on the conflict existing: mark it resolved first, and bail
+	// out (rolling back, writing no git objects) if there was nothing open to
+	// resolve. This keeps the ErrNotFound path side-effect-free.
+	res, err := tx.Exec(
+		`UPDATE conflict SET status='resolved', resolved_at=? WHERE change_id=? AND path=? AND status='open'`,
+		ts, changeID, path)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+
 	// Build the new tip tree/commit with the resolved content. These go-git
-	// writes are content-addressed and idempotent, so they stay outside the tx.
+	// writes are content-addressed and idempotent, so they are safe to do
+	// mid-transaction (they are not DB ops); doing them after the existence
+	// check means no dangling objects on the ErrNotFound path above.
 	tree, err := e.commitTree(ch.HeadCommit)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
@@ -125,27 +151,6 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 	newHead, err := e.writeCommit(newTree.String(), changeID, ch.Author, []string{ch.HeadCommit})
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
-	}
-
-	ts := e.now().UTC().Format(time.RFC3339Nano)
-	tx, err := e.db.Begin()
-	if err != nil {
-		return fmt.Errorf("change.ResolveConflict: begin tx: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	res, err := tx.Exec(
-		`UPDATE conflict SET status='resolved', resolved_at=? WHERE change_id=? AND path=? AND status='open'`,
-		ts, changeID, path)
-	if err != nil {
-		return fmt.Errorf("change.ResolveConflict: %w", err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("change.ResolveConflict: %w", err)
-	}
-	if n == 0 {
-		return ErrNotFound
 	}
 
 	var remaining int
