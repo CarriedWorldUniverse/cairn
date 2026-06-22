@@ -126,6 +126,34 @@ func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
 	return h, nil
 }
 
+// writeCommit stores a commit object snapshotting treeSha for changeID and
+// returns its hex sha. Author and committer share a single timestamp (e.now())
+// so identical inputs hash identically.
+func (e *Engine) writeCommit(treeSha, changeID, author string, parents []string) (string, error) {
+	when := e.now()
+	sig := object.Signature{Name: author, When: when}
+	parentHashes := make([]plumbing.Hash, 0, len(parents))
+	for _, p := range parents {
+		parentHashes = append(parentHashes, plumbing.NewHash(p))
+	}
+	c := &object.Commit{
+		Author:       sig,
+		Committer:    sig,
+		Message:      "snapshot\n\nChange-Id: " + changeID + "\n",
+		TreeHash:     plumbing.NewHash(treeSha),
+		ParentHashes: parentHashes,
+	}
+	obj := e.git.Storer.NewEncodedObject()
+	if err := c.Encode(obj); err != nil {
+		return "", fmt.Errorf("change.writeCommit: encode: %w", err)
+	}
+	h, err := e.git.Storer.SetEncodedObject(obj)
+	if err != nil {
+		return "", fmt.Errorf("change.writeCommit: store: %w", err)
+	}
+	return h.String(), nil
+}
+
 // readTree reads a tree (recursively) into a flat path->bytes map keyed by the
 // full "/"-separated path of each file.
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
