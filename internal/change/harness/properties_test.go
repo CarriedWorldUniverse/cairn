@@ -24,9 +24,9 @@ func newEngine(t *testing.T) *change.Engine {
 	return e
 }
 
-// seedMain creates a change on main, commits files, and returns main's new tip.
+// seedMain creates a change on main and commits files, advancing main's tip.
 // Commit advances the owning line's tip, so this seeds main's state directly.
-func seedMain(t *testing.T, e *change.Engine, files map[string][]byte) string {
+func seedMain(t *testing.T, e *change.Engine, files map[string][]byte) {
 	t.Helper()
 	main, err := e.LineByName("main")
 	if err != nil {
@@ -39,8 +39,6 @@ func seedMain(t *testing.T, e *change.Engine, files map[string][]byte) string {
 	if _, err := e.Commit(ch.ID, files); err != nil {
 		t.Fatalf("seed Commit: %v", err)
 	}
-	main, _ = e.LineByName("main")
-	return main.TipCommit
 }
 
 // foldAll folds every non-root open line into its parent, deepest-first, so a
@@ -261,7 +259,10 @@ func TestProperty4_FastForwardFold(t *testing.T) {
 				t.Fatalf("seed %d: FoldLine: %v", seed, err)
 			}
 			main, _ = e.LineByName("main")
-			files, _ := e.Files(main.TipCommit)
+			files, err := e.Files(main.TipCommit)
+			if err != nil {
+				t.Fatalf("seed %d: Files: %v", seed, err)
+			}
 			if !bytes.Equal(files["n.txt"], []byte("new\n")) {
 				t.Fatalf("seed %d: fold did not advance parent tip with n.txt: %v", seed, keys(files))
 			}
@@ -279,24 +280,42 @@ func TestProperty5_AbandonIsolation(t *testing.T) {
 			main, _ := e.LineByName("main")
 			seedMain(t, e, map[string][]byte{"f.txt": []byte("base\n")})
 			mainTip := func() string { l, _ := e.LineByName("main"); return l.TipCommit }
+			// Pre-advance tip, captured at the shared base where exp forks.
 			before := mainTip()
 
+			// exp forks at the shared base, BEFORE main advances, so its later edit
+			// genuinely conflicts with main's advance.
 			exp, _ := e.CreateLine("exp", main.ID)
-			// advance main so exp's edit genuinely conflicts.
+
+			// advance main: base -> X.
 			mc, _ := e.CreateChange(main.ID, "m")
-			e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")})
+			if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}); err != nil {
+				t.Fatalf("seed %d: advance main: %v", seed, err)
+			}
+			// main must have actually moved off the fork point.
+			if mainTip() == before {
+				t.Fatalf("seed %d: main did not advance off the fork point", seed)
+			}
 			beforeAbandon := mainTip()
 
+			// exp edits the same path: base -> WILD. merge-forward sees (base,X,WILD)
+			// and must record a conflict — otherwise the abandon scenario is vacuous.
 			ec, _ := e.CreateChange(exp.ID, "e")
-			e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("WILD\n")})
+			r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("WILD\n")})
+			if err != nil {
+				t.Fatalf("seed %d: wild commit: %v", seed, err)
+			}
+			if len(r.Conflicts) == 0 {
+				t.Fatalf("seed %d: setup expected a conflict (main must have advanced before exp committed)", seed)
+			}
 
 			if err := e.AbandonLine(exp.ID); err != nil {
 				t.Fatalf("seed %d: AbandonLine: %v", seed, err)
 			}
+			// Abandon leaves main byte-identical: its tip is unchanged.
 			if got := mainTip(); got != beforeAbandon {
 				t.Fatalf("seed %d: main tip changed by abandon: %s != %s", seed, got, beforeAbandon)
 			}
-			_ = before
 		})
 	}
 }
@@ -499,7 +518,10 @@ func TestProperty8_ResolutionClosesLoop(t *testing.T) {
 				t.Fatalf("seed %d: FoldLine after resolve: %v", seed, err)
 			}
 			main, _ = e.LineByName("main")
-			files, _ := e.Files(main.TipCommit)
+			files, err := e.Files(main.TipCommit)
+			if err != nil {
+				t.Fatalf("seed %d: Files: %v", seed, err)
+			}
 			if !bytes.Equal(files["f.txt"], resolved) {
 				t.Fatalf("seed %d: parent tip f.txt = %q, want %q", seed, files["f.txt"], resolved)
 			}
