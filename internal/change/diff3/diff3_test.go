@@ -103,3 +103,82 @@ func TestMerge3OnlyOursChanges(t *testing.T) {
 		t.Fatalf("merged = %q, want %q", strings.Join(got.Merged, ""), want)
 	}
 }
+
+func TestMerge3OnlyTheirsChanges(t *testing.T) {
+	base := lines("a\nb\nc\n")
+	ours := lines("a\nb\nc\n")   // unchanged
+	theirs := lines("a\nB\nc\n") // only theirs modifies b
+	got := Merge3(base, ours, theirs)
+	if got.Conflict {
+		t.Fatalf("expected no conflict, got conflict; merged=%q", got.Merged)
+	}
+	if strings.Join(got.Merged, "") != "a\nB\nc\n" {
+		t.Fatalf("merged = %q, want a\\nB\\nc\\n", strings.Join(got.Merged, ""))
+	}
+}
+
+func TestMerge3ConflictBothInsertAtSamePosition(t *testing.T) {
+	base := lines("a\nb\n")
+	ours := lines("X\na\nb\n")   // insert X before a
+	theirs := lines("Y\na\nb\n") // insert Y before a
+	if got := Merge3(base, ours, theirs); !got.Conflict {
+		t.Fatal("conflicting inserts at same position must conflict")
+	}
+}
+
+func TestMerge3IdenticalInsertsAtSamePositionNoConflict(t *testing.T) {
+	base := lines("a\nb\n")
+	ours := lines("X\na\nb\n")
+	theirs := lines("X\na\nb\n")
+	got := Merge3(base, ours, theirs)
+	if got.Conflict {
+		t.Fatalf("identical inserts must not conflict; merged=%q", got.Merged)
+	}
+	if strings.Join(got.Merged, "") != "X\na\nb\n" {
+		t.Fatalf("merged = %q, want X\\na\\nb\\n", strings.Join(got.Merged, ""))
+	}
+}
+
+func TestMerge3CascadingOverlapIsConflict(t *testing.T) {
+	// ours replaces lines 0-1, theirs replaces lines 1-2 — they share line 1,
+	// so they must land in a single conflict block, not split cleanly.
+	base := lines("a\nb\nc\nd\n")
+	ours := lines("A\nB\nc\nd\n")
+	theirs := lines("a\nB2\nC\nd\n")
+	got := Merge3(base, ours, theirs)
+	if !got.Conflict {
+		t.Fatal("overlapping cross-side regions must conflict")
+	}
+	if !strings.Contains(strings.Join(got.Merged, ""), "d\n") {
+		t.Fatalf("clean trailing line lost: %q", strings.Join(got.Merged, ""))
+	}
+}
+
+func TestMerge3EmptyBaseConflict(t *testing.T) {
+	got := Merge3([]string{}, lines("X\n"), lines("Y\n"))
+	if !got.Conflict {
+		t.Fatal("both sides adding to empty base with different content must conflict")
+	}
+}
+
+func TestMerge3EmptyBaseIdentical(t *testing.T) {
+	got := Merge3([]string{}, lines("X\n"), lines("X\n"))
+	if got.Conflict {
+		t.Fatalf("identical adds to empty base must not conflict; merged=%q", got.Merged)
+	}
+}
+
+func TestMerge3NoTrailingNewline(t *testing.T) {
+	// content whose last line has no trailing newline (SplitAfter yields a final
+	// element without "\n"); a clean non-overlapping merge must still work.
+	base := lines("a\nb")   // ["a\n","b"]
+	ours := lines("A\nb")   // change first line
+	theirs := lines("a\nB") // change last (newline-less) line
+	got := Merge3(base, ours, theirs)
+	if got.Conflict {
+		t.Fatalf("expected clean merge, got conflict; merged=%q", got.Merged)
+	}
+	if strings.Join(got.Merged, "") != "A\nB" {
+		t.Fatalf("merged = %q, want A\\nB", strings.Join(got.Merged, ""))
+	}
+}

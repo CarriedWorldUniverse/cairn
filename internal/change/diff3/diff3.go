@@ -51,6 +51,9 @@ func changedRegions(base, side []string) []region {
 // region that starts there seeds it. Once the chunk has content, a region joins
 // only if its base range overlaps (Start < chunkEnd); a region that merely
 // abuts the chunk end starts a new chunk so disjoint edits merge cleanly.
+//
+// Invariant: next is the FIXED chunk start, captured before chunk-gathering
+// begins; only chunkEnd grows as overlapping regions are pulled in.
 func regionJoins(r region, next, chunkEnd int) bool {
 	if r.Start > chunkEnd {
 		return false
