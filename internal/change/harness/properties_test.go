@@ -3,6 +3,7 @@ package harness
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
@@ -184,6 +185,17 @@ func TestProperty2_DeterministicConflicts(t *testing.T) {
 			open, _ := e.Conflicts(ec.ID)
 			if len(open) != 1 || open[0].Path != "f.txt" {
 				t.Fatalf("seed %d: open conflicts = %+v, want one on f.txt", seed, open)
+			}
+			// The conflict must capture THREE genuinely distinct sides, not a
+			// degenerate record: base="base", parent/ours="X", change/theirs="Y"
+			// are three different contents, so their blob shas must be non-empty
+			// and pairwise distinct; the conflict-marked blob must also be set.
+			c := open[0]
+			if c.BaseBlob == "" || c.ParentBlob == "" || c.ChangeBlob == "" || c.MarkedBlob == "" {
+				t.Fatalf("seed %d: conflict has empty side blob: %+v", seed, c)
+			}
+			if c.BaseBlob == c.ParentBlob || c.BaseBlob == c.ChangeBlob || c.ParentBlob == c.ChangeBlob {
+				t.Fatalf("seed %d: conflict sides not distinct: %+v", seed, c)
 			}
 			ch, _ := e.GetChange(ec.ID)
 			if !ch.HasConflict {
@@ -385,6 +397,68 @@ func TestProperty7_OpLogReplayUndo(t *testing.T) {
 			ops, _ = e.OperationLog()
 			if len(ops) == 0 || ops[len(ops)-1].OpType != "undo" {
 				t.Fatalf("seed %d: last op = %+v, want undo", seed, lastOp(ops))
+			}
+		})
+	}
+}
+
+// Property 7b — Op-log replay consistency. The op-log stores a before/after
+// snapshot of the ref-map per op, so replaying the recorded views from empty is
+// just re-applying each op's view_after in order. This pins two invariants that
+// make that replay faithful:
+//   - chain continuity: each op's ViewBefore equals the previous op's ViewAfter
+//     (the world the next op saw is the world the previous op left), so the
+//     snapshots form an unbroken chain.
+//   - terminal consistency: the last op's ViewAfter equals the engine's current
+//     ref-map, so replaying the recorded view_afters in order terminates at the
+//     real present state.
+//
+// Together: replaying the recorded views from empty reproduces the final ref-map.
+func TestProperty7b_OpLogReplayConsistency(t *testing.T) {
+	for _, seed := range seeds {
+		t.Run(fmt.Sprintf("seed=%d", seed), func(t *testing.T) {
+			_ = seed
+			e := newEngine(t)
+			main, _ := e.LineByName("main")
+			seedMain(t, e, map[string][]byte{"a.txt": []byte("a\n")})
+
+			// A couple more commits on main to build a multi-op chain.
+			c1, _ := e.CreateChange(main.ID, "m1")
+			if _, err := e.Commit(c1.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n")}); err != nil {
+				t.Fatalf("seed %d: commit b: %v", seed, err)
+			}
+			c2, _ := e.CreateChange(main.ID, "m2")
+			if _, err := e.Commit(c2.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n"), "c.txt": []byte("c\n")}); err != nil {
+				t.Fatalf("seed %d: commit c: %v", seed, err)
+			}
+
+			ops, err := e.OperationLog()
+			if err != nil {
+				t.Fatalf("seed %d: OperationLog: %v", seed, err)
+			}
+			if len(ops) < 2 {
+				t.Fatalf("seed %d: expected a multi-op chain, got %d ops", seed, len(ops))
+			}
+
+			// Chain continuity: each op saw the world the previous op left.
+			for i := 1; i < len(ops); i++ {
+				if !reflect.DeepEqual(ops[i].ViewBefore, ops[i-1].ViewAfter) {
+					t.Fatalf("seed %d: op-log chain broken at %d: ViewBefore=%v != prev ViewAfter=%v",
+						seed, i, ops[i].ViewBefore, ops[i-1].ViewAfter)
+				}
+			}
+
+			// Terminal consistency: the last recorded view_after is the present
+			// ref-map. Reconstruct the present main tip and compare. (viewMap is
+			// unexported; LineByName gives the authoritative current tip.)
+			last := ops[len(ops)-1].ViewAfter
+			curMain, err := e.LineByName("main")
+			if err != nil {
+				t.Fatalf("seed %d: LineByName(main): %v", seed, err)
+			}
+			if last["main"] != curMain.TipCommit {
+				t.Fatalf("seed %d: last op ViewAfter[main]=%q != current main tip %q",
+					seed, last["main"], curMain.TipCommit)
 			}
 		})
 	}
