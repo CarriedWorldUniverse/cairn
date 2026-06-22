@@ -13,7 +13,7 @@ Three pieces. **cairn** is the *convergence engine*: it owns a shared **change-g
 **Decisions locked in brainstorming (2026-06-22):**
 
 1. **Collision model = conflicts-as-data (the jj model).** Both edits land; overlap becomes a stored conflict object resolvable later, anywhere; no merge day.
-2. **Convergence is commit-triggered — no watcher.** All convergence runs as part of the **commit** action. **Merge-forward (a branch adopts its parent) runs on every commit**, so branches never drift and conflicts resolve incrementally. **Merge-back (fold into the parent) is explicit** (`cairn fold`, itself commit-triggered) — never automatic — so a broken experiment can be **abandoned** with zero effect on its parent.
+2. **Convergence is commit-triggered — no watcher.** All convergence runs as part of the **commit** action (and branch creation). **When an origin exists, a commit/branch first checks origin and updates the local parent line to the latest**, then **merge-forward (the branch adopts its parent) runs** — so you always work against the newest state and drift can't accumulate. **Merge-back (fold into the parent) is explicit** (`cairn fold`, itself commit-triggered) — never automatic — so a broken experiment can be **abandoned** with zero effect on its parent. With **no origin** it's fully local (local-first); if the origin is unreachable, the commit still succeeds locally and syncs on reconnect (best-effort, never a blocker).
 3. **Branches & tags stay first-class.** A **branch** is a named *line* off a parent; lines form a **tree** via a parent pointer, so branch-of-a-branch = depth ≥ 2 and "where your source is" = your path from the root. **Tags** are first-class version markers (real `refs/tags`, git-exported).
 4. **Access model = CoW mounts via porter** (Phase 2), surfaced as branch-named folders you `express`/`unexpress` via the CLI. Agents keep their existing toolchain unchanged.
 5. **Storage core = build on go-git** with a change-id + operation-log layer on top — exactly how jj works (its default backend *is* git). Keeps git-compat for free; reuses cairn's go-git core and frontends.
@@ -49,6 +49,7 @@ Phases 2–5 are sketched in §10 but are **out of scope for this spec**.
 - porter CoW mounts + the `express`/`unexpress` CLI (Phase 2).
 - the `cairn clone <git-url>` / `cairn push` **CLI commands** — the import/export *mapping* is defined in §6; wrapping it as CLI is Phase 2.
 - **privacy/disclosure enforcement** (folder/file/commit-level withholding) — the export/push path in §6 reserves the hook; enforcement lands with the projection layer (Phase 3).
+- **commit-time origin sync** (check origin + update-to-latest on commit/branch) — needs a remote; lands with the CLI/remote layer (Phase 2). The local merge-forward it feeds is Phase 1.
 - ledger conflict items + semantic projection (Phase 3).
 - resolution UX, auto-resolver agents, web UI (Phase 4).
 - **version-number derivation (GitVersion-style)** — tags ship in Phase 1, derivation is Phase 5 (§10).
@@ -150,7 +151,7 @@ operation                        -- append-only op-log
 
 **Branch & experiment (the core workflow):**
 1. `CreateLine(repo, name="exp/idea", parent="main")` → `line_id`, based on `main`'s current tip.
-2. Agent edits and **commits** on the line: `Commit(change_id, tree)`. Each commit records the work **and merges `main` forward** into the branch (adopts the parent's latest). Non-overlapping → clean; overlapping → conflict objects, surfaced and resolvable *now*, not saved up.
+2. Agent edits and **commits** on the line: `Commit(change_id, tree)`. Each commit (if an origin exists) **first checks origin and fast-forwards the local parent to the latest**, then records the work **and merges `main` forward** into the branch (adopts the parent's latest). Non-overlapping → clean; overlapping → conflict objects, surfaced and resolvable *now*, not saved up.
 3. The branch stays continuously current with `main` simply by committing — no separate "pull"/"rebase" step, no watcher.
 4a. **Idea works:** `FoldLine("exp/idea")` → because the branch has already adopted `main`, this is a **fast-forward** of `main` to the branch tip. No merge-back storm.
 4b. **Idea is broken:** `AbandonLine("exp/idea")` → the line and its changes vanish; `main` is untouched. Zero blast radius.
@@ -288,7 +289,7 @@ Steps 1–4 are foundational and can land first; 5–9 build on them; 10 is the 
 
 ## 10. Later phases (sketch — NOT this spec)
 
-- **Phase 2 — porter CoW mounts + the CLI working-copy model.** Branch-named folders backed by **OverlayFS** (shared lower + per-branch upper; unchanged files cost zero per-branch bytes — §11), `express`/`unexpress`, `cairn commit` (CLI verb or a git post-commit hook) as the commit trigger, and **`cairn clone`/`push` against standard git remotes** (§6) — the CLI runs **fully local with no server** (the engine is embedded, §1.11). No watcher service. Deliverable: two real agents editing on dMon, converging with no merge day. **See §11.** porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge).
+- **Phase 2 — porter CoW mounts + the CLI working-copy model.** Branch-named folders backed by **OverlayFS** (shared lower + per-branch upper; unchanged files cost zero per-branch bytes — §11), `express`/`unexpress`, `cairn commit` (CLI verb or a git post-commit hook) as the commit trigger — which, **when an origin is configured, checks origin and updates the parent to latest before merge-forward** — and **`cairn clone`/`push` against standard git remotes** (§6). The CLI runs **fully local with no server** (the engine is embedded, §1.11). No watcher service. Deliverable: two real agents editing on dMon, converging with no merge day. **See §11.** porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge).
 - **Phase 3 — ledger conflict items + semantic projection + privacy/disclosure.** Conflict objects → ledger items; micro-commit noise → clean semantic "change" history via the projection engine. **Folder/file/commit-level privacy flags + the withholding filter + `Disclose`** land here (the delayed-public-projection mechanism, NEX-25, at fine granularity), wired into the §6 publish boundary.
 - **Phase 4 — resolution UX + auto-resolver agents + git-export polish.** Designated resolver agents clear conflict objects; web UI surfaces lines/changes/conflicts/lineage; rename-aware merge.
 - **Phase 5 — version derivation tooling (GitVersion-style).** Built-in semantic-version derivation from tags + graph distance + branch/line conventions: configurable increment rules, pre-release/build metadata, CI-consumable output. (Tags ship in Phase 1; this is the *derivation* layer on top.)
@@ -323,7 +324,7 @@ myrepo/
   - `cairn clone <url>` — from a cairn server **or** a standard git URL (§6 import).
   - `cairn push [remote]` — to a cairn server **or** a standard git remote (§6 push; respects privacy).
   - `cairn express <branch>` / `cairn unexpress <branch>` — materialise / remove a branch folder (line created off the chosen parent if new; history stays in the store on unexpress).
-  - `cairn commit` — commit + merge-forward (the trigger).
+  - `cairn commit` — the trigger: (check origin + update parent to latest, if an origin exists) → commit → merge-forward.
   - `cairn fold <branch>` — explicit merge-back (fast-forward into parent).
   - `cairn abandon <branch>` — throw the experiment away; parent untouched.
   - `cairn private <path|commit>` / `cairn disclose <path|commit>` — set/clear folder/file/commit privacy (enforced at the publish boundary; Phase 3).
@@ -346,3 +347,4 @@ myrepo/
 - **import parent inference** — when cloning a plain git repo, how to assign each branch's parent line (default: root) — by merge-base heuristic vs flat-off-root. Pin with the Phase-2 `cairn clone`.
 - **push fidelity** — exactly which cairn metadata rides in `refs/cairn/*` + trailers on push to a plain git remote (lineage, change-ids — yes; op-log — local-by-default like jj). Confirm before Phase-2 push.
 - **privacy enforcement semantics** — private = *withheld from public projection/push* (disclosure/embargo, the primary meaning) and/or *read-access-scoped per identity* (herald-gated). Pin with the Phase-3 projection/privacy work; the §6 hook must not preclude either.
+- **commit-time origin sync on unreachable origin** — default = commit succeeds locally + sync-on-reconnect (best-effort, never blocks). Confirm vs a strict "must reach origin" mode for high-consistency repos. Pin with the Phase-2 remote layer.
