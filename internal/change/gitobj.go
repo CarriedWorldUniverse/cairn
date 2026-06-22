@@ -131,7 +131,7 @@ func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
 // so identical inputs hash identically.
 func (e *Engine) writeCommit(treeSha, changeID, author string, parents []string) (string, error) {
 	when := e.now()
-	sig := object.Signature{Name: author, When: when}
+	sig := object.Signature{Name: author, Email: author + "@cairn", When: when}
 	parentHashes := make([]plumbing.Hash, 0, len(parents))
 	for _, p := range parents {
 		parentHashes = append(parentHashes, plumbing.NewHash(p))

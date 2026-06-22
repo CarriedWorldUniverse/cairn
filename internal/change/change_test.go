@@ -1,6 +1,7 @@
 package change
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -32,5 +33,26 @@ func TestCommitAdvancesHeadStableChangeID(t *testing.T) {
 	}
 	if got.HeadCommit != r2.HeadCommit {
 		t.Fatalf("stored head %s != last commit %s", got.HeadCommit, r2.HeadCommit)
+	}
+}
+
+func TestGetChangeNotFound(t *testing.T) {
+	e := newTestEngine(t)
+	if _, err := e.GetChange("znotarealchangeid"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("GetChange unknown id: got %v, want ErrNotFound", err)
+	}
+}
+
+func TestNewChangeIDUnique(t *testing.T) {
+	seen := make(map[string]bool, 100)
+	for i := 0; i < 100; i++ {
+		id := newChangeID()
+		if seen[id] {
+			t.Fatalf("duplicate change_id after %d calls: %s", i, id)
+		}
+		seen[id] = true
+		if !strings.HasPrefix(id, "z") {
+			t.Fatalf("id %q missing z prefix", id)
+		}
 	}
 }
