@@ -8,16 +8,17 @@
 
 ## 0. The vision in one paragraph (so Phase 1 has a frame)
 
-Three pieces. **cairn** is the *convergence engine*: it owns a shared **change-graph** organised into **lines** (branches). Each agent's work is a *change* (a stable id, continuously snapshotted) on a line; cairn runs **continuous auto-rebase** so every line continuously **adopts the changes on its parent line**, and where edits overlap it writes a **conflict object** *into the change* instead of failing — nobody is blocked. Because a branch is always current with its parent, **"merge-back" degrades to a fast-forward** (the conflicts were already resolved, incrementally, as the work happened); a broken experiment is simply **abandoned** with zero effect on the parent. An **operation log** records every move so anything is undoable/replayable. **porter** (Phase 2) gives each agent a **copy-on-write mount** of a line so agents edit normal files with normal tools and porter streams continuous snapshots into cairn — killing worktrees. **ledger** (Phase 3) is where conflict objects and *semantic* changes surface as tracked items, reusing cairn's projection engine. Git stays a **first-class export** throughout: lines ⇒ branches, changes ⇒ commits, plus real **tags** — so `git clone`/`push` and cairn's existing SSH/HTTP frontends keep working.
+Three pieces. **cairn** is the *convergence engine*: it owns a shared **change-graph** organised into **lines** (branches) that form a tree via a parent pointer. Each agent's work is a *change* (a stable id) on a line, recorded by a **commit**. **The commit is the only convergence trigger — there is no watcher service.** On every commit the branch **merges its parent forward** (adopts the parent's latest work) so branches never drift; where edits overlap, cairn writes a **conflict object** *into the change* instead of failing — nobody is blocked. Folding a branch **back** into its parent is a separate, **explicit** act (`cairn fold`) — never automatic — so a broken experiment is simply **abandoned** with zero effect on its parent. Because a branch has been adopting its parent all along, fold-back is a **fast-forward**: the conflicts were already resolved, incrementally, at commit time. An **operation log** records every move so anything is undoable/replayable. **porter** (Phase 2) gives each agent a **copy-on-write mount** of a line, surfaced via the CLI as branch-named folders you `express`/`unexpress` on demand — agents edit normal files with normal tools. **ledger** (Phase 3) is where conflict objects and *semantic* changes surface as tracked items. Git stays a **first-class export** throughout: lines ⇒ branches, changes ⇒ commits, plus real **tags** — so `git clone`/`push` and cairn's existing SSH/HTTP frontends keep working.
 
 **Decisions locked in brainstorming (2026-06-22):**
 
-1. **Collision model = conflicts-as-data + continuous auto-rebase (the jj model).** Both edits land; overlap becomes a stored conflict object resolvable later, anywhere; no merge day.
-2. **Branches & tags stay first-class.** A **branch** is a named experiment *line* off a parent; it **continuously adopts** its parent's changes (forward auto-rebase), so merge-back is resolved incrementally and degrades to a fast-forward — and a broken experiment is **abandoned** with zero effect on primary. **Tags** are first-class version markers (real `refs/tags`, git-exported).
-3. **Access model = CoW mounts via porter** (Phase 2). Agents keep their existing toolchain unchanged.
-4. **Storage core = build on go-git** with a change-id + operation-log layer on top — exactly how jj works (its default backend *is* git). Keeps git-compat for free; reuses cairn's go-git core and frontends.
-5. **Version derivation tooling (GitVersion-style) is a dedicated later phase.** Phase 1 ships **tags only**; automatic semver derivation from tags + graph distance + branch is specced separately later.
-6. **First build = Phase 1, the convergence core** (incl. lines/branches + tags), proven with a concurrency test harness — no porter, no ledger needed to validate.
+1. **Collision model = conflicts-as-data (the jj model).** Both edits land; overlap becomes a stored conflict object resolvable later, anywhere; no merge day.
+2. **Convergence is commit-triggered — no watcher.** All convergence runs as part of the **commit** action. **Merge-forward (a branch adopts its parent) runs on every commit**, so branches never drift and conflicts resolve incrementally. **Merge-back (fold into the parent) is explicit** (`cairn fold`, itself commit-triggered) — never automatic — so a broken experiment can be **abandoned** with zero effect on its parent.
+3. **Branches & tags stay first-class.** A **branch** is a named *line* off a parent; lines form a **tree** via a parent pointer, so branch-of-a-branch = depth ≥ 2 and "where your source is" = your path from the root. **Tags** are first-class version markers (real `refs/tags`, git-exported).
+4. **Access model = CoW mounts via porter** (Phase 2), surfaced as branch-named folders you `express`/`unexpress` via the CLI. Agents keep their existing toolchain unchanged.
+5. **Storage core = build on go-git** with a change-id + operation-log layer on top — exactly how jj works (its default backend *is* git). Keeps git-compat for free; reuses cairn's go-git core and frontends.
+6. **Version derivation tooling (GitVersion-style) is a dedicated later phase.** Phase 1 ships **tags only**; automatic semver derivation from tags + graph distance + branch is specced separately later.
+7. **First build = Phase 1, the convergence core** (incl. lines/branches + tags + lineage), proven with a concurrency test harness — no porter, no ledger needed to validate.
 
 Phases 2–5 are sketched in §10 but are **out of scope for this spec**.
 
@@ -27,25 +28,26 @@ Phases 2–5 are sketched in §10 but are **out of scope for this spec**.
 
 **IN:**
 
-1. **Line (branch)** abstraction — a named line of work with a **parent line** (primary/`main` is the root line, parent = none). A line continuously rebases its open changes onto its parent's tip ("adopts" the parent).
-2. **Change** abstraction — a stable `change_id` independent of content, on a line, carrying a moving series of snapshots (git commits). The visible commit advances; the change_id does not. (jj's change vs commit distinction.)
-3. **Continuous snapshot** — `Snapshot(change_id, tree)` records a new commit on the change and triggers auto-rebase. In Phase 1 the tree is supplied directly by the caller (the test harness; later, porter).
-4. **Continuous auto-rebase / parent-adoption** — when a parent line advances, every child line's open changes are rebased onto the new parent tip via three-way merge. Clean → updated cleanly. Overlap → a **conflict object** is materialised and the change carries a *conflicted* (but valid) commit. This is what makes merge-back a fast-forward.
-5. **Conflict object** — structured record of an overlap: `change_id`, conflicting paths, the three sides (base / parent / change) materialised as diff3-marked blobs, status `open|resolved`. The change is never blocked; the line is simply not folded into its parent while a conflict is open.
-6. **Fold-up & abandon** — folding a clean line into its parent is a **fast-forward** (it's already adopted the parent). **Abandon** drops a line and all its changes with **zero effect on the parent** — the experiment-throwaway guarantee.
-7. **Tags** — first-class named version markers on any change/commit (`refs/tags/<name>`), created via a `Tag` op, git-exported. (No version-number *derivation* in Phase 1 — see §10.)
-8. **Operation log** — append-only record of every mutation (snapshot, rebase, fold, abandon, branch, tag, resolve, undo) with the full ref-map view-state before/after, actor (herald agent id), timestamp. Enables `Undo`/replay.
-9. **Git-compat export** — lines ⇒ `refs/heads/<line>`; each open change ⇒ `refs/cairn/change/<change_id>`; tags ⇒ `refs/tags/<name>`; `change_id` also written as a `Change-Id:` commit trailer. Existing cairn clone/fetch sees these refs.
-10. **Concurrency test harness** — the Phase-1 proof (see §8).
+1. **Line (branch)** abstraction — a named line of work with a **parent line** (primary/`main` is the root, parent = none). Lines form a tree; a line's lineage is its path from the root.
+2. **Change** abstraction — a stable `change_id` independent of content, on a line, carrying a moving series of commits. The visible commit advances; the change_id does not. (jj's change vs commit distinction.)
+3. **Commit (the trigger)** — `Commit(change_id, tree)` records a new git commit on the change and **runs merge-forward** (item 4). The commit is the *sole* convergence trigger; there is no filesystem watcher or background service. In Phase 1 the tree is supplied directly by the caller (the test harness; later, the CLI/porter on `cairn commit`).
+4. **Merge-forward on commit** — on each commit, the branch's change is rebased onto its **parent line's current tip** (the branch "adopts" the parent) via three-way merge. Clean → updated cleanly. Overlap → a **conflict object** is materialised and the change carries a *conflicted* (but valid) commit. This is what makes fold-back a fast-forward.
+5. **Conflict object** — structured record of an overlap: `change_id`, conflicting paths, the three sides (base / parent / change) materialised as diff3-marked blobs, status `open|resolved`. The change is never blocked; the line is simply not foldable while a conflict is open.
+6. **Fold (explicit merge-back) & abandon** — `FoldLine` folds a clean line into its parent as a **fast-forward** (it has already adopted the parent); rejected if conflicts are open. Folding is never automatic. **Abandon** drops a line and its changes with **zero effect on the parent** — the experiment-throwaway guarantee.
+7. **Lineage tracking** — every line records its `parent_line`; the engine can return a line's full ancestry chain and the repo's line tree (with ahead/behind per edge). This data is exported so a clone reconstructs the tree (§6). The CLI renders it (§11).
+8. **Tags** — first-class named version markers on any commit (`refs/tags/<name>`), created via a `Tag` op, git-exported. (No version-number *derivation* in Phase 1 — see §10.)
+9. **Operation log** — append-only record of every mutation (commit, rebase, fold, abandon, branch, tag, resolve, undo) with the full ref-map view-state before/after, actor (herald agent id), timestamp. Enables `Undo`/replay.
+10. **Git-compat export** — lines ⇒ `refs/heads/<line>`; each open change ⇒ `refs/cairn/change/<change_id>`; tags ⇒ `refs/tags/<name>`; lineage ⇒ recorded so the tree rebuilds; `change_id` ⇒ a `Change-Id:` commit trailer.
+11. **Concurrency test harness** — the Phase-1 proof (see §8).
 
 **OUT (later phases / explicitly deferred):**
 
-- porter CoW mounts + snapshot daemon (Phase 2).
+- porter CoW mounts + the `express`/`unexpress` CLI (Phase 2).
 - ledger conflict items + semantic projection (Phase 3).
 - resolution UX, auto-resolver agents, web UI (Phase 4).
 - **version-number derivation (GitVersion-style)** — tags ship in Phase 1, derivation is Phase 5 (§10).
 - auth changes (reuse herald exactly as cairn does today).
-- cross-repo; rename-aware merge; stacked/octopus lines beyond single-parent.
+- cross-repo; rename-aware merge; multi-parent (octopus) lines.
 - automatic conflict *resolution* (Phase 1 only *records* conflicts and supports a caller-supplied resolution).
 
 ---
@@ -56,18 +58,18 @@ New package alongside the existing core (README layout): a sibling to `internal/
 
 ```
 internal/change/         the convergence engine
-  line.go                Line (branch) model; parent pointer; fold/abandon
-  change.go              Change + Snapshot model; change_id generation
+  line.go                Line (branch) model; parent pointer; lineage; fold/abandon
+  change.go              Change + Commit model; change_id generation
   oplog.go               operation log (append-only; view-state = ref-map)
-  rebase.go              three-way merge / auto-rebase onto parent line
+  rebase.go              three-way merge / merge-forward onto parent line
   conflict.go            conflict object: diff3 sides, materialise, status
   tag.go                 tag refs
   store.go               persistence (SQLite catalogue + go-git object store)
-  export.go              git-compat ref projection (refs/heads, refs/cairn/change/*, refs/tags)
+  export.go              git-compat ref projection (refs/heads, refs/cairn/change/*, refs/tags) + lineage
 internal/change/harness/ concurrency test harness (simulated agents)
 ```
 
-It reuses `internal/repo/`'s go-git handle + SQLite catalogue (cairn already has `schema.sql`). No frontend changes in Phase 1; the engine is exercised via its Go API + the harness. A thin gRPC surface (§7) is included so Phase 2's porter can call it, but the *proof* does not depend on a running server.
+It reuses `internal/repo/`'s go-git handle + SQLite catalogue (cairn already has `schema.sql`). No frontend changes in Phase 1; the engine is exercised via its Go API + the harness. A thin gRPC surface (§7) is included so Phase 2's CLI/porter can call it, but the *proof* does not depend on a running server.
 
 ---
 
@@ -76,13 +78,14 @@ It reuses `internal/repo/`'s go-git handle + SQLite catalogue (cairn already has
 SQLite catalogue (extends cairn's existing DB), git object store via go-git.
 
 ```
-line                             -- a branch
+line                             -- a branch; the tree edge is parent_line
   line_id       text PK
   repo_id       uuid
-  name          text             -- "main", "exp/agent-a-idea"; unique within repo
+  name          text             -- "main", "exp/idea", "exp/idea/idea2"; unique within repo.
+                                  --   name MAY be path-style to mirror lineage, but parent_line is truth.
   parent_line   text NULL        -- NULL for the root line (primary); else the line it adopts
-  tip_commit    text             -- current integrated tip of this line
-  base_commit   text             -- parent tip this line is currently rebased onto
+  tip_commit    text             -- current tip of this line
+  base_commit   text             -- parent tip this line last adopted (merge-forward base)
   status        text             -- open | folded | abandoned
   created_at, updated_at
 
@@ -91,7 +94,7 @@ change
   repo_id       uuid
   line_id       text FK
   author        text             -- herald agent id
-  head_commit   text             -- current snapshot's git sha (moves; change_id does not)
+  head_commit   text             -- current commit sha (moves; change_id does not)
   status        text             -- open | folded | abandoned
   has_conflict  bool
   created_at, updated_at
@@ -118,8 +121,8 @@ tag
 operation                        -- append-only op-log
   id            text PK          -- ulid/monotonic (deterministic via injected clock)
   repo_id       uuid
-  op_type       text             -- branch | snapshot | rebase | fold | abandon | tag | resolve | undo
-  actor         text             -- herald agent id (or "system" for auto-rebase)
+  op_type       text             -- branch | commit | rebase | fold | abandon | tag | resolve | undo
+  actor         text             -- herald agent id (or "system" for merge-forward)
   parent_op     text             -- previous op id (the op DAG)
   view_before   text JSON        -- ref-map { line:tip, change_id:sha, tag:sha … } before
   view_after    text JSON        -- ref-map after
@@ -129,8 +132,9 @@ operation                        -- append-only op-log
 
 **Invariants:**
 - `change_id` / `line_id` are stable for life; `head_commit` / `tip_commit` move.
-- A conflicted change has a valid `head_commit` (a commit whose tree contains diff3-marked blobs) — it is *never* a blocking error state.
-- A line is folded into its parent **only** when it has no open conflicts (no conflicted commit ever fast-forwards a parent).
+- `parent_line` forms a tree (no cycles); the root line has `parent_line = NULL`. A line's lineage = the chain of `parent_line` to the root.
+- A conflicted change has a valid `head_commit` (a commit whose tree contains diff3-marked blobs) — never a blocking error state.
+- A line folds into its parent **only** when it has no open conflicts (no conflicted commit ever fast-forwards a parent). Fold is explicit.
 - **Abandon** removes a line/change and its refs but never mutates the parent — the throwaway guarantee.
 - The op-log is the source of truth for "what the world looked like"; `view_after` of the latest op == current ref-map. `Undo(op)` appends a new `undo` op restoring a prior `view_before` (history append-only; undo is itself an op — jj semantics).
 
@@ -140,27 +144,25 @@ operation                        -- append-only op-log
 
 **Branch & experiment (the core workflow):**
 1. `CreateLine(repo, name="exp/idea", parent="main")` → `line_id`, based on `main`'s current tip.
-2. Agent snapshots changes on the line: `Snapshot(change_id, tree)` → commits on the line.
-3. **Parent advances** (someone folds work into `main`, tip T→T'). op-log: `fold`, then `rebase` fan-out.
-4. The experiment line **auto-adopts**: its open changes rebase onto T'. Non-overlapping → clean; overlapping → conflict objects (resolved incrementally, now, not saved up). `base_commit = T'`.
-5a. **Idea works:** `FoldLine("exp/idea")` → because the line already adopted `main`, this is a **fast-forward** of `main` to the line's tip. No merge-back, no conflict storm.
-5b. **Idea is broken:** `AbandonLine("exp/idea")` → the line and its changes vanish; `main` is untouched. Zero blast radius.
+2. Agent edits and **commits** on the line: `Commit(change_id, tree)`. Each commit records the work **and merges `main` forward** into the branch (adopts the parent's latest). Non-overlapping → clean; overlapping → conflict objects, surfaced and resolvable *now*, not saved up.
+3. The branch stays continuously current with `main` simply by committing — no separate "pull"/"rebase" step, no watcher.
+4a. **Idea works:** `FoldLine("exp/idea")` → because the branch has already adopted `main`, this is a **fast-forward** of `main` to the branch tip. No merge-back storm.
+4b. **Idea is broken:** `AbandonLine("exp/idea")` → the line and its changes vanish; `main` is untouched. Zero blast radius.
 
-**Happy path (concurrent, non-overlapping) — same line or sibling lines:**
-Two agents snapshot non-overlapping edits; both land; auto-rebase converges them; folding is order-independent and trunk content equals the union of edits.
+**Branch-of-a-branch:** `CreateLine(repo, "exp/idea/idea2", parent="exp/idea")`. `idea2` adopts `exp/idea` on each commit; `exp/idea` adopts `main` on each of *its* commits. Fold proceeds one level at a time (`idea2`→`exp/idea`, then `exp/idea`→`main`). Lineage = `main → exp/idea → idea2` (§7 `GetLineage`).
 
 **Collision path (overlap):**
-1. Agent A and Agent B edit the same region of `foo.go` (same parent). Both snapshots **land** as commits.
-2. A folds first → parent tip = A's edit.
-3. B's line auto-rebases onto the new parent; the three-way merge of (base, parent=A, change=B) overlaps → a **conflict object** for `foo.go` with the three sides + a diff3-marked blob; B's `head_commit` becomes conflicted-but-valid; `has_conflict = true`.
-4. **B is not blocked** — keeps editing other files; further snapshots layer on top.
-5. A resolver supplies a resolved blob via `ResolveConflict`; conflict → `resolved`; once no open conflicts remain, B's line folds (fast-forward). op-log: `resolve`, `fold`.
+1. Agent A (on `main` or a sibling line) and Agent B (on `exp/idea`) edit the same region of `foo.go`. Both commit; both land.
+2. A's edit becomes part of `main`.
+3. On B's **next commit**, merge-forward rebases B onto the new `main`; the three-way merge of (base, parent=A, change=B) overlaps → a **conflict object** for `foo.go` with the three sides + a diff3-marked blob; B's `head_commit` is conflicted-but-valid; `has_conflict = true`.
+4. **B is not blocked** — keeps editing/committing other files; conflicts persist as data on the change.
+5. A resolver supplies a resolved blob via `ResolveConflict` (or edits the marked file and commits); conflict → `resolved`; once no open conflicts remain, `FoldLine` is allowed. op-log: `resolve`, `fold`.
 
 Convergence is order-independent: non-overlapping edits produce identical final content regardless of fold order; overlapping edits deterministically produce the same conflict sides regardless of order (§8).
 
 ---
 
-## 5. Three-way merge / auto-rebase (the hard, risky part)
+## 5. Three-way merge / merge-forward (the hard, risky part)
 
 **Risk called out:** go-git's built-in merge support is thin. Phase 1 implements a **blob-level diff3 three-way merge** at the tree level rather than relying on go-git for merge:
 
@@ -175,11 +177,12 @@ This isolates the only genuinely novel engineering and makes it unit-testable on
 
 ---
 
-## 6. Git-compat export (§1 item 9, detail)
+## 6. Git-compat export (§1 item 10, detail)
 
 - Lines ⇒ `refs/heads/<line.name>` (ordinary branches; plain git clients see ordinary history).
 - Each open change ⇒ `refs/cairn/change/<change_id>` at its `head_commit`.
 - Tags ⇒ `refs/tags/<name>`.
+- **Lineage** ⇒ each line's `parent_line` + `base_commit` is recorded so a clone rebuilds the tree. Phase-1 mechanism: a `Cairn-Parent:` trailer on the line's first commit + the catalogue; revisitable to a dedicated ref namespace if lineage must travel to arbitrary plain-git clones.
 - A conflicted change's commit carries diff3-marked blobs in its tree — a plain `git checkout` shows conflict markers (familiar to any tool), while the structured conflict object carries the machine-readable sides.
 - Folded changes/lines drop their `refs/cairn/change/*` and (for folded lines) the line ref; history is preserved in the parent. Abandoned lines drop refs; the op-log retains the trace.
 
@@ -189,16 +192,18 @@ cairn's **existing SSH/HTTP frontends are unchanged** — clone/fetch/push keep 
 
 ## 7. API surface (Phase 1)
 
-In-process Go API is primary; a thin JSON-over-gRPC wrapper (matching cairn's existing `internal/grpcapi` style) is added so Phase-2 porter can call across the wire.
+In-process Go API is primary; a thin JSON-over-gRPC wrapper (matching cairn's existing `internal/grpcapi` style) is added so the Phase-2 CLI/porter can call across the wire.
 
 ```
 CreateLine(repo_id, name, parent_line)         -> line_id
 FoldLine(line_id)                              -> parent_tip | rejected(reason: has_conflict)
 AbandonLine(line_id)                           -> ok            (parent untouched)
 ListLines(repo_id, {status?})                  -> []line
+GetLineage(line_id)                            -> [root … line]  (ancestry chain)
+GetLineTree(repo_id)                           -> tree(line, children, ahead/behind per edge)
 
 CreateChange(line_id, author)                  -> change_id
-Snapshot(change_id, tree)                       -> head_commit, conflict_summary
+Commit(change_id, tree)                         -> head_commit, conflict_summary   (runs merge-forward)
 GetChange(change_id)                           -> change + conflicts
 ListChanges(line_id, {status?})                -> []change
 ResolveConflict(change_id, path, resolved_blob)-> conflict.status, change.has_conflict
@@ -211,28 +216,29 @@ GetOperationLog(repo_id, {since_op?})          -> []operation
 Undo(op_id)                                    -> new_op (restores prior view)
 ```
 
-`tree` in Phase 1 = a path→bytes map (the harness supplies it; porter will too). No auth surface added — when fronted (Phase 2) it sits behind herald like cairn's other gRPC services; `author`/`tagger` is gateway/herald-stamped, never trusted from the model.
+`tree` in Phase 1 = a path→bytes map (the harness supplies it; the CLI/porter will too). No auth surface added — when fronted (Phase 2) it sits behind herald like cairn's other gRPC services; `author`/`tagger` is gateway/herald-stamped, never trusted from the model.
 
 ---
 
 ## 8. The Phase-1 proof: concurrency test harness
 
-The Definition of Done. A harness in `internal/change/harness/` that spins up **N simulated agents** across **one repo with multiple lines**, each emitting a scripted stream of snapshots (some overlapping, some not), with interleavings driven by a seedable scheduler.
+The Definition of Done. A harness in `internal/change/harness/` that spins up **N simulated agents** across **one repo with a tree of lines**, each emitting a scripted stream of commits (some overlapping, some not), with interleavings driven by a seedable scheduler.
 
 **Properties asserted:**
 
-1. **Convergence (non-overlap):** for any interleaving of non-overlapping edits, after all changes fold, parent content is identical and equals the union of edits.
-2. **Deterministic conflicts (overlap):** overlapping edits produce exactly one conflict object per conflicting path, with the correct three sides — independent of fold order.
-3. **No blocking:** an agent with a conflicted change can still snapshot further edits to other paths and have them retained.
-4. **Parent-adoption / fast-forward fold:** an experiment line that has continuously adopted its parent folds back as a **fast-forward** (no merge commit, no late conflict) when clean.
-5. **Abandon isolation:** abandoning an experiment line — even one with open conflicts — leaves the parent line byte-for-byte unchanged.
-6. **Op-log replay:** replaying the op-log from empty reproduces the exact final ref-map; `Undo` of the last op restores the prior `view_after` exactly.
-7. **Resolution closes the loop:** after `ResolveConflict` for all open conflicts, the previously-conflicted line folds and parent content is the resolved content.
-8. **Git-compat:** a plain go-git read of `refs/heads/*`, `refs/cairn/change/*`, `refs/tags/*` matches the engine's view; a conflicted ref's blob contains diff3 markers.
+1. **Convergence (non-overlap):** for any interleaving of non-overlapping edits, after all lines fold, parent content is identical and equals the union of edits.
+2. **Deterministic conflicts (overlap):** overlapping edits produce exactly one conflict object per conflicting path, with the correct three sides — independent of order.
+3. **No blocking:** an agent with a conflicted change can still commit further edits to other paths and have them retained.
+4. **Fast-forward fold:** a branch that has adopted its parent (via commits) folds back as a **fast-forward** — no merge commit, no late conflict — when clean.
+5. **Abandon isolation:** abandoning a branch — even one with open conflicts — leaves the parent line byte-for-byte unchanged.
+6. **Lineage integrity:** branch-of-a-branch (depth ≥ 2) folds one level at a time; `GetLineage` returns the correct chain; the line tree is reconstructable from the export.
+7. **Op-log replay:** replaying the op-log from empty reproduces the exact final ref-map; `Undo` of the last op restores the prior `view_after` exactly.
+8. **Resolution closes the loop:** after `ResolveConflict` for all open conflicts, the previously-conflicted line folds and parent content is the resolved content.
+9. **Git-compat:** a plain go-git read of `refs/heads/*`, `refs/cairn/change/*`, `refs/tags/*` matches the engine's view; a conflicted ref's blob contains diff3 markers; lineage rebuilds from the export.
 
 **Method:** property-style testing over many seeds (table + randomised interleavings with a fixed seed list), TDD throughout. Runs in CI (the repo already has build+test+vet — PR #19/#22).
 
-**DoD:** all eight properties green in CI; `go test ./...` and `go vet ./...` clean; the harness scales to ≥3 agents, ≥2 lines, and ≥hundreds of interleavings without flakiness.
+**DoD:** all nine properties green in CI; `go test ./...` and `go vet ./...` clean; the harness scales to ≥3 agents, ≥3 lines incl. depth ≥ 2, and ≥hundreds of interleavings without flakiness.
 
 ---
 
@@ -240,16 +246,16 @@ The Definition of Done. A harness in `internal/change/harness/` that spins up **
 
 Each step independently testable, TDD:
 
-1. **change_id + Change/Snapshot model + store** — create change, snapshot to a go-git commit, move head, write `Change-Id` trailer. Test: snapshots advance head, change_id stable.
-2. **line model (branch) + parent pointer** — create line off a parent, track base/tip. Test: lines created, parentage recorded.
+1. **change_id + Change/Commit model + store** — create change, commit to a go-git commit, move head, write `Change-Id` trailer. Test: commits advance head, change_id stable.
+2. **line model (branch) + parent pointer + lineage** — create line off a parent, track base/tip, return ancestry + tree. Test: lineage chain + tree correct.
 3. **operation log** — append-only ops with view-state; replay; `Undo`. Test: replay reproduces state; undo restores prior view.
 4. **three-way merge / diff3** (the risk) — pure function on three trees → merged tree + conflicts. Test: synthetic trees, every classification, clean vs conflicted hunks.
-5. **auto-rebase / parent-adoption + fold + fan-out** — parent advance re-bases child lines; clean fold = fast-forward; conflicts materialise. Test: §4 paths.
-6. **conflict object + ResolveConflict** — materialise diff3 blob, resolve, unblock fold. Test: §8 property 7.
-7. **abandon** — drop line/change with no parent effect. Test: §8 property 5.
+5. **merge-forward on commit + fan-out** — each commit rebases onto parent tip; conflicts materialise. Test: §4 paths.
+6. **fold (explicit) + abandon** — clean fold = fast-forward; abandon leaves parent untouched. Test: §8 properties 4, 5, 6.
+7. **conflict object + ResolveConflict** — materialise diff3 blob, resolve, unblock fold. Test: §8 property 8.
 8. **tags** — create/list tag refs. Test: tag round-trips through export.
-9. **git-compat export** — ref projection (heads/change/tags); conflicted-blob markers. Test: §8 property 8.
-10. **concurrency harness** — §8 properties 1–8 across seeds.
+9. **git-compat export** — ref projection (heads/change/tags) + lineage; conflicted-blob markers. Test: §8 property 9.
+10. **concurrency harness** — §8 properties 1–9 across seeds.
 11. **thin gRPC wrapper** — wire the API for Phase 2 (no auth changes; herald-stamped author when fronted).
 
 Steps 1–4 are foundational and can land first; 5–9 build on them; 10 is the proof; 11 is the Phase-2 seam.
@@ -258,10 +264,10 @@ Steps 1–4 are foundational and can land first; 5–9 build on them; 10 is the 
 
 ## 10. Later phases (sketch — NOT this spec)
 
-- **Phase 2 — porter CoW mounts + snapshot daemon + the CLI working-copy model.** Per-agent copy-on-write mount of a line; daemon watches the mount and calls `Snapshot`. Deliverable: two real agents editing on dMon, converging with no merge day. porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge). **Client/working-copy model (see §11).**
-- **Phase 3 — ledger conflict items + semantic projection.** Conflict objects → ledger items; micro-snapshot noise → clean semantic "change" history via the projection engine (same machinery as delayed-public-projection).
-- **Phase 4 — resolution UX + auto-resolver agents + git-export polish.** Designated resolver agents clear conflict objects; web UI surfaces lines/changes/conflicts; rename-aware merge.
-- **Phase 5 — version derivation tooling (GitVersion-style).** Built-in semantic-version derivation from tags + graph distance + branch/line conventions: configurable increment rules, pre-release/build metadata, CI-consumable output. (Tags themselves ship in Phase 1; this is the *derivation* layer on top.)
+- **Phase 2 — porter CoW mounts + the CLI working-copy model.** Branch-named folders, `express`/`unexpress`, and `cairn commit` (CLI verb or a git post-commit hook) as the commit trigger that calls `Commit`. No watcher service. Deliverable: two real agents editing on dMon, converging with no merge day. **See §11.** porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge).
+- **Phase 3 — ledger conflict items + semantic projection.** Conflict objects → ledger items; micro-commit noise → clean semantic "change" history via the projection engine (same machinery as delayed-public-projection).
+- **Phase 4 — resolution UX + auto-resolver agents + git-export polish.** Designated resolver agents clear conflict objects; web UI surfaces lines/changes/conflicts/lineage; rename-aware merge.
+- **Phase 5 — version derivation tooling (GitVersion-style).** Built-in semantic-version derivation from tags + graph distance + branch/line conventions: configurable increment rules, pre-release/build metadata, CI-consumable output. (Tags ship in Phase 1; this is the *derivation* layer on top.)
 
 ---
 
@@ -271,31 +277,39 @@ How it's *used* on disk. A clone produces a real `.git` (the object store + chan
 
 ```
 myrepo/
-├── .git/          object store + change-graph; clones like a real git repo —
-│                  plain `git` works here (git-compat from Phase 1 §6)
-├── main/          default branch, "expressed" as a folder (worktree-style)
-└── exp-idea/      another branch, expressed on demand, its own folder
+├── .git/                object store + change-graph; clones like a real git repo —
+│                        plain `git` works here (git-compat from Phase 1 §6)
+├── main/                default branch, "expressed" as a folder (worktree-style)
+├── exp-idea/            a branch, expressed on demand, its own folder
+└── exp-idea--idea2/     a branch-of-a-branch; lineage shown by `cairn status`/`tree`
 ```
 
 - **Clone** → `.git` + the default branch expressed as a folder named for the branch.
 - **Any branch** can be expressed the same way; multiple expressed branches live side by side as sibling folders (Theo's "simultaneous checkouts in multiple locations," made trivial).
-- Each expressed folder is a **CoW mount** (porter) → expressing is instant and cheap; porter's daemon continuously snapshots the folder into the change-graph; convergence/auto-rebase happen underneath.
+- **Branches are NEVER nested inside each other's folders.** A branch-of-a-branch (`exp-idea/idea2`) is expressed as its **own flat sibling folder** at the same level (e.g. `exp-idea--idea2/`), *not* as a subfolder inside `exp-idea/`. Putting a branch among another branch's working files is the mess we're avoiding — you'd no longer be able to tell source content from a checked-out branch. **Lineage lives in metadata (the line tree + `.cairn` stamp + `cairn tree`/`status`), never in the directory hierarchy.** The folder layout is flat; the *tree* is logical. (If root clutter ever bites, the flat set can move under a single `wt/` container — still flat, still no nesting — but that's a Phase-2 cosmetic, not the model.)
+- Each expressed folder is a **CoW mount** (porter) → expressing is instant and cheap.
+- **Commit is the trigger.** `cairn commit` (or a git post-commit hook in the folder) calls `Commit`, which records the work and merges the parent forward. There is **no daemon watching the folder**.
+- **Lineage is always legible:**
+  - `cairn tree` → the whole line forest, with ahead/behind per edge.
+  - `cairn status` (inside a folder) → "you are on `exp-idea/idea2` ← `exp-idea` ← `main`; adopted main@<sha>; N ahead of exp-idea."
+  - each expressed folder carries a tiny `.cairn` stamp (line id, parent chain, base commit) so a tool/agent reads "where am I" with **no server call**.
 - **CLI verbs:**
-  - `cairn express <branch>` — materialise a branch as `./<branch>/` (CoW mount; creates the line if new, off the chosen parent).
-  - `cairn unexpress <branch>` — remove the folder; the branch/line and its history stay in the store.
-  - `cairn list` — show lines and which are currently expressed.
-  - (fold/abandon/tag/resolve map to the §7 API.)
+  - `cairn express <branch>` / `cairn unexpress <branch>` — materialise / remove a branch folder (line created off the chosen parent if new; history stays in the store on unexpress).
+  - `cairn commit` — commit + merge-forward (the trigger).
+  - `cairn fold <branch>` — explicit merge-back (fast-forward into parent).
+  - `cairn abandon <branch>` — throw the experiment away; parent untouched.
+  - `cairn tree` / `cairn status` / `cairn tag` — lineage + tagging.
 
-**Phase-1 implication (the only thing Phase 1 must honour):** the git-compat export (§6) must make `.git` a clean, plain-git-readable store — lines ⇒ `refs/heads/*`, tags ⇒ `refs/tags/*`, change refs under `refs/cairn/change/*` — so that this local layout and `cairn express/unexpress` can be built on top in Phase 2 without reworking the core. No CLI or mount code in Phase 1.
+**Phase-1 implication (the only thing Phase 1 must honour):** the git-compat export (§6) must make `.git` a clean, plain-git-readable store — lines ⇒ `refs/heads/*`, tags ⇒ `refs/tags/*`, change refs under `refs/cairn/change/*`, lineage recorded — so this layout and the CLI build on top in Phase 2 without reworking the core. No CLI or mount code in Phase 1.
 
 ---
 
 ## 12. Open questions for the plan (small, non-blocking)
 
 - **diff3 library vs hand-rolled** — pin a small reviewed diff3 implementation vs implement directly. Lean toward a vetted small lib, pinned.
-- **Fold policy** — explicit `FoldLine` (Phase-1 default) vs continuous auto-fold of clean lines. Phase 1 ships explicit; expose the policy seam.
-- **Parent-adoption cadence** — re-base child lines immediately on parent advance (Phase-1 default) vs batched. Pin in step 5.
+- **Lineage export mechanism** — `Cairn-Parent:` commit trailer (Phase-1 default) vs a dedicated `refs/cairn/lineage/*` namespace so lineage travels to arbitrary plain-git clones. Pin in step 2/9.
 - **Change-id alphabet** — exact reverse-hex alphabet (jj uses k–z). Cosmetic; pin in step 1.
 - **op-log id scheme** — ulid vs monotonic counter; must be deterministic under the seedable clock.
 - **annotated vs lightweight tags** — Phase 1 lightweight (`refs/tags/<name>` → commit); annotated-tag objects (message/signature) revisit with Phase 5.
+- **branch-name ↔ folder-name encoding** — path-style line names (`exp/idea/idea2`) vs flat folder names with separators (`exp-idea--idea2`). Decide with the CLI in Phase 2; the engine treats `name` as opaque.
 - **catalogue vs git-ref op store** — Phase 1 stores the op-log in SQLite (cairn already has it); jj keeps it in refs. Revisit if the op-log should travel with `git clone`.
