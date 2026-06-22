@@ -88,3 +88,27 @@ func TestExportFoldedLineNotExported(t *testing.T) {
 		t.Fatalf("refs/heads/main missing: %v", err)
 	}
 }
+
+func TestExportPrunesFoldedRefsOnReexport(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	seedLineTip(t, e, main.ID, map[string][]byte{"a.txt": []byte("a\n")})
+	exp, _ := e.CreateLine("exp", main.ID)
+	ch, _ := e.CreateChange(exp.ID, "e")
+	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")})
+	if err := e.Export(); err != nil {
+		t.Fatalf("export1: %v", err)
+	} // exp ref now exists
+	if err := e.FoldLine(exp.ID); err != nil {
+		t.Fatalf("fold: %v", err)
+	}
+	if err := e.Export(); err != nil {
+		t.Fatalf("export2: %v", err)
+	}
+	if _, err := e.git.Reference(plumbing.NewBranchReferenceName("exp"), true); err == nil {
+		t.Fatal("refs/heads/exp must be pruned after fold + re-export")
+	}
+	if _, err := e.git.Reference(plumbing.ReferenceName("refs/cairn/change/"+ch.ID), true); err == nil {
+		t.Fatal("refs/cairn/change/<id> must be pruned after fold + re-export")
+	}
+}

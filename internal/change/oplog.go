@@ -122,12 +122,20 @@ func (e *Engine) Undo() error {
 	}
 
 	ts := e.now().UTC().Format(time.RFC3339Nano)
+	tx, err := e.db.Begin()
+	if err != nil {
+		return fmt.Errorf("change.Undo: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
 	for name, sha := range last.ViewBefore {
-		if _, err := e.db.Exec(
+		if _, err := tx.Exec(
 			`UPDATE line SET tip_commit=?, updated_at=? WHERE name=?`,
 			sha, ts, name); err != nil {
 			return fmt.Errorf("change.Undo: %w", err)
 		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("change.Undo: commit tx: %w", err)
 	}
 	if err := e.recordOp("undo", "system", cur, last.ViewBefore); err != nil {
 		return err

@@ -49,7 +49,10 @@ func Open(dir string) (*Engine, error) {
 		return nil, fmt.Errorf("change.Open: git: %w", err)
 	}
 
-	db, err := sql.Open("sqlite", filepath.Join(dir, "cairn.db"))
+	// _pragma=busy_timeout(5000) makes writers wait up to 5s for a held lock
+	// instead of failing immediately with SQLITE_BUSY. This is the query-param
+	// form modernc.org/sqlite documents (a bare _busy_timeout is not parsed).
+	db, err := sql.Open("sqlite", filepath.Join(dir, "cairn.db")+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, fmt.Errorf("change.Open: sqlite: %w", err)
 	}

@@ -124,6 +124,7 @@ func (e *Engine) GetLineTree() ([]LineNode, error) {
 			return nil, fmt.Errorf("change.GetLineTree: %w", err)
 		}
 		l.ParentLine = parent.String
+		// Phase-1: approximation (0/1), real commit-distance is a Phase-2 refinement.
 		ahead := 0
 		if l.TipCommit != "" && l.TipCommit != l.BaseCommit {
 			ahead = 1

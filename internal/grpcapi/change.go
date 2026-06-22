@@ -43,6 +43,12 @@ func mapErr(err error) error {
 	}
 }
 
+// LineByName resolves a line name to its row through the error-mapped facade.
+func (s *ChangeService) LineByName(ctx context.Context, name string) (change.Line, error) {
+	l, err := s.eng.LineByName(name)
+	return l, mapErr(err)
+}
+
 // CreateLine forks a new line off parent.
 func (s *ChangeService) CreateLine(ctx context.Context, name, parent string) (change.Line, error) {
 	ln, err := s.eng.CreateLine(name, parent)
