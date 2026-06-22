@@ -258,14 +258,39 @@ Steps 1–4 are foundational and can land first; 5–9 build on them; 10 is the 
 
 ## 10. Later phases (sketch — NOT this spec)
 
-- **Phase 2 — porter CoW mounts + snapshot daemon.** Per-agent copy-on-write mount of a line; daemon watches the mount and calls `Snapshot`. Deliverable: two real agents editing on dMon, converging with no merge day. porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge).
+- **Phase 2 — porter CoW mounts + snapshot daemon + the CLI working-copy model.** Per-agent copy-on-write mount of a line; daemon watches the mount and calls `Snapshot`. Deliverable: two real agents editing on dMon, converging with no merge day. porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge). **Client/working-copy model (see §11).**
 - **Phase 3 — ledger conflict items + semantic projection.** Conflict objects → ledger items; micro-snapshot noise → clean semantic "change" history via the projection engine (same machinery as delayed-public-projection).
 - **Phase 4 — resolution UX + auto-resolver agents + git-export polish.** Designated resolver agents clear conflict objects; web UI surfaces lines/changes/conflicts; rename-aware merge.
 - **Phase 5 — version derivation tooling (GitVersion-style).** Built-in semantic-version derivation from tags + graph distance + branch/line conventions: configurable increment rules, pre-release/build metadata, CI-consumable output. (Tags themselves ship in Phase 1; this is the *derivation* layer on top.)
 
 ---
 
-## 11. Open questions for the plan (small, non-blocking)
+## 11. Client / working-copy model (Phase 2 shape — captured now so Phase 1 export serves it)
+
+How it's *used* on disk. A clone produces a real `.git` (the object store + change-graph) plus branches **expressed** as branch-named folders — the good half of git worktrees, without the cost or the merge-back.
+
+```
+myrepo/
+├── .git/          object store + change-graph; clones like a real git repo —
+│                  plain `git` works here (git-compat from Phase 1 §6)
+├── main/          default branch, "expressed" as a folder (worktree-style)
+└── exp-idea/      another branch, expressed on demand, its own folder
+```
+
+- **Clone** → `.git` + the default branch expressed as a folder named for the branch.
+- **Any branch** can be expressed the same way; multiple expressed branches live side by side as sibling folders (Theo's "simultaneous checkouts in multiple locations," made trivial).
+- Each expressed folder is a **CoW mount** (porter) → expressing is instant and cheap; porter's daemon continuously snapshots the folder into the change-graph; convergence/auto-rebase happen underneath.
+- **CLI verbs:**
+  - `cairn express <branch>` — materialise a branch as `./<branch>/` (CoW mount; creates the line if new, off the chosen parent).
+  - `cairn unexpress <branch>` — remove the folder; the branch/line and its history stay in the store.
+  - `cairn list` — show lines and which are currently expressed.
+  - (fold/abandon/tag/resolve map to the §7 API.)
+
+**Phase-1 implication (the only thing Phase 1 must honour):** the git-compat export (§6) must make `.git` a clean, plain-git-readable store — lines ⇒ `refs/heads/*`, tags ⇒ `refs/tags/*`, change refs under `refs/cairn/change/*` — so that this local layout and `cairn express/unexpress` can be built on top in Phase 2 without reworking the core. No CLI or mount code in Phase 1.
+
+---
+
+## 12. Open questions for the plan (small, non-blocking)
 
 - **diff3 library vs hand-rolled** — pin a small reviewed diff3 implementation vs implement directly. Lean toward a vetted small lib, pinned.
 - **Fold policy** — explicit `FoldLine` (Phase-1 default) vs continuous auto-fold of clean lines. Phase 1 ships explicit; expose the policy seam.
