@@ -40,12 +40,18 @@ func TestMaterializeClearsStaleFiles(t *testing.T) {
 	t.Cleanup(func() { _ = eng.Close() })
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
-	r1, _ := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("1\n"), "gone.txt": []byte("x\n")})
+	r1, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("1\n"), "gone.txt": []byte("x\n")})
+	if err != nil {
+		t.Fatalf("commit r1: %v", err)
+	}
 	dir := filepath.Join(t.TempDir(), "wc")
 	if err := Materialize(eng, r1.HeadCommit, dir); err != nil {
 		t.Fatalf("mat1: %v", err)
 	}
-	r2, _ := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("2\n")})
+	r2, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("2\n")})
+	if err != nil {
+		t.Fatalf("commit r2: %v", err)
+	}
 	if err := Materialize(eng, r2.HeadCommit, dir); err != nil {
 		t.Fatalf("mat2: %v", err)
 	}
