@@ -2,7 +2,6 @@ package grpcapi
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
@@ -41,5 +40,4 @@ func TestChangeServiceMapsNotFound(t *testing.T) {
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("GetChange unknown: code = %v, want NotFound", status.Code(err))
 	}
-	_ = errors.Is // keep import if unused otherwise
 }
