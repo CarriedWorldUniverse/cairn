@@ -33,7 +33,10 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	if err != nil {
 		return Line{}, err
 	}
-	before := e.viewMap()
+	before, err := e.viewMap()
+	if err != nil {
+		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
+	}
 	l := Line{
 		ID:         newID(),
 		Name:       name,
@@ -50,7 +53,11 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	if err != nil {
 		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
 	}
-	if err := e.recordOp("branch", "system", before, e.viewMap()); err != nil {
+	after, err := e.viewMap()
+	if err != nil {
+		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
+	}
+	if err := e.recordOp("branch", "system", before, after); err != nil {
 		return Line{}, err
 	}
 	return l, nil

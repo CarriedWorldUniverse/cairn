@@ -1,6 +1,9 @@
 package change
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestOpLogRecordsAndUndoRestores(t *testing.T) {
 	e := newTestEngine(t)
@@ -40,5 +43,30 @@ func TestOpLogRecordsAndUndoRestores(t *testing.T) {
 	ops2, _ := e.OperationLog()
 	if ops2[len(ops2)-1].OpType != "undo" {
 		t.Fatalf("last op after undo = %q, want undo", ops2[len(ops2)-1].OpType)
+	}
+}
+
+func TestUndoEmptyLogReturnsNotFound(t *testing.T) {
+	e := newTestEngine(t)
+	if err := e.Undo(); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("Undo on empty log: want ErrNotFound, got %v", err)
+	}
+}
+
+func TestCreateLineRecordsBranchOp(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	if _, err := e.CreateLine("exp", main.ID); err != nil {
+		t.Fatalf("CreateLine: %v", err)
+	}
+	ops, err := e.OperationLog()
+	if err != nil {
+		t.Fatalf("OperationLog: %v", err)
+	}
+	if len(ops) == 0 || ops[len(ops)-1].OpType != "branch" {
+		t.Fatalf("last op = %v, want a branch op", ops)
+	}
+	if _, ok := ops[len(ops)-1].ViewAfter["exp"]; !ok {
+		t.Fatalf("branch op view_after missing new line 'exp': %+v", ops[len(ops)-1].ViewAfter)
 	}
 }

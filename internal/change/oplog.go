@@ -21,30 +21,24 @@ type Operation struct {
 }
 
 // viewMap snapshots the ref-map: every non-abandoned line's name → tip_commit.
-func (e *Engine) viewMap() map[string]string {
+func (e *Engine) viewMap() (map[string]string, error) {
 	view := map[string]string{}
 	rows, err := e.db.Query(`SELECT name, tip_commit FROM line WHERE status != 'abandoned'`)
 	if err != nil {
-		return view
+		return nil, fmt.Errorf("change.viewMap: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var name, tip string
 		if err := rows.Scan(&name, &tip); err != nil {
-			return view
+			return nil, fmt.Errorf("change.viewMap: %w", err)
 		}
 		view[name] = tip
 	}
-	return view
-}
-
-// lastOpID returns the id of the most recent operation, or "" if the log is empty.
-func (e *Engine) lastOpID() string {
-	var id string
-	if err := e.db.QueryRow(`SELECT id FROM operation ORDER BY id DESC LIMIT 1`).Scan(&id); err != nil {
-		return ""
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("change.viewMap: %w", err)
 	}
-	return id
+	return view, nil
 }
 
 // recordOp appends a single operation to the log. The id carries an RFC3339Nano
@@ -61,10 +55,14 @@ func (e *Engine) recordOp(opType, actor string, before, after map[string]string)
 	}
 	now := e.now().UTC()
 	id := now.Format(time.RFC3339Nano) + "-" + newID()[:8]
+	// parent_op is the max existing op id, selected inline so the parent pick and
+	// the insert are atomic under SQLite's serialized writes (no SELECT-then-INSERT
+	// race). The new row's id is an RFC3339Nano "now" prefix, which sorts after all
+	// existing ids, so MAX(id) over the current rows is the correct parent.
 	if _, err := e.db.Exec(
 		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
-		 VALUES(?,?,?,?,?,?,'{}',?)`,
-		id, opType, actor, e.lastOpID(), string(beforeJSON), string(afterJSON),
+		 VALUES(?,?,?, (SELECT COALESCE(MAX(id),'') FROM operation), ?,?,'{}',?)`,
+		id, opType, actor, string(beforeJSON), string(afterJSON),
 		now.Format(time.RFC3339Nano)); err != nil {
 		return fmt.Errorf("change.recordOp: %w", err)
 	}
@@ -118,7 +116,10 @@ func (e *Engine) Undo() error {
 		return ErrNotFound
 	}
 	last := ops[len(ops)-1]
-	cur := e.viewMap()
+	cur, err := e.viewMap()
+	if err != nil {
+		return err
+	}
 
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	for name, sha := range last.ViewBefore {

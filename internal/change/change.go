@@ -90,7 +90,10 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 	if err != nil {
 		return CommitResult{}, err
 	}
-	before := e.viewMap()
+	before, err := e.viewMap()
+	if err != nil {
+		return CommitResult{}, fmt.Errorf("change.Commit: %w", err)
+	}
 	tree, err := e.writeTree(files)
 	if err != nil {
 		return CommitResult{}, err
@@ -163,7 +166,11 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 	if err := tx.Commit(); err != nil {
 		return CommitResult{}, fmt.Errorf("change.Commit: commit tx: %w", err)
 	}
-	if err := e.recordOp("commit", ch.Author, before, e.viewMap()); err != nil {
+	after, err := e.viewMap()
+	if err != nil {
+		return CommitResult{}, fmt.Errorf("change.Commit: %w", err)
+	}
+	if err := e.recordOp("commit", ch.Author, before, after); err != nil {
 		return CommitResult{}, err
 	}
 	return CommitResult{HeadCommit: head, Conflicts: conflicts}, nil

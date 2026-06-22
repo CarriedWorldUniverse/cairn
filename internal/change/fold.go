@@ -35,7 +35,10 @@ func (e *Engine) FoldLine(lineID string) error {
 		return fmt.Errorf("change.FoldLine: parent line %s is %s, cannot fold into it", parent.ID, parent.Status)
 	}
 
-	before := e.viewMap()
+	before, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.FoldLine: %w", err)
+	}
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	tx, err := e.db.Begin()
 	if err != nil {
@@ -66,7 +69,11 @@ func (e *Engine) FoldLine(lineID string) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.FoldLine: commit tx: %w", err)
 	}
-	if err := e.recordOp("fold", "system", before, e.viewMap()); err != nil {
+	after, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.FoldLine: %w", err)
+	}
+	if err := e.recordOp("fold", "system", before, after); err != nil {
 		return err
 	}
 	return nil
@@ -79,7 +86,10 @@ func (e *Engine) AbandonLine(lineID string) error {
 	if _, err := e.lineByID(lineID); err != nil {
 		return err
 	}
-	before := e.viewMap()
+	before, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.AbandonLine: %w", err)
+	}
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	tx, err := e.db.Begin()
 	if err != nil {
@@ -100,7 +110,11 @@ func (e *Engine) AbandonLine(lineID string) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.AbandonLine: commit tx: %w", err)
 	}
-	if err := e.recordOp("abandon", "system", before, e.viewMap()); err != nil {
+	after, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.AbandonLine: %w", err)
+	}
+	if err := e.recordOp("abandon", "system", before, after); err != nil {
 		return err
 	}
 	return nil
