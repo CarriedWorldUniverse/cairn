@@ -101,11 +101,17 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 	if err != nil {
 		return CommitResult{}, err
 	}
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	ts := e.now().UTC().Format(time.RFC3339Nano)
 	if _, err := e.db.Exec(
 		`UPDATE change SET head_commit=?, updated_at=? WHERE id=?`,
-		head, now, ch.ID); err != nil {
+		head, ts, ch.ID); err != nil {
 		return CommitResult{}, fmt.Errorf("change.Commit: %w", err)
+	}
+	// advance the owning line's tip to this change's new head.
+	// Phase-1 simplification: with multiple concurrent changes on one line, the
+	// tip simply reflects the most recent commit.
+	if _, err := e.db.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, ch.LineID); err != nil {
+		return CommitResult{}, err
 	}
 	return CommitResult{HeadCommit: head}, nil
 }

@@ -30,10 +30,14 @@ func names(ls []Line) []string {
 	return out
 }
 
-func TestGetLineTreeAheadBehind(t *testing.T) {
+func TestGetLineTreeAhead(t *testing.T) {
 	e := newTestEngine(t)
 	main, _ := e.LineByName("main")
 	exp, _ := e.CreateLine("exp", main.ID)
+	ch, _ := e.CreateChange(exp.ID, "agent-test")
+	if _, err := e.Commit(ch.ID, map[string][]byte{"f.txt": []byte("hi\n")}); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
 	nodes, err := e.GetLineTree()
 	if err != nil {
 		t.Fatalf("GetLineTree: %v", err)
@@ -42,8 +46,18 @@ func TestGetLineTreeAheadBehind(t *testing.T) {
 		t.Fatalf("nodes = %d, want 2", len(nodes))
 	}
 	for _, n := range nodes {
-		if n.Line.ID == exp.ID && n.Parent != main.ID {
-			t.Fatalf("exp parent = %q, want %q", n.Parent, main.ID)
+		switch n.Line.ID {
+		case exp.ID:
+			if n.Parent != main.ID {
+				t.Fatalf("exp parent = %q, want %q", n.Parent, main.ID)
+			}
+			if n.Ahead != 1 {
+				t.Fatalf("exp Ahead = %d, want 1", n.Ahead)
+			}
+		case main.ID:
+			if n.Ahead != 0 {
+				t.Fatalf("main Ahead = %d, want 0", n.Ahead)
+			}
 		}
 	}
 }

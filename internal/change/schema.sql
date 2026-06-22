@@ -4,7 +4,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS line (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL UNIQUE,
-  parent_line TEXT,
+  parent_line TEXT REFERENCES line(id),
   tip_commit  TEXT NOT NULL DEFAULT '',
   base_commit TEXT NOT NULL DEFAULT '',
   status      TEXT NOT NULL DEFAULT 'open',

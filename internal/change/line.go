@@ -73,8 +73,13 @@ func (e *Engine) lineByID(id string) (Line, error) {
 // root-first, ending with the line itself.
 func (e *Engine) GetLineage(lineID string) ([]Line, error) {
 	var chain []Line
+	seen := map[string]bool{}
 	id := lineID
 	for id != "" {
+		if seen[id] {
+			return nil, fmt.Errorf("change.GetLineage: cycle detected at line %s", id)
+		}
+		seen[id] = true
 		l, err := e.lineByID(id)
 		if err != nil {
 			return nil, err
