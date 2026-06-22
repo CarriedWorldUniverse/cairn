@@ -1,6 +1,7 @@
 package change
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 
@@ -88,18 +89,18 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 
 		switch {
 		case inOurs && inTheirs:
-			if bytesEq(ov, tv) {
+			if bytes.Equal(ov, tv) {
 				// Both sides agree.
 				merged[p] = ov
 				continue
 			}
 			// Both present and differ. If one side never touched the file
 			// (equal to base), take the other side wholesale.
-			if inBase && bytesEq(bv, ov) {
+			if inBase && bytes.Equal(bv, ov) {
 				merged[p] = tv
 				continue
 			}
-			if inBase && bytesEq(bv, tv) {
+			if inBase && bytes.Equal(bv, tv) {
 				merged[p] = ov
 				continue
 			}
@@ -108,7 +109,7 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			mergedBytes := []byte(strings.Join(res.Merged, ""))
 			merged[p] = mergedBytes
 			if res.Conflict {
-				c, err := e.recordConflict(changeID, p, bv, ov, tv, mergedBytes)
+				c, err := e.buildConflict(changeID, p, bv, ov, tv, mergedBytes)
 				if err != nil {
 					return "", nil, err
 				}
@@ -122,8 +123,9 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			merged[p] = ov
 
 		case !inOurs && inTheirs:
-			// Present only on the change side: symmetric to the above. Keep the
-			// change's content.
+			// Present only on the change side: added on the change, or the
+			// parent deleted it (whether or not the change also modified it).
+			// Phase-1 rule: keep the side that still has content — the change's.
 			merged[p] = tv
 
 		default:
@@ -154,19 +156,6 @@ func splitLines(b []byte) []string {
 		return nil
 	}
 	return strings.SplitAfter(string(b), "\n")
-}
-
-// bytesEq reports whether a and b are byte-identical.
-func bytesEq(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // unionKeys returns the sorted union of all keys across the given maps.

@@ -184,6 +184,8 @@ func (e *Engine) mergeBase(a, b string) (string, error) {
 	if len(bases) == 0 {
 		return "", nil
 	}
+	// Phase-1 lines are single-parent (linear ancestry), so MergeBase yields at
+	// most one common ancestor; taking bases[0] is unambiguous here.
 	return bases[0].Hash.String(), nil
 }
 

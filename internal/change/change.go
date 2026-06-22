@@ -132,17 +132,35 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 		hasConflict = 1
 	}
 
+	// All three catalogue writes — conflict rows, the change head, and the line
+	// tip — commit or roll back together, so a failure can't orphan conflict
+	// rows or leave a stale tip. The go-git blob/tree/commit writes above are
+	// content-addressed and idempotent, so they stay outside the transaction.
 	ts := e.now().UTC().Format(time.RFC3339Nano)
-	if _, err := e.db.Exec(
+	tx, err := e.db.Begin()
+	if err != nil {
+		return CommitResult{}, fmt.Errorf("change.Commit: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	for _, c := range conflicts {
+		if err := insertConflict(tx, c, ts); err != nil {
+			return CommitResult{}, fmt.Errorf("change.Commit: record conflict: %w", err)
+		}
+	}
+	if _, err := tx.Exec(
 		`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`,
 		head, hasConflict, ts, ch.ID); err != nil {
-		return CommitResult{}, fmt.Errorf("change.Commit: %w", err)
+		return CommitResult{}, fmt.Errorf("change.Commit: advance change head: %w", err)
 	}
 	// advance the owning line's tip to this change's FINAL (post-merge) head.
 	// Phase-1 simplification: with multiple concurrent changes on one line, the
 	// tip simply reflects the most recent commit.
-	if _, err := e.db.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, ch.LineID); err != nil {
-		return CommitResult{}, err
+	if _, err := tx.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, ch.LineID); err != nil {
+		return CommitResult{}, fmt.Errorf("change.Commit: advance line tip: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return CommitResult{}, fmt.Errorf("change.Commit: commit tx: %w", err)
 	}
 	return CommitResult{HeadCommit: head, Conflicts: conflicts}, nil
 }
