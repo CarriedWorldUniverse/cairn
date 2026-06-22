@@ -57,20 +57,29 @@ func TestRepoTwoBranchConverge(t *testing.T) {
 
 func TestRepoConflictThenResolve(t *testing.T) {
 	root := t.TempDir()
-	r, _ := Open(root, "t")
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
 	t.Cleanup(func() { _ = r.Close() })
-	os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := r.Commit("main", ""); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	if err := r.Express("exp", "main"); err != nil {
 		t.Fatalf("express: %v", err)
 	}
-	os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("X\n"), 0o644)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("X\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := r.Commit("main", ""); err != nil {
 		t.Fatalf("main adv: %v", err)
 	}
-	os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644)
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	res, err := r.Commit("exp", "")
 	if err != nil {
 		t.Fatalf("exp commit: %v", err)
@@ -78,7 +87,9 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	if len(res.Conflicts) == 0 {
 		t.Fatal("expected conflict")
 	}
-	os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644)
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := r.Resolve("exp", "f.txt"); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -88,5 +99,59 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	got, _ := Scan(filepath.Join(root, "main"))
 	if string(got["f.txt"]) != "resolved\n" {
 		t.Fatalf("main f.txt = %q, want resolved", got["f.txt"])
+	}
+}
+
+func TestRepoReopenLoadsState(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if err := r.Express("exp", "main"); err != nil {
+		t.Fatalf("Express: %v", err)
+	}
+	_ = r.Close()
+	r2, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("re-Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r2.Close() })
+	if _, ok := r2.Ls()["exp"]; !ok {
+		t.Fatalf("re-Open did not load expressed 'exp': %v", r2.Ls())
+	}
+}
+
+func TestRepoAbandonRemovesFolderParentUntouched(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "m.txt"), []byte("M\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", ""); err != nil {
+		t.Fatalf("commit main: %v", err)
+	}
+	if err := r.Express("exp", "main"); err != nil {
+		t.Fatalf("express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "exp", "wild.txt"), []byte("W\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Abandon("exp"); err != nil {
+		t.Fatalf("Abandon: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "exp")); !os.IsNotExist(err) {
+		t.Fatal("exp folder must be removed after abandon")
+	}
+	if _, ok := r.Ls()["main"]; !ok {
+		t.Fatal("main must still be expressed")
+	}
+	got, _ := Scan(filepath.Join(root, "main"))
+	if string(got["m.txt"]) != "M\n" || got["wild.txt"] != nil {
+		t.Fatalf("main perturbed by abandon: %v", got)
 	}
 }

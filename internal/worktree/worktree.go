@@ -112,17 +112,21 @@ func (r *Repo) Express(branch, parent string) error {
 		}
 	}
 
-	ch, err := r.eng.CreateChange(line.ID, r.author)
-	if err != nil {
-		return fmt.Errorf("worktree.Express: %w", err)
-	}
-
+	// Do the filesystem work FIRST so a failed materialize/mkdir cannot leave a
+	// dangling change with no wc.json entry. CreateChange has no observable side
+	// effect until Express records it below, so deferring it past the FS op is
+	// safe and avoids the leak.
 	dir := filepath.Join(r.root, branch)
 	if line.TipCommit != "" {
 		if err := Materialize(r.eng, line.TipCommit, dir); err != nil {
 			return fmt.Errorf("worktree.Express: %w", err)
 		}
 	} else if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("worktree.Express: %w", err)
+	}
+
+	ch, err := r.eng.CreateChange(line.ID, r.author)
+	if err != nil {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
 
@@ -182,6 +186,10 @@ func (r *Repo) Fold(branch string) error {
 	if parentLineID == "" {
 		return nil
 	}
+	// Partial-failure gap: FoldLine + Unexpress have already committed by this
+	// point, so the engine and wc.json stay consistent even if the re-materialize
+	// below fails. The only casualty is a stale parent folder on disk; the caller
+	// should re-express/re-materialize the parent to refresh it.
 	for name, entry := range r.st.Expressed {
 		pl, err := r.eng.LineByName(name)
 		if err != nil {

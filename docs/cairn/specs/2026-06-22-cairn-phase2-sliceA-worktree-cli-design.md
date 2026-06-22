@@ -18,7 +18,7 @@
 5. Tests: unit (materialize/scan round-trip, wc.json) + a CLI-level integration test of the two-branch converge demo.
 
 **OUT (later slices/phases):**
-- OverlayFS CoW space-saving (Slice B) — Slice A uses plain materialization (full file copy per expressed folder).
+- OverlayFS CoW space-saving (Slice B) — Slice A uses plain materialization (full file copy per expressed folder). **Slice-B design note (operator, 2026-06-22):** in the OverlayFS model, `commit` must **revert the committed files out of the per-branch upper layer** so the upper holds only *live, uncommitted* edits — committed content is then served from the (advanced) shared lower. Otherwise the upper accumulates committed content and the space-saving erodes. (Slice A's re-materialize-from-head is the plain-FS analog.)
 - `clone`/`push`/`fetch`/`sync` + commit-time origin sync (Slice C).
 - `version`/`release`/`private`/`disclose`/`tag` CLI (Phase 5 / privacy).
 - Multi-repo, daemon/watcher (there is none — commit is the trigger).
