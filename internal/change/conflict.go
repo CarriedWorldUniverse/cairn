@@ -3,6 +3,7 @@ package change
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 // Conflict is a row in the conflict catalogue: a single path that could not be
@@ -64,6 +65,112 @@ func insertConflict(tx *sql.Tx, c Conflict, at string) error {
 		 VALUES(?,?,?,?,?,?,?,?,?)`,
 		c.ID, c.ChangeID, c.Path, c.BaseBlob, c.ParentBlob, c.ChangeBlob, c.MarkedBlob, c.Status, at); err != nil {
 		return fmt.Errorf("change.insertConflict: %w", err)
+	}
+	return nil
+}
+
+// Conflicts lists the open (unresolved) conflicts on a change, ordered by path.
+func (e *Engine) Conflicts(changeID string) ([]Conflict, error) {
+	rows, err := e.db.Query(
+		`SELECT id, change_id, path, base_blob, parent_blob, change_blob, marked_blob, status
+		 FROM conflict WHERE change_id=? AND status='open' ORDER BY path`,
+		changeID)
+	if err != nil {
+		return nil, fmt.Errorf("change.Conflicts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var out []Conflict
+	for rows.Next() {
+		var c Conflict
+		if err := rows.Scan(&c.ID, &c.ChangeID, &c.Path, &c.BaseBlob, &c.ParentBlob, &c.ChangeBlob, &c.MarkedBlob, &c.Status); err != nil {
+			return nil, fmt.Errorf("change.Conflicts: %w", err)
+		}
+		out = append(out, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("change.Conflicts: %w", err)
+	}
+	return out, nil
+}
+
+// ResolveConflict resolves a single open conflict on a change by replacing the
+// conflicting path's content with resolved. It writes a new tip commit carrying
+// the resolved content, marks the conflict row resolved, advances the change
+// head and owning line tip, and clears has_conflict once no open conflicts
+// remain. All catalogue writes commit or roll back together. Resolving a
+// non-existent open conflict (or unknown change) returns ErrNotFound with no
+// head advance.
+func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
+	ch, err := e.GetChange(changeID)
+	if err != nil {
+		return err
+	}
+
+	// Build the new tip tree/commit with the resolved content. These go-git
+	// writes are content-addressed and idempotent, so they stay outside the tx.
+	tree, err := e.commitTree(ch.HeadCommit)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	files, err := e.readTree(tree)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	files[path] = resolved
+	newTree, err := e.writeTree(files)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	newHead, err := e.writeCommit(newTree.String(), changeID, ch.Author, []string{ch.HeadCommit})
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+
+	ts := e.now().UTC().Format(time.RFC3339Nano)
+	tx, err := e.db.Begin()
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.Exec(
+		`UPDATE conflict SET status='resolved', resolved_at=? WHERE change_id=? AND path=? AND status='open'`,
+		ts, changeID, path)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+
+	var remaining int
+	if err := tx.QueryRow(
+		`SELECT COUNT(*) FROM conflict WHERE change_id=? AND status='open'`,
+		changeID).Scan(&remaining); err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	hasConflict := 0
+	if remaining > 0 {
+		hasConflict = 1
+	}
+
+	if _, err := tx.Exec(
+		`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`,
+		newHead, hasConflict, ts, changeID); err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	if _, err := tx.Exec(
+		`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`,
+		newHead, ts, ch.LineID); err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("change.ResolveConflict: commit tx: %w", err)
 	}
 	return nil
 }
