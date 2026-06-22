@@ -54,6 +54,17 @@ func (e *Engine) readBlob(sha string) ([]byte, error) {
 // writeTree builds blob and (nested) tree objects from a path->bytes map (paths
 // are "/"-separated) and returns the root tree hash.
 func (e *Engine) writeTree(files map[string][]byte) (plumbing.Hash, error) {
+	for path := range files {
+		if path == "" {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: empty path")
+		}
+		if strings.HasPrefix(path, "/") {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: path %q begins with /", path)
+		}
+		if strings.Contains(path, "//") {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: path %q contains empty segment", path)
+		}
+	}
 	return e.buildTree(files)
 }
 
@@ -73,6 +84,14 @@ func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
 			subdirs[dir][rest] = data
 		} else {
 			immediate[path] = data
+		}
+	}
+
+	// A name cannot be both a file and a subdirectory at the same tree level;
+	// that would emit two entries with the same name (an invalid git tree).
+	for name := range immediate {
+		if _, ok := subdirs[name]; ok {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: name %q used as both file and directory", name)
 		}
 	}
 

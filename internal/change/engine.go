@@ -81,7 +81,7 @@ func (e *Engine) ensureRootLine() error {
 	if _, err := e.LineByName(RootLineName); err == nil {
 		return nil
 	} else if !errors.Is(err, ErrNotFound) {
-		return err
+		return fmt.Errorf("change.ensureRootLine: %w", err)
 	}
 	now := e.now().UTC().Format(time.RFC3339Nano)
 	_, err := e.db.Exec(
