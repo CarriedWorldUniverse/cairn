@@ -293,7 +293,7 @@ Steps 1–4 are foundational and can land first; 5–9 build on them; 10 is the 
 - **Phase 2 — porter CoW mounts + the CLI working-copy model.** Branch-named folders backed by **OverlayFS** (shared lower + per-branch upper; unchanged files cost zero per-branch bytes — §11), `express`/`unexpress`, `cairn commit` (CLI verb or a git post-commit hook) as the commit trigger — which, **when an origin is configured, checks origin and updates the parent to latest before merge-forward** — and **`cairn clone`/`push` against standard git remotes** (§6). The CLI runs **fully local with no server** (the engine is embedded, §1.11). No watcher service. Deliverable: two real agents editing on dMon, converging with no merge day. **See §11.** porter lineage: NEX-349 (read-only mount → atomic check-in → lease/merge).
 - **Phase 3 — ledger conflict items + semantic projection + privacy/disclosure.** Conflict objects → ledger items; micro-commit noise → clean semantic "change" history via the projection engine. **Folder/file/commit-level privacy flags + the withholding filter + `Disclose`** land here (the delayed-public-projection mechanism, NEX-25, at fine granularity), wired into the §6 publish boundary.
 - **Phase 4 — resolution UX + auto-resolver agents + git-export polish.** Designated resolver agents clear conflict objects; web UI surfaces lines/changes/conflicts/lineage; rename-aware merge.
-- **Phase 5 — version derivation tooling (GitVersion-style).** Built-in semantic-version derivation from tags + graph distance + branch/line conventions: configurable increment rules, pre-release/build metadata, CI-consumable output. (Tags ship in Phase 1; this is the *derivation* layer on top.)
+- **Phase 5 — version derivation & publishing (GitVersion-style). Full design in §12.** Deterministically derived semver from tags + graph distance + branch/line, consistent across npm/NuGet/PyPI/containers, with atomic `cairn release` (tag + manifest stamp + publish) and collision/monotonicity guardrails — so package versions are never hand-typed or fat-fingered. Depends only on Phase 1 (tags + graph); **can be scheduled independently of Phases 2–4.**
 
 ---
 
@@ -330,12 +330,43 @@ myrepo/
   - `cairn abandon <branch>` — throw the experiment away; parent untouched.
   - `cairn private <path|commit>` / `cairn disclose <path|commit>` — set/clear folder/file/commit privacy (enforced at the publish boundary; Phase 3).
   - `cairn tree` / `cairn status` / `cairn tag` — lineage + tagging.
+  - `cairn version` — print the derived version (consumed by CI/publish; never hand-typed). `cairn release` — atomic tag + manifest-stamp + publish to npm/NuGet/PyPI/… (§12).
 
 **Phase-1 implication (the only thing Phase 1 must honour):** the git-compat export (§6) must make `.git` a clean, plain-git-readable store — lines ⇒ `refs/heads/*`, tags ⇒ `refs/tags/*`, change refs under `refs/cairn/change/*`, lineage recorded — so this layout and the CLI build on top in Phase 2 without reworking the core. No CLI or mount code in Phase 1.
 
 ---
 
-## 12. Open questions for the plan (small, non-blocking)
+## 12. Versioning & publishing (derived versions — no fat-fingering)
+
+**Goal:** every artifact cairn publishes (**npm, NuGet, PyPI, container images, …**) gets a **deterministically derived** semantic version computed from the change-graph — **never hand-typed** — so versions are consistent across every registry, monotonic, collision-free, and impossible to fat-finger on a push.
+
+**Derivation (GitVersion-style, adapted to lines/changes).** The version is a *pure function* of (graph position, reachable tags, config):
+- **Base** = nearest reachable **tag** (`v1.4.0`).
+- **Increment since that tag** = the largest bump implied by the changes (breaking → major, feature → minor, fix → patch; read from change metadata / conventional-commit subjects), else a configured default (patch). An explicit bump intent on a change/tag overrides.
+- **Pre-release + height from the line:** trunk → a release version (`1.4.1`); an experiment line → a pre-release stamped with the line + **distance** (`1.4.1-exp-idea.5`, where `5` = commits since the branch point). Every line's builds are uniquely and monotonically versioned, so two agents on two lines **never collide**.
+- **Determinism:** same commit → same version, always; `+<short-sha>` build metadata for traceability.
+
+**Consistent across ecosystems.** cairn computes one **canonical semver** and renders it per target — the mapping is config, not manual:
+- **npm / NuGet** → semver2 (`1.4.1`, `1.4.1-exp-idea.5`).
+- **PyPI** → PEP 440 (`1.4.1`, `1.4.1.dev5`, `1.4.1rc1`).
+- container tags, Go module tags, etc.
+
+The *same logical version* is published everywhere — no per-registry hand-editing, no drift between a package.json and a .csproj.
+
+**No fat-fingering on publish — the whole point.**
+- `cairn version` prints the derived version; **CI/publish tooling consumes it — no human ever types a version.**
+- `cairn release` is **atomic**: tag + (optionally) **stamp the manifest** (`package.json` / `.csproj` / `pyproject.toml`) + publish, in one operation, so the tag, the manifest, and the published artifact can **never disagree**.
+- **Guardrails:** refuse to publish a version that already exists (checked against the registry *and* tags); enforce monotonicity; refuse a dirty/uncommitted state.
+
+**Privacy interaction.** Public package versions derive from the **public projection**, so an embargo (which freezes the public tip — §6) also freezes the public version line: published versions never get ahead of what's actually disclosed.
+
+**Config:** `cairn.version` (GitVersion.yml-shaped) — tag prefix, increment rules, branch→pre-release conventions, per-ecosystem rendering.
+
+**Scope/phasing:** this is the version-derivation tooling (Phase 5, §10). It depends **only on Phase 1** (tags + the change-graph) + config — *not* on porter or ledger — so it can be scheduled **independently** of Phases 2–4 and pulled forward if publishing value warrants it. (Tags themselves ship in Phase 1.)
+
+---
+
+## 13. Open questions for the plan (small, non-blocking)
 
 - **diff3 library vs hand-rolled** — pin a small reviewed diff3 implementation vs implement directly. Lean toward a vetted small lib, pinned.
 - **Lineage export mechanism** — `Cairn-Parent:` commit trailer (Phase-1 default) vs a dedicated `refs/cairn/lineage/*` namespace so lineage travels to arbitrary plain-git clones. Pin in step 2/9.
