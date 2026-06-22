@@ -27,15 +27,12 @@ func (e *Engine) FoldLine(lineID string) error {
 	if line.ParentLine == "" {
 		return fmt.Errorf("change.FoldLine: cannot fold the root line")
 	}
-
-	var open int
-	if err := e.db.QueryRow(
-		`SELECT COUNT(*) FROM conflict c JOIN change ch ON c.change_id=ch.id
-		 WHERE ch.line_id=? AND c.status='open'`, lineID).Scan(&open); err != nil {
-		return fmt.Errorf("change.FoldLine: %w", err)
+	parent, err := e.lineByID(line.ParentLine)
+	if err != nil {
+		return err
 	}
-	if open > 0 {
-		return ErrHasConflict
+	if parent.Status != "open" {
+		return fmt.Errorf("change.FoldLine: parent line %s is %s, cannot fold into it", parent.ID, parent.Status)
 	}
 
 	ts := e.now().UTC().Format(time.RFC3339Nano)
@@ -44,6 +41,16 @@ func (e *Engine) FoldLine(lineID string) error {
 		return fmt.Errorf("change.FoldLine: begin tx: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+
+	var open int
+	if err := tx.QueryRow(
+		`SELECT COUNT(*) FROM conflict c JOIN change ch ON c.change_id=ch.id
+		 WHERE ch.line_id=? AND c.status='open'`, lineID).Scan(&open); err != nil {
+		return fmt.Errorf("change.FoldLine: %w", err)
+	}
+	if open > 0 {
+		return ErrHasConflict
+	}
 
 	if _, err := tx.Exec(
 		`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`,
@@ -65,6 +72,9 @@ func (e *Engine) FoldLine(lineID string) error {
 // and the line itself abandoned. The parent line is never touched, so nothing
 // of the abandoned work reaches it. Both mutations commit or roll back together.
 func (e *Engine) AbandonLine(lineID string) error {
+	if _, err := e.lineByID(lineID); err != nil {
+		return err
+	}
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	tx, err := e.db.Begin()
 	if err != nil {

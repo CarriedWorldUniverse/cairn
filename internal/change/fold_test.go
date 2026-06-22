@@ -50,6 +50,19 @@ func TestAbandonLeavesParentUntouched(t *testing.T) {
 	if expAfter.Status != "abandoned" {
 		t.Fatalf("exp status = %q, want abandoned", expAfter.Status)
 	}
+	chAfter, _ := e.GetChange(ch.ID)
+	if chAfter.Status != "abandoned" {
+		t.Fatalf("change status = %q, want abandoned", chAfter.Status)
+	}
+}
+
+func TestFoldRootLineReturnsError(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	err := e.FoldLine(main.ID)
+	if err == nil || errors.Is(err, ErrHasConflict) {
+		t.Fatalf("FoldLine on root: want non-nil non-ErrHasConflict error, got %v", err)
+	}
 }
 
 func TestFoldRejectedWithOpenConflict(t *testing.T) {
