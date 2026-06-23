@@ -155,23 +155,25 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 // yet). The catalogue writes (conflict rows, change head, line tip) commit or
 // roll back together, matching the Commit path.
 func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult, error) {
-	// Find (or create) the line's active change. Conflicts and the merge head
-	// attach to it.
+	// Find the line's active open change WITHOUT creating one. A change is only
+	// needed on the diverged-merge path (to carry the merge head + conflicts);
+	// creating one here would leave a dangling, never-committed "sync" change on
+	// the up-to-date / ahead / fast-forward paths.
 	var changeID, changeHead string
+	hasChange := true
 	err := e.db.QueryRow(
 		`SELECT id, head_commit FROM change WHERE line_id=? AND status='open' ORDER BY updated_at DESC LIMIT 1`,
 		lineID).Scan(&changeID, &changeHead)
 	if errors.Is(err, sql.ErrNoRows) {
-		ch, cerr := e.CreateChange(lineID, syncAuthor)
-		if cerr != nil {
-			return LineResult{}, cerr
-		}
-		changeID = ch.ID
+		hasChange = false
+		changeID = ""
 		changeHead = ""
 	} else if err != nil {
 		return LineResult{}, fmt.Errorf("reconcile: find change: %w", err)
 	}
 
+	// L is the local side: the change head when a change exists (falling back to
+	// the line tip if that change has no commit yet), otherwise the line tip.
 	l := changeHead
 	if l == "" {
 		l = lineTip
@@ -192,13 +194,24 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		return LineResult{Line: lineName, Status: "up-to-date"}, nil
 
 	case base == l && l != "":
-		// Fast-forward: adopt the remote tip wholesale.
+		// Fast-forward: adopt the remote tip wholesale. When the line has an open
+		// change, advance its head too; otherwise advance only the line tip — no
+		// change is created.
 		if err := e.applyHead(changeID, lineID, r, 0); err != nil {
 			return LineResult{}, err
 		}
 		return LineResult{Line: lineName, Status: "fast-forward"}, nil
 
 	default:
+		// Diverged: a real 3-way merge needs a change to attach the merge head and
+		// any conflicts. Create one now only if the line had none.
+		if !hasChange {
+			ch, cerr := e.CreateChange(lineID, syncAuthor)
+			if cerr != nil {
+				return LineResult{}, cerr
+			}
+			changeID = ch.ID
+		}
 		// Diverged (or unrelated histories, base==""): 3-way merge. ours=remote,
 		// theirs=local — so the merge favours nothing automatically and records a
 		// conflict on a genuine same-region divergence.
@@ -248,8 +261,10 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 	}
 }
 
-// applyHead advances the change head and the owning line tip to head in one
-// transaction (fast-forward / no-conflict path).
+// applyHead advances the owning line tip to head — and, when changeID is non-
+// empty, the change head too — in one transaction (fast-forward / no-conflict
+// path). A "" changeID means the line has no open change, so only the line tip
+// moves and no change is touched or created.
 func (e *Engine) applyHead(changeID, lineID, head string, hasConflict int) error {
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 	tx, err := e.db.Begin()
@@ -257,10 +272,12 @@ func (e *Engine) applyHead(changeID, lineID, head string, hasConflict int) error
 		return fmt.Errorf("reconcile: begin tx: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.Exec(
-		`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`,
-		head, hasConflict, ts, changeID); err != nil {
-		return fmt.Errorf("reconcile: advance change head: %w", err)
+	if changeID != "" {
+		if _, err := tx.Exec(
+			`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`,
+			head, hasConflict, ts, changeID); err != nil {
+			return fmt.Errorf("reconcile: advance change head: %w", err)
+		}
 	}
 	if _, err := tx.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, lineID); err != nil {
 		return fmt.Errorf("reconcile: advance line tip: %w", err)

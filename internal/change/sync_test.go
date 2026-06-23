@@ -317,6 +317,56 @@ func TestPullLocalAheadNoOp(t *testing.T) {
 	}
 }
 
+func TestPullNoChangeNoOrphan(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	// import does NOT create an open change on the line. Count changes before.
+	root, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	var before int
+	if err := e.db.QueryRow(`SELECT COUNT(*) FROM change WHERE line_id=?`, root.ID).Scan(&before); err != nil {
+		t.Fatalf("count before: %v", err)
+	}
+	// up-to-date pull (no remote advance)
+	if _, err := e.PullFromRemote("origin"); err != nil {
+		t.Fatalf("pull up-to-date: %v", err)
+	}
+	// remote advances; ff pull
+	advanceOrigin(t, bare, def, "added.txt", "X\n")
+	if _, err := e.PullFromRemote("origin"); err != nil {
+		t.Fatalf("pull ff: %v", err)
+	}
+	var after int
+	if err := e.db.QueryRow(`SELECT COUNT(*) FROM change WHERE line_id=?`, root.ID).Scan(&after); err != nil {
+		t.Fatalf("count after: %v", err)
+	}
+	if after != before {
+		t.Fatalf("pull created %d orphan change(s) on no-op/ff paths (before=%d after=%d)", after-before, before, after)
+	}
+	// and the ff landed
+	r2, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	files, err := e.Files(r2.TipCommit)
+	if err != nil {
+		t.Fatalf("Files: %v", err)
+	}
+	if string(files["added.txt"]) != "X\n" {
+		t.Fatalf("ff didn't land: %v", files)
+	}
+}
+
 func TestPullUpToDate(t *testing.T) {
 	skipOnWindowsSync(t)
 	bare, def := originWithCommit(t)
