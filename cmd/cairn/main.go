@@ -43,10 +43,13 @@ subcommands:
   commit <branch> [-m msg]  snapshot a branch folder onto its change
   fold <branch>             fold a branch into its parent
   abandon <branch>          discard a branch's line
-  status [branch]           report a branch's state (default main)
+  status [branch]           report a branch's state (default: the root branch)
   tree                      print the line tree
   ls                        list expressed branches
   resolve <branch> <path>   resolve a conflict on a branch
+  remote                    list configured remotes
+  remote add <name> <url>   register a remote (--cairn for a cairn remote)
+  push [remote]             publish branches + tags (default origin, --force)
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -83,6 +86,10 @@ func run(args []string) error {
 		return cmdLs(rest)
 	case "resolve":
 		return cmdResolve(rest)
+	case "remote":
+		return cmdRemote(rest)
+	case "push":
+		return cmdPush(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -283,15 +290,22 @@ func cmdStatus(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	branch := change.RootLineName
-	if fs.NArg() > 0 {
-		branch = fs.Arg(0)
-	}
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	branch := ""
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		// No branch given: default to the structural root's name, not the literal
+		// "main" — after a clone of a master-default repo the root is "master".
+		branch, err = r.DefaultBranch()
+		if err != nil {
+			return mapErr(err)
+		}
+	}
 	st, err := r.Status(branch)
 	if err != nil {
 		return mapErr(err)
@@ -365,6 +379,101 @@ func cmdResolve(args []string) error {
 	}
 	defer r.Close()
 	return mapErr(r.Resolve(branch, path))
+}
+
+// cmdRemote lists remotes (no args) or adds one (remote add <name> <url>
+// [--cairn]). The --cairn flag records the remote's kind as "cairn"; otherwise
+// it defaults to "git".
+func cmdRemote(args []string) error {
+	// "remote add ..." is a sub-form; dispatch before flag parsing so the
+	// add-specific flags (--cairn) don't collide with the list form.
+	if len(args) > 0 && args[0] == "add" {
+		return cmdRemoteAdd(args[1:])
+	}
+	fs := flag.NewFlagSet("remote", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	rems, err := r.Remotes()
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, rem := range rems {
+		fmt.Printf("%s  %s  (%s)\n", rem.Name, rem.URL, rem.Kind)
+	}
+	return nil
+}
+
+func cmdRemoteAdd(args []string) error {
+	fs := flag.NewFlagSet("remote add", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	cairn := fs.Bool("cairn", false, "register as a cairn remote (default git)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 2 {
+		return errors.New("usage: cairn remote add <name> <url> [--cairn]")
+	}
+	name := fs.Arg(0)
+	url := fs.Arg(1)
+	kind := "git"
+	if *cairn {
+		kind = "cairn"
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.AddRemote(name, url, kind); err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("%s  %s  (%s)\n", name, url, kind)
+	return nil
+}
+
+// cmdPush publishes the change-graph's branches + tags to a remote (default
+// "origin"). --force overwrites a diverged remote branch.
+func cmdPush(args []string) error {
+	fs := flag.NewFlagSet("push", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	force := fs.Bool("force", false, "force-overwrite a diverged remote branch")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	remote := "origin"
+	if fs.NArg() > 0 {
+		remote = fs.Arg(0)
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	// Spec: pushing to a remote registered as kind "cairn" must warn that
+	// cairn->cairn fidelity isn't implemented yet and it's pushing as git. Done
+	// in the CLI layer so the engine stays I/O-free.
+	rems, err := r.Remotes()
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, rem := range rems {
+		if rem.Name == remote && rem.Kind == "cairn" {
+			fmt.Fprintf(os.Stderr, "cairn: remote %q is type cairn; cairn->cairn fidelity not yet implemented, pushing as git\n", remote)
+			break
+		}
+	}
+	if err := r.Push(remote, *force); err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("pushed -> %s\n", remote)
+	return nil
 }
 
 // mapErr translates change-engine sentinels into operator-facing messages.

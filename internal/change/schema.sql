@@ -49,5 +49,9 @@ CREATE TABLE IF NOT EXISTS operation (
   detail      TEXT NOT NULL DEFAULT '{}',
   at          TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS remote_kind (
+  name TEXT PRIMARY KEY,
+  kind TEXT NOT NULL DEFAULT 'git'   -- 'git' | 'cairn'
+);
 CREATE INDEX IF NOT EXISTS idx_change_line ON change(line_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_change ON conflict(change_id);
