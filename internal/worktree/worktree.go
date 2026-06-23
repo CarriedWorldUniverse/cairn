@@ -362,6 +362,42 @@ func (r *Repo) Tree() ([]change.LineNode, error) {
 // the named remote. force overwrites a diverged remote branch.
 func (r *Repo) Push(remote string, force bool) error { return r.eng.PushToRemote(remote, force) }
 
+// Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
+// without reconciling local lines — the read-only half of a pull. Local work is
+// never clobbered.
+func (r *Repo) Fetch(remote string) error {
+	if err := r.eng.FetchTracking(remote); err != nil {
+		return fmt.Errorf("worktree.Fetch: %w", err)
+	}
+	return nil
+}
+
+// Pull fetches the named remote and reconciles every open local line against its
+// remote branch (fast-forward or 3-way merge with conflicts-as-data), then
+// re-materializes every expressed folder to its line's (possibly merged) tip so
+// disk reflects the result. Conflicts are returned as data on the PullSummary,
+// not as an error.
+func (r *Repo) Pull(remote string) (change.PullSummary, error) {
+	sum, err := r.eng.PullFromRemote(remote)
+	if err != nil {
+		return sum, fmt.Errorf("worktree.Pull: %w", err)
+	}
+	for branch, entry := range r.st.Expressed {
+		line, lerr := r.eng.LineByName(branch)
+		if lerr != nil || line.TipCommit == "" {
+			continue
+		}
+		dir := filepath.Join(r.root, entry.Path)
+		if merr := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); merr != nil {
+			return sum, fmt.Errorf("worktree.Pull: %w", merr)
+		}
+	}
+	if err := SaveState(r.stPath, r.st); err != nil {
+		return sum, fmt.Errorf("worktree.Pull: %w", err)
+	}
+	return sum, nil
+}
+
 // AddRemote registers (or re-points) a git remote and records its cairn kind
 // ("git" or "cairn"; defaulting to "git" when empty).
 func (r *Repo) AddRemote(name, url, kind string) error { return r.eng.AddRemote(name, url, kind) }

@@ -285,6 +285,38 @@ func TestPullDivergentConflict(t *testing.T) {
 	}
 }
 
+func TestPullLocalAheadNoOp(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	root, _ := e.LineByName(def)
+	ch, _ := e.CreateChange(root.ID, "local")
+	if _, err := e.Commit(ch.ID, map[string][]byte{"local_ahead.txt": []byte("L\n")}); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	before, _ := e.LineByName(def)
+	sum, err := e.PullFromRemote("origin") // remote NOT advanced
+	if err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+	after, _ := e.LineByName(def)
+	if after.TipCommit != before.TipCommit {
+		t.Fatalf("local-ahead pull rewound/moved tip: %s -> %s", before.TipCommit, after.TipCommit)
+	}
+	for _, lr := range sum.Lines {
+		if lr.Line == def && lr.Status != "up-to-date" {
+			t.Fatalf("local-ahead status = %q, want up-to-date", lr.Status)
+		}
+	}
+}
+
 func TestPullUpToDate(t *testing.T) {
 	skipOnWindowsSync(t)
 	bare, def := originWithCommit(t)

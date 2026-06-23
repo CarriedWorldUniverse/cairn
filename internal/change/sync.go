@@ -55,6 +55,14 @@ func (e *Engine) fetchTracking(remoteName string) error {
 	return nil
 }
 
+// FetchTracking fetches remoteName's heads into tracking refs without touching
+// local lines — the read-only "fetch" verb. It is a thin exported wrapper over
+// fetchTracking so the worktree layer can offer `cairn fetch` without exposing
+// the reconcile half of a pull.
+func (e *Engine) FetchTracking(remoteName string) error {
+	return e.fetchTracking(remoteName)
+}
+
 // remoteHeads returns short-name → commit-sha for every hash reference under
 // refs/remotes/<remoteName>/, skipping the remote's HEAD pointer.
 func (e *Engine) remoteHeads(remoteName string) (map[string]string, error) {
@@ -123,6 +131,11 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 	_ = rows.Close()
 
 	var sum PullSummary
+	// Each line reconcile is its own transaction (see reconcileLine's applyHead /
+	// applyMerge). On an error mid-loop, already-reconciled lines stay committed
+	// and a retry is safe — it re-fetches and re-reconciles, finding the done
+	// lines up-to-date. Full cross-line atomicity (all-or-nothing across every
+	// line) is a Phase-2 concern, not provided here.
 	for _, lr := range lines {
 		r, ok := rheads[lr.name]
 		if !ok {
@@ -205,6 +218,10 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 				return LineResult{}, err
 			}
 		}
+		// cairn convention: ours = the side being adopted (here the remote tip),
+		// theirs = the local change — consistent with merge-forward, where ours is
+		// the parent line being adopted. So a recorded conflict's parent_blob is
+		// the adopted/remote side and its change_blob is the local side, by design.
 		merged, conflicts, err := e.mergeTrees(changeID, baseTree, rTree, lTree)
 		if err != nil {
 			return LineResult{}, err
