@@ -22,9 +22,14 @@ func reflinkOrCopy(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
 	}
-	defer out.Close()
+	// Deferred close is a harmless no-op safety net; the explicit Close below
+	// surfaces write/close errors (e.g. on a near-full or network FS).
+	defer func() { _ = out.Close() }()
 
 	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
+	}
+	if err := out.Close(); err != nil {
 		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
 	}
 	return nil

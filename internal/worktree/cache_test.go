@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
@@ -50,5 +51,22 @@ func TestMaterializeCoWIsolation(t *testing.T) {
 	sum := sha256.Sum256(content)
 	if gotCache, _ := os.ReadFile(filepath.Join(cacheDir, "blobs", hex.EncodeToString(sum[:]))); string(gotCache) != "v1\n" {
 		t.Fatalf("cache blob mutated")
+	}
+}
+
+func TestMaterializeLeavesNoTempBlobs(t *testing.T) {
+	eng, _ := change.Open(t.TempDir())
+	t.Cleanup(func() { _ = eng.Close() })
+	main, _ := eng.LineByName("main")
+	ch, _ := eng.CreateChange(main.ID, "t")
+	r, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n")})
+	if err != nil { t.Fatal(err) }
+	cacheDir := filepath.Join(t.TempDir(), "cache")
+	if err := Materialize(eng, cacheDir, r.HeadCommit, filepath.Join(t.TempDir(), "wc")); err != nil { t.Fatal(err) }
+	entries, _ := os.ReadDir(filepath.Join(cacheDir, "blobs"))
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".blob-") || strings.HasSuffix(e.Name(), ".tmp") {
+			t.Fatalf("leftover temp blob: %s", e.Name())
+		}
 	}
 }

@@ -27,10 +27,15 @@ func reflinkOrCopy(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
 	}
-	defer out.Close()
+	// Deferred close is a harmless no-op safety net; the explicit Close calls
+	// below surface write/close errors (e.g. on a near-full or network FS).
+	defer func() { _ = out.Close() }()
 
 	err = unix.IoctlFileClone(int(out.Fd()), int(in.Fd()))
 	if err == nil {
+		if err := out.Close(); err != nil {
+			return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
+		}
 		return nil
 	}
 	if !isCloneUnsupported(err) {
@@ -46,6 +51,9 @@ func reflinkOrCopy(src, dst string) error {
 		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
 	}
 	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
+	}
+	if err := out.Close(); err != nil {
 		return fmt.Errorf("worktree.reflinkOrCopy: %w", err)
 	}
 	return nil
