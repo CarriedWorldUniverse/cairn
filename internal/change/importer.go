@@ -51,7 +51,10 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 	}
 
 	// Rename the root to the default branch and set it to that head's commit.
-	defTip := heads[def]
+	defTip, ok := heads[def]
+	if !ok {
+		return "", fmt.Errorf("change.ImportFromRemote: default branch %q not in fetched heads", def)
+	}
 	if _, err := tx.Exec(
 		`UPDATE line SET name=?, tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
 		def, defTip, defTip, ts, rootID); err != nil {

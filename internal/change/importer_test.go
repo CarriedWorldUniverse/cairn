@@ -157,6 +157,34 @@ func TestImportFromRemoteMapsLinesAndTags(t *testing.T) {
 	}
 }
 
+func TestReopenAfterImportNoSecondRoot(t *testing.T) {
+	url, def := makeOriginRepoFull(t)
+	dir := t.TempDir()
+	e, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if _, err := e.ImportFromRemote(url); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	_ = e.Close()
+	e2, err := Open(dir) // re-open the SAME dir
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	t.Cleanup(func() { _ = e2.Close() })
+	var roots int
+	if err := e2.db.QueryRow(`SELECT COUNT(*) FROM line WHERE parent_line IS NULL`).Scan(&roots); err != nil {
+		t.Fatalf("count roots: %v", err)
+	}
+	if roots != 1 {
+		t.Fatalf("after reopen: %d root lines, want 1", roots)
+	}
+	if _, err := e2.LineByName(def); err != nil {
+		t.Fatalf("default line %q gone after reopen: %v", def, err)
+	}
+}
+
 func TestFetchRemoteLandsHeadsAndDefault(t *testing.T) {
 	url := makeOriginRepo(t)
 	e, err := Open(t.TempDir())
