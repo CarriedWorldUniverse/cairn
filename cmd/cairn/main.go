@@ -52,6 +52,7 @@ subcommands:
   push [remote]             publish branches + tags (default origin, --force)
   fetch [remote]            fetch a remote into tracking refs (default origin)
   pull [remote]             fetch + reconcile each line (default origin)
+  config <key> [value]      get (one arg) or set (two args) a config value
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -96,6 +97,8 @@ func run(args []string) error {
 		return cmdFetch(rest)
 	case "pull":
 		return cmdPull(rest)
+	case "config":
+		return cmdConfig(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -243,6 +246,15 @@ func cmdCommit(args []string) error {
 	res, err := r.Commit(branch, *msg)
 	if err != nil {
 		return mapErr(err)
+	}
+	// The commit succeeded; surface the best-effort auto-sync outcome on BOTH
+	// the conflict and the clean path (before the branching below) so a notice
+	// is never dropped when there are conflicts.
+	switch note := r.LastSyncNote(); {
+	case note == "synced":
+		fmt.Fprintln(os.Stderr, "cairn: auto-synced with origin")
+	case strings.HasPrefix(note, "skipped:"):
+		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
 	}
 	if len(res.Conflicts) > 0 {
 		paths := make([]string, 0, len(res.Conflicts))
@@ -475,6 +487,11 @@ func cmdPush(args []string) error {
 			break
 		}
 	}
+	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
+	// once) so "push just works". A successful auto-retry is intentionally silent
+	// for v1: detecting whether the retry happened would need engine I/O the CLI
+	// layer deliberately avoids. A merge that conflicts surfaces as a non-nil
+	// "resolve, then push" error mapped to stderr below.
 	if err := r.Push(remote, *force); err != nil {
 		return mapErr(err)
 	}
@@ -541,6 +558,39 @@ func cmdPull(args []string) error {
 	if anyConflicts {
 		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
 	}
+	return nil
+}
+
+// cmdConfig gets or sets a config value. With one arg it prints the value (an
+// empty line when unset); with two args it stores the value.
+func cmdConfig(args []string) error {
+	fs := flag.NewFlagSet("config", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn config <key> [value]")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	key := fs.Arg(0)
+	if fs.NArg() == 1 {
+		value, _, err := r.GetConfig(key)
+		if err != nil {
+			return mapErr(err)
+		}
+		fmt.Println(value)
+		return nil
+	}
+	value := fs.Arg(1)
+	if err := r.SetConfig(key, value); err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("set %s=%s\n", key, value)
 	return nil
 }
 

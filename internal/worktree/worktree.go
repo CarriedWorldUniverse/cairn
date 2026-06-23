@@ -10,6 +10,11 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
+// ErrPushConflict is returned by Repo.Push when a diverged remote was pulled
+// and the 3-way merge produced conflicts: the push is stopped (not retried) so
+// the operator can resolve the conflict markers left on disk, then push again.
+var ErrPushConflict = errors.New("remote diverged and merging produced conflicts; resolve, then push")
+
 // Repo is the working-copy orchestrator that bridges expressed branch folders on
 // disk and the cairn change engine. Each expressed branch is a folder under root
 // holding the materialized files of an open change on the corresponding line.
@@ -19,6 +24,11 @@ type Repo struct {
 	eng    *change.Engine
 	st     *State
 	stPath string
+
+	// lastSyncNote records the outcome of the best-effort commit-time auto-sync
+	// from the most recent Commit, so the CLI can surface it. Empty means autosync
+	// was off (or no commit has run); see LastSyncNote.
+	lastSyncNote string
 }
 
 // StatusInfo reports the state of an expressed branch: its lineage (root-first
@@ -176,8 +186,55 @@ func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
+
+	// Best-effort, opt-in auto-sync AFTER the commit. The commit has already
+	// succeeded above; the pull is purely additive and never alters res or the
+	// (nil) error returned here. Any sync failure (offline, fetch error, conflict)
+	// is captured as a note for the CLI, not propagated.
+	r.lastSyncNote = r.autoSync()
+
 	return res, nil
 }
+
+// autoSync runs the opt-in commit-time sync and returns a note describing the
+// outcome for the CLI: "" when autosync is off, "synced" on a successful pull,
+// or "skipped:<reason>" otherwise. It never returns an error — the commit's
+// success is independent of the sync.
+func (r *Repo) autoSync() string {
+	v, ok, err := r.eng.GetConfig("autosync")
+	if err != nil || !ok || !change.ConfigTruthy(v) {
+		return ""
+	}
+	rems, err := r.eng.ListRemotes()
+	if err != nil {
+		return "skipped:list-remotes-error"
+	}
+	hasOrigin := false
+	for _, rem := range rems {
+		if rem.Name == "origin" {
+			hasOrigin = true
+			break
+		}
+	}
+	if !hasOrigin {
+		return "skipped:no origin"
+	}
+	sum, perr := r.Pull("origin")
+	if perr != nil {
+		return "skipped:offline"
+	}
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			return "skipped:conflicts"
+		}
+	}
+	return "synced"
+}
+
+// LastSyncNote returns the outcome of the most recent Commit's best-effort
+// commit-time auto-sync, for the CLI to surface. It is "" when autosync was off,
+// "synced" on success, or "skipped:<reason>" otherwise.
+func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 
 // Fold folds an expressed branch's line back into its parent, fast-forwarding the
 // parent tip, then unexpresses the branch. Any expressed line whose ID is the
@@ -360,7 +417,29 @@ func (r *Repo) Tree() ([]change.LineNode, error) {
 
 // Push projects the change-graph onto git refs and publishes branches + tags to
 // the named remote. force overwrites a diverged remote branch.
-func (r *Repo) Push(remote string, force bool) error { return r.eng.PushToRemote(remote, force) }
+//
+// On a non-fast-forward rejection (the remote advanced since we last synced) and
+// when not forcing, Push reconciles automatically: it pulls (fetch + 3-way merge,
+// re-materializing folders) and retries the push once. If the merge produced any
+// conflict, it stops with a clear "resolve, then push" error rather than retrying,
+// leaving the conflict markers on disk for the operator to resolve.
+func (r *Repo) Push(remote string, force bool) error {
+	err := r.eng.PushToRemote(remote, force)
+	if err == nil || force || !change.IsNonFastForward(err) {
+		return err
+	}
+	// remote diverged → reconcile + retry once
+	sum, perr := r.Pull(remote)
+	if perr != nil {
+		return fmt.Errorf("worktree.Push: %w", perr)
+	}
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			return fmt.Errorf("worktree.Push: %w", ErrPushConflict)
+		}
+	}
+	return r.eng.PushToRemote(remote, force)
+}
 
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
 // without reconciling local lines — the read-only half of a pull. Local work is
@@ -404,6 +483,12 @@ func (r *Repo) AddRemote(name, url, kind string) error { return r.eng.AddRemote(
 
 // Remotes returns every configured remote with its URL and cairn kind.
 func (r *Repo) Remotes() ([]change.RemoteInfo, error) { return r.eng.ListRemotes() }
+
+// GetConfig returns the stored value for key; ok is false when unset.
+func (r *Repo) GetConfig(key string) (string, bool, error) { return r.eng.GetConfig(key) }
+
+// SetConfig stores value under key.
+func (r *Repo) SetConfig(key, value string) error { return r.eng.SetConfig(key, value) }
 
 // Ls returns a copy of the currently expressed branch entries.
 func (r *Repo) Ls() map[string]Entry {
