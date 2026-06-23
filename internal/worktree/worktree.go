@@ -509,6 +509,9 @@ func (r *Repo) Tag(name, branch string) error {
 	if err != nil {
 		return fmt.Errorf("worktree.Tag: %w", err)
 	}
+	if line.TipCommit == "" {
+		return fmt.Errorf("worktree.Tag: branch %q has no commits to tag", branch)
+	}
 	return r.eng.Tag(name, line.TipCommit, r.author)
 }
 
@@ -528,6 +531,9 @@ func (r *Repo) DeriveInput(branch string, cfg version.Config) (version.DeriveInp
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	if line.TipCommit == "" {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: branch %q has no commits", branch)
 	}
 	tag, dist, err := r.eng.DescribeVersion(line.TipCommit)
 	if err != nil {

@@ -58,6 +58,38 @@ func TestDeriveInputTrunk(t *testing.T) {
 	}
 }
 
+func TestTagNoCommitsErrors(t *testing.T) {
+	skipOnWindows(t)
+	r, err := Open(t.TempDir(), "tester")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	def, err := r.DefaultBranch()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Tag("v0.0.1", def); err == nil {
+		t.Fatal("tagging a branch with no commits should error")
+	}
+}
+
+func TestDeriveInputNoCommitsErrors(t *testing.T) {
+	skipOnWindows(t)
+	r, err := Open(t.TempDir(), "tester")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	def, err := r.DefaultBranch()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.DeriveInput(def, version.DefaultConfig()); err == nil {
+		t.Fatal("DeriveInput on a no-commit branch should error")
+	}
+}
+
 func TestPendingBumpRoundTrip(t *testing.T) {
 	skipOnWindows(t)
 	root := t.TempDir()

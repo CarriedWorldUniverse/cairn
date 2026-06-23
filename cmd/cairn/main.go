@@ -687,15 +687,15 @@ func cmdVersionBump(args []string) error {
 		return errors.New("usage: cairn version bump major|minor|patch")
 	}
 	level := args[0]
+	switch level {
+	case "major", "minor", "patch":
+	default:
+		return errors.New("usage: cairn version bump major|minor|patch [--repo DIR]")
+	}
 	fs := flag.NewFlagSet("version bump", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
-	}
-	switch level {
-	case "major", "minor", "patch":
-	default:
-		return fmt.Errorf("bump level %q must be major|minor|patch", level)
 	}
 	r, err := openRepo(*repo, *author)
 	if err != nil {
