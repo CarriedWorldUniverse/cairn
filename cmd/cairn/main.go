@@ -50,6 +50,8 @@ subcommands:
   remote                    list configured remotes
   remote add <name> <url>   register a remote (--cairn for a cairn remote)
   push [remote]             publish branches + tags (default origin, --force)
+  fetch [remote]            fetch a remote into tracking refs (default origin)
+  pull [remote]             fetch + reconcile each line (default origin)
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -90,6 +92,10 @@ func run(args []string) error {
 		return cmdRemote(rest)
 	case "push":
 		return cmdPush(rest)
+	case "fetch":
+		return cmdFetch(rest)
+	case "pull":
+		return cmdPull(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -473,6 +479,68 @@ func cmdPush(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Printf("pushed -> %s\n", remote)
+	return nil
+}
+
+// cmdFetch fetches a remote (default "origin") into tracking refs without
+// touching local lines.
+func cmdFetch(args []string) error {
+	fs := flag.NewFlagSet("fetch", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	remote := "origin"
+	if fs.NArg() > 0 {
+		remote = fs.Arg(0)
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.Fetch(remote); err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("fetched <- %s\n", remote)
+	return nil
+}
+
+// cmdPull fetches a remote (default "origin") and reconciles each local line
+// against its remote branch, re-materializing expressed folders. Each line's
+// outcome is printed; conflicts are reported but non-fatal (exit 0) so the
+// operator can resolve them and push.
+func cmdPull(args []string) error {
+	fs := flag.NewFlagSet("pull", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	remote := "origin"
+	if fs.NArg() > 0 {
+		remote = fs.Arg(0)
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	sum, err := r.Pull(remote)
+	if err != nil {
+		return mapErr(err)
+	}
+	anyConflicts := false
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			anyConflicts = true
+			fmt.Printf("%s: %s (%d conflicts)\n", lr.Line, lr.Status, lr.Conflicts)
+		} else {
+			fmt.Printf("%s: %s\n", lr.Line, lr.Status)
+		}
+	}
+	if anyConflicts {
+		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
+	}
 	return nil
 }
 
