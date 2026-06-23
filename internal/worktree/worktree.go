@@ -10,6 +10,11 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
+// ErrPushConflict is returned by Repo.Push when a diverged remote was pulled
+// and the 3-way merge produced conflicts: the push is stopped (not retried) so
+// the operator can resolve the conflict markers left on disk, then push again.
+var ErrPushConflict = errors.New("remote diverged and merging produced conflicts; resolve, then push")
+
 // Repo is the working-copy orchestrator that bridges expressed branch folders on
 // disk and the cairn change engine. Each expressed branch is a folder under root
 // holding the materialized files of an open change on the corresponding line.
@@ -378,7 +383,7 @@ func (r *Repo) Push(remote string, force bool) error {
 	}
 	for _, lr := range sum.Lines {
 		if lr.Conflicts > 0 {
-			return fmt.Errorf("worktree.Push: remote diverged and merging produced conflicts; resolve, then push")
+			return fmt.Errorf("worktree.Push: %w", ErrPushConflict)
 		}
 	}
 	return r.eng.PushToRemote(remote, force)
@@ -426,6 +431,12 @@ func (r *Repo) AddRemote(name, url, kind string) error { return r.eng.AddRemote(
 
 // Remotes returns every configured remote with its URL and cairn kind.
 func (r *Repo) Remotes() ([]change.RemoteInfo, error) { return r.eng.ListRemotes() }
+
+// GetConfig returns the stored value for key; ok is false when unset.
+func (r *Repo) GetConfig(key string) (string, bool, error) { return r.eng.GetConfig(key) }
+
+// SetConfig stores value under key.
+func (r *Repo) SetConfig(key, value string) error { return r.eng.SetConfig(key, value) }
 
 // Ls returns a copy of the currently expressed branch entries.
 func (r *Repo) Ls() map[string]Entry {

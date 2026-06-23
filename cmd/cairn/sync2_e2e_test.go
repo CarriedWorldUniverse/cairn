@@ -61,8 +61,8 @@ func TestE2E_PushAutoPullConflictStops(t *testing.T) {
 	if err == nil {
 		t.Fatalf("push over a conflicting divergence should error, got nil")
 	}
-	if !strings.Contains(err.Error(), "resolve") {
-		t.Fatalf("conflict-stop error %q should mention resolve", err.Error())
+	if !strings.Contains(err.Error(), "resolve, then push") {
+		t.Fatalf("conflict-stop error %q should say 'resolve, then push'", err.Error())
 	}
 
 	// readme.txt now has conflict markers on disk; write the resolution, resolve,
@@ -81,5 +81,30 @@ func TestE2E_PushAutoPullConflictStops(t *testing.T) {
 	}
 	if string(got) != "resolved\n" {
 		t.Fatalf("remote readme.txt = %q, want resolved", got)
+	}
+}
+
+func TestE2E_PushForceBypassesRetry(t *testing.T) {
+	skipOnWindows(t)
+	origin := makeSeededBareRepo(t)
+	A := filepath.Join(t.TempDir(), "A")
+	B := filepath.Join(t.TempDir(), "B")
+	mustRun(t, "clone", origin, A)
+	mustRun(t, "clone", origin, B)
+	def := soleExpressedDir(t, A)
+	// A and B edit the SAME file differently
+	os.WriteFile(filepath.Join(A, def, "readme.txt"), []byte("A-version\n"), 0o644)
+	mustRun(t, "commit", "--repo", A, def)
+	mustRun(t, "push", "--repo", A)
+	os.WriteFile(filepath.Join(B, def, "readme.txt"), []byte("B-version\n"), 0o644)
+	mustRun(t, "commit", "--repo", B, def)
+	// force push goes straight through, no pull/conflict
+	mustRun(t, "push", "--repo", B, "--force")
+	// remote now has B's version (force won)
+	C := filepath.Join(t.TempDir(), "C")
+	mustRun(t, "clone", origin, C)
+	got, _ := os.ReadFile(filepath.Join(C, def, "readme.txt"))
+	if string(got) != "B-version\n" {
+		t.Fatalf("force push didn't win: %q", got)
 	}
 }
