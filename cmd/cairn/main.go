@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
@@ -60,6 +61,8 @@ subcommands:
   push [remote]             publish branches + tags (default origin, --force)
   fetch [remote]            fetch a remote into tracking refs (default origin)
   pull [remote]             fetch + reconcile each line (default origin)
+  log [branch] [-n N]       show commit history
+  show <commit>             show a commit's metadata + diff
   config <key> [value]      get (one arg) or set (two args) a config value
   tag <name> [branch]       tag the tip of a branch (default: root branch)
   version [--target eco]    print the derived version (stdout only, CI-safe)
@@ -97,6 +100,10 @@ func run(args []string) error {
 		return cmdStatus(rest)
 	case "diff":
 		return cmdDiff(rest)
+	case "log":
+		return cmdLog(rest)
+	case "show":
+		return cmdShow(rest)
 	case "tree":
 		return cmdTree(rest)
 	case "ls":
@@ -857,6 +864,81 @@ func cmdRelease(args []string) error {
 	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
 	if *target == "npm" || *target == "pypi" || *target == "nuget" {
 		fmt.Fprintf(os.Stderr, "cairn: manifest stamped but not committed — run `cairn commit %s` before the next release or a pull\n", branch)
+	}
+	return nil
+}
+
+// cmdLog prints the commit history of a branch, newest first.
+// Usage: cairn log [branch] [-n N]
+func cmdLog(args []string) error {
+	fs := flag.NewFlagSet("log", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	n := fs.Int("n", 20, "max commits to show")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch := ""
+	var berr error
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		branch, berr = r.DefaultBranch()
+		if berr != nil {
+			return mapErr(berr)
+		}
+	}
+	commits, err := r.Log(branch, *n)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, c := range commits {
+		short := c.SHA
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		fmt.Printf("%s  %s  %s  %s\n", short, c.When.Format("2006-01-02"), c.AuthorName, c.Subject)
+	}
+	return nil
+}
+
+// cmdShow prints a commit's metadata and the diff against its first parent.
+// Usage: cairn show <commit>
+func cmdShow(args []string) error {
+	fs := flag.NewFlagSet("show", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: cairn show <commit>")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	ci, diffs, err := r.Show(fs.Arg(0))
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("commit %s\nAuthor: %s <%s>\nDate:   %s\n\n    %s\n\n",
+		ci.SHA, ci.AuthorName, ci.AuthorEmail,
+		ci.When.Format(time.RFC3339), ci.Message)
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
 	}
 	return nil
 }

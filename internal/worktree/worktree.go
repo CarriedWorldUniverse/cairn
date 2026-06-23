@@ -621,6 +621,23 @@ func (r *Repo) Ls() map[string]Entry {
 // Root returns the working-copy root directory (for config file resolution).
 func (r *Repo) Root() string { return r.root }
 
+// Log returns the commit history for branch (newest first, up to limit entries).
+func (r *Repo) Log(branch string, limit int) ([]change.CommitInfo, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Log: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, nil
+	}
+	return r.eng.Log(line.TipCommit, limit)
+}
+
+// Show returns a commit's metadata and the diff against its first parent.
+func (r *Repo) Show(commit string) (change.CommitInfo, []change.FileDiff, error) {
+	return r.eng.Show(commit)
+}
+
 // Tag names the tip of branch with the given tag name.
 func (r *Repo) Tag(name, branch string) error {
 	line, err := r.eng.LineByName(branch)
