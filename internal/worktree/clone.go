@@ -33,6 +33,7 @@ func Clone(url, dir, author string) (*Repo, error) {
 		_ = eng.Close()
 		return nil, fmt.Errorf("worktree.Clone: %w", err)
 	}
+	author = resolveIdentity(eng, author)
 	r := &Repo{root: dir, author: author, eng: eng, st: st, stPath: stPath}
 	if err := r.Express(def, ""); err != nil {
 		_ = eng.Close()

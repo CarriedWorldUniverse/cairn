@@ -64,6 +64,7 @@ func Open(root, author string) (*Repo, error) {
 		_ = eng.Close()
 		return nil, fmt.Errorf("worktree.Open: %w", err)
 	}
+	author = resolveIdentity(eng, author)
 	r := &Repo{root: root, author: author, eng: eng, st: st, stPath: stPath}
 	// First-run guard, by STRUCTURE not name: express the actual root line
 	// (parent_line IS NULL), whatever it is called. After a Clone of a remote
@@ -81,6 +82,28 @@ func Open(root, author string) (*Repo, error) {
 		}
 	}
 	return r, nil
+}
+
+// resolveIdentity resolves the author name + email for commits this working copy
+// writes and configures the engine accordingly. name comes from config user.name
+// (else the passed author); email from config user.email (else $CAIRN_EMAIL, else
+// $GIT_AUTHOR_EMAIL, else ""). It returns the resolved name so the caller can use
+// it as the Repo's author (recorded on change rows via CreateChange).
+func resolveIdentity(eng *change.Engine, author string) string {
+	name := author
+	if v, ok, _ := eng.GetConfig("user.name"); ok && v != "" {
+		name = v
+	}
+	email := ""
+	if v, ok, _ := eng.GetConfig("user.email"); ok && v != "" {
+		email = v
+	} else if v := os.Getenv("CAIRN_EMAIL"); v != "" {
+		email = v
+	} else if v := os.Getenv("GIT_AUTHOR_EMAIL"); v != "" {
+		email = v
+	}
+	eng.SetIdentity(name, email)
+	return name
 }
 
 // cacheDir returns the path to the content-addressed blob cache shared by all
@@ -166,7 +189,7 @@ func (r *Repo) Express(branch, parent string) error {
 // (adopting the parent line via the engine's merge-forward) and re-materializes
 // the resulting head, so the folder reflects any merged-in parent state. The
 // CommitResult carries the new head and any conflicts recorded.
-func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
+func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
@@ -176,7 +199,7 @@ func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
-	res, err := r.eng.Commit(entry.ChangeID, files)
+	res, err := r.eng.Commit(entry.ChangeID, files, message)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}

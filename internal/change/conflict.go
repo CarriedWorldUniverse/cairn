@@ -152,7 +152,7 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
-	newHead, err := e.writeCommit(newTree.String(), changeID, ch.Author, []string{ch.HeadCommit})
+	newHead, err := e.writeCommit(newTree.String(), changeID, "resolve conflicts", []string{ch.HeadCommit})
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}

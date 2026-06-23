@@ -246,7 +246,7 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		if l != "" {
 			parents = []string{l, r}
 		}
-		head, err := e.writeCommit(merged, changeID, syncAuthor, parents)
+		head, err := e.writeCommit(merged, changeID, "merge remote-tracking", parents)
 		if err != nil {
 			return LineResult{}, err
 		}

@@ -129,9 +129,20 @@ func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
 // writeCommit stores a commit object snapshotting treeSha for changeID and
 // returns its hex sha. Author and committer share a single timestamp (e.now())
 // so identical inputs hash identically.
-func (e *Engine) writeCommit(treeSha, changeID, author string, parents []string) (string, error) {
+func (e *Engine) writeCommit(treeSha, changeID, message string, parents []string) (string, error) {
 	when := e.now()
-	sig := object.Signature{Name: author, Email: author + "@cairn", When: when}
+	name, email := e.idName, e.idEmail
+	if name == "" {
+		name = "cairn"
+	}
+	if email == "" {
+		email = name + "@users.noreply.cairn"
+	}
+	sig := object.Signature{Name: name, Email: email, When: when}
+	if message == "" {
+		message = "snapshot"
+	}
+	fullMsg := message + "\n\nChange-Id: " + changeID + "\n"
 	parentHashes := make([]plumbing.Hash, 0, len(parents))
 	for _, p := range parents {
 		parentHashes = append(parentHashes, plumbing.NewHash(p))
@@ -139,7 +150,7 @@ func (e *Engine) writeCommit(treeSha, changeID, author string, parents []string)
 	c := &object.Commit{
 		Author:       sig,
 		Committer:    sig,
-		Message:      "snapshot\n\nChange-Id: " + changeID + "\n",
+		Message:      fullMsg,
 		TreeHash:     plumbing.NewHash(treeSha),
 		ParentHashes: parentHashes,
 	}
