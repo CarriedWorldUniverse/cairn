@@ -17,13 +17,19 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
+
+// Publisher/probe seams, overridable in tests.
+var newPublisher = func() release.Publisher { return release.ExecPublisher{} }
+var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -57,6 +63,7 @@ subcommands:
   tag <name> [branch]       tag the tip of a branch (default: root branch)
   version [--target eco]    print the derived version (stdout only, CI-safe)
   version bump <level>      record explicit bump intent (major|minor|patch)
+  release --target eco      cut a clean release: tag + stamp + publish (--dry-run)
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -107,6 +114,8 @@ func run(args []string) error {
 		return cmdTag(rest)
 	case "version":
 		return cmdVersion(rest)
+	case "release":
+		return cmdRelease(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -706,6 +715,70 @@ func cmdVersionBump(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Fprintf(os.Stderr, "cairn: next release bump set to %s\n", level)
+	return nil
+}
+
+// cmdRelease cuts a clean release version (e.g. v1.0.1) for the default branch
+// and the requested ecosystem: it derives the next release version, stamps the
+// manifest, tags, and publishes atomically (with --dry-run showing the plan).
+func cmdRelease(args []string) error {
+	fs := flag.NewFlagSet("release", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	target := fs.String("target", "", "ecosystem: npm|nuget|pypi|oci")
+	dryRun := fs.Bool("dry-run", false, "show the plan without tagging or publishing")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *target == "" {
+		return errors.New("usage: cairn release --target npm|nuget|pypi|oci [--dry-run]")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		return mapErr(err)
+	}
+	cfg, err := version.LoadConfig(r.Root())
+	if err != nil {
+		return mapErr(err)
+	}
+	in, err := r.DeriveInput(branch, cfg)
+	if err != nil {
+		return mapErr(err)
+	}
+	rel, err := version.ReleaseVersion(in)
+	if err != nil {
+		return mapErr(err)
+	}
+	rendered, err := version.Render(rel, *target)
+	if err != nil {
+		return mapErr(err)
+	}
+	port, err := r.ReleasePort(branch, *target)
+	if err != nil {
+		return mapErr(err)
+	}
+	opts := release.Options{
+		Eco:     *target,
+		Version: rendered,
+		TagName: cfg.TagPrefix + rel.String(),
+		Dir:     filepath.Join(*repo, branch),
+	}
+	if *dryRun {
+		plan, err := release.Plan(opts, port, newProbe())
+		if err != nil {
+			return mapErr(err)
+		}
+		fmt.Println(plan)
+		return nil
+	}
+	if err := release.Release(opts, port, newPublisher(), newProbe()); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
 	return nil
 }
 

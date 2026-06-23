@@ -26,6 +26,15 @@ func (e *Engine) Tag(name, commitSha, tagger string) error {
 	return nil
 }
 
+// DeleteTag removes the tag named name. Idempotent: deleting a missing tag is not
+// an error. The tag's git ref is pruned on the next Export.
+func (e *Engine) DeleteTag(name string) error {
+	if _, err := e.db.Exec(`DELETE FROM tag WHERE name=?`, name); err != nil {
+		return fmt.Errorf("change.DeleteTag: %w", err)
+	}
+	return nil
+}
+
 // ListTags lists all tags, ordered by name.
 func (e *Engine) ListTags() ([]Tag, error) {
 	rows, err := e.db.Query(

@@ -55,6 +55,26 @@ func Derive(in DeriveInput) (Canonical, error) {
 	return core, nil
 }
 
+// ReleaseVersion returns the clean release version this commit publishes AS: the
+// base core with the effective bump applied, with NO pre-release or build
+// metadata (unlike Derive, which yields CI identifiers for off-tag commits). A
+// release always advances from the base tag.
+func ReleaseVersion(in DeriveInput) (Canonical, error) {
+	base := Canonical{}
+	if in.BaseTag != "" {
+		parsed, err := Parse(strings.TrimPrefix(in.BaseTag, in.Config.TagPrefix))
+		if err != nil {
+			return Canonical{}, fmt.Errorf("version.ReleaseVersion: base tag: %w", err)
+		}
+		base = Canonical{Major: parsed.Major, Minor: parsed.Minor, Patch: parsed.Patch}
+	}
+	bump := in.PendingBump
+	if bump == "" {
+		bump = in.Config.DefaultIncrement
+	}
+	return applyBump(base, bump)
+}
+
 func applyBump(b Canonical, bump string) (Canonical, error) {
 	switch bump {
 	case "major":

@@ -7,6 +7,20 @@ func di(base string, dist int, line string, trunk bool, lineDist int, bump, sha 
 		LineDistance: lineDist, PendingBump: bump, ShortSHA: sha, Config: DefaultConfig()}
 }
 
+func TestReleaseVersion(t *testing.T) {
+	v, err := ReleaseVersion(di("v1.4.0", 3, "main", true, 3, "", "abc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.String() != "1.4.1" {
+		t.Fatalf("got %q want 1.4.1 (clean, no build metadata)", v.String())
+	}
+	v2, _ := ReleaseVersion(di("v1.4.0", 2, "main", true, 2, "minor", "abc"))
+	if v2.String() != "1.5.0" {
+		t.Fatalf("got %q want 1.5.0", v2.String())
+	}
+}
+
 func TestDeriveOnTagIsRelease(t *testing.T) {
 	v, err := Derive(di("v1.4.0", 0, "main", true, 0, "", "abc1234"))
 	if err != nil {
