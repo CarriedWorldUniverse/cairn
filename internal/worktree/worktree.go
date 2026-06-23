@@ -43,6 +43,9 @@ type StatusInfo struct {
 	Ahead     int
 	Conflicts []string
 	Expressed []string
+	Added     []string
+	Modified  []string
+	Deleted   []string
 }
 
 // Open opens (creating if needed) the working copy rooted at root with the given
@@ -426,10 +429,28 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for _, l := range lineage {
 		names = append(names, l.Name)
 	}
-	ahead := 0
-	if line.TipCommit != "" && line.TipCommit != line.BaseCommit {
-		ahead = 1
+	ahead, err := r.eng.LineHeight(line)
+	if err != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
+	diffs, err := r.WorkingDiff(branch)
+	if err != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
+	}
+	var added, modified, deleted []string
+	for _, d := range diffs {
+		switch d.Status {
+		case change.Added:
+			added = append(added, d.Path)
+		case change.Modified:
+			modified = append(modified, d.Path)
+		case change.Deleted:
+			deleted = append(deleted, d.Path)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(modified)
+	sort.Strings(deleted)
 	conflicts, err := r.eng.Conflicts(entry.ChangeID)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
@@ -449,7 +470,48 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 		Ahead:     ahead,
 		Conflicts: paths,
 		Expressed: expressed,
+		Added:     added,
+		Modified:  modified,
+		Deleted:   deleted,
 	}, nil
+}
+
+// WorkingDiff returns the per-path diff between an expressed branch's committed
+// tip tree (HEAD) and its current on-disk contents (working). A branch with no
+// commits yet diffs the working folder against the empty tree.
+func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
+	}
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+	}
+	var committed map[string][]byte
+	if line.TipCommit != "" {
+		committed, err = r.eng.Files(line.TipCommit)
+		if err != nil {
+			return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+		}
+	} else {
+		committed = map[string][]byte{}
+	}
+	working, err := Scan(filepath.Join(r.root, entry.Path))
+	if err != nil {
+		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+	}
+	return change.DiffTrees(committed, working, "HEAD", "working"), nil
+}
+
+// DiffCommits returns the per-path diff between two commits, passing through to
+// the change engine.
+func (r *Repo) DiffCommits(a, b string) ([]change.FileDiff, error) {
+	diffs, err := r.eng.DiffCommits(a, b)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.DiffCommits: %w", err)
+	}
+	return diffs, nil
 }
 
 // DefaultBranch returns the name of the structural root line (the parent_line IS

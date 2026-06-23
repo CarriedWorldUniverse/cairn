@@ -51,6 +51,7 @@ subcommands:
   fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
   abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
   status [branch]           report a branch's state (default: the root branch)
+  diff [branch] | <a> <b>   show changes (working-vs-tip, or commit-vs-commit)
   tree                      print the line tree
   ls                        list expressed branches
   resolve <branch> <path>   resolve a conflict on a branch
@@ -94,6 +95,8 @@ func run(args []string) error {
 		return cmdAbandon(rest)
 	case "status":
 		return cmdStatus(rest)
+	case "diff":
+		return cmdDiff(rest)
 	case "tree":
 		return cmdTree(rest)
 	case "ls":
@@ -353,6 +356,64 @@ func cmdStatus(args []string) error {
 	fmt.Printf("ahead:     %d\n", st.Ahead)
 	fmt.Printf("conflicts: %s\n", strings.Join(st.Conflicts, ", "))
 	fmt.Printf("expressed: %s\n", strings.Join(st.Expressed, ", "))
+	if len(st.Modified)+len(st.Added)+len(st.Deleted) > 0 {
+		fmt.Println("changes:")
+		for _, p := range st.Modified {
+			fmt.Printf("  M %s\n", p)
+		}
+		for _, p := range st.Added {
+			fmt.Printf("  A %s\n", p)
+		}
+		for _, p := range st.Deleted {
+			fmt.Printf("  D %s\n", p)
+		}
+	}
+	return nil
+}
+
+// cmdDiff prints the unified diff for working-vs-tip (default or named branch) or
+// commit-vs-commit. Binary files print a "Binary files differ" line.
+func cmdDiff(args []string) error {
+	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	var diffs []change.FileDiff
+	switch fs.NArg() {
+	case 0, 1:
+		branch := fs.Arg(0)
+		if branch == "" {
+			branch, err = r.DefaultBranch()
+			if err != nil {
+				return mapErr(err)
+			}
+		}
+		diffs, err = r.WorkingDiff(branch)
+	case 2:
+		diffs, err = r.DiffCommits(fs.Arg(0), fs.Arg(1))
+	default:
+		return errors.New("usage: cairn diff [branch] | cairn diff <commitA> <commitB>")
+	}
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
+	}
 	return nil
 }
 
