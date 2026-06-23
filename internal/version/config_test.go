@@ -43,3 +43,13 @@ func TestLoadConfigRejectsBadIncrement(t *testing.T) {
 		t.Error("expected validation error for bad increment")
 	}
 }
+
+func TestLoadConfigRejectsDigitPrefix(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "cairn.version"), []byte("tag-prefix: v1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadConfig(dir); err == nil {
+		t.Error("digit-containing tag-prefix should be rejected")
+	}
+}

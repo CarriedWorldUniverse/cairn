@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -65,6 +66,9 @@ func (c Config) Validate() error {
 	case "major", "minor", "patch":
 	default:
 		return fmt.Errorf("version.Config: default-increment %q must be major|minor|patch", c.DefaultIncrement)
+	}
+	if strings.ContainsAny(c.TagPrefix, "0123456789") {
+		return fmt.Errorf("version.Config: tag-prefix %q must not contain digits", c.TagPrefix)
 	}
 	return nil
 }

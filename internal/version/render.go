@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -52,8 +53,7 @@ func renderPEP440(v Canonical) string {
 
 func lastNumeric(parts []string) int {
 	for i := len(parts) - 1; i >= 0; i-- {
-		var n int
-		if _, err := fmt.Sscanf(parts[i], "%d", &n); err == nil {
+		if n, err := strconv.Atoi(parts[i]); err == nil {
 			return n
 		}
 	}
