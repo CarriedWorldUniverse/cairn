@@ -788,6 +788,37 @@ func (a *releaseAdapter) TagExists(name string) (bool, error) {
 	return false, nil
 }
 
+// Undo reverts the most recent operation (restoring each line's tip to its prior
+// state) and re-materializes every expressed branch so disk matches the catalogue.
+// Phase-1 limitation: it restores line tips only — it does not delete lines that
+// the undone operation created.
+func (r *Repo) Undo() error {
+	if err := r.eng.Undo(); err != nil {
+		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	for branch, entry := range r.st.Expressed {
+		line, err := r.eng.LineByName(branch)
+		if err != nil {
+			if errors.Is(err, change.ErrNotFound) {
+				continue // line gone — nothing to re-materialize
+			}
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		dir := filepath.Join(r.root, entry.Path)
+		if line.TipCommit != "" {
+			if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// OperationLog returns the full operation log in chronological order.
+func (r *Repo) OperationLog() ([]change.Operation, error) {
+	return r.eng.OperationLog()
+}
+
 // isDirty reports whether the expressed folder differs from the branch's
 // committed tip tree. It returns (false, nil) when the branch is not expressed
 // or when the engine line is gone (ErrNotFound — already folded/abandoned), so

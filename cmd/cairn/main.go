@@ -63,6 +63,8 @@ subcommands:
   pull [remote]             fetch + reconcile each line (default origin)
   log [branch] [-n N]       show commit history
   show <commit>             show a commit's metadata + diff
+  undo                      revert the last operation
+  oplog                     show the operation history
   config <key> [value]      get (one arg) or set (two args) a config value
   tag <name> [branch]       tag the tip of a branch (default: root branch)
   version [--target eco]    print the derived version (stdout only, CI-safe)
@@ -104,6 +106,10 @@ func run(args []string) error {
 		return cmdLog(rest)
 	case "show":
 		return cmdShow(rest)
+	case "undo":
+		return cmdUndo(rest)
+	case "oplog":
+		return cmdOplog(rest)
 	case "tree":
 		return cmdTree(rest)
 	case "ls":
@@ -864,6 +870,54 @@ func cmdRelease(args []string) error {
 	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
 	if *target == "npm" || *target == "pypi" || *target == "nuget" {
 		fmt.Fprintf(os.Stderr, "cairn: manifest stamped but not committed — run `cairn commit %s` before the next release or a pull\n", branch)
+	}
+	return nil
+}
+
+// cmdUndo reverts the most recent operation, restoring every expressed branch's
+// folder to the prior tip. The Phase-1 limitation (lines created by the undone
+// op are not deleted) is surfaced as a note on stderr.
+func cmdUndo(args []string) error {
+	fs := flag.NewFlagSet("undo", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.Undo(); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintln(os.Stderr, "cairn: reverted the last operation (line tips restored; lines created by it are not removed)")
+	return nil
+}
+
+// cmdOplog prints the operation log in chronological order (newest last,
+// matching log-style reading). Each line: <op-id> <op-type> <actor> [detail].
+func cmdOplog(args []string) error {
+	fs := flag.NewFlagSet("oplog", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	ops, err := r.OperationLog()
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, op := range ops {
+		detail := op.Detail
+		if detail != "" {
+			detail = "  " + detail
+		}
+		fmt.Printf("%s  %-8s  %s%s\n", op.ID, op.OpType, op.Actor, detail)
 	}
 	return nil
 }
