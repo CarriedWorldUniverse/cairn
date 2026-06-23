@@ -61,6 +61,10 @@ func Open(root, author string) (*Repo, error) {
 	return r, nil
 }
 
+// cacheDir returns the path to the content-addressed blob cache shared by all
+// materializations in this working copy.
+func (r *Repo) cacheDir() string { return filepath.Join(r.root, ".cairn", "cache") }
+
 // Close releases the underlying change engine.
 func (r *Repo) Close() error {
 	if err := r.eng.Close(); err != nil {
@@ -114,7 +118,7 @@ func (r *Repo) Express(branch, parent string) error {
 	// safe and avoids the leak.
 	dir := filepath.Join(r.root, branch)
 	if line.TipCommit != "" {
-		if err := Materialize(r.eng, line.TipCommit, dir); err != nil {
+		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
 			return fmt.Errorf("worktree.Express: %w", err)
 		}
 	} else if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -156,7 +160,7 @@ func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
 	if ch.HeadCommit != "" {
-		if err := Materialize(r.eng, ch.HeadCommit, dir); err != nil {
+		if err := Materialize(r.eng, r.cacheDir(), ch.HeadCommit, dir); err != nil {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
@@ -196,7 +200,7 @@ func (r *Repo) Fold(branch string) error {
 		}
 		dir := filepath.Join(r.root, entry.Path)
 		if pl.TipCommit != "" {
-			if err := Materialize(r.eng, pl.TipCommit, dir); err != nil {
+			if err := Materialize(r.eng, r.cacheDir(), pl.TipCommit, dir); err != nil {
 				return fmt.Errorf("worktree.Fold: %w", err)
 			}
 		}
@@ -259,7 +263,7 @@ func (r *Repo) Resolve(branch, path string) error {
 		return fmt.Errorf("worktree.Resolve: %w", err)
 	}
 	if ch.HeadCommit != "" {
-		if err := Materialize(r.eng, ch.HeadCommit, dir); err != nil {
+		if err := Materialize(r.eng, r.cacheDir(), ch.HeadCommit, dir); err != nil {
 			return fmt.Errorf("worktree.Resolve: %w", err)
 		}
 	}
