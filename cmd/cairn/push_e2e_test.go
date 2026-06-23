@@ -72,6 +72,22 @@ func soleExpressedDir(t *testing.T, dir string) string {
 	return found
 }
 
+// TestE2E_PushCairnKindStillSucceeds asserts that pushing to a remote registered
+// with kind "cairn" still succeeds (the cairn->git fallback notice goes to stderr
+// and is non-fatal).
+func TestE2E_PushCairnKindStillSucceeds(t *testing.T) {
+	skipOnWindows(t)
+	bare := makeSeededBareRepo(t)
+	dir := filepath.Join(t.TempDir(), "work")
+	mustRun(t, "clone", bare, dir)
+	if err := run([]string{"remote", "add", "--repo", dir, "--cairn", "peer", bare}); err != nil {
+		t.Fatalf("remote add --cairn: %v", err)
+	}
+	if err := run([]string{"push", "--repo", dir, "peer"}); err != nil {
+		t.Fatalf("push to cairn-kind remote should succeed: %v", err)
+	}
+}
+
 func TestE2E_CloneWorkPushReclone(t *testing.T) {
 	skipOnWindows(t)
 	origin := makeSeededBareRepo(t)

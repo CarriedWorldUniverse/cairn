@@ -43,7 +43,7 @@ subcommands:
   commit <branch> [-m msg]  snapshot a branch folder onto its change
   fold <branch>             fold a branch into its parent
   abandon <branch>          discard a branch's line
-  status [branch]           report a branch's state (default main)
+  status [branch]           report a branch's state (default: the root branch)
   tree                      print the line tree
   ls                        list expressed branches
   resolve <branch> <path>   resolve a conflict on a branch
@@ -290,15 +290,22 @@ func cmdStatus(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	branch := change.RootLineName
-	if fs.NArg() > 0 {
-		branch = fs.Arg(0)
-	}
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	branch := ""
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		// No branch given: default to the structural root's name, not the literal
+		// "main" — after a clone of a master-default repo the root is "master".
+		branch, err = r.DefaultBranch()
+		if err != nil {
+			return mapErr(err)
+		}
+	}
 	st, err := r.Status(branch)
 	if err != nil {
 		return mapErr(err)
@@ -449,6 +456,19 @@ func cmdPush(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	// Spec: pushing to a remote registered as kind "cairn" must warn that
+	// cairn->cairn fidelity isn't implemented yet and it's pushing as git. Done
+	// in the CLI layer so the engine stays I/O-free.
+	rems, err := r.Remotes()
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, rem := range rems {
+		if rem.Name == remote && rem.Kind == "cairn" {
+			fmt.Fprintf(os.Stderr, "cairn: remote %q is type cairn; cairn->cairn fidelity not yet implemented, pushing as git\n", remote)
+			break
+		}
+	}
 	if err := r.Push(remote, *force); err != nil {
 		return mapErr(err)
 	}

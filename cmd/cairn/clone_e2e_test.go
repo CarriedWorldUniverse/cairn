@@ -50,6 +50,22 @@ func makeOriginRepoCLI(t *testing.T) (string, string) {
 	return dir, head.Name().Short()
 }
 
+// TestE2E_StatusDefaultsToStructuralRoot asserts that after cloning a repo whose
+// default branch is "master", `status` with no branch arg defaults to the
+// structural root ("master") rather than the literal "main" and succeeds.
+func TestE2E_StatusDefaultsToStructuralRoot(t *testing.T) {
+	skipOnWindows(t)
+	url, def := makeOriginRepoCLI(t) // go-git PlainInit default is typically "master"
+	if def == "main" {
+		t.Skipf("default branch is %q; this test needs a non-main default", def)
+	}
+	dir := filepath.Join(t.TempDir(), "myrepo")
+	mustRun(t, "clone", url, dir)
+	if err := run([]string{"status", "--repo", dir}); err != nil {
+		t.Fatalf("status with no branch arg should default to root %q: %v", def, err)
+	}
+}
+
 func TestE2E_CloneViaCLI(t *testing.T) {
 	skipOnWindows(t)
 	url, def := makeOriginRepoCLI(t)

@@ -338,6 +338,17 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	}, nil
 }
 
+// DefaultBranch returns the name of the structural root line (the parent_line IS
+// NULL line), whatever it is called. After a clone of a remote whose default
+// branch is e.g. "master", this is "master" rather than the literal "main".
+func (r *Repo) DefaultBranch() (string, error) {
+	root, err := r.eng.RootLine()
+	if err != nil {
+		return "", fmt.Errorf("worktree.DefaultBranch: %w", err)
+	}
+	return root.Name, nil
+}
+
 // Tree returns the line tree from the engine.
 func (r *Repo) Tree() ([]change.LineNode, error) {
 	nodes, err := r.eng.GetLineTree()
