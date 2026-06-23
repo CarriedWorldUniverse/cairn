@@ -360,7 +360,29 @@ func (r *Repo) Tree() ([]change.LineNode, error) {
 
 // Push projects the change-graph onto git refs and publishes branches + tags to
 // the named remote. force overwrites a diverged remote branch.
-func (r *Repo) Push(remote string, force bool) error { return r.eng.PushToRemote(remote, force) }
+//
+// On a non-fast-forward rejection (the remote advanced since we last synced) and
+// when not forcing, Push reconciles automatically: it pulls (fetch + 3-way merge,
+// re-materializing folders) and retries the push once. If the merge produced any
+// conflict, it stops with a clear "resolve, then push" error rather than retrying,
+// leaving the conflict markers on disk for the operator to resolve.
+func (r *Repo) Push(remote string, force bool) error {
+	err := r.eng.PushToRemote(remote, force)
+	if err == nil || force || !change.IsNonFastForward(err) {
+		return err
+	}
+	// remote diverged → reconcile + retry once
+	sum, perr := r.Pull(remote)
+	if perr != nil {
+		return fmt.Errorf("worktree.Push: %w", perr)
+	}
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			return fmt.Errorf("worktree.Push: remote diverged and merging produced conflicts; resolve, then push")
+		}
+	}
+	return r.eng.PushToRemote(remote, force)
+}
 
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
 // without reconciling local lines — the read-only half of a pull. Local work is

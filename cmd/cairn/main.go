@@ -475,6 +475,11 @@ func cmdPush(args []string) error {
 			break
 		}
 	}
+	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
+	// once) so "push just works". A successful auto-retry is intentionally silent
+	// for v1: detecting whether the retry happened would need engine I/O the CLI
+	// layer deliberately avoids. A merge that conflicts surfaces as a non-nil
+	// "resolve, then push" error mapped to stderr below.
 	if err := r.Push(remote, *force); err != nil {
 		return mapErr(err)
 	}

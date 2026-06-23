@@ -163,7 +163,7 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 	// "non-fast-forward update: <ref>" (remote.go), not the typed
 	// ErrNonFastForwardUpdate (that one is for worktree pull). Match the message
 	// robustly so a diverged remote gives a clear, actionable error.
-	if isNonFastForward(err) {
+	if IsNonFastForward(err) {
 		return fmt.Errorf(
 			"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force: %w",
 			label, remoteName, err)
@@ -171,10 +171,10 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 	return fmt.Errorf("%s: %w", label, err)
 }
 
-// isNonFastForward reports whether a go-git push error is a non-fast-forward
+// IsNonFastForward reports whether a go-git push error is a non-fast-forward
 // rejection. It checks the typed error (for forward-compatibility) and the
 // message text go-git actually emits today.
-func isNonFastForward(err error) bool {
+func IsNonFastForward(err error) bool {
 	if errors.Is(err, git.ErrNonFastForwardUpdate) {
 		return true
 	}
