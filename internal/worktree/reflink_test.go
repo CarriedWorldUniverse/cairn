@@ -28,3 +28,13 @@ func TestReflinkOrCopyIndependentAfterWrite(t *testing.T) {
 	got, _ := os.ReadFile(src)
 	if string(got) != "original\n" { t.Fatalf("src mutated to %q", got) }
 }
+
+func TestReflinkOrCopyTruncatesExistingDst(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src"); dst := filepath.Join(dir, "dst")
+	if err := os.WriteFile(src, []byte("new\n"), 0o644); err != nil { t.Fatal(err) }
+	if err := os.WriteFile(dst, []byte("STALE-LONGER-CONTENT\n"), 0o644); err != nil { t.Fatal(err) }
+	if err := reflinkOrCopy(src, dst); err != nil { t.Fatalf("reflinkOrCopy: %v", err) }
+	got, _ := os.ReadFile(dst)
+	if string(got) != "new\n" { t.Fatalf("dst = %q, want new (no stale residue)", got) }
+}
