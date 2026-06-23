@@ -993,9 +993,11 @@ func cmdShow(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
-	fmt.Printf("commit %s\nAuthor: %s <%s>\nDate:   %s\n\n    %s\n\n",
-		ci.SHA, ci.AuthorName, ci.AuthorEmail,
-		ci.When.Format(time.RFC3339), ci.Message)
+	fmt.Printf("commit %s\nAuthor: %s <%s>\nDate:   %s\n\n", ci.SHA, ci.AuthorName, ci.AuthorEmail, ci.When.Format(time.RFC3339))
+	for _, line := range strings.Split(ci.Message, "\n") {
+		fmt.Printf("    %s\n", line)
+	}
+	fmt.Println()
 	for _, d := range diffs {
 		if d.Binary {
 			fmt.Printf("Binary files differ: %s\n", d.Path)
@@ -1016,7 +1018,7 @@ func mapErr(err error) error {
 	case err == nil:
 		return nil
 	case errors.Is(err, change.ErrHasConflict):
-		return errors.New("resolve conflicts before folding")
+		return fmt.Errorf("resolve conflicts before folding: %w", err)
 	case errors.Is(err, change.ErrNotFound):
 		return err
 	default:

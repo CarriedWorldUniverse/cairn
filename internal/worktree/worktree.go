@@ -429,6 +429,7 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for _, l := range lineage {
 		names = append(names, l.Name)
 	}
+	// Ahead = commits since this line's branch point; the root line has no branch point so it is structurally 0.
 	ahead, err := r.eng.LineHeight(line)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
@@ -807,6 +808,15 @@ func (r *Repo) Undo() error {
 		dir := filepath.Join(r.root, entry.Path)
 		if line.TipCommit != "" {
 			if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		} else {
+			// Restored to the pre-first-commit baseline: the committed tree is
+			// empty, so the expressed folder must be emptied to match.
+			if err := os.RemoveAll(dir); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+			if err := os.MkdirAll(dir, 0o755); err != nil {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
 		}

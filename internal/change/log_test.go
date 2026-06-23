@@ -141,3 +141,15 @@ func TestShow_FirstCommitDiffVsEmpty(t *testing.T) {
 		}
 	}
 }
+
+// TestStripChangeIDBodyMention verifies that stripChangeID only removes the
+// trailing Change-Id trailer and does NOT strip a "Change-Id:" mention that
+// appears inside the message body.
+func TestStripChangeIDBodyMention(t *testing.T) {
+	input := "fix thing\n\nsee Change-Id: discussion\n\nChange-Id: zABC\n"
+	want := "fix thing\n\nsee Change-Id: discussion"
+	got := stripChangeID(input)
+	if got != want {
+		t.Errorf("stripChangeID(%q)\n   got  %q\n  want %q", input, got, want)
+	}
+}

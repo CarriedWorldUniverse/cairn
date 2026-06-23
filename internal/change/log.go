@@ -40,7 +40,7 @@ func (e *Engine) commitInfo(sha string) (CommitInfo, error) {
 
 // stripChangeID removes the trailing "\n\nChange-Id: ...\n" trailer.
 func stripChangeID(m string) string {
-	if i := strings.Index(m, "\n\nChange-Id:"); i >= 0 {
+	if i := strings.LastIndex(m, "\n\nChange-Id:"); i >= 0 {
 		return m[:i]
 	}
 	return m

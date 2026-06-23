@@ -92,6 +92,58 @@ func TestUndoRestoresTipAndRematerializes(t *testing.T) {
 	}
 }
 
+// TestUndoToEmptyBaselineClearsFolder verifies that Undo of the FIRST commit
+// empties the expressed folder (matching the pre-first-commit baseline where
+// TipCommit is "") rather than leaving stale files on disk.
+func TestUndoToEmptyBaselineClearsFolder(t *testing.T) {
+	skipOnWindows(t)
+
+	root := t.TempDir()
+	r, err := Open(root, "tester")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		t.Fatalf("DefaultBranch: %v", err)
+	}
+
+	// Write and commit the first (and only) commit.
+	if err := os.WriteFile(filepath.Join(root, branch, "a.txt"), []byte("v1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit(branch, "first"); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	// Undo that single commit — restores to the empty baseline.
+	if err := r.Undo(); err != nil {
+		t.Fatalf("Undo: %v", err)
+	}
+
+	// TipCommit must be empty (no commits on this line).
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		t.Fatalf("LineByName after Undo: %v", err)
+	}
+	if line.TipCommit != "" {
+		t.Errorf("TipCommit after Undo = %q, want %q (empty baseline)", line.TipCommit, "")
+	}
+
+	// Expressed folder must no longer contain a.txt.
+	entries, err := os.ReadDir(filepath.Join(root, branch))
+	if err != nil {
+		t.Fatalf("ReadDir expressed folder: %v", err)
+	}
+	for _, e := range entries {
+		if e.Name() == "a.txt" {
+			t.Error("a.txt still present in expressed folder after Undo to empty baseline")
+		}
+	}
+}
+
 // TestUndoEmptyLogErrors verifies that Undo on a fresh (no-op) repo returns an
 // error rather than panicking.
 func TestUndoEmptyLogErrors(t *testing.T) {
