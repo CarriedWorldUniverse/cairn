@@ -155,3 +155,22 @@ func TestRepoAbandonRemovesFolderParentUntouched(t *testing.T) {
 		t.Fatalf("main perturbed by abandon: %v", got)
 	}
 }
+
+func TestRepoCannotAbandonOrUnexpressRoot(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := r.Abandon("main"); err == nil {
+		t.Fatal("Abandon(main) must error")
+	}
+	if err := r.Unexpress("main"); err == nil {
+		t.Fatal("Unexpress(main) must error")
+	}
+	// main still expressed + intact
+	if _, ok := r.Ls()["main"]; !ok {
+		t.Fatal("main must still be expressed")
+	}
+}

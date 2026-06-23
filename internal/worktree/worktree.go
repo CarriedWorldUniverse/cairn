@@ -69,11 +69,6 @@ func (r *Repo) Close() error {
 	return nil
 }
 
-// dir returns the on-disk folder for an expressed branch.
-func (r *Repo) dir(branch string) string {
-	return filepath.Join(r.root, r.st.Expressed[branch].Path)
-}
-
 // Express materializes a branch as a folder under root, creating its line if it
 // does not exist. For the root line, branch must equal change.RootLineName and
 // parent is ignored. For any other branch, an absent line is forked off parent
@@ -212,6 +207,9 @@ func (r *Repo) Fold(branch string) error {
 // Abandon throws away an expressed branch's line (nothing reaches the parent) and
 // unexpresses the branch.
 func (r *Repo) Abandon(branch string) error {
+	if branch == change.RootLineName {
+		return fmt.Errorf("worktree.Abandon: cannot abandon the root line %q", branch)
+	}
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
@@ -224,6 +222,9 @@ func (r *Repo) Abandon(branch string) error {
 
 // Unexpress removes an expressed branch's folder and forgets it from state.
 func (r *Repo) Unexpress(branch string) error {
+	if branch == change.RootLineName {
+		return fmt.Errorf("worktree.Unexpress: cannot unexpress the root line %q", branch)
+	}
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return fmt.Errorf("worktree.Unexpress: branch %q is not expressed", branch)
