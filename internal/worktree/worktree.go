@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
 // ErrPushConflict is returned by Repo.Push when a diverged remote was pulled
@@ -497,4 +498,61 @@ func (r *Repo) Ls() map[string]Entry {
 		out[k] = v
 	}
 	return out
+}
+
+// Root returns the working-copy root directory (for config file resolution).
+func (r *Repo) Root() string { return r.root }
+
+// Tag names the tip of branch with the given tag name.
+func (r *Repo) Tag(name, branch string) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.Tag: %w", err)
+	}
+	return r.eng.Tag(name, line.TipCommit, r.author)
+}
+
+// PendingBump returns the recorded explicit bump intent ("" if none).
+func (r *Repo) PendingBump() (string, error) {
+	v, _, err := r.eng.GetConfig("version.pending_bump")
+	return v, err
+}
+
+// SetPendingBump records explicit bump intent for the next release.
+func (r *Repo) SetPendingBump(level string) error {
+	return r.eng.SetConfig("version.pending_bump", level)
+}
+
+// DeriveInput assembles the facts version.Derive needs for branch.
+func (r *Repo) DeriveInput(branch string, cfg version.Config) (version.DeriveInput, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	tag, dist, err := r.eng.DescribeVersion(line.TipCommit)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	height, err := r.eng.LineHeight(line)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	bump, err := r.PendingBump()
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	short := line.TipCommit
+	if len(short) > 7 {
+		short = short[:7]
+	}
+	return version.DeriveInput{
+		BaseTag:      tag,
+		Distance:     dist,
+		LineName:     branch,
+		IsTrunk:      line.ParentLine == "",
+		LineDistance: height,
+		PendingBump:  bump,
+		ShortSHA:     short,
+		Config:       cfg,
+	}, nil
 }
