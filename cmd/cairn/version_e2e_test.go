@@ -60,6 +60,12 @@ func TestE2E_Version(t *testing.T) {
 		t.Fatalf("trunk off-tag version = %q, want 1.0.1+...", out)
 	}
 
+	// --release should return the clean release form (no build metadata)
+	relOut := mustRunOut(t, "version", "--repo", dir, "--release")
+	if strings.TrimSpace(relOut) != "1.0.1" {
+		t.Fatalf("version --release = %q, want clean 1.0.1 (no build metadata)", relOut)
+	}
+
 	// pypi render should produce a PEP 440 compatible version starting with 1.0.1
 	out = mustRunOut(t, "version", "--repo", dir, "--target", "pypi")
 	if !strings.HasPrefix(strings.TrimSpace(out), "1.0.1") {

@@ -657,6 +657,7 @@ func cmdVersion(args []string) error {
 	fs := flag.NewFlagSet("version", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	target := fs.String("target", "", "render for ecosystem: npm|nuget|pypi|oci|go")
+	releaseForm := fs.Bool("release", false, "print the clean release version that `cairn release` would tag")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -677,7 +678,12 @@ func cmdVersion(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
-	v, err := version.Derive(in)
+	var v version.Canonical
+	if *releaseForm {
+		v, err = version.ReleaseVersion(in)
+	} else {
+		v, err = version.Derive(in)
+	}
 	if err != nil {
 		return mapErr(err)
 	}
@@ -786,7 +792,7 @@ func cmdRelease(args []string) error {
 	}
 	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
 	if *target == "npm" || *target == "pypi" || *target == "nuget" {
-		fmt.Fprintln(os.Stderr, "cairn: manifest stamped but not committed — commit before pulling to avoid losing the stamp")
+		fmt.Fprintf(os.Stderr, "cairn: manifest stamped but not committed — run `cairn commit %s` before the next release or a pull\n", branch)
 	}
 	return nil
 }

@@ -583,6 +583,10 @@ type releaseAdapter struct {
 
 func (a *releaseAdapter) Dirty() (bool, error) { return a.r.isDirty(a.branch) }
 
+// LatestTag returns the nearest tag reachable via first-parent ancestry — the
+// monotonicity base for a release. cairn's linear fold model keeps release tags
+// on the trunk's first-parent chain so this finds them; a tag off that chain
+// (rebased/forked history) would not constrain the guard. Acceptable for slice 1.
 func (a *releaseAdapter) LatestTag() (string, error) {
 	tag, _, err := a.r.eng.DescribeVersion(a.line.TipCommit)
 	return tag, err
