@@ -16,6 +16,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"sort"
 	"strings"
 
@@ -36,6 +37,7 @@ usage: cairn <subcommand> [flags] [args]
 
 subcommands:
   init [dir]                bootstrap a repo (expresses main)
+  clone <url> [dir]         import a remote repo and express its default branch
   express <branch>          materialize a branch folder (--from <parent>)
   unexpress <branch>        remove a branch folder
   commit <branch> [-m msg]  snapshot a branch folder onto its change
@@ -61,6 +63,8 @@ func run(args []string) error {
 		return nil
 	case "init":
 		return cmdInit(rest)
+	case "clone":
+		return cmdClone(rest)
 	case "express":
 		return cmdExpress(rest)
 	case "unexpress":
@@ -125,6 +129,46 @@ func cmdInit(args []string) error {
 	defer r.Close()
 	fmt.Printf("initialized cairn repo at %s\n", dir)
 	return nil
+}
+
+func cmdClone(args []string) error {
+	fs := flag.NewFlagSet("clone", flag.ContinueOnError)
+	author := fs.String("author", defaultAuthor(), "commit author")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn clone <url> [dir]")
+	}
+	url := fs.Arg(0)
+	dir := ""
+	if fs.NArg() > 1 {
+		dir = fs.Arg(1)
+	} else {
+		dir = dirFromURL(url)
+	}
+	if dir == "" {
+		return errors.New("cannot derive destination dir from url; pass it explicitly")
+	}
+	r, err := worktree.Clone(url, dir, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	fmt.Printf("cloned %s -> %s\n", url, dir)
+	return nil
+}
+
+// dirFromURL derives a clone destination directory from a remote URL: the last
+// path segment with any trailing ".git" stripped.
+func dirFromURL(url string) string {
+	trimmed := strings.TrimRight(url, "/")
+	base := path.Base(trimmed)
+	base = strings.TrimSuffix(base, ".git")
+	if base == "." || base == "/" || base == "" {
+		return ""
+	}
+	return base
 }
 
 func cmdExpress(args []string) error {

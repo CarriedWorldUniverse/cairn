@@ -1,0 +1,96 @@
+package worktree
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+)
+
+// makeOriginRepoWT builds a real (non-bare) git repo with one commit on its
+// default branch and a "feature" branch with another commit. It returns the
+// file:// URL and the default branch short name (captured before branching).
+func makeOriginRepoWT(t *testing.T) (string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	r, err := git.PlainInit(dir, false)
+	if err != nil {
+		t.Fatalf("PlainInit: %v", err)
+	}
+	wt, err := r.Worktree()
+	if err != nil {
+		t.Fatalf("Worktree: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add("readme.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("init", &git.CommitOptions{Author: &object.Signature{Name: "o", Email: "o@x"}}); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+
+	head, err := r.Head()
+	if err != nil {
+		t.Fatalf("Head: %v", err)
+	}
+	def := head.Name().Short()
+
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("feature"),
+		Create: true,
+	}); err != nil {
+		t.Fatalf("checkout feature: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "feature.txt"), []byte("feat\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add("feature.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("feat", &git.CommitOptions{Author: &object.Signature{Name: "o", Email: "o@x"}}); err != nil {
+		t.Fatalf("commit feature: %v", err)
+	}
+
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(def),
+	}); err != nil {
+		t.Fatalf("checkout default: %v", err)
+	}
+
+	return "file://" + dir, def
+}
+
+func TestCloneImportsAndExpresses(t *testing.T) {
+	url, def := makeOriginRepoWT(t) // returns file:// url + default branch name
+	dir := filepath.Join(t.TempDir(), "myrepo")
+	r, err := Clone(url, dir, "tester")
+	if err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	got, err := os.ReadFile(filepath.Join(dir, def, "readme.txt"))
+	if err != nil {
+		t.Fatalf("expressed default %q not found: %v", def, err)
+	}
+	if string(got) != "hello\n" {
+		t.Fatalf("readme = %q", got)
+	}
+	// the imported feature line is usable: express + commit + fold
+	if err := r.Express("feature", ""); err != nil {
+		t.Fatalf("Express feature: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "feature", "f.txt"), []byte("F\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("feature", ""); err != nil {
+		t.Fatalf("commit feature: %v", err)
+	}
+	if err := r.Fold("feature"); err != nil {
+		t.Fatalf("fold feature: %v", err)
+	}
+}

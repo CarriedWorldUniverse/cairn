@@ -82,34 +82,30 @@ func (r *Repo) Express(branch, parent string) error {
 		return nil
 	}
 
+	// Resolve the line structurally: an existing line (under ANY name, including
+	// the root) is used as-is; an absent line is forked off parent (default
+	// "main"). This keeps root detection name-independent — after an import the
+	// root may be named "master"/"trunk" rather than "main".
 	var line change.Line
-	if branch == change.RootLineName {
-		l, err := r.eng.LineByName(change.RootLineName)
-		if err != nil {
-			return fmt.Errorf("worktree.Express: %w", err)
-		}
+	l, err := r.eng.LineByName(branch)
+	switch {
+	case err == nil:
 		line = l
-	} else {
-		l, err := r.eng.LineByName(branch)
-		switch {
-		case err == nil:
-			line = l
-		case errors.Is(err, change.ErrNotFound):
-			if parent == "" {
-				parent = change.RootLineName
-			}
-			parentLine, perr := r.eng.LineByName(parent)
-			if perr != nil {
-				return fmt.Errorf("worktree.Express: parent %q: %w", parent, perr)
-			}
-			created, cerr := r.eng.CreateLine(branch, parentLine.ID)
-			if cerr != nil {
-				return fmt.Errorf("worktree.Express: %w", cerr)
-			}
-			line = created
-		default:
-			return fmt.Errorf("worktree.Express: %w", err)
+	case errors.Is(err, change.ErrNotFound):
+		if parent == "" {
+			parent = change.RootLineName
 		}
+		parentLine, perr := r.eng.LineByName(parent)
+		if perr != nil {
+			return fmt.Errorf("worktree.Express: parent %q: %w", parent, perr)
+		}
+		created, cerr := r.eng.CreateLine(branch, parentLine.ID)
+		if cerr != nil {
+			return fmt.Errorf("worktree.Express: %w", cerr)
+		}
+		line = created
+	default:
+		return fmt.Errorf("worktree.Express: %w", err)
 	}
 
 	// Do the filesystem work FIRST so a failed materialize/mkdir cannot leave a
@@ -211,12 +207,12 @@ func (r *Repo) Fold(branch string) error {
 // Abandon throws away an expressed branch's line (nothing reaches the parent) and
 // unexpresses the branch.
 func (r *Repo) Abandon(branch string) error {
-	if branch == change.RootLineName {
-		return fmt.Errorf("worktree.Abandon: cannot abandon the root line %q", branch)
-	}
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
+	}
+	if line.ParentLine == "" {
+		return fmt.Errorf("worktree.Abandon: cannot abandon the root line %q", branch)
 	}
 	if err := r.eng.AbandonLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
@@ -226,8 +222,20 @@ func (r *Repo) Abandon(branch string) error {
 
 // Unexpress removes an expressed branch's folder and forgets it from state.
 func (r *Repo) Unexpress(branch string) error {
-	if branch == change.RootLineName {
-		return fmt.Errorf("worktree.Unexpress: cannot unexpress the root line %q", branch)
+	// Structural root guard: refuse only when the branch resolves to the root
+	// line (ParentLine == ""). If the line is already gone (ErrNotFound — e.g.
+	// after a fold/abandon removed it), don't block; proceed to remove the
+	// folder/state below. Any other resolution error is fatal.
+	line, err := r.eng.LineByName(branch)
+	switch {
+	case err == nil:
+		if line.ParentLine == "" {
+			return fmt.Errorf("worktree.Unexpress: cannot unexpress the root line %q", branch)
+		}
+	case errors.Is(err, change.ErrNotFound):
+		// line already gone — fall through to folder/state cleanup
+	default:
+		return fmt.Errorf("worktree.Unexpress: %w", err)
 	}
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
