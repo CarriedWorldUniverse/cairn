@@ -46,10 +46,10 @@ subcommands:
   init [dir]                bootstrap a repo (expresses main)
   clone <url> [dir]         import a remote repo and express its default branch
   express <branch>          materialize a branch folder (--from <parent>)
-  unexpress <branch>        remove a branch folder
+  unexpress <branch>        remove a branch folder (--force to discard uncommitted changes)
   commit <branch> [-m msg]  snapshot a branch folder onto its change
-  fold <branch>             fold a branch into its parent
-  abandon <branch>          discard a branch's line
+  fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
+  abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
   status [branch]           report a branch's state (default: the root branch)
   tree                      print the line tree
   ls                        list expressed branches
@@ -230,6 +230,7 @@ func cmdExpress(args []string) error {
 func cmdUnexpress(args []string) error {
 	fs := flag.NewFlagSet("unexpress", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	force := fs.Bool("force", false, "discard uncommitted changes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -241,7 +242,7 @@ func cmdUnexpress(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.Unexpress(fs.Arg(0)))
+	return mapErr(r.Unexpress(fs.Arg(0), *force))
 }
 
 func cmdCommit(args []string) error {
@@ -288,6 +289,7 @@ func cmdCommit(args []string) error {
 func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	force := fs.Bool("force", false, "discard uncommitted changes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -299,12 +301,13 @@ func cmdFold(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.Fold(fs.Arg(0)))
+	return mapErr(r.Fold(fs.Arg(0), *force))
 }
 
 func cmdAbandon(args []string) error {
 	fs := flag.NewFlagSet("abandon", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	force := fs.Bool("force", false, "discard uncommitted changes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -316,7 +319,7 @@ func cmdAbandon(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.Abandon(fs.Arg(0)))
+	return mapErr(r.Abandon(fs.Arg(0), *force))
 }
 
 func cmdStatus(args []string) error {

@@ -42,7 +42,7 @@ func Run(e *change.Engine, steps []Step, seed int64) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, err := e.Commit(ch.ID, s.Files); err != nil {
+		if _, err := e.Commit(ch.ID, s.Files, ""); err != nil {
 			return nil, err
 		}
 		ids[idx] = ch.ID

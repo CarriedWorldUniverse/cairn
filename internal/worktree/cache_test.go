@@ -18,7 +18,7 @@ func TestMaterializeCachesBlobsDeduped(t *testing.T) {
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
 	same := []byte("shared\n")
-	r, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": same, "b.txt": same, "c.txt": []byte("other\n")})
+	r, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": same, "b.txt": same, "c.txt": []byte("other\n")}, "")
 	if err != nil { t.Fatalf("Commit: %v", err) }
 	cacheDir := filepath.Join(t.TempDir(), "cache")
 	dir := filepath.Join(t.TempDir(), "wc")
@@ -38,7 +38,7 @@ func TestMaterializeCoWIsolation(t *testing.T) {
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
 	content := []byte("v1\n")
-	r, err := eng.Commit(ch.ID, map[string][]byte{"f.txt": content})
+	r, err := eng.Commit(ch.ID, map[string][]byte{"f.txt": content}, "")
 	if err != nil { t.Fatalf("Commit: %v", err) }
 	cacheDir := filepath.Join(t.TempDir(), "cache")
 	a := filepath.Join(t.TempDir(), "A"); b := filepath.Join(t.TempDir(), "B")
@@ -59,7 +59,7 @@ func TestMaterializeLeavesNoTempBlobs(t *testing.T) {
 	t.Cleanup(func() { _ = eng.Close() })
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
-	r, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n")})
+	r, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n")}, "")
 	if err != nil { t.Fatal(err) }
 	cacheDir := filepath.Join(t.TempDir(), "cache")
 	if err := Materialize(eng, cacheDir, r.HeadCommit, filepath.Join(t.TempDir(), "wc")); err != nil { t.Fatal(err) }

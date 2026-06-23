@@ -36,7 +36,7 @@ func seedMain(t *testing.T, e *change.Engine, files map[string][]byte) {
 	if err != nil {
 		t.Fatalf("CreateChange(main): %v", err)
 	}
-	if _, err := e.Commit(ch.ID, files); err != nil {
+	if _, err := e.Commit(ch.ID, files, ""); err != nil {
 		t.Fatalf("seed Commit: %v", err)
 	}
 }
@@ -84,7 +84,7 @@ func foldAll(t *testing.T, e *change.Engine) {
 		if err != nil {
 			t.Fatalf("CreateChange(readopt): %v", err)
 		}
-		res, err := e.Commit(rc.ID, files)
+		res, err := e.Commit(rc.ID, files, "")
 		if err != nil {
 			t.Fatalf("re-adopt Commit: %v", err)
 		}
@@ -164,13 +164,13 @@ func TestProperty2_DeterministicConflicts(t *testing.T) {
 
 			// main advances: base -> X.
 			mc, _ := e.CreateChange(main.ID, "m")
-			if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}); err != nil {
+			if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, ""); err != nil {
 				t.Fatalf("main advance: %v", err)
 			}
 
 			// exp edits the same path: base -> Y. merge-forward sees (base,X,Y).
 			ec, _ := e.CreateChange(exp.ID, "e")
-			r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")})
+			r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
 			if err != nil {
 				t.Fatalf("exp commit: %v", err)
 			}
@@ -215,17 +215,17 @@ func TestProperty3_ConflictDoesNotBlock(t *testing.T) {
 			seedMain(t, e, map[string][]byte{"f.txt": []byte("base\n")})
 			exp, _ := e.CreateLine("exp", main.ID)
 			mc, _ := e.CreateChange(main.ID, "m")
-			e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")})
+			e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, "")
 
 			ec, _ := e.CreateChange(exp.ID, "e")
-			r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")})
+			r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
 			if len(r.Conflicts) == 0 {
 				t.Fatalf("seed %d: setup expected a conflict", seed)
 			}
 
 			// More work on the SAME change, a different file: must not be blocked.
 			if _, err := e.Commit(ec.ID, map[string][]byte{
-				"f.txt": []byte("Y\n"), "new.txt": []byte("new\n")}); err != nil {
+				"f.txt": []byte("Y\n"), "new.txt": []byte("new\n")}, ""); err != nil {
 				t.Fatalf("seed %d: follow-up commit on conflicted change: %v", seed, err)
 			}
 			ch, _ := e.GetChange(ec.ID)
@@ -252,7 +252,7 @@ func TestProperty4_FastForwardFold(t *testing.T) {
 			exp, _ := e.CreateLine("exp", main.ID)
 			ec, _ := e.CreateChange(exp.ID, "e")
 			if _, err := e.Commit(ec.ID, map[string][]byte{
-				"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}); err != nil {
+				"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, ""); err != nil {
 				t.Fatalf("commit: %v", err)
 			}
 			if err := e.FoldLine(exp.ID); err != nil {
@@ -289,7 +289,7 @@ func TestProperty5_AbandonIsolation(t *testing.T) {
 
 			// advance main: base -> X.
 			mc, _ := e.CreateChange(main.ID, "m")
-			if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}); err != nil {
+			if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, ""); err != nil {
 				t.Fatalf("seed %d: advance main: %v", seed, err)
 			}
 			// main must have actually moved off the fork point.
@@ -301,7 +301,7 @@ func TestProperty5_AbandonIsolation(t *testing.T) {
 			// exp edits the same path: base -> WILD. merge-forward sees (base,X,WILD)
 			// and must record a conflict — otherwise the abandon scenario is vacuous.
 			ec, _ := e.CreateChange(exp.ID, "e")
-			r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("WILD\n")})
+			r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("WILD\n")}, "")
 			if err != nil {
 				t.Fatalf("seed %d: wild commit: %v", seed, err)
 			}
@@ -339,11 +339,11 @@ func TestProperty6_LineageIntegrity(t *testing.T) {
 
 			a, _ := e.CreateLine("a", main.ID)
 			ca, _ := e.CreateChange(a.ID, "aa")
-			e.Commit(ca.ID, map[string][]byte{"root.txt": []byte("r\n"), "a.txt": []byte("a\n")})
+			e.Commit(ca.ID, map[string][]byte{"root.txt": []byte("r\n"), "a.txt": []byte("a\n")}, "")
 
 			b, _ := e.CreateLine("b", a.ID)
 			cb, _ := e.CreateChange(b.ID, "ab")
-			e.Commit(cb.ID, map[string][]byte{"root.txt": []byte("r\n"), "a.txt": []byte("a\n"), "b.txt": []byte("b\n")})
+			e.Commit(cb.ID, map[string][]byte{"root.txt": []byte("r\n"), "a.txt": []byte("a\n"), "b.txt": []byte("b\n")}, "")
 
 			lineage, err := e.GetLineage(b.ID)
 			if err != nil {
@@ -395,7 +395,7 @@ func TestProperty7_OpLogReplayUndo(t *testing.T) {
 			captured := beforeTip()
 
 			mc, _ := e.CreateChange(main.ID, "m")
-			if _, err := e.Commit(mc.ID, map[string][]byte{"a.txt": []byte("a\n"), "z.txt": []byte("z\n")}); err != nil {
+			if _, err := e.Commit(mc.ID, map[string][]byte{"a.txt": []byte("a\n"), "z.txt": []byte("z\n")}, ""); err != nil {
 				t.Fatalf("commit: %v", err)
 			}
 			if got := beforeTip(); got == captured {
@@ -443,11 +443,11 @@ func TestProperty7b_OpLogReplayConsistency(t *testing.T) {
 
 			// A couple more commits on main to build a multi-op chain.
 			c1, _ := e.CreateChange(main.ID, "m1")
-			if _, err := e.Commit(c1.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n")}); err != nil {
+			if _, err := e.Commit(c1.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n")}, ""); err != nil {
 				t.Fatalf("seed %d: commit b: %v", seed, err)
 			}
 			c2, _ := e.CreateChange(main.ID, "m2")
-			if _, err := e.Commit(c2.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n"), "c.txt": []byte("c\n")}); err != nil {
+			if _, err := e.Commit(c2.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n"), "c.txt": []byte("c\n")}, ""); err != nil {
 				t.Fatalf("seed %d: commit c: %v", seed, err)
 			}
 
@@ -495,9 +495,9 @@ func TestProperty8_ResolutionClosesLoop(t *testing.T) {
 			seedMain(t, e, map[string][]byte{"f.txt": []byte("base\n")})
 			exp, _ := e.CreateLine("exp", main.ID)
 			mc, _ := e.CreateChange(main.ID, "m")
-			e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")})
+			e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, "")
 			ec, _ := e.CreateChange(exp.ID, "e")
-			r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")})
+			r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
 			if len(r.Conflicts) == 0 {
 				t.Fatalf("seed %d: setup expected a conflict", seed)
 			}

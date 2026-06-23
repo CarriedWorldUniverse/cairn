@@ -206,7 +206,11 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		// Diverged: a real 3-way merge needs a change to attach the merge head and
 		// any conflicts. Create one now only if the line had none.
 		if !hasChange {
-			ch, cerr := e.CreateChange(lineID, syncAuthor)
+			author := e.idName
+			if author == "" {
+				author = syncAuthor
+			}
+			ch, cerr := e.CreateChange(lineID, author)
 			if cerr != nil {
 				return LineResult{}, cerr
 			}
@@ -246,7 +250,7 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		if l != "" {
 			parents = []string{l, r}
 		}
-		head, err := e.writeCommit(merged, changeID, syncAuthor, parents)
+		head, err := e.writeCommit(merged, changeID, "merge remote-tracking", parents)
 		if err != nil {
 			return LineResult{}, err
 		}

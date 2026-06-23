@@ -38,7 +38,7 @@ func TestMaterializeSharesBlocksWhenReflinkSupported(t *testing.T) {
 	for i := range big {
 		big[i] = byte(i*7 + 1)
 	}
-	r, err := eng.Commit(ch.ID, map[string][]byte{"big.bin": big})
+	r, err := eng.Commit(ch.ID, map[string][]byte{"big.bin": big}, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}

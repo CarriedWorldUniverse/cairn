@@ -32,7 +32,7 @@ func TestPushToRemoteGitRefs(t *testing.T) {
 	t.Cleanup(func() { _ = e.Close() })
 	main, _ := e.LineByName("main")
 	ch, _ := e.CreateChange(main.ID, "a")
-	r, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n")})
+	r, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n")}, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestPushNonFastForwardThenForce(t *testing.T) {
 	t.Cleanup(func() { _ = e.Close() })
 	main, _ := e.LineByName("main")
 	ch, _ := e.CreateChange(main.ID, "a")
-	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("1\n")}); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("1\n")}, ""); err != nil {
 		t.Fatalf("commit1: %v", err)
 	}
 	if err := e.AddRemote("origin", bareDir, "git"); err != nil {
@@ -124,7 +124,7 @@ func TestPushNonFastForwardThenForce(t *testing.T) {
 
 	advanceBareMainIndependently(t, bareDir)
 
-	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("2\n")}); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("2\n")}, ""); err != nil {
 		t.Fatalf("commit2: %v", err)
 	}
 	if err := e.PushToRemote("origin", false); err == nil {

@@ -64,6 +64,7 @@ func Open(root, author string) (*Repo, error) {
 		_ = eng.Close()
 		return nil, fmt.Errorf("worktree.Open: %w", err)
 	}
+	author = resolveIdentity(eng, author)
 	r := &Repo{root: root, author: author, eng: eng, st: st, stPath: stPath}
 	// First-run guard, by STRUCTURE not name: express the actual root line
 	// (parent_line IS NULL), whatever it is called. After a Clone of a remote
@@ -81,6 +82,28 @@ func Open(root, author string) (*Repo, error) {
 		}
 	}
 	return r, nil
+}
+
+// resolveIdentity resolves the author name + email for commits this working copy
+// writes and configures the engine accordingly. name comes from config user.name
+// (else the passed author); email from config user.email (else $CAIRN_EMAIL, else
+// $GIT_AUTHOR_EMAIL, else ""). It returns the resolved name so the caller can use
+// it as the Repo's author (recorded on change rows via CreateChange).
+func resolveIdentity(eng *change.Engine, author string) string {
+	name := author
+	if v, ok, _ := eng.GetConfig("user.name"); ok && v != "" {
+		name = v
+	}
+	email := ""
+	if v, ok, _ := eng.GetConfig("user.email"); ok && v != "" {
+		email = v
+	} else if v := os.Getenv("CAIRN_EMAIL"); v != "" {
+		email = v
+	} else if v := os.Getenv("GIT_AUTHOR_EMAIL"); v != "" {
+		email = v
+	}
+	eng.SetIdentity(name, email)
+	return name
 }
 
 // cacheDir returns the path to the content-addressed blob cache shared by all
@@ -166,7 +189,7 @@ func (r *Repo) Express(branch, parent string) error {
 // (adopting the parent line via the engine's merge-forward) and re-materializes
 // the resulting head, so the folder reflects any merged-in parent state. The
 // CommitResult carries the new head and any conflicts recorded.
-func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
+func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
@@ -176,7 +199,7 @@ func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
-	res, err := r.eng.Commit(entry.ChangeID, files)
+	res, err := r.eng.Commit(entry.ChangeID, files, message)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
@@ -242,8 +265,18 @@ func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 // Fold folds an expressed branch's line back into its parent, fast-forwarding the
 // parent tip, then unexpresses the branch. Any expressed line whose ID is the
 // folded line's parent is re-materialized to the new parent tip so its folder
-// reflects the adopted work.
-func (r *Repo) Fold(branch string) error {
+// reflects the adopted work. force allows discarding uncommitted changes; without
+// it, Fold refuses if the branch has uncommitted edits.
+func (r *Repo) Fold(branch string, force bool) error {
+	if !force {
+		dirty, derr := r.isDirty(branch)
+		if derr != nil {
+			return fmt.Errorf("worktree.Fold: %w", derr)
+		}
+		if dirty {
+			return fmt.Errorf("worktree.Fold: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+		}
+	}
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Fold: %w", err)
@@ -252,7 +285,7 @@ func (r *Repo) Fold(branch string) error {
 	if err := r.eng.FoldLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Fold: %w", err)
 	}
-	if err := r.Unexpress(branch); err != nil {
+	if err := r.Unexpress(branch, true); err != nil {
 		return err
 	}
 	if parentLineID == "" {
@@ -281,8 +314,18 @@ func (r *Repo) Fold(branch string) error {
 }
 
 // Abandon throws away an expressed branch's line (nothing reaches the parent) and
-// unexpresses the branch.
-func (r *Repo) Abandon(branch string) error {
+// unexpresses the branch. force allows discarding uncommitted changes; without it,
+// Abandon refuses if the branch has uncommitted edits.
+func (r *Repo) Abandon(branch string, force bool) error {
+	if !force {
+		dirty, derr := r.isDirty(branch)
+		if derr != nil {
+			return fmt.Errorf("worktree.Abandon: %w", derr)
+		}
+		if dirty {
+			return fmt.Errorf("worktree.Abandon: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+		}
+	}
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
@@ -293,11 +336,13 @@ func (r *Repo) Abandon(branch string) error {
 	if err := r.eng.AbandonLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
 	}
-	return r.Unexpress(branch)
+	return r.Unexpress(branch, true)
 }
 
 // Unexpress removes an expressed branch's folder and forgets it from state.
-func (r *Repo) Unexpress(branch string) error {
+// force allows discarding uncommitted changes; without it, Unexpress refuses if
+// the branch has uncommitted edits.
+func (r *Repo) Unexpress(branch string, force bool) error {
 	// Structural root guard: refuse only when the branch resolves to the root
 	// line (ParentLine == ""). If the line is already gone (ErrNotFound — e.g.
 	// after a fold/abandon removed it), don't block; proceed to remove the
@@ -312,6 +357,15 @@ func (r *Repo) Unexpress(branch string) error {
 		// line already gone — fall through to folder/state cleanup
 	default:
 		return fmt.Errorf("worktree.Unexpress: %w", err)
+	}
+	if !force {
+		dirty, derr := r.isDirty(branch)
+		if derr != nil {
+			return fmt.Errorf("worktree.Unexpress: %w", derr)
+		}
+		if dirty {
+			return fmt.Errorf("worktree.Unexpress: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+		}
 	}
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
@@ -656,17 +710,26 @@ func (a *releaseAdapter) TagExists(name string) (bool, error) {
 }
 
 // isDirty reports whether the expressed folder differs from the branch's
-// committed tip tree.
+// committed tip tree. It returns (false, nil) when the branch is not expressed
+// or when the engine line is gone (ErrNotFound — already folded/abandoned), so
+// callers that run a dirty-check before a destructive op can safely proceed.
 func (r *Repo) isDirty(branch string) (bool, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
-		return false, fmt.Errorf("worktree.isDirty: branch %q is not expressed", branch)
+		// Branch not in working-copy state: nothing to compare, not dirty.
+		return false, nil
 	}
 	scanned, err := Scan(filepath.Join(r.root, entry.Path))
 	if err != nil {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
 	line, err := r.eng.LineByName(branch)
+	if errors.Is(err, change.ErrNotFound) {
+		// Line already folded/abandoned: no committed tip to diff against, so the
+		// folder cannot be "dirty" in a recoverable sense — treat as clean and
+		// allow removal.
+		return false, nil
+	}
 	if err != nil {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}

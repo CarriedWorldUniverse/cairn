@@ -30,11 +30,17 @@ const RootLineName = "main"
 // Engine is the per-repo change engine. The bare go-git repo and the SQLite
 // catalogue live side by side under dir.
 type Engine struct {
-	dir string
-	git *git.Repository
-	db  *sql.DB
-	now func() time.Time
+	dir     string
+	git     *git.Repository
+	db      *sql.DB
+	now     func() time.Time
+	idName  string
+	idEmail string
 }
+
+// SetIdentity configures the author identity used for all commits this engine
+// writes. Empty values fall back to safe placeholders in writeCommit.
+func (e *Engine) SetIdentity(name, email string) { e.idName, e.idEmail = name, email }
 
 // Open opens (creating if needed) the change engine rooted at dir. It opens or
 // initialises a bare go-git object store at dir/objects.git and the SQLite

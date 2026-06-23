@@ -17,7 +17,7 @@ func TestMaterializeScanRoundTrip(t *testing.T) {
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
 	files := map[string][]byte{"a.txt": []byte("a\n"), "dir/b.txt": []byte("b\n")}
-	r, err := eng.Commit(ch.ID, files)
+	r, err := eng.Commit(ch.ID, files, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestMaterializeClearsStaleFiles(t *testing.T) {
 	t.Cleanup(func() { _ = eng.Close() })
 	main, _ := eng.LineByName("main")
 	ch, _ := eng.CreateChange(main.ID, "t")
-	r1, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("1\n"), "gone.txt": []byte("x\n")})
+	r1, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("1\n"), "gone.txt": []byte("x\n")}, "")
 	if err != nil {
 		t.Fatalf("commit r1: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestMaterializeClearsStaleFiles(t *testing.T) {
 	if err := Materialize(eng, cacheDir, r1.HeadCommit, dir); err != nil {
 		t.Fatalf("mat1: %v", err)
 	}
-	r2, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("2\n")})
+	r2, err := eng.Commit(ch.ID, map[string][]byte{"keep.txt": []byte("2\n")}, "")
 	if err != nil {
 		t.Fatalf("commit r2: %v", err)
 	}

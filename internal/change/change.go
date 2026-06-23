@@ -85,7 +85,7 @@ func (e *Engine) GetChange(id string) (Change, error) {
 // Commit snapshots files onto the change: it writes a tree and a commit whose
 // parent is the change's previous head, advances head_commit, and returns the
 // new head. This is the pure snapshot half; merge-forward is layered on later.
-func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult, error) {
+func (e *Engine) Commit(changeID string, files map[string][]byte, message string) (CommitResult, error) {
 	ch, err := e.GetChange(changeID)
 	if err != nil {
 		return CommitResult{}, err
@@ -111,7 +111,7 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 			parents = []string{line.TipCommit}
 		}
 	}
-	head, err := e.writeCommit(tree.String(), ch.ID, ch.Author, parents)
+	head, err := e.writeCommit(tree.String(), ch.ID, message, parents)
 	if err != nil {
 		return CommitResult{}, err
 	}
@@ -126,7 +126,7 @@ func (e *Engine) Commit(changeID string, files map[string][]byte) (CommitResult,
 		return CommitResult{}, err
 	}
 	if merged != "" && merged != tree.String() {
-		head, err = e.writeCommit(merged, ch.ID, ch.Author, []string{head})
+		head, err = e.writeCommit(merged, ch.ID, message, []string{head})
 		if err != nil {
 			return CommitResult{}, err
 		}
