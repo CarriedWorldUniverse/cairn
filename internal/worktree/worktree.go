@@ -1,6 +1,7 @@
 package worktree
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"sort"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/release"
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
 // ErrPushConflict is returned by Repo.Push when a diverged remote was pulled
@@ -497,4 +500,195 @@ func (r *Repo) Ls() map[string]Entry {
 		out[k] = v
 	}
 	return out
+}
+
+// Root returns the working-copy root directory (for config file resolution).
+func (r *Repo) Root() string { return r.root }
+
+// Tag names the tip of branch with the given tag name.
+func (r *Repo) Tag(name, branch string) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.Tag: %w", err)
+	}
+	if line.TipCommit == "" {
+		return fmt.Errorf("worktree.Tag: branch %q has no commits to tag", branch)
+	}
+	return r.eng.Tag(name, line.TipCommit, r.author)
+}
+
+// PendingBump returns the recorded explicit bump intent ("" if none).
+func (r *Repo) PendingBump() (string, error) {
+	v, _, err := r.eng.GetConfig("version.pending_bump")
+	return v, err
+}
+
+// SetPendingBump records explicit bump intent for the next release.
+func (r *Repo) SetPendingBump(level string) error {
+	return r.eng.SetConfig("version.pending_bump", level)
+}
+
+// DeriveInput assembles the facts version.Derive needs for branch.
+func (r *Repo) DeriveInput(branch string, cfg version.Config) (version.DeriveInput, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	if line.TipCommit == "" {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: branch %q has no commits", branch)
+	}
+	tag, dist, err := r.eng.DescribeVersion(line.TipCommit)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	height, err := r.eng.LineHeight(line)
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	bump, err := r.PendingBump()
+	if err != nil {
+		return version.DeriveInput{}, fmt.Errorf("worktree.DeriveInput: %w", err)
+	}
+	short := line.TipCommit
+	if len(short) > 7 {
+		short = short[:7]
+	}
+	return version.DeriveInput{
+		BaseTag:      tag,
+		Distance:     dist,
+		LineName:     branch,
+		IsTrunk:      line.ParentLine == "",
+		LineDistance: height,
+		PendingBump:  bump,
+		ShortSHA:     short,
+		Config:       cfg,
+	}, nil
+}
+
+// ReleasePort adapts a branch's working copy to release.RepoPort.
+func (r *Repo) ReleasePort(branch, eco string) (release.RepoPort, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.ReleasePort: %w", err)
+	}
+	return &releaseAdapter{r: r, branch: branch, line: line, eco: eco}, nil
+}
+
+type releaseAdapter struct {
+	r      *Repo
+	branch string
+	line   change.Line
+	eco    string
+}
+
+func (a *releaseAdapter) Dirty() (bool, error) { return a.r.isDirty(a.branch) }
+
+// LatestTag returns the nearest tag reachable via first-parent ancestry — the
+// monotonicity base for a release. cairn's linear fold model keeps release tags
+// on the trunk's first-parent chain so this finds them; a tag off that chain
+// (rebased/forked history) would not constrain the guard. Acceptable for slice 1.
+func (a *releaseAdapter) LatestTag() (string, error) {
+	tag, _, err := a.r.eng.DescribeVersion(a.line.TipCommit)
+	return tag, err
+}
+
+func (a *releaseAdapter) ReadManifest(eco string) ([]byte, string, error) {
+	p, err := a.manifestPath(eco)
+	if err != nil {
+		return nil, "", err
+	}
+	if p == "" {
+		return nil, "", nil // tag-only ecosystem (oci/go) or no manifest present
+	}
+	b, err := os.ReadFile(p)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, p, nil
+		}
+		return nil, "", fmt.Errorf("worktree.ReadManifest: %w", err)
+	}
+	return b, p, nil
+}
+
+// manifestPath resolves the manifest file to stamp for an ecosystem within the
+// branch folder, or "" when there is nothing to stamp (oci/go are tag-only; a
+// missing nuget .csproj is tolerated).
+func (a *releaseAdapter) manifestPath(eco string) (string, error) {
+	dir := filepath.Join(a.r.root, a.branch)
+	switch eco {
+	case "npm":
+		return filepath.Join(dir, "package.json"), nil
+	case "pypi":
+		return filepath.Join(dir, "pyproject.toml"), nil
+	case "nuget":
+		matches, err := filepath.Glob(filepath.Join(dir, "*.csproj"))
+		if err != nil {
+			return "", fmt.Errorf("worktree.manifestPath: %w", err)
+		}
+		if len(matches) == 0 {
+			return "", nil
+		}
+		return matches[0], nil // first .csproj; single-project assumption for slice 1
+	default:
+		return "", nil
+	}
+}
+
+func (a *releaseAdapter) WriteManifest(path string, b []byte) error {
+	return os.WriteFile(path, b, 0o644)
+}
+
+func (a *releaseAdapter) CreateTag(name string) error { return a.r.Tag(name, a.branch) }
+func (a *releaseAdapter) DeleteTag(name string) error { return a.r.eng.DeleteTag(name) }
+func (a *releaseAdapter) ClearPendingBump() error     { return a.r.SetPendingBump("") }
+
+func (a *releaseAdapter) TagExists(name string) (bool, error) {
+	tags, err := a.r.eng.ListTags()
+	if err != nil {
+		return false, err
+	}
+	for _, t := range tags {
+		if t.Name == name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// isDirty reports whether the expressed folder differs from the branch's
+// committed tip tree.
+func (r *Repo) isDirty(branch string) (bool, error) {
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return false, fmt.Errorf("worktree.isDirty: branch %q is not expressed", branch)
+	}
+	scanned, err := Scan(filepath.Join(r.root, entry.Path))
+	if err != nil {
+		return false, fmt.Errorf("worktree.isDirty: %w", err)
+	}
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return false, fmt.Errorf("worktree.isDirty: %w", err)
+	}
+	var committed map[string][]byte
+	if line.TipCommit != "" {
+		committed, err = r.eng.Files(line.TipCommit)
+		if err != nil {
+			return false, fmt.Errorf("worktree.isDirty: %w", err)
+		}
+	}
+	return !sameFiles(scanned, committed), nil
+}
+
+func sameFiles(a, b map[string][]byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, va := range a {
+		vb, ok := b[k]
+		if !ok || !bytes.Equal(va, vb) {
+			return false
+		}
+	}
+	return true
 }
