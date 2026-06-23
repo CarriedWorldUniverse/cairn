@@ -725,8 +725,9 @@ func (r *Repo) isDirty(branch string) (bool, error) {
 	}
 	line, err := r.eng.LineByName(branch)
 	if errors.Is(err, change.ErrNotFound) {
-		// Line already gone from the engine (folded/abandoned): nothing to
-		// compare, removal is safe.
+		// Line already folded/abandoned: no committed tip to diff against, so the
+		// folder cannot be "dirty" in a recoverable sense — treat as clean and
+		// allow removal.
 		return false, nil
 	}
 	if err != nil {

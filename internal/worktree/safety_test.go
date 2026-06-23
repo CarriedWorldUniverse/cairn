@@ -175,6 +175,41 @@ func TestFoldDirtyRefused(t *testing.T) {
 	}
 }
 
+// TestIsDirtyErrNotFoundLineGone exercises the ErrNotFound early-return in
+// isDirty: the line is removed directly via the engine while the worktree entry
+// remains in st.Expressed — isDirty must return (false, nil) and not propagate
+// the error.
+func TestIsDirtyErrNotFoundLineGone(t *testing.T) {
+	skipOnWindows(t)
+	r, err := Open(t.TempDir(), "tester")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	root, err := r.DefaultBranch()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Express("feat", root); err != nil {
+		t.Fatal(err)
+	}
+	// Remove the line directly via the engine, leaving the worktree entry behind.
+	line, err := r.eng.LineByName("feat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.eng.AbandonLine(line.ID); err != nil {
+		t.Fatal(err)
+	}
+	dirty, err := r.isDirty("feat")
+	if err != nil {
+		t.Fatalf("isDirty errored on a gone line: %v", err)
+	}
+	if dirty {
+		t.Fatal("isDirty should report a gone line as not-dirty")
+	}
+}
+
 // TestIsDirtyMissingLineSafe verifies that isDirty returns (false, nil) after a
 // successful Abandon (line no longer exists in the engine).
 func TestIsDirtyMissingLineSafe(t *testing.T) {
