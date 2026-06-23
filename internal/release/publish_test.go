@@ -1,6 +1,10 @@
 package release
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
+)
 
 func TestPublishArgv(t *testing.T) {
 	for _, tc := range []struct {
@@ -27,16 +31,17 @@ func TestPublishArgv(t *testing.T) {
 }
 
 func TestGuardMonotonic(t *testing.T) {
-	if err := guardMonotonic("1.4.1", "1.4.0"); err != nil {
+	mk := func(s string) version.Canonical { v, _ := version.Parse(s); return v }
+	if err := guardMonotonic(mk("1.4.1"), "1.4.0"); err != nil {
 		t.Errorf("1.4.1 > 1.4.0 should pass: %v", err)
 	}
-	if err := guardMonotonic("1.4.0", "1.4.0"); err == nil {
+	if err := guardMonotonic(mk("1.4.0"), "1.4.0"); err == nil {
 		t.Error("equal version should fail monotonicity")
 	}
-	if err := guardMonotonic("1.3.0", "1.4.0"); err == nil {
+	if err := guardMonotonic(mk("1.3.0"), "1.4.0"); err == nil {
 		t.Error("lower version should fail monotonicity")
 	}
-	if err := guardMonotonic("1.0.0", ""); err != nil {
+	if err := guardMonotonic(mk("1.0.0"), ""); err != nil {
 		t.Errorf("no prior tag should pass: %v", err)
 	}
 }

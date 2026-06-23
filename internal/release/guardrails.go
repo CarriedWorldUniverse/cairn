@@ -21,20 +21,16 @@ func (ExecProbe) Exists(eco, name, ver string) (bool, error) { return false, nil
 
 // guardMonotonic fails unless newV is strictly greater (semver precedence) than
 // latestTag. An empty latestTag (no prior release) always passes.
-func guardMonotonic(newV, latestTag string) error {
+func guardMonotonic(newV version.Canonical, latestTag string) error {
 	if latestTag == "" {
 		return nil
-	}
-	a, err := version.Parse(newV)
-	if err != nil {
-		return fmt.Errorf("release.guardMonotonic: new %q: %w", newV, err)
 	}
 	b, err := version.Parse(latestTag)
 	if err != nil {
 		return fmt.Errorf("release.guardMonotonic: latest %q: %w", latestTag, err)
 	}
-	if version.Compare(a, b) <= 0 {
-		return fmt.Errorf("release: version %s is not greater than latest %s", newV, latestTag)
+	if version.Compare(newV, b) <= 0 {
+		return fmt.Errorf("release: version %s is not greater than latest %s", newV.String(), latestTag)
 	}
 	return nil
 }

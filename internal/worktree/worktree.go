@@ -589,11 +589,13 @@ func (a *releaseAdapter) LatestTag() (string, error) {
 }
 
 func (a *releaseAdapter) ReadManifest(eco string) ([]byte, string, error) {
-	name := manifestName(eco)
-	if name == "" {
-		return nil, "", nil // tag-only / unstamped ecosystem
+	p, err := a.manifestPath(eco)
+	if err != nil {
+		return nil, "", err
 	}
-	p := filepath.Join(a.r.root, a.branch, name)
+	if p == "" {
+		return nil, "", nil // tag-only ecosystem (oci/go) or no manifest present
+	}
 	b, err := os.ReadFile(p)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -602,6 +604,30 @@ func (a *releaseAdapter) ReadManifest(eco string) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("worktree.ReadManifest: %w", err)
 	}
 	return b, p, nil
+}
+
+// manifestPath resolves the manifest file to stamp for an ecosystem within the
+// branch folder, or "" when there is nothing to stamp (oci/go are tag-only; a
+// missing nuget .csproj is tolerated).
+func (a *releaseAdapter) manifestPath(eco string) (string, error) {
+	dir := filepath.Join(a.r.root, a.branch)
+	switch eco {
+	case "npm":
+		return filepath.Join(dir, "package.json"), nil
+	case "pypi":
+		return filepath.Join(dir, "pyproject.toml"), nil
+	case "nuget":
+		matches, err := filepath.Glob(filepath.Join(dir, "*.csproj"))
+		if err != nil {
+			return "", fmt.Errorf("worktree.manifestPath: %w", err)
+		}
+		if len(matches) == 0 {
+			return "", nil
+		}
+		return matches[0], nil // first .csproj; single-project assumption for slice 1
+	default:
+		return "", nil
+	}
 }
 
 func (a *releaseAdapter) WriteManifest(path string, b []byte) error {
@@ -661,17 +687,4 @@ func sameFiles(a, b map[string][]byte) bool {
 		}
 	}
 	return true
-}
-
-// manifestName returns the manifest file for an ecosystem, or "" if there is
-// nothing to stamp (oci/go are tag-only; nuget *.csproj glob is deferred).
-func manifestName(eco string) string {
-	switch eco {
-	case "npm":
-		return "package.json"
-	case "pypi":
-		return "pyproject.toml"
-	default:
-		return ""
-	}
 }

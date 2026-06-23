@@ -732,6 +732,11 @@ func cmdRelease(args []string) error {
 	if *target == "" {
 		return errors.New("usage: cairn release --target npm|nuget|pypi|oci [--dry-run]")
 	}
+	switch *target {
+	case "npm", "nuget", "pypi", "oci":
+	default:
+		return errors.New("usage: cairn release --target npm|nuget|pypi|oci [--dry-run]")
+	}
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
@@ -764,6 +769,7 @@ func cmdRelease(args []string) error {
 	opts := release.Options{
 		Eco:     *target,
 		Version: rendered,
+		Core:    rel,
 		TagName: cfg.TagPrefix + rel.String(),
 		Dir:     filepath.Join(*repo, branch),
 	}
@@ -779,6 +785,9 @@ func cmdRelease(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
+	if *target == "npm" || *target == "pypi" || *target == "nuget" {
+		fmt.Fprintln(os.Stderr, "cairn: manifest stamped but not committed — commit before pulling to avoid losing the stamp")
+	}
 	return nil
 }
 

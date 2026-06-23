@@ -3,6 +3,8 @@ package release
 import (
 	"errors"
 	"testing"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
 type fakeRepo struct {
@@ -50,7 +52,7 @@ type okProbe struct{}
 func (okProbe) Exists(eco, name, version string) (bool, error) { return false, nil }
 
 func opts() Options {
-	return Options{Eco: "npm", Version: "1.4.1", TagName: "v1.4.1", Dir: "/repo"}
+	return Options{Eco: "npm", Version: "1.4.1", Core: version.Canonical{Major: 1, Minor: 4, Patch: 1}, TagName: "v1.4.1", Dir: "/repo"}
 }
 
 func TestReleaseSuccess(t *testing.T) {

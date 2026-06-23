@@ -3,6 +3,8 @@ package release
 import (
 	"fmt"
 	"strings"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
 // RepoPort is the repo capability surface Release needs. worktree.Repo provides a
@@ -19,11 +21,12 @@ type RepoPort interface {
 }
 
 type Options struct {
-	Eco     string // npm|nuget|pypi|oci
-	Version string // rendered version for Eco
-	TagName string // e.g. "v1.4.1"
-	Name    string // package name (registry-exists probe); optional
-	Dir     string // publish working dir
+	Eco     string            // npm|nuget|pypi|oci
+	Version string            // rendered version for Eco
+	Core    version.Canonical // canonical version core (ecosystem-agnostic; used for monotonicity)
+	TagName string            // e.g. "v1.4.1"
+	Name    string            // package name (registry-exists probe); optional
+	Dir     string            // publish working dir
 }
 
 // runGuards runs all three guardrails (dirty / monotonic / already-exists).
@@ -39,7 +42,7 @@ func runGuards(o Options, repo RepoPort, probe RegistryProbe) error {
 	if err != nil {
 		return err
 	}
-	if err := guardMonotonic(o.Version, latestTag); err != nil {
+	if err := guardMonotonic(o.Core, latestTag); err != nil {
 		return err
 	}
 	tagged, err := repo.TagExists(o.TagName)
