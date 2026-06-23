@@ -247,6 +247,15 @@ func cmdCommit(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
+	// The commit succeeded; surface the best-effort auto-sync outcome on BOTH
+	// the conflict and the clean path (before the branching below) so a notice
+	// is never dropped when there are conflicts.
+	switch note := r.LastSyncNote(); {
+	case note == "synced":
+		fmt.Fprintln(os.Stderr, "cairn: auto-synced with origin")
+	case strings.HasPrefix(note, "skipped:"):
+		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
+	}
 	if len(res.Conflicts) > 0 {
 		paths := make([]string, 0, len(res.Conflicts))
 		for _, c := range res.Conflicts {
@@ -254,12 +263,6 @@ func cmdCommit(args []string) error {
 		}
 		fmt.Fprintf(os.Stderr, "%d conflict(s) in: %s\n", len(res.Conflicts), strings.Join(paths, ", "))
 		return nil
-	}
-	switch note := r.LastSyncNote(); {
-	case note == "synced":
-		fmt.Fprintln(os.Stderr, "cairn: auto-synced with origin")
-	case strings.HasPrefix(note, "skipped:"):
-		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
 	}
 	fmt.Println(res.HeadCommit)
 	return nil

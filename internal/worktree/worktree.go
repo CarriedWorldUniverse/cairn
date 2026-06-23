@@ -207,7 +207,7 @@ func (r *Repo) autoSync() string {
 	}
 	rems, err := r.eng.ListRemotes()
 	if err != nil {
-		return "skipped:no origin"
+		return "skipped:list-remotes-error"
 	}
 	hasOrigin := false
 	for _, rem := range rems {

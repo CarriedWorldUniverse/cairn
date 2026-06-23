@@ -71,6 +71,25 @@ func TestE2E_CommitAutoSyncOfflineStillCommits(t *testing.T) {
 	mustRun(t, "commit", "--repo", dir, def) // must SUCCEED despite autosync on + no origin
 }
 
+func TestE2E_CommitAutoSyncBrokenOriginStillCommits(t *testing.T) {
+	skipOnWindows(t)
+	dir := filepath.Join(t.TempDir(), "local")
+	mustRun(t, "init", dir)
+	// origin is configured but points at a nonexistent repo, so the autosync
+	// fetch itself errors (configured-but-broken path, not "no origin").
+	badURL := filepath.Join(t.TempDir(), "does-not-exist.git")
+	mustRun(t, "remote", "add", "--repo", dir, "origin", badURL)
+	mustRun(t, "config", "--repo", dir, "autosync", "true")
+	def := soleExpressedDir(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, def, "x.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", dir, def) // must SUCCEED despite autosync on + broken origin
+	if _, err := os.Stat(filepath.Join(dir, def, "x.txt")); err != nil {
+		t.Fatalf("local work lost: %v", err)
+	}
+}
+
 func TestE2E_PushAutoPullRetry(t *testing.T) {
 	skipOnWindows(t)
 	origin := makeSeededBareRepo(t)
