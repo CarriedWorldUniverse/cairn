@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -53,6 +54,9 @@ subcommands:
   fetch [remote]            fetch a remote into tracking refs (default origin)
   pull [remote]             fetch + reconcile each line (default origin)
   config <key> [value]      get (one arg) or set (two args) a config value
+  tag <name> [branch]       tag the tip of a branch (default: root branch)
+  version [--target eco]    print the derived version (stdout only, CI-safe)
+  version bump <level>      record explicit bump intent (major|minor|patch)
 
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -99,6 +103,10 @@ func run(args []string) error {
 		return cmdPull(rest)
 	case "config":
 		return cmdConfig(rest)
+	case "tag":
+		return cmdTag(rest)
+	case "version":
+		return cmdVersion(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -591,6 +599,113 @@ func cmdConfig(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Printf("set %s=%s\n", key, value)
+	return nil
+}
+
+// cmdTag names the tip of a branch with a tag. Usage:
+//
+//	cairn tag [--repo dir] <name> [branch]
+//
+// branch defaults to the structural root.
+func cmdTag(args []string) error {
+	fs := flag.NewFlagSet("tag", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn tag <name> [branch]")
+	}
+	name := fs.Arg(0)
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch := ""
+	if fs.NArg() >= 2 {
+		branch = fs.Arg(1)
+	} else {
+		branch, err = r.DefaultBranch()
+		if err != nil {
+			return mapErr(err)
+		}
+	}
+	if err := r.Tag(name, branch); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: tagged %s -> %s\n", branch, name)
+	return nil
+}
+
+// cmdVersion prints the derived version for the default branch, rendered for
+// the requested ecosystem (default: plain semver). Stdout carries the version
+// string ONLY so callers can do $(cairn version).
+func cmdVersion(args []string) error {
+	if len(args) > 0 && args[0] == "bump" {
+		return cmdVersionBump(args[1:])
+	}
+	fs := flag.NewFlagSet("version", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	target := fs.String("target", "", "render for ecosystem: npm|nuget|pypi|oci|go")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		return mapErr(err)
+	}
+	cfg, err := version.LoadConfig(r.Root())
+	if err != nil {
+		return mapErr(err)
+	}
+	in, err := r.DeriveInput(branch, cfg)
+	if err != nil {
+		return mapErr(err)
+	}
+	v, err := version.Derive(in)
+	if err != nil {
+		return mapErr(err)
+	}
+	out, err := version.Render(v, *target)
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Println(out)
+	return nil
+}
+
+// cmdVersionBump records explicit bump intent (major|minor|patch) for the next
+// release. The level is positional and must appear before any flags.
+func cmdVersionBump(args []string) error {
+	if len(args) < 1 {
+		return errors.New("usage: cairn version bump major|minor|patch")
+	}
+	level := args[0]
+	fs := flag.NewFlagSet("version bump", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args[1:]); err != nil {
+		return err
+	}
+	switch level {
+	case "major", "minor", "patch":
+	default:
+		return fmt.Errorf("bump level %q must be major|minor|patch", level)
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.SetPendingBump(level); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: next release bump set to %s\n", level)
 	return nil
 }
 
