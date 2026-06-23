@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5"
@@ -131,5 +132,34 @@ func TestPushNonFastForwardThenForce(t *testing.T) {
 	}
 	if err := e.PushToRemote("origin", true); err != nil {
 		t.Fatalf("force push should succeed: %v", err)
+	}
+}
+
+func TestPushUnknownRemote(t *testing.T) {
+	e := newTestEngine(t)
+	if err := e.PushToRemote("nonexistent", false); err == nil || !strings.Contains(err.Error(), `no remote "nonexistent"`) {
+		t.Fatalf("want clear no-remote error, got %v", err)
+	}
+}
+
+func TestAddRemoteIdempotentAndListed(t *testing.T) {
+	skipOnWindowsPush(t)
+	e := newTestEngine(t)
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	if err := e.AddRemote("origin", bare, ""); err != nil { // kind default "git"
+		t.Fatalf("AddRemote: %v", err)
+	}
+	if err := e.AddRemote("origin", bare, "git"); err != nil { // idempotent
+		t.Fatalf("re-add: %v", err)
+	}
+	rs, err := e.ListRemotes()
+	if err != nil {
+		t.Fatalf("ListRemotes: %v", err)
+	}
+	if len(rs) != 1 || rs[0].Name != "origin" || rs[0].Kind != "git" {
+		t.Fatalf("remotes = %+v", rs)
 	}
 }

@@ -94,13 +94,13 @@ func (e *Engine) remoteKind(name string) string {
 // a non-force push is surfaced as a clear "diverged" error advising fetch/sync or
 // --force; an already-up-to-date push is treated as success.
 func (e *Engine) PushToRemote(remoteName string, force bool) error {
-	return e.push(remoteName, gitRefSpecs(force), force)
+	return e.push("change.PushToRemote", remoteName, gitRefSpecs(force), force)
 }
 
 // PushToRemoteBranch is PushToRemote restricted to a single branch (plus tags):
 // it publishes refs/heads/<branch> and refs/tags/* only.
 func (e *Engine) PushToRemoteBranch(remoteName, branch string, force bool) error {
-	return e.push(remoteName, branchRefSpecs(branch, force), force)
+	return e.push("change.PushToRemoteBranch", remoteName, branchRefSpecs(branch, force), force)
 }
 
 // gitRefSpecs returns the all-branches + all-tags refspecs, force-prefixed when
@@ -130,17 +130,19 @@ func branchRefSpecs(branch string, force bool) []config.RefSpec {
 }
 
 // push is the shared implementation behind PushToRemote/PushToRemoteBranch.
-func (e *Engine) push(remoteName string, refSpecs []config.RefSpec, force bool) error {
+// label names the calling function for error wrapping so messages point at the
+// real entry point (PushToRemote vs PushToRemoteBranch).
+func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force bool) error {
 	if err := e.Export(); err != nil {
-		return fmt.Errorf("change.PushToRemote: %w", err)
+		return fmt.Errorf("%s: %w", label, err)
 	}
 
 	rem, err := e.git.Remote(remoteName)
 	if errors.Is(err, git.ErrRemoteNotFound) {
-		return fmt.Errorf("change.PushToRemote: no remote %q", remoteName)
+		return fmt.Errorf("%s: no remote %q", label, remoteName)
 	}
 	if err != nil {
-		return fmt.Errorf("change.PushToRemote: %w", err)
+		return fmt.Errorf("%s: %w", label, err)
 	}
 
 	// Remote kind seam: a "cairn" remote will eventually receive a full-fidelity
@@ -163,10 +165,10 @@ func (e *Engine) push(remoteName string, refSpecs []config.RefSpec, force bool) 
 	// robustly so a diverged remote gives a clear, actionable error.
 	if isNonFastForward(err) {
 		return fmt.Errorf(
-			"change.PushToRemote: remote %q diverged (non-fast-forward); fetch/sync first or push --force: %w",
-			remoteName, err)
+			"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force: %w",
+			label, remoteName, err)
 	}
-	return fmt.Errorf("change.PushToRemote: %w", err)
+	return fmt.Errorf("%s: %w", label, err)
 }
 
 // isNonFastForward reports whether a go-git push error is a non-fast-forward

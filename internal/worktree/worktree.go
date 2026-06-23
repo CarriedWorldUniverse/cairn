@@ -347,6 +347,17 @@ func (r *Repo) Tree() ([]change.LineNode, error) {
 	return nodes, nil
 }
 
+// Push projects the change-graph onto git refs and publishes branches + tags to
+// the named remote. force overwrites a diverged remote branch.
+func (r *Repo) Push(remote string, force bool) error { return r.eng.PushToRemote(remote, force) }
+
+// AddRemote registers (or re-points) a git remote and records its cairn kind
+// ("git" or "cairn"; defaulting to "git" when empty).
+func (r *Repo) AddRemote(name, url, kind string) error { return r.eng.AddRemote(name, url, kind) }
+
+// Remotes returns every configured remote with its URL and cairn kind.
+func (r *Repo) Remotes() ([]change.RemoteInfo, error) { return r.eng.ListRemotes() }
+
 // Ls returns a copy of the currently expressed branch entries.
 func (r *Repo) Ls() map[string]Entry {
 	out := make(map[string]Entry, len(r.st.Expressed))
