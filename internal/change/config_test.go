@@ -25,3 +25,17 @@ func TestConfigRoundTrip(t *testing.T) {
 		t.Fatalf("after update = %q", v)
 	}
 }
+
+func TestConfigTruthy(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"true", true}, {"TRUE", true}, {"1", true}, {"on", true}, {"ON", true}, {" on ", true},
+		{"false", false}, {"", false}, {"yes", false}, {"0", false}, {"off", false},
+	} {
+		if got := ConfigTruthy(tc.in); got != tc.want {
+			t.Errorf("ConfigTruthy(%q) = %v, want %v", tc.in, got, tc.want)
+		}
+	}
+}

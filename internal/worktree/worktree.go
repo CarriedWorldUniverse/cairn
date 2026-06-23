@@ -24,6 +24,11 @@ type Repo struct {
 	eng    *change.Engine
 	st     *State
 	stPath string
+
+	// lastSyncNote records the outcome of the best-effort commit-time auto-sync
+	// from the most recent Commit, so the CLI can surface it. Empty means autosync
+	// was off (or no commit has run); see LastSyncNote.
+	lastSyncNote string
 }
 
 // StatusInfo reports the state of an expressed branch: its lineage (root-first
@@ -181,8 +186,55 @@ func (r *Repo) Commit(branch, _msg string) (change.CommitResult, error) {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
+
+	// Best-effort, opt-in auto-sync AFTER the commit. The commit has already
+	// succeeded above; the pull is purely additive and never alters res or the
+	// (nil) error returned here. Any sync failure (offline, fetch error, conflict)
+	// is captured as a note for the CLI, not propagated.
+	r.lastSyncNote = r.autoSync()
+
 	return res, nil
 }
+
+// autoSync runs the opt-in commit-time sync and returns a note describing the
+// outcome for the CLI: "" when autosync is off, "synced" on a successful pull,
+// or "skipped:<reason>" otherwise. It never returns an error — the commit's
+// success is independent of the sync.
+func (r *Repo) autoSync() string {
+	v, ok, err := r.eng.GetConfig("autosync")
+	if err != nil || !ok || !change.ConfigTruthy(v) {
+		return ""
+	}
+	rems, err := r.eng.ListRemotes()
+	if err != nil {
+		return "skipped:no origin"
+	}
+	hasOrigin := false
+	for _, rem := range rems {
+		if rem.Name == "origin" {
+			hasOrigin = true
+			break
+		}
+	}
+	if !hasOrigin {
+		return "skipped:no origin"
+	}
+	sum, perr := r.Pull("origin")
+	if perr != nil {
+		return "skipped:offline"
+	}
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			return "skipped:conflicts"
+		}
+	}
+	return "synced"
+}
+
+// LastSyncNote returns the outcome of the most recent Commit's best-effort
+// commit-time auto-sync, for the CLI to surface. It is "" when autosync was off,
+// "synced" on success, or "skipped:<reason>" otherwise.
+func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 
 // Fold folds an expressed branch's line back into its parent, fast-forwarding the
 // parent tip, then unexpresses the branch. Any expressed line whose ID is the

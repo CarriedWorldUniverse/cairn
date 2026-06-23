@@ -5,7 +5,71 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
+
+// advanceSeededBareRepo clones the bare repo into a temp non-bare working copy,
+// writes path=content on the default branch, commits, and pushes back — so the
+// bare's default branch advances by one commit independently of any cairn clone.
+func advanceSeededBareRepo(t *testing.T, bare, path, content string) {
+	t.Helper()
+	work := t.TempDir()
+	repo, err := git.PlainClone(work, false, &git.CloneOptions{URL: bare})
+	if err != nil {
+		t.Fatalf("clone bare to advance: %v", err)
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		t.Fatalf("Worktree: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(work, path), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("advance", &git.CommitOptions{Author: &object.Signature{Name: "o", Email: "o@x"}}); err != nil {
+		t.Fatalf("commit advance: %v", err)
+	}
+	if err := repo.Push(&git.PushOptions{RemoteName: "origin", RefSpecs: []config.RefSpec{"refs/heads/*:refs/heads/*"}}); err != nil {
+		t.Fatalf("push advance: %v", err)
+	}
+}
+
+func TestE2E_CommitAutoSync(t *testing.T) {
+	skipOnWindows(t)
+	origin := makeSeededBareRepo(t)
+	B := filepath.Join(t.TempDir(), "B")
+	mustRun(t, "clone", origin, B)
+	def := soleExpressedDir(t, B)
+	mustRun(t, "config", "--repo", B, "autosync", "true")
+	advanceSeededBareRepo(t, origin, "remote.txt", "R\n") // remote advances independently
+	if err := os.WriteFile(filepath.Join(B, def, "local.txt"), []byte("L\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", B, def) // autosync pulls origin AFTER the commit
+	if _, err := os.Stat(filepath.Join(B, def, "remote.txt")); err != nil {
+		t.Fatalf("autosync didn't bring remote work: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(B, def, "local.txt")); err != nil {
+		t.Fatalf("local work lost: %v", err)
+	}
+}
+
+func TestE2E_CommitAutoSyncOfflineStillCommits(t *testing.T) {
+	skipOnWindows(t)
+	dir := filepath.Join(t.TempDir(), "local")
+	mustRun(t, "init", dir) // no origin at all
+	mustRun(t, "config", "--repo", dir, "autosync", "true")
+	def := soleExpressedDir(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, def, "x.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", dir, def) // must SUCCEED despite autosync on + no origin
+}
 
 func TestE2E_PushAutoPullRetry(t *testing.T) {
 	skipOnWindows(t)

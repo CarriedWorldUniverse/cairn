@@ -255,6 +255,12 @@ func cmdCommit(args []string) error {
 		fmt.Fprintf(os.Stderr, "%d conflict(s) in: %s\n", len(res.Conflicts), strings.Join(paths, ", "))
 		return nil
 	}
+	switch note := r.LastSyncNote(); {
+	case note == "synced":
+		fmt.Fprintln(os.Stderr, "cairn: auto-synced with origin")
+	case strings.HasPrefix(note, "skipped:"):
+		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
+	}
 	fmt.Println(res.HeadCommit)
 	return nil
 }
