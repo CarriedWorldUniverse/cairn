@@ -1,8 +1,10 @@
 package change
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -11,12 +13,110 @@ import (
 
 const originRemote = "origin"
 
+// ImportFromRemote fetches url's refs into the bare store and maps them onto the
+// change-graph: the remote default branch becomes this engine's root line (the
+// unique parent_line IS NULL row, renamed in place), every other head becomes a
+// flat child line off the root, and every tag is recorded. It is idempotent —
+// re-importing the same remote re-fetches and upserts without creating
+// duplicate lines or tags. Returns the default branch short name.
+func (e *Engine) ImportFromRemote(url string) (string, error) {
+	if err := e.fetchRemote(url); err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+	def, err := e.detectDefault()
+	if err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+	heads, err := e.listHeads()
+	if err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+	tags, err := e.listTags()
+	if err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+
+	tx, err := e.db.Begin()
+	if err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	ts := e.now().UTC().Format(time.RFC3339Nano)
+
+	// The root line is the unique parent_line IS NULL row.
+	var rootID string
+	if err := tx.QueryRow(`SELECT id FROM line WHERE parent_line IS NULL`).Scan(&rootID); err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+
+	// Rename the root to the default branch and set it to that head's commit.
+	defTip := heads[def]
+	if _, err := tx.Exec(
+		`UPDATE line SET name=?, tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
+		def, defTip, defTip, ts, rootID); err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+
+	// Every non-default head becomes a flat child line off the root.
+	for name, sha := range heads {
+		if name == def {
+			continue
+		}
+		var existingID string
+		err := tx.QueryRow(`SELECT id FROM line WHERE name=?`, name).Scan(&existingID)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			if _, err := tx.Exec(
+				`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
+				 VALUES(?,?,?,?,?,'open',?,?)`,
+				newID(), name, rootID, sha, sha, ts, ts); err != nil {
+				return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+			}
+		case err != nil:
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		default:
+			if _, err := tx.Exec(
+				`UPDATE line SET tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
+				sha, sha, ts, existingID); err != nil {
+				return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+			}
+		}
+	}
+
+	// Record each tag (name is PRIMARY KEY; upsert the commit on re-import).
+	for name, sha := range tags {
+		if _, err := tx.Exec(
+			`INSERT INTO tag(name, commit_sha, tagger, at) VALUES(?,?,?,?)
+			 ON CONFLICT(name) DO UPDATE SET commit_sha=excluded.commit_sha`,
+			name, sha, "import", ts); err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+	return def, nil
+}
+
 // fetchRemote ensures an "origin" remote at url and fetches all heads + tags
 // into the bare store. Idempotent (re-fetch is fine).
 func (e *Engine) fetchRemote(url string) error {
 	rem, err := e.git.Remote(originRemote)
 	if errors.Is(err, git.ErrRemoteNotFound) {
 		rem, err = e.git.CreateRemote(&config.RemoteConfig{Name: originRemote, URLs: []string{url}})
+	} else if err == nil {
+		// origin already exists. If its configured URL differs from url, re-point
+		// it at the new URL (delete + recreate) so a re-fetch with a changed URL
+		// does not silently keep using the old one.
+		cfg := rem.Config()
+		if len(cfg.URLs) == 0 || cfg.URLs[0] != url {
+			if err = e.git.DeleteRemote(originRemote); err != nil {
+				return fmt.Errorf("change.fetchRemote: %w", err)
+			}
+			rem, err = e.git.CreateRemote(&config.RemoteConfig{Name: originRemote, URLs: []string{url}})
+		}
 	}
 	if err != nil {
 		return fmt.Errorf("change.fetchRemote: %w", err)
@@ -57,8 +157,9 @@ func (e *Engine) detectDefault() (string, error) {
 			}
 		}
 	}
-	// Fallback: the remote did not advertise a symbolic HEAD (common over
-	// file://). Use the fetched heads.
+	// Fallback: ANY rem.List error (not only the file:// no-symbolic-HEAD case)
+	// drops us here, as does a List that returned but advertised no symbolic
+	// HEAD. In all of these we determine the default from the fetched heads.
 	heads, err := e.listHeads()
 	if err != nil {
 		return "", err
