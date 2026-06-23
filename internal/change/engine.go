@@ -78,20 +78,24 @@ func newID() string {
 	return hex.EncodeToString(b[:])
 }
 
-// ensureRootLine inserts the root line ("main", no parent) if it does not yet
-// exist. Idempotent: opening an existing engine is a no-op.
+// ensureRootLine inserts the root line ("main", no parent) if no root exists.
+// It probes by STRUCTURE (the unique parent_line IS NULL row), not by name, so
+// that a re-Open after ImportFromRemote renamed the root to the remote default
+// (e.g. "master") does not insert a SECOND root and corrupt the unique-root
+// invariant. Idempotent: opening an existing engine is a no-op.
 func (e *Engine) ensureRootLine() error {
-	if _, err := e.LineByName(RootLineName); err == nil {
-		return nil
-	} else if !errors.Is(err, ErrNotFound) {
+	var count int
+	if err := e.db.QueryRow(`SELECT COUNT(*) FROM line WHERE parent_line IS NULL`).Scan(&count); err != nil {
 		return fmt.Errorf("change.ensureRootLine: %w", err)
 	}
+	if count > 0 {
+		return nil
+	}
 	now := e.now().UTC().Format(time.RFC3339Nano)
-	_, err := e.db.Exec(
+	if _, err := e.db.Exec(
 		`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
 		 VALUES(?,?,NULL,'','','open',?,?)`,
-		newID(), RootLineName, now, now)
-	if err != nil {
+		newID(), RootLineName, now, now); err != nil {
 		return fmt.Errorf("change.ensureRootLine: %w", err)
 	}
 	return nil

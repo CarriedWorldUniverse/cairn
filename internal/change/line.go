@@ -63,6 +63,18 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	return l, nil
 }
 
+// RootLine returns the repo's root line (the unique parent_line IS NULL row).
+func (e *Engine) RootLine() (Line, error) {
+	var id string
+	if err := e.db.QueryRow(`SELECT id FROM line WHERE parent_line IS NULL`).Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Line{}, ErrNotFound
+		}
+		return Line{}, fmt.Errorf("change.RootLine: %w", err)
+	}
+	return e.lineByID(id)
+}
+
 // lineByID loads a line by its id, or returns ErrNotFound.
 func (e *Engine) lineByID(id string) (Line, error) {
 	row := e.db.QueryRow(
