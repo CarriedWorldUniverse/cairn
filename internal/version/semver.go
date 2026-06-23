@@ -35,15 +35,17 @@ func Parse(s string) (Canonical, error) {
 	s = strings.TrimPrefix(s, "v")
 	var v Canonical
 	if i := strings.IndexByte(s, '+'); i >= 0 {
-		if s[i+1:] != "" {
-			v.Build = strings.Split(s[i+1:], ".")
+		if s[i+1:] == "" {
+			return Canonical{}, fmt.Errorf("version.Parse: %q has empty build metadata", orig)
 		}
+		v.Build = strings.Split(s[i+1:], ".")
 		s = s[:i]
 	}
 	if i := strings.IndexByte(s, '-'); i >= 0 {
-		if s[i+1:] != "" {
-			v.PreRelease = strings.Split(s[i+1:], ".")
+		if s[i+1:] == "" {
+			return Canonical{}, fmt.Errorf("version.Parse: %q has empty pre-release", orig)
 		}
+		v.PreRelease = strings.Split(s[i+1:], ".")
 		s = s[:i]
 	}
 	parts := strings.Split(s, ".")
@@ -64,6 +66,12 @@ func Parse(s string) (Canonical, error) {
 }
 
 func atoi(s string) (int, error) {
+	if s == "" {
+		return 0, fmt.Errorf("empty numeric segment")
+	}
+	if len(s) > 1 && s[0] == '0' {
+		return 0, fmt.Errorf("numeric segment %q has a leading zero", s)
+	}
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 0 {
 		return 0, fmt.Errorf("invalid numeric segment %q", s)
