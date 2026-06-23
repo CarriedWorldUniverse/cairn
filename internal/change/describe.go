@@ -3,6 +3,7 @@ package change
 import (
 	"fmt"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
@@ -22,7 +23,9 @@ func (e *Engine) DescribeVersion(commit string) (string, int, error) {
 	}
 	byCommit := make(map[string]string, len(tags))
 	for _, t := range tags {
-		if _, ok := byCommit[t.Commit]; !ok {
+		if cur, ok := byCommit[t.Commit]; ok {
+			byCommit[t.Commit] = preferTag(cur, t.Name)
+		} else {
 			byCommit[t.Commit] = t.Name
 		}
 	}
@@ -43,11 +46,11 @@ func (e *Engine) DescribeVersion(commit string) (string, int, error) {
 	return "", 0, fmt.Errorf("change.DescribeVersion: ancestry exceeded %d commits", describeWalkCap)
 }
 
-// LineHeight returns the first-parent distance from line.TipCommit back to
-// line.BaseCommit (the fork-point). Returns 0 if the tip equals the base or
-// the tip is empty.
+// LineHeight returns the number of commits on line since its base (branch point):
+// the first-parent distance from TipCommit back to BaseCommit. A line with no
+// commits beyond its base (or no base recorded) has height 0.
 func (e *Engine) LineHeight(line Line) (int, error) {
-	if line.TipCommit == "" || line.TipCommit == line.BaseCommit {
+	if line.TipCommit == "" || line.BaseCommit == "" || line.TipCommit == line.BaseCommit {
 		return 0, nil
 	}
 	cur := line.TipCommit
@@ -60,11 +63,39 @@ func (e *Engine) LineHeight(line Line) (int, error) {
 			return 0, fmt.Errorf("change.LineHeight: %w", err)
 		}
 		if next == "" {
-			return h + 1, nil
+			// Reached a root without crossing BaseCommit (e.g. the tip was
+			// fast-forwarded onto a remote head whose first-parent chain bypasses
+			// the local fork point). h is still a deterministic, monotonic
+			// first-parent depth — adequate for a unique per-line pre-release.
+			return h, nil
 		}
 		cur = next
 	}
 	return 0, fmt.Errorf("change.LineHeight: ancestry exceeded %d commits", describeWalkCap)
+}
+
+// preferTag returns the higher-precedence of two tag names that point at the same
+// commit, so DescribeVersion bases on the most specific release. Unparseable tags
+// sort below parseable ones; two unparseable tags fall back to the larger string.
+func preferTag(a, b string) string {
+	pa, ea := version.Parse(a)
+	pb, eb := version.Parse(b)
+	switch {
+	case ea != nil && eb != nil:
+		if a >= b {
+			return a
+		}
+		return b
+	case ea != nil:
+		return b
+	case eb != nil:
+		return a
+	default:
+		if version.Compare(pa, pb) >= 0 {
+			return a
+		}
+		return b
+	}
 }
 
 // firstParent returns the hex sha of the first parent of commit, or "" if the

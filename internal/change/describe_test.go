@@ -49,3 +49,22 @@ func TestDescribeVersionNoTag(t *testing.T) {
 		t.Fatalf("no-tag = %q, %d; want empty, dist>=1", tag, dist)
 	}
 }
+
+func TestDescribeVersionPrefersHighestTagOnSameCommit(t *testing.T) {
+	e := newTestEngine(t)
+	root, _ := e.RootLine()
+	c1 := seedLineTip(t, e, root.ID, map[string][]byte{"a.txt": []byte("1")})
+	if err := e.Tag("v1.0.0", c1, "tester"); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Tag("v1.0.1", c1, "tester"); err != nil {
+		t.Fatal(err)
+	}
+	tag, dist, err := e.DescribeVersion(c1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tag != "v1.0.1" || dist != 0 {
+		t.Fatalf("DescribeVersion = %q,%d; want v1.0.1,0 (highest tag on the commit)", tag, dist)
+	}
+}
