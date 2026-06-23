@@ -1,4 +1,5 @@
 /cairn-server
+/cairn
 *.db
 *.db-*
 .DS_Store
