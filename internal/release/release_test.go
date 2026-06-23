@@ -6,11 +6,13 @@ import (
 )
 
 type fakeRepo struct {
-	dirty       bool
-	latestTag   string
-	manifest    []byte
-	tagged      string
-	bumpCleared bool
+	dirty        bool
+	latestTag    string
+	manifest     []byte
+	tagged       string
+	bumpCleared  bool
+	existingTag  string
+	createTagErr error
 }
 
 func (f *fakeRepo) Dirty() (bool, error)       { return f.dirty, nil }
@@ -19,9 +21,16 @@ func (f *fakeRepo) ReadManifest(eco string) ([]byte, string, error) {
 	return f.manifest, "manifest." + eco, nil
 }
 func (f *fakeRepo) WriteManifest(path string, b []byte) error { f.manifest = b; return nil }
-func (f *fakeRepo) CreateTag(name string) error               { f.tagged = name; return nil }
-func (f *fakeRepo) DeleteTag(name string) error               { f.tagged = ""; return nil }
-func (f *fakeRepo) ClearPendingBump() error                   { f.bumpCleared = true; return nil }
+func (f *fakeRepo) TagExists(name string) (bool, error)       { return f.existingTag == name, nil }
+func (f *fakeRepo) CreateTag(name string) error {
+	if f.createTagErr != nil {
+		return f.createTagErr
+	}
+	f.tagged = name
+	return nil
+}
+func (f *fakeRepo) DeleteTag(name string) error { f.tagged = ""; return nil }
+func (f *fakeRepo) ClearPendingBump() error     { f.bumpCleared = true; return nil }
 
 type fakePub struct {
 	called bool
@@ -120,6 +129,31 @@ func TestPlanDryRunNoMutation(t *testing.T) {
 	}
 	if fr.tagged != "" || string(fr.manifest) != `{"version":"0.0.0"}` {
 		t.Error("dry-run must not mutate")
+	}
+}
+
+func TestReleaseExistingTagRefused(t *testing.T) {
+	fr := &fakeRepo{existingTag: "v1.4.1", manifest: []byte(`{"version":"0.0.0"}`)}
+	pub := &fakePub{}
+	if err := Release(opts(), fr, pub, okProbe{}); err == nil {
+		t.Fatal("existing tag must be refused")
+	}
+	if pub.called || string(fr.manifest) != `{"version":"0.0.0"}` {
+		t.Error("must not publish or stamp when the tag already exists")
+	}
+}
+
+func TestReleaseCreateTagFailureRollsBackManifest(t *testing.T) {
+	fr := &fakeRepo{createTagErr: errors.New("dup"), manifest: []byte(`{"version":"0.0.0"}`)}
+	pub := &fakePub{}
+	if err := Release(opts(), fr, pub, okProbe{}); err == nil {
+		t.Fatal("CreateTag failure should error")
+	}
+	if pub.called {
+		t.Error("must not publish when tagging failed")
+	}
+	if string(fr.manifest) != `{"version":"0.0.0"}` {
+		t.Errorf("manifest not rolled back after CreateTag failure: %s", fr.manifest)
 	}
 }
 

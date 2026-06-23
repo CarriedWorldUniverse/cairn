@@ -58,3 +58,17 @@ func TestStampManifestMissingField(t *testing.T) {
 		t.Error("expected error for unknown ecosystem")
 	}
 }
+
+func TestStampManifestReplacesOnlyFirst(t *testing.T) {
+	npm := `{"version":"0.0.0","deps":{"version":"9.9.9"}}`
+	out, err := StampManifest("npm", []byte(npm), "1.4.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"version":"1.4.1"`) {
+		t.Fatalf("top-level not stamped: %s", out)
+	}
+	if !strings.Contains(string(out), `"version":"9.9.9"`) {
+		t.Fatalf("nested version must be untouched: %s", out)
+	}
+}

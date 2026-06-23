@@ -33,8 +33,12 @@ func StampManifest(eco string, src []byte, version string) ([]byte, error) {
 }
 
 func replaceOne(re *regexp.Regexp, src []byte, repl, what string) ([]byte, error) {
-	if !re.Match(src) {
+	loc := re.FindSubmatchIndex(src)
+	if loc == nil {
 		return nil, fmt.Errorf("release.StampManifest: %s not found", what)
 	}
-	return re.ReplaceAll(src, []byte(repl)), nil
+	out := append([]byte(nil), src[:loc[0]]...)
+	out = re.Expand(out, []byte(repl), src, loc)
+	out = append(out, src[loc[1]:]...)
+	return out, nil
 }

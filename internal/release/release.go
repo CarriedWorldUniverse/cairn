@@ -12,6 +12,7 @@ type RepoPort interface {
 	LatestTag() (string, error)
 	ReadManifest(eco string) (content []byte, path string, err error)
 	WriteManifest(path string, content []byte) error
+	TagExists(name string) (bool, error)
 	CreateTag(name string) error
 	DeleteTag(name string) error
 	ClearPendingBump() error
@@ -41,6 +42,13 @@ func runGuards(o Options, repo RepoPort, probe RegistryProbe) error {
 	if err := guardMonotonic(o.Version, latestTag); err != nil {
 		return err
 	}
+	tagged, err := repo.TagExists(o.TagName)
+	if err != nil {
+		return err
+	}
+	if tagged {
+		return fmt.Errorf("release: version %s is already tagged (%s)", o.Version, o.TagName)
+	}
 	exists, err := probe.Exists(o.Eco, o.Name, o.Version)
 	if err != nil {
 		return err
@@ -64,9 +72,12 @@ func Plan(o Options, repo RepoPort, probe RegistryProbe) (string, error) {
 	if len(content) > 0 {
 		stamped = path
 	}
-	argv, _ := publishArgv(o.Eco, o.Dir, o.Version)
+	pubStep := "(tag-only ecosystem, no publish command)"
+	if argv, perr := publishArgv(o.Eco, o.Dir, o.Version); perr == nil {
+		pubStep = strings.Join(argv, " ")
+	}
 	return fmt.Sprintf("release plan:\n  version: %s\n  tag:     %s\n  manifest: %s\n  publish: %s",
-		o.Version, o.TagName, stamped, strings.Join(argv, " ")), nil
+		o.Version, o.TagName, stamped, pubStep), nil
 }
 
 // Release performs the atomic release. Publish is last (the only irreversible
@@ -107,8 +118,11 @@ func Release(o Options, repo RepoPort, pub Publisher, probe RegistryProbe) error
 
 	// 3. Publish — last, irreversible.
 	if err := pub.Publish(o.Eco, o.Dir, o.Version); err != nil {
-		_ = repo.DeleteTag(o.TagName)
+		delErr := repo.DeleteTag(o.TagName)
 		rollback()
+		if delErr != nil {
+			return fmt.Errorf("release: publish failed AND tag cleanup failed (%v); manually remove tag %s: %w", delErr, o.TagName, err)
+		}
 		return fmt.Errorf("release: publish failed, rolled back tag+manifest: %w", err)
 	}
 
