@@ -32,8 +32,20 @@ import (
 var newPublisher = func() release.Publisher { return release.ExecPublisher{} }
 var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 
+// errConflicts is returned by cmdCommit and cmdPull when conflicts were
+// recorded. main() maps this to os.Exit(2) so that `commit && push` is safe
+// in scripts (exit 2 ≠ success, but distinct from a hard error at exit 1).
+// The stderr notice is printed by the cmd function; main must NOT print it again.
+var errConflicts = errors.New("completed with conflicts")
+
 func main() {
 	if err := run(os.Args[1:]); err != nil {
+		if errors.Is(err, errConflicts) {
+			os.Exit(2)
+		}
+		if errors.Is(err, flag.ErrHelp) {
+			os.Exit(0)
+		}
 		fmt.Fprintln(os.Stderr, "cairn:", err)
 		os.Exit(1)
 	}
@@ -296,7 +308,7 @@ func cmdCommit(args []string) error {
 			paths = append(paths, c.Path)
 		}
 		fmt.Fprintf(os.Stderr, "%d conflict(s) in: %s\n", len(res.Conflicts), strings.Join(paths, ", "))
-		return nil
+		return errConflicts
 	}
 	fmt.Println(res.HeadCommit)
 	return nil
@@ -651,6 +663,7 @@ func cmdPull(args []string) error {
 	}
 	if anyConflicts {
 		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
+		return errConflicts
 	}
 	return nil
 }
@@ -1005,7 +1018,7 @@ func mapErr(err error) error {
 	case errors.Is(err, change.ErrHasConflict):
 		return errors.New("resolve conflicts before folding")
 	case errors.Is(err, change.ErrNotFound):
-		return errors.New("not found")
+		return err
 	default:
 		return err
 	}
