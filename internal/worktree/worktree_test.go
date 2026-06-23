@@ -42,7 +42,7 @@ func TestRepoTwoBranchConverge(t *testing.T) {
 		t.Fatalf("unexpected conflicts: %v", res.Conflicts)
 	}
 
-	if err := r.Fold("exp"); err != nil {
+	if err := r.Fold("exp", false); err != nil {
 		t.Fatalf("Fold: %v", err)
 	}
 
@@ -93,7 +93,7 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	if err := r.Resolve("exp", "f.txt"); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
-	if err := r.Fold("exp"); err != nil {
+	if err := r.Fold("exp", false); err != nil {
 		t.Fatalf("Fold after resolve: %v", err)
 	}
 	got, _ := Scan(filepath.Join(root, "main"))
@@ -141,7 +141,7 @@ func TestRepoAbandonRemovesFolderParentUntouched(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "exp", "wild.txt"), []byte("W\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Abandon("exp"); err != nil {
+	if err := r.Abandon("exp", true); err != nil {
 		t.Fatalf("Abandon: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "exp")); !os.IsNotExist(err) {
@@ -163,10 +163,10 @@ func TestRepoCannotAbandonOrUnexpressRoot(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 	t.Cleanup(func() { _ = r.Close() })
-	if err := r.Abandon("main"); err == nil {
+	if err := r.Abandon("main", false); err == nil {
 		t.Fatal("Abandon(main) must error")
 	}
-	if err := r.Unexpress("main"); err == nil {
+	if err := r.Unexpress("main", false); err == nil {
 		t.Fatal("Unexpress(main) must error")
 	}
 	// main still expressed + intact

@@ -103,7 +103,7 @@ func TestCloneImportsAndExpresses(t *testing.T) {
 	if _, err := r.Commit("feature", ""); err != nil {
 		t.Fatalf("commit feature: %v", err)
 	}
-	if err := r.Fold("feature"); err != nil {
+	if err := r.Fold("feature", false); err != nil {
 		t.Fatalf("fold feature: %v", err)
 	}
 }
