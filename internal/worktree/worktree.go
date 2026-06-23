@@ -34,8 +34,8 @@ type StatusInfo struct {
 
 // Open opens (creating if needed) the working copy rooted at root with the given
 // default author. The change engine lives under root/.cairn and the working-copy
-// state under root/.cairn/wc.json. On first run the root line ("main") is
-// expressed automatically.
+// state under root/.cairn/wc.json. On first run the structural root line
+// (whatever it is named) is expressed automatically.
 func Open(root, author string) (*Repo, error) {
 	cairnDir := filepath.Join(root, ".cairn")
 	if err := os.MkdirAll(cairnDir, 0o755); err != nil {
@@ -52,8 +52,17 @@ func Open(root, author string) (*Repo, error) {
 		return nil, fmt.Errorf("worktree.Open: %w", err)
 	}
 	r := &Repo{root: root, author: author, eng: eng, st: st, stPath: stPath}
-	if _, ok := st.Expressed[change.RootLineName]; !ok {
-		if err := r.Express(change.RootLineName, ""); err != nil {
+	// First-run guard, by STRUCTURE not name: express the actual root line
+	// (parent_line IS NULL), whatever it is called. After a Clone of a remote
+	// whose default branch is e.g. "master", the root is named "master" and
+	// expressing the literal "main" would fail.
+	root2, err := r.eng.RootLine()
+	if err != nil {
+		_ = eng.Close()
+		return nil, err
+	}
+	if _, ok := st.Expressed[root2.Name]; !ok {
+		if err := r.Express(root2.Name, ""); err != nil {
 			_ = eng.Close()
 			return nil, err
 		}
@@ -76,16 +85,17 @@ func (r *Repo) Close() error {
 // Express materializes a branch as a folder under root, creating its line if it
 // does not exist. For the root line, branch must equal change.RootLineName and
 // parent is ignored. For any other branch, an absent line is forked off parent
-// (defaulting to "main"). Re-expressing an already-expressed branch is a no-op.
+// (defaulting to the structural root). Re-expressing an already-expressed
+// branch is a no-op.
 func (r *Repo) Express(branch, parent string) error {
 	if _, ok := r.st.Expressed[branch]; ok {
 		return nil
 	}
 
 	// Resolve the line structurally: an existing line (under ANY name, including
-	// the root) is used as-is; an absent line is forked off parent (default
-	// "main"). This keeps root detection name-independent — after an import the
-	// root may be named "master"/"trunk" rather than "main".
+	// the root) is used as-is; an absent line is forked off parent (defaulting
+	// to the structural root). This keeps root detection name-independent —
+	// after an import the root may be named "master"/"trunk" rather than "main".
 	var line change.Line
 	l, err := r.eng.LineByName(branch)
 	switch {
@@ -93,7 +103,13 @@ func (r *Repo) Express(branch, parent string) error {
 		line = l
 	case errors.Is(err, change.ErrNotFound):
 		if parent == "" {
-			parent = change.RootLineName
+			// Default to the actual structural root (parent_line IS NULL),
+			// whatever its name — after an import it may be "master"/"trunk".
+			rootLine, rerr := r.eng.RootLine()
+			if rerr != nil {
+				return fmt.Errorf("worktree.Express: %w", rerr)
+			}
+			parent = rootLine.Name
 		}
 		parentLine, perr := r.eng.LineByName(parent)
 		if perr != nil {

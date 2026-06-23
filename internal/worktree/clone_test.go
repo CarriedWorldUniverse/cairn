@@ -94,3 +94,26 @@ func TestCloneImportsAndExpresses(t *testing.T) {
 		t.Fatalf("fold feature: %v", err)
 	}
 }
+
+// TestReopenAfterCloneNonMainDefault guards the cross-session reopen path: after
+// cloning a remote whose default branch is not "main", the root line is named
+// after that default (e.g. "master") and a fresh Open of the cloned dir must
+// express the structural root by name, not the literal "main".
+func TestReopenAfterCloneNonMainDefault(t *testing.T) {
+	url, def := makeOriginRepoWT(t) // go-git PlainInit default is typically "master"
+	dir := filepath.Join(t.TempDir(), "myrepo")
+	r, err := Clone(url, dir, "t")
+	if err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	_ = r.Close()
+	// Re-open the cloned dir in a "new session"
+	r2, err := Open(dir, "t")
+	if err != nil {
+		t.Fatalf("re-Open after clone failed (root=%q): %v", def, err)
+	}
+	t.Cleanup(func() { _ = r2.Close() })
+	if _, ok := r2.Ls()[def]; !ok {
+		t.Fatalf("default branch %q not expressed after reopen: %v", def, r2.Ls())
+	}
+}
