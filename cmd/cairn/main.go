@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
@@ -31,8 +32,20 @@ import (
 var newPublisher = func() release.Publisher { return release.ExecPublisher{} }
 var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 
+// errConflicts is returned by cmdCommit and cmdPull when conflicts were
+// recorded. main() maps this to os.Exit(2) so that `commit && push` is safe
+// in scripts (exit 2 ≠ success, but distinct from a hard error at exit 1).
+// The stderr notice is printed by the cmd function; main must NOT print it again.
+var errConflicts = errors.New("completed with conflicts")
+
 func main() {
 	if err := run(os.Args[1:]); err != nil {
+		if errors.Is(err, errConflicts) {
+			os.Exit(2)
+		}
+		if errors.Is(err, flag.ErrHelp) {
+			os.Exit(0)
+		}
 		fmt.Fprintln(os.Stderr, "cairn:", err)
 		os.Exit(1)
 	}
@@ -51,6 +64,7 @@ subcommands:
   fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
   abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
   status [branch]           report a branch's state (default: the root branch)
+  diff [branch] | <a> <b>   show changes (working-vs-tip, or commit-vs-commit)
   tree                      print the line tree
   ls                        list expressed branches
   resolve <branch> <path>   resolve a conflict on a branch
@@ -59,6 +73,10 @@ subcommands:
   push [remote]             publish branches + tags (default origin, --force)
   fetch [remote]            fetch a remote into tracking refs (default origin)
   pull [remote]             fetch + reconcile each line (default origin)
+  log [branch] [-n N]       show commit history
+  show <commit>             show a commit's metadata + diff
+  undo                      revert the last operation
+  oplog                     show the operation history
   config <key> [value]      get (one arg) or set (two args) a config value
   tag <name> [branch]       tag the tip of a branch (default: root branch)
   version [--target eco]    print the derived version (stdout only, CI-safe)
@@ -94,6 +112,16 @@ func run(args []string) error {
 		return cmdAbandon(rest)
 	case "status":
 		return cmdStatus(rest)
+	case "diff":
+		return cmdDiff(rest)
+	case "log":
+		return cmdLog(rest)
+	case "show":
+		return cmdShow(rest)
+	case "undo":
+		return cmdUndo(rest)
+	case "oplog":
+		return cmdOplog(rest)
 	case "tree":
 		return cmdTree(rest)
 	case "ls":
@@ -280,7 +308,7 @@ func cmdCommit(args []string) error {
 			paths = append(paths, c.Path)
 		}
 		fmt.Fprintf(os.Stderr, "%d conflict(s) in: %s\n", len(res.Conflicts), strings.Join(paths, ", "))
-		return nil
+		return errConflicts
 	}
 	fmt.Println(res.HeadCommit)
 	return nil
@@ -353,6 +381,64 @@ func cmdStatus(args []string) error {
 	fmt.Printf("ahead:     %d\n", st.Ahead)
 	fmt.Printf("conflicts: %s\n", strings.Join(st.Conflicts, ", "))
 	fmt.Printf("expressed: %s\n", strings.Join(st.Expressed, ", "))
+	if len(st.Modified)+len(st.Added)+len(st.Deleted) > 0 {
+		fmt.Println("changes:")
+		for _, p := range st.Modified {
+			fmt.Printf("  M %s\n", p)
+		}
+		for _, p := range st.Added {
+			fmt.Printf("  A %s\n", p)
+		}
+		for _, p := range st.Deleted {
+			fmt.Printf("  D %s\n", p)
+		}
+	}
+	return nil
+}
+
+// cmdDiff prints the unified diff for working-vs-tip (default or named branch) or
+// commit-vs-commit. Binary files print a "Binary files differ" line.
+func cmdDiff(args []string) error {
+	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	var diffs []change.FileDiff
+	switch fs.NArg() {
+	case 0, 1:
+		branch := fs.Arg(0)
+		if branch == "" {
+			branch, err = r.DefaultBranch()
+			if err != nil {
+				return mapErr(err)
+			}
+		}
+		diffs, err = r.WorkingDiff(branch)
+	case 2:
+		diffs, err = r.DiffCommits(fs.Arg(0), fs.Arg(1))
+	default:
+		return errors.New("usage: cairn diff [branch] | cairn diff <commitA> <commitB>")
+	}
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
+	}
 	return nil
 }
 
@@ -577,6 +663,7 @@ func cmdPull(args []string) error {
 	}
 	if anyConflicts {
 		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
+		return errConflicts
 	}
 	return nil
 }
@@ -800,15 +887,140 @@ func cmdRelease(args []string) error {
 	return nil
 }
 
+// cmdUndo reverts the most recent operation, restoring every expressed branch's
+// folder to the prior tip. The Phase-1 limitation (lines created by the undone
+// op are not deleted) is surfaced as a note on stderr.
+func cmdUndo(args []string) error {
+	fs := flag.NewFlagSet("undo", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.Undo(); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintln(os.Stderr, "cairn: reverted the last operation (line tips restored; lines created by it are not removed)")
+	return nil
+}
+
+// cmdOplog prints the operation log in chronological order (newest last,
+// matching log-style reading). Each line: <op-id> <op-type> <actor> [detail].
+func cmdOplog(args []string) error {
+	fs := flag.NewFlagSet("oplog", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	ops, err := r.OperationLog()
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, op := range ops {
+		detail := op.Detail
+		if detail != "" {
+			detail = "  " + detail
+		}
+		fmt.Printf("%s  %-8s  %s%s\n", op.ID, op.OpType, op.Actor, detail)
+	}
+	return nil
+}
+
+// cmdLog prints the commit history of a branch, newest first.
+// Usage: cairn log [branch] [-n N]
+func cmdLog(args []string) error {
+	fs := flag.NewFlagSet("log", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	n := fs.Int("n", 20, "max commits to show")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch := ""
+	var berr error
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		branch, berr = r.DefaultBranch()
+		if berr != nil {
+			return mapErr(berr)
+		}
+	}
+	commits, err := r.Log(branch, *n)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, c := range commits {
+		short := c.SHA
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		fmt.Printf("%s  %s  %s  %s\n", short, c.When.Format("2006-01-02"), c.AuthorName, c.Subject)
+	}
+	return nil
+}
+
+// cmdShow prints a commit's metadata and the diff against its first parent.
+// Usage: cairn show <commit>
+func cmdShow(args []string) error {
+	fs := flag.NewFlagSet("show", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: cairn show <commit>")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	ci, diffs, err := r.Show(fs.Arg(0))
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("commit %s\nAuthor: %s <%s>\nDate:   %s\n\n", ci.SHA, ci.AuthorName, ci.AuthorEmail, ci.When.Format(time.RFC3339))
+	for _, line := range strings.Split(ci.Message, "\n") {
+		fmt.Printf("    %s\n", line)
+	}
+	fmt.Println()
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
+	}
+	return nil
+}
+
 // mapErr translates change-engine sentinels into operator-facing messages.
 func mapErr(err error) error {
 	switch {
 	case err == nil:
 		return nil
 	case errors.Is(err, change.ErrHasConflict):
-		return errors.New("resolve conflicts before folding")
+		return fmt.Errorf("resolve conflicts before folding: %w", err)
 	case errors.Is(err, change.ErrNotFound):
-		return errors.New("not found")
+		return err
 	default:
 		return err
 	}

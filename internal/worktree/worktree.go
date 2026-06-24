@@ -43,6 +43,9 @@ type StatusInfo struct {
 	Ahead     int
 	Conflicts []string
 	Expressed []string
+	Added     []string
+	Modified  []string
+	Deleted   []string
 }
 
 // Open opens (creating if needed) the working copy rooted at root with the given
@@ -426,10 +429,29 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for _, l := range lineage {
 		names = append(names, l.Name)
 	}
-	ahead := 0
-	if line.TipCommit != "" && line.TipCommit != line.BaseCommit {
-		ahead = 1
+	// Ahead = commits since this line's branch point; the root line has no branch point so it is structurally 0.
+	ahead, err := r.eng.LineHeight(line)
+	if err != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
+	diffs, err := r.WorkingDiff(branch)
+	if err != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
+	}
+	var added, modified, deleted []string
+	for _, d := range diffs {
+		switch d.Status {
+		case change.Added:
+			added = append(added, d.Path)
+		case change.Modified:
+			modified = append(modified, d.Path)
+		case change.Deleted:
+			deleted = append(deleted, d.Path)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(modified)
+	sort.Strings(deleted)
 	conflicts, err := r.eng.Conflicts(entry.ChangeID)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
@@ -449,7 +471,48 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 		Ahead:     ahead,
 		Conflicts: paths,
 		Expressed: expressed,
+		Added:     added,
+		Modified:  modified,
+		Deleted:   deleted,
 	}, nil
+}
+
+// WorkingDiff returns the per-path diff between an expressed branch's committed
+// tip tree (HEAD) and its current on-disk contents (working). A branch with no
+// commits yet diffs the working folder against the empty tree.
+func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
+	}
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+	}
+	var committed map[string][]byte
+	if line.TipCommit != "" {
+		committed, err = r.eng.Files(line.TipCommit)
+		if err != nil {
+			return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+		}
+	} else {
+		committed = map[string][]byte{}
+	}
+	working, err := Scan(filepath.Join(r.root, entry.Path))
+	if err != nil {
+		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+	}
+	return change.DiffTrees(committed, working, "HEAD", "working"), nil
+}
+
+// DiffCommits returns the per-path diff between two commits, passing through to
+// the change engine.
+func (r *Repo) DiffCommits(a, b string) ([]change.FileDiff, error) {
+	diffs, err := r.eng.DiffCommits(a, b)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.DiffCommits: %w", err)
+	}
+	return diffs, nil
 }
 
 // DefaultBranch returns the name of the structural root line (the parent_line IS
@@ -558,6 +621,23 @@ func (r *Repo) Ls() map[string]Entry {
 
 // Root returns the working-copy root directory (for config file resolution).
 func (r *Repo) Root() string { return r.root }
+
+// Log returns the commit history for branch (newest first, up to limit entries).
+func (r *Repo) Log(branch string, limit int) ([]change.CommitInfo, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Log: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, nil
+	}
+	return r.eng.Log(line.TipCommit, limit)
+}
+
+// Show returns a commit's metadata and the diff against its first parent.
+func (r *Repo) Show(commit string) (change.CommitInfo, []change.FileDiff, error) {
+	return r.eng.Show(commit)
+}
 
 // Tag names the tip of branch with the given tag name.
 func (r *Repo) Tag(name, branch string) error {
@@ -707,6 +787,46 @@ func (a *releaseAdapter) TagExists(name string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// Undo reverts the most recent operation (restoring each line's tip to its prior
+// state) and re-materializes every expressed branch so disk matches the catalogue.
+// Phase-1 limitation: it restores line tips only — it does not delete lines that
+// the undone operation created.
+func (r *Repo) Undo() error {
+	if err := r.eng.Undo(); err != nil {
+		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	for branch, entry := range r.st.Expressed {
+		line, err := r.eng.LineByName(branch)
+		if err != nil {
+			if errors.Is(err, change.ErrNotFound) {
+				continue // line gone — nothing to re-materialize
+			}
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		dir := filepath.Join(r.root, entry.Path)
+		if line.TipCommit != "" {
+			if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		} else {
+			// Restored to the pre-first-commit baseline: the committed tree is
+			// empty, so the expressed folder must be emptied to match.
+			if err := os.RemoveAll(dir); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// OperationLog returns the full operation log in chronological order.
+func (r *Repo) OperationLog() ([]change.Operation, error) {
+	return r.eng.OperationLog()
 }
 
 // isDirty reports whether the expressed folder differs from the branch's

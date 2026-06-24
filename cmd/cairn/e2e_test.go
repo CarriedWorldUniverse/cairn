@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -52,8 +53,11 @@ func TestE2E_ConflictResolveViaCLI(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	// commit exp -> conflict; commit is non-fatal (exit 0), so run must return nil
-	mustRun(t, "commit", "--repo", root, "exp")
+	// commit exp -> conflict; returns errConflicts (exit 2 in main) so the
+	// script-safe `commit && push` chain breaks cleanly. Allow errConflicts here.
+	if err := run([]string{"commit", "--repo", root, "exp"}); err != nil && !errors.Is(err, errConflicts) {
+		t.Fatalf("commit with conflict: unexpected error %v", err)
+	}
 	// exp/f.txt now has diff3 markers on disk; write the resolution and resolve
 	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
 		t.Fatal(err)
