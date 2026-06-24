@@ -151,10 +151,15 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 	// we never push refs/cairn/* to a remote.
 	_ = e.remoteKind(remoteName)
 
+	auth, err := e.authForRemote(rem)
+	if err != nil {
+		return fmt.Errorf("%s: %w", label, err)
+	}
 	err = rem.Push(&git.PushOptions{
 		RemoteName: remoteName,
 		RefSpecs:   refSpecs,
 		Force:      force,
+		Auth:       auth,
 	})
 	if err == nil || errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return nil

@@ -43,11 +43,16 @@ func (e *Engine) fetchTracking(remoteName string) error {
 	if err != nil {
 		return fmt.Errorf("change.fetchTracking: %w", err)
 	}
+	auth, err := e.authForRemote(rem)
+	if err != nil {
+		return fmt.Errorf("change.fetchTracking: %w", err)
+	}
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
 		},
 		Tags: git.AllTags,
+		Auth: auth,
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchTracking: %w", err)

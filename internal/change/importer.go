@@ -124,12 +124,17 @@ func (e *Engine) fetchRemote(url string) error {
 	if err != nil {
 		return fmt.Errorf("change.fetchRemote: %w", err)
 	}
+	auth, err := e.authForRemote(rem)
+	if err != nil {
+		return fmt.Errorf("change.fetchRemote: %w", err)
+	}
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			"+refs/heads/*:refs/heads/*",
 			"+refs/tags/*:refs/tags/*",
 		},
 		Tags: git.AllTags,
+		Auth: auth,
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchRemote: %w", err)
@@ -152,7 +157,11 @@ func (e *Engine) detectDefault() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("change.detectDefault: %w", err)
 	}
-	refs, err := rem.List(&git.ListOptions{})
+	auth, err := e.authForRemote(rem)
+	if err != nil {
+		return "", fmt.Errorf("change.detectDefault: %w", err)
+	}
+	refs, err := rem.List(&git.ListOptions{Auth: auth})
 	if err == nil {
 		for _, ref := range refs {
 			if ref.Name() == plumbing.HEAD && ref.Type() == plumbing.SymbolicReference {
