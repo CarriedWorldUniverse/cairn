@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS change (
   head_commit  TEXT NOT NULL DEFAULT '',
   status       TEXT NOT NULL DEFAULT 'open',
   has_conflict INTEGER NOT NULL DEFAULT 0,
+  sealed       INTEGER NOT NULL DEFAULT 0,
   created_at   TEXT NOT NULL,
   updated_at   TEXT NOT NULL
 );

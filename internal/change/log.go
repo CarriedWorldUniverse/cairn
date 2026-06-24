@@ -1,6 +1,8 @@
 package change
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -16,6 +18,7 @@ type CommitInfo struct {
 	When        time.Time
 	Subject     string // first line, Change-Id trailer stripped
 	Message     string // full message minus the Change-Id trailer
+	Working     bool   // head of an open (unsealed) change — the working commit
 }
 
 func (e *Engine) commitInfo(sha string) (CommitInfo, error) {
@@ -36,6 +39,21 @@ func (e *Engine) commitInfo(sha string) (CommitInfo, error) {
 		Subject:     strings.TrimSpace(subject),
 		Message:     strings.TrimSpace(msg),
 	}, nil
+}
+
+// isWorkingHead reports whether sha is the head_commit of some OPEN (unsealed)
+// change — i.e. it is a live working commit that a snapshot may still amend.
+func (e *Engine) isWorkingHead(sha string) (bool, error) {
+	var one int
+	err := e.db.QueryRow(
+		`SELECT 1 FROM change WHERE head_commit=? AND sealed=0 LIMIT 1`, sha).Scan(&one)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("change.isWorkingHead: %w", err)
+	}
+	return true, nil
 }
 
 // stripChangeID removes the trailing "\n\nChange-Id: ...\n" trailer.
@@ -59,6 +77,11 @@ func (e *Engine) Log(commit string, limit int) ([]CommitInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("change.Log: %w", err)
 		}
+		working, err := e.isWorkingHead(cur)
+		if err != nil {
+			return nil, fmt.Errorf("change.Log: %w", err)
+		}
+		ci.Working = working
 		out = append(out, ci)
 		next, err := e.firstParent(cur)
 		if err != nil {

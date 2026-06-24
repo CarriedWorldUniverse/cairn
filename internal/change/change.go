@@ -18,6 +18,10 @@ type Change struct {
 	HeadCommit  string
 	Status      string
 	HasConflict bool
+	// Sealed marks a change whose head is no longer the open working commit:
+	// a fresh change is open (sealed=0); sealing freezes its head so later
+	// snapshots no longer amend it.
+	Sealed bool
 }
 
 // CommitResult is the outcome of a Commit: the final head commit (after merge-
@@ -56,8 +60,8 @@ func (e *Engine) CreateChange(lineID, author string) (Change, error) {
 	}
 	now := e.now().UTC().Format(time.RFC3339Nano)
 	_, err := e.db.Exec(
-		`INSERT INTO change(id, line_id, author, head_commit, status, has_conflict, created_at, updated_at)
-		 VALUES(?,?,?,'',?,0,?,?)`,
+		`INSERT INTO change(id, line_id, author, head_commit, status, has_conflict, sealed, created_at, updated_at)
+		 VALUES(?,?,?,'',?,0,0,?,?)`,
 		ch.ID, ch.LineID, ch.Author, ch.Status, now, now)
 	if err != nil {
 		return Change{}, fmt.Errorf("change.CreateChange: %w", err)
@@ -68,17 +72,18 @@ func (e *Engine) CreateChange(lineID, author string) (Change, error) {
 // GetChange loads a change by id, or returns ErrNotFound.
 func (e *Engine) GetChange(id string) (Change, error) {
 	row := e.db.QueryRow(
-		`SELECT id, line_id, author, head_commit, status, has_conflict FROM change WHERE id=?`,
+		`SELECT id, line_id, author, head_commit, status, has_conflict, sealed FROM change WHERE id=?`,
 		id)
 	var ch Change
-	var hasConflict int
-	if err := row.Scan(&ch.ID, &ch.LineID, &ch.Author, &ch.HeadCommit, &ch.Status, &hasConflict); err != nil {
+	var hasConflict, sealed int
+	if err := row.Scan(&ch.ID, &ch.LineID, &ch.Author, &ch.HeadCommit, &ch.Status, &hasConflict, &sealed); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Change{}, ErrNotFound
 		}
 		return Change{}, fmt.Errorf("change.GetChange: %w", err)
 	}
 	ch.HasConflict = hasConflict != 0
+	ch.Sealed = sealed != 0
 	return ch, nil
 }
 
