@@ -75,6 +75,7 @@ subcommands:
   push [remote]                 publish branches + tags (default origin, --force)
   fetch [remote]                fetch a remote into tracking refs (default origin)
   pull [remote]                 fetch + reconcile each line (default origin)
+  blame <path> [branch]         show per-line author/date/commit
   log [branch] [-n N]           show commit history
   show <commit>                 show a commit's metadata + diff
   undo                          revert the last operation
@@ -117,6 +118,8 @@ func run(args []string) error {
 		return cmdStatus(rest)
 	case "diff":
 		return cmdDiff(rest)
+	case "blame":
+		return cmdBlame(rest)
 	case "log":
 		return cmdLog(rest)
 	case "show":
@@ -970,6 +973,47 @@ func cmdOplog(args []string) error {
 			detail = "  " + detail
 		}
 		fmt.Printf("%s  %-8s  %s%s\n", op.ID, op.OpType, op.Actor, detail)
+	}
+	return nil
+}
+
+// cmdBlame prints per-line provenance for a file at the tip of a branch,
+// mapping each line back to its cairn change-id.
+// Usage: cairn blame [--repo dir] <path> [branch]
+func cmdBlame(args []string) error {
+	fs := flag.NewFlagSet("blame", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn blame <path> [branch]")
+	}
+	path := fs.Arg(0)
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch := ""
+	if fs.NArg() > 1 {
+		branch = fs.Arg(1)
+	} else if branch, err = r.DefaultBranch(); err != nil {
+		return mapErr(err)
+	}
+	lines, err := r.Blame(branch, path)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, ln := range lines {
+		id := ln.Commit
+		if len(id) > 8 {
+			id = id[:8]
+		}
+		if working, _ := r.IsWorkingCommit(ln.Commit); working {
+			id = "(working)"
+		}
+		fmt.Printf("%-10s %-14s %s  %s\n", id, ln.Author, ln.When.Format("2006-01-02"), strings.TrimRight(ln.Text, "\n"))
 	}
 	return nil
 }

@@ -732,6 +732,21 @@ func (r *Repo) Show(commit string) (change.CommitInfo, []change.FileDiff, error)
 	return r.eng.Show(commit)
 }
 
+// Blame returns per-line provenance for path at the tip of branch.
+func (r *Repo) Blame(branch, path string) ([]change.BlameLine, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Blame: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, fmt.Errorf("worktree.Blame: branch %q has no commits", branch)
+	}
+	return r.eng.Blame(line.TipCommit, path)
+}
+
+// IsWorkingCommit reports whether sha is the head of an open (un-sealed) change.
+func (r *Repo) IsWorkingCommit(sha string) (bool, error) { return r.eng.IsWorkingHead(sha) }
+
 // Tag names the tip of branch with the given tag name.
 func (r *Repo) Tag(name, branch string) error {
 	line, err := r.eng.LineByName(branch)
