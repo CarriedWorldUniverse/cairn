@@ -34,15 +34,18 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	// Build into a sibling temp dir first, then swap — so a failure mid-build
-	// leaves the existing working copy intact (the slow writes happen before
-	// anything destructive). Sibling of dir means same filesystem → os.Rename
-	// is atomic.
-	tmp := dir + ".cairn-tmp"
-	if err := os.RemoveAll(tmp); err != nil {
+	// Build into a unique sibling temp dir first, then swap — so a failure
+	// mid-build leaves the existing working copy intact (the slow writes happen
+	// before anything destructive). A sibling of dir is on the same filesystem →
+	// os.Rename is atomic. MkdirTemp gives a fresh unique name so concurrent or
+	// retried Materialize calls can't collide on a fixed path.
+	tmp, err := os.MkdirTemp(filepath.Dir(dir), filepath.Base(dir)+".cairn-tmp-")
+	if err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	if err := os.MkdirAll(tmp, 0o755); err != nil {
+	// MkdirTemp creates the dir 0o700; the working copy expects 0o755.
+	if err := os.Chmod(tmp, 0o755); err != nil {
+		os.RemoveAll(tmp)
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	for p, data := range files {
@@ -92,6 +95,7 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	if err := os.Rename(tmp, dir); err != nil {
+		os.RemoveAll(tmp)
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	return nil
@@ -147,13 +151,34 @@ func loadIgnorePatterns(path string) ([]gitignore.Pattern, error) {
 	return patterns, sc.Err()
 }
 
+// hasTrackedPrefix reports whether any tracked path lies under the directory
+// dirRel (slash-separated, relative to the scan root) — i.e. some key has the
+// prefix dirRel+"/". Used so an ignored directory is only skipped wholesale
+// when nothing tracked lives inside it; otherwise we must descend to preserve
+// the tracked files (git only ignores untracked paths).
+func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
+	prefix := dirRel + "/"
+	for k := range tracked {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // Scan reads all regular files (and symlinks) under dir into a content map
 // keyed by slash-separated path relative to dir, plus a sparse modes map
 // carrying the non-regular kind/permission of each entry (absent ⇒ regular).
 // It honors .gitignore and .cairnignore at the root of dir, and
 // unconditionally skips any .git/ or .cairn/ directory subtree. Symlinks are
 // stored as their target string and never followed.
-func Scan(dir string) (map[string][]byte, map[string]change.EntryMode, error) {
+//
+// tracked is the set of paths already committed at the branch's tip. Following
+// git semantics, ignore patterns only affect UNTRACKED paths: a path present
+// in tracked is never dropped, even when it (or its directory) matches an
+// ignore pattern. A nil tracked set means "nothing tracked" → every ignored
+// path is skipped (the historical behaviour).
+func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, error) {
 	// Load ignore patterns from root-level .gitignore and .cairnignore.
 	var patterns []gitignore.Pattern
 	for _, name := range []string{".gitignore", ".cairnignore"} {
@@ -198,16 +223,25 @@ func Scan(dir string) (map[string][]byte, map[string]change.EntryMode, error) {
 					return filepath.SkipDir
 				}
 			}
-			// Apply gitignore matcher for directories: if matched, skip subtree.
+			// Apply gitignore matcher for directories: if matched, skip the
+			// subtree ONLY when no tracked path lies under it. If a tracked file
+			// lives inside, descend so it survives (the per-file tracked check
+			// keeps it; untracked siblings are still filtered).
 			if m.Match(parts, true) {
-				return filepath.SkipDir
+				if !hasTrackedPrefix(tracked, slashRel) {
+					return filepath.SkipDir
+				}
 			}
 			return nil
 		}
 
-		// File entry: skip if matched by an ignore pattern.
+		// File entry: skip if matched by an ignore pattern, but only when the
+		// path is UNTRACKED. An already-tracked file is never ignored (git
+		// semantics) so a committed-then-ignored path is not silently dropped.
 		if m.Match(parts, false) {
-			return nil
+			if _, ok := tracked[slashRel]; !ok {
+				return nil
+			}
 		}
 
 		// Symlink: store its target string, mark ModeSymlink, never follow it.

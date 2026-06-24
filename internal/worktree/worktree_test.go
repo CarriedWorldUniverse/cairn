@@ -46,7 +46,7 @@ func TestRepoTwoBranchConverge(t *testing.T) {
 		t.Fatalf("Fold: %v", err)
 	}
 
-	got, _, err := Scan(filepath.Join(root, "main"))
+	got, _, err := Scan(filepath.Join(root, "main"), nil)
 	if err != nil {
 		t.Fatalf("Scan main: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	if err := r.Fold("exp", false); err != nil {
 		t.Fatalf("Fold after resolve: %v", err)
 	}
-	got, _, _ := Scan(filepath.Join(root, "main"))
+	got, _, _ := Scan(filepath.Join(root, "main"), nil)
 	if string(got["f.txt"]) != "resolved\n" {
 		t.Fatalf("main f.txt = %q, want resolved", got["f.txt"])
 	}
@@ -150,7 +150,7 @@ func TestRepoAbandonRemovesFolderParentUntouched(t *testing.T) {
 	if _, ok := r.Ls()["main"]; !ok {
 		t.Fatal("main must still be expressed")
 	}
-	got, _, _ := Scan(filepath.Join(root, "main"))
+	got, _, _ := Scan(filepath.Join(root, "main"), nil)
 	if string(got["m.txt"]) != "M\n" || got["wild.txt"] != nil {
 		t.Fatalf("main perturbed by abandon: %v", got)
 	}
