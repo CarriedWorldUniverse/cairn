@@ -9,7 +9,7 @@ import (
 func seedLineTip(t *testing.T, e *Engine, lineID string, files map[string][]byte) string {
 	t.Helper()
 	ch, _ := e.CreateChange(lineID, "seed")
-	r, err := e.Commit(ch.ID, files, "")
+	r, err := e.Commit(ch.ID, files, nil, "")
 	if err != nil {
 		t.Fatalf("seed commit: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestCommitMergeForwardNonOverlap(t *testing.T) {
 	r, err := e.Commit(ch.ID, map[string][]byte{
 		"a.txt": []byte("a\n"),
 		"b.txt": []byte("B\n"),
-	}, "")
+	}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -76,12 +76,12 @@ func TestCommitMergeForwardConflict(t *testing.T) {
 
 	// Advance main's tip via the line-tip rule: a change on main commits X.
 	mc, _ := e.CreateChange(main.ID, "agent-main")
-	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, ""); err != nil {
+	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, nil, ""); err != nil {
 		t.Fatalf("advance main: %v", err)
 	}
 
 	ch, _ := e.CreateChange(exp.ID, "agent-exp")
-	r, err := e.Commit(ch.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
+	r, err := e.Commit(ch.ID, map[string][]byte{"f.txt": []byte("Y\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}

@@ -22,7 +22,7 @@ func TestMaterializeAtomicSwap(t *testing.T) {
 	ch, _ := eng.CreateChange(main.ID, "t")
 
 	// First commit: a.txt = v1.
-	r1, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, "")
+	r1, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit r1: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestMaterializeAtomicSwap(t *testing.T) {
 	}
 
 	// Second commit: a.txt = v2, add b.txt.
-	r2, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v2\n"), "b.txt": []byte("hello\n")}, "")
+	r2, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v2\n"), "b.txt": []byte("hello\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit r2: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestMaterializeFailureLeavesOriginalIntact(t *testing.T) {
 	ch, _ := eng.CreateChange(main.ID, "t")
 
 	// Good first commit.
-	r1, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, "")
+	r1, err := eng.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit r1: %v", err)
 	}

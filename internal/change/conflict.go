@@ -148,7 +148,7 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
 	files[path] = resolved
-	newTree, err := e.writeTree(files)
+	newTree, err := e.writeTree(files, nil)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}

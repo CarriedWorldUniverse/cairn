@@ -15,12 +15,12 @@ func TestConflictRecordedAndResolved(t *testing.T) {
 
 	// main advances: a change on main edits f.txt -> X (advances main tip).
 	mc, _ := e.CreateChange(main.ID, "m")
-	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, ""); err != nil {
+	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, nil, ""); err != nil {
 		t.Fatalf("main commit: %v", err)
 	}
 	// exp edits the same region -> Y; merge-forward against main's X over base -> conflict.
 	ec, _ := e.CreateChange(exp.ID, "e")
-	r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
+	r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("exp commit: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestResolveConflictNotFound(t *testing.T) {
 	e := newTestEngine(t)
 	main, _ := e.LineByName("main")
 	ch, _ := e.CreateChange(main.ID, "a")
-	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, nil, ""); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 	before, _ := e.GetChange(ch.ID)
@@ -75,9 +75,9 @@ func TestResolveConflictPartialLeavesHasConflict(t *testing.T) {
 	seedLineTip(t, e, main.ID, map[string][]byte{"f.txt": []byte("base\n"), "g.txt": []byte("base\n")})
 	exp, _ := e.CreateLine("exp", main.ID)
 	mc, _ := e.CreateChange(main.ID, "m")
-	e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n"), "g.txt": []byte("X\n")}, "")
+	e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n"), "g.txt": []byte("X\n")}, nil, "")
 	ec, _ := e.CreateChange(exp.ID, "e")
-	r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n"), "g.txt": []byte("Y\n")}, "")
+	r, _ := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n"), "g.txt": []byte("Y\n")}, nil, "")
 	if len(r.Conflicts) != 2 {
 		t.Fatalf("want 2 conflicts, got %d", len(r.Conflicts))
 	}

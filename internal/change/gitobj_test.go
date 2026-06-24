@@ -12,7 +12,7 @@ func TestWriteReadTreeRoundTrip(t *testing.T) {
 		"dir/b.txt":   []byte("beta\n"),
 		"dir/c/d.txt": []byte("delta\n"),
 	}
-	h, err := e.writeTree(files)
+	h, err := e.writeTree(files, nil)
 	if err != nil {
 		t.Fatalf("writeTree: %v", err)
 	}
@@ -27,21 +27,21 @@ func TestWriteReadTreeRoundTrip(t *testing.T) {
 
 func TestWriteTreeRejectsFileDirCollision(t *testing.T) {
 	e := newTestEngine(t)
-	if _, err := e.writeTree(map[string][]byte{"x": []byte("file\n"), "x/sub": []byte("sub\n")}); err == nil {
+	if _, err := e.writeTree(map[string][]byte{"x": []byte("file\n"), "x/sub": []byte("sub\n")}, nil); err == nil {
 		t.Fatal("expected error for file/dir name collision")
 	}
 }
 
 func TestWriteTreeRejectsSlashPrefix(t *testing.T) {
 	e := newTestEngine(t)
-	if _, err := e.writeTree(map[string][]byte{"/bad.txt": []byte("x")}); err == nil {
+	if _, err := e.writeTree(map[string][]byte{"/bad.txt": []byte("x")}, nil); err == nil {
 		t.Fatal("expected error for path beginning with /")
 	}
 }
 
 func TestWriteReadEmptyTree(t *testing.T) {
 	e := newTestEngine(t)
-	h, err := e.writeTree(map[string][]byte{})
+	h, err := e.writeTree(map[string][]byte{}, nil)
 	if err != nil {
 		t.Fatalf("writeTree empty: %v", err)
 	}

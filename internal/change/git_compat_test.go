@@ -25,7 +25,7 @@ func TestProperty9_GitCompat(t *testing.T) {
 
 	// main advances base -> X.
 	mc, _ := e.CreateChange(main.ID, "m")
-	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, ""); err != nil {
+	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, nil, ""); err != nil {
 		t.Fatalf("main advance: %v", err)
 	}
 	main, _ = e.LineByName("main")
@@ -36,7 +36,7 @@ func TestProperty9_GitCompat(t *testing.T) {
 
 	// exp edits the same path -> Y: a genuine 3-way conflict.
 	ec, _ := e.CreateChange(exp.ID, "e")
-	r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "")
+	r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("exp commit: %v", err)
 	}

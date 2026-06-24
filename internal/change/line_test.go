@@ -35,7 +35,7 @@ func TestGetLineTreeAhead(t *testing.T) {
 	main, _ := e.LineByName("main")
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "agent-test")
-	if _, err := e.Commit(ch.ID, map[string][]byte{"f.txt": []byte("hi\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"f.txt": []byte("hi\n")}, nil, ""); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 	nodes, err := e.GetLineTree()

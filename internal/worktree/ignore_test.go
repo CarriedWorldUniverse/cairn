@@ -27,7 +27,7 @@ func TestScanRespectsGitignore(t *testing.T) {
 	mustWrite(t, dir, "debug.log", "noise\n")
 	mustWrite(t, dir, "node_modules/dep/index.js", "x\n")
 	mustWrite(t, dir, "src/app.go", "package app\n")
-	files, err := Scan(dir)
+	files, _, err := Scan(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestScanSkipsGitAndCairnDirs(t *testing.T) {
 	mustWrite(t, dir, ".git/config", "[core]\n")
 	mustWrite(t, dir, ".cairn/wc.json", "{}\n")
 	mustWrite(t, dir, "sub/.git/HEAD", "ref\n")
-	files, err := Scan(dir)
+	files, _, err := Scan(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestScanCairnignore(t *testing.T) {
 	mustWrite(t, dir, ".cairnignore", "secret.key\n")
 	mustWrite(t, dir, "secret.key", "k\n")
 	mustWrite(t, dir, "ok.txt", "1\n")
-	files, _ := Scan(dir)
+	files, _, _ := Scan(dir)
 	if _, ok := files["secret.key"]; ok {
 		t.Error(".cairnignore not honored")
 	}

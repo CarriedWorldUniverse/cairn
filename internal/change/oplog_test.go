@@ -13,7 +13,7 @@ func TestOpLogRecordsAndUndoRestores(t *testing.T) {
 
 	// A commit on main advances its tip and should record an op.
 	ch, _ := e.CreateChange(main.ID, "m")
-	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a2\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a2\n")}, nil, ""); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 	after, _ := e.LineByName("main")

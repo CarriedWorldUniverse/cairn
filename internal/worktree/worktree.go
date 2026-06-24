@@ -198,11 +198,11 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
 	}
 	dir := filepath.Join(r.root, entry.Path)
-	files, err := Scan(dir)
+	files, modes, err := Scan(dir)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
-	res, err := r.eng.Commit(entry.ChangeID, files, message)
+	res, err := r.eng.Commit(entry.ChangeID, files, modes, message)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
@@ -498,7 +498,7 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	} else {
 		committed = map[string][]byte{}
 	}
-	working, err := Scan(filepath.Join(r.root, entry.Path))
+	working, _, err := Scan(filepath.Join(r.root, entry.Path))
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
@@ -839,7 +839,7 @@ func (r *Repo) isDirty(branch string) (bool, error) {
 		// Branch not in working-copy state: nothing to compare, not dirty.
 		return false, nil
 	}
-	scanned, err := Scan(filepath.Join(r.root, entry.Path))
+	scanned, _, err := Scan(filepath.Join(r.root, entry.Path))
 	if err != nil {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}

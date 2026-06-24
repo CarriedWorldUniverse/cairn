@@ -26,6 +26,10 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	if err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
+	modes, err := eng.FileModes(commitSha)
+	if err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
 	blobs := filepath.Join(cacheDir, "blobs")
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
@@ -42,6 +46,23 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	for p, data := range files {
+		full := filepath.Join(tmp, filepath.FromSlash(p))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			os.RemoveAll(tmp)
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+
+		// Symlink: write the target string as an actual symlink, bypassing the
+		// blob cache/reflink path (a symlink's content is its target).
+		if modes[p] == change.ModeSymlink {
+			_ = os.Remove(full) // tmp is fresh, but be defensive
+			if err := os.Symlink(string(data), full); err != nil {
+				os.RemoveAll(tmp)
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
+			continue
+		}
+
 		sum := sha256.Sum256(data)
 		key := hex.EncodeToString(sum[:])
 		cacheBlob := filepath.Join(blobs, key)
@@ -54,14 +75,15 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		full := filepath.Join(tmp, filepath.FromSlash(p))
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			os.RemoveAll(tmp)
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
 		if err := reflinkOrCopy(cacheBlob, full); err != nil {
 			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		if modes[p] == change.ModeExecutable {
+			if err := os.Chmod(full, 0o755); err != nil {
+				os.RemoveAll(tmp)
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
 		}
 	}
 	// Swap: remove the old dir, then atomically rename temp into place.
@@ -125,22 +147,26 @@ func loadIgnorePatterns(path string) ([]gitignore.Pattern, error) {
 	return patterns, sc.Err()
 }
 
-// Scan reads all regular files under dir into a map keyed by slash-separated
-// path relative to dir. It honors .gitignore and .cairnignore at the root of
-// dir, and unconditionally skips any .git/ or .cairn/ directory subtree.
-func Scan(dir string) (map[string][]byte, error) {
+// Scan reads all regular files (and symlinks) under dir into a content map
+// keyed by slash-separated path relative to dir, plus a sparse modes map
+// carrying the non-regular kind/permission of each entry (absent ⇒ regular).
+// It honors .gitignore and .cairnignore at the root of dir, and
+// unconditionally skips any .git/ or .cairn/ directory subtree. Symlinks are
+// stored as their target string and never followed.
+func Scan(dir string) (map[string][]byte, map[string]change.EntryMode, error) {
 	// Load ignore patterns from root-level .gitignore and .cairnignore.
 	var patterns []gitignore.Pattern
 	for _, name := range []string{".gitignore", ".cairnignore"} {
 		ps, err := loadIgnorePatterns(filepath.Join(dir, name))
 		if err != nil {
-			return nil, fmt.Errorf("worktree.Scan: %w", err)
+			return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
 		}
 		patterns = append(patterns, ps...)
 	}
 	m := gitignore.NewMatcher(patterns)
 
 	out := map[string][]byte{}
+	modes := map[string]change.EntryMode{}
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -184,15 +210,30 @@ func Scan(dir string) (map[string][]byte, error) {
 			return nil
 		}
 
+		// Symlink: store its target string, mark ModeSymlink, never follow it.
+		// (A symlink is not a dir, so WalkDir won't descend it — no loop risk.)
+		if d.Type()&os.ModeSymlink != 0 {
+			target, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			out[slashRel] = []byte(target)
+			modes[slashRel] = change.ModeSymlink
+			return nil
+		}
+
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
 		out[slashRel] = data
+		if info, ierr := d.Info(); ierr == nil && info.Mode()&0o111 != 0 {
+			modes[slashRel] = change.ModeExecutable
+		}
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("worktree.Scan: %w", err)
+		return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
 	}
-	return out, nil
+	return out, modes, nil
 }

@@ -15,7 +15,7 @@ func TestExportRefs(t *testing.T) {
 	}
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
-	r, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n")}, "")
+	r, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "b.txt": []byte("b\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestExportAbandonedLineNotExported(t *testing.T) {
 	main, _ := e.LineByName("main")
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
-	e.Commit(ch.ID, map[string][]byte{"x.txt": []byte("x\n")}, "")
+	e.Commit(ch.ID, map[string][]byte{"x.txt": []byte("x\n")}, nil, "")
 	if err := e.AbandonLine(exp.ID); err != nil {
 		t.Fatalf("AbandonLine: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestExportFoldedLineNotExported(t *testing.T) {
 	seedLineTip(t, e, main.ID, map[string][]byte{"a.txt": []byte("a\n")})
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
-	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, "")
+	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, nil, "")
 	if err := e.FoldLine(exp.ID); err != nil {
 		t.Fatalf("FoldLine: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestExportPrunesFoldedRefsOnReexport(t *testing.T) {
 	seedLineTip(t, e, main.ID, map[string][]byte{"a.txt": []byte("a\n")})
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
-	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, "")
+	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, nil, "")
 	if err := e.Export(); err != nil {
 		t.Fatalf("export1: %v", err)
 	} // exp ref now exists

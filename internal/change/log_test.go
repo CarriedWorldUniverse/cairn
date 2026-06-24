@@ -17,15 +17,15 @@ func buildThreeCommits(t *testing.T, e *Engine) (sha1, sha2, sha3 string) {
 	if err != nil {
 		t.Fatalf("CreateChange: %v", err)
 	}
-	r1, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, "first")
+	r1, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v1\n")}, nil, "first")
 	if err != nil {
 		t.Fatalf("Commit 1: %v", err)
 	}
-	r2, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v2\n")}, "second")
+	r2, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v2\n")}, nil, "second")
 	if err != nil {
 		t.Fatalf("Commit 2: %v", err)
 	}
-	r3, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v3\n"), "b.txt": []byte("new\n")}, "third")
+	r3, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("v3\n"), "b.txt": []byte("new\n")}, nil, "third")
 	if err != nil {
 		t.Fatalf("Commit 3: %v", err)
 	}

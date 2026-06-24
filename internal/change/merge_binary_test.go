@@ -32,7 +32,7 @@ func TestMergeBinaryConflictNoMarkers(t *testing.T) {
 	mc, _ := e.CreateChange(main.ID, "agent-main")
 	if _, err := e.Commit(mc.ID, map[string][]byte{
 		"image.png": fakeBinaryB,
-	}, ""); err != nil {
+	}, nil, ""); err != nil {
 		t.Fatalf("advance main with binary: %v", err)
 	}
 
@@ -42,7 +42,7 @@ func TestMergeBinaryConflictNoMarkers(t *testing.T) {
 	ch, _ := e.CreateChange(exp.ID, "agent-exp")
 	r, err := e.Commit(ch.ID, map[string][]byte{
 		"image.png": fakeBinaryC,
-	}, "")
+	}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit (binary diverge): %v", err)
 	}
@@ -107,7 +107,7 @@ func TestMergeBinaryUnchangedOneSide(t *testing.T) {
 	ch, _ := e.CreateChange(exp.ID, "agent-exp2")
 	r, err := e.Commit(ch.ID, map[string][]byte{
 		"data.bin": fakeBinaryB,
-	}, "")
+	}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit (binary one-side): %v", err)
 	}

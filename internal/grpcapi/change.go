@@ -85,7 +85,7 @@ func (s *ChangeService) CreateChange(ctx context.Context, lineID, author string)
 
 // Commit snapshots files into a change.
 func (s *ChangeService) Commit(ctx context.Context, changeID string, files map[string][]byte, message string) (change.CommitResult, error) {
-	res, err := s.eng.Commit(changeID, files, message)
+	res, err := s.eng.Commit(changeID, files, nil, message)
 	return res, mapErr(err)
 }
 

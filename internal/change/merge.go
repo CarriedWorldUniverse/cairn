@@ -146,7 +146,7 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		}
 	}
 
-	tree, err := e.writeTree(merged)
+	tree, err := e.writeTree(merged, nil)
 	if err != nil {
 		return "", nil, err
 	}
