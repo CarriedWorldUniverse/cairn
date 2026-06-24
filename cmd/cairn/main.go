@@ -90,6 +90,9 @@ subcommands:
   stash pop [branch]        restore the most recent stash onto branch
   stash list                list the stash stack
   stash drop [id]           discard a stash (default: most recent)
+  reword <commit> <message> change the message of a sealed commit (history edit)
+  squash <commit>           fold a sealed commit into its parent (history edit)
+  drop <commit>             remove a sealed commit from its line (history edit)
 
 config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
@@ -157,6 +160,12 @@ func run(args []string) error {
 		return cmdRelease(rest)
 	case "stash":
 		return cmdStash(rest)
+	case "reword":
+		return cmdReword(rest)
+	case "squash":
+		return cmdSquash(rest)
+	case "drop":
+		return cmdDrop(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -1265,6 +1274,95 @@ func cmdStashList(args []string) error {
 		fmt.Printf("%-4d %-12s %s  %s\n", s.ID, s.Branch, date, s.Message)
 	}
 	return nil
+}
+
+// reportEdit prints the result of a history-editing operation (reword/squash/
+// drop) to stdout/stderr: the new line tip on stdout on success, or a conflict
+// notice on stderr (exit 2) when the rebase produced conflicts.
+func reportEdit(res change.CommitResult, verb string) error {
+	if len(res.Conflicts) > 0 {
+		paths := make([]string, 0, len(res.Conflicts))
+		for _, c := range res.Conflicts {
+			paths = append(paths, c.Path)
+		}
+		fmt.Fprintf(os.Stderr, "%s: %d rebase conflict(s) in: %s\n", verb, len(res.Conflicts), strings.Join(paths, ", "))
+		return errConflicts
+	}
+	fmt.Println(res.HeadCommit)
+	return nil
+}
+
+// cmdReword changes the message of a sealed commit.
+// Usage: cairn reword [--repo dir] <commit> <new-message>
+func cmdReword(args []string) error {
+	fs := flag.NewFlagSet("reword", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 2 {
+		return errors.New("usage: cairn reword <commit> <new-message>")
+	}
+	commit := fs.Arg(0)
+	message := fs.Arg(1)
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	res, err := r.Reword(commit, message)
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportEdit(res, "reword")
+}
+
+// cmdSquash folds a sealed commit into its parent.
+// Usage: cairn squash [--repo dir] <commit>
+func cmdSquash(args []string) error {
+	fs := flag.NewFlagSet("squash", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn squash <commit>")
+	}
+	commit := fs.Arg(0)
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	res, err := r.Squash(commit)
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportEdit(res, "squash")
+}
+
+// cmdDrop removes a sealed commit from its line.
+// Usage: cairn drop [--repo dir] <commit>
+func cmdDrop(args []string) error {
+	fs := flag.NewFlagSet("drop", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn drop <commit>")
+	}
+	commit := fs.Arg(0)
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	res, err := r.Drop(commit)
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportEdit(res, "drop")
 }
 
 // cmdStashDrop discards a stash entry. An optional positional id selects the

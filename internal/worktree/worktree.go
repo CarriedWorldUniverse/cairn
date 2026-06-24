@@ -1040,6 +1040,93 @@ func (r *Repo) OperationLog() ([]change.Operation, error) {
 	return r.eng.OperationLog()
 }
 
+// applyEdit runs an engine edit verb (reword/squash/drop) identified by name,
+// then re-materializes every expressed branch whose line was affected. It
+// resolves the branch name from the commit sha BEFORE the edit (squash/drop
+// deletes the change row) and returns the new line tip plus any rebase
+// conflicts as a CommitResult.
+func (r *Repo) applyEdit(commit string, editFn func() ([]change.Conflict, error)) (change.CommitResult, error) {
+	// Resolve which branch (line name) owns this commit BEFORE the edit,
+	// because squash/drop deletes the change row.
+	branchName, err := r.lineNameOfCommit(commit)
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+
+	conflicts, err := editFn()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+
+	// Re-materialize any expressed branch whose line name matches.
+	if entry, ok := r.st.Expressed[branchName]; ok {
+		if merr := r.rematerialize(branchName, entry); merr != nil {
+			return change.CommitResult{}, merr
+		}
+	}
+
+	// Read the new line tip to return in the result.
+	line, err := r.eng.LineByName(branchName)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.applyEdit: %w", err)
+	}
+	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts}, nil
+}
+
+// lineNameOfCommit resolves the line name that owns the given commit sha by
+// walking all expressed branches and checking the engine's line tip. For
+// expressed branches the line is in the expressed set; for non-expressed lines
+// we fall back to a full scan of engine lines (future work). The commit must
+// carry a Change-Id trailer; the engine's GetChange lookup does the resolution.
+func (r *Repo) lineNameOfCommit(commit string) (string, error) {
+	// Ask the engine: the commit carries a Change-Id trailer that maps back to a
+	// change row which carries the line_id. Use LineByName to go from line_id to
+	// the line name — but we need the reverse direction. Walk expressed branches
+	// first (cheap), then fall back to a full engine query via the change row.
+	//
+	// Strategy: resolve via the engine's full short-sha / change-id path:
+	// Engine.Reword/Squash/Drop call guardEditable which maps commit → change →
+	// line. We replicate just enough here to get the line name.
+	//
+	// We ask every expressed branch's line whether its tip (or any sealed commit
+	// on it) includes this sha. The simplest reliable approach: call
+	// eng.LineByName for each expressed branch and check if the sha appears in
+	// its log. That would be O(N*depth). Instead we use the change catalogue:
+	// the commit's Change-Id points to a change row with a line_id.
+	//
+	// Since we need the change package's internal accessor we expose a thin
+	// wrapper on Engine: LineOfCommit.
+	name, err := r.eng.LineOfCommit(commit)
+	if err != nil {
+		return "", fmt.Errorf("worktree.lineNameOfCommit: %w", err)
+	}
+	return name, nil
+}
+
+// Reword changes the commit message of a sealed commit on its line.
+// The branch folder is re-materialized to the rebased tip.
+func (r *Repo) Reword(commit, message string) (change.CommitResult, error) {
+	return r.applyEdit(commit, func() ([]change.Conflict, error) {
+		return r.eng.Reword(commit, message)
+	})
+}
+
+// Squash folds a sealed commit into its parent on the same line.
+// The branch folder is re-materialized to the rebased tip.
+func (r *Repo) Squash(commit string) (change.CommitResult, error) {
+	return r.applyEdit(commit, func() ([]change.Conflict, error) {
+		return r.eng.Squash(commit)
+	})
+}
+
+// Drop removes a sealed commit from its line, rebasing later commits.
+// The branch folder is re-materialized to the rebased tip.
+func (r *Repo) Drop(commit string) (change.CommitResult, error) {
+	return r.applyEdit(commit, func() ([]change.Conflict, error) {
+		return r.eng.Drop(commit)
+	})
+}
+
 // isDirty reports whether the branch has un-sealed work: a non-empty delta in
 // its OPEN working change vs that change's parent commit. Under working-copy-is-
 // a-commit the expressed folder always equals the working commit (line tip) after
