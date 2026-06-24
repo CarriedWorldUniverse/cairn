@@ -14,27 +14,28 @@ import (
 const originRemote = "origin"
 
 // ImportFromRemote fetches url's refs into the bare store and maps them onto the
-// change-graph: the remote default branch becomes this engine's root line (the
-// unique parent_line IS NULL row, renamed in place), every other head becomes a
-// flat child line off the root, and every tag is recorded. It is idempotent —
-// re-importing the same remote re-fetches and upserts without creating
-// duplicate lines or tags. Returns the default branch short name.
+// change-graph. When the remote advertises a cairn meta ref (refs/cairn/meta) the
+// EXACT change-graph (line tree, changes, conflicts) is reconstructed from the meta
+// commit with full fidelity (see importMeta). Otherwise it falls back to a lossy
+// flat projection of refs/heads: the remote default branch becomes this engine's
+// root line (the unique parent_line IS NULL row, renamed in place) and every other
+// head becomes a flat child line off the root. On both paths every tag is recorded.
+// It is idempotent — re-importing the same remote re-fetches and upserts without
+// creating duplicate lines or tags. Returns the default branch short name.
 func (e *Engine) ImportFromRemote(url string) (string, error) {
 	if err := e.fetchRemote(url); err != nil {
-		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-	}
-	def, err := e.detectDefault()
-	if err != nil {
-		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-	}
-	heads, err := e.listHeads()
-	if err != nil {
 		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 	}
 	tags, err := e.listTags()
 	if err != nil {
 		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 	}
+
+	// If the remote advertised a cairn meta ref (refs/cairn/meta), the full
+	// change-graph was fetched and we reconstruct it with FULL FIDELITY. Otherwise
+	// we fall back to the lossy flat projection of refs/heads.
+	metaRef, metaErr := e.git.Reference(plumbing.ReferenceName("refs/cairn/meta"), false)
+	hasMeta := metaErr == nil && metaRef != nil
 
 	tx, err := e.db.Begin()
 	if err != nil {
@@ -44,50 +45,73 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 
 	ts := e.now().UTC().Format(time.RFC3339Nano)
 
-	// The root line is the unique parent_line IS NULL row.
-	var rootID string
-	if err := tx.QueryRow(`SELECT id FROM line WHERE parent_line IS NULL`).Scan(&rootID); err != nil {
-		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-	}
-
-	// Rename the root to the default branch and set it to that head's commit.
-	defTip, ok := heads[def]
-	if !ok {
-		return "", fmt.Errorf("change.ImportFromRemote: default branch %q not in fetched heads", def)
-	}
-	if _, err := tx.Exec(
-		`UPDATE line SET name=?, tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
-		def, defTip, defTip, ts, rootID); err != nil {
-		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-	}
-
-	// Every non-default head becomes a flat child line off the root.
-	for name, sha := range heads {
-		if name == def {
-			continue
-		}
-		var existingID string
-		err := tx.QueryRow(`SELECT id FROM line WHERE name=?`, name).Scan(&existingID)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			if _, err := tx.Exec(
-				`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
-				 VALUES(?,?,?,?,?,'open',?,?)`,
-				newID(), name, rootID, sha, sha, ts, ts); err != nil {
-				return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-			}
-		case err != nil:
+	var def string
+	if hasMeta {
+		// Fidelity path: importMeta DELETEs the init catalogue and re-installs the
+		// exact line tree / changes / conflicts from the meta commit. It returns the
+		// reconstructed root line (the unique parent_line IS NULL row).
+		def, err = e.importMeta(metaRef.Hash().String(), tx, ts)
+		if err != nil {
 			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
-		default:
-			if _, err := tx.Exec(
-				`UPDATE line SET tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
-				sha, sha, ts, existingID); err != nil {
+		}
+	} else {
+		// Flat-projection path (no cairn metadata on the remote).
+		def, err = e.detectDefault()
+		if err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+		heads, err := e.listHeads()
+		if err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+
+		// The root line is the unique parent_line IS NULL row.
+		var rootID string
+		if err := tx.QueryRow(`SELECT id FROM line WHERE parent_line IS NULL`).Scan(&rootID); err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+
+		// Rename the root to the default branch and set it to that head's commit.
+		defTip, ok := heads[def]
+		if !ok {
+			return "", fmt.Errorf("change.ImportFromRemote: default branch %q not in fetched heads", def)
+		}
+		if _, err := tx.Exec(
+			`UPDATE line SET name=?, tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
+			def, defTip, defTip, ts, rootID); err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+
+		// Every non-default head becomes a flat child line off the root.
+		for name, sha := range heads {
+			if name == def {
+				continue
+			}
+			var existingID string
+			err := tx.QueryRow(`SELECT id FROM line WHERE name=?`, name).Scan(&existingID)
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				if _, err := tx.Exec(
+					`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
+					 VALUES(?,?,?,?,?,'open',?,?)`,
+					newID(), name, rootID, sha, sha, ts, ts); err != nil {
+					return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+				}
+			case err != nil:
 				return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+			default:
+				if _, err := tx.Exec(
+					`UPDATE line SET tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
+					sha, sha, ts, existingID); err != nil {
+					return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+				}
 			}
 		}
 	}
 
 	// Record each tag (name is PRIMARY KEY; upsert the commit on re-import).
+	// Tags are not carried in the meta document, so they are recorded from
+	// refs/tags/* on BOTH paths.
 	for name, sha := range tags {
 		if _, err := tx.Exec(
 			`INSERT INTO tag(name, commit_sha, tagger, at) VALUES(?,?,?,?)
