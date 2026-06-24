@@ -264,6 +264,157 @@ func TestRewordWorkingChangeNoHead(t *testing.T) {
 	}
 }
 
+// TestSquashCombinesIntoParent: Squash(S2commit) folds S2 into S1 — the chain
+// shrinks from 3 to 2 steps; the first step keeps S1's change-id, its message
+// is the concatenation of S1 and S2's messages, and its tree contains S2's
+// content; S2's change-id row is deleted; S3 is the second step, its change-id
+// and file content preserved.
+func TestSquashCombinesIntoParent(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, msgs := buildChildLineWith3Sealed(t, e)
+
+	conflicts, err := e.Squash(commits[1]) // S2
+	if err != nil {
+		t.Fatalf("Squash(S2): %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Squash conflicts = %d, want 0", len(conflicts))
+	}
+
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after squash: %v", err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("chain len = %d, want 2 (3 minus squashed)", len(chain))
+	}
+
+	// First step keeps S1's change-id.
+	if chain[0].ChangeID != changeIDs[0] {
+		t.Errorf("chain[0].ChangeID = %q, want S1's %q", chain[0].ChangeID, changeIDs[0])
+	}
+	// Message is concatenation of S1+S2.
+	if !strings.Contains(chain[0].Message, msgs[0]) {
+		t.Errorf("chain[0].Message = %q, want it to contain S1 msg %q", chain[0].Message, msgs[0])
+	}
+	if !strings.Contains(chain[0].Message, msgs[1]) {
+		t.Errorf("chain[0].Message = %q, want it to contain S2 msg %q", chain[0].Message, msgs[1])
+	}
+
+	// S2's change-id row must be deleted.
+	if _, err := e.GetChange(changeIDs[1]); err == nil {
+		t.Errorf("GetChange(S2 change-id) returned no error — row should have been deleted")
+	}
+
+	// Squashed step's tree contains S2's content (s2.txt, added by S2).
+	squashedTree, err := e.readTree(chain[0].Tree)
+	if err != nil {
+		t.Fatalf("readTree(squashed step): %v", err)
+	}
+	if got := string(squashedTree["s2.txt"]); got != "S2 content\n" {
+		t.Errorf("s2.txt in squashed tree = %q, want %q", got, "S2 content\n")
+	}
+
+	// S3 is the second step, its change-id preserved.
+	if chain[1].ChangeID != changeIDs[2] {
+		t.Errorf("chain[1].ChangeID = %q, want S3's %q", chain[1].ChangeID, changeIDs[2])
+	}
+	// S3's file content is unchanged at the line tip.
+	tipTree, err := e.readTree(chain[1].Tree)
+	if err != nil {
+		t.Fatalf("readTree(S3 tip): %v", err)
+	}
+	if got := string(tipTree["s3.txt"]); got != "S3 content\n" {
+		t.Errorf("s3.txt at tip = %q, want %q", got, "S3 content\n")
+	}
+}
+
+// TestSquashFirstCommitErrors: Squash on the first sealed commit (idx==0) must
+// return an error containing "nothing to squash into".
+func TestSquashFirstCommitErrors(t *testing.T) {
+	e := newTestEngine(t)
+	_, commits, _, _ := buildChildLineWith3Sealed(t, e)
+
+	_, err := e.Squash(commits[0]) // S1 is the first — nothing above it
+	if err == nil {
+		t.Fatal("Squash(S1): want error, got nil")
+	}
+	if !strings.Contains(err.Error(), "nothing to squash into") {
+		t.Fatalf("Squash(S1) error = %q, want it to contain %q", err.Error(), "nothing to squash into")
+	}
+}
+
+// TestSquashRebasesWorkingChange: after Squash(S2), the open working change
+// (which has a snapshotted file) rebases cleanly onto the new chain top (the
+// rewritten S3), and its own file content survives.
+func TestSquashRebasesWorkingChange(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, _ := buildChildLineWith3Sealed(t, e)
+
+	// Snapshot a file onto the current open working change.
+	openID := openWorkingChangeID(t, e, childID)
+	if _, _, err := e.SnapshotWorking(openID, map[string]TreeEntry{
+		"w.txt": blobEntry(t, e, "working\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(open): %v", err)
+	}
+
+	conflicts, err := e.Squash(commits[1]) // S2
+	if err != nil {
+		t.Fatalf("Squash(S2): %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Squash conflicts = %d, want 0", len(conflicts))
+	}
+
+	// After squash the chain has 2 steps; get the new S3 commit (now chain[1]).
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after squash: %v", err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("chain len = %d, want 2", len(chain))
+	}
+	if chain[1].ChangeID != changeIDs[2] {
+		t.Errorf("chain[1].ChangeID = %q, want S3's %q", chain[1].ChangeID, changeIDs[2])
+	}
+
+	// The working change's head first-parent must be the new S3 commit.
+	w, err := e.GetChange(openID)
+	if err != nil {
+		t.Fatalf("GetChange(open after squash): %v", err)
+	}
+	if w.HeadCommit == "" {
+		t.Fatal("open working change has no head after squash")
+	}
+	wParent, err := e.firstParent(w.HeadCommit)
+	if err != nil {
+		t.Fatalf("firstParent(working head): %v", err)
+	}
+	if wParent != chain[1].Commit {
+		t.Fatalf("working parent = %s, want new S3 commit %s", wParent, chain[1].Commit)
+	}
+
+	// Working change's file content survives the rebase.
+	wTree, err := e.readTree(chain[1].Tree)
+	if err != nil {
+		t.Fatalf("readTree(new S3): %v", err)
+	}
+	// w.txt is in the WORKING change tree, not S3's tree — read the working head's tree.
+	wHeadTree, err := e.treeHashOf(w.HeadCommit)
+	if err != nil {
+		t.Fatalf("treeHashOf(working head): %v", err)
+	}
+	wHeadContents, err := e.readTree(wHeadTree)
+	if err != nil {
+		t.Fatalf("readTree(working head): %v", err)
+	}
+	if got := string(wHeadContents["w.txt"]); got != "working\n" {
+		t.Errorf("w.txt in working head = %q, want %q", got, "working\n")
+	}
+	_ = wTree // only needed to confirm S3's tip is accessible
+}
+
 // TestRewordByChangeIdRobust verifies that guardEditable matches by change-id
 // rather than exact commit sha. It passes the sealed step's head commit sha
 // (the canonical path) and confirms Reword succeeds and preserves the change-id.

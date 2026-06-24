@@ -370,6 +370,32 @@ func (e *Engine) openWorkingChange(lineID string) (Change, error) {
 	return e.GetChange(id)
 }
 
+// Squash folds the sealed commit `commit` into its parent — combining the two
+// into one sealed commit that keeps the PARENT's change-id, takes `commit`'s
+// (cumulative) tree, and concatenates their messages. Descendants rebase cleanly.
+func (e *Engine) Squash(commit string) ([]Conflict, error) {
+	lineID, chain, idx, err := e.guardEditable(commit)
+	if err != nil {
+		return nil, err
+	}
+	if idx == 0 {
+		return nil, errors.New("change.Squash: nothing to squash into (commit is the first on its line)")
+	}
+	// Combine chain[idx] INTO chain[idx-1]: keep idx-1's change-id, take idx's
+	// tree (the cumulative state), idx-1's ParentTree, concatenated message.
+	combined := sealStep{
+		ChangeID:   chain[idx-1].ChangeID,
+		Tree:       chain[idx].Tree,
+		ParentTree: chain[idx-1].ParentTree,
+		Message:    chain[idx-1].Message + "\n\n" + chain[idx].Message,
+	}
+	newSeq := make([]sealStep, 0, len(chain)-1)
+	newSeq = append(newSeq, chain[:idx-1]...)
+	newSeq = append(newSeq, combined)
+	newSeq = append(newSeq, chain[idx+1:]...)
+	return e.rewriteChain(lineID, newSeq)
+}
+
 // Reword changes the description of a sealed commit on its line, preserving its
 // change-id and rebasing the commits above it (and the open working change) onto
 // the rewritten history. It returns any rebase conflicts as data.
