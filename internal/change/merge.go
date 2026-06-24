@@ -104,7 +104,20 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 				merged[p] = ov
 				continue
 			}
-			// Genuine divergence: three-way line merge.
+			// Genuine divergence: check for binary before attempting line-merge.
+			if isBinary(bv) || isBinary(ov) || isBinary(tv) {
+				// Binary whole-file conflict: keep the change/theirs side verbatim
+				// (theirs = the change's snapshot in mergeForward) and record a
+				// conflict without emitting any text markers.
+				merged[p] = tv
+				c, err := e.buildConflict(changeID, p, bv, ov, tv, tv)
+				if err != nil {
+					return "", nil, err
+				}
+				conflicts = append(conflicts, c)
+				continue
+			}
+			// Three-way line merge for text files.
 			res := diff3.Merge3(splitLines(bv), splitLines(ov), splitLines(tv))
 			mergedBytes := []byte(strings.Join(res.Merged, ""))
 			merged[p] = mergedBytes
