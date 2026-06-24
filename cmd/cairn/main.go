@@ -1293,7 +1293,7 @@ func reportEdit(res change.CommitResult, verb string) error {
 }
 
 // cmdReword changes the message of a sealed commit.
-// Usage: cairn reword [--repo dir] <commit> <new-message>
+// Usage: cairn reword [--repo dir] <commit> <message>
 func cmdReword(args []string) error {
 	fs := flag.NewFlagSet("reword", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
@@ -1301,11 +1301,11 @@ func cmdReword(args []string) error {
 		return err
 	}
 	if fs.NArg() < 2 {
-		return errors.New("usage: cairn reword <commit> <new-message>")
+		return errors.New("usage: cairn reword <commit> <message>")
 	}
 	commit := fs.Arg(0)
 	message := fs.Arg(1)
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -1329,7 +1329,7 @@ func cmdSquash(args []string) error {
 		return errors.New("usage: cairn squash <commit>")
 	}
 	commit := fs.Arg(0)
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -1353,7 +1353,7 @@ func cmdDrop(args []string) error {
 		return errors.New("usage: cairn drop <commit>")
 	}
 	commit := fs.Arg(0)
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

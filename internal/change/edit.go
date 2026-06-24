@@ -60,6 +60,9 @@ func (e *Engine) sealedChain(lineID string) ([]sealStep, error) {
 	var steps []sealStep
 	for c := top; c != "" && c != line.BaseCommit; {
 		runCID := e.changeIDOf(c)
+		if runCID == "" {
+			break // reached a non-cairn commit; the editable chain ends here
+		}
 		topCommit := c
 		// Descend through every commit carrying the same change-id.
 		bottom := c
@@ -144,6 +147,9 @@ func (e *Engine) guardEditable(commit string) (lineID string, chain []sealStep, 
 	if err != nil {
 		return "", nil, 0, err
 	}
+	if !ch.Sealed {
+		return "", nil, -1, errors.New("change.guardEditable: that is the open working change, not a sealed commit")
+	}
 	lineID = ch.LineID
 	line, err := e.lineByID(lineID)
 	if err != nil {
@@ -192,7 +198,7 @@ func (e *Engine) guardEditable(commit string) (lineID string, chain []sealStep, 
 // NOT present in newSeq are deleted. All catalogue writes commit or roll back in
 // ONE transaction; the go-git tree/commit writes stay outside it (content-
 // addressed and idempotent). Returns any rebase conflicts as data.
-func (e *Engine) rewriteChain(lineID string, newSeq []sealStep) ([]Conflict, error) {
+func (e *Engine) rewriteChain(lineID string, origChain, newSeq []sealStep) ([]Conflict, error) {
 	line, err := e.lineByID(lineID)
 	if err != nil {
 		return nil, err
@@ -200,10 +206,6 @@ func (e *Engine) rewriteChain(lineID string, newSeq []sealStep) ([]Conflict, err
 	before, err := e.viewMap()
 	if err != nil {
 		return nil, fmt.Errorf("change.rewriteChain: %w", err)
-	}
-	origChain, err := e.sealedChain(lineID)
-	if err != nil {
-		return nil, err
 	}
 
 	// Re-seal each step onto the rebuilt parent. ours = the new parent's tree
@@ -393,7 +395,7 @@ func (e *Engine) Squash(commit string) ([]Conflict, error) {
 	newSeq = append(newSeq, chain[:idx-1]...)
 	newSeq = append(newSeq, combined)
 	newSeq = append(newSeq, chain[idx+1:]...)
-	return e.rewriteChain(lineID, newSeq)
+	return e.rewriteChain(lineID, chain, newSeq)
 }
 
 // Drop removes the sealed commit `commit` from its line, 3-way-rebasing every
@@ -407,7 +409,7 @@ func (e *Engine) Drop(commit string) ([]Conflict, error) {
 	newSeq := make([]sealStep, 0, len(chain)-1)
 	newSeq = append(newSeq, chain[:idx]...)
 	newSeq = append(newSeq, chain[idx+1:]...)
-	return e.rewriteChain(lineID, newSeq)
+	return e.rewriteChain(lineID, chain, newSeq)
 }
 
 // Reword changes the description of a sealed commit on its line, preserving its
@@ -419,5 +421,8 @@ func (e *Engine) Reword(commit, message string) ([]Conflict, error) {
 		return nil, err
 	}
 	chain[idx].Message = message
-	return e.rewriteChain(lineID, chain)
+	// origChain and newSeq are the same slice: reword removes no change-ids, so
+	// the removed set (computed by change-id membership) is empty regardless, and
+	// the in-place message mutation does not affect that computation.
+	return e.rewriteChain(lineID, chain, chain)
 }

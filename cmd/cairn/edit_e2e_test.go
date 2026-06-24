@@ -114,6 +114,43 @@ func TestEditDropE2E(t *testing.T) {
 	}
 }
 
+// TestEditCapturesLiveEditsBeforeRewrite verifies that a history edit (reword)
+// first captures live on-disk edits into the working change before rewriting —
+// i.e. the CLI uses openRepoSynced. Without that sync, the rewrite would rebase
+// a stale working commit and re-materialize over the user's uncommitted edits,
+// losing them. We write a NEW uncommitted file into the feat folder, reword a
+// sealed commit, and assert the new edit is NOT lost: it still shows as an
+// un-sealed change in `cairn status feat` and the file still has its content.
+func TestEditCapturesLiveEditsBeforeRewrite(t *testing.T) {
+	root, sha1, _ := setupFeatBranch(t)
+
+	// Write a NEW uncommitted edit into the feat working folder.
+	livePath := filepath.Join(root, "feat", "live.txt")
+	if err := os.WriteFile(livePath, []byte("live edit\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reword an older sealed commit. This triggers a sealed-chain rewrite and
+	// rebases the working change; openRepoSynced must capture live.txt first.
+	mustRun(t, "reword", "--repo", root, sha1, "rewrote-first")
+
+	// The live edit must survive on disk.
+	got, err := os.ReadFile(livePath)
+	if err != nil {
+		t.Fatalf("live.txt gone after reword: %v", err)
+	}
+	if string(got) != "live edit\n" {
+		t.Errorf("live.txt content = %q after reword, want %q (live edit lost)", string(got), "live edit\n")
+	}
+
+	// And it must be captured into the working change: status shows it as an
+	// un-sealed addition.
+	statusOut := captureRun(t, "status", "--repo", root, "feat")
+	if !strings.Contains(statusOut, "live.txt") {
+		t.Errorf("status does not show captured live edit 'live.txt':\n%s", statusOut)
+	}
+}
+
 // TestEditRefusedOnRoot verifies that reword/squash/drop all refuse to operate
 // on the root line with a clear error.
 func TestEditRefusedOnRoot(t *testing.T) {

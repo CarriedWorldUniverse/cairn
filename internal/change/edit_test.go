@@ -139,10 +139,24 @@ func TestSealedChainOrder(t *testing.T) {
 func TestGuardEditableRefusals(t *testing.T) {
 	e := newTestEngine(t)
 
-	// Root-line sealed commit → refused (cannot edit the root line).
+	// Root-line SEALED commit → refused (cannot edit the root line). Seal it so
+	// the root-line check is what rejects it (not the working-change guard, which
+	// fires first for an unsealed working head).
 	main, _ := e.LineByName("main")
-	rootTip := seedLineTip(t, e, main.ID, map[string][]byte{"r.txt": []byte("r\n")})
-	if _, _, _, err := e.guardEditable(rootTip); err == nil {
+	rootCur := openChange(t, e, main.ID)
+	if _, _, err := e.SnapshotWorking(rootCur, map[string]TreeEntry{
+		"r.txt": blobEntry(t, e, "r\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(root): %v", err)
+	}
+	if _, _, err := e.Seal(rootCur, "root seal"); err != nil {
+		t.Fatalf("Seal(root): %v", err)
+	}
+	rootSealed, err := e.GetChange(rootCur)
+	if err != nil {
+		t.Fatalf("GetChange(root sealed): %v", err)
+	}
+	if _, _, _, err := e.guardEditable(rootSealed.HeadCommit); err == nil {
 		t.Fatal("guardEditable(root commit): want error, got nil")
 	} else if !strings.Contains(err.Error(), "root line") {
 		t.Fatalf("guardEditable(root commit) error = %v, want root-line refusal", err)
@@ -600,6 +614,48 @@ func TestDropDependentConflicts(t *testing.T) {
 	xContent := string(tipFiles["x.txt"])
 	if !strings.Contains(xContent, "<<<<<<<") && !strings.Contains(xContent, "|||||||") {
 		t.Errorf("x.txt at tip = %q; want conflict markers (<<<<<<< or |||||||)", xContent)
+	}
+}
+
+// TestGuardRefusesWorkingCommit: passing the OPEN working change's own head
+// commit sha to Reword/Squash/Drop must be refused with a clear message that
+// names the open working change (not the misleading "base or below").
+func TestGuardRefusesWorkingCommit(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, _, _ := buildChildLineWith3Sealed(t, e)
+	_ = commits
+
+	// Snapshot the open working change so it has a head commit to pass in.
+	openID := openWorkingChangeID(t, e, childID)
+	if _, _, err := e.SnapshotWorking(openID, map[string]TreeEntry{
+		"w.txt": blobEntry(t, e, "working\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(open): %v", err)
+	}
+	w, err := e.GetChange(openID)
+	if err != nil {
+		t.Fatalf("GetChange(open): %v", err)
+	}
+	if w.HeadCommit == "" {
+		t.Fatal("open working change has no head after snapshot")
+	}
+
+	for _, tc := range []struct {
+		name string
+		call func(string) ([]Conflict, error)
+	}{
+		{"Reword", func(c string) ([]Conflict, error) { return e.Reword(c, "x") }},
+		{"Squash", e.Squash},
+		{"Drop", e.Drop},
+	} {
+		_, err := tc.call(w.HeadCommit)
+		if err == nil {
+			t.Errorf("%s(working head): want error, got nil", tc.name)
+			continue
+		}
+		if !strings.Contains(err.Error(), "open working change") {
+			t.Errorf("%s(working head) error = %q, want it to mention %q", tc.name, err.Error(), "open working change")
+		}
 	}
 }
 
