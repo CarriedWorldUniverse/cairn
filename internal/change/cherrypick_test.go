@@ -60,7 +60,7 @@ func TestCherryPickCleanApply(t *testing.T) {
 	// its "base of B" commit — bBaseCID).
 	bLineID, _, bBaseCID := sealOne(t, e, "B", map[string]string{"b.txt": "B\n"}, "base of B")
 
-	conflicts, err := e.CherryPick(cCommit, bLineID)
+	_, conflicts, err := e.CherryPick(cCommit, bLineID)
 	if err != nil {
 		t.Fatalf("CherryPick: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestCherryPickKeepsWorkingEdits(t *testing.T) {
 		t.Fatalf("SnapshotWorking(B open): %v", err)
 	}
 
-	conflicts, err := e.CherryPick(cCommit, bLineID)
+	_, conflicts, err := e.CherryPick(cCommit, bLineID)
 	if err != nil {
 		t.Fatalf("CherryPick: %v", err)
 	}
@@ -221,20 +221,27 @@ func TestCherryPickConflictAsData(t *testing.T) {
 	// This leaves B with one sealed "B x" change (bBaseCID).
 	bLineID, _, bBaseCID := sealOne(t, e, "B", map[string]string{"x.txt": "B\n"}, "B x")
 
-	conflicts, err := e.CherryPick(cCommit, bLineID)
+	newID, conflicts, err := e.CherryPick(cCommit, bLineID)
 	if err != nil {
 		t.Fatalf("CherryPick: %v", err)
 	}
 	if len(conflicts) == 0 {
 		t.Fatalf("CherryPick conflicts = 0, want >0 (x.txt diverges)")
 	}
+	if newID == "" {
+		t.Fatal("CherryPick returned empty new sealed change-id, want the pick's id")
+	}
 
-	// A new sealed change (the pick) exists on B, distinct from B's own base.
-	var newID string
+	// The returned newID IS the new sealed change (the pick) on B, distinct from
+	// B's own base. Cross-check against the catalogue.
+	var queriedID string
 	if err := e.db.QueryRow(
 		`SELECT id FROM change WHERE line_id=? AND sealed=1 AND id!=?`,
-		bLineID, bBaseCID).Scan(&newID); err != nil {
+		bLineID, bBaseCID).Scan(&queriedID); err != nil {
 		t.Fatalf("get new sealed id on B: %v", err)
+	}
+	if queriedID != newID {
+		t.Fatalf("returned newID %q != queried new sealed id %q", newID, queriedID)
 	}
 
 	// The conflict is recorded against the new sealed change (has_conflict set
@@ -350,7 +357,7 @@ func TestCherryPickWorkingRebaseConflictFlags(t *testing.T) {
 	}
 
 	// Cherry-pick C onto B.
-	conflicts, err := e.CherryPick(cCommit, bLine.ID)
+	_, conflicts, err := e.CherryPick(cCommit, bLine.ID)
 	if err != nil {
 		t.Fatalf("CherryPick: %v", err)
 	}
@@ -398,7 +405,7 @@ func TestCherryPickNonCairnCommit(t *testing.T) {
 	e := newTestEngine(t)
 	bLineID, _, _ := sealOne(t, e, "B", map[string]string{"b.txt": "B\n"}, "base of B")
 
-	_, err := e.CherryPick("0000000000000000000000000000000000000000", bLineID)
+	_, _, err := e.CherryPick("0000000000000000000000000000000000000000", bLineID)
 	if err == nil {
 		t.Fatal("CherryPick(bogus sha): want error, got nil")
 	}

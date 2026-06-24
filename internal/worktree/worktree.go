@@ -1136,12 +1136,25 @@ func (r *Repo) CherryPick(branch, commit string) (change.CommitResult, error) {
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
 	}
-	conflicts, err := r.eng.CherryPick(commit, line.ID)
+	newID, conflicts, err := r.eng.CherryPick(commit, line.ID)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
 	}
+	// Pick-level conflicts are recorded on the NEW sealed change the pick mints,
+	// but resolve/status operate on the working change W (entry.ChangeID). Mirror
+	// Commit: reassign the pick conflicts from newID onto W so they're reachable.
+	// (W-rebase conflicts are already on W, so this consolidates ALL conflicts.)
+	if len(conflicts) > 0 {
+		if entry, ok := r.st.Expressed[branch]; ok {
+			if err := r.eng.ReassignConflicts(newID, entry.ChangeID); err != nil {
+				return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+			}
+		}
+	}
 	if entry, ok := r.st.Expressed[branch]; ok {
-		_ = r.rematerialize(branch, entry)
+		if err := r.rematerialize(branch, entry); err != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+		}
 	}
 	line, err = r.eng.LineByName(branch)
 	if err != nil {

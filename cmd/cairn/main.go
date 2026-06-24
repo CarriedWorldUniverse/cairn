@@ -1408,6 +1408,7 @@ func cmdCherryPick(args []string) error {
 		fmt.Fprintf(os.Stderr, "cherry-pick: %d conflict(s) in: %s — resolve, then commit\n", len(res.Conflicts), strings.Join(paths, ", "))
 		return errConflicts
 	}
+	fmt.Println(res.HeadCommit)
 	fmt.Fprintln(os.Stderr, "cairn: cherry-picked")
 	return nil
 }

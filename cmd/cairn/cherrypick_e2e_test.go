@@ -75,8 +75,8 @@ func TestCherryPickBogusCommit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for bogus commit sha, got nil")
 	}
-	if !strings.Contains(err.Error(), "cairn commit") {
-		t.Errorf("error = %q, want it to contain 'cairn commit'", err.Error())
+	if !strings.Contains(err.Error(), "not a cairn commit") {
+		t.Errorf("error = %q, want it to contain 'not a cairn commit'", err.Error())
 	}
 }
 
@@ -157,5 +157,76 @@ func TestCherryPickConflictReturnsErrConflicts(t *testing.T) {
 	}
 	if !errors.Is(err, errConflicts) {
 		t.Errorf("expected errConflicts, got %v", err)
+	}
+}
+
+// TestCherryPickConflictResolveThenCommit drives the end-to-end flow that was
+// silently broken: a PICK-level conflict left its conflict rows on the new
+// sealed change (not the working change), so `status`/`resolve` could not see
+// or resolve them. This proves the worktree now reassigns pick conflicts onto
+// the working change W, so:
+//  1. cherry-pick exits with errConflicts,
+//  2. `status` LISTS the conflict path (it's on W now),
+//  3. `resolve` succeeds against W,
+//  4. `commit` then succeeds.
+func TestCherryPickConflictResolveThenCommit(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	rootBranch := soleExpressedDir(t, root)
+
+	// Seed root with x.txt="root base".
+	if err := os.WriteFile(filepath.Join(root, rootBranch, "x.txt"), []byte("root base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "--author", "tester", "-m", "root base", rootBranch)
+
+	// Express feat off root; change x.txt to a feat value and commit (this is C).
+	mustRun(t, "express", "--repo", root, "--from", rootBranch, "feat")
+	if err := os.WriteFile(filepath.Join(root, "feat", "x.txt"), []byte("feat version\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	shaOut := captureRun(t, "commit", "--repo", root, "--author", "tester", "-m", "feat edits x", "feat")
+	sha := strings.TrimSpace(shaOut)
+	if sha == "" {
+		t.Fatal("commit returned empty sha")
+	}
+
+	// Advance root so its x.txt diverges from the feat base — guarantees a
+	// PICK-level conflict (ours=root advanced, theirs=feat, base=root base).
+	if err := os.WriteFile(filepath.Join(root, rootBranch, "x.txt"), []byte("root advanced\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "--author", "tester", "-m", "root advances", rootBranch)
+
+	// Cherry-pick the feat commit onto root → conflict.
+	err := run([]string{"cherry-pick", "--repo", root, "--author", "tester", sha, rootBranch})
+	if err == nil {
+		t.Skip("cherry-pick resolved cleanly; merge-base computation did not conflict")
+	}
+	if !errors.Is(err, errConflicts) {
+		t.Fatalf("expected errConflicts, got %v", err)
+	}
+
+	// status must LIST the conflict path — proving the conflict is on the working
+	// change W (status/Conflicts read entry.ChangeID), not stranded on the sealed pick.
+	statusOut := captureRun(t, "status", "--repo", root, rootBranch)
+	if !strings.Contains(statusOut, "x.txt") {
+		t.Fatalf("status does not list the conflict path x.txt (conflict not reachable on W):\n%s", statusOut)
+	}
+
+	// resolve must SUCCEED against W (proves reassignment worked). The on-disk
+	// file currently carries conflict markers; take its content as the resolution
+	// after writing a clean resolved value.
+	if err := os.WriteFile(filepath.Join(root, rootBranch, "x.txt"), []byte("resolved\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"resolve", "--repo", root, "--author", "tester", rootBranch, "x.txt"}); err != nil {
+		t.Fatalf("resolve x.txt failed (conflict not on W): %v", err)
+	}
+
+	// commit must now succeed with no remaining conflicts.
+	if err := run([]string{"commit", "--repo", root, "--author", "tester", "-m", "resolved pick", rootBranch}); err != nil {
+		t.Fatalf("commit after resolve failed: %v", err)
 	}
 }
