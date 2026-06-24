@@ -69,6 +69,29 @@ func (e *Engine) CreateChange(lineID, author string) (Change, error) {
 	return ch, nil
 }
 
+// OpenChangeForLine returns the existing open (unsealed) change for lineID, or
+// ErrNotFound if none exists. This allows callers to reuse a previously-imported
+// open change (e.g. one restored from refs/cairn/meta on clone) rather than
+// always creating a new one.
+func (e *Engine) OpenChangeForLine(lineID string) (Change, error) {
+	row := e.db.QueryRow(
+		`SELECT id, line_id, author, head_commit, status, has_conflict, sealed
+		 FROM change WHERE line_id=? AND status='open' AND sealed=0
+		 ORDER BY updated_at DESC LIMIT 1`,
+		lineID)
+	var ch Change
+	var hasConflict, sealed int
+	if err := row.Scan(&ch.ID, &ch.LineID, &ch.Author, &ch.HeadCommit, &ch.Status, &hasConflict, &sealed); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Change{}, ErrNotFound
+		}
+		return Change{}, fmt.Errorf("change.OpenChangeForLine: %w", err)
+	}
+	ch.HasConflict = hasConflict != 0
+	ch.Sealed = sealed != 0
+	return ch, nil
+}
+
 // GetChange loads a change by id, or returns ErrNotFound.
 func (e *Engine) GetChange(id string) (Change, error) {
 	row := e.db.QueryRow(

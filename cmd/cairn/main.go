@@ -607,7 +607,7 @@ func cmdRemote(args []string) error {
 func cmdRemoteAdd(args []string) error {
 	fs := flag.NewFlagSet("remote add", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	cairn := fs.Bool("cairn", false, "register as a cairn remote (default git)")
+	cairn := fs.Bool("cairn", false, "register as a cairn remote — enables full-fidelity push (line tree + change-ids + open conflicts); default is plain git projection")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -650,19 +650,6 @@ func cmdPush(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	// Spec: pushing to a remote registered as kind "cairn" must warn that
-	// cairn->cairn fidelity isn't implemented yet and it's pushing as git. Done
-	// in the CLI layer so the engine stays I/O-free.
-	rems, err := r.Remotes()
-	if err != nil {
-		return mapErr(err)
-	}
-	for _, rem := range rems {
-		if rem.Name == remote && rem.Kind == "cairn" {
-			fmt.Fprintf(os.Stderr, "cairn: remote %q is type cairn; cairn->cairn fidelity not yet implemented, pushing as git\n", remote)
-			break
-		}
-	}
 	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
 	// once) so "push just works". A successful auto-retry is intentionally silent
 	// for v1: detecting whether the retry happened would need engine I/O the CLI
