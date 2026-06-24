@@ -193,6 +193,13 @@ func (r *Repo) Express(branch, parent string) error {
 // cache makes an unchanged folder cheap. Self-healing: a corrupt/missing cache is
 // treated as empty (full rescan), never an error.
 func (r *Repo) SyncWorking() error {
+	if active, err := r.eng.BisectActive(); err != nil {
+		return fmt.Errorf("worktree.SyncWorking: %w", err)
+	} else if active {
+		// A bisect session has a historical commit materialized in the folder;
+		// never snapshot it into the open working change.
+		return nil
+	}
 	for branch, entry := range r.st.Expressed {
 		if err := r.syncBranch(branch, entry); err != nil {
 			return err
@@ -976,6 +983,130 @@ func (r *Repo) Undo() error {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
 		}
+	}
+	return nil
+}
+
+// BisectActive reports whether a bisect session is in progress.
+func (r *Repo) BisectActive() (bool, error) { return r.eng.BisectActive() }
+
+// BisectStatus returns the active session's status (Active=false when none).
+func (r *Repo) BisectStatus() (change.BisectInfo, error) { return r.eng.BisectInfo() }
+
+// BisectStart begins a bisect on branch between known-good and known-bad commits.
+// It refuses if the branch has un-sealed work (the session would shadow it), then
+// materializes the first midpoint into the branch folder for the operator to test.
+func (r *Repo) BisectStart(branch, good, bad string) (change.BisectStep, error) {
+	dirty, err := r.isDirty(branch)
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
+	}
+	if dirty {
+		return change.BisectStep{}, errors.New("worktree.BisectStart: stash or commit your work before bisecting")
+	}
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
+	}
+	step, err := r.eng.BisectStart(line.ID, branch, good, bad)
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
+	}
+	if err := r.materializeBisect(branch, step); err != nil {
+		return change.BisectStep{}, err
+	}
+	return step, nil
+}
+
+// BisectMark records the verdict ("good"|"bad") for the current commit and
+// materializes the next midpoint (or the first-bad answer on Done).
+func (r *Repo) BisectMark(verdict string) (change.BisectStep, error) {
+	info, err := r.eng.BisectInfo()
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectMark: %w", err)
+	}
+	if !info.Active {
+		return change.BisectStep{}, errors.New("worktree.BisectMark: no bisect in progress")
+	}
+	step, err := r.eng.BisectMark(verdict)
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectMark: %w", err)
+	}
+	if err := r.materializeBisect(info.Branch, step); err != nil {
+		return change.BisectStep{}, err
+	}
+	return step, nil
+}
+
+// BisectSkip steps over an untestable midpoint and materializes the new current.
+func (r *Repo) BisectSkip() (change.BisectStep, error) {
+	info, err := r.eng.BisectInfo()
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectSkip: %w", err)
+	}
+	if !info.Active {
+		return change.BisectStep{}, errors.New("worktree.BisectSkip: no bisect in progress")
+	}
+	step, err := r.eng.BisectSkip()
+	if err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectSkip: %w", err)
+	}
+	if err := r.materializeBisect(info.Branch, step); err != nil {
+		return change.BisectStep{}, err
+	}
+	return step, nil
+}
+
+// BisectReset clears the session and restores the working folder to the line tip.
+// While a session is active it restores the session branch from the recorded
+// restore tip. After convergence (the engine deleted the session on the final
+// mark, so the folder is left displaying the first-bad commit) there is no session
+// to clear; it then re-materializes every expressed branch to its line tip — the
+// catalogue is never mutated during bisect, so the line tip IS the working tip.
+func (r *Repo) BisectReset() error {
+	info, err := r.eng.BisectInfo()
+	if err != nil {
+		return fmt.Errorf("worktree.BisectReset: %w", err)
+	}
+	if !info.Active {
+		// No live session (e.g. bisect converged): restore every expressed folder
+		// to its line tip so a midpoint/first-bad left on disk is cleared.
+		for branch, entry := range r.st.Expressed {
+			if err := r.rematerialize(branch, entry); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	tip, err := r.eng.BisectReset()
+	if err != nil {
+		return fmt.Errorf("worktree.BisectReset: %w", err)
+	}
+	if entry, ok := r.st.Expressed[info.Branch]; ok && tip != "" {
+		if err := Materialize(r.eng, r.cacheDir(), tip, filepath.Join(r.root, entry.Path)); err != nil {
+			return fmt.Errorf("worktree.BisectReset: %w", err)
+		}
+	}
+	return nil
+}
+
+// materializeBisect puts the step's current commit (the midpoint to test, or the
+// first-bad when Done) into the branch's expressed folder. A non-expressed branch
+// or empty target is a no-op.
+func (r *Repo) materializeBisect(branch string, step change.BisectStep) error {
+	target := step.Current
+	if step.Done {
+		target = step.FirstBad
+	}
+	if target == "" {
+		return nil
+	}
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return nil
+	}
+	if err := Materialize(r.eng, r.cacheDir(), target, filepath.Join(r.root, entry.Path)); err != nil {
+		return fmt.Errorf("worktree.materializeBisect: %w", err)
 	}
 	return nil
 }

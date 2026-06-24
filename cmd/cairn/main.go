@@ -94,6 +94,11 @@ subcommands:
   squash <commit>           fold a sealed commit into its parent (history edit)
   drop <commit>             remove a sealed commit from its line (history edit)
   cherry-pick <commit> [branch]  apply a commit from another line onto your branch
+  bisect start --good <c> --bad <c> [branch]  begin a bisect (materializes the midpoint)
+  bisect good | bad             mark the current commit; materializes the next midpoint
+  bisect skip                   step over an untestable midpoint
+  bisect status                 show the active bisect session
+  bisect reset                  end the bisect; restore the working folder
 
 config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
@@ -169,6 +174,8 @@ func run(args []string) error {
 		return cmdDrop(rest)
 	case "cherry-pick":
 		return cmdCherryPick(rest)
+	case "bisect":
+		return cmdBisect(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -1438,5 +1445,163 @@ func cmdStashDrop(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Fprintln(os.Stderr, "cairn: stash entry discarded")
+	return nil
+}
+
+// cmdBisect dispatches bisect sub-commands. The midpoint to test is materialized
+// into the branch folder; auto-snapshot is suspended for the whole session.
+func cmdBisect(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: cairn bisect start|good|bad|skip|status|reset")
+	}
+	sub, rest := args[0], args[1:]
+	switch sub {
+	case "start":
+		return cmdBisectStart(rest)
+	case "good":
+		return cmdBisectMark(rest, "good")
+	case "bad":
+		return cmdBisectMark(rest, "bad")
+	case "skip":
+		return cmdBisectSkip(rest)
+	case "status":
+		return cmdBisectStatus(rest)
+	case "reset":
+		return cmdBisectReset(rest)
+	case "run":
+		return errors.New("bisect run: not yet")
+	default:
+		return fmt.Errorf("unknown bisect subcommand %q", sub)
+	}
+}
+
+// reportBisectStep prints a step's outcome to stderr: the converged first-bad
+// commit (with its subject) when Done, else the midpoint to test and how many
+// candidates remain.
+func reportBisectStep(r *worktree.Repo, step change.BisectStep) error {
+	if step.Done {
+		fmt.Fprintf(os.Stderr, "cairn: first bad commit: %s\n", step.FirstBad)
+		if info, _, err := r.Show(step.FirstBad); err == nil && info.Subject != "" {
+			fmt.Fprintf(os.Stderr, "  %s\n", info.Subject)
+		}
+		return nil
+	}
+	left := 0
+	if info, err := r.BisectStatus(); err == nil {
+		left = info.CandidatesLeft
+	}
+	fmt.Fprintf(os.Stderr, "cairn: testing %s — %d candidates left (mark with 'cairn bisect good' / 'bad')\n", step.Current, left)
+	return nil
+}
+
+func cmdBisectStart(args []string) error {
+	fs := flag.NewFlagSet("bisect start", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	good := fs.String("good", "", "known-good commit")
+	bad := fs.String("bad", "", "known-bad commit")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *good == "" || *bad == "" {
+		return errors.New("usage: cairn bisect start --good <commit> --bad <commit> [branch]")
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	var branch string
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else if branch, err = r.DefaultBranch(); err != nil {
+		return mapErr(err)
+	}
+	step, err := r.BisectStart(branch, *good, *bad)
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportBisectStep(r, step)
+}
+
+func cmdBisectMark(args []string, verdict string) error {
+	fs := flag.NewFlagSet("bisect "+verdict, flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	step, err := r.BisectMark(verdict)
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportBisectStep(r, step)
+}
+
+func cmdBisectSkip(args []string) error {
+	fs := flag.NewFlagSet("bisect skip", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	step, err := r.BisectSkip()
+	if err != nil {
+		return mapErr(err)
+	}
+	return reportBisectStep(r, step)
+}
+
+func cmdBisectStatus(args []string) error {
+	fs := flag.NewFlagSet("bisect status", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	// Read-only: open without a pre-sync so a midpoint/first-bad on disk is never
+	// snapshotted into the working change.
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	info, err := r.BisectStatus()
+	if err != nil {
+		return mapErr(err)
+	}
+	if !info.Active {
+		fmt.Fprintln(os.Stderr, "cairn: no bisect in progress")
+		return nil
+	}
+	fmt.Printf("branch %s  good %s  bad %s  testing %s  (%d candidates left)\n",
+		info.Branch, info.Good, info.Bad, info.Current, info.CandidatesLeft)
+	return nil
+}
+
+func cmdBisectReset(args []string) error {
+	fs := flag.NewFlagSet("bisect reset", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	// Open WITHOUT a pre-sync: after convergence the session is gone, so a sync
+	// would snapshot the first-bad commit left in the folder into the working
+	// change. reset only restores the folder; it never needs live edits captured.
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.BisectReset(); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintln(os.Stderr, "cairn: bisect reset; working folder restored")
 	return nil
 }
