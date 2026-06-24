@@ -86,8 +86,8 @@ subcommands:
   version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
-  stash [-m msg]            shelve the working change; reset the folder to the sealed state
-  stash pop                 restore the most recent stash
+  stash [-m msg] [branch]   shelve the working change; reset the folder to the sealed state
+  stash pop [branch]        restore the most recent stash onto branch
   stash list                list the stash stack
   stash drop [id]           discard a stash (default: most recent)
 
@@ -1170,6 +1170,7 @@ func cmdStash(args []string) error {
 }
 
 // cmdStashPush shelves the working change and resets the folder to the sealed tip.
+// An optional trailing positional selects the branch (default: structural root).
 func cmdStashPush(args []string) error {
 	// Strip a leading literal "push" sub-verb if present.
 	if len(args) > 0 && args[0] == "push" {
@@ -1186,9 +1187,14 @@ func cmdStashPush(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	branch, err := r.DefaultBranch()
-	if err != nil {
-		return mapErr(err)
+	var branch string
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		branch, err = r.DefaultBranch()
+		if err != nil {
+			return mapErr(err)
+		}
 	}
 	if err := r.Stash(branch, *msg); err != nil {
 		return mapErr(err)
@@ -1198,6 +1204,7 @@ func cmdStashPush(args []string) error {
 }
 
 // cmdStashPop restores the most recent stash entry onto the working branch.
+// An optional trailing positional selects the branch (default: structural root).
 func cmdStashPop(args []string) error {
 	fs := flag.NewFlagSet("stash pop", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
@@ -1209,9 +1216,17 @@ func cmdStashPop(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	branch, err := r.DefaultBranch()
-	if err != nil {
-		return mapErr(err)
+	var (
+		branch string
+		berr   error
+	)
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else {
+		branch, berr = r.DefaultBranch()
+		if berr != nil {
+			return mapErr(berr)
+		}
 	}
 	if err := r.StashPop(branch); err != nil {
 		return mapErr(err)

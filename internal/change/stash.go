@@ -202,6 +202,9 @@ func (e *Engine) StashApply(changeID string, stashID int64, drop bool) error {
 	if err != nil {
 		return err
 	}
+	if ch.HeadCommit == "" {
+		return errors.New("change.StashApply: working change has no snapshot")
+	}
 	parent, err := e.firstParent(ch.HeadCommit)
 	if err != nil {
 		return fmt.Errorf("change.StashApply: %w", err)
@@ -267,8 +270,10 @@ func (e *Engine) StashApply(changeID string, stashID int64, drop bool) error {
 	return nil
 }
 
-// StashDrop deletes a stash row without applying it. stashID 0 drops the top of
-// the stack. Errors "no stash entries" when there is nothing to drop.
+// StashDrop deletes a stash entry. Drops are final — they record no operation,
+// so they are not reversible by 'cairn undo' (matching git stash drop).
+// stashID 0 drops the top of the stack. Errors "no stash entries" when there
+// is nothing to drop.
 func (e *Engine) StashDrop(stashID int64) error {
 	rowID := stashID
 	if stashID == 0 {

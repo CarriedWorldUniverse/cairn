@@ -84,6 +84,63 @@ func TestStashNothingToStash(t *testing.T) {
 	}
 }
 
+// TestStashOnNonRootBranch verifies that stash/pop work on a non-root branch by
+// passing the branch name as a positional arg:
+//  1. init; commit a seed on root; express "feature" off root.
+//  2. Write wip.txt into feature/; `cairn stash --repo dir feature -m "wip"`.
+//  3. feature/ is clean; stash list shows the entry on branch "feature".
+//  4. `cairn stash pop --repo dir feature` → wip.txt is back in feature/.
+func TestStashOnNonRootBranch(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	def := soleExpressedDir(t, root)
+
+	// Seed the default branch so it has a commit to fork from.
+	if err := os.WriteFile(filepath.Join(root, def, "seed.txt"), []byte("seed\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, def)
+
+	// Express "feature" off the root branch.
+	mustRun(t, "express", "--repo", root, "--from", def, "feature")
+
+	// Write uncommitted work into feature/.
+	wipPath := filepath.Join(root, "feature", "wip.txt")
+	if err := os.WriteFile(wipPath, []byte("wip\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Stash on the "feature" branch — branch is the trailing positional.
+	mustRun(t, "stash", "--repo", root, "-m", "wip", "feature")
+
+	// wip.txt must be gone from disk.
+	if _, err := os.Stat(wipPath); err == nil {
+		t.Fatal("wip.txt still exists after stash on feature; expected folder reset")
+	}
+
+	// stash list must show the entry on branch "feature".
+	listOut := mustRunOut(t, "stash", "list", "--repo", root)
+	if !strings.Contains(listOut, "feature") {
+		t.Fatalf("stash list missing branch 'feature':\n%s", listOut)
+	}
+	if !strings.Contains(listOut, "wip") {
+		t.Fatalf("stash list missing message 'wip':\n%s", listOut)
+	}
+
+	// Pop the stash on the "feature" branch.
+	mustRun(t, "stash", "pop", "--repo", root, "feature")
+
+	// wip.txt must be back.
+	got, err := os.ReadFile(wipPath)
+	if err != nil {
+		t.Fatalf("wip.txt missing after stash pop on feature: %v", err)
+	}
+	if string(got) != "wip\n" {
+		t.Fatalf("wip.txt content = %q, want %q", string(got), "wip\n")
+	}
+}
+
 // TestStashDrop stashes twice, drops the top, and asserts one entry remains.
 func TestStashDrop(t *testing.T) {
 	root := t.TempDir()

@@ -182,6 +182,39 @@ func TestStashListOrderAndDrop(t *testing.T) {
 	}
 }
 
+// TestStashApplyNoSnapshot verifies that StashApply on a working change with no
+// snapshot (HeadCommit == "") returns a clear "no snapshot" error instead of an
+// opaque object-not-found from the git layer.
+func TestStashApplyNoSnapshot(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+
+	// First, create a real stash entry using a different change (so StashApply
+	// has something to pop), then call StashApply on a change with no snapshot.
+	id1, _ := stashWorkingDelta(t, e, main.ID)
+	if _, err := e.StashPush(id1, "seed"); err != nil {
+		t.Fatalf("StashPush seed: %v", err)
+	}
+
+	// Open a fresh change with no snapshot (HeadCommit will be "").
+	id2 := openChange(t, e, main.ID)
+	ch, err := e.GetChange(id2)
+	if err != nil {
+		t.Fatalf("GetChange: %v", err)
+	}
+	if ch.HeadCommit != "" {
+		t.Fatalf("expected fresh change to have no snapshot (HeadCommit==%q), got %q", "", ch.HeadCommit)
+	}
+
+	err = e.StashApply(id2, 0, false)
+	if err == nil {
+		t.Fatal("StashApply on head-less change: expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "no snapshot") {
+		t.Fatalf("StashApply on head-less change: err = %q, want it to contain \"no snapshot\"", err.Error())
+	}
+}
+
 // TestStashTableOnLegacyRepo proves the stash table is created on Open (additive
 // CREATE IF NOT EXISTS), so an existing repo gets it without an ALTER migration.
 func TestStashTableOnLegacyRepo(t *testing.T) {
