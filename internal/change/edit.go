@@ -33,7 +33,7 @@ func (e *Engine) sealedChain(lineID string) ([]sealStep, error) {
 	// Locate the open working change on the line and find the top sealed commit.
 	var openHead string
 	switch err := e.db.QueryRow(
-		`SELECT head_commit FROM change WHERE line_id=? AND sealed=0 LIMIT 1`,
+		`SELECT head_commit FROM change WHERE line_id=? AND status='open' AND sealed=0 ORDER BY updated_at DESC LIMIT 1`,
 		lineID).Scan(&openHead); {
 	case errors.Is(err, sql.ErrNoRows):
 		openHead = ""
@@ -161,14 +161,14 @@ func (e *Engine) guardEditable(commit string) (lineID string, chain []sealStep, 
 		return "", nil, 0, err
 	}
 	idx = -1
-	for i, s := range chain {
-		if s.Commit == commit {
+	for i := range chain {
+		if chain[i].ChangeID == cid {
 			idx = i
 			break
 		}
 	}
 	if idx < 0 {
-		return "", nil, 0, errors.New("commit is not an editable sealed commit on its line (it may be the base or below)")
+		return "", nil, -1, fmt.Errorf("change.guardEditable: commit is not an editable sealed commit on its line (it may be the base or below)")
 	}
 
 	// No child lines: editing this line's history would invalidate any line forked
@@ -238,26 +238,42 @@ func (e *Engine) rewriteChain(lineID string, newSeq []sealStep) ([]Conflict, err
 	if err != nil {
 		return nil, err
 	}
-	wOld, err := e.treeHashOf(w.HeadCommit)
-	if err != nil {
-		return nil, fmt.Errorf("change.rewriteChain: %w", err)
-	}
-	wParentCommit, err := e.firstParent(w.HeadCommit)
-	if err != nil {
-		return nil, fmt.Errorf("change.rewriteChain: %w", err)
-	}
-	wParentTree, err := e.treeHashOf(wParentCommit)
-	if err != nil {
-		return nil, fmt.Errorf("change.rewriteChain: %w", err)
-	}
-	mw, cfw, err := e.mergeTrees(w.ID, wParentTree, prevTree, wOld)
-	if err != nil {
-		return nil, fmt.Errorf("change.rewriteChain: merge working: %w", err)
-	}
-	conflicts = append(conflicts, cfw...)
-	newW, err := e.writeCommit(mw, w.ID, workingDescription, parentsSlice(prevCommit))
-	if err != nil {
-		return nil, fmt.Errorf("change.rewriteChain: write working: %w", err)
+	var newW string
+	wDesc := workingDescription
+	if w.HeadCommit == "" {
+		// Never snapshotted: the working change has no delta — it rides cleanly
+		// on the new top without any tree merge needed.
+		newW, err = e.writeCommit(prevTree, w.ID, wDesc, parentsSlice(prevCommit))
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: write working (no head): %w", err)
+		}
+	} else {
+		wMsg, err := e.commitMessage(w.HeadCommit)
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: %w", err)
+		}
+		wDesc = stripChangeID(wMsg) // Fix 2: preserve the working description
+		wOld, err := e.treeHashOf(w.HeadCommit)
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: %w", err)
+		}
+		wParentCommit, err := e.firstParent(w.HeadCommit)
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: %w", err)
+		}
+		wParentTree, err := e.treeHashOf(wParentCommit)
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: %w", err)
+		}
+		mw, cfw, err := e.mergeTrees(w.ID, wParentTree, prevTree, wOld)
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: merge working: %w", err)
+		}
+		conflicts = append(conflicts, cfw...)
+		newW, err = e.writeCommit(mw, w.ID, wDesc, parentsSlice(prevCommit))
+		if err != nil {
+			return nil, fmt.Errorf("change.rewriteChain: write working: %w", err)
+		}
 	}
 
 	// Change-ids present after the rewrite, to know which old rows to delete.
@@ -341,11 +357,11 @@ func (e *Engine) rewriteChain(lineID string, newSeq []sealStep) ([]Conflict, err
 	return conflicts, nil
 }
 
-// openWorkingChange returns the single open (sealed=0) working change on the line.
+// openWorkingChange returns the single open (sealed=0, status='open') working change on the line.
 func (e *Engine) openWorkingChange(lineID string) (Change, error) {
 	var id string
 	switch err := e.db.QueryRow(
-		`SELECT id FROM change WHERE line_id=? AND sealed=0 LIMIT 1`, lineID).Scan(&id); {
+		`SELECT id FROM change WHERE line_id=? AND status='open' AND sealed=0 ORDER BY updated_at DESC LIMIT 1`, lineID).Scan(&id); {
 	case errors.Is(err, sql.ErrNoRows):
 		return Change{}, fmt.Errorf("change.openWorkingChange: no open change on line %s", lineID)
 	case err != nil:

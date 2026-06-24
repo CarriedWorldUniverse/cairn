@@ -206,3 +206,102 @@ func openWorkingChangeID(t *testing.T, e *Engine, lineID string) string {
 	}
 	return id
 }
+
+// TestRewordWorkingChangeNoHead verifies that Reword succeeds even when the open
+// working change on the line has never been snapshotted (HeadCommit == ""). The
+// working change has no delta of its own; it should ride cleanly on the new top
+// after the sealed-chain rewrite, and its head's parent should equal the new
+// chain top commit.
+func TestRewordWorkingChangeNoHead(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, _, _ := buildChildLineWith3Sealed(t, e)
+
+	// Confirm the open working change has NO head commit (never snapshotted).
+	openID := openWorkingChangeID(t, e, childID)
+	wBefore, err := e.GetChange(openID)
+	if err != nil {
+		t.Fatalf("GetChange(open before reword): %v", err)
+	}
+	if wBefore.HeadCommit != "" {
+		t.Skipf("open change already has a head (%s); test requires unsanpshotted change", wBefore.HeadCommit)
+	}
+
+	// Reword S2 (middle commit). Must not crash on firstParent("").
+	conflicts, err := e.Reword(commits[1], "no-head reword")
+	if err != nil {
+		t.Fatalf("Reword with no-head working change: %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Reword conflicts = %d, want 0", len(conflicts))
+	}
+
+	// Chain rebuilt correctly.
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after reword: %v", err)
+	}
+	if len(chain) != 3 {
+		t.Fatalf("chain len = %d, want 3", len(chain))
+	}
+	if chain[1].Message != "no-head reword" {
+		t.Errorf("chain[1].Message = %q, want %q", chain[1].Message, "no-head reword")
+	}
+
+	// The open working change now has a head whose parent is the new chain top.
+	wAfter, err := e.GetChange(openID)
+	if err != nil {
+		t.Fatalf("GetChange(open after reword): %v", err)
+	}
+	if wAfter.HeadCommit == "" {
+		t.Fatal("open working change has no head after no-head reword")
+	}
+	wParent, err := e.firstParent(wAfter.HeadCommit)
+	if err != nil {
+		t.Fatalf("firstParent(working head): %v", err)
+	}
+	if wParent != chain[2].Commit {
+		t.Errorf("working change parent = %s, want new chain top %s", wParent, chain[2].Commit)
+	}
+}
+
+// TestRewordByChangeIdRobust verifies that guardEditable matches by change-id
+// rather than exact commit sha. It passes the sealed step's head commit sha
+// (the canonical path) and confirms Reword succeeds and preserves the change-id.
+func TestRewordByChangeIdRobust(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, _ := buildChildLineWith3Sealed(t, e)
+
+	// Snapshot the open change so rewriteChain's working-change path is exercised
+	// (prevents the no-head path from being taken here).
+	openID := openWorkingChangeID(t, e, childID)
+	if _, _, err := e.SnapshotWorking(openID, map[string]TreeEntry{
+		"robust.txt": blobEntry(t, e, "robust\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking: %v", err)
+	}
+
+	// Pass S1's head commit sha — the standard path for guardEditable.
+	// After Fix 4, the match uses change-id so this should still work correctly.
+	conflicts, err := e.Reword(commits[0], "robust reword")
+	if err != nil {
+		t.Fatalf("Reword(S1 by head sha): %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Reword conflicts = %d, want 0", len(conflicts))
+	}
+
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain: %v", err)
+	}
+	if len(chain) != 3 {
+		t.Fatalf("chain len = %d, want 3", len(chain))
+	}
+	if chain[0].Message != "robust reword" {
+		t.Errorf("chain[0].Message = %q, want %q", chain[0].Message, "robust reword")
+	}
+	// Change-id of S1 must be preserved across the rewrite.
+	if chain[0].ChangeID != changeIDs[0] {
+		t.Errorf("chain[0].ChangeID = %q, want %q (preserved)", chain[0].ChangeID, changeIDs[0])
+	}
+}
