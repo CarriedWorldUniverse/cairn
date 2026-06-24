@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	_ "modernc.org/sqlite"
 )
 
@@ -130,6 +131,30 @@ func (e *Engine) ensureRootLine() error {
 		return fmt.Errorf("change.ensureRootLine: %w", err)
 	}
 	return nil
+}
+
+// LineOfCommit resolves the line name that owns commit (by full or short sha).
+// It looks up the commit's Change-Id trailer, finds the owning change row, then
+// reads the line name. Returns ErrNotFound when the commit is not a cairn commit
+// or its change row is absent.
+func (e *Engine) LineOfCommit(commit string) (string, error) {
+	full, err := e.git.ResolveRevision(plumbing.Revision(commit))
+	if err != nil {
+		return "", fmt.Errorf("change.LineOfCommit: resolve %q: %w", commit, err)
+	}
+	cid := e.changeIDOf(full.String())
+	if cid == "" {
+		return "", fmt.Errorf("change.LineOfCommit: %w: no Change-Id on commit %s", ErrNotFound, commit)
+	}
+	ch, err := e.GetChange(cid)
+	if err != nil {
+		return "", fmt.Errorf("change.LineOfCommit: %w", err)
+	}
+	line, err := e.lineByID(ch.LineID)
+	if err != nil {
+		return "", fmt.Errorf("change.LineOfCommit: %w", err)
+	}
+	return line.Name, nil
 }
 
 // LineByName loads a line by its unique name, or returns ErrNotFound.
