@@ -1,6 +1,7 @@
 package worktree
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -8,8 +9,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 )
 
 // Materialize writes the files of commitSha into dir, replacing any existing
@@ -80,26 +83,95 @@ func writeFileAtomic(path string, data []byte) error {
 	return nil
 }
 
+// loadIgnorePatterns reads patterns from a gitignore-style file (one per line,
+// blank lines and lines starting with '#' skipped). Missing files are silently
+// ignored. Returns nil patterns if the file does not exist.
+func loadIgnorePatterns(path string) ([]gitignore.Pattern, error) {
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var patterns []gitignore.Pattern
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := sc.Text()
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		patterns = append(patterns, gitignore.ParsePattern(line, nil))
+	}
+	return patterns, sc.Err()
+}
+
 // Scan reads all regular files under dir into a map keyed by slash-separated
-// path relative to dir.
+// path relative to dir. It honors .gitignore and .cairnignore at the root of
+// dir, and unconditionally skips any .git/ or .cairn/ directory subtree.
 func Scan(dir string) (map[string][]byte, error) {
+	// Load ignore patterns from root-level .gitignore and .cairnignore.
+	var patterns []gitignore.Pattern
+	for _, name := range []string{".gitignore", ".cairnignore"} {
+		ps, err := loadIgnorePatterns(filepath.Join(dir, name))
+		if err != nil {
+			return nil, fmt.Errorf("worktree.Scan: %w", err)
+		}
+		patterns = append(patterns, ps...)
+	}
+	m := gitignore.NewMatcher(patterns)
+
 	out := map[string][]byte{}
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() {
-			return nil
-		}
+
 		rel, err := filepath.Rel(dir, path)
 		if err != nil {
 			return err
 		}
+
+		// The root dir itself: rel == "."; nothing to match.
+		if rel == "." {
+			return nil
+		}
+
+		slashRel := filepath.ToSlash(rel)
+		parts := strings.Split(slashRel, "/")
+
+		// Unconditionally skip .git and .cairn directories (and any path
+		// component that is .git or .cairn, for nested cases like sub/.git/).
+		if d.IsDir() {
+			name := d.Name()
+			if name == ".git" || name == ".cairn" {
+				return filepath.SkipDir
+			}
+			// Also guard against nested components (e.g. "sub/.git").
+			for _, part := range parts {
+				if part == ".git" || part == ".cairn" {
+					return filepath.SkipDir
+				}
+			}
+			// Apply gitignore matcher for directories: if matched, skip subtree.
+			if m.Match(parts, true) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// File entry: skip if matched by an ignore pattern.
+		if m.Match(parts, false) {
+			return nil
+		}
+
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		out[filepath.ToSlash(rel)] = data
+		out[slashRel] = data
 		return nil
 	})
 	if err != nil {
