@@ -147,8 +147,16 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
+	// Preserve exec/symlink on every OTHER file in the head tree. The resolved
+	// path gets user-merged regular bytes, so it must be regular now — drop any
+	// prior non-regular mode for it.
+	modes, err := e.FileModes(ch.HeadCommit)
+	if err != nil {
+		return fmt.Errorf("change.ResolveConflict: %w", err)
+	}
+	delete(modes, path)
 	files[path] = resolved
-	newTree, err := e.writeTree(files, nil)
+	newTree, err := e.writeTree(files, modes)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}

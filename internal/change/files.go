@@ -24,9 +24,21 @@ func (e *Engine) FileModes(commitSha string) (map[string]EntryMode, error) {
 	if err != nil {
 		return nil, fmt.Errorf("change.FileModes: %w", err)
 	}
-	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
+	modes, err := e.fileModesFromTree(treeHash)
 	if err != nil {
 		return nil, fmt.Errorf("change.FileModes: %w", err)
+	}
+	return modes, nil
+}
+
+// fileModesFromTree returns the non-regular modes (executable/symlink) per path
+// for a TREE (not a commit). Regular files are omitted (absent ⇒ regular). It is
+// the shared mode-reader behind both FileModes (commit→tree) and the merge path,
+// which works in tree shas.
+func (e *Engine) fileModesFromTree(treeHash string) (map[string]EntryMode, error) {
+	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
+	if err != nil {
+		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
 	}
 	out := map[string]EntryMode{}
 	err = tree.Files().ForEach(func(f *object.File) error {
@@ -39,7 +51,7 @@ func (e *Engine) FileModes(commitSha string) (map[string]EntryMode, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("change.FileModes: %w", err)
+		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
 	}
 	return out, nil
 }
