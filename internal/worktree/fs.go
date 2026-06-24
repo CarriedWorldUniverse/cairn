@@ -30,10 +30,15 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	if err := os.RemoveAll(dir); err != nil {
+	// Build into a sibling temp dir first, then swap — so a failure mid-build
+	// leaves the existing working copy intact (the slow writes happen before
+	// anything destructive). Sibling of dir means same filesystem → os.Rename
+	// is atomic.
+	tmp := dir + ".cairn-tmp"
+	if err := os.RemoveAll(tmp); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(tmp, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	for p, data := range files {
@@ -42,18 +47,30 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 		cacheBlob := filepath.Join(blobs, key)
 		if _, err := os.Stat(cacheBlob); errors.Is(err, os.ErrNotExist) {
 			if err := writeFileAtomic(cacheBlob, data); err != nil {
+				os.RemoveAll(tmp)
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
 		} else if err != nil {
+			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		full := filepath.Join(dir, filepath.FromSlash(p))
+		full := filepath.Join(tmp, filepath.FromSlash(p))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		if err := reflinkOrCopy(cacheBlob, full); err != nil {
+			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
+	}
+	// Swap: remove the old dir, then atomically rename temp into place.
+	if err := os.RemoveAll(dir); err != nil {
+		os.RemoveAll(tmp)
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
+	if err := os.Rename(tmp, dir); err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	return nil
 }
