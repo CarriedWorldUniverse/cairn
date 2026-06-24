@@ -94,6 +94,43 @@ func (e *Engine) Conflicts(changeID string) ([]Conflict, error) {
 	return out, nil
 }
 
+// ReassignConflicts moves every open conflict row from one change to another and
+// updates the has_conflict flags on both. Under the working-copy-is-a-commit
+// model a conflicting seal records conflicts on the sealed change, but the live
+// unresolved state belongs to the fresh working change the seal opens — so the
+// worktree reassigns them there, where the operator resolves against the working
+// commit. Idempotent: reassigning zero rows just clears the source flag.
+func (e *Engine) ReassignConflicts(fromChangeID, toChangeID string) error {
+	ts := e.now().UTC().Format(time.RFC3339Nano)
+	tx, err := e.db.Begin()
+	if err != nil {
+		return fmt.Errorf("change.ReassignConflicts: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	res, err := tx.Exec(
+		`UPDATE conflict SET change_id=? WHERE change_id=? AND status='open'`,
+		toChangeID, fromChangeID)
+	if err != nil {
+		return fmt.Errorf("change.ReassignConflicts: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("change.ReassignConflicts: %w", err)
+	}
+	if _, err := tx.Exec(`UPDATE change SET has_conflict=0, updated_at=? WHERE id=?`, ts, fromChangeID); err != nil {
+		return fmt.Errorf("change.ReassignConflicts: clear source flag: %w", err)
+	}
+	if n > 0 {
+		if _, err := tx.Exec(`UPDATE change SET has_conflict=1, updated_at=? WHERE id=?`, ts, toChangeID); err != nil {
+			return fmt.Errorf("change.ReassignConflicts: set target flag: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("change.ReassignConflicts: commit tx: %w", err)
+	}
+	return nil
+}
+
 // ResolveConflict resolves a single open conflict on a change by replacing the
 // conflicting path's content with resolved. It writes a new tip commit carrying
 // the resolved content, marks the conflict row resolved, advances the change

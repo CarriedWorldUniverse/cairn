@@ -93,7 +93,14 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	if err := r.Resolve("exp", "f.txt"); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
-	if err := r.Fold("exp", false); err != nil {
+	// Resolve writes the resolution into the OPEN working change (an unsealed
+	// amend), so under the new isDirty a non-force Fold correctly refuses it —
+	// folding would discard the un-sealed resolution. Assert the refusal, then
+	// fold with force to converge the resolved content into main.
+	if err := r.Fold("exp", false); err == nil {
+		t.Fatal("Fold(exp, false) must refuse the un-sealed resolution")
+	}
+	if err := r.Fold("exp", true); err != nil {
 		t.Fatalf("Fold after resolve: %v", err)
 	}
 	got, _, _ := Scan(filepath.Join(root, "main"), nil)

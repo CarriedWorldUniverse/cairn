@@ -166,8 +166,12 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 	// the up-to-date / ahead / fast-forward paths.
 	var changeID, changeHead string
 	hasChange := true
+	// Pick the line's open WORKING change (sealed=0). A sealed change keeps
+	// status='open' but is frozen — its head must not absorb a merge — so it is
+	// excluded; the fresh working change a seal opens is the live one a merge
+	// conflict belongs on (where `resolve` looks).
 	err := e.db.QueryRow(
-		`SELECT id, head_commit FROM change WHERE line_id=? AND status='open' ORDER BY updated_at DESC LIMIT 1`,
+		`SELECT id, head_commit FROM change WHERE line_id=? AND status='open' AND sealed=0 ORDER BY updated_at DESC LIMIT 1`,
 		lineID).Scan(&changeID, &changeHead)
 	if errors.Is(err, sql.ErrNoRows) {
 		hasChange = false

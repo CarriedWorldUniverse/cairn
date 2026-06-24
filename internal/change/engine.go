@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -66,6 +67,10 @@ func Open(dir string) (*Engine, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("change.Open: schema: %w", err)
 	}
+	if err := migrate(db); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
 
 	e := &Engine{dir: dir, git: g, db: db, now: time.Now}
 	if err := e.ensureRootLine(); err != nil {
@@ -82,6 +87,26 @@ func newID() string {
 	var b [16]byte
 	_, _ = rand.Read(b[:])
 	return hex.EncodeToString(b[:])
+}
+
+// migrate applies idempotent ALTER TABLE migrations so repos created before a
+// column was added pick it up. Each statement is run unconditionally; a
+// "duplicate column name" error (the column already exists, e.g. a fresh repo
+// where schema.sql already created it) is ignored. Add new column migrations to
+// this list as the schema evolves.
+func migrate(db *sql.DB) error {
+	migrations := []string{
+		`ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`,
+	}
+	for _, m := range migrations {
+		if _, err := db.Exec(m); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return fmt.Errorf("change.migrate: %w", err)
+		}
+	}
+	return nil
 }
 
 // ensureRootLine inserts the root line ("main", no parent) if no root exists.

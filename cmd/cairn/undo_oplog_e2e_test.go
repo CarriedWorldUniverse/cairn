@@ -62,9 +62,12 @@ func TestE2E_UndoOplog(t *testing.T) {
 	if len(lines) < 2 {
 		t.Errorf("oplog should have multiple lines, got %d:\n%s", len(lines), oplogOut)
 	}
-	// The last entry should be the undo op.
-	lastLine := lines[len(lines)-1]
-	if !strings.Contains(lastLine, "undo") {
-		t.Errorf("last oplog line should contain 'undo'; got: %q", lastLine)
+	// The oplog must contain the undo op. Under working-copy-is-a-commit, the undo
+	// is no longer necessarily the LAST op: re-materializing to the restored tip
+	// leaves the (now empty) working change out of sync with disk, so the next
+	// read command's command-start SyncWorking legitimately records a fresh
+	// snapshot op on top. We assert the undo is recorded, not that it is last.
+	if !strings.Contains(oplogOut, "undo") {
+		t.Errorf("oplog should contain an 'undo' op; got:\n%s", oplogOut)
 	}
 }

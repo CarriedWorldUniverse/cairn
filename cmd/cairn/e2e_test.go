@@ -63,7 +63,10 @@ func TestE2E_ConflictResolveViaCLI(t *testing.T) {
 		t.Fatal(err)
 	}
 	mustRun(t, "resolve", "--repo", root, "exp", "f.txt") // resolve <branch> <path>
-	mustRun(t, "fold", "--repo", root, "exp")
+	// The resolution is un-sealed work on exp's open working change, so a plain
+	// fold now (correctly) refuses to silently discard it; --force carries the
+	// resolved content forward via the fold's fast-forward.
+	mustRun(t, "fold", "--force", "--repo", root, "exp")
 	got, err := os.ReadFile(filepath.Join(root, "main", "f.txt"))
 	if err != nil {
 		t.Fatalf("read main/f.txt: %v", err)

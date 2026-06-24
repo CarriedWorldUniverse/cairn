@@ -35,9 +35,13 @@ func TestUnexpressDirtyRefused(t *testing.T) {
 		t.Fatalf("commit child: %v", err)
 	}
 
-	// Write an uncommitted file into child.
+	// Write an un-sealed file into child and SyncWorking (as the CLI does via
+	// openRepoSynced) so the open working change carries the delta.
 	if err := os.WriteFile(filepath.Join(root, "child", "dirty.txt"), []byte("dirty\n"), 0o644); err != nil {
 		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking: %v", err)
 	}
 
 	// force=false must refuse.
@@ -45,8 +49,8 @@ func TestUnexpressDirtyRefused(t *testing.T) {
 	if err == nil {
 		t.Fatal("Unexpress(child, false) must error on dirty branch")
 	}
-	if !strings.Contains(err.Error(), "uncommitted") {
-		t.Fatalf("error must mention 'uncommitted', got: %v", err)
+	if !strings.Contains(err.Error(), "un-sealed") {
+		t.Fatalf("error must mention 'un-sealed', got: %v", err)
 	}
 	// Folder must still exist.
 	if _, statErr := os.Stat(filepath.Join(root, "child")); os.IsNotExist(statErr) {
@@ -90,9 +94,12 @@ func TestAbandonDirtyRefused(t *testing.T) {
 		t.Fatalf("commit child: %v", err)
 	}
 
-	// Write an uncommitted file.
+	// Write an un-sealed file and SyncWorking (mirrors the CLI's openRepoSynced).
 	if err := os.WriteFile(filepath.Join(root, "child", "dirty.txt"), []byte("dirty\n"), 0o644); err != nil {
 		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking: %v", err)
 	}
 
 	// force=false must refuse.
@@ -100,8 +107,8 @@ func TestAbandonDirtyRefused(t *testing.T) {
 	if err == nil {
 		t.Fatal("Abandon(child, false) must error on dirty branch")
 	}
-	if !strings.Contains(err.Error(), "uncommitted") {
-		t.Fatalf("error must mention 'uncommitted', got: %v", err)
+	if !strings.Contains(err.Error(), "un-sealed") {
+		t.Fatalf("error must mention 'un-sealed', got: %v", err)
 	}
 	// Branch must still be expressed (line still exists).
 	if _, ok := r.Ls()["child"]; !ok {
@@ -149,9 +156,12 @@ func TestFoldDirtyRefused(t *testing.T) {
 		t.Fatalf("commit child: %v", err)
 	}
 
-	// Write an uncommitted file → dirty.
+	// Write an un-sealed file → dirty, and SyncWorking (mirrors openRepoSynced).
 	if err := os.WriteFile(filepath.Join(root, "child", "dirty.txt"), []byte("dirty\n"), 0o644); err != nil {
 		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking: %v", err)
 	}
 
 	// force=false must refuse while dirty.
@@ -159,13 +169,17 @@ func TestFoldDirtyRefused(t *testing.T) {
 	if err == nil {
 		t.Fatal("Fold(child, false) must error on dirty branch")
 	}
-	if !strings.Contains(err.Error(), "uncommitted") {
-		t.Fatalf("error must mention 'uncommitted', got: %v", err)
+	if !strings.Contains(err.Error(), "un-sealed") {
+		t.Fatalf("error must mention 'un-sealed', got: %v", err)
 	}
 
-	// Remove the dirty file to make it clean again, then fold succeeds.
+	// Remove the dirty file to make it clean again (re-sync so the working change
+	// reflects the cleaned folder), then fold succeeds.
 	if err := os.Remove(filepath.Join(root, "child", "dirty.txt")); err != nil {
 		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking (clean): %v", err)
 	}
 	if err := r.Fold("child", false); err != nil {
 		t.Fatalf("Fold(child, false) on clean branch must succeed: %v", err)

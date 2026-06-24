@@ -61,12 +61,12 @@ subcommands:
   init [dir]                bootstrap a repo (expresses main)
   clone <url> [dir]         import a remote repo and express its default branch
   express <branch>          materialize a branch folder (--from <parent>)
-  unexpress <branch>        remove a branch folder (--force to discard uncommitted changes)
-  commit <branch> [-m msg]  snapshot a branch folder onto its change
-  fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
-  abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
-  status [branch]           report a branch's state (default: the root branch)
-  diff [branch] | diff <a> <b>  show changes (working-vs-tip, or commit-vs-commit)
+  unexpress <branch>        remove a branch folder (--force to discard un-sealed work)
+  commit <branch> [-m msg]  seal the working change (stamps msg, starts a fresh change)
+  fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
+  abandon <branch>          discard a branch's line (--force to discard un-sealed work)
+  status [branch]           report a branch's state — the working change vs its parent (default: root)
+  diff [branch] | diff <a> <b>  show the working change vs its parent, or commit-vs-commit
   tree                          print the line tree
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch
@@ -174,6 +174,24 @@ func openRepo(repo, author string) (*worktree.Repo, error) {
 	return worktree.Open(repo, author)
 }
 
+// openRepoSynced opens a repo and immediately snapshots every expressed folder
+// into its open working change (SyncWorking), so working-copy-aware commands see
+// live on-disk edits. A sync failure closes the repo and surfaces a clear error.
+// Use this for read/inspect commands and pre-op safety checks; do NOT use it for
+// history operations (undo/oplog) — snapshotting first would record an op that
+// undo then targets.
+func openRepoSynced(repo, author string) (*worktree.Repo, error) {
+	r, err := openRepo(repo, author)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.SyncWorking(); err != nil {
+		_ = r.Close()
+		return nil, fmt.Errorf("snapshotting working copy: %w", err)
+	}
+	return r, nil
+}
+
 // repoFlags registers --repo and --author on fs, returning the bound vars.
 func repoFlags(fs *flag.FlagSet) (repo, author *string) {
 	repo = fs.String("repo", ".", "repo root directory")
@@ -264,7 +282,7 @@ func cmdExpress(args []string) error {
 		return errors.New("branch required")
 	}
 	branch := fs.Arg(0)
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -279,14 +297,14 @@ func cmdExpress(args []string) error {
 func cmdUnexpress(args []string) error {
 	fs := flag.NewFlagSet("unexpress", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -338,14 +356,14 @@ func cmdCommit(args []string) error {
 func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -356,14 +374,14 @@ func cmdFold(args []string) error {
 func cmdAbandon(args []string) error {
 	fs := flag.NewFlagSet("abandon", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -377,7 +395,7 @@ func cmdStatus(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -425,7 +443,7 @@ func cmdDiff(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -469,7 +487,7 @@ func cmdTree(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -490,7 +508,7 @@ func cmdLs(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -965,7 +983,7 @@ func cmdLog(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -989,7 +1007,18 @@ func cmdLog(args []string) error {
 		if len(short) > 8 {
 			short = short[:8]
 		}
-		fmt.Printf("%s  %s  %s  %s\n", short, c.When.Format("2006-01-02"), c.AuthorName, c.Subject)
+		subject := c.Subject
+		if c.Working {
+			// The head of an open (unsealed) change is the live working commit. Its
+			// description is the "(working)" placeholder until the change is named;
+			// surface the marker once (avoid a doubled "(working) (working)").
+			if subject == "" || subject == "(working)" {
+				subject = "(working)"
+			} else {
+				subject = "(working) " + subject
+			}
+		}
+		fmt.Printf("%s  %s  %s  %s\n", short, c.When.Format("2006-01-02"), c.AuthorName, subject)
 	}
 	return nil
 }
@@ -1005,7 +1034,7 @@ func cmdShow(args []string) error {
 	if fs.NArg() != 1 {
 		return errors.New("usage: cairn show <commit>")
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

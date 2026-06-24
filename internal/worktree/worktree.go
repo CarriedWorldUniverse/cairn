@@ -1,12 +1,12 @@
 package worktree
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
@@ -188,56 +188,121 @@ func (r *Repo) Express(branch, parent string) error {
 	return nil
 }
 
-// Commit snapshots the on-disk contents of an expressed branch onto its change
-// (adopting the parent line via the engine's merge-forward) and re-materializes
-// the resulting head, so the folder reflects any merged-in parent state. The
-// CommitResult carries the new head and any conflicts recorded.
+// SyncWorking snapshots every expressed folder into its line's open working
+// change (amend-in-place), so the working commit always reflects the folder. The
+// cache makes an unchanged folder cheap. Self-healing: a corrupt/missing cache is
+// treated as empty (full rescan), never an error.
+func (r *Repo) SyncWorking() error {
+	for branch, entry := range r.st.Expressed {
+		if err := r.syncBranch(branch, entry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// syncBranch snapshots one expressed branch's folder into its open working
+// change via amend-in-place, using the per-branch snapshot cache for cheap
+// rescans. A corrupt/missing cache is treated as empty (full rescan).
+func (r *Repo) syncBranch(branch string, entry Entry) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.syncBranch: %w", err)
+	}
+	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
+	// paths, so a committed-then-ignored file is never dropped from the scan.
+	var tracked map[string]struct{}
+	if line.TipCommit != "" {
+		committed, ferr := r.eng.Files(line.TipCommit)
+		if ferr != nil {
+			return fmt.Errorf("worktree.syncBranch: %w", ferr)
+		}
+		tracked = trackedSet(committed)
+	}
+	cachePath := filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
+	cache, err := loadWCCache(cachePath)
+	if err != nil {
+		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
+	}
+	scanStartNs := time.Now().UnixNano()
+	entries, newCache, cacheChanged, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
+	if err != nil {
+		return fmt.Errorf("worktree.syncBranch: %w", err)
+	}
+	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
+		return fmt.Errorf("worktree.syncBranch: %w", err)
+	}
+	if cacheChanged {
+		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
+			return fmt.Errorf("worktree.syncBranch: %w", err)
+		}
+		if err := saveWCCache(cachePath, newCache); err != nil {
+			return fmt.Errorf("worktree.syncBranch: %w", err)
+		}
+	}
+	return nil
+}
+
+// Commit seals the open working change of an expressed branch: it first
+// snapshots the folder into the working change (so the seal captures live
+// edits), stamps the message (adopting the parent line via merge-forward),
+// advances this branch to the fresh working change opened by the seal, and
+// re-materializes to the new working tip. The CommitResult carries the sealed
+// head and any conflicts recorded.
 func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
 	}
-	dir := filepath.Join(r.root, entry.Path)
-	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
-	// paths, so a committed-then-ignored file must not be dropped from the scan
-	// (which would silently delete it from history on this commit).
+	if err := r.syncBranch(branch, entry); err != nil {
+		return change.CommitResult{}, err
+	}
+	prevChangeID := entry.ChangeID
+	newChangeID, conflicts, err := r.eng.Seal(entry.ChangeID, message)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	// This branch now tracks the fresh working change opened by Seal.
+	entry.ChangeID = newChangeID
+	r.st.Expressed[branch] = entry
+	if err := SaveState(r.stPath, r.st); err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	// The branch's working-cache referenced the old change's snapshot fingerprints
+	// and stays valid (same folder paths); the fresh change's first SyncWorking
+	// will re-amend off it. Re-materialize to the new working tip (== sealed tree;
+	// folder content unchanged, but merged-in parent state is reflected).
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
-	var tracked map[string]struct{}
 	if line.TipCommit != "" {
-		committed, ferr := r.eng.Files(line.TipCommit)
-		if ferr != nil {
-			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", ferr)
-		}
-		tracked = trackedSet(committed)
-	}
-	files, modes, err := Scan(dir, tracked)
-	if err != nil {
-		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
-	}
-	res, err := r.eng.Commit(entry.ChangeID, files, modes, message)
-	if err != nil {
-		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
-	}
-	ch, err := r.eng.GetChange(entry.ChangeID)
-	if err != nil {
-		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
-	}
-	if ch.HeadCommit != "" {
-		if err := Materialize(r.eng, r.cacheDir(), ch.HeadCommit, dir); err != nil {
+		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path)); err != nil {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
 
-	// Best-effort, opt-in auto-sync AFTER the commit. The commit has already
+	// A conflicting seal records the conflicts on the now-sealed change, but the
+	// live unresolved state belongs to the FRESH working change. Snapshot the
+	// conflict-marked content (just materialized to disk) into the fresh change so
+	// it has a head to resolve against, then move the conflict rows onto it — so
+	// `status`/`resolve` operate on the working change as the operator expects.
+	if len(conflicts) > 0 {
+		if err := r.syncBranch(branch, entry); err != nil {
+			return change.CommitResult{}, err
+		}
+		if err := r.eng.ReassignConflicts(prevChangeID, entry.ChangeID); err != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+		}
+	}
+
+	// Best-effort, opt-in auto-sync AFTER the seal. The seal has already
 	// succeeded above; the pull is purely additive and never alters res or the
 	// (nil) error returned here. Any sync failure (offline, fetch error, conflict)
 	// is captured as a note for the CLI, not propagated.
 	r.lastSyncNote = r.autoSync()
 
-	return res, nil
+	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts}, nil
 }
 
 // autoSync runs the opt-in commit-time sync and returns a note describing the
@@ -292,7 +357,7 @@ func (r *Repo) Fold(branch string, force bool) error {
 			return fmt.Errorf("worktree.Fold: %w", derr)
 		}
 		if dirty {
-			return fmt.Errorf("worktree.Fold: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+			return fmt.Errorf("worktree.Fold: branch %q has un-sealed work (recoverable with 'cairn undo'); commit it or pass --force to discard", branch)
 		}
 	}
 	line, err := r.eng.LineByName(branch)
@@ -341,7 +406,7 @@ func (r *Repo) Abandon(branch string, force bool) error {
 			return fmt.Errorf("worktree.Abandon: %w", derr)
 		}
 		if dirty {
-			return fmt.Errorf("worktree.Abandon: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+			return fmt.Errorf("worktree.Abandon: branch %q has un-sealed work (recoverable with 'cairn undo'); commit it or pass --force to discard", branch)
 		}
 	}
 	line, err := r.eng.LineByName(branch)
@@ -382,7 +447,7 @@ func (r *Repo) Unexpress(branch string, force bool) error {
 			return fmt.Errorf("worktree.Unexpress: %w", derr)
 		}
 		if dirty {
-			return fmt.Errorf("worktree.Unexpress: branch %q has uncommitted changes; commit them or pass --force to discard", branch)
+			return fmt.Errorf("worktree.Unexpress: branch %q has un-sealed work (recoverable with 'cairn undo'); commit it or pass --force to discard", branch)
 		}
 	}
 	entry, ok := r.st.Expressed[branch]
@@ -444,8 +509,19 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for _, l := range lineage {
 		names = append(names, l.Name)
 	}
-	// Ahead = commits since this line's branch point; the root line has no branch point so it is structurally 0.
-	ahead, err := r.eng.LineHeight(line)
+	// Ahead = SEALED commits since this line's branch point. The open working
+	// change's commit sits at the line tip (an unsealed amend); it must not
+	// inflate the count, so when present we measure height from its parent (the
+	// sealed tip) instead of the raw line tip.
+	sealedLine := line
+	if ch, cerr := r.eng.GetChange(entry.ChangeID); cerr == nil && !ch.Sealed && ch.HeadCommit != "" {
+		parent, perr := r.eng.FirstParent(ch.HeadCommit)
+		if perr != nil {
+			return StatusInfo{}, fmt.Errorf("worktree.Status: %w", perr)
+		}
+		sealedLine.TipCommit = parent
+	}
+	ahead, err := r.eng.LineHeight(sealedLine)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
@@ -492,32 +568,34 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	}, nil
 }
 
-// WorkingDiff returns the per-path diff between an expressed branch's committed
-// tip tree (HEAD) and its current on-disk contents (working). A branch with no
-// commits yet diffs the working folder against the empty tree.
+// WorkingDiff returns the per-path diff between an expressed branch's open
+// working change and its parent commit — the change introduced by the working
+// commit. Since SyncWorking keeps the working commit equal to the folder, this
+// is the live "what's uncommitted" view. A working change with no snapshot yet
+// (empty head) yields an empty diff. Callers must SyncWorking first to capture
+// on-disk edits into the working commit.
 func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
 	}
-	line, err := r.eng.LineByName(branch)
+	ch, err := r.eng.GetChange(entry.ChangeID)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
-	var committed map[string][]byte
-	if line.TipCommit != "" {
-		committed, err = r.eng.Files(line.TipCommit)
-		if err != nil {
-			return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
-		}
-	} else {
-		committed = map[string][]byte{}
+	if ch.HeadCommit == "" {
+		// No working snapshot yet: nothing differs from the parent.
+		return nil, nil
 	}
-	working, _, err := Scan(filepath.Join(r.root, entry.Path), trackedSet(committed))
+	parent, err := r.eng.FirstParent(ch.HeadCommit)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
-	return change.DiffTrees(committed, working, "HEAD", "working"), nil
+	diffs, err := r.eng.DiffCommits(parent, ch.HeadCommit)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
+	}
+	return diffs, nil
 }
 
 // DiffCommits returns the per-path diff between two commits, passing through to
@@ -730,7 +808,22 @@ type releaseAdapter struct {
 	eco    string
 }
 
-func (a *releaseAdapter) Dirty() (bool, error) { return a.r.isDirty(a.branch) }
+// Dirty reports whether the release branch has un-sealed work. The release flow
+// opens the repo WITHOUT a command-start SyncWorking (openRepo, not
+// openRepoSynced) and stamps the manifest on disk without committing, so the
+// working change does not yet reflect that stamp. Sync the branch first so the
+// working-delta isDirty sees the stamped-but-uncommitted manifest and the
+// guardrail refuses a second release on a stamped tree.
+func (a *releaseAdapter) Dirty() (bool, error) {
+	entry, ok := a.r.st.Expressed[a.branch]
+	if !ok {
+		return false, nil
+	}
+	if err := a.r.syncBranch(a.branch, entry); err != nil {
+		return false, fmt.Errorf("worktree.releaseAdapter.Dirty: %w", err)
+	}
+	return a.r.isDirty(a.branch)
+}
 
 // LatestTag returns the nearest tag reachable via first-parent ancestry — the
 // monotonicity base for a release. cairn's linear fold model keeps release tags
@@ -812,13 +905,46 @@ func (r *Repo) Undo() error {
 	if err := r.eng.Undo(); err != nil {
 		return fmt.Errorf("worktree.Undo: %w", err)
 	}
+	// eng.Undo restored line tips but NOT change heads. The open change's stale
+	// head can still point at the undone commit, which would resurface it on the
+	// next snapshot (it would be picked as the working commit's parent). Reconcile
+	// each expressed branch's open change head against the restored line tip:
+	//   - tip == ""            → clear head (start fresh on the empty baseline)
+	//   - tip IS our working   → keep head=tip (amend continues on the restored tip)
+	//   - tip is a different/   → clear head, so the next SnapshotWorking parents a
+	//     sealed commit          fresh working commit ON TOP of the restored tip,
+	//                            never on the undone commit.
 	for branch, entry := range r.st.Expressed {
 		line, err := r.eng.LineByName(branch)
 		if err != nil {
 			if errors.Is(err, change.ErrNotFound) {
-				continue // line gone — nothing to re-materialize
+				continue // line gone — nothing to reconcile/re-materialize
 			}
 			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		tip := line.TipCommit
+		switch {
+	case tip == "":
+			if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		default:
+			cid, err := r.eng.ChangeIDOf(tip)
+			if err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+			if cid == entry.ChangeID {
+				// The restored tip IS this change's working commit → amend continues.
+				if err := r.eng.SetWorkingHead(entry.ChangeID, tip); err != nil {
+					return fmt.Errorf("worktree.Undo: %w", err)
+				}
+			} else {
+				// Restored tip is a different/sealed commit (or carries no trailer):
+				// start a fresh working commit on top of it (parent = tip).
+				if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
+					return fmt.Errorf("worktree.Undo: %w", err)
+				}
+			}
 		}
 		dir := filepath.Join(r.root, entry.Path)
 		if line.TipCommit != "" {
@@ -844,62 +970,62 @@ func (r *Repo) OperationLog() ([]change.Operation, error) {
 	return r.eng.OperationLog()
 }
 
-// isDirty reports whether the expressed folder differs from the branch's
-// committed tip tree. It returns (false, nil) when the branch is not expressed
-// or when the engine line is gone (ErrNotFound — already folded/abandoned), so
-// callers that run a dirty-check before a destructive op can safely proceed.
+// isDirty reports whether the branch has un-sealed work: a non-empty delta in
+// its OPEN working change vs that change's parent commit. Under working-copy-is-
+// a-commit the expressed folder always equals the working commit (line tip) after
+// SyncWorking, so a disk-vs-tip comparison is always clean and would silently let
+// abandon/fold discard unsealed edits. Comparing the working commit against its
+// parent instead catches exactly the work a destructive op would lose.
+//
+// It returns (false, nil) when the branch is not expressed, when the engine line/
+// change is gone (ErrNotFound — already folded/abandoned), or when the open change
+// has no working commit yet, so callers running a dirty-check before a destructive
+// op can safely proceed.
+//
+// Callers reach isDirty via openRepoSynced (SyncWorking runs first), so the
+// working commit already reflects the latest on-disk edits.
 func (r *Repo) isDirty(branch string) (bool, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		// Branch not in working-copy state: nothing to compare, not dirty.
 		return false, nil
 	}
-	line, err := r.eng.LineByName(branch)
-	if errors.Is(err, change.ErrNotFound) {
-		// Line already folded/abandoned: no committed tip to diff against, so the
-		// folder cannot be "dirty" in a recoverable sense — treat as clean and
-		// allow removal.
-		return false, nil
+	ch, err := r.eng.GetChange(entry.ChangeID)
+	if err != nil {
+		if errors.Is(err, change.ErrNotFound) {
+			return false, nil // line/change gone — treat as clean
+		}
+		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
+	if ch.HeadCommit == "" {
+		return false, nil // no working commit yet → nothing unsealed
+	}
+	parent, err := r.eng.FirstParent(ch.HeadCommit)
 	if err != nil {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
-	var committed map[string][]byte
-	var committedModes map[string]change.EntryMode
-	if line.TipCommit != "" {
-		committed, err = r.eng.Files(line.TipCommit)
-		if err != nil {
-			return false, fmt.Errorf("worktree.isDirty: %w", err)
-		}
-		committedModes, err = r.eng.FileModes(line.TipCommit)
-		if err != nil {
-			return false, fmt.Errorf("worktree.isDirty: %w", err)
-		}
-	}
-	// Ignore patterns only affect untracked paths, so scan with the tracked set
-	// to avoid reporting a committed-then-ignored file as a phantom deletion.
-	scanned, scannedModes, err := Scan(filepath.Join(r.root, entry.Path), trackedSet(committed))
+	diffs, err := r.eng.DiffCommits(parent, ch.HeadCommit)
 	if err != nil {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
-	// Dirty if EITHER content OR modes differ (a chmod-only change is dirty).
-	if !sameFiles(scanned, committed) {
+	if len(diffs) > 0 {
 		return true, nil
 	}
-	return !sameModes(scannedModes, committedModes), nil
-}
-
-func sameFiles(a, b map[string][]byte) bool {
-	if len(a) != len(b) {
-		return false
+	// DiffCommits is content-only, so a mode-only delta (e.g. chmod +x) shows no
+	// file diff yet is still un-sealed work. Compare the working commit's modes
+	// against its parent's so a chmod-only change is caught.
+	headModes, err := r.eng.FileModes(ch.HeadCommit)
+	if err != nil {
+		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
-	for k, va := range a {
-		vb, ok := b[k]
-		if !ok || !bytes.Equal(va, vb) {
-			return false
+	var parentModes map[string]change.EntryMode
+	if parent != "" {
+		parentModes, err = r.eng.FileModes(parent)
+		if err != nil {
+			return false, fmt.Errorf("worktree.isDirty: %w", err)
 		}
 	}
-	return true
+	return !sameModes(parentModes, headModes), nil
 }
 
 // sameModes compares two sparse mode maps (absent ⇒ regular). They are equal
