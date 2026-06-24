@@ -2,6 +2,7 @@ package change
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -27,8 +28,13 @@ func TestWriteReadTreeRoundTrip(t *testing.T) {
 
 func TestWriteTreeRejectsFileDirCollision(t *testing.T) {
 	e := newTestEngine(t)
-	if _, err := e.writeTree(map[string][]byte{"x": []byte("file\n"), "x/sub": []byte("sub\n")}, nil); err == nil {
+	_, err := e.writeTree(map[string][]byte{"x": []byte("file\n"), "x/sub": []byte("sub\n")}, nil)
+	if err == nil {
 		t.Fatal("expected error for file/dir name collision")
+	}
+	// E4: the error must use the friendlier "exists as both a file and a directory" wording.
+	if !strings.Contains(err.Error(), "exists as both a file and a directory") {
+		t.Fatalf("collision error %q should contain %q", err.Error(), "exists as both a file and a directory")
 	}
 }
 
