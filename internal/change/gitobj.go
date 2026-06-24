@@ -33,6 +33,84 @@ func (e *Engine) writeBlob(data []byte) (plumbing.Hash, error) {
 	return h, nil
 }
 
+// WriteBlob stores data as a git blob object and returns its hash as a hex
+// string. It is the exported wrapper over writeBlob used by callers outside the
+// change package (e.g. worktree.CachedScan stores a blob on a cache miss).
+func (e *Engine) WriteBlob(data []byte) (string, error) {
+	h, err := e.writeBlob(data)
+	if err != nil {
+		return "", err
+	}
+	return h.String(), nil
+}
+
+// writeTreeRefs builds (nested) tree objects from a path->TreeEntry map (paths
+// are "/"-separated) and returns the root tree hash. Unlike buildTree it does
+// NOT write blobs: each entry already carries the hex SHA of a blob guaranteed
+// to be in the object store, referenced directly via plumbing.NewHash. The
+// immediate/subdir split, file-vs-dir collision guard, mode emission, sort, and
+// tree encoding mirror buildTree exactly so the resulting tree hash is identical
+// to the writeBlob+buildTree path for the same logical contents.
+func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, error) {
+	// Split into immediate entries and grouped subdirectory contents, re-keying
+	// subdir entries by the remaining path (same as buildTree does for data).
+	subdirs := map[string]map[string]TreeEntry{}
+	immediate := map[string]TreeEntry{}
+	for path, entry := range entries {
+		if i := strings.IndexByte(path, '/'); i >= 0 {
+			dir := path[:i]
+			rest := path[i+1:]
+			if subdirs[dir] == nil {
+				subdirs[dir] = map[string]TreeEntry{}
+			}
+			subdirs[dir][rest] = entry
+		} else {
+			immediate[path] = entry
+		}
+	}
+
+	// A name cannot be both a file and a subdirectory at the same tree level;
+	// that would emit two entries with the same name (an invalid git tree).
+	for name := range immediate {
+		if _, ok := subdirs[name]; ok {
+			return plumbing.ZeroHash, fmt.Errorf("cannot commit: %q exists as both a file and a directory at the same level", name)
+		}
+	}
+
+	var treeEntries []object.TreeEntry
+	for name, entry := range immediate {
+		m := filemode.Regular
+		switch entry.Mode {
+		case ModeExecutable:
+			m = filemode.Executable
+		case ModeSymlink:
+			m = filemode.Symlink
+		}
+		treeEntries = append(treeEntries, object.TreeEntry{Name: name, Mode: m, Hash: plumbing.NewHash(entry.SHA)})
+	}
+	for dir, contents := range subdirs {
+		h, err := e.writeTreeRefs(contents)
+		if err != nil {
+			return plumbing.ZeroHash, err
+		}
+		treeEntries = append(treeEntries, object.TreeEntry{Name: dir, Mode: filemode.Dir, Hash: h})
+	}
+
+	// git requires tree entries sorted by name.
+	sort.Slice(treeEntries, func(i, j int) bool { return treeEntries[i].Name < treeEntries[j].Name })
+
+	tree := &object.Tree{Entries: treeEntries}
+	obj := e.git.Storer.NewEncodedObject()
+	if err := tree.Encode(obj); err != nil {
+		return plumbing.ZeroHash, fmt.Errorf("change.writeTreeRefs: encode: %w", err)
+	}
+	h, err := e.git.Storer.SetEncodedObject(obj)
+	if err != nil {
+		return plumbing.ZeroHash, fmt.Errorf("change.writeTreeRefs: store: %w", err)
+	}
+	return h, nil
+}
+
 // readBlob reads the contents of a git blob by hash.
 func (e *Engine) readBlob(sha string) ([]byte, error) {
 	b, err := e.git.BlobObject(plumbing.NewHash(sha))

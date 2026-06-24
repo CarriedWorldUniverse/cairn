@@ -179,20 +179,56 @@ func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
 // ignore pattern. A nil tracked set means "nothing tracked" → every ignored
 // path is skipped (the historical behaviour).
 func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, error) {
+	out := map[string][]byte{}
+	modes := map[string]change.EntryMode{}
+	err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
+		// Symlink: store its target string, mark ModeSymlink, never follow it.
+		// (A symlink is not a dir, so WalkDir won't descend it — no loop risk.)
+		if d.Type()&os.ModeSymlink != 0 {
+			target, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			out[slashRel] = []byte(target)
+			modes[slashRel] = change.ModeSymlink
+			return nil
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		out[slashRel] = data
+		if info, ierr := d.Info(); ierr == nil && info.Mode()&0o111 != 0 {
+			modes[slashRel] = change.ModeExecutable
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
+	}
+	return out, modes, nil
+}
+
+// walkWorktree performs the shared Slice-C worktree walk: it loads root-level
+// .gitignore/.cairnignore, descends dir, unconditionally skips .git/.cairn
+// subtrees, applies gitignore (honouring the tracked set per git semantics so
+// tracked paths and ignored dirs containing tracked paths survive), and invokes
+// fn once per surviving file/symlink entry with its slash-separated relative
+// path, absolute path, and dir-entry. Callers supply fn to read or cache.
+func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, path string, d fs.DirEntry) error) error {
 	// Load ignore patterns from root-level .gitignore and .cairnignore.
 	var patterns []gitignore.Pattern
 	for _, name := range []string{".gitignore", ".cairnignore"} {
 		ps, err := loadIgnorePatterns(filepath.Join(dir, name))
 		if err != nil {
-			return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
+			return err
 		}
 		patterns = append(patterns, ps...)
 	}
 	m := gitignore.NewMatcher(patterns)
 
-	out := map[string][]byte{}
-	modes := map[string]change.EntryMode{}
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -244,30 +280,6 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 			}
 		}
 
-		// Symlink: store its target string, mark ModeSymlink, never follow it.
-		// (A symlink is not a dir, so WalkDir won't descend it — no loop risk.)
-		if d.Type()&os.ModeSymlink != 0 {
-			target, err := os.Readlink(path)
-			if err != nil {
-				return err
-			}
-			out[slashRel] = []byte(target)
-			modes[slashRel] = change.ModeSymlink
-			return nil
-		}
-
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		out[slashRel] = data
-		if info, ierr := d.Info(); ierr == nil && info.Mode()&0o111 != 0 {
-			modes[slashRel] = change.ModeExecutable
-		}
-		return nil
+		return fn(slashRel, path, d)
 	})
-	if err != nil {
-		return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
-	}
-	return out, modes, nil
 }
