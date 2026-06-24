@@ -98,6 +98,11 @@ func preferTag(a, b string) string {
 	}
 }
 
+// FirstParent returns the hex sha of the first parent of commit, or "" if the
+// commit is a root (has no parents). It is the exported wrapper over firstParent
+// for callers that need a working commit's parent (e.g. working-vs-parent diffs).
+func (e *Engine) FirstParent(commit string) (string, error) { return e.firstParent(commit) }
+
 // firstParent returns the hex sha of the first parent of commit, or "" if the
 // commit is a root (has no parents).
 func (e *Engine) firstParent(commit string) (string, error) {

@@ -1,6 +1,9 @@
 package change
 
 import (
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -129,13 +132,38 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 		return "", nil, fmt.Errorf("change.Seal: open fresh change: %w", err)
 	}
 
+	// Absorb a trailing working-snapshot op for THIS change so a commit is a
+	// single undo step: the working snapshots taken since the last seal (e.g. by
+	// command-start SyncWorking, plus the snapshot the worktree takes right before
+	// sealing) are part of the same logical commit. We take that snapshot burst's
+	// view_before as the seal op's view_before and delete the snapshot op, so
+	// undoing the commit restores the line to its prior SEALED tip — not to the
+	// intermediate working snapshot.
+	sealBefore := before
+	var lastID, lastType, lastDetail, lastBeforeJSON string
+	switch err := tx.QueryRow(
+		`SELECT id, op_type, detail, view_before FROM operation ORDER BY id DESC LIMIT 1`).
+		Scan(&lastID, &lastType, &lastDetail, &lastBeforeJSON); {
+	case err == nil && lastType == opSnapshot && lastDetail == ch.ID:
+		var snapBefore map[string]string
+		if jerr := json.Unmarshal([]byte(lastBeforeJSON), &snapBefore); jerr != nil {
+			return "", nil, fmt.Errorf("change.Seal: unmarshal snapshot view_before: %w", jerr)
+		}
+		sealBefore = snapBefore
+		if _, derr := tx.Exec(`DELETE FROM operation WHERE id=?`, lastID); derr != nil {
+			return "", nil, fmt.Errorf("change.Seal: absorb snapshot op: %w", derr)
+		}
+	case err != nil && !errors.Is(err, sql.ErrNoRows):
+		return "", nil, fmt.Errorf("change.Seal: probe last op: %w", err)
+	}
+
 	// Record a non-coalesced commit op in-tx (so view_after sees the new line tip),
 	// mirroring recordSnapshotOp's insert but with op_type=commit and empty detail.
 	after, err := viewMapTx(tx)
 	if err != nil {
 		return "", nil, fmt.Errorf("change.Seal: %w", err)
 	}
-	if err := recordOpTx(tx, e.now().UTC(), opCommit, ch.Author, before, after, ts); err != nil {
+	if err := recordOpTx(tx, e.now().UTC(), opCommit, ch.Author, sealBefore, after, ts); err != nil {
 		return "", nil, fmt.Errorf("change.Seal: record op: %w", err)
 	}
 
