@@ -2,6 +2,7 @@ package change
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -118,4 +119,32 @@ func (e *Engine) firstParent(commit string) (string, error) {
 		return "", fmt.Errorf("parent of %s: %w", commit, err)
 	}
 	return first.Hash.String(), nil
+}
+
+// ChangeIDOf reads commitSha and returns the value of its `Change-Id:` trailer,
+// or "" if the commit carries no trailer (e.g. an externally-authored commit).
+// Callers reconciling an open change's head after an undo treat "" as "not our
+// working commit" and start a fresh working commit on top.
+func (e *Engine) ChangeIDOf(commitSha string) (string, error) {
+	if commitSha == "" {
+		return "", nil
+	}
+	c, err := e.git.CommitObject(plumbing.NewHash(commitSha))
+	if err != nil {
+		return "", fmt.Errorf("change.ChangeIDOf: commit %s: %w", commitSha, err)
+	}
+	return parseChangeID(c.Message), nil
+}
+
+// SetWorkingHead repoints an open change's head_commit. An empty head means the
+// change has no working commit yet, so the next snapshot roots on the line tip;
+// this is how undo-reconciliation restarts a working commit on the restored tip.
+func (e *Engine) SetWorkingHead(changeID, head string) error {
+	now := e.now().UTC().Format(time.RFC3339Nano)
+	if _, err := e.db.Exec(
+		`UPDATE change SET head_commit=?, updated_at=? WHERE id=?`,
+		head, now, changeID); err != nil {
+		return fmt.Errorf("change.SetWorkingHead: %w", err)
+	}
+	return nil
 }

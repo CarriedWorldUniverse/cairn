@@ -61,10 +61,10 @@ subcommands:
   init [dir]                bootstrap a repo (expresses main)
   clone <url> [dir]         import a remote repo and express its default branch
   express <branch>          materialize a branch folder (--from <parent>)
-  unexpress <branch>        remove a branch folder (--force to discard uncommitted changes)
+  unexpress <branch>        remove a branch folder (--force to discard un-sealed work)
   commit <branch> [-m msg]  seal the working change (stamps msg, starts a fresh change)
-  fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
-  abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
+  fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
+  abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
   diff [branch] | diff <a> <b>  show the working change vs its parent, or commit-vs-commit
   tree                          print the line tree
@@ -297,7 +297,7 @@ func cmdExpress(args []string) error {
 func cmdUnexpress(args []string) error {
 	fs := flag.NewFlagSet("unexpress", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -356,7 +356,7 @@ func cmdCommit(args []string) error {
 func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -374,7 +374,7 @@ func cmdFold(args []string) error {
 func cmdAbandon(args []string) error {
 	fs := flag.NewFlagSet("abandon", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	force := fs.Bool("force", false, "discard uncommitted changes")
+	force := fs.Bool("force", false, "discard un-sealed work")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}

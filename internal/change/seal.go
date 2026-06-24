@@ -139,22 +139,31 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	// view_before as the seal op's view_before and delete the snapshot op, so
 	// undoing the commit restores the line to its prior SEALED tip — not to the
 	// intermediate working snapshot.
+	//
+	// Find the most recent snapshot op FOR THIS CHANGE — not the global-last op.
+	// In a multi-branch repo a command-start SyncWorking snapshots every expressed
+	// branch, so the global-last op may belong to ANOTHER branch; keying on
+	// (op_type=snapshot, detail=ch.ID) absorbs the right one. Snapshots for one
+	// change coalesce into a single op (recordSnapshotOp), so there is exactly one
+	// to absorb.
 	sealBefore := before
-	var lastID, lastType, lastDetail, lastBeforeJSON string
+	var snapID, sealBeforeJSON string
 	switch err := tx.QueryRow(
-		`SELECT id, op_type, detail, view_before FROM operation ORDER BY id DESC LIMIT 1`).
-		Scan(&lastID, &lastType, &lastDetail, &lastBeforeJSON); {
-	case err == nil && lastType == opSnapshot && lastDetail == ch.ID:
+		`SELECT id, view_before FROM operation WHERE op_type=? AND detail=? ORDER BY id DESC LIMIT 1`,
+		opSnapshot, ch.ID).Scan(&snapID, &sealBeforeJSON); {
+	case err == nil:
 		var snapBefore map[string]string
-		if jerr := json.Unmarshal([]byte(lastBeforeJSON), &snapBefore); jerr != nil {
+		if jerr := json.Unmarshal([]byte(sealBeforeJSON), &snapBefore); jerr != nil {
 			return "", nil, fmt.Errorf("change.Seal: unmarshal snapshot view_before: %w", jerr)
 		}
 		sealBefore = snapBefore
-		if _, derr := tx.Exec(`DELETE FROM operation WHERE id=?`, lastID); derr != nil {
+		if _, derr := tx.Exec(`DELETE FROM operation WHERE id=?`, snapID); derr != nil {
 			return "", nil, fmt.Errorf("change.Seal: absorb snapshot op: %w", derr)
 		}
-	case err != nil && !errors.Is(err, sql.ErrNoRows):
-		return "", nil, fmt.Errorf("change.Seal: probe last op: %w", err)
+	case errors.Is(err, sql.ErrNoRows):
+		// No snapshot to absorb (e.g. an empty seal): keep the pre-seal view.
+	default:
+		return "", nil, fmt.Errorf("change.Seal: probe snapshot op: %w", err)
 	}
 
 	// Record a non-coalesced commit op in-tx (so view_after sees the new line tip),

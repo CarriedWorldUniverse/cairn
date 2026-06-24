@@ -64,6 +64,21 @@ func stripChangeID(m string) string {
 	return m
 }
 
+// parseChangeID extracts the Change-Id trailer value from a commit message, or
+// "" if the message carries no trailer. It locates the trailer the same way
+// stripChangeID does ("\n\nChange-Id:"), then trims the value to its first line.
+func parseChangeID(m string) string {
+	i := strings.LastIndex(m, "\n\nChange-Id:")
+	if i < 0 {
+		return ""
+	}
+	rest := m[i+len("\n\nChange-Id:"):]
+	if nl := strings.IndexByte(rest, '\n'); nl >= 0 {
+		rest = rest[:nl]
+	}
+	return strings.TrimSpace(rest)
+}
+
 // Log returns up to limit commits along first-parent ancestry from commit
 // (newest first). limit<=0 means unbounded (bounded by describeWalkCap).
 func (e *Engine) Log(commit string, limit int) ([]CommitInfo, error) {

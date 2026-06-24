@@ -124,9 +124,13 @@ func TestChmodOnlyIsDirty(t *testing.T) {
 		t.Fatal("dirty right after commit (should be clean)")
 	}
 
-	// chmod +x with no content change.
+	// chmod +x with no content change, then SyncWorking (as the CLI does via
+	// openRepoSynced) so the open working change captures the mode-only delta.
 	if err := os.Chmod(script, 0o755); err != nil {
 		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking (post-chmod): %v", err)
 	}
 	dirty, err := r.isDirty("exp")
 	if err != nil {
