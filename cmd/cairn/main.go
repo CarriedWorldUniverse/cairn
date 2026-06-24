@@ -66,25 +66,26 @@ subcommands:
   fold <branch>             fold a branch into its parent (--force to discard uncommitted changes)
   abandon <branch>          discard a branch's line (--force to discard uncommitted changes)
   status [branch]           report a branch's state (default: the root branch)
-  diff [branch] | <a> <b>   show changes (working-vs-tip, or commit-vs-commit)
-  tree                      print the line tree
-  ls                        list expressed branches
-  resolve <branch> <path>   resolve a conflict on a branch
-  remote                    list configured remotes
-  remote add <name> <url>   register a remote (--cairn for a cairn remote)
-  push [remote]             publish branches + tags (default origin, --force)
-  fetch [remote]            fetch a remote into tracking refs (default origin)
-  pull [remote]             fetch + reconcile each line (default origin)
-  log [branch] [-n N]       show commit history
-  show <commit>             show a commit's metadata + diff
-  undo                      revert the last operation
-  oplog                     show the operation history
-  config <key> [value]      get (one arg) or set (two args) a config value
-  tag <name> [branch]       tag the tip of a branch (default: root branch)
-  version [--target eco]    print the derived version (stdout only, CI-safe)
-  version bump <level>      record explicit bump intent (major|minor|patch)
-  release --target eco      cut a clean release: tag + stamp + publish (--dry-run)
+  diff [branch] | diff <a> <b>  show changes (working-vs-tip, or commit-vs-commit)
+  tree                          print the line tree
+  ls                            list expressed branches
+  resolve <branch> <path>       resolve a conflict on a branch
+  remote                        list configured remotes
+  remote add <name> <url>       register a remote (--cairn for a cairn remote)
+  push [remote]                 publish branches + tags (default origin, --force)
+  fetch [remote]                fetch a remote into tracking refs (default origin)
+  pull [remote]                 fetch + reconcile each line (default origin)
+  log [branch] [-n N]           show commit history
+  show <commit>                 show a commit's metadata + diff
+  undo                          revert the last operation
+  oplog                         show the operation history
+  config <key> [value]          get (one arg) or set (two args) a config value
+  tag <name> [branch]           tag the tip of a branch (default: root branch)
+  version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
+  version bump <level>          record explicit bump intent (major|minor|patch)
+  release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
 
+config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
 // run dispatches a subcommand. args is os.Args[1:].
@@ -163,8 +164,13 @@ func defaultAuthor() string {
 	return "cairn"
 }
 
-// openRepo opens a Repo from already-parsed flag values.
+// openRepo opens a Repo from already-parsed flag values. It refuses to open
+// (and thus silently bootstrap) a directory that has no .cairn sub-directory;
+// the caller should run `cairn init` first.
 func openRepo(repo, author string) (*worktree.Repo, error) {
+	if fi, err := os.Stat(filepath.Join(repo, ".cairn")); err != nil || !fi.IsDir() {
+		return nil, fmt.Errorf("not a cairn repo (run 'cairn init' here first)")
+	}
 	return worktree.Open(repo, author)
 }
 
@@ -185,12 +191,21 @@ func cmdInit(args []string) error {
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
 	}
+	// Re-init guard: if .cairn already exists, silently succeed (no-op, exit 0).
+	if fi, err := os.Stat(filepath.Join(dir, ".cairn")); err == nil && fi.IsDir() {
+		fmt.Fprintf(os.Stderr, "cairn: already a cairn repo at %s\n", dir)
+		return nil
+	}
 	r, err := worktree.Open(dir, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
-	fmt.Printf("initialized cairn repo at %s\n", dir)
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: initialized; edit files in %s/\n", filepath.Join(dir, branch))
 	return nil
 }
 
@@ -213,12 +228,16 @@ func cmdClone(args []string) error {
 	if dir == "" {
 		return errors.New("cannot derive destination dir from url; pass it explicitly")
 	}
+	// Refuse to clone into a non-empty directory to avoid clobbering existing work.
+	if ents, err := os.ReadDir(dir); err == nil && len(ents) > 0 {
+		return fmt.Errorf("destination %s already exists and is not empty", dir)
+	}
 	r, err := worktree.Clone(url, dir, *author)
 	if err != nil {
 		return mapRemoteErr(err)
 	}
 	defer r.Close()
-	fmt.Printf("cloned %s -> %s\n", url, dir)
+	fmt.Fprintf(os.Stderr, "cairn: cloned %s -> %s\n", url, dir)
 	return nil
 }
 
@@ -560,7 +579,7 @@ func cmdRemoteAdd(args []string) error {
 	if err := r.AddRemote(name, url, kind); err != nil {
 		return mapErr(err)
 	}
-	fmt.Printf("%s  %s  (%s)\n", name, url, kind)
+	fmt.Fprintf(os.Stderr, "cairn: added remote %s  %s  (%s)\n", name, url, kind)
 	return nil
 }
 
@@ -699,7 +718,7 @@ func cmdConfig(args []string) error {
 	if err := r.SetConfig(key, value); err != nil {
 		return mapErr(err)
 	}
-	fmt.Printf("set %s=%s\n", key, value)
+	fmt.Fprintf(os.Stderr, "cairn: set %s=%s\n", key, value)
 	return nil
 }
 

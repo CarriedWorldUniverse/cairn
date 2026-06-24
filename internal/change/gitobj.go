@@ -108,7 +108,7 @@ func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) 
 	// that would emit two entries with the same name (an invalid git tree).
 	for name := range immediate {
 		if _, ok := subdirs[name]; ok {
-			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: name %q used as both file and directory", name)
+			return plumbing.ZeroHash, fmt.Errorf("cannot commit: %q exists as both a file and a directory at the same level", name)
 		}
 	}
 
