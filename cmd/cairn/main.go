@@ -579,7 +579,7 @@ func cmdRemoteAdd(args []string) error {
 	if err := r.AddRemote(name, url, kind); err != nil {
 		return mapErr(err)
 	}
-	fmt.Printf("%s  %s  (%s)\n", name, url, kind)
+	fmt.Fprintf(os.Stderr, "cairn: added remote %s  %s  (%s)\n", name, url, kind)
 	return nil
 }
 
