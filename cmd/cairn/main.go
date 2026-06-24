@@ -20,6 +20,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,6 +86,10 @@ subcommands:
   version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
+  stash [-m msg]            shelve the working change; reset the folder to the sealed state
+  stash pop                 restore the most recent stash
+  stash list                list the stash stack
+  stash drop [id]           discard a stash (default: most recent)
 
 config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
@@ -150,6 +155,8 @@ func run(args []string) error {
 		return cmdVersion(rest)
 	case "release":
 		return cmdRelease(rest)
+	case "stash":
+		return cmdStash(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -1145,4 +1152,130 @@ func mapErr(err error) error {
 	default:
 		return err
 	}
+}
+
+// cmdStash dispatches stash sub-commands: pop, list, drop, or push (default).
+func cmdStash(args []string) error {
+	if len(args) > 0 {
+		switch args[0] {
+		case "pop":
+			return cmdStashPop(args[1:])
+		case "list":
+			return cmdStashList(args[1:])
+		case "drop":
+			return cmdStashDrop(args[1:])
+		}
+	}
+	return cmdStashPush(args)
+}
+
+// cmdStashPush shelves the working change and resets the folder to the sealed tip.
+func cmdStashPush(args []string) error {
+	// Strip a leading literal "push" sub-verb if present.
+	if len(args) > 0 && args[0] == "push" {
+		args = args[1:]
+	}
+	fs := flag.NewFlagSet("stash", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	msg := fs.String("m", "", "stash message")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		return mapErr(err)
+	}
+	if err := r.Stash(branch, *msg); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: shelved working changes; folder reset to %s's sealed state\n", branch)
+	return nil
+}
+
+// cmdStashPop restores the most recent stash entry onto the working branch.
+func cmdStashPop(args []string) error {
+	fs := flag.NewFlagSet("stash pop", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	branch, err := r.DefaultBranch()
+	if err != nil {
+		return mapErr(err)
+	}
+	if err := r.StashPop(branch); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintln(os.Stderr, "cairn: restored the most recent stash")
+	return nil
+}
+
+// cmdStashList prints the stash stack to stdout, newest first.
+func cmdStashList(args []string) error {
+	fs := flag.NewFlagSet("stash list", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	entries, err := r.StashList()
+	if err != nil {
+		return mapErr(err)
+	}
+	if len(entries) == 0 {
+		fmt.Fprintln(os.Stderr, "cairn: no stashes")
+		return nil
+	}
+	for _, s := range entries {
+		date := s.CreatedAt
+		if t, terr := time.Parse(time.RFC3339Nano, s.CreatedAt); terr == nil {
+			date = t.Format("2006-01-02")
+		} else if t, terr := time.Parse(time.RFC3339, s.CreatedAt); terr == nil {
+			date = t.Format("2006-01-02")
+		}
+		fmt.Printf("%-4d %-12s %s  %s\n", s.ID, s.Branch, date, s.Message)
+	}
+	return nil
+}
+
+// cmdStashDrop discards a stash entry. An optional positional id selects the
+// entry (default 0 = top of stack).
+func cmdStashDrop(args []string) error {
+	fs := flag.NewFlagSet("stash drop", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	var id int64
+	if fs.NArg() > 0 {
+		var parseErr error
+		id, parseErr = strconv.ParseInt(fs.Arg(0), 10, 64)
+		if parseErr != nil {
+			return fmt.Errorf("invalid stash id %q: %w", fs.Arg(0), parseErr)
+		}
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.StashDrop(id); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintln(os.Stderr, "cairn: stash entry discarded")
+	return nil
 }
