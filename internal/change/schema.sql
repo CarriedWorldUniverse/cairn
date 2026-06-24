@@ -67,5 +67,15 @@ CREATE TABLE IF NOT EXISTS stash (
   message TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS bisect (
+  id          INTEGER PRIMARY KEY CHECK (id = 1),
+  line_id     TEXT NOT NULL,
+  branch      TEXT NOT NULL,
+  good_sha    TEXT NOT NULL,
+  bad_sha     TEXT NOT NULL,
+  current_sha TEXT NOT NULL,
+  restore_tip TEXT NOT NULL,
+  started_at  TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_change_line ON change(line_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_change ON conflict(change_id);
