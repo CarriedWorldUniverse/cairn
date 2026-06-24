@@ -15,6 +15,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,6 +27,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 // Publisher/probe seams, overridable in tests.
@@ -213,7 +215,7 @@ func cmdClone(args []string) error {
 	}
 	r, err := worktree.Clone(url, dir, *author)
 	if err != nil {
-		return mapErr(err)
+		return mapRemoteErr(err)
 	}
 	defer r.Close()
 	fmt.Printf("cloned %s -> %s\n", url, dir)
@@ -599,7 +601,7 @@ func cmdPush(args []string) error {
 	// layer deliberately avoids. A merge that conflicts surfaces as a non-nil
 	// "resolve, then push" error mapped to stderr below.
 	if err := r.Push(remote, *force); err != nil {
-		return mapErr(err)
+		return mapRemoteErr(err)
 	}
 	fmt.Printf("pushed -> %s\n", remote)
 	return nil
@@ -623,7 +625,7 @@ func cmdFetch(args []string) error {
 	}
 	defer r.Close()
 	if err := r.Fetch(remote); err != nil {
-		return mapErr(err)
+		return mapRemoteErr(err)
 	}
 	fmt.Printf("fetched <- %s\n", remote)
 	return nil
@@ -650,7 +652,7 @@ func cmdPull(args []string) error {
 	defer r.Close()
 	sum, err := r.Pull(remote)
 	if err != nil {
-		return mapErr(err)
+		return mapRemoteErr(err)
 	}
 	anyConflicts := false
 	for _, lr := range sum.Lines {
@@ -1010,6 +1012,33 @@ func cmdShow(args []string) error {
 		}
 	}
 	return nil
+}
+
+// mapRemoteErr translates go-git transport/network failures into actionable
+// guidance. It falls through to mapErr for anything it doesn't recognize.
+func mapRemoteErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch {
+	case errors.Is(err, transport.ErrAuthenticationRequired),
+		errors.Is(err, transport.ErrAuthorizationFailed):
+		return errors.New("authentication failed — set $CAIRN_TOKEN (a personal access token) for an HTTPS remote, or check your ssh-agent/key for an SSH remote")
+	case errors.Is(err, transport.ErrRepositoryNotFound):
+		return errors.New("repository not found — check the remote URL and that you have access")
+	}
+	// Network-shaped failures (no typed sentinel): match by shape/substring.
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return errors.New("could not reach the remote — check the URL and your network connection")
+	}
+	msg := err.Error()
+	for _, s := range []string{"no such host", "connection refused", "i/o timeout", "network is unreachable", "dial tcp"} {
+		if strings.Contains(msg, s) {
+			return errors.New("could not reach the remote — check the URL and your network connection")
+		}
+	}
+	return mapErr(err)
 }
 
 // mapErr translates change-engine sentinels into operator-facing messages.
