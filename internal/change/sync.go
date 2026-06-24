@@ -50,6 +50,7 @@ func (e *Engine) fetchTracking(remoteName string) error {
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
+			"+refs/cairn/*:refs/cairn/*",
 		},
 		Tags: git.AllTags,
 		Auth: auth,

@@ -132,6 +132,7 @@ func (e *Engine) fetchRemote(url string) error {
 		RefSpecs: []config.RefSpec{
 			"+refs/heads/*:refs/heads/*",
 			"+refs/tags/*:refs/tags/*",
+			"+refs/cairn/*:refs/cairn/*",
 		},
 		Tags: git.AllTags,
 		Auth: auth,

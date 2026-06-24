@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // RemoteInfo describes a configured remote: its name, its first configured URL,
@@ -145,11 +146,24 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 		return fmt.Errorf("%s: %w", label, err)
 	}
 
-	// Remote kind seam: a "cairn" remote will eventually receive a full-fidelity
-	// push (refs/cairn/* + catalogue reconstruction). That is deferred; for now
-	// both "git" and "cairn" remotes take the standard git projection below, and
-	// we never push refs/cairn/* to a remote.
-	_ = e.remoteKind(remoteName)
+	// Remote kind seam: a "cairn" remote receives a full-fidelity push that
+	// includes refs/cairn/meta (the serialized change-graph snapshot). A plain
+	// "git" remote receives only the standard heads/tags projection (no cairn refs).
+	if e.remoteKind(remoteName) == "cairn" {
+		metaCommit, err := e.ExportMeta()
+		if err != nil {
+			return fmt.Errorf("%s: meta: %w", label, err)
+		}
+		if err := e.git.Storer.SetReference(
+			plumbing.NewHashReference(
+				plumbing.ReferenceName("refs/cairn/meta"),
+				plumbing.NewHash(metaCommit),
+			),
+		); err != nil {
+			return fmt.Errorf("%s: set meta ref: %w", label, err)
+		}
+		refSpecs = append(refSpecs, config.RefSpec("refs/cairn/meta:refs/cairn/meta"))
+	}
 
 	auth, err := e.authForRemote(rem)
 	if err != nil {
