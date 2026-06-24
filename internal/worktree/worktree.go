@@ -1012,8 +1012,13 @@ func (r *Repo) BisectStart(branch, good, bad string) (change.BisectStep, error) 
 	if err != nil {
 		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
 	}
-	if err := r.materializeBisect(branch, step); err != nil {
-		return change.BisectStep{}, err
+	// An immediate-done start creates NO session and tested nothing — leave the
+	// folder at the working tip rather than materializing a historical commit with
+	// no session to suspend the auto-snapshot. Only a real midpoint is shown.
+	if !step.Done {
+		if err := r.materializeBisect(branch, step); err != nil {
+			return change.BisectStep{}, err
+		}
 	}
 	return step, nil
 }
@@ -1057,32 +1062,25 @@ func (r *Repo) BisectSkip() (change.BisectStep, error) {
 	return step, nil
 }
 
-// BisectReset clears the session and restores the working folder to the line tip.
-// While a session is active it restores the session branch from the recorded
-// restore tip. After convergence (the engine deleted the session on the final
-// mark, so the folder is left displaying the first-bad commit) there is no session
-// to clear; it then re-materializes every expressed branch to its line tip — the
-// catalogue is never mutated during bisect, so the line tip IS the working tip.
+// BisectReset is the sole place a bisect session is cleared. It restores the
+// session branch's folder to the recorded restore tip (the line tip captured at
+// start) and deletes the session. The session stays alive through the done state
+// (after convergence) precisely so the auto-snapshot stays suspended until here —
+// so reset always finds a live session unless none was ever started.
 func (r *Repo) BisectReset() error {
 	info, err := r.eng.BisectInfo()
 	if err != nil {
 		return fmt.Errorf("worktree.BisectReset: %w", err)
 	}
 	if !info.Active {
-		// No live session (e.g. bisect converged): restore every expressed folder
-		// to its line tip so a midpoint/first-bad left on disk is cleared.
-		for branch, entry := range r.st.Expressed {
-			if err := r.rematerialize(branch, entry); err != nil {
-				return err
-			}
-		}
-		return nil
+		return errors.New("worktree.BisectReset: no bisect in progress")
 	}
+	branch := info.Branch
 	tip, err := r.eng.BisectReset()
 	if err != nil {
 		return fmt.Errorf("worktree.BisectReset: %w", err)
 	}
-	if entry, ok := r.st.Expressed[info.Branch]; ok && tip != "" {
+	if entry, ok := r.st.Expressed[branch]; ok && tip != "" {
 		if err := Materialize(r.eng, r.cacheDir(), tip, filepath.Join(r.root, entry.Path)); err != nil {
 			return fmt.Errorf("worktree.BisectReset: %w", err)
 		}

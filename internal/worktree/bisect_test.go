@@ -98,3 +98,81 @@ func TestSyncWorkingSuspendedDuringBisect(t *testing.T) {
 		t.Fatal("SyncWorking still a no-op after reset; working head unchanged")
 	}
 }
+
+// TestSyncWorkingSuspendedAfterConvergence is the data-corruption regression test:
+// after a bisect CONVERGES (Done) but before reset, the session must stay alive so
+// SyncWorking remains suspended — otherwise the next command would snapshot the
+// historical first-bad commit (left in the folder) into the open working change.
+func TestSyncWorkingSuspendedAfterConvergence(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "tester")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := r.Express("feat", ""); err != nil {
+		t.Fatalf("Express: %v", err)
+	}
+	var good, bad string
+	for i := 0; i < 6; i++ {
+		sha := sealCommit(t, r, "feat", "step.txt", string(rune('a'+i))+"\n")
+		if i == 0 {
+			good = sha
+		}
+		bad = sha
+	}
+	entry := r.st.Expressed["feat"]
+	chBefore, _ := r.eng.GetChange(entry.ChangeID)
+	headBefore := chBefore.HeadCommit
+
+	// Drive to convergence by always marking "bad".
+	step, err := r.BisectStart("feat", good, bad)
+	if err != nil {
+		t.Fatalf("BisectStart: %v", err)
+	}
+	for !step.Done {
+		if step, err = r.BisectMark("bad"); err != nil {
+			t.Fatalf("BisectMark: %v", err)
+		}
+	}
+	if step.FirstBad == "" {
+		t.Fatal("converged with empty FirstBad")
+	}
+
+	// CONVERGED, NOT reset: the session must still be active (suspend still in force).
+	if active, _ := r.BisectActive(); !active {
+		t.Fatal("BisectActive() false after convergence; the post-convergence window would corrupt the working change")
+	}
+	// A command edits/reads the folder + SyncWorking → must be a no-op.
+	if err := os.WriteFile(filepath.Join(root, "feat", "step.txt"), []byte("HISTORICAL\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.SyncWorking(); err != nil {
+		t.Fatalf("SyncWorking after convergence: %v", err)
+	}
+	chAfter, _ := r.eng.GetChange(entry.ChangeID)
+	if chAfter.HeadCommit != headBefore {
+		t.Fatalf("working head corrupted post-convergence: before=%s after=%s", headBefore, chAfter.HeadCommit)
+	}
+
+	// reset restores the folder to the working tip and clears the session.
+	if err := r.BisectReset(); err != nil {
+		t.Fatalf("BisectReset: %v", err)
+	}
+	if active, _ := r.BisectActive(); active {
+		t.Fatal("BisectActive() true after reset")
+	}
+}
+
+// TestBisectResetNoSession: reset with no session in progress errors cleanly.
+func TestBisectResetNoSession(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "tester")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := r.BisectReset(); err == nil {
+		t.Fatal("BisectReset with no session: want error, got nil")
+	}
+}

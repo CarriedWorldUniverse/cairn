@@ -14,6 +14,8 @@ type BisectInfo struct {
 	Branch             string
 	Good, Bad, Current string
 	CandidatesLeft     int
+	Done               bool   // bounds are adjacent — Current is the first bad commit
+	FirstBad           string // the answer, when Done
 }
 
 // BisectStep is the outcome of a bisect transition: either the next commit to
@@ -86,8 +88,14 @@ func (e *Engine) BisectInfo() (BisectInfo, error) {
 	gi := chainIndex(chain, s.good)
 	bi := chainIndex(chain, s.bad)
 	left := 0
+	done := false
+	firstBad := ""
 	if gi >= 0 && bi >= 0 {
 		left = bi - gi
+		if bi == gi+1 {
+			done = true
+			firstBad = s.bad
+		}
 	}
 	return BisectInfo{
 		Active:         true,
@@ -96,6 +104,8 @@ func (e *Engine) BisectInfo() (BisectInfo, error) {
 		Bad:            s.bad,
 		Current:        s.current,
 		CandidatesLeft: left,
+		Done:           done,
+		FirstBad:       firstBad,
 	}, nil
 }
 
@@ -167,6 +177,12 @@ func (e *Engine) BisectMark(verdict string) (BisectStep, error) {
 		return BisectStep{}, errors.New("change.BisectMark: session refers to a commit no longer on the line")
 	}
 
+	// Already converged: re-report the answer idempotently, change nothing. (The
+	// session stays alive until reset, so a stray mark after Done is harmless.)
+	if bi == gi+1 {
+		return BisectStep{Done: true, FirstBad: chain[bi].Commit}, nil
+	}
+
 	switch verdict {
 	case "good":
 		// The regression is AFTER current: raise the lower bound.
@@ -184,15 +200,22 @@ func (e *Engine) BisectMark(verdict string) (BisectStep, error) {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Converged: the first bad commit is the upper bound.
+	// Converged: the first bad commit is the upper bound. KEEP the session alive
+	// (in this done state) so the auto-snapshot stays suspended — the folder still
+	// holds the historical first-bad commit, and only `reset` clears the session
+	// and restores the working tip. Deleting here would let the next command
+	// snapshot the historical commit into the working change.
 	if bi == gi+1 {
-		if _, err := tx.Exec(`DELETE FROM bisect WHERE id=1`); err != nil {
-			return BisectStep{}, fmt.Errorf("change.BisectMark: clear session: %w", err)
+		firstBad := chain[bi].Commit
+		if _, err := tx.Exec(
+			`UPDATE bisect SET good_sha=?, bad_sha=?, current_sha=? WHERE id=1`,
+			chain[gi].Commit, firstBad, firstBad); err != nil {
+			return BisectStep{}, fmt.Errorf("change.BisectMark: finalize session: %w", err)
 		}
 		if err := tx.Commit(); err != nil {
 			return BisectStep{}, fmt.Errorf("change.BisectMark: commit tx: %w", err)
 		}
-		return BisectStep{Done: true, FirstBad: chain[bi].Commit}, nil
+		return BisectStep{Done: true, FirstBad: firstBad}, nil
 	}
 
 	mi := gi + (bi-gi)/2
@@ -225,11 +248,14 @@ func (e *Engine) BisectSkip() (BisectStep, error) {
 		return BisectStep{}, fmt.Errorf("change.BisectSkip: %w", err)
 	}
 	gi := chainIndex(chain, s.good)
+	bi := chainIndex(chain, s.bad)
 	ci := chainIndex(chain, s.current)
-	if gi < 0 || ci < 0 {
+	if gi < 0 || bi < 0 || ci < 0 {
 		return BisectStep{}, errors.New("change.BisectSkip: session refers to a commit no longer on the line")
 	}
-	if ci-1 <= gi {
+	// The new candidate must stay strictly inside the (good, bad) range — never the
+	// known-good lower bound nor at/above the known-bad upper bound.
+	if ci-1 <= gi || ci-1 >= bi {
 		return BisectStep{}, errors.New("cannot narrow further — adjacent commits skipped")
 	}
 	current := chain[ci-1].Commit
@@ -242,14 +268,22 @@ func (e *Engine) BisectSkip() (BisectStep, error) {
 // BisectReset clears the session and returns the recorded restore tip (the line
 // tip captured at start), so the caller can put the folder back.
 func (e *Engine) BisectReset() (restoreTip string, err error) {
-	switch err := e.db.QueryRow(`SELECT restore_tip FROM bisect WHERE id=1`).Scan(&restoreTip); {
+	tx, err := e.db.Begin()
+	if err != nil {
+		return "", fmt.Errorf("change.BisectReset: begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	switch err := tx.QueryRow(`SELECT restore_tip FROM bisect WHERE id=1`).Scan(&restoreTip); {
 	case errors.Is(err, sql.ErrNoRows):
 		return "", errors.New("no bisect in progress")
 	case err != nil:
 		return "", fmt.Errorf("change.BisectReset: %w", err)
 	}
-	if _, err := e.db.Exec(`DELETE FROM bisect WHERE id=1`); err != nil {
+	if _, err := tx.Exec(`DELETE FROM bisect WHERE id=1`); err != nil {
 		return "", fmt.Errorf("change.BisectReset: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("change.BisectReset: commit tx: %w", err)
 	}
 	return restoreTip, nil
 }

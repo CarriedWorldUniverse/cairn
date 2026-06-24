@@ -114,9 +114,25 @@ func TestBisectFindsFirstBad(t *testing.T) {
 		t.Fatalf("FirstBad = %s (S%d), want S4 (%s)", step.FirstBad, idx+1, S4)
 	}
 
-	// Session is cleared once Done.
+	// The session STAYS ALIVE in a done state until reset (so the auto-snapshot
+	// stays suspended while the historical first-bad is in the folder). BisectInfo
+	// reports Done; only BisectReset clears it.
+	if active, _ := e.BisectActive(); !active {
+		t.Fatal("BisectActive() = false after Done, want true (session persists until reset)")
+	}
+	if info, _ := e.BisectInfo(); !info.Done || info.FirstBad != S4 {
+		t.Fatalf("BisectInfo after Done = {Done:%v FirstBad:%s}, want {true %s}", info.Done, info.FirstBad, S4)
+	}
+	// A redundant mark after Done is idempotent (re-reports, no error/change).
+	if again, err := e.BisectMark("bad"); err != nil || !again.Done || again.FirstBad != S4 {
+		t.Fatalf("BisectMark after Done = (%+v, %v), want idempotent Done/%s", again, err, S4)
+	}
+	// reset clears it.
+	if _, err := e.BisectReset(); err != nil {
+		t.Fatalf("BisectReset: %v", err)
+	}
 	if active, _ := e.BisectActive(); active {
-		t.Fatal("BisectActive() = true after Done, want false")
+		t.Fatal("BisectActive() = true after reset, want false")
 	}
 }
 
