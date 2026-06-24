@@ -1127,6 +1127,42 @@ func (r *Repo) Drop(commit string) (change.CommitResult, error) {
 	})
 }
 
+// CherryPick applies the delta of the given commit onto branch as a new sealed
+// commit, then rebases the open working change on top. The result carries the
+// new line tip and any conflicts (conflicts-as-data). If branch is expressed its
+// folder is re-materialized to reflect the pick.
+func (r *Repo) CherryPick(branch, commit string) (change.CommitResult, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+	}
+	newID, conflicts, err := r.eng.CherryPick(commit, line.ID)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+	}
+	// Pick-level conflicts are recorded on the NEW sealed change the pick mints,
+	// but resolve/status operate on the working change W (entry.ChangeID). Mirror
+	// Commit: reassign the pick conflicts from newID onto W so they're reachable.
+	// (W-rebase conflicts are already on W, so this consolidates ALL conflicts.)
+	if len(conflicts) > 0 {
+		if entry, ok := r.st.Expressed[branch]; ok {
+			if err := r.eng.ReassignConflicts(newID, entry.ChangeID); err != nil {
+				return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+			}
+		}
+	}
+	if entry, ok := r.st.Expressed[branch]; ok {
+		if err := r.rematerialize(branch, entry); err != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+		}
+	}
+	line, err = r.eng.LineByName(branch)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+	}
+	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts}, nil
+}
+
 // isDirty reports whether the branch has un-sealed work: a non-empty delta in
 // its OPEN working change vs that change's parent commit. Under working-copy-is-
 // a-commit the expressed folder always equals the working commit (line tip) after

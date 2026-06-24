@@ -93,6 +93,7 @@ subcommands:
   reword <commit> <message> change the message of a sealed commit (history edit)
   squash <commit>           fold a sealed commit into its parent (history edit)
   drop <commit>             remove a sealed commit from its line (history edit)
+  cherry-pick <commit> [branch]  apply a commit from another line onto your branch
 
 config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
@@ -166,6 +167,8 @@ func run(args []string) error {
 		return cmdSquash(rest)
 	case "drop":
 		return cmdDrop(rest)
+	case "cherry-pick":
+		return cmdCherryPick(rest)
 	default:
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
@@ -1363,6 +1366,51 @@ func cmdDrop(args []string) error {
 		return mapErr(err)
 	}
 	return reportEdit(res, "drop")
+}
+
+// cmdCherryPick applies the delta of a given commit onto a branch as a new
+// sealed commit (original message, fresh change-id), rebasing the open working
+// change on top. Conflicts are returned as data (exit 2) so the operator can
+// resolve them and continue.
+//
+// Usage: cairn cherry-pick [--repo dir] <commit> [branch]
+// branch defaults to the structural root when omitted.
+func cmdCherryPick(args []string) error {
+	fs := flag.NewFlagSet("cherry-pick", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn cherry-pick <commit> [branch]")
+	}
+	commit := fs.Arg(0)
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	var branch string
+	if fs.NArg() > 1 {
+		branch = fs.Arg(1)
+	} else if branch, err = r.DefaultBranch(); err != nil {
+		return mapErr(err)
+	}
+	res, err := r.CherryPick(branch, commit)
+	if err != nil {
+		return mapErr(err)
+	}
+	if len(res.Conflicts) > 0 {
+		paths := make([]string, 0, len(res.Conflicts))
+		for _, c := range res.Conflicts {
+			paths = append(paths, c.Path)
+		}
+		fmt.Fprintf(os.Stderr, "cherry-pick: %d conflict(s) in: %s — resolve, then commit\n", len(res.Conflicts), strings.Join(paths, ", "))
+		return errConflicts
+	}
+	fmt.Println(res.HeadCommit)
+	fmt.Fprintln(os.Stderr, "cairn: cherry-picked")
+	return nil
 }
 
 // cmdStashDrop discards a stash entry. An optional positional id selects the
