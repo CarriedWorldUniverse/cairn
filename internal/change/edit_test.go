@@ -5,6 +5,52 @@ import (
 	"testing"
 )
 
+// buildChildLineWith3SealedSameFile forks a child line off main and seals three
+// commits on it (S1,S2,S3), each modifying the SAME file "x.txt" with different
+// content. It returns the child line id, sealed commit shas, change-ids, and
+// messages in base→top order.
+func buildChildLineWith3SealedSameFile(t *testing.T, e *Engine) (childLineID string, commits, changeIDs []string, msgs []string) {
+	t.Helper()
+	main, err := e.LineByName("main")
+	if err != nil {
+		t.Fatalf("LineByName(main): %v", err)
+	}
+	// Seed main with a base so the child has a real fork point.
+	seedLineTip(t, e, main.ID, map[string][]byte{"base.txt": []byte("base\n")})
+
+	child, err := e.CreateLine("child", main.ID)
+	if err != nil {
+		t.Fatalf("CreateLine(child): %v", err)
+	}
+
+	// Each step modifies x.txt with successive content.
+	contents := []string{"1\n", "2\n", "3\n"}
+	msgs = []string{"S1", "S2", "S3"}
+	cur := openChange(t, e, child.ID)
+	for i, m := range msgs {
+		if _, _, err := e.SnapshotWorking(cur, map[string]TreeEntry{
+			"x.txt": blobEntry(t, e, contents[i]),
+		}); err != nil {
+			t.Fatalf("SnapshotWorking %s: %v", m, err)
+		}
+		next, conflicts, err := e.Seal(cur, m)
+		if err != nil {
+			t.Fatalf("Seal %s: %v", m, err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("Seal %s conflicts = %d, want 0", m, len(conflicts))
+		}
+		sealed, err := e.GetChange(cur)
+		if err != nil {
+			t.Fatalf("GetChange(sealed %s): %v", m, err)
+		}
+		commits = append(commits, sealed.HeadCommit)
+		changeIDs = append(changeIDs, sealed.ID)
+		cur = next
+	}
+	return child.ID, commits, changeIDs, msgs
+}
+
 // buildChildLineWith3Sealed forks a child line off main and seals three commits
 // on it (S1,S2,S3), each snapshotting one file. It returns the child line id and
 // the three sealed commit shas / change-ids in base→top order.
@@ -454,5 +500,149 @@ func TestRewordByChangeIdRobust(t *testing.T) {
 	// Change-id of S1 must be preserved across the rewrite.
 	if chain[0].ChangeID != changeIDs[0] {
 		t.Errorf("chain[0].ChangeID = %q, want %q (preserved)", chain[0].ChangeID, changeIDs[0])
+	}
+}
+
+// TestDropIndependent: S1 adds s1.txt, S2 adds s2.txt, S3 adds s3.txt (each
+// touches a DIFFERENT file). Drop(S2commit) removes S2 cleanly — no conflicts,
+// chain shrinks to 2 steps, s2.txt is absent from tip, s1.txt and s3.txt are
+// present (merged in via the 3-way rebase), S2's change-id row is deleted.
+func TestDropIndependent(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, _ := buildChildLineWith3Sealed(t, e)
+
+	conflicts, err := e.Drop(commits[1]) // S2 (adds s2.txt)
+	if err != nil {
+		t.Fatalf("Drop(S2): %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Drop(S2) conflicts = %d, want 0 (independent files)", len(conflicts))
+	}
+
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after Drop: %v", err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("chain len = %d, want 2 (3 minus dropped)", len(chain))
+	}
+
+	// S2's change-id row must be deleted.
+	if _, err := e.GetChange(changeIDs[1]); err == nil {
+		t.Errorf("GetChange(S2 change-id) returned no error — row should have been deleted")
+	}
+
+	// The chain[1] (rewritten S3) commit tree should have s1.txt and s3.txt merged
+	// in, but NOT s2.txt. The 3-way merge of (base=S2's tree={s2.txt},
+	// ours=S1's rebuilt tree={s1.txt}, theirs=S3's tree={s3.txt}) produces
+	// {s1.txt, s3.txt}: s2.txt was deleted from both sides (absent in ours/theirs),
+	// s1.txt added by ours, s3.txt added by theirs.
+	tipFiles, err := e.Files(chain[1].Commit)
+	if err != nil {
+		t.Fatalf("Files(tip): %v", err)
+	}
+	if _, ok := tipFiles["s2.txt"]; ok {
+		t.Errorf("s2.txt present in tip tree after Drop(S2) — should have been removed")
+	}
+	if _, ok := tipFiles["s1.txt"]; !ok {
+		t.Errorf("s1.txt missing from tip tree after Drop(S2)")
+	}
+	if _, ok := tipFiles["s3.txt"]; !ok {
+		t.Errorf("s3.txt missing from tip tree after Drop(S2)")
+	}
+}
+
+// TestDropDependentConflicts: S1 creates x.txt="1\n", S2 changes x.txt="2\n",
+// S3 changes x.txt="3\n" (all touch the SAME file). Drop(S2commit) → returns
+// conflicts (len>0); the rewrite still COMPLETES (S2's change-id deleted, chain
+// has 2 steps); the conflict is recorded on S3's change.
+func TestDropDependentConflicts(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, _ := buildChildLineWith3SealedSameFile(t, e)
+
+	conflicts, err := e.Drop(commits[1]) // S2 (changes x.txt "1\n"→"2\n")
+	if err != nil {
+		t.Fatalf("Drop(S2): %v", err)
+	}
+	if len(conflicts) == 0 {
+		t.Fatalf("Drop(S2) conflicts = 0, want >0 (S3 depends on S2's x.txt change)")
+	}
+
+	// The rewrite still completed: chain has 2 steps, S2's change-id is deleted.
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after Drop: %v", err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("chain len = %d, want 2 (3 minus dropped)", len(chain))
+	}
+	if _, err := e.GetChange(changeIDs[1]); err == nil {
+		t.Errorf("GetChange(S2 change-id) returned no error — row should have been deleted")
+	}
+
+	// The conflict is recorded on S3's change.
+	s3Conflicts, err := e.Conflicts(changeIDs[2])
+	if err != nil {
+		t.Fatalf("Conflicts(S3): %v", err)
+	}
+	if len(s3Conflicts) == 0 {
+		t.Fatalf("Conflicts(S3) = 0, want >0 — conflict should be recorded on S3's change")
+	}
+	// The conflict path should be x.txt.
+	if s3Conflicts[0].Path != "x.txt" {
+		t.Errorf("conflict path = %q, want %q", s3Conflicts[0].Path, "x.txt")
+	}
+	// The tip's x.txt content should contain conflict markers (diff3).
+	tipFiles, err := e.Files(chain[1].Commit)
+	if err != nil {
+		t.Fatalf("Files(S3 tip): %v", err)
+	}
+	xContent := string(tipFiles["x.txt"])
+	if !strings.Contains(xContent, "<<<<<<<") && !strings.Contains(xContent, "|||||||") {
+		t.Errorf("x.txt at tip = %q; want conflict markers (<<<<<<< or |||||||)", xContent)
+	}
+}
+
+// TestDropFirstCommit: Drop(S1commit) (idx==0) succeeds; S1 gone; S2/S3 rebase
+// onto the base (their independent files survive).
+func TestDropFirstCommit(t *testing.T) {
+	e := newTestEngine(t)
+	childID, commits, changeIDs, _ := buildChildLineWith3Sealed(t, e)
+
+	conflicts, err := e.Drop(commits[0]) // S1 (adds s1.txt)
+	if err != nil {
+		t.Fatalf("Drop(S1): %v", err)
+	}
+	if len(conflicts) != 0 {
+		t.Fatalf("Drop(S1) conflicts = %d, want 0 (independent files)", len(conflicts))
+	}
+
+	chain, err := e.sealedChain(childID)
+	if err != nil {
+		t.Fatalf("sealedChain after Drop(S1): %v", err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("chain len = %d, want 2 (3 minus S1)", len(chain))
+	}
+
+	// S1's change-id row must be deleted.
+	if _, err := e.GetChange(changeIDs[0]); err == nil {
+		t.Errorf("GetChange(S1 change-id) returned no error — row should have been deleted")
+	}
+
+	// S2 and S3 survive: their files are present at the tip.
+	tipFiles, err := e.Files(chain[1].Commit)
+	if err != nil {
+		t.Fatalf("Files(tip after Drop(S1)): %v", err)
+	}
+	if _, ok := tipFiles["s2.txt"]; !ok {
+		t.Errorf("s2.txt missing from tip after Drop(S1)")
+	}
+	if _, ok := tipFiles["s3.txt"]; !ok {
+		t.Errorf("s3.txt missing from tip after Drop(S1)")
+	}
+	// s1.txt was only added by S1; it should be absent from the tip.
+	if _, ok := tipFiles["s1.txt"]; ok {
+		t.Errorf("s1.txt present in tip after Drop(S1) — should have been removed")
 	}
 }

@@ -396,6 +396,20 @@ func (e *Engine) Squash(commit string) ([]Conflict, error) {
 	return e.rewriteChain(lineID, newSeq)
 }
 
+// Drop removes the sealed commit `commit` from its line, 3-way-rebasing every
+// later commit onto the gap. A later commit that depended on the dropped one
+// records a conflict (data); the rewrite still completes.
+func (e *Engine) Drop(commit string) ([]Conflict, error) {
+	lineID, chain, idx, err := e.guardEditable(commit)
+	if err != nil {
+		return nil, err
+	}
+	newSeq := make([]sealStep, 0, len(chain)-1)
+	newSeq = append(newSeq, chain[:idx]...)
+	newSeq = append(newSeq, chain[idx+1:]...)
+	return e.rewriteChain(lineID, newSeq)
+}
+
 // Reword changes the description of a sealed commit on its line, preserving its
 // change-id and rebasing the commits above it (and the open working change) onto
 // the rewritten history. It returns any rebase conflicts as data.
