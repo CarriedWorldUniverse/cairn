@@ -103,6 +103,7 @@ func gitCredentialFill(rawurl string) (user, pass string, ok bool) {
 		return "", "", false
 	}
 	cmd := exec.Command("git", "credential", "fill")
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	cmd.Stdin = strings.NewReader("protocol=" + proto + "\nhost=" + host + "\n\n")
 	out, err := cmd.Output()
 	if err != nil {
@@ -115,7 +116,7 @@ func gitCredentialFill(rawurl string) (user, pass string, ok bool) {
 			pass = v
 		}
 	}
-	if user == "" && pass == "" {
+	if user == "" || pass == "" {
 		return "", "", false
 	}
 	return user, pass, true

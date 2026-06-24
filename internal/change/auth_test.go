@@ -138,6 +138,14 @@ func TestFirstEnv(t *testing.T) {
 	}
 }
 
+func TestGitCredentialFillNoGit(t *testing.T) {
+	t.Setenv("PATH", "") // make the "git" binary unfindable
+	u, p, ok := gitCredentialFill("https://github.com/o/r.git")
+	if ok || u != "" || p != "" {
+		t.Fatalf("with no git on PATH expected ok=false/empty, got user=%q pass=%q ok=%v", u, p, ok)
+	}
+}
+
 func TestAuthForSSHClassified(t *testing.T) {
 	// An scp-like URL must take the SSH branch. In CI with no agent/key it may
 	// return an error; the deterministic assertion is that it never returns a
