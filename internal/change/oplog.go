@@ -1,6 +1,7 @@
 package change
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -65,6 +66,29 @@ func (e *Engine) recordOp(opType, actor string, before, after map[string]string)
 		id, opType, actor, string(beforeJSON), string(afterJSON),
 		now.Format(time.RFC3339Nano)); err != nil {
 		return fmt.Errorf("change.recordOp: %w", err)
+	}
+	return nil
+}
+
+// recordOpTx appends a single non-coalesced operation inside tx, so it commits
+// atomically with the catalogue writes that produced it (e.g. a seal). It mirrors
+// recordOp's insert exactly: an RFC3339Nano-prefixed id (sorts after all existing
+// ids, so MAX(id) is the correct parent), parent_op selected inline, empty detail.
+func recordOpTx(tx *sql.Tx, now time.Time, opType, actor string, before, after map[string]string, ts string) error {
+	beforeJSON, err := json.Marshal(before)
+	if err != nil {
+		return fmt.Errorf("change.recordOpTx: marshal before: %w", err)
+	}
+	afterJSON, err := json.Marshal(after)
+	if err != nil {
+		return fmt.Errorf("change.recordOpTx: marshal after: %w", err)
+	}
+	id := now.Format(time.RFC3339Nano) + "-" + newID()[:8]
+	if _, err := tx.Exec(
+		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
+		 VALUES(?,?,?, (SELECT COALESCE(MAX(id),'') FROM operation), ?,?,'{}',?)`,
+		id, opType, actor, string(beforeJSON), string(afterJSON), ts); err != nil {
+		return fmt.Errorf("change.recordOpTx: %w", err)
 	}
 	return nil
 }
