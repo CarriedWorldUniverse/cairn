@@ -8,6 +8,92 @@ import (
 	"testing"
 )
 
+// TestBisectRunE2E builds 6 commits on feat where flag.txt flips ok->bad at
+// commit 4, then runs `cairn bisect run -- sh -c "grep -q ok flag.txt"` to
+// drive the session automatically. The run must converge on s4 as first-bad.
+func TestBisectRunE2E(t *testing.T) {
+	skipOnWindows(t)
+	root := filepath.Join(t.TempDir(), "repo")
+	mustRun(t, "init", root)
+	mustRun(t, "express", "--repo", root, "feat")
+
+	flagPath := filepath.Join(root, "feat", "flag.txt")
+	distinctPath := filepath.Join(root, "feat", "n.txt")
+
+	shas := make([]string, 0, 6)
+	for i := 1; i <= 6; i++ {
+		val := "ok\n"
+		if i >= 4 {
+			val = "bad\n"
+		}
+		if err := os.WriteFile(flagPath, []byte(val), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(distinctPath, []byte(strings.Repeat("x", i)+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		shas = append(shas, commitShaCLI(t, root, "feat"))
+	}
+	s1, s4, s6 := shas[0], shas[3], shas[5]
+
+	// Start the bisect: s1 known-good, s6 known-bad.
+	_, startErr, err := runOutErr(t, "bisect", "start", "--repo", root, "--good", s1, "--bad", s6, "feat")
+	if err != nil {
+		t.Fatalf("bisect start: %v (stderr=%q)", err, startErr)
+	}
+
+	// Run automated bisect: 0=good (grep found "ok"), else=bad.
+	stdout, _, runErr := runOutErr(t,
+		"bisect", "run", "--repo", root, "--", "sh", "-c", "grep -q ok "+flagPath)
+	if runErr != nil {
+		t.Fatalf("bisect run: %v (stdout=%q)", runErr, stdout)
+	}
+
+	// The first-bad sha must be printed on stdout.
+	firstBad := strings.TrimSpace(stdout)
+	if firstBad == "" {
+		t.Fatal("bisect run: nothing printed on stdout")
+	}
+	if firstBad != s4 {
+		t.Fatalf("bisect run: first bad = %s, want s4 = %s", firstBad, s4)
+	}
+
+	// Session must still be alive (Done but not reset).
+	active, aerr := bisectActiveCLI(t, root)
+	if aerr != nil {
+		t.Fatalf("bisect status after run: %v", aerr)
+	}
+	if !active {
+		t.Fatal("bisect session should still be active (Done but not reset) after bisect run")
+	}
+
+	// Reset must cleanly end the session.
+	_, resetErr, rerr := runOutErr(t, "bisect", "reset", "--repo", root)
+	if rerr != nil {
+		t.Fatalf("bisect reset: %v (stderr=%q)", rerr, resetErr)
+	}
+	active2, _ := bisectActiveCLI(t, root)
+	if active2 {
+		t.Fatal("bisect session still active after reset")
+	}
+}
+
+// TestBisectRunNoSession verifies that `bisect run` without an active session
+// returns a clear error message.
+func TestBisectRunNoSession(t *testing.T) {
+	skipOnWindows(t)
+	root := filepath.Join(t.TempDir(), "repo")
+	mustRun(t, "init", root)
+
+	_, _, err := runOutErr(t, "bisect", "run", "--repo", root, "--", "true")
+	if err == nil {
+		t.Fatal("bisect run without session: want error, got nil")
+	}
+	if !strings.Contains(err.Error(), "no bisect in progress") {
+		t.Fatalf("bisect run no-session error = %q, want 'no bisect in progress'", err)
+	}
+}
+
 // runOutErr runs run(args) capturing BOTH stdout and stderr, returning them and
 // the run error (the caller decides whether the error is acceptable).
 func runOutErr(t *testing.T, args ...string) (stdout, stderr string, err error) {

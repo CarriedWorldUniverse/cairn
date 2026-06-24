@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -99,6 +100,7 @@ subcommands:
   bisect skip                   step over an untestable midpoint
   bisect status                 show the active bisect session
   bisect reset                  end the bisect; restore the working folder
+  bisect run [--repo d] -- <cmd>   automate: 0=good, 125=skip, else=bad
 
 config keys: user.name, user.email, autosync
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
@@ -1448,6 +1450,119 @@ func cmdStashDrop(args []string) error {
 	return nil
 }
 
+// shortSha returns the first 8 characters of a sha (or the full string if shorter).
+func shortSha(s string) string {
+	if len(s) > 8 {
+		return s[:8]
+	}
+	return s
+}
+
+// cmdBisectRun automates a bisect session by running a test command at each
+// materialized midpoint. The command's exit code determines the verdict:
+//
+//	0   → good
+//	125 → skip (untestable midpoint)
+//	else → bad
+//
+// Usage: cairn bisect run [--repo dir] [--author a] -- <cmd> [args...]
+//
+// A bisect session must already be active (cairn bisect start ...). The session
+// stays alive after convergence until the caller runs `cairn bisect reset`.
+func cmdBisectRun(args []string) error {
+	// Split args at the first "--" token so cairn flags are separated from the
+	// test command. Everything before "--" is parsed by FlagSet; everything after
+	// is the command to execute.
+	var flagArgs, cmdArgs []string
+	split := false
+	for _, a := range args {
+		if a == "--" && !split {
+			split = true
+			continue
+		}
+		if split {
+			cmdArgs = append(cmdArgs, a)
+		} else {
+			flagArgs = append(flagArgs, a)
+		}
+	}
+	fs := flag.NewFlagSet("bisect run", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := fs.Parse(flagArgs); err != nil {
+		return err
+	}
+	// Fallback: no "--" separator — treat remaining positional args as the command.
+	if len(cmdArgs) == 0 {
+		cmdArgs = fs.Args()
+	}
+	if len(cmdArgs) == 0 {
+		return errors.New("usage: cairn bisect run [--repo dir] -- <cmd> [args...]")
+	}
+
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+
+	info, err := r.BisectStatus()
+	if err != nil {
+		return mapErr(err)
+	}
+	if !info.Active {
+		return errors.New("no bisect in progress; run 'cairn bisect start --good <c> --bad <c>' first")
+	}
+
+	// The expressed folder for the bisect branch: <repo>/<branch>.
+	folder := filepath.Join(*repo, info.Branch)
+
+	for {
+		st, err := r.BisectStatus()
+		if err != nil {
+			return mapErr(err)
+		}
+		if st.Done {
+			fmt.Println(st.FirstBad)
+			fmt.Fprintf(os.Stderr, "cairn: first bad commit: %s — run 'cairn bisect reset' to finish\n", shortSha(st.FirstBad))
+			return nil
+		}
+
+		// Run the test command in the midpoint folder.
+		c := exec.Command(cmdArgs[0], cmdArgs[1:]...) //nolint:gosec
+		c.Dir = folder
+		c.Stdout = os.Stderr // stream test output to stderr so stdout stays clean
+		c.Stderr = os.Stderr
+		runErr := c.Run()
+		code := 0
+		if runErr != nil {
+			ee, ok := runErr.(*exec.ExitError)
+			if !ok {
+				// Non-exit error (e.g. command not found): surface and abort.
+				return fmt.Errorf("bisect run: %w", runErr)
+			}
+			code = ee.ExitCode()
+		}
+
+		switch {
+		case code == 0:
+			fmt.Fprintf(os.Stderr, "cairn: %s — good\n", shortSha(st.Current))
+			if _, err := r.BisectMark("good"); err != nil {
+				return mapErr(err)
+			}
+		case code == 125:
+			fmt.Fprintf(os.Stderr, "cairn: %s — skip\n", shortSha(st.Current))
+			if _, err := r.BisectSkip(); err != nil {
+				return mapErr(err)
+			}
+		default:
+			fmt.Fprintf(os.Stderr, "cairn: %s — bad (exit %d)\n", shortSha(st.Current), code)
+			if _, err := r.BisectMark("bad"); err != nil {
+				return mapErr(err)
+			}
+		}
+	}
+}
+
 // cmdBisect dispatches bisect sub-commands. The midpoint to test is materialized
 // into the branch folder; auto-snapshot is suspended for the whole session.
 func cmdBisect(args []string) error {
@@ -1469,7 +1584,7 @@ func cmdBisect(args []string) error {
 	case "reset":
 		return cmdBisectReset(rest)
 	case "run":
-		return errors.New("bisect run: not yet")
+		return cmdBisectRun(rest)
 	default:
 		return fmt.Errorf("unknown bisect subcommand %q", sub)
 	}
