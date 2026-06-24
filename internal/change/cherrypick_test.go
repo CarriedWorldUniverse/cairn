@@ -271,6 +271,127 @@ func TestCherryPickConflictAsData(t *testing.T) {
 	}
 }
 
+// TestCherryPickWorkingRebaseConflictFlags: the pick itself is clean (pick delta
+// applies without conflict), but W's rebase onto the pick conflicts. Verifies:
+//   - W's has_conflict is set TRUE (W absorbed the W-rebase conflict),
+//   - conflict rows are recorded under w.ID,
+//   - the new sealed change's has_conflict is FALSE (pick was clean).
+//
+// Setup: B's top has y.txt="base\n" (established as a sealed change bBaseCID).
+// B's open working change snapshots y.txt="WORK\n". Commit C (from line A) edits
+// y.txt="base\n"→"PICK\n" (its parent had y.txt="base\n"). Cherry-pick C onto B:
+//
+//	pick merge: base="base\n" ours(B top)="base\n" theirs="PICK\n" → clean, result="PICK\n"
+//	W rebase:   base="base\n" ours(pick)="PICK\n"  theirs(W)="WORK\n" → CONFLICT
+func TestCherryPickWorkingRebaseConflictFlags(t *testing.T) {
+	e := newTestEngine(t)
+
+	// Establish main with a seed so CreateLine has something to branch from.
+	main, err := e.LineByName("main")
+	if err != nil {
+		t.Fatalf("LineByName(main): %v", err)
+	}
+	seedLineTip(t, e, main.ID, map[string][]byte{"base.txt": []byte("base\n")})
+
+	// Line A: first seal sets y.txt="base\n" (the pick's parent state), then seal C
+	// changes y.txt="base\n"→"PICK\n".
+	aLine, err := e.CreateLine("A", main.ID)
+	if err != nil {
+		t.Fatalf("CreateLine(A): %v", err)
+	}
+	aCur := openChange(t, e, aLine.ID)
+	if _, _, err := e.SnapshotWorking(aCur, map[string]TreeEntry{
+		"y.txt": blobEntry(t, e, "base\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(A y base): %v", err)
+	}
+	aNext, _, err := e.Seal(aCur, "A y base")
+	if err != nil {
+		t.Fatalf("Seal(A y base): %v", err)
+	}
+	// C: y.txt "base\n" → "PICK\n"
+	if _, _, err := e.SnapshotWorking(aNext, map[string]TreeEntry{
+		"y.txt": blobEntry(t, e, "PICK\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(C): %v", err)
+	}
+	if _, _, err := e.Seal(aNext, "C pick y"); err != nil {
+		t.Fatalf("Seal(C): %v", err)
+	}
+	cSealed, err := e.GetChange(aNext)
+	if err != nil {
+		t.Fatalf("GetChange(C): %v", err)
+	}
+	cCommit := cSealed.HeadCommit
+
+	// Line B: seal a change that sets y.txt="base\n" at B's top (bBaseCID).
+	bLine, err := e.CreateLine("B", main.ID)
+	if err != nil {
+		t.Fatalf("CreateLine(B): %v", err)
+	}
+	bCur := openChange(t, e, bLine.ID)
+	if _, _, err := e.SnapshotWorking(bCur, map[string]TreeEntry{
+		"y.txt": blobEntry(t, e, "base\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(B y base): %v", err)
+	}
+	_, _, err = e.Seal(bCur, "B y base")
+	if err != nil {
+		t.Fatalf("Seal(B y base): %v", err)
+	}
+	bBaseCID := bCur // reuse: bCur is now the sealed change-id for "B y base"
+
+	// B's open working change: snapshot y.txt="WORK\n" (un-sealed edit).
+	bOpen := openWorkingChangeID(t, e, bLine.ID)
+	if _, _, err := e.SnapshotWorking(bOpen, map[string]TreeEntry{
+		"y.txt": blobEntry(t, e, "WORK\n"),
+	}); err != nil {
+		t.Fatalf("SnapshotWorking(B open WORK): %v", err)
+	}
+
+	// Cherry-pick C onto B.
+	conflicts, err := e.CherryPick(cCommit, bLine.ID)
+	if err != nil {
+		t.Fatalf("CherryPick: %v", err)
+	}
+	if len(conflicts) == 0 {
+		t.Fatal("CherryPick conflicts = 0, want >0 (W-rebase should conflict on y.txt)")
+	}
+
+	// W's has_conflict must be TRUE — it absorbed the rebase conflict.
+	wChange, err := e.GetChange(bOpen)
+	if err != nil {
+		t.Fatalf("GetChange(W): %v", err)
+	}
+	if !wChange.HasConflict {
+		t.Errorf("W.HasConflict = false, want true (W-rebase conflicted on y.txt)")
+	}
+
+	// Conflict rows must be recorded against W's change-id.
+	wConflicts, err := e.Conflicts(bOpen)
+	if err != nil {
+		t.Fatalf("Conflicts(W): %v", err)
+	}
+	if len(wConflicts) == 0 {
+		t.Error("Conflicts(W) = 0, want >0 — conflict rows should be on W's change-id")
+	}
+
+	// The new sealed change (the pick) must have has_conflict=FALSE — pick was clean.
+	var newSealedID string
+	if err := e.db.QueryRow(
+		`SELECT id FROM change WHERE line_id=? AND sealed=1 AND id!=?`,
+		bLine.ID, bBaseCID).Scan(&newSealedID); err != nil {
+		t.Fatalf("get new sealed change on B: %v", err)
+	}
+	newSealedChange, err := e.GetChange(newSealedID)
+	if err != nil {
+		t.Fatalf("GetChange(new sealed): %v", err)
+	}
+	if newSealedChange.HasConflict {
+		t.Errorf("new sealed change HasConflict = true, want false (pick was clean; only W-rebase conflicted)")
+	}
+}
+
 // TestCherryPickNonCairnCommit: cherry-picking a bogus / non-cairn sha returns an
 // error mentioning "not a cairn commit".
 func TestCherryPickNonCairnCommit(t *testing.T) {

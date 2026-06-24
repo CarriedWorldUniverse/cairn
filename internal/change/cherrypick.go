@@ -93,6 +93,11 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) ([]Conflict, erro
 	if err != nil {
 		return nil, fmt.Errorf("change.CherryPick: %w", err)
 	}
+	// Capture pick-only conflict flag BEFORE W-rebase appends its own conflicts.
+	pickHC := 0
+	if len(cf) > 0 {
+		pickHC = 1
+	}
 	newSealed, err := e.writeCommit(merged, newID, pickedMsg, parentsSlice(topSealed))
 	if err != nil {
 		return nil, fmt.Errorf("change.CherryPick: %w", err)
@@ -100,6 +105,7 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) ([]Conflict, erro
 
 	// Rebase the open working change W onto newSealed (apply W's delta onto the pick).
 	var newW string
+	wHC := 0
 	wDesc := workingDescription
 	if w.HeadCommit == "" {
 		// Never snapshotted: the working change has no delta — it rides cleanly on
@@ -131,6 +137,9 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) ([]Conflict, erro
 		if err != nil {
 			return nil, fmt.Errorf("change.CherryPick: %w", err)
 		}
+		if len(cfw) > 0 {
+			wHC = 1
+		}
 		cf = append(cf, cfw...)
 		newW, err = e.writeCommit(mw, w.ID, wDesc, parentsSlice(newSealed))
 		if err != nil {
@@ -139,10 +148,6 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) ([]Conflict, erro
 	}
 
 	ts := e.now().UTC().Format(time.RFC3339Nano)
-	hc := 0
-	if len(cf) > 0 {
-		hc = 1
-	}
 	tx, err := e.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("change.CherryPick: begin: %w", err)
@@ -151,14 +156,15 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) ([]Conflict, erro
 
 	// New SEALED change row for the picked commit. Mirrors Seal's column set —
 	// Seal inserts an OPEN fresh change with the literals 'open',0,0; here the row
-	// is the picked commit itself, so head=newSealed, has_conflict=hc, sealed=1.
+	// is the picked commit itself, so head=newSealed, has_conflict=pickHC, sealed=1.
+	// pickHC reflects only pick-level conflicts, not W-rebase conflicts.
 	if _, err := tx.Exec(
 		`INSERT INTO change(id, line_id, author, head_commit, status, has_conflict, sealed, created_at, updated_at)
 		 VALUES(?,?,?,?,'open',?,1,?,?)`,
-		newID, targetLineID, w.Author, newSealed, hc, ts, ts); err != nil {
+		newID, targetLineID, w.Author, newSealed, pickHC, ts, ts); err != nil {
 		return nil, fmt.Errorf("change.CherryPick: insert change: %w", err)
 	}
-	if _, err := tx.Exec(`UPDATE change SET head_commit=?, updated_at=? WHERE id=?`, newW, ts, w.ID); err != nil {
+	if _, err := tx.Exec(`UPDATE change SET head_commit=?, has_conflict=?, updated_at=? WHERE id=?`, newW, wHC, ts, w.ID); err != nil {
 		return nil, fmt.Errorf("change.CherryPick: advance working: %w", err)
 	}
 	if _, err := tx.Exec(`UPDATE line SET tip_commit=? WHERE id=?`, newW, targetLineID); err != nil {
