@@ -185,7 +185,7 @@ func TestPullDivergentCleanMerge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateChange: %v", err)
 	}
-	if _, err := e.Commit(ch.ID, mustFilesPlusLocal(t, e, root.TipCommit), ""); err != nil {
+	if _, err := e.Commit(ch.ID, mustFilesPlusLocal(t, e, root.TipCommit), nil, ""); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 	// remote edits a DIFFERENT new file
@@ -244,7 +244,7 @@ func TestPullDivergentConflict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateChange: %v", err)
 	}
-	if _, err := e.Commit(ch.ID, map[string][]byte{"readme.txt": []byte("local edit\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"readme.txt": []byte("local edit\n")}, nil, ""); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 	// remote edits the SAME file's same region differently
@@ -298,7 +298,7 @@ func TestPullLocalAheadNoOp(t *testing.T) {
 	}
 	root, _ := e.LineByName(def)
 	ch, _ := e.CreateChange(root.ID, "local")
-	if _, err := e.Commit(ch.ID, map[string][]byte{"local_ahead.txt": []byte("L\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"local_ahead.txt": []byte("L\n")}, nil, ""); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 	before, _ := e.LineByName(def)

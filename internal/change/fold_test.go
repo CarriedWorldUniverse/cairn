@@ -14,7 +14,7 @@ func TestFoldFastForwardsParent(t *testing.T) {
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
 	// Commit advances exp's tip automatically (merge-forward + line-tip rule).
-	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, ""); err != nil {
+	if _, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("a\n"), "n.txt": []byte("new\n")}, nil, ""); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 	if err := e.FoldLine(exp.ID); err != nil {
@@ -38,7 +38,7 @@ func TestAbandonLeavesParentUntouched(t *testing.T) {
 	baseTip := seedLineTip(t, e, main.ID, map[string][]byte{"a.txt": []byte("a\n")})
 	exp, _ := e.CreateLine("exp", main.ID)
 	ch, _ := e.CreateChange(exp.ID, "e")
-	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("WILD\n")}, "")
+	e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("WILD\n")}, nil, "")
 	if err := e.AbandonLine(exp.ID); err != nil {
 		t.Fatalf("AbandonLine: %v", err)
 	}
@@ -71,9 +71,9 @@ func TestFoldRejectedWithOpenConflict(t *testing.T) {
 	seedLineTip(t, e, main.ID, map[string][]byte{"f.txt": []byte("base\n")})
 	exp, _ := e.CreateLine("exp", main.ID)
 	mc, _ := e.CreateChange(main.ID, "m")
-	e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, "")
+	e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, nil, "")
 	ec, _ := e.CreateChange(exp.ID, "e")
-	e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, "") // conflict on exp
+	e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, nil, "") // conflict on exp
 	if err := e.FoldLine(exp.ID); !errors.Is(err, ErrHasConflict) {
 		t.Fatalf("FoldLine with open conflict: want ErrHasConflict, got %v", err)
 	}

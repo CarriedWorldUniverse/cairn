@@ -79,6 +79,17 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		return "", nil, err
 	}
 
+	// Per-path modes from each contributing side (tree shas). theirs = the local
+	// change's snapshot, ours = the parent line's tip.
+	oursModes, err := e.fileModesFromTree(oursTree)
+	if err != nil {
+		return "", nil, err
+	}
+	theirsModes, err := e.fileModesFromTree(theirsTree)
+	if err != nil {
+		return "", nil, err
+	}
+
 	merged := map[string][]byte{}
 	var conflicts []Conflict
 
@@ -104,7 +115,20 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 				merged[p] = ov
 				continue
 			}
-			// Genuine divergence: three-way line merge.
+			// Genuine divergence: check for binary before attempting line-merge.
+			if isBinary(bv) || isBinary(ov) || isBinary(tv) {
+				// Binary whole-file conflict: keep the change/theirs side verbatim
+				// (theirs = the change's snapshot in mergeForward) and record a
+				// conflict without emitting any text markers.
+				merged[p] = tv
+				c, err := e.buildConflict(changeID, p, bv, ov, tv, tv)
+				if err != nil {
+					return "", nil, err
+				}
+				conflicts = append(conflicts, c)
+				continue
+			}
+			// Three-way line merge for text files.
 			res := diff3.Merge3(splitLines(bv), splitLines(ov), splitLines(tv))
 			mergedBytes := []byte(strings.Join(res.Merged, ""))
 			merged[p] = mergedBytes
@@ -133,7 +157,27 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		}
 	}
 
-	tree, err := e.writeTree(merged)
+	// Thread modes alongside merged content. A path's mode MUST follow the side
+	// whose content was kept — a symlink's target string is only valid WITH
+	// ModeSymlink, else it is committed as a regular file. The merged content for
+	// any path came from theirs when theirs has it (the inOurs&&inTheirs and the
+	// theirs-only branches above all retain theirs' bytes on agreement/merge/add),
+	// else from ours. So: if the path exists on theirs, take theirsModes[p]; else
+	// take oursModes[p]. Only record non-regular modes (sparse map).
+	mergedModes := map[string]EntryMode{}
+	for p := range merged {
+		var mode EntryMode
+		if _, inTheirs := theirs[p]; inTheirs {
+			mode = theirsModes[p]
+		} else {
+			mode = oursModes[p]
+		}
+		if mode != ModeRegular {
+			mergedModes[p] = mode
+		}
+	}
+
+	tree, err := e.writeTree(merged, mergedModes)
 	if err != nil {
 		return "", nil, err
 	}

@@ -25,7 +25,7 @@ func TestCommitMessageStored(t *testing.T) {
 		t.Fatalf("CreateChange: %v", err)
 	}
 	e.SetIdentity("Agent A", "agent@x.io")
-	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, "fix the parser")
+	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, nil, "fix the parser")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestCommitDefaultMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateChange: %v", err)
 	}
-	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, "")
+	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestCommitIdentity(t *testing.T) {
 		t.Fatalf("CreateChange: %v", err)
 	}
 	e.SetIdentity("Jane Dev", "jane@x.io")
-	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, "msg")
+	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, nil, "msg")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestCommitDefaultIdentityEmail(t *testing.T) {
 	}
 	// No SetIdentity: writeCommit must fall back to a non-routable placeholder,
 	// NOT the broken "@cairn" email.
-	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, "")
+	res, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}

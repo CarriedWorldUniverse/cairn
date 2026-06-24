@@ -198,11 +198,26 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
 	}
 	dir := filepath.Join(r.root, entry.Path)
-	files, err := Scan(dir)
+	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
+	// paths, so a committed-then-ignored file must not be dropped from the scan
+	// (which would silently delete it from history on this commit).
+	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
-	res, err := r.eng.Commit(entry.ChangeID, files, message)
+	var tracked map[string]struct{}
+	if line.TipCommit != "" {
+		committed, ferr := r.eng.Files(line.TipCommit)
+		if ferr != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", ferr)
+		}
+		tracked = trackedSet(committed)
+	}
+	files, modes, err := Scan(dir, tracked)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	res, err := r.eng.Commit(entry.ChangeID, files, modes, message)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
@@ -498,7 +513,7 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	} else {
 		committed = map[string][]byte{}
 	}
-	working, err := Scan(filepath.Join(r.root, entry.Path))
+	working, _, err := Scan(filepath.Join(r.root, entry.Path), trackedSet(committed))
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
@@ -839,10 +854,6 @@ func (r *Repo) isDirty(branch string) (bool, error) {
 		// Branch not in working-copy state: nothing to compare, not dirty.
 		return false, nil
 	}
-	scanned, err := Scan(filepath.Join(r.root, entry.Path))
-	if err != nil {
-		return false, fmt.Errorf("worktree.isDirty: %w", err)
-	}
 	line, err := r.eng.LineByName(branch)
 	if errors.Is(err, change.ErrNotFound) {
 		// Line already folded/abandoned: no committed tip to diff against, so the
@@ -854,13 +865,28 @@ func (r *Repo) isDirty(branch string) (bool, error) {
 		return false, fmt.Errorf("worktree.isDirty: %w", err)
 	}
 	var committed map[string][]byte
+	var committedModes map[string]change.EntryMode
 	if line.TipCommit != "" {
 		committed, err = r.eng.Files(line.TipCommit)
 		if err != nil {
 			return false, fmt.Errorf("worktree.isDirty: %w", err)
 		}
+		committedModes, err = r.eng.FileModes(line.TipCommit)
+		if err != nil {
+			return false, fmt.Errorf("worktree.isDirty: %w", err)
+		}
 	}
-	return !sameFiles(scanned, committed), nil
+	// Ignore patterns only affect untracked paths, so scan with the tracked set
+	// to avoid reporting a committed-then-ignored file as a phantom deletion.
+	scanned, scannedModes, err := Scan(filepath.Join(r.root, entry.Path), trackedSet(committed))
+	if err != nil {
+		return false, fmt.Errorf("worktree.isDirty: %w", err)
+	}
+	// Dirty if EITHER content OR modes differ (a chmod-only change is dirty).
+	if !sameFiles(scanned, committed) {
+		return true, nil
+	}
+	return !sameModes(scannedModes, committedModes), nil
 }
 
 func sameFiles(a, b map[string][]byte) bool {
@@ -874,4 +900,31 @@ func sameFiles(a, b map[string][]byte) bool {
 		}
 	}
 	return true
+}
+
+// sameModes compares two sparse mode maps (absent ⇒ regular). They are equal
+// iff they carry the same keys with the same values.
+func sameModes(a, b map[string]change.EntryMode) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, va := range a {
+		if vb, ok := b[k]; !ok || vb != va {
+			return false
+		}
+	}
+	return true
+}
+
+// trackedSet turns a committed file map's keys into a set of tracked paths for
+// Scan. A nil files map yields a nil set ("nothing tracked").
+func trackedSet(files map[string][]byte) map[string]struct{} {
+	if files == nil {
+		return nil
+	}
+	tracked := make(map[string]struct{}, len(files))
+	for k := range files {
+		tracked[k] = struct{}{}
+	}
+	return tracked
 }

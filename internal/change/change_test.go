@@ -16,11 +16,11 @@ func TestCommitAdvancesHeadStableChangeID(t *testing.T) {
 	if !strings.HasPrefix(ch.ID, "z") {
 		t.Fatalf("change_id %q, want reverse-hex (z-prefixed)", ch.ID)
 	}
-	r1, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, "")
+	r1, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("one\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit 1: %v", err)
 	}
-	r2, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("two\n")}, "")
+	r2, err := e.Commit(ch.ID, map[string][]byte{"a.txt": []byte("two\n")}, nil, "")
 	if err != nil {
 		t.Fatalf("Commit 2: %v", err)
 	}

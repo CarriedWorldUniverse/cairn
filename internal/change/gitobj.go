@@ -52,8 +52,9 @@ func (e *Engine) readBlob(sha string) ([]byte, error) {
 }
 
 // writeTree builds blob and (nested) tree objects from a path->bytes map (paths
-// are "/"-separated) and returns the root tree hash.
-func (e *Engine) writeTree(files map[string][]byte) (plumbing.Hash, error) {
+// are "/"-separated) and returns the root tree hash. The sparse modes map
+// carries per-path kind/permission (absent ⇒ regular; nil ⇒ all regular).
+func (e *Engine) writeTree(files map[string][]byte, modes map[string]EntryMode) (plumbing.Hash, error) {
 	for path := range files {
 		if path == "" {
 			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: empty path")
@@ -65,25 +66,41 @@ func (e *Engine) writeTree(files map[string][]byte) (plumbing.Hash, error) {
 			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: path %q contains empty segment", path)
 		}
 	}
-	return e.buildTree(files)
+	return e.buildTree(files, modes)
 }
 
 // buildTree recursively constructs a tree from a flat path->bytes map at the
-// current level. Keys may contain "/" denoting subdirectories.
-func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
-	// Split into immediate files and grouped subdirectory contents.
+// current level. Keys may contain "/" denoting subdirectories. The modes map
+// is split in lockstep with files so each entry emits its real git mode
+// (regular/executable/symlink). A nil modes map yields all-regular entries.
+func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) (plumbing.Hash, error) {
+	// Split into immediate files and grouped subdirectory contents, splitting
+	// modes in lockstep so each subtree carries its own paths' modes.
 	subdirs := map[string]map[string][]byte{}
+	subdirModes := map[string]map[string]EntryMode{}
 	immediate := map[string][]byte{}
+	immediateModes := map[string]EntryMode{}
 	for path, data := range files {
 		if i := strings.IndexByte(path, '/'); i >= 0 {
 			dir := path[:i]
 			rest := path[i+1:]
 			if subdirs[dir] == nil {
 				subdirs[dir] = map[string][]byte{}
+				subdirModes[dir] = map[string]EntryMode{}
 			}
 			subdirs[dir][rest] = data
+			if modes != nil {
+				if mode, ok := modes[path]; ok {
+					subdirModes[dir][rest] = mode
+				}
+			}
 		} else {
 			immediate[path] = data
+			if modes != nil {
+				if mode, ok := modes[path]; ok {
+					immediateModes[path] = mode
+				}
+			}
 		}
 	}
 
@@ -101,10 +118,18 @@ func (e *Engine) buildTree(files map[string][]byte) (plumbing.Hash, error) {
 		if err != nil {
 			return plumbing.ZeroHash, err
 		}
-		entries = append(entries, object.TreeEntry{Name: name, Mode: filemode.Regular, Hash: h})
+		// A reader of a nil sub-map returns the zero value (ModeRegular).
+		m := filemode.Regular
+		switch immediateModes[name] {
+		case ModeExecutable:
+			m = filemode.Executable
+		case ModeSymlink:
+			m = filemode.Symlink
+		}
+		entries = append(entries, object.TreeEntry{Name: name, Mode: m, Hash: h})
 	}
 	for dir, contents := range subdirs {
-		h, err := e.buildTree(contents)
+		h, err := e.buildTree(contents, subdirModes[dir])
 		if err != nil {
 			return plumbing.ZeroHash, err
 		}
