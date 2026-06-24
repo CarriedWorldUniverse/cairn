@@ -58,5 +58,14 @@ CREATE TABLE IF NOT EXISTS config (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS stash (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  line_id TEXT NOT NULL,
+  branch TEXT NOT NULL,
+  commit_sha TEXT NOT NULL,
+  base_sha TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_change_line ON change(line_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_change ON conflict(change_id);

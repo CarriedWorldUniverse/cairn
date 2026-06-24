@@ -732,6 +732,21 @@ func (r *Repo) Show(commit string) (change.CommitInfo, []change.FileDiff, error)
 	return r.eng.Show(commit)
 }
 
+// Blame returns per-line provenance for path at the tip of branch.
+func (r *Repo) Blame(branch, path string) ([]change.BlameLine, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Blame: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, fmt.Errorf("worktree.Blame: branch %q has no commits", branch)
+	}
+	return r.eng.Blame(line.TipCommit, path)
+}
+
+// IsWorkingCommit reports whether sha is the head of an open (un-sealed) change.
+func (r *Repo) IsWorkingCommit(sha string) (bool, error) { return r.eng.IsWorkingHead(sha) }
+
 // Tag names the tip of branch with the given tag name.
 func (r *Repo) Tag(name, branch string) error {
 	line, err := r.eng.LineByName(branch)
@@ -964,6 +979,61 @@ func (r *Repo) Undo() error {
 	}
 	return nil
 }
+
+// rematerialize refreshes the expressed folder to the branch's current line tip.
+func (r *Repo) rematerialize(branch string, entry Entry) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.rematerialize: %w", err)
+	}
+	if line.TipCommit != "" {
+		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path)); err != nil {
+			return fmt.Errorf("worktree.rematerialize: %w", err)
+		}
+	}
+	return nil
+}
+
+// Stash shelves the expressed branch's current working delta (un-sealed edits)
+// onto the stash stack with message, then re-materializes the folder to the
+// sealed tip (folder is reset to the clean committed state). Errors "nothing to
+// stash" when the working change has no un-sealed edits.
+func (r *Repo) Stash(branch, message string) error {
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return fmt.Errorf("worktree.Stash: branch %q is not expressed", branch)
+	}
+	if err := r.syncBranch(branch, entry); err != nil {
+		return err
+	}
+	if _, err := r.eng.StashPush(entry.ChangeID, message); err != nil {
+		return fmt.Errorf("worktree.Stash: %w", err)
+	}
+	return r.rematerialize(branch, entry)
+}
+
+// StashPop restores the most recent stash entry onto the expressed branch's
+// working change, then re-materializes the folder so the restored files appear
+// on disk. The stash entry is dropped after a successful apply.
+func (r *Repo) StashPop(branch string) error {
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		return fmt.Errorf("worktree.StashPop: branch %q is not expressed", branch)
+	}
+	if err := r.syncBranch(branch, entry); err != nil {
+		return err
+	}
+	if err := r.eng.StashApply(entry.ChangeID, 0, true); err != nil {
+		return fmt.Errorf("worktree.StashPop: %w", err)
+	}
+	return r.rematerialize(branch, entry)
+}
+
+// StashList returns the stash stack newest-first, passing through to the engine.
+func (r *Repo) StashList() ([]change.StashEntry, error) { return r.eng.StashList() }
+
+// StashDrop deletes a stash entry without applying it. id 0 drops the top.
+func (r *Repo) StashDrop(id int64) error { return r.eng.StashDrop(id) }
 
 // OperationLog returns the full operation log in chronological order.
 func (r *Repo) OperationLog() ([]change.Operation, error) {
