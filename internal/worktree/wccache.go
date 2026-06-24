@@ -57,13 +57,16 @@ func saveWCCache(path string, c map[string]wcCacheEntry) error {
 // matches the on-disk kind/exec-bit — it reuses the stored blob SHA WITHOUT
 // reading the file. On a miss it reads (or Readlinks) the file, stores the blob
 // via eng.WriteBlob (so the returned SHA always refers to an already-stored
-// blob), and records a fresh cache entry. It returns the entries plus a freshly
+// blob), and records a fresh cache entry. It returns the entries, a freshly
 // rebuilt cache containing only paths actually seen this scan (so vanished paths
-// are dropped). scanStartNs is captured by the caller (time.Now().UnixNano())
-// before the walk and passed in.
-func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, error) {
+// are dropped), and a bool cacheChanged that is true whenever the new cache
+// differs from the input (a miss was taken, or a path vanished). Callers can
+// skip saveWCCache when cacheChanged is false. scanStartNs is captured by the
+// caller (time.Now().UnixNano()) before the walk and passed in.
+func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, error) {
 	entries := map[string]change.TreeEntry{}
 	newCache := map[string]wcCacheEntry{}
+	changed := false
 
 	err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
 		info, err := d.Info()
@@ -95,6 +98,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 			}
 			entries[slashRel] = change.TreeEntry{SHA: sha, Mode: change.ModeSymlink}
 			newCache[slashRel] = wcCacheEntry{MtimeNs: mtimeNs, Size: size, BlobSHA: sha, Mode: change.ModeSymlink}
+			changed = true
 			return nil
 		}
 
@@ -118,10 +122,15 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		}
 		entries[slashRel] = change.TreeEntry{SHA: sha, Mode: mode}
 		newCache[slashRel] = wcCacheEntry{MtimeNs: mtimeNs, Size: size, BlobSHA: sha, Mode: mode}
+		changed = true
 		return nil
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("worktree.CachedScan: %w", err)
+		return nil, nil, false, fmt.Errorf("worktree.CachedScan: %w", err)
 	}
-	return entries, newCache, nil
+	// A vanished path reduces len(newCache) below len(cache); detect that too.
+	if !changed && len(newCache) != len(cache) {
+		changed = true
+	}
+	return entries, newCache, changed, nil
 }

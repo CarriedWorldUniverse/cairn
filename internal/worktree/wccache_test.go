@@ -70,13 +70,16 @@ func TestCachedScanReusesUnchanged(t *testing.T) {
 	}
 
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	entries1, cache1, err := CachedScan(eng, dir, nil, nil, start1)
+	entries1, cache1, changed1, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
 	sha := entries1["a.txt"].SHA
 	if sha == "" {
 		t.Fatalf("scan1 produced no SHA for a.txt: %v", entries1)
+	}
+	if !changed1 {
+		t.Fatalf("scan1 with empty cache should report cacheChanged=true")
 	}
 
 	// Make the file UNREADABLE but keep mtime/size identical. A cache HIT must
@@ -87,12 +90,15 @@ func TestCachedScanReusesUnchanged(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, _, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, _, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2 (should be a cache hit, no read): %v", err)
 	}
 	if entries2["a.txt"].SHA != sha {
 		t.Fatalf("cache hit should reuse SHA: got %s want %s", entries2["a.txt"].SHA, sha)
+	}
+	if changed2 {
+		t.Fatalf("scan2 with warm cache and no changes should report cacheChanged=false")
 	}
 }
 
@@ -104,7 +110,7 @@ func TestCachedScanDetectsChange(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	entries1, cache1, err := CachedScan(eng, dir, nil, nil, start1)
+	entries1, cache1, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -115,7 +121,7 @@ func TestCachedScanDetectsChange(t *testing.T) {
 		t.Fatalf("rewrite: %v", err)
 	}
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, cache2, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, cache2, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2: %v", err)
 	}
@@ -124,6 +130,9 @@ func TestCachedScanDetectsChange(t *testing.T) {
 	}
 	if cache2["a.txt"].BlobSHA != entries2["a.txt"].SHA {
 		t.Fatalf("cache not updated: cache %s entry %s", cache2["a.txt"].BlobSHA, entries2["a.txt"].SHA)
+	}
+	if !changed2 {
+		t.Fatalf("scan2 after file edit should report cacheChanged=true")
 	}
 }
 
@@ -143,7 +152,7 @@ func TestCachedScanRacy(t *testing.T) {
 		"a.txt": {MtimeNs: mtimeNs, Size: info.Size(), BlobSHA: "0000000000000000000000000000000000000000", Mode: change.ModeRegular},
 	}
 	// scanStartNs at or below the file's mtime ⇒ racy ⇒ re-read.
-	entries, _, err := CachedScan(eng, dir, nil, cache, mtimeNs)
+	entries, _, _, err := CachedScan(eng, dir, nil, cache, mtimeNs)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -167,7 +176,7 @@ func TestCachedScanDropsVanished(t *testing.T) {
 		t.Fatalf("write b: %v", err)
 	}
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	_, cache1, err := CachedScan(eng, dir, nil, nil, start1)
+	_, cache1, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -179,7 +188,7 @@ func TestCachedScanDropsVanished(t *testing.T) {
 		t.Fatalf("remove b: %v", err)
 	}
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, cache2, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, cache2, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2: %v", err)
 	}
@@ -188,6 +197,9 @@ func TestCachedScanDropsVanished(t *testing.T) {
 	}
 	if _, ok := cache2["b.txt"]; ok {
 		t.Fatalf("vanished b.txt should be dropped from cache")
+	}
+	if !changed2 {
+		t.Fatalf("scan2 after file removal should report cacheChanged=true")
 	}
 }
 
@@ -203,7 +215,7 @@ func TestCachedScanSymlink(t *testing.T) {
 		t.Fatalf("symlink: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, _, err := CachedScan(eng, dir, nil, nil, start)
+	entries, _, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -225,7 +237,7 @@ func TestCachedScanExecMode(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, cache, err := CachedScan(eng, dir, nil, nil, start)
+	entries, cache, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -250,7 +262,7 @@ func TestCachedScanHonorsIgnore(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, _, err := CachedScan(eng, dir, nil, nil, start)
+	entries, _, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -259,5 +271,50 @@ func TestCachedScanHonorsIgnore(t *testing.T) {
 	}
 	if _, ok := entries["a.txt"]; !ok {
 		t.Fatalf("a.txt should be present")
+	}
+}
+
+// TestCachedScanCacheChangedFlag verifies that cacheChanged is false on a
+// warm-cache no-edit rescan, and true after editing a file.
+func TestCachedScanCacheChangedFlag(t *testing.T) {
+	skipOnWindows(t)
+	eng := newCacheTestEngine(t)
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.txt")
+	if err := os.WriteFile(path, []byte("hello\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	// First scan: cold cache → cacheChanged must be true.
+	start1 := time.Now().UnixNano() + int64(time.Second)
+	_, cache1, changed1, err := CachedScan(eng, dir, nil, nil, start1)
+	if err != nil {
+		t.Fatalf("scan1: %v", err)
+	}
+	if !changed1 {
+		t.Fatalf("cold-cache scan should report cacheChanged=true")
+	}
+
+	// Second scan: warm cache, nothing touched → cacheChanged must be false.
+	start2 := time.Now().UnixNano() + int64(time.Second)
+	_, _, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
+	if err != nil {
+		t.Fatalf("scan2: %v", err)
+	}
+	if changed2 {
+		t.Fatalf("warm-cache no-edit scan should report cacheChanged=false, got true")
+	}
+
+	// Edit the file, then rescan → cacheChanged must be true again.
+	if err := os.WriteFile(path, []byte("world\n"), 0o644); err != nil {
+		t.Fatalf("rewrite: %v", err)
+	}
+	start3 := time.Now().UnixNano() + int64(time.Second)
+	_, _, changed3, err := CachedScan(eng, dir, nil, cache1, start3)
+	if err != nil {
+		t.Fatalf("scan3: %v", err)
+	}
+	if !changed3 {
+		t.Fatalf("scan after edit should report cacheChanged=true")
 	}
 }

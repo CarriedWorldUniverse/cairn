@@ -304,7 +304,7 @@ func cmdUnexpress(args []string) error {
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepo(*repo, *author)
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

@@ -7,6 +7,47 @@ import (
 	"testing"
 )
 
+// TestUnexpressRefusesUnsealedWork: unexpress without --force must refuse when
+// the branch folder contains un-sealed edits (openRepoSynced captures them into
+// the working change so the dirty-guard fires). With --force it must succeed.
+func TestUnexpressRefusesUnsealedWork(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	// init expresses the root branch; express a child branch off it.
+	child := "feature"
+	mustRun(t, "express", "--repo", root, "--from", soleExpressedDir(t, root), child)
+
+	// Write a file into the child folder WITHOUT committing → un-sealed work.
+	if err := os.WriteFile(
+		filepath.Join(root, child, "unsaved.txt"),
+		[]byte("work in progress\n"),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	// unexpress without --force must error and mention "un-sealed".
+	if err := run([]string{"unexpress", "--repo", root, child}); err == nil {
+		t.Fatal("unexpress without --force: expected error for un-sealed work, got nil")
+	} else if !strings.Contains(err.Error(), "un-sealed") {
+		t.Fatalf("unexpress error should mention 'un-sealed', got: %v", err)
+	}
+
+	// The child folder must still exist (not silently removed).
+	if _, err := os.Stat(filepath.Join(root, child)); err != nil {
+		t.Fatalf("child folder removed despite failed unexpress: %v", err)
+	}
+
+	// unexpress --force must succeed, discarding the un-sealed work.
+	mustRun(t, "unexpress", "--repo", root, "--force", child)
+
+	// The child folder must now be gone.
+	if _, err := os.Stat(filepath.Join(root, child)); !os.IsNotExist(err) {
+		t.Fatalf("child folder still present after --force unexpress (err=%v)", err)
+	}
+}
+
 // TestWCCEditsAutoCaptured: a working-copy edit with NO commit is captured by
 // the command-start auto-snapshot, so status/diff/log all observe it.
 func TestWCCEditsAutoCaptured(t *testing.T) {

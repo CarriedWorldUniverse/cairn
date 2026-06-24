@@ -225,18 +225,20 @@ func (r *Repo) syncBranch(branch string, entry Entry) error {
 		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
+	entries, newCache, cacheChanged, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
 	if err != nil {
 		return fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
 		return fmt.Errorf("worktree.syncBranch: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
-		return fmt.Errorf("worktree.syncBranch: %w", err)
-	}
-	if err := saveWCCache(cachePath, newCache); err != nil {
-		return fmt.Errorf("worktree.syncBranch: %w", err)
+	if cacheChanged {
+		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
+			return fmt.Errorf("worktree.syncBranch: %w", err)
+		}
+		if err := saveWCCache(cachePath, newCache); err != nil {
+			return fmt.Errorf("worktree.syncBranch: %w", err)
+		}
 	}
 	return nil
 }
