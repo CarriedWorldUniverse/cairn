@@ -1,0 +1,35 @@
+# Configures GitHub's auto-generated release notes, used by GoReleaser's
+# `changelog.use: github-native` (and the "Generate release notes" button).
+# Notes list the PRs merged between the previous tag and this one, grouped by
+# label. The final catch-all category means every PR is listed even when
+# unlabeled, so the changelog is never empty.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - skip-changelog
+    authors:
+      - dependabot
+      - dependabot[bot]
+  categories:
+    - title: ✨ Features
+      labels:
+        - feature
+        - enhancement
+    - title: 🐛 Fixes
+      labels:
+        - bug
+        - fix
+    - title: 📝 Documentation
+      labels:
+        - documentation
+        - docs
+    - title: 🔧 Maintenance
+      labels:
+        - chore
+        - ci
+        - build
+        - dependencies
+    - title: Other changes
+      labels:
+        - "*"

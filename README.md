@@ -81,6 +81,9 @@ On **Windows**, download the `.zip`, extract `cairn.exe`, and add its folder to 
 Verify any download against the release's `checksums.txt` (SHA-256). To build from
 source instead: `go build ./cmd/cairn`.
 
+Full command reference (all subcommands, flags, examples, and a git→cairn cheat-sheet):
+**[`docs/cairn/CLI.md`](docs/cairn/CLI.md)**. Or run `cairn help`.
+
 Releases are cut by pushing a `v*` tag — [`.github/workflows/release.yml`](.github/workflows/release.yml)
 runs [GoReleaser](https://goreleaser.com) ([`.goreleaser.yaml`](.goreleaser.yaml)) to
 build the matrix and publish the archives.
