@@ -32,6 +32,12 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
+// buildVersion is the release version of this binary, injected at link time by
+// GoReleaser (-ldflags "-X main.buildVersion=..."). It defaults to "dev" for a
+// plain `go build`/`go run`. Reported by the top-level `--version` flag — this
+// is distinct from the `version` subcommand, which derives the repo's semver.
+var buildVersion = "dev"
+
 // Publisher/probe seams, overridable in tests.
 var newPublisher = func() release.Publisher { return release.ExecPublisher{} }
 var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
@@ -112,6 +118,10 @@ func run(args []string) error {
 		return errors.New("no subcommand")
 	}
 	sub, rest := args[0], args[1:]
+	if sub == "--version" || sub == "-v" {
+		fmt.Println("cairn", buildVersion)
+		return nil
+	}
 	switch sub {
 	case "help", "-h", "--help":
 		fmt.Println(usage)

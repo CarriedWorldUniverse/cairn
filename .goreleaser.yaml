@@ -1,0 +1,68 @@
+version: 2
+project_name: cairn
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cairn
+    main: ./cmd/cairn
+    binary: cairn
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w -X main.buildVersion={{ .Version }}
+
+archives:
+  - id: cairn
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "cairn_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Others
+      order: 999
+
+release:
+  footer: |
+    ## Install
+
+    **Linux / macOS** — download the matching `.tar.gz`, then:
+    ```
+    tar xzf cairn_*_<os>_<arch>.tar.gz
+    sudo mv cairn /usr/local/bin/
+    cairn --version
+    ```
+    **macOS Gatekeeper** (binaries are unsigned): clear quarantine once —
+    ```
+    xattr -d com.apple.quarantine /usr/local/bin/cairn
+    ```
+    or right-click the binary → Open.
+
+    **Windows** — download the `.zip`, extract `cairn.exe`, add its folder to `PATH`, then `cairn --version`.
+
+    Verify your download against `checksums.txt` (SHA-256).

@@ -60,6 +60,31 @@ at the top of [`cmd/cairn-server/main.go`](cmd/cairn-server/main.go) for the ful
 
 For container build and cluster deployment, see **[`deploy/k3s/README.md`](deploy/k3s/README.md)** — it covers building the image, loading it into k3s, the one-time SSH host-key secret, and the HTTP (gateway-fronted) vs SSH (LoadBalancer) ingress setup.
 
+## Install the CLI
+
+`cmd/cairn` is the working-copy CLI (the jj-style local VCS — express branches as
+folders, commit, fold/abandon, push/pull). Pre-built standalone binaries are
+published on the [Releases](https://github.com/CarriedWorldUniverse/cairn/releases)
+page for linux/macOS/Windows × amd64/arm64.
+
+```sh
+# Linux / macOS: download the matching archive, then
+tar xzf cairn_<version>_<os>_<arch>.tar.gz
+sudo mv cairn /usr/local/bin/
+cairn --version            # prints the release version
+
+# macOS only — binaries are unsigned, so clear Gatekeeper quarantine once:
+xattr -d com.apple.quarantine /usr/local/bin/cairn
+```
+
+On **Windows**, download the `.zip`, extract `cairn.exe`, and add its folder to `PATH`.
+Verify any download against the release's `checksums.txt` (SHA-256). To build from
+source instead: `go build ./cmd/cairn`.
+
+Releases are cut by pushing a `v*` tag — [`.github/workflows/release.yml`](.github/workflows/release.yml)
+runs [GoReleaser](https://goreleaser.com) ([`.goreleaser.yaml`](.goreleaser.yaml)) to
+build the matrix and publish the archives.
+
 ## Design docs
 
 The cairn-specific design lives under [`docs/cairn/`](docs/cairn):
