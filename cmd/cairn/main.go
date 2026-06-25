@@ -407,7 +407,7 @@ func cmdExpress(args []string) error {
 	if err := r.Express(branch, *from); err != nil {
 		return mapErr(err)
 	}
-	fmt.Printf("%s/%s\n", *repo, branch)
+	fmt.Printf("%s/%s\n", *repo, worktree.FolderName(branch))
 	return nil
 }
 
