@@ -6,13 +6,27 @@ import (
 	"testing"
 )
 
-// isolate points os.UserConfigDir at a temp dir so the test never touches the
-// real user config. On Linux/most-unix os.UserConfigDir honours XDG_CONFIG_HOME.
-func isolate(t *testing.T) string {
+// isolate redirects os.UserConfigDir at a temp dir so a test never touches the
+// real user config. os.UserConfigDir reads a different env var per platform
+// (XDG_CONFIG_HOME on Linux, HOME/Library/Application Support on macOS, AppData
+// on Windows), so set all of them at the temp root to cover every runner.
+func isolate(t *testing.T) {
 	t.Helper()
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	return dir
+	t.Setenv("HOME", dir)
+	t.Setenv("AppData", dir)
+}
+
+// configPath returns the isolated config file path via the package's own
+// resolver, so assertions never hard-code a platform's directory layout.
+func configPath(t *testing.T) string {
+	t.Helper()
+	p, err := Path()
+	if err != nil {
+		t.Fatalf("Path: %v", err)
+	}
+	return p
 }
 
 func TestGetUnsetReturnsEmpty(t *testing.T) {
@@ -23,15 +37,14 @@ func TestGetUnsetReturnsEmpty(t *testing.T) {
 }
 
 func TestSetThenGet(t *testing.T) {
-	dir := isolate(t)
+	isolate(t)
 	if err := Set("user.name", "Jane Dev"); err != nil {
 		t.Fatal(err)
 	}
 	if got := Get("user.name"); got != "Jane Dev" {
 		t.Fatalf("user.name = %q, want Jane Dev", got)
 	}
-	// File created under <configdir>/cairn/config.
-	if _, err := os.Stat(filepath.Join(dir, "cairn", "config")); err != nil {
+	if _, err := os.Stat(configPath(t)); err != nil {
 		t.Fatalf("config file not created: %v", err)
 	}
 }
@@ -62,8 +75,8 @@ func TestSetOverwritesExistingKey(t *testing.T) {
 }
 
 func TestLoadIgnoresCommentsAndBlanks(t *testing.T) {
-	dir := isolate(t)
-	cfg := filepath.Join(dir, "cairn", "config")
+	isolate(t)
+	cfg := configPath(t)
 	if err := os.MkdirAll(filepath.Dir(cfg), 0o755); err != nil {
 		t.Fatal(err)
 	}

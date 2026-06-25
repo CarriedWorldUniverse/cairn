@@ -12,7 +12,12 @@ import (
 // in isolation regardless of the host's real config.
 func isolateIdentityEnv(t *testing.T) {
 	t.Helper()
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	// os.UserConfigDir reads a different env var per platform; set them all so
+	// the global config is isolated on every runner (Linux/macOS/Windows).
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("HOME", dir)
+	t.Setenv("AppData", dir)
 	t.Setenv("CAIRN_AUTHOR", "")
 	t.Setenv("CAIRN_EMAIL", "")
 	t.Setenv("GIT_AUTHOR_EMAIL", "")
