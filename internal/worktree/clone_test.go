@@ -81,7 +81,7 @@ func TestCloneImportsAndExpresses(t *testing.T) {
 	skipOnWindows(t)
 	url, def := makeOriginRepoWT(t) // returns local path url + default branch name
 	dir := filepath.Join(t.TempDir(), "myrepo")
-	r, err := Clone(url, dir, "tester")
+	r, err := Clone(url, dir, "tester", nil)
 	if err != nil {
 		t.Fatalf("Clone: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestReopenAfterCloneNonMainDefault(t *testing.T) {
 	skipOnWindows(t)
 	url, def := makeOriginRepoWT(t) // go-git PlainInit default is typically "master"
 	dir := filepath.Join(t.TempDir(), "myrepo")
-	r, err := Clone(url, dir, "t")
+	r, err := Clone(url, dir, "t", nil)
 	if err != nil {
 		t.Fatalf("Clone: %v", err)
 	}
