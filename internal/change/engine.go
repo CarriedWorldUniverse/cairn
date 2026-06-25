@@ -50,6 +50,10 @@ type Engine struct {
 // writes. Empty values fall back to safe placeholders in writeCommit.
 func (e *Engine) SetIdentity(name, email string) { e.idName, e.idEmail = name, email }
 
+// Identity returns the configured author name and email (either may be "" when
+// unset).
+func (e *Engine) Identity() (name, email string) { return e.idName, e.idEmail }
+
 // SetProgress sets the writer that network fetch progress (the git sideband:
 // counting/compressing/receiving objects) is streamed to during clone/fetch.
 // nil (the default) disables progress output. The CLI points this at os.Stderr.
