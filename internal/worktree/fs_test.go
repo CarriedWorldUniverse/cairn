@@ -8,6 +8,36 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
+// TestMaterializeCreatesParentDirs reproduces the bug hit expressing a branch
+// whose name contains "/" (e.g. "docs/readme-refresh"): the target dir is nested
+// (<root>/docs/readme-refresh) but its parent (<root>/docs) does not exist —
+// after a clone that expressed only the root, no "docs/" folder was ever made.
+// Materialize must create the parent before building its temp dir.
+func TestMaterializeCreatesParentDirs(t *testing.T) {
+	eng, err := change.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = eng.Close() })
+	main, _ := eng.LineByName("main")
+	ch, _ := eng.CreateChange(main.ID, "t")
+	r, err := eng.Commit(ch.ID, map[string][]byte{"README.md": []byte("hi\n")}, nil, "")
+	if err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	cacheDir := filepath.Join(t.TempDir(), "cache")
+	root := t.TempDir()
+	// Parent "docs" deliberately does NOT exist on disk.
+	dir := filepath.Join(root, "docs", "readme-refresh")
+	if err := Materialize(eng, cacheDir, r.HeadCommit, dir); err != nil {
+		t.Fatalf("Materialize into nested dir: %v", err)
+	}
+	if got, err := os.ReadFile(filepath.Join(dir, "README.md")); err != nil || string(got) != "hi\n" {
+		t.Fatalf("expressed file missing/wrong: got %q err %v", got, err)
+	}
+}
+
 func TestMaterializeScanRoundTrip(t *testing.T) {
 	eng, err := change.Open(t.TempDir())
 	if err != nil {

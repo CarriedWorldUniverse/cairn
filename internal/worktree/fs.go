@@ -34,6 +34,13 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
+	// Ensure dir's parent exists. A branch name may contain "/" (e.g.
+	// "docs/readme-refresh"), so dir can be nested under a folder that was never
+	// created — e.g. after a clone that expressed only the root. Both the temp
+	// dir below and the final rename need the parent to exist.
+	if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
 	// Build into a unique sibling temp dir first, then swap — so a failure
 	// mid-build leaves the existing working copy intact (the slow writes happen
 	// before anything destructive). A sibling of dir is on the same filesystem →
