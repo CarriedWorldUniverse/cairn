@@ -692,6 +692,18 @@ func (r *Repo) Push(remote string, force bool) error {
 	return r.eng.PushToRemote(remote, force)
 }
 
+// PushBranch publishes a SINGLE line (plus tags) to remote — for feeding one
+// feature line to a remote to open a PR, without touching other lines (notably
+// the remote-tracked main). Unlike Push it does not auto-pull-retry on
+// divergence; a diverged remote branch surfaces the clear "diverged" error so
+// the operator pulls deliberately.
+func (r *Repo) PushBranch(remote, branch string, force bool) error {
+	if _, err := r.eng.LineByName(branch); err != nil {
+		return fmt.Errorf("worktree.PushBranch: %w", err)
+	}
+	return r.eng.PushToRemoteBranch(remote, branch, force)
+}
+
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
 // without reconciling local lines — the read-only half of a pull. Local work is
 // never clobbered.
