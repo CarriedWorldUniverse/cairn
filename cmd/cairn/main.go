@@ -268,38 +268,32 @@ func collectIdentity(curName, curEmail string) (string, string, error) {
 	return name, email, nil
 }
 
-// ensureIdentity guarantees a real author identity before a commit lands. If one
-// is configured (repo/global/env) it returns immediately. Otherwise, on a
-// terminal it runs first-use setup (saving globally + applying to this session);
-// non-interactively it errors with guidance — cairn never invents or silently
-// borrows an identity.
-func ensureIdentity(r *worktree.Repo) error {
-	curName, curEmail := r.Identity()
-	if curName != "" && curEmail != "" {
-		return nil
+// ensureIdentity settles the author identity before a commit lands, best-effort
+// and never blocking (the CLI+agent-first contract: a script/agent must never
+// hang or hard-fail on a prompt). Precedence: cairn's own config (repo→global→
+// env, already resolved into r.Identity) wins; any gap is filled from git config
+// so non-interactive commits still get real attribution; and only on a real
+// terminal with nothing configured do we run gh-style first-use setup (saved
+// globally, asked once). Whatever is still missing is covered by the engine's
+// commit-time placeholder — cairn prefers its own identity but never refuses to
+// commit for lack of one.
+func ensureIdentity(r *worktree.Repo) {
+	name, email := r.Identity()
+	if name != "" && email != "" {
+		return
 	}
-	if !isInteractive() {
-		// No terminal to prompt (script, agent, CI): fall back to the git identity
-		// configured in that environment as a last resort. cairn's own config
-		// (repo/global) still takes precedence; this only fills what's missing.
-		name := firstNonEmptyStr(curName, gitConfigValue("user.name"))
-		email := firstNonEmptyStr(curEmail, gitConfigValue("user.email"))
-		if name != "" && email != "" {
-			r.SetIdentity(name, email)
-			return nil
+	// Fill gaps from the git identity configured in this environment.
+	name = firstNonEmptyStr(name, gitConfigValue("user.name"))
+	email = firstNonEmptyStr(email, gitConfigValue("user.email"))
+	if (name == "" || email == "") && isInteractive() {
+		fmt.Fprintln(os.Stderr, "cairn: no identity set — let's set it up (saved globally, asked once).")
+		if n, e, err := collectIdentity(name, email); err == nil {
+			name, email = n, e
 		}
-		return errors.New("no identity configured — run 'cairn setup', or:\n" +
-			"  cairn config --global user.name \"Your Name\"\n" +
-			"  cairn config --global user.email \"you@example.com\"\n" +
-			"(or set $CAIRN_AUTHOR / $CAIRN_EMAIL)")
 	}
-	fmt.Fprintln(os.Stderr, "cairn: no identity set — let's set it up (saved globally, asked once).")
-	name, email, err := collectIdentity(curName, curEmail)
-	if err != nil {
-		return err
+	if name != "" || email != "" {
+		r.SetIdentity(name, email)
 	}
-	r.SetIdentity(name, email)
-	return nil
 }
 
 func cmdSetup(args []string) error {
@@ -595,9 +589,7 @@ func cmdCommit(args []string) error {
 	} else {
 		return errors.New("branch required (or run from inside a branch folder)")
 	}
-	if err := ensureIdentity(r); err != nil {
-		return mapErr(err)
-	}
+	ensureIdentity(r)
 	res, err := r.Commit(branch, *msg)
 	if err != nil {
 		return mapErr(err)
