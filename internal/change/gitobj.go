@@ -128,6 +128,52 @@ func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, err
 	return h, nil
 }
 
+// readTreeRefs reads a tree (recursively) into a flat path->TreeEntry map keyed
+// by the full "/"-separated path of each file. It is the mode-preserving inverse
+// of writeTreeRefs: each entry carries the blob's hex SHA and its EntryMode
+// (regular/executable/symlink), NOT its bytes. Use this (not readTree) whenever a
+// tree must be rebuilt — readTree flattens via tree.Files() and re-reads blob
+// contents, losing exec/symlink modes and re-materializing bytes. Round-tripping
+// readTreeRefs -> writeTreeRefs reproduces the identical tree hash.
+func (e *Engine) readTreeRefs(treeHash string) (map[string]TreeEntry, error) {
+	out := map[string]TreeEntry{}
+	if treeHash == "" {
+		return out, nil
+	}
+	if err := e.collectTreeRefs(treeHash, "", out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEntry) error {
+	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
+	if err != nil {
+		return fmt.Errorf("change.readTreeRefs: tree %s: %w", treeHash, err)
+	}
+	for _, ent := range tree.Entries {
+		path := ent.Name
+		if prefix != "" {
+			path = prefix + "/" + ent.Name
+		}
+		if ent.Mode == filemode.Dir {
+			if err := e.collectTreeRefs(ent.Hash.String(), path, out); err != nil {
+				return err
+			}
+			continue
+		}
+		mode := ModeRegular
+		switch ent.Mode {
+		case filemode.Executable:
+			mode = ModeExecutable
+		case filemode.Symlink:
+			mode = ModeSymlink
+		}
+		out[path] = TreeEntry{SHA: ent.Hash.String(), Mode: mode}
+	}
+	return nil
+}
+
 // readBlob reads the contents of a git blob by hash.
 func (e *Engine) readBlob(sha string) ([]byte, error) {
 	b, err := e.git.BlobObject(plumbing.NewHash(sha))

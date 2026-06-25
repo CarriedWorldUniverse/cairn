@@ -170,6 +170,16 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 		refSpecs = append(refSpecs, config.RefSpec("+refs/cairn/*:refs/cairn/*"))
 	}
 
+	// Privacy: if any path is withheld, repoint the refs about to be pushed at a
+	// redacted projection (private bytes stripped from every reachable tree), push
+	// those, and restore the real refs afterward. No-op (and byte-identical to a
+	// plain push) when nothing is flagged private.
+	restore, err := e.redactForPush(refSpecs)
+	if err != nil {
+		return fmt.Errorf("%s: redact: %w", label, err)
+	}
+	defer restore()
+
 	auth, err := e.authForRemote(rem)
 	if err != nil {
 		return fmt.Errorf("%s: %w", label, err)
@@ -193,6 +203,126 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 			label, remoteName, err)
 	}
 	return fmt.Errorf("%s: %w", label, err)
+}
+
+// redactForPush implements the privacy guarantee at the push boundary. When any
+// path is flagged private, it builds a redacted projection of every commit
+// reachable from the refs about to be pushed (refSpecs), repoints those local
+// refs at their redacted SHAs, and returns a restore func that puts the real refs
+// back (run via defer, so it fires even if the push errors). The catalogue/DB is
+// never touched, and the local object store keeps the real objects — only NEW
+// redacted objects are written. With no private flags it is a single query and a
+// no-op restore, so the push is byte-identical to a non-private push.
+//
+// All four pushed surfaces are covered: refs/heads/* (sealed tips), refs/tags/*,
+// refs/cairn/change/* (live working snapshots — the worst leak), and
+// refs/cairn/meta (rebuilt so its recorded commit SHAs point at redacted commits).
+func (e *Engine) redactForPush(refSpecs []config.RefSpec) (func(), error) {
+	noop := func() {}
+	red, on, err := e.newRedactor()
+	if err != nil {
+		return noop, err
+	}
+	if !on {
+		return noop, nil // fast path: nothing withheld
+	}
+
+	const metaRef = "refs/cairn/meta"
+	type refSnap struct {
+		name plumbing.ReferenceName
+		orig plumbing.Hash
+	}
+	var commitRefs []refSnap
+	hasMeta := false
+
+	iter, err := e.git.References()
+	if err != nil {
+		return noop, fmt.Errorf("redactForPush: refs: %w", err)
+	}
+	err = iter.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() != plumbing.HashReference {
+			return nil // skip symbolic refs (HEAD)
+		}
+		name := ref.Name()
+		if !refSpecsMatch(refSpecs, name) {
+			return nil
+		}
+		if name.String() == metaRef {
+			hasMeta = true
+			return nil // meta is rebuilt separately (its tree is meta.json, not file content)
+		}
+		commitRefs = append(commitRefs, refSnap{name, ref.Hash()})
+		return nil
+	})
+	if err != nil {
+		return noop, fmt.Errorf("redactForPush: %w", err)
+	}
+
+	// Redact every commit reachable from the in-scope commit refs.
+	anchors := make([]string, 0, len(commitRefs))
+	for _, rs := range commitRefs {
+		anchors = append(anchors, rs.orig.String())
+	}
+	mapping, err := red.project(anchors)
+	if err != nil {
+		return noop, fmt.Errorf("redactForPush: %w", err)
+	}
+
+	// Repoint each in-scope ref at its redacted target, recording how to restore.
+	var restores []func()
+	restore := func() {
+		for i := len(restores) - 1; i >= 0; i-- {
+			restores[i]()
+		}
+	}
+	setRef := func(name plumbing.ReferenceName, sha string) error {
+		return e.git.Storer.SetReference(plumbing.NewHashReference(name, plumbing.NewHash(sha)))
+	}
+	for _, rs := range commitRefs {
+		name, orig := rs.name, rs.orig
+		redSHA := mapping[orig.String()]
+		if redSHA == "" || redSHA == orig.String() {
+			continue // ref unchanged by redaction
+		}
+		if err := setRef(name, redSHA); err != nil {
+			restore()
+			return noop, fmt.Errorf("redactForPush: set %s: %w", name, err)
+		}
+		restores = append(restores, func() { _ = e.git.Storer.SetReference(plumbing.NewHashReference(name, orig)) })
+	}
+
+	// Rebuild refs/cairn/meta so its recorded commit SHAs point at redacted commits.
+	if hasMeta {
+		origMeta, rerr := e.git.Reference(plumbing.ReferenceName(metaRef), false)
+		if rerr == nil {
+			redMeta, merr := red.redactedMeta(mapping)
+			if merr != nil {
+				restore()
+				return noop, fmt.Errorf("redactForPush: meta: %w", merr)
+			}
+			if redMeta != origMeta.Hash().String() {
+				if err := setRef(plumbing.ReferenceName(metaRef), redMeta); err != nil {
+					restore()
+					return noop, fmt.Errorf("redactForPush: set meta: %w", err)
+				}
+				oh := origMeta.Hash()
+				restores = append(restores, func() {
+					_ = e.git.Storer.SetReference(plumbing.NewHashReference(plumbing.ReferenceName(metaRef), oh))
+				})
+			}
+		}
+	}
+	return restore, nil
+}
+
+// refSpecsMatch reports whether any refspec's source side matches the ref name.
+func refSpecsMatch(refSpecs []config.RefSpec, name plumbing.ReferenceName) bool {
+	for _, s := range refSpecs {
+		if s.Match(name) {
+			return true
+		}
+	}
+	return false
 }
 
 // IsNonFastForward reports whether a go-git push error is a non-fast-forward
