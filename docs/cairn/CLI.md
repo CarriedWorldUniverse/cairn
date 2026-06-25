@@ -20,7 +20,7 @@ under [`docs/cairn/`](.); for installation see the [README](../../README.md#inst
   - [Setup](#setup) · [Lines (branches)](#lines-branches) · [Saving work](#saving-work)
   - [Inspecting](#inspecting) · [Conflicts](#conflicts) · [Undo & history](#undo--history)
   - [History editing](#history-editing) · [Stash](#stash) · [Bisect](#bisect)
-  - [Remotes & collaboration](#remotes--collaboration) · [Versioning & release](#versioning--release)
+  - [Remotes & collaboration](#remotes--collaboration) · [Privacy](#privacy-withholding-from-pushes) · [Versioning & release](#versioning--release)
 - [Exit codes](#exit-codes)
 - [Coming from git](#coming-from-git)
 
@@ -402,6 +402,43 @@ Fetch a remote into tracking refs (default `origin`) without reconciling.
 
 #### `cairn pull [remote]`
 Fetch and reconcile each line (default `origin`).
+
+### Privacy (withholding from pushes)
+
+Keep a path **out of every push** — the way you'd keep secrets out of a repo, but tracked and
+enforced instead of just hoped-for. The withheld file stays **real on disk and in your local
+commits** (you need the secret to run the thing); cairn strips it from whatever it publishes, so
+**no withheld byte ever reaches a remote** — never in plaintext, never as ciphertext. A flag
+covers the path **and everything beneath it**, and applies **retroactively** (the path is redacted
+from all history on push, not just new commits).
+
+This is the local-over-git behaviour. Per-identity gating, embargo, and recoverable-but-redacted
+projections are deferred **cairn-server** features (see the convergence-core spec §6); over a plain
+git (or even cairn) remote, private simply means *not shipped*.
+
+#### `cairn private <path> [--shape-only]`
+Withhold `<path>` (and its subtree) from every push. Default is **omit** — the path is absent from
+the pushed repo entirely (no name, no bytes), like an enforced `.gitignore`. `--shape-only` keeps
+the path but replaces its bytes with a `<<private>>` placeholder (useful when you want the public
+projection to *show* that a secret belongs there).
+```sh
+cairn private secrets            # the secrets/ folder never leaves your machine
+cairn private config/prod.env    # a single file
+cairn private docs --shape-only  # docs/ paths visible, contents withheld
+```
+
+#### `cairn private ls`
+List withheld paths and their modes.
+
+#### `cairn disclose <path>`
+Stop withholding a path; the next push includes its real content. (Anything already pushed before
+you withheld it is, of course, already on the remote — withhold *before* the first push.)
+
+> **What's redacted:** every pushed surface — `refs/heads/*` (sealed history), `refs/tags/*`,
+> and, for a cairn remote, the live working snapshots (`refs/cairn/change/*`) and the change-graph
+> metadata (`refs/cairn/meta`). The redaction is a push-time projection: your local refs and the
+> object store are never altered, so the next ordinary command sees real content. With no privacy
+> flags set, a push is byte-for-byte identical to one without this feature.
 
 ### Versioning & release
 

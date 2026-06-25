@@ -77,5 +77,10 @@ CREATE TABLE IF NOT EXISTS bisect (
   restore_tip TEXT NOT NULL,
   started_at  TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS privacy (
+  path       TEXT PRIMARY KEY,
+  mode       TEXT NOT NULL CHECK (mode IN ('shape-only','omit')),
+  created_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_change_line ON change(line_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_change ON conflict(change_id);

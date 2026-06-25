@@ -94,6 +94,9 @@ subcommands:
   setup                         set your commit identity (name/email), stored globally
   config [--global] <key> [value]  get/set a config value (--global = user-level, all repos)
   tag <name> [branch]           tag the tip of a branch (default: root branch)
+  private <path> [--shape-only] withhold a file/folder from every push (omit by default)
+  private ls                    list withheld paths
+  disclose <path>               stop withholding a path
   version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
@@ -181,6 +184,10 @@ func run(args []string) error {
 		return cmdSetup(rest)
 	case "tag":
 		return cmdTag(rest)
+	case "private":
+		return cmdPrivate(rest)
+	case "disclose":
+		return cmdDisclose(rest)
 	case "version":
 		return cmdVersion(rest)
 	case "release":
@@ -1089,6 +1096,77 @@ func cmdTag(args []string) error {
 		return mapErr(err)
 	}
 	fmt.Fprintf(os.Stderr, "cairn: tagged %s -> %s\n", branch, name)
+	return nil
+}
+
+// cmdPrivate withholds a path from every push, or (with the `ls` subcommand)
+// lists withheld paths. Usage:
+//
+//	cairn private <path> [--shape-only]
+//	cairn private ls
+//
+// Withheld content is tracked locally (readable on disk, in local commits) but is
+// stripped from every push — omit by default (path gone entirely), or
+// --shape-only to keep the path with placeholder bytes.
+func cmdPrivate(args []string) error {
+	fs := flag.NewFlagSet("private", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	shapeOnly := fs.Bool("shape-only", false, "keep the path with placeholder bytes instead of removing it entirely")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn private <path> [--shape-only]  |  cairn private ls")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if fs.Arg(0) == "ls" {
+		entries, err := r.ListPrivate()
+		if err != nil {
+			return mapErr(err)
+		}
+		for _, e := range entries {
+			fmt.Printf("%s\t%s\n", e.Path, e.Mode)
+		}
+		return nil
+	}
+	path := fs.Arg(0)
+	if err := r.MarkPrivate(path, *shapeOnly); err != nil {
+		return mapErr(err)
+	}
+	mode := "omit"
+	if *shapeOnly {
+		mode = "shape-only"
+	}
+	fmt.Fprintf(os.Stderr, "cairn: withholding %s from pushes (%s)\n", path, mode)
+	return nil
+}
+
+// cmdDisclose stops withholding a path: the next push includes its real content.
+//
+//	cairn disclose <path>
+func cmdDisclose(args []string) error {
+	fs := flag.NewFlagSet("disclose", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn disclose <path>")
+	}
+	path := fs.Arg(0)
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.UnmarkPrivate(path); err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: disclosed %s (no longer withheld)\n", path)
 	return nil
 }
 

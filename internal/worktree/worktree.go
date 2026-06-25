@@ -937,6 +937,23 @@ func (r *Repo) Tag(name, branch string) error {
 	return r.eng.Tag(name, line.TipCommit, r.author)
 }
 
+// MarkPrivate withholds a path (and everything beneath it) from every push. omit
+// (the default) drops it from the pushed projection entirely; shapeOnly keeps the
+// path but replaces its bytes with a placeholder.
+func (r *Repo) MarkPrivate(path string, shapeOnly bool) error {
+	mode := change.PrivacyOmit
+	if shapeOnly {
+		mode = change.PrivacyShapeOnly
+	}
+	return r.eng.MarkPrivate(path, mode)
+}
+
+// UnmarkPrivate stops withholding a path. Idempotent.
+func (r *Repo) UnmarkPrivate(path string) error { return r.eng.UnmarkPrivate(path) }
+
+// ListPrivate returns every privacy flag, ordered by path.
+func (r *Repo) ListPrivate() ([]change.PrivateEntry, error) { return r.eng.ListPrivate() }
+
 // PendingBump returns the recorded explicit bump intent ("" if none).
 func (r *Repo) PendingBump() (string, error) {
 	v, _, err := r.eng.GetConfig("version.pending_bump")
