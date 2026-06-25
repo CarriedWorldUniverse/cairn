@@ -36,3 +36,18 @@ func TestRunUnknownSubcommand(t *testing.T) {
 		t.Fatal("expected error for unknown subcommand")
 	}
 }
+
+// TestVersionFlag covers the top-level --version/-v build-version flag (distinct
+// from the `version` subcommand, which derives the repo's semver). It defaults
+// to "dev" and is overridden at link time by GoReleaser.
+func TestVersionFlag(t *testing.T) {
+	if buildVersion != "dev" {
+		t.Fatalf("buildVersion default = %q, want dev", buildVersion)
+	}
+	for _, flag := range []string{"--version", "-v"} {
+		out := captureRun(t, flag)
+		if want := "cairn dev\n"; out != want {
+			t.Fatalf("run(%q) = %q, want %q", flag, out, want)
+		}
+	}
+}
