@@ -104,6 +104,7 @@ subcommands:
   reword <commit> <message> change the message of a sealed commit (history edit)
   squash <commit>           fold a sealed commit into its parent (history edit)
   drop <commit>             remove a sealed commit from its line (history edit)
+  reauthor --old-email <glob> --name <n> --email <e> [--dry-run]  bulk-retag commit identity (whole repo)
   cherry-pick <commit> [branch]  apply a commit from another line onto your branch
   bisect start --good <c> --bad <c> [branch]  begin a bisect (materializes the midpoint)
   bisect good | bad             mark the current commit; materializes the next midpoint
@@ -194,6 +195,8 @@ func run(args []string) error {
 		return cmdDrop(rest)
 	case "cherry-pick":
 		return cmdCherryPick(rest)
+	case "reauthor":
+		return cmdReauthor(rest)
 	case "bisect":
 		return cmdBisect(rest)
 	default:
@@ -1672,6 +1675,55 @@ func cmdDrop(args []string) error {
 		return mapErr(err)
 	}
 	return reportEdit(res, "drop")
+}
+
+// cmdReauthor bulk-rewrites commit author/email across the whole repo (every line,
+// root included). Match the OLD identity by name and/or email glob; supply the NEW
+// name and/or email. At least one match filter is required (a guard against
+// retagging the entire history by accident), as is at least one replacement.
+//
+//	cairn reauthor --old-email '*@users.noreply.cairn' --name Jacinta --email jacinta@darksoft.co.nz
+//	cairn reauthor --old-name cairn --name Jacinta --email me@x.io --dry-run
+func cmdReauthor(args []string) error {
+	fs := flag.NewFlagSet("reauthor", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	oldName := fs.String("old-name", "", "match commits whose author/committer name matches this glob")
+	oldEmail := fs.String("old-email", "", "match commits whose author/committer email matches this glob")
+	newName := fs.String("name", "", "new author/committer name (unchanged if empty)")
+	newEmail := fs.String("email", "", "new author/committer email (unchanged if empty)")
+	dryRun := fs.Bool("dry-run", false, "report what would change without rewriting")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if *oldName == "" && *oldEmail == "" {
+		return errors.New("reauthor: specify at least one of --old-name / --old-email " +
+			"(refusing to match every commit); e.g. --old-email '*@users.noreply.cairn'")
+	}
+	if *newName == "" && *newEmail == "" {
+		return errors.New("reauthor: specify at least one of --name / --email to set")
+	}
+	r, err := openRepoSynced(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	res, err := r.Reauthor(change.ReauthorSpec{
+		OldName:  *oldName,
+		OldEmail: *oldEmail,
+		NewName:  *newName,
+		NewEmail: *newEmail,
+		DryRun:   *dryRun,
+	})
+	if err != nil {
+		return mapErr(err)
+	}
+	verb := "rewrote"
+	if *dryRun {
+		verb = "would rewrite"
+	}
+	fmt.Printf("reauthor: %s %d commit(s) matching the old identity (%d total rebuilt, incl. descendants)\n",
+		verb, res.Matched, res.Rewritten)
+	return nil
 }
 
 // cmdCherryPick applies the delta of a given commit onto a branch as a new

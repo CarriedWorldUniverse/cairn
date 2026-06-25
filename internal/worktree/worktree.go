@@ -1433,6 +1433,27 @@ func (r *Repo) Drop(commit string) (change.CommitResult, error) {
 	})
 }
 
+// Reauthor rewrites the author/committer identity of every matching commit across
+// the whole repo (see change.Reauthor). Because only identity changes — trees are
+// preserved — the on-disk content of every expressed folder is byte-identical
+// afterward; we still re-materialize each so its working state tracks the new
+// commit SHAs. A dry run touches nothing.
+func (r *Repo) Reauthor(spec change.ReauthorSpec) (change.ReauthorResult, error) {
+	res, err := r.eng.Reauthor(spec)
+	if err != nil {
+		return change.ReauthorResult{}, err
+	}
+	if spec.DryRun {
+		return res, nil
+	}
+	for branch, entry := range r.st.Expressed {
+		if merr := r.rematerialize(branch, entry); merr != nil {
+			return change.ReauthorResult{}, merr
+		}
+	}
+	return res, nil
+}
+
 // CherryPick applies the delta of the given commit onto branch as a new sealed
 // commit, then rebases the open working change on top. The result carries the
 // new line tip and any conflicts (conflicts-as-data). If branch is expressed its
