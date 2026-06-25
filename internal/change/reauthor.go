@@ -233,9 +233,49 @@ func (e *Engine) commitAnchors() ([]string, error) {
 	return out, nil
 }
 
+// peelToCommit resolves sha to its underlying commit, peeling annotated tag
+// objects — a tag ref points at a tag OBJECT, not a commit, so a cloned annotated
+// tag's SHA is not loadable as a commit. Returns ok=false when sha is missing or
+// resolves to a non-commit (tree/blob/dangling): such an anchor is skipped rather
+// than crashing the walk. (cairn makes lightweight tags; this only matters for
+// tags imported from a git remote.)
+func (e *Engine) peelToCommit(sha string) (string, bool) {
+	h := plumbing.NewHash(sha)
+	if _, err := e.git.CommitObject(h); err == nil {
+		return sha, true
+	}
+	obj, err := e.git.Object(plumbing.AnyObject, h)
+	if err != nil {
+		return "", false
+	}
+	for i := 0; i < 10; i++ { // bound any tag->tag chain
+		tag, ok := obj.(*object.Tag)
+		if !ok {
+			break
+		}
+		if obj, err = tag.Object(); err != nil {
+			return "", false
+		}
+	}
+	if c, ok := obj.(*object.Commit); ok {
+		return c.Hash.String(), true
+	}
+	return "", false
+}
+
 // topoCommits returns all commits reachable from anchors (following every parent),
 // ordered parents-before-children so a rewrite can remap parents as it goes.
+// Anchors are peeled to commits first (annotated tags) and unresolvable anchors
+// dropped, so a cloned repo's annotated tags don't crash the walk.
 func (e *Engine) topoCommits(anchors []string) ([]string, error) {
+	seeds := make([]string, 0, len(anchors))
+	for _, a := range anchors {
+		if c, ok := e.peelToCommit(a); ok {
+			seeds = append(seeds, c)
+		}
+	}
+	anchors = seeds
+
 	visited := map[string]bool{}
 	var order []string
 	// Iterative post-order DFS: emit a node only after all its parents are emitted.
