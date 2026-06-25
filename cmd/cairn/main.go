@@ -550,7 +550,7 @@ func cmdStatus(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -598,7 +598,7 @@ func cmdDiff(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -1182,7 +1182,7 @@ func cmdLog(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -1233,7 +1233,7 @@ func cmdShow(args []string) error {
 	if fs.NArg() != 1 {
 		return errors.New("usage: cairn show <commit>")
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

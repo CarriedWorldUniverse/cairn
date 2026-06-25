@@ -242,6 +242,20 @@ func (r *Repo) SyncWorking() error {
 	return nil
 }
 
+// syncOne snapshots a single expressed branch into its working change, skipping
+// the snapshot during an active bisect (the folder holds a historical commit).
+// Read/write methods call this so a command re-scans ONLY the branch it touches,
+// rather than every expressed folder — the cost that dominated `status` on a
+// large tree with several branches expressed.
+func (r *Repo) syncOne(branch string, entry Entry) error {
+	if active, err := r.eng.BisectActive(); err != nil {
+		return fmt.Errorf("worktree.syncOne: %w", err)
+	} else if active {
+		return nil
+	}
+	return r.syncBranch(branch, entry)
+}
+
 // syncBranch snapshots one expressed branch's folder into its open working
 // change via amend-in-place, using the per-branch snapshot cache for cheap
 // rescans. A corrupt/missing cache is treated as empty (full rescan).
@@ -571,6 +585,9 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	if !ok {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: branch %q is not expressed", branch)
 	}
+	if err := r.syncOne(branch, entry); err != nil {
+		return StatusInfo{}, err
+	}
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
@@ -652,6 +669,9 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
+	}
+	if err := r.syncOne(branch, entry); err != nil {
+		return nil, err
 	}
 	ch, err := r.eng.GetChange(entry.ChangeID)
 	if err != nil {
