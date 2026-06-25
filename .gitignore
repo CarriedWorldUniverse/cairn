@@ -3,3 +3,6 @@
 *.db
 *.db-*
 .DS_Store
+
+# GoReleaser build output
+dist/
