@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime"
+	"sync"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -64,73 +66,148 @@ func saveWCCache(path string, c map[string]wcCacheEntry) error {
 // skip saveWCCache when cacheChanged is false. scanStartNs is captured by the
 // caller (time.Now().UnixNano()) before the walk and passed in.
 func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, error) {
-	entries := map[string]change.TreeEntry{}
-	newCache := map[string]wcCacheEntry{}
-	changed := false
-
-	err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
+	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
+	// collected by the (serial) directory walk. The slow per-file step — reading
+	// a cache-missed file's content — is then done in PARALLEL, because on Windows
+	// each file open is intercepted by the antivirus scanner and is latency- not
+	// CPU-bound, so concurrent reads hide that latency. The go-git blob writes
+	// stay serial below (the object store is not concurrency-safe).
+	type scanItem struct {
+		slashRel string
+		path     string
+		mtimeNs  int64
+		size     int64
+		symlink  bool
+		mode     change.EntryMode
+	}
+	var items []scanItem
+	if err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
 		info, err := d.Info()
 		if err != nil {
 			return err
 		}
-		mtimeNs := info.ModTime().UnixNano()
-		size := info.Size()
-		prev, hadPrev := cache[slashRel]
-		// A cache entry is trustworthy only if its stat matches AND the file was
-		// last modified strictly before the scan began. mtimeNs >= scanStartNs is
-		// "racy": the file may have changed in the same nanosecond the scan saw,
-		// so we cannot trust the cached SHA and must re-read.
-		statMatch := hadPrev && prev.MtimeNs == mtimeNs && prev.Size == size && mtimeNs < scanStartNs
-
-		if d.Type()&os.ModeSymlink != 0 {
-			if statMatch && prev.Mode == change.ModeSymlink {
-				entries[slashRel] = change.TreeEntry{SHA: prev.BlobSHA, Mode: change.ModeSymlink}
-				newCache[slashRel] = prev
-				return nil
-			}
-			target, err := os.Readlink(path)
-			if err != nil {
-				return err
-			}
-			sha, err := eng.WriteBlob([]byte(target))
-			if err != nil {
-				return err
-			}
-			entries[slashRel] = change.TreeEntry{SHA: sha, Mode: change.ModeSymlink}
-			newCache[slashRel] = wcCacheEntry{MtimeNs: mtimeNs, Size: size, BlobSHA: sha, Mode: change.ModeSymlink}
-			changed = true
-			return nil
-		}
-
-		// Regular file: determine the on-disk mode from the exec bit.
 		mode := change.ModeRegular
 		if info.Mode()&0o111 != 0 {
 			mode = change.ModeExecutable
 		}
-		if statMatch && prev.Mode == mode {
-			entries[slashRel] = change.TreeEntry{SHA: prev.BlobSHA, Mode: mode}
-			newCache[slashRel] = prev
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		sha, err := eng.WriteBlob(data)
-		if err != nil {
-			return err
-		}
-		entries[slashRel] = change.TreeEntry{SHA: sha, Mode: mode}
-		newCache[slashRel] = wcCacheEntry{MtimeNs: mtimeNs, Size: size, BlobSHA: sha, Mode: mode}
-		changed = true
+		items = append(items, scanItem{
+			slashRel: slashRel, path: path,
+			mtimeNs: info.ModTime().UnixNano(), size: info.Size(),
+			symlink: d.Type()&os.ModeSymlink != 0, mode: mode,
+		})
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, nil, false, fmt.Errorf("worktree.CachedScan: %w", err)
+	}
+
+	// Per-item resolution. A cache HIT reuses the stored SHA (no read). A MISS
+	// records the freshly-read content (data) for the serial blob-write pass. The
+	// `cache` map is only read here, so concurrent access is safe.
+	type scanResult struct {
+		sha  string // set on a hit
+		data []byte // set on a miss (content to write); nil on a hit
+		miss bool
+		err  error
+	}
+	results := make([]scanResult, len(items))
+	resolve := func(i int) {
+		it := items[i]
+		prev, hadPrev := cache[it.slashRel]
+		mode := it.mode
+		if it.symlink {
+			mode = change.ModeSymlink
+		}
+		// A cache entry is trustworthy only if its stat matches AND the file was
+		// last modified strictly before the scan began (mtime >= scanStartNs is
+		// "racy" — it may have changed in the instant the scan saw it).
+		if hadPrev && prev.MtimeNs == it.mtimeNs && prev.Size == it.size &&
+			it.mtimeNs < scanStartNs && prev.Mode == mode {
+			results[i] = scanResult{sha: prev.BlobSHA}
+			return
+		}
+		if it.symlink {
+			target, err := os.Readlink(it.path)
+			results[i] = scanResult{data: []byte(target), miss: true, err: err}
+			return
+		}
+		data, err := os.ReadFile(it.path)
+		results[i] = scanResult{data: data, miss: true, err: err}
+	}
+	parallelFor(len(items), resolve)
+
+	// Serial reduce: write blobs for misses (object store is not concurrency-safe)
+	// and assemble the entries + rebuilt cache.
+	entries := map[string]change.TreeEntry{}
+	newCache := map[string]wcCacheEntry{}
+	changed := false
+	for i, it := range items {
+		r := results[i]
+		if r.err != nil {
+			return nil, nil, false, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
+		}
+		mode := it.mode
+		if it.symlink {
+			mode = change.ModeSymlink
+		}
+		if !r.miss {
+			entries[it.slashRel] = change.TreeEntry{SHA: r.sha, Mode: mode}
+			newCache[it.slashRel] = cache[it.slashRel]
+			continue
+		}
+		sha, err := eng.WriteBlob(r.data)
+		if err != nil {
+			return nil, nil, false, fmt.Errorf("worktree.CachedScan: %w", err)
+		}
+		entries[it.slashRel] = change.TreeEntry{SHA: sha, Mode: mode}
+		newCache[it.slashRel] = wcCacheEntry{MtimeNs: it.mtimeNs, Size: it.size, BlobSHA: sha, Mode: mode}
+		changed = true
 	}
 	// A vanished path reduces len(newCache) below len(cache); detect that too.
 	if !changed && len(newCache) != len(cache) {
 		changed = true
 	}
 	return entries, newCache, changed, nil
+}
+
+// parallelFor runs fn(0)..fn(n-1) across a bounded pool of workers. The worker
+// count is tuned for I/O latency (more than CPUs) since the slow step is file
+// reads, not computation; each index is handled by exactly one worker so callers
+// need no locking to write results[i].
+func parallelFor(n int, fn func(i int)) {
+	if n == 0 {
+		return
+	}
+	workers := runtime.NumCPU() * 4
+	if workers > 32 {
+		workers = 32
+	}
+	if workers > n {
+		workers = n
+	}
+	if workers <= 1 {
+		for i := 0; i < n; i++ {
+			fn(i)
+		}
+		return
+	}
+	var next int64
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() {
+			defer wg.Done()
+			for {
+				mu.Lock()
+				i := next
+				next++
+				mu.Unlock()
+				if int(i) >= n {
+					return
+				}
+				fn(int(i))
+			}
+		}()
+	}
+	wg.Wait()
 }
