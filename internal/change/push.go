@@ -162,7 +162,12 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 		); err != nil {
 			return fmt.Errorf("%s: set meta ref: %w", label, err)
 		}
-		refSpecs = append(refSpecs, config.RefSpec("refs/cairn/meta:refs/cairn/meta"))
+		// Push ALL cairn refs (meta + the per-change refs), not just meta. refs/heads
+		// now publishes only SEALED tips, so the working-snapshot commits a
+		// cairn->cairn clone needs for full fidelity are reachable only via the
+		// refs/cairn/change/<id> refs. Force, since an open change's working head is
+		// re-amended (a fresh, non-descendant commit) on every snapshot.
+		refSpecs = append(refSpecs, config.RefSpec("+refs/cairn/*:refs/cairn/*"))
 	}
 
 	auth, err := e.authForRemote(rem)

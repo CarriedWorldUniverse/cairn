@@ -202,10 +202,28 @@ func defaultAuthor() string {
 	if a := os.Getenv("CAIRN_AUTHOR"); a != "" {
 		return a
 	}
+	if n := gitConfigValue("user.name"); n != "" {
+		return n // inherit the developer's git identity for commit attribution
+	}
 	if u := os.Getenv("USER"); u != "" {
 		return u
 	}
+	if u := os.Getenv("USERNAME"); u != "" { // Windows
+		return u
+	}
 	return "cairn"
+}
+
+// gitConfigValue returns `git config --get <key>` (respecting local + global +
+// system scopes), or "" when git is unavailable or the key is unset. It lets
+// cairn default to the developer's existing git identity so pushed commits are
+// attributed to them, not the placeholder "cairn".
+func gitConfigValue(key string) string {
+	out, err := exec.Command("git", "config", "--get", key).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // openRepo opens a Repo from already-parsed flag values. It refuses to open
@@ -786,12 +804,14 @@ func cmdPush(args []string) error {
 	fs := flag.NewFlagSet("push", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "force-overwrite a diverged remote branch")
+	all := fs.Bool("all", false, "push all lines, not just the current one")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	// push [remote] [branch]: 0 args → all lines to origin; 1 arg → all lines to
-	// that remote; 2 args → only <branch> to <remote> (e.g. feed one feature line
-	// to origin for a PR, without touching main).
+	// push [remote] [branch]: 2 args → only <branch> to <remote>; otherwise the
+	// branch defaults to the line you're standing in (like git pushes the current
+	// branch), so a push from inside a feature folder publishes only that line and
+	// never touches main. --all forces the legacy all-lines push.
 	remote := "origin"
 	branch := ""
 	switch {
@@ -805,6 +825,11 @@ func cmdPush(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	if branch == "" && !*all {
+		if b, ok := r.CWDBranch(); ok {
+			branch = b // inside a branch folder → push just that line
+		}
+	}
 	if branch != "" {
 		// Single-line push: no auto-pull-retry (a diverged branch surfaces the
 		// clear "diverged" error).

@@ -66,7 +66,7 @@ Persistent config (stored in the repo, set with `cairn config`):
 
 | Key | Meaning |
 |-----|---------|
-| `user.name` | Name written into sealed commits |
+| `user.name` | Name written into sealed commits (defaults to your `git config user.name`) |
 | `user.email` | Email written into sealed commits |
 | `autosync` | When truthy, `commit` does a best-effort `pull` from `origin` afterward |
 
@@ -322,16 +322,18 @@ cairn remote add origin https://github.com/me/proj.git
 cairn remote add team git@host:team/proj.git --cairn
 ```
 
-#### `cairn push [remote] [branch]` — `--force`
-Publish lines + tags (default `origin`). If the remote moved, push auto-pulls and retries
-once; `--force` overwrites a diverged remote branch.
-
-With a `branch` argument, push **only that line** (plus tags) — e.g. feed one feature line
-to the remote to open a PR, without touching the remote-tracked `main`:
+#### `cairn push [remote] [branch]` — `--force` `--all`
+Publish to `origin` (default). By default push publishes **only the line you're standing in**
+(like git pushes the current branch) — so a push from inside a feature folder never touches
+`main`. Pass an explicit `branch`, or `--all` to publish every line:
 ```sh
-cairn push origin feat      # publish just 'feat'
+cd feat && cairn push        # publishes just 'feat'
+cairn push origin feat       # explicit single line
+cairn push --all             # every line + tags
 ```
-(The single-line push does not auto-pull-retry — a diverged branch surfaces the clear error.)
+Only **sealed** commits are published — the auto-snapshot working state is local, like git's
+working tree, and never pushed. `--force` overwrites a diverged remote branch; the all-lines
+push auto-pulls + retries once on divergence (single-line surfaces the clear error instead).
 
 #### `cairn fetch [remote]`
 Fetch a remote into tracking refs (default `origin`) without reconciling.

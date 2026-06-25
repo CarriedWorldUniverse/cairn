@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -119,11 +120,23 @@ func resolveIdentity(eng *change.Engine, author string) string {
 		email = v
 	} else if v := os.Getenv("CAIRN_EMAIL"); v != "" {
 		email = v
+	} else if v := gitConfigValue("user.email"); v != "" {
+		email = v // inherit the developer's git identity for commit attribution
 	} else if v := os.Getenv("GIT_AUTHOR_EMAIL"); v != "" {
 		email = v
 	}
 	eng.SetIdentity(name, email)
 	return name
+}
+
+// gitConfigValue returns `git config --get <key>` (or "" if git is unavailable or
+// the key is unset), so cairn can default to the developer's existing git email.
+func gitConfigValue(key string) string {
+	out, err := exec.Command("git", "config", "--get", key).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // cacheDir returns the path to the content-addressed blob cache shared by all

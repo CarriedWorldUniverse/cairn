@@ -133,3 +133,81 @@ func TestE2E_CloneWorkPushReclone(t *testing.T) {
 		t.Fatalf("pushed new.txt not present after re-clone: %v", err)
 	}
 }
+
+// TestE2E_PushSealedOnly (P2): push publishes the SEALED commit, never the
+// working snapshot, and un-sealed working edits are not pushed.
+func TestE2E_PushSealedOnly(t *testing.T) {
+	skipOnWindows(t)
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("hi\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "main", "-m", "real commit")
+	mustRun(t, "remote", "add", "--repo", root, "origin", bare)
+	// An un-sealed working edit that must NOT be published.
+	if err := os.WriteFile(filepath.Join(root, "main", "uncommitted.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "push", "--repo", root, "origin", "main")
+
+	br, err := git.PlainOpen(bare)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref, err := br.Reference(plumbing.NewBranchReferenceName("main"), false)
+	if err != nil {
+		t.Fatalf("main not pushed: %v", err)
+	}
+	c, err := br.CommitObject(ref.Hash())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Message == "(working)\n" || c.Message[:len("(working)")] == "(working)" {
+		t.Fatalf("pushed a working snapshot, not the sealed commit: %q", c.Message)
+	}
+	tree, _ := c.Tree()
+	if _, err := tree.File("uncommitted.txt"); err == nil {
+		t.Fatal("un-sealed working file was published")
+	}
+}
+
+// TestE2E_PushDefaultsToCurrentLine (P1): `push` from inside a branch folder
+// publishes only that line, never main.
+func TestE2E_PushDefaultsToCurrentLine(t *testing.T) {
+	skipOnWindows(t)
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("b\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "main", "-m", "base")
+	mustRun(t, "remote", "add", "--repo", root, "origin", bare)
+	mustRun(t, "express", "--repo", root, "--from", "main", "feat")
+	if err := os.WriteFile(filepath.Join(root, "feat", "g.txt"), []byte("w\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "feat", "-m", "feat work")
+
+	// push with no branch arg, from inside the feat folder.
+	mustRun(t, "push", "--repo", filepath.Join(root, "feat"), "origin")
+
+	br, err := git.PlainOpen(bare)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := br.Reference(plumbing.NewBranchReferenceName("feat"), false); err != nil {
+		t.Fatalf("feat not pushed: %v", err)
+	}
+	if _, err := br.Reference(plumbing.NewBranchReferenceName("main"), false); err == nil {
+		t.Fatal("push from inside feat must NOT publish main")
+	}
+}
