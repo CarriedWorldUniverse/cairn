@@ -59,7 +59,7 @@ Subcommands that operate on an existing repo accept:
 
 | Flag | Default | Meaning |
 |------|---------|---------|
-| `--repo <dir>` | `.` | Repo root — cairn walks up from here to find `.cairn`, so you can run from any subfolder (like git finds `.git`) |
+| `--repo <dir>` | `.` | Repo root — cairn walks up from here to find `.cairn`, so you can run from any subfolder (like git finds `.git`). Run from inside a branch folder and commands default to **that branch** (like git's current branch); `commit -m …` needs no branch argument |
 | `--author <name>` | `$CAIRN_AUTHOR`, else `$USER`, else `cairn` | Author recorded on operations |
 
 Persistent config (stored in the repo, set with `cairn config`):
