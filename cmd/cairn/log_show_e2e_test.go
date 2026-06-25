@@ -105,3 +105,25 @@ func TestE2E_LogShowThreeCommits(t *testing.T) {
 		t.Errorf("cairn show output missing 'file2.txt':\n%s", showOut)
 	}
 }
+
+// TestShowAndCherryPickAcceptShortSHA is the regression for commands rejecting
+// abbreviated SHAs: `cairn log` prints 8-char short SHAs, but `show`/`cherry-pick`
+// used plumbing.NewHash (which demands a full 40-char hash) and failed with
+// "object not found" / "is not a cairn commit" on the very SHA log displayed.
+func TestShowAndCherryPickAcceptShortSHA(t *testing.T) {
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("hi\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	full := strings.TrimSpace(captureRun(t, "commit", "--repo", root, "main", "-m", "the message"))
+	if len(full) < 8 {
+		t.Fatalf("commit returned no sha: %q", full)
+	}
+	short := full[:8]
+
+	out := captureRun(t, "show", "--repo", root, short)
+	if !strings.Contains(out, "the message") {
+		t.Fatalf("show <short-sha> did not resolve; output:\n%s", out)
+	}
+}

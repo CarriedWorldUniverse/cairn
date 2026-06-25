@@ -160,6 +160,19 @@ func (e *Engine) LineOfCommit(commit string) (string, error) {
 	return line.Name, nil
 }
 
+// ResolveCommit resolves a user-supplied commit revision — a full OR abbreviated
+// SHA, or any git revision (e.g. a tag) — to its full 40-char hash. cairn's `log`
+// prints short SHAs, so every command that takes a commit argument must accept
+// them; callers normalize the user's argument through this before handing a SHA
+// to the catalogue/object lookups, which expect full hashes.
+func (e *Engine) ResolveCommit(rev string) (string, error) {
+	h, err := e.git.ResolveRevision(plumbing.Revision(rev))
+	if err != nil {
+		return "", fmt.Errorf("change.ResolveCommit: %q: %w", rev, err)
+	}
+	return h.String(), nil
+}
+
 // LineByName loads a line by its unique name, or returns ErrNotFound.
 func (e *Engine) LineByName(name string) (Line, error) {
 	row := e.db.QueryRow(
