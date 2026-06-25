@@ -1,0 +1,30 @@
+# Build + publish the standalone cairn CLI as per-OS archives on a version tag.
+# Runs alongside release-image.yml (which ships the cairn-server container).
+# A tag push publishes a GitHub Release; manual workflow_dispatch is a dry run
+# (--snapshot builds the matrix without publishing).
+name: release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: >-
+            ${{ github.event_name == 'workflow_dispatch'
+                && 'release --snapshot --clean'
+                || 'release --clean' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
