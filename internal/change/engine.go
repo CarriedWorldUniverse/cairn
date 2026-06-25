@@ -58,9 +58,12 @@ func Open(dir string) (*Engine, error) {
 	}
 
 	// _pragma=busy_timeout(5000) makes writers wait up to 5s for a held lock
-	// instead of failing immediately with SQLITE_BUSY. This is the query-param
-	// form modernc.org/sqlite documents (a bare _busy_timeout is not parsed).
-	db, err := sql.Open("sqlite", filepath.Join(dir, "cairn.db")+"?_pragma=busy_timeout(5000)")
+	// instead of failing immediately with SQLITE_BUSY. _pragma=foreign_keys(1)
+	// enforces foreign keys on EVERY pooled connection (a one-shot PRAGMA in
+	// schema.sql only applies to the connection that ran it). These are the
+	// query-param form modernc.org/sqlite documents (a bare _busy_timeout is not
+	// parsed).
+	db, err := sql.Open("sqlite", filepath.Join(dir, "cairn.db")+"?_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("change.Open: sqlite: %w", err)
 	}

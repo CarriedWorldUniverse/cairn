@@ -176,7 +176,13 @@ func (r *Repo) Express(branch, parent string) error {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
 
-	ch, err := r.eng.CreateChange(line.ID, r.author)
+	// Reuse an existing open (unsealed) change if one already exists for this
+	// line (e.g. a change imported from refs/cairn/meta that carries open
+	// conflict rows). Creating a new change would orphan those rows.
+	ch, err := r.eng.OpenChangeForLine(line.ID)
+	if errors.Is(err, change.ErrNotFound) {
+		ch, err = r.eng.CreateChange(line.ID, r.author)
+	}
 	if err != nil {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
