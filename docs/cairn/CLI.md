@@ -59,7 +59,7 @@ Subcommands that operate on an existing repo accept:
 
 | Flag | Default | Meaning |
 |------|---------|---------|
-| `--repo <dir>` | `.` | Repo root directory |
+| `--repo <dir>` | `.` | Repo root — cairn walks up from here to find `.cairn`, so you can run from any subfolder (like git finds `.git`) |
 | `--author <name>` | `$CAIRN_AUTHOR`, else `$USER`, else `cairn` | Author recorded on operations |
 
 Persistent config (stored in the repo, set with `cairn config`):
