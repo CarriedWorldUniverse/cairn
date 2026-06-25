@@ -81,12 +81,19 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	// different tree, re-commit on it so the sealed head reflects the adopted
 	// state. (Mirrors Commit: mergeForward always returns a non-empty tree — the
 	// snapshot's own for a root/empty-parent line — so compare against treeSha.)
-	merged, conflicts, err := e.mergeForward(ch.ID, sealed)
+	merged, adoptedParent, conflicts, err := e.mergeForward(ch.ID, sealed)
 	if err != nil {
 		return "", nil, err
 	}
 	if merged != "" && merged != treeSha {
-		sealed, err = e.writeCommit(merged, ch.ID, message, []string{sealed})
+		// Record the adopted parent-line tip as a second parent so this is a true
+		// merge commit: the merge base advances, so a resolved conflict is not
+		// re-detected (and re-marked) on the next seal.
+		parents := []string{sealed}
+		if adoptedParent != "" {
+			parents = append(parents, adoptedParent)
+		}
+		sealed, err = e.writeCommit(merged, ch.ID, message, parents)
 		if err != nil {
 			return "", nil, err
 		}

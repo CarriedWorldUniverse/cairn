@@ -75,8 +75,10 @@ func TestCherryPickBogusCommit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for bogus commit sha, got nil")
 	}
-	if !strings.Contains(err.Error(), "not a cairn commit") {
-		t.Errorf("error = %q, want it to contain 'not a cairn commit'", err.Error())
+	// The commit argument is resolved first (so short SHAs work); an unresolvable
+	// revision fails clearly, naming the offending revision.
+	if !strings.Contains(err.Error(), "deadbeef") {
+		t.Errorf("error = %q, want it to name the bogus revision 'deadbeef'", err.Error())
 	}
 }
 

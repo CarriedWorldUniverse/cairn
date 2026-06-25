@@ -614,7 +614,15 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 // DiffCommits returns the per-path diff between two commits, passing through to
 // the change engine.
 func (r *Repo) DiffCommits(a, b string) ([]change.FileDiff, error) {
-	diffs, err := r.eng.DiffCommits(a, b)
+	fullA, err := r.eng.ResolveCommit(a)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.DiffCommits: %w", err)
+	}
+	fullB, err := r.eng.ResolveCommit(b)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.DiffCommits: %w", err)
+	}
+	diffs, err := r.eng.DiffCommits(fullA, fullB)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.DiffCommits: %w", err)
 	}
@@ -742,7 +750,11 @@ func (r *Repo) Log(branch string, limit int) ([]change.CommitInfo, error) {
 
 // Show returns a commit's metadata and the diff against its first parent.
 func (r *Repo) Show(commit string) (change.CommitInfo, []change.FileDiff, error) {
-	return r.eng.Show(commit)
+	full, err := r.eng.ResolveCommit(commit)
+	if err != nil {
+		return change.CommitInfo{}, nil, fmt.Errorf("worktree.Show: %w", err)
+	}
+	return r.eng.Show(full)
 }
 
 // Blame returns per-line provenance for path at the tip of branch.
@@ -952,7 +964,7 @@ func (r *Repo) Undo() error {
 		}
 		tip := line.TipCommit
 		switch {
-	case tip == "":
+		case tip == "":
 			if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
@@ -1013,6 +1025,12 @@ func (r *Repo) BisectStart(branch, good, bad string) (change.BisectStep, error) 
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
+	}
+	if good, err = r.eng.ResolveCommit(good); err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: good: %w", err)
+	}
+	if bad, err = r.eng.ResolveCommit(bad); err != nil {
+		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: bad: %w", err)
 	}
 	step, err := r.eng.BisectStart(line.ID, branch, good, bad)
 	if err != nil {
@@ -1268,6 +1286,10 @@ func (r *Repo) Drop(commit string) (change.CommitResult, error) {
 // folder is re-materialized to reflect the pick.
 func (r *Repo) CherryPick(branch, commit string) (change.CommitResult, error) {
 	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
+	}
+	commit, err = r.eng.ResolveCommit(commit)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
 	}

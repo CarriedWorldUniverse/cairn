@@ -149,12 +149,19 @@ func (e *Engine) Commit(changeID string, files map[string][]byte, modes map[stri
 	// from the snapshot's own, re-commit on it so the change's head reflects the
 	// adopted state. (A root line, or one whose merge changed nothing, keeps the
 	// snapshot as head.)
-	merged, conflicts, err := e.mergeForward(ch.ID, head)
+	merged, adoptedParent, conflicts, err := e.mergeForward(ch.ID, head)
 	if err != nil {
 		return CommitResult{}, err
 	}
 	if merged != "" && merged != tree.String() {
-		head, err = e.writeCommit(merged, ch.ID, message, []string{head})
+		// Record the adopted parent-line tip as a second parent so this is a true
+		// merge commit: the merge base advances, so a resolved conflict is not
+		// re-detected (and re-marked) on the next commit.
+		parents := []string{head}
+		if adoptedParent != "" {
+			parents = append(parents, adoptedParent)
+		}
+		head, err = e.writeCommit(merged, ch.ID, message, parents)
 		if err != nil {
 			return CommitResult{}, err
 		}

@@ -9,56 +9,66 @@ import (
 )
 
 // mergeForward rebases the change's snapshot onto its line's PARENT-line tip:
-// the change adopts its parent. It returns the hex hash of the merged tree plus
-// any per-path conflicts recorded along the way.
+// the change adopts its parent. It returns the hex hash of the merged tree, the
+// parent-line tip that was adopted (so the caller can record it as a MERGE parent
+// of the merged commit — see below), and any per-path conflicts recorded along
+// the way.
+//
+// The adopted-parent return is load-bearing: when the merged tree differs from
+// the snapshot, the caller re-commits it and MUST list adoptedParent as a second
+// parent. Otherwise the merge base between this line and its parent never
+// advances, so a conflict that the user resolves is re-detected (and re-marked)
+// on the very next commit — the resolution can never stick.
 //
 // For a root line (no parent), or a parent line with no tip yet, there is
-// nothing to merge onto and the snapshot's own tree is returned unchanged.
-func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree string, conflicts []Conflict, err error) {
+// nothing to merge onto: the snapshot's own tree is returned and adoptedParent
+// is "".
+func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree, adoptedParent string, conflicts []Conflict, err error) {
 	ch, err := e.GetChange(changeID)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	line, err := e.lineByID(ch.LineID)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	// Root line: nothing to adopt.
 	if line.ParentLine == "" {
 		t, err := e.commitTree(snapshotCommit)
-		return t, nil, err
+		return t, "", nil, err
 	}
 
 	parent, err := e.lineByID(line.ParentLine)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	// Parent line has no commits yet: nothing to adopt.
 	if parent.TipCommit == "" {
 		t, err := e.commitTree(snapshotCommit)
-		return t, nil, err
+		return t, "", nil, err
 	}
 
 	oursTree, err := e.commitTree(parent.TipCommit)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	theirsTree, err := e.commitTree(snapshotCommit)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	baseCommit, err := e.mergeBase(parent.TipCommit, snapshotCommit)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	var baseTree string
 	if baseCommit != "" {
 		if baseTree, err = e.commitTree(baseCommit); err != nil {
-			return "", nil, err
+			return "", "", nil, err
 		}
 	}
-	return e.mergeTrees(changeID, baseTree, oursTree, theirsTree)
+	merged, conflicts, err := e.mergeTrees(changeID, baseTree, oursTree, theirsTree)
+	return merged, parent.TipCommit, conflicts, err
 }
 
 // mergeTrees performs a per-path three-way merge of oursTree (parent line) and
