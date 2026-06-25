@@ -49,6 +49,51 @@ func TestWriteTreeRefsMatchesWriteTree(t *testing.T) {
 	}
 }
 
+// TestTreeSortDirectoryAware reproduces the "entries in tree are not sorted"
+// encode failure: git sorts a directory entry as if its name ended in "/", so a
+// dir whose name is a prefix of a sibling FILE (e.g. "app" next to "app.go",
+// where '.'=0x2e < '/'=0x2f) must sort AFTER the file. A plain string sort puts
+// the dir first and go-git's encoder rejects it. Both build paths must succeed
+// and agree.
+func TestTreeSortDirectoryAware(t *testing.T) {
+	e := newTestEngine(t)
+	// Names chosen so plain-string and git-canonical orderings differ:
+	//   plain:  app  < app.go ,  src < src-x.txt  (dir first — WRONG for git)
+	//   git:    app.go < app/ ,  src-x.txt < src/
+	files := map[string][]byte{
+		"app.go":      []byte("package main\n"),
+		"app/main.go": []byte("package app\n"),
+		"src-x.txt":   []byte("x\n"),
+		"src/y.txt":   []byte("y\n"),
+	}
+
+	wantHash, err := e.writeTree(files, nil)
+	if err != nil {
+		t.Fatalf("writeTree (directory-aware sort): %v", err)
+	}
+
+	entries := map[string]TreeEntry{}
+	for path, data := range files {
+		sha, err := e.WriteBlob(data)
+		if err != nil {
+			t.Fatalf("WriteBlob %q: %v", path, err)
+		}
+		entries[path] = TreeEntry{SHA: sha, Mode: ModeRegular}
+	}
+	gotHash, err := e.writeTreeRefs(entries)
+	if err != nil {
+		t.Fatalf("writeTreeRefs (directory-aware sort): %v", err)
+	}
+	if gotHash != wantHash {
+		t.Fatalf("tree hash mismatch: writeTreeRefs=%s writeTree=%s", gotHash, wantHash)
+	}
+
+	// And the tree round-trips through go-git's reader.
+	if _, err := e.readTree(gotHash.String()); err != nil {
+		t.Fatalf("readTree: %v", err)
+	}
+}
+
 // TestWriteTreeRefsRejectsFileDirCollision mirrors buildTree's collision guard.
 func TestWriteTreeRefsRejectsFileDirCollision(t *testing.T) {
 	e := newTestEngine(t)
