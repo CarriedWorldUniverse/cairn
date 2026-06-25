@@ -734,6 +734,21 @@ func (r *Repo) SetBranchHint(branch string) { r.branchHint = branch }
 // by commands (e.g. commit) that require a branch but can infer it from location.
 func (r *Repo) CWDBranch() (string, bool) { return r.branchHint, r.branchHint != "" }
 
+// Reparent changes branch's recorded parent line to newParent (by name), so a
+// stacked branch flat-projected onto the root at import can be restored to its
+// real parent. See change.Reparent.
+func (r *Repo) Reparent(branch, newParent string) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.Reparent: %w", err)
+	}
+	np, err := r.eng.LineByName(newParent)
+	if err != nil {
+		return fmt.Errorf("worktree.Reparent: parent %q: %w", newParent, err)
+	}
+	return r.eng.Reparent(line.ID, np.ID)
+}
+
 // BranchForFolder returns the branch whose expressed working folder is folder
 // (the flat on-disk name, e.g. "base-5-0" for branch "base/5-0"), if any.
 func (r *Repo) BranchForFolder(folder string) (string, bool) {

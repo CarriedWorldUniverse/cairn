@@ -63,6 +63,61 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	return l, nil
 }
 
+// Reparent changes lineID's recorded parent to newParentID and recomputes its
+// base as the merge-base of the two tips. Importing from a plain git remote
+// flat-projects every branch as a child of the root (git records no branch
+// parentage), so a stacked branch — e.g. base/5-0 forked from rc/4-1, not main —
+// arrives rooted at trunk. Reparenting restores the real topology, which fixes the
+// lineage, the fold destination, and the reconcile base in one move. It refuses to
+// reparent the root, onto itself, or onto one of its own descendants (a cycle).
+func (e *Engine) Reparent(lineID, newParentID string) error {
+	line, err := e.lineByID(lineID)
+	if err != nil {
+		return err
+	}
+	if line.ParentLine == "" {
+		return fmt.Errorf("change.Reparent: cannot reparent the root line")
+	}
+	if lineID == newParentID {
+		return fmt.Errorf("change.Reparent: a line cannot be its own parent")
+	}
+	np, err := e.lineByID(newParentID)
+	if err != nil {
+		return err
+	}
+	// Cycle guard: walk up from newParent; lineID must not appear above it.
+	for cur := np; cur.ParentLine != ""; {
+		if cur.ParentLine == lineID {
+			return fmt.Errorf("change.Reparent: %q is a descendant of %q (would create a cycle)", np.Name, line.Name)
+		}
+		cur, err = e.lineByID(cur.ParentLine)
+		if err != nil {
+			return err
+		}
+	}
+	base := np.TipCommit
+	if line.TipCommit != "" && np.TipCommit != "" {
+		if mb, mberr := e.mergeBase(line.TipCommit, np.TipCommit); mberr == nil && mb != "" {
+			base = mb
+		}
+	}
+	before, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.Reparent: %w", err)
+	}
+	now := e.now().UTC().Format(time.RFC3339Nano)
+	if _, err := e.db.Exec(
+		`UPDATE line SET parent_line=?, base_commit=?, updated_at=? WHERE id=?`,
+		newParentID, base, now, lineID); err != nil {
+		return fmt.Errorf("change.Reparent: %w", err)
+	}
+	after, err := e.viewMap()
+	if err != nil {
+		return fmt.Errorf("change.Reparent: %w", err)
+	}
+	return e.recordOp("reparent", "system", before, after)
+}
+
 // RootLine returns the repo's root line (the unique parent_line IS NULL row).
 func (e *Engine) RootLine() (Line, error) {
 	var id string

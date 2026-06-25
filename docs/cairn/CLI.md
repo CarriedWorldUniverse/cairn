@@ -158,6 +158,18 @@ A path-like branch name expresses as a single **flat** folder — `/` becomes `-
 unchanged (`tree`/`log`/`push` use `base/5-0`). If two branches would map to the same
 folder (e.g. `feat/x` and a literal `feat-x`), express refuses rather than clobber.
 
+#### `cairn reparent <branch> <new-parent>`
+Set a line's parent. Cloning from a **git** remote flat-projects every branch as a child
+of the root (git records no branch parentage), so a *stacked* branch — `base/5-0` forked
+from `rc/4-1`, not `main` — arrives rooted at trunk. Reparenting restores the real
+topology, which fixes the `lineage`, the `fold` destination, and the reconcile base in one
+move. Refuses to reparent the root, onto itself, or onto a descendant (a cycle).
+```sh
+cairn reparent base/5-0 rc/4-1   # lineage becomes main → rc/4-1 → base/5-0
+```
+(cairn→cairn clones preserve the real tree via `refs/cairn/meta`; this is only needed after
+importing from a plain git remote.)
+
 #### `cairn unexpress <branch>` — `--force`
 Remove a line's working folder (the line itself is kept). Refuses if the folder has
 un-sealed work unless `--force` (the work remains recoverable via `undo`).
