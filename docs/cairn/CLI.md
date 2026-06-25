@@ -300,9 +300,16 @@ cairn remote add origin https://github.com/me/proj.git
 cairn remote add team git@host:team/proj.git --cairn
 ```
 
-#### `cairn push [remote]` — `--force`
+#### `cairn push [remote] [branch]` — `--force`
 Publish lines + tags (default `origin`). If the remote moved, push auto-pulls and retries
 once; `--force` overwrites a diverged remote branch.
+
+With a `branch` argument, push **only that line** (plus tags) — e.g. feed one feature line
+to the remote to open a PR, without touching the remote-tracked `main`:
+```sh
+cairn push origin feat      # publish just 'feat'
+```
+(The single-line push does not auto-pull-retry — a diverged branch surfaces the clear error.)
 
 #### `cairn fetch [remote]`
 Fetch a remote into tracking refs (default `origin`) without reconciling.

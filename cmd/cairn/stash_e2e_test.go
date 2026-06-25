@@ -74,13 +74,10 @@ func TestStashRoundTrip(t *testing.T) {
 func TestStashNothingToStash(t *testing.T) {
 	root := t.TempDir()
 	mustRun(t, "init", root)
-	// No edits — stash should fail with "nothing to stash".
-	err := run([]string{"stash", "--repo", root})
-	if err == nil {
-		t.Fatal("expected error when stashing clean working copy, got nil")
-	}
-	if !strings.Contains(err.Error(), "nothing to stash") {
-		t.Fatalf("error %q should contain 'nothing to stash'", err.Error())
+	// No edits — stashing a clean working copy is a no-op (exit 0), matching
+	// git's "No local changes to save", not a hard error.
+	if err := run([]string{"stash", "--repo", root}); err != nil {
+		t.Fatalf("stash on a clean working copy should be a no-op, got: %v", err)
 	}
 }
 

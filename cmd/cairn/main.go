@@ -80,7 +80,7 @@ subcommands:
   resolve <branch> <path>       resolve a conflict on a branch
   remote                        list configured remotes
   remote add <name> <url>       register a remote (--cairn for a cairn remote)
-  push [remote]                 publish branches + tags (default origin, --force)
+  push [remote] [branch]        publish all lines + tags, or just <branch> (default origin, --force)
   fetch [remote]                fetch a remote into tracking refs (default origin)
   pull [remote]                 fetch + reconcile each line (default origin)
   blame <path> [branch]         show per-line author/date/commit
@@ -717,8 +717,15 @@ func cmdPush(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
+	// push [remote] [branch]: 0 args → all lines to origin; 1 arg → all lines to
+	// that remote; 2 args → only <branch> to <remote> (e.g. feed one feature line
+	// to origin for a PR, without touching main).
 	remote := "origin"
-	if fs.NArg() > 0 {
+	branch := ""
+	switch {
+	case fs.NArg() >= 2:
+		remote, branch = fs.Arg(0), fs.Arg(1)
+	case fs.NArg() == 1:
 		remote = fs.Arg(0)
 	}
 	r, err := openRepo(*repo, *author)
@@ -726,6 +733,15 @@ func cmdPush(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	if branch != "" {
+		// Single-line push: no auto-pull-retry (a diverged branch surfaces the
+		// clear "diverged" error).
+		if err := r.PushBranch(remote, branch, *force); err != nil {
+			return mapRemoteErr(err)
+		}
+		fmt.Printf("pushed %s -> %s\n", branch, remote)
+		return nil
+	}
 	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
 	// once) so "push just works". A successful auto-retry is intentionally silent
 	// for v1: detecting whether the retry happened would need engine I/O the CLI
@@ -1290,6 +1306,12 @@ func cmdStashPush(args []string) error {
 		}
 	}
 	if err := r.Stash(branch, *msg); err != nil {
+		// Nothing to stash is a no-op, not a failure (matches git's "No local
+		// changes to save" → exit 0), so `stash` is script-safe.
+		if strings.Contains(err.Error(), "nothing to stash") {
+			fmt.Fprintf(os.Stderr, "cairn: no working changes to stash on %s\n", branch)
+			return nil
+		}
 		return mapErr(err)
 	}
 	fmt.Fprintf(os.Stderr, "cairn: shelved working changes; folder reset to %s's sealed state\n", branch)

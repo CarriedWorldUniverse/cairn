@@ -7,8 +7,36 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
+
+// TestE2E_PushSingleBranch covers `cairn push <remote> <branch>`: only that line
+// is published, so you can feed a feature line to a remote for a PR without
+// touching the (remote-tracked) default branch.
+func TestE2E_PushSingleBranch(t *testing.T) {
+	skipOnWindows(t)
+	bare := makeSeededBareRepo(t)
+	dir := t.TempDir()
+	mustRun(t, "clone", bare, dir)
+	def := soleExpressedDir(t, dir)
+
+	mustRun(t, "express", "--repo", dir, "--from", def, "feat")
+	if err := os.WriteFile(filepath.Join(dir, "feat", "x.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", dir, "feat", "-m", "feat work")
+
+	mustRun(t, "push", "--repo", dir, "origin", "feat")
+
+	bareRepo, err := git.PlainOpen(bare)
+	if err != nil {
+		t.Fatalf("PlainOpen bare: %v", err)
+	}
+	if _, err := bareRepo.Reference(plumbing.ReferenceName("refs/heads/feat"), false); err != nil {
+		t.Fatalf("single-branch push did not publish refs/heads/feat: %v", err)
+	}
+}
 
 // makeSeededBareRepo builds a bare git repo seeded with a default branch and a
 // committed readme.txt, then returns the bare repo's path (usable as a clone
