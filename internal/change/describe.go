@@ -24,6 +24,13 @@ func (e *Engine) DescribeVersion(commit string) (string, int, error) {
 	}
 	byCommit := make(map[string]string, len(tags))
 	for _, t := range tags {
+		// Only semver tags anchor a derived version. A repo can carry arbitrary
+		// non-semver tags (e.g. "v1", "forgejo-archive", inherited release tags);
+		// anchoring on one would make `version`/`release` hard-fail at Parse. Skip
+		// them so the walk continues to the nearest real version tag (or none).
+		if _, err := version.Parse(t.Name); err != nil {
+			continue
+		}
 		if cur, ok := byCommit[t.Commit]; ok {
 			byCommit[t.Commit] = preferTag(cur, t.Name)
 		} else {
