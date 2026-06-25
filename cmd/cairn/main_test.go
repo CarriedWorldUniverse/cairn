@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -34,6 +35,32 @@ func TestCLIInitExpressCommit(t *testing.T) {
 func TestRunUnknownSubcommand(t *testing.T) {
 	if err := run([]string{"bogus"}); err == nil {
 		t.Fatal("expected error for unknown subcommand")
+	}
+}
+
+// TestRepoDiscoveryFromSubfolder covers running cairn from a subfolder of a repo
+// (e.g. inside an expressed branch folder): openRepo walks up to find .cairn,
+// like git locating .git, instead of failing with "not a cairn repo".
+func TestRepoDiscoveryFromSubfolder(t *testing.T) {
+	root := t.TempDir()
+	if err := run([]string{"init", root}); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	sub := filepath.Join(root, "main", "deep", "sub")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// A command pointed at the deep subfolder must resolve to the repo root.
+	if err := run([]string{"status", "--repo", sub}); err != nil {
+		t.Fatalf("status from subfolder %q: %v", sub, err)
+	}
+	// Outside any repo it must still fail clearly.
+	err := run([]string{"status", "--repo", t.TempDir()})
+	if err == nil {
+		t.Fatal("expected 'not a cairn repo' outside a repo")
+	}
+	if !strings.Contains(err.Error(), "not a cairn repo") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

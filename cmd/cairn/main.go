@@ -208,11 +208,34 @@ func defaultAuthor() string {
 // openRepo opens a Repo from already-parsed flag values. It refuses to open
 // (and thus silently bootstrap) a directory that has no .cairn sub-directory;
 // the caller should run `cairn init` first.
-func openRepo(repo, author string) (*worktree.Repo, error) {
-	if fi, err := os.Stat(filepath.Join(repo, ".cairn")); err != nil || !fi.IsDir() {
-		return nil, fmt.Errorf("not a cairn repo (run 'cairn init' here first)")
+// discoverRepoRoot walks up from start to the nearest ancestor directory that
+// contains a .cairn directory, mirroring how git locates .git. This lets cairn
+// run from any subfolder of a repo (e.g. inside an expressed branch folder), not
+// only the root. Returns the repo root, or an error if no .cairn is found up to
+// the filesystem root.
+func discoverRepoRoot(start string) (string, error) {
+	dir, err := filepath.Abs(start)
+	if err != nil {
+		return "", fmt.Errorf("not a cairn repo: %w", err)
 	}
-	return worktree.Open(repo, author)
+	for {
+		if fi, serr := os.Stat(filepath.Join(dir, ".cairn")); serr == nil && fi.IsDir() {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir { // reached the filesystem root
+			return "", fmt.Errorf("not a cairn repo (no .cairn in %q or any parent directory; run 'cairn init')", start)
+		}
+		dir = parent
+	}
+}
+
+func openRepo(repo, author string) (*worktree.Repo, error) {
+	root, err := discoverRepoRoot(repo)
+	if err != nil {
+		return nil, err
+	}
+	return worktree.Open(root, author)
 }
 
 // openRepoSynced opens a repo and immediately snapshots every expressed folder
