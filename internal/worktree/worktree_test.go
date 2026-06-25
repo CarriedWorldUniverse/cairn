@@ -246,3 +246,59 @@ func TestRepoCannotAbandonOrUnexpressRoot(t *testing.T) {
 		t.Fatal("main must still be expressed")
 	}
 }
+
+// TestExpressSlashBranchFlatFolder: a path-like branch name (e.g. "base/5-0")
+// expresses as a single FLAT folder ("base-5-0"), never a nested directory —
+// the branch name itself is unchanged. Flattening removes the nested-directory
+// rename that caused the Windows rename race.
+func TestExpressSlashBranchFlatFolder(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("base/5-0", "main"); err != nil {
+		t.Fatalf("Express base/5-0: %v", err)
+	}
+	// Flat folder exists; nested does not.
+	if _, err := os.Stat(filepath.Join(root, "base-5-0", "f.txt")); err != nil {
+		t.Fatalf("flat folder base-5-0 missing/empty: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "base", "5-0")); !os.IsNotExist(err) {
+		t.Fatalf("nested folder base/5-0 must not exist")
+	}
+	// The branch NAME is preserved (tree/status/push use it).
+	if _, err := r.eng.LineByName("base/5-0"); err != nil {
+		t.Fatalf("branch name should remain base/5-0: %v", err)
+	}
+}
+
+// TestExpressFolderCollisionRefused: two branches must not map to the same flat
+// folder ("feat/x" → "feat-x" colliding with a literal "feat-x").
+func TestExpressFolderCollisionRefused(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("b\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("feat/x", "main"); err != nil {
+		t.Fatalf("Express feat/x: %v", err)
+	}
+	if err := r.Express("feat-x", "main"); err == nil {
+		t.Fatal("expected a folder-collision error for feat-x vs feat/x")
+	}
+}

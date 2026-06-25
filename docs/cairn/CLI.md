@@ -151,7 +151,12 @@ without it, express an existing line. The folder is created next to the repo roo
 ```sh
 cairn express feature --from main   # new line forked from main
 cairn express main                  # re-express an existing line
+cairn express base/5-0 --from main  # folder is base-5-0 (flat); branch stays base/5-0
 ```
+A path-like branch name expresses as a single **flat** folder — `/` becomes `-`
+(`base/5-0` → `base-5-0`) — so branch folders never nest. The branch name itself is
+unchanged (`tree`/`log`/`push` use `base/5-0`). If two branches would map to the same
+folder (e.g. `feat/x` and a literal `feat-x`), express refuses rather than clobber.
 
 #### `cairn unexpress <branch>` — `--force`
 Remove a line's working folder (the line itself is kept). Refuses if the folder has

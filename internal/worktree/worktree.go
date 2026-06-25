@@ -6,12 +6,23 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
+
+// FolderName maps a branch (line) name to its on-disk working-folder name. A
+// branch name may be path-like (e.g. "base/5-0"), but it must NOT become a nested
+// folder: "/" is replaced with "-" so every branch expresses as a single flat
+// folder ("base-5-0") under the repo root. This avoids nested-directory swaps —
+// the source of the Windows rename race — and keeps expressed folders siblings.
+// The branch NAME is unchanged everywhere else (tree/log/push use "base/5-0").
+func FolderName(branch string) string {
+	return strings.ReplaceAll(branch, "/", "-")
+}
 
 // ErrPushConflict is returned by Repo.Push when a diverged remote was pulled
 // and the 3-way merge produced conflicts: the push is stopped (not retried) so
@@ -163,11 +174,22 @@ func (r *Repo) Express(branch, parent string) error {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
 
+	// The on-disk folder is the FLAT form of the branch name (slashes → dashes),
+	// so a path-like branch never nests. Refuse if that flat name is already used
+	// by a different branch (e.g. "feat/x" → "feat-x" colliding with a literal
+	// "feat-x") rather than clobbering it.
+	folder := FolderName(branch)
+	for b, e := range r.st.Expressed {
+		if b != branch && e.Path == folder {
+			return fmt.Errorf("worktree.Express: folder %q is already used by branch %q; rename one before expressing %q", folder, b, branch)
+		}
+	}
+
 	// Do the filesystem work FIRST so a failed materialize/mkdir cannot leave a
 	// dangling change with no wc.json entry. CreateChange has no observable side
 	// effect until Express records it below, so deferring it past the FS op is
 	// safe and avoids the leak.
-	dir := filepath.Join(r.root, branch)
+	dir := filepath.Join(r.root, folder)
 	if line.TipCommit != "" {
 		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
 			return fmt.Errorf("worktree.Express: %w", err)
@@ -187,7 +209,7 @@ func (r *Repo) Express(branch, parent string) error {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
 
-	r.st.Expressed[branch] = Entry{Path: branch, ChangeID: ch.ID}
+	r.st.Expressed[branch] = Entry{Path: folder, ChangeID: ch.ID}
 	if err := SaveState(r.stPath, r.st); err != nil {
 		return fmt.Errorf("worktree.Express: %w", err)
 	}
