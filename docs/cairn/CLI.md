@@ -161,6 +161,12 @@ un-sealed work unless `--force` (the work remains recoverable via `undo`).
 Fold a finished line into its parent (merge-forward), then retire it. `--force` discards
 un-sealed work in the folder.
 
+Folding into a **remote-tracked** line (one that arrived from a remote — e.g. the `main`
+you cloned) is **refused by default**: advancing an upstream branch locally diverges from
+how the remote integrates the change (a PR / its own merge), and a protected remote will
+reject the push. Push your line and open a PR instead — or `--force` to fold anyway. (Lines
+you created locally with `express` are never guarded; `cairn undo` reverts a fold.)
+
 #### `cairn abandon <branch>` — `--force`
 Discard a line entirely (it is not folded anywhere). `--force` to drop un-sealed work.
 

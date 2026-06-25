@@ -1198,6 +1198,15 @@ func mapRemoteErr(err error) error {
 			return errors.New("could not reach the remote — check the URL and your network connection")
 		}
 	}
+	// A protected-branch / pre-receive-hook rejection: the update is a valid
+	// fast-forward but the remote's policy declined it (changes must go through a
+	// PR). This is what you hit after folding into an upstream branch locally.
+	low := strings.ToLower(msg)
+	for _, s := range []string{"protected branch", "gh006", "hook declined", "[remote rejected]", "remote: error", "push declined", "cannot lock ref"} {
+		if strings.Contains(low, s) {
+			return fmt.Errorf("the remote rejected the push — the branch is likely protected (changes need a pull request). If you folded or committed into this branch locally, 'cairn undo' rewinds it; then push your own line and open a PR. (%v)", err)
+		}
+	}
 	return mapErr(err)
 }
 

@@ -378,6 +378,23 @@ func (r *Repo) Fold(branch string, force bool) error {
 		return fmt.Errorf("worktree.Fold: %w", err)
 	}
 	parentLineID := line.ParentLine
+	// Guard: folding into a remote-tracked (upstream) line advances it locally,
+	// which diverges from how the remote integrates the change (a PR / its own
+	// merge) and a protected remote will reject the push. Refuse by default, with
+	// a consequence warning; --force lets the user do it anyway.
+	if !force && parentLineID != "" {
+		tracks, terr := r.eng.LineTracksRemote(parentLineID)
+		if terr != nil {
+			return fmt.Errorf("worktree.Fold: %w", terr)
+		}
+		if tracks {
+			parent, perr := r.eng.LineByID(parentLineID)
+			if perr != nil {
+				return fmt.Errorf("worktree.Fold: %w", perr)
+			}
+			return fmt.Errorf("worktree.Fold: %q tracks the remote — folding %q into it locally diverges from upstream (a protected remote will reject the push). Push %q and open a PR instead; 'cairn undo' reverts a fold. Pass --force to fold anyway", parent.Name, branch, branch)
+		}
+	}
 	if err := r.eng.FoldLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Fold: %w", err)
 	}

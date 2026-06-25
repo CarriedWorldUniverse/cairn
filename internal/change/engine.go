@@ -108,6 +108,9 @@ func newID() string {
 func migrate(db *sql.DB) error {
 	migrations := []string{
 		`ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`,
+		// tracks_remote marks a line that ARRIVED from a remote (set on clone/
+		// import, never on push). The fold guard warns before folding into one.
+		`ALTER TABLE line ADD COLUMN tracks_remote INTEGER NOT NULL DEFAULT 0`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {

@@ -121,6 +121,15 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		}
 	}
 
+	// Every line created above arrived FROM the remote (this engine is freshly
+	// created for the clone), so mark them remote-tracked. This is the signal the
+	// fold guard uses to warn before diverging an upstream branch locally; lines
+	// created later with `express` stay local (tracks_remote defaults to 0). The
+	// mark follows INCOMING refs only — pushing a line never sets it.
+	if _, err := tx.Exec(`UPDATE line SET tracks_remote=1, updated_at=?`, ts); err != nil {
+		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 	}

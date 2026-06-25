@@ -74,3 +74,23 @@ func TestMapRemoteErrNil(t *testing.T) {
 		t.Fatal("nil should map to nil")
 	}
 }
+
+// TestMapRemoteErrProtectedTeachesUndo: a protected-branch / hook-decline push
+// rejection is humanized into guidance that teaches `cairn undo` and the
+// push-line-then-PR recovery (the case you hit after folding into an upstream
+// branch locally).
+func TestMapRemoteErrProtectedTeachesUndo(t *testing.T) {
+	for _, raw := range []string{
+		"command error on refs/heads/main: GH006: Protected branch update failed",
+		"pre-receive hook declined",
+		"remote: error: protected branch hook declined",
+	} {
+		got := mapRemoteErr(errors.New(raw))
+		if got == nil {
+			t.Fatalf("nil for %q", raw)
+		}
+		if !strings.Contains(got.Error(), "undo") || !strings.Contains(strings.ToLower(got.Error()), "pull request") {
+			t.Fatalf("rejection not humanized to teach undo+PR for %q: %v", raw, got)
+		}
+	}
+}

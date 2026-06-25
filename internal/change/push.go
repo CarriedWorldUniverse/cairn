@@ -184,7 +184,7 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 	// robustly so a diverged remote gives a clear, actionable error.
 	if IsNonFastForward(err) {
 		return fmt.Errorf(
-			"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force: %w",
+			"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force. If you folded/committed into this branch locally and didn't mean to, 'cairn undo' rewinds it: %w",
 			label, remoteName, err)
 	}
 	return fmt.Errorf("%s: %w", label, err)
