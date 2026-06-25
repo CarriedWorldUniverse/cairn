@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5"
@@ -103,8 +104,48 @@ func TestCloneImportsAndExpresses(t *testing.T) {
 	if _, err := r.Commit("feature", ""); err != nil {
 		t.Fatalf("commit feature: %v", err)
 	}
-	if err := r.Fold("feature", false); err != nil {
+	// The parent here is the imported (remote-tracked) default branch, so a plain
+	// fold is now guarded; --force performs it. (The guard itself is covered by
+	// TestFoldIntoRemoteTrackedLineGuard.)
+	if err := r.Fold("feature", true); err != nil {
 		t.Fatalf("fold feature: %v", err)
+	}
+}
+
+// TestFoldIntoRemoteTrackedLineGuard locks the fold guard: folding a local change
+// into a line that arrived from the remote (an upstream branch) is refused by
+// default — it would diverge from how the remote integrates the change — and
+// allowed with --force. A locally-created parent is never guarded.
+func TestFoldIntoRemoteTrackedLineGuard(t *testing.T) {
+	skipOnWindows(t)
+	url, def := makeOriginRepoWT(t)
+	dir := filepath.Join(t.TempDir(), "repo")
+	r, err := Clone(url, dir, "tester", nil)
+	if err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+
+	// A locally-created feature off the remote-tracked default.
+	if err := r.Express("local-feat", def); err != nil {
+		t.Fatalf("Express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "local-feat", "x.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("local-feat", "work"); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+
+	// Folding into the remote-tracked default is refused without --force.
+	if err := r.Fold("local-feat", false); err == nil {
+		t.Fatal("fold into a remote-tracked line must be refused without --force")
+	} else if !strings.Contains(err.Error(), "tracks the remote") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// --force performs it.
+	if err := r.Fold("local-feat", true); err != nil {
+		t.Fatalf("fold --force into a remote-tracked line: %v", err)
 	}
 }
 

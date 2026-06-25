@@ -92,6 +92,26 @@ func (e *Engine) lineByID(id string) (Line, error) {
 	return l, nil
 }
 
+// LineByID loads a line by its id (exported wrapper around lineByID), or returns
+// ErrNotFound.
+func (e *Engine) LineByID(id string) (Line, error) { return e.lineByID(id) }
+
+// LineTracksRemote reports whether the line arrived from a remote (set on
+// clone/import). The fold guard uses this to warn before folding a local change
+// into an upstream branch (which would diverge from how the remote integrates
+// it, e.g. via a PR). Lines created locally with `express` are not tracked.
+func (e *Engine) LineTracksRemote(id string) (bool, error) {
+	var v int
+	err := e.db.QueryRow(`SELECT tracks_remote FROM line WHERE id=?`, id).Scan(&v)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, ErrNotFound
+	}
+	if err != nil {
+		return false, fmt.Errorf("change.LineTracksRemote: %w", err)
+	}
+	return v != 0, nil
+}
+
 // GetLineage walks parent_line from lineID up to the root and returns the chain
 // root-first, ending with the line itself.
 func (e *Engine) GetLineage(lineID string) ([]Line, error) {
