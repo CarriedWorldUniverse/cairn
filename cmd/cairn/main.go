@@ -278,6 +278,16 @@ func parseArgs(fs *flag.FlagSet, args []string) error {
 			positionals = append(positionals, args[i+1:]...)
 			i = len(args)
 		case len(a) > 1 && a[0] == '-':
+			// Git-style attached short-flag value, e.g. -n5 or -mmsg: split into the
+			// flag and its value so go-git's flag parser (which only accepts -n 5 /
+			// -n=5) sees a valid form. Only when the whole token isn't itself a flag
+			// name and its first char IS a non-boolean flag, so "-author"/"-force"
+			// are left intact.
+			if a[1] != '-' && len(a) > 2 && !strings.Contains(a, "=") &&
+				fs.Lookup(a[1:]) == nil && fs.Lookup(a[1:2]) != nil && !isBoolFlag(fs, a[1:2]) {
+				flags = append(flags, "-"+a[1:2], a[2:])
+				continue
+			}
 			flags = append(flags, a)
 			// A non-boolean flag written as "-flag value" (no "=") consumes the
 			// next token as its value, so keep them adjacent when reordering.
