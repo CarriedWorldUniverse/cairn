@@ -66,6 +66,29 @@ func TestParseArgsInterspersed(t *testing.T) {
 		}
 	})
 
+	t.Run("attached short-flag value (-n5, -mmsg)", func(t *testing.T) {
+		fs, m, _, n := newFS()
+		if err := parseArgs(fs, []string{"branch", "-n5", "-mhello"}); err != nil {
+			t.Fatal(err)
+		}
+		if *n != 5 || *m != "hello" || fs.Arg(0) != "branch" {
+			t.Fatalf("n=%d m=%q arg0=%q, want 5/hello/branch", *n, *m, fs.Arg(0))
+		}
+	})
+
+	t.Run("single-dash long flags are not split", func(t *testing.T) {
+		fs := flag.NewFlagSet("t", flag.ContinueOnError)
+		author := fs.String("author", "", "")
+		force := fs.Bool("force", false, "")
+		// "-author" must NOT become "-a" + "uthor"; "-force" stays a bool flag.
+		if err := parseArgs(fs, []string{"-author", "ada", "-force", "branch"}); err != nil {
+			t.Fatal(err)
+		}
+		if *author != "ada" || !*force || fs.Arg(0) != "branch" {
+			t.Fatalf("author=%q force=%v arg0=%q", *author, *force, fs.Arg(0))
+		}
+	})
+
 	t.Run("multiple positionals with flag between", func(t *testing.T) {
 		fs, m, _, _ := newFS()
 		if err := parseArgs(fs, []string{"a", "-m", "msg", "b"}); err != nil {
