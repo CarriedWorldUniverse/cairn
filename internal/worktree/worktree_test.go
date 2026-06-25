@@ -109,6 +109,71 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	}
 }
 
+// TestRepoConflictResolveThenCommitClean is the regression for the bug where a
+// resolved conflict was re-detected on the next commit: Seal's merge-forward
+// re-ran the 3-way merge against the parent without recording the parent tip as
+// a merge parent, so the merge base never advanced and the resolution could
+// never be sealed. (The sibling test above resolves then FOLDS, which masked it.)
+func TestRepoConflictResolveThenCommitClean(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("exp", "main"); err != nil {
+		t.Fatalf("express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("X\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "mainedit"); err != nil {
+		t.Fatalf("main adv: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := r.Commit("exp", "expedit")
+	if err != nil {
+		t.Fatalf("exp commit: %v", err)
+	}
+	if len(res.Conflicts) == 0 {
+		t.Fatal("expected conflict on the first commit")
+	}
+	// Resolve, then COMMIT (seal) — the resolution must stick.
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Resolve("exp", "f.txt"); err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	res2, err := r.Commit("exp", "resolved")
+	if err != nil {
+		t.Fatalf("commit after resolve: %v", err)
+	}
+	if len(res2.Conflicts) != 0 {
+		t.Fatalf("conflict re-detected after resolve+commit: %v", res2.Conflicts)
+	}
+	got, _, _ := Scan(filepath.Join(root, "exp"), nil)
+	if string(got["f.txt"]) != "resolved\n" {
+		t.Fatalf("exp f.txt = %q, want resolved", got["f.txt"])
+	}
+	// A further no-op commit stays clean too (the merge base really advanced).
+	res3, err := r.Commit("exp", "noop")
+	if err != nil {
+		t.Fatalf("noop commit: %v", err)
+	}
+	if len(res3.Conflicts) != 0 {
+		t.Fatalf("conflict resurfaced on a later commit: %v", res3.Conflicts)
+	}
+}
+
 func TestRepoReopenLoadsState(t *testing.T) {
 	root := t.TempDir()
 	r, err := Open(root, "t")
