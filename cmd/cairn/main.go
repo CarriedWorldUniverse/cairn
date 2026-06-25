@@ -72,6 +72,7 @@ subcommands:
   unexpress <branch>        remove a branch folder (--force to discard un-sealed work)
   commit <branch> [-m msg]  seal the working change (stamps msg, starts a fresh change)
   fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
+  reparent <branch> <parent>  set a branch's parent line (fix stacked topology after a git import)
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
   diff [branch] | diff <a> <b>  show the working change vs its parent, or commit-vs-commit
@@ -138,6 +139,8 @@ func run(args []string) error {
 		return cmdCommit(rest)
 	case "fold":
 		return cmdFold(rest)
+	case "reparent":
+		return cmdReparent(rest)
 	case "abandon":
 		return cmdAbandon(rest)
 	case "status":
@@ -524,6 +527,27 @@ func cmdFold(args []string) error {
 	}
 	defer r.Close()
 	return mapErr(r.Fold(fs.Arg(0), *force))
+}
+
+func cmdReparent(args []string) error {
+	fs := flag.NewFlagSet("reparent", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 2 {
+		return errors.New("usage: cairn reparent <branch> <new-parent>")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.Reparent(fs.Arg(0), fs.Arg(1)); err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("reparented %s onto %s\n", fs.Arg(0), fs.Arg(1))
+	return nil
 }
 
 func cmdAbandon(args []string) error {

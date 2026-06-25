@@ -61,3 +61,38 @@ func TestGetLineTreeAhead(t *testing.T) {
 		}
 	}
 }
+
+// TestReparent: a line flat-projected onto the root (as a git import does) can be
+// reparented onto its real parent, which updates parent_line and the base; cycles
+// and reparenting the root are refused.
+func TestReparent(t *testing.T) {
+	e := newTestEngine(t)
+	root, _ := e.RootLine()
+	seedLineTip(t, e, root.ID, map[string][]byte{"m.txt": []byte("m\n")})
+
+	rc, _ := e.CreateLine("rc/4-1", root.ID)
+	seedLineTip(t, e, rc.ID, map[string][]byte{"rc.txt": []byte("rc\n")})
+	// base is created rooted at the ROOT (the flat-import mistake), not rc.
+	base, _ := e.CreateLine("base/5-0", root.ID)
+	seedLineTip(t, e, base.ID, map[string][]byte{"base.txt": []byte("b\n")})
+
+	if got, _ := e.lineByID(base.ID); got.ParentLine != root.ID {
+		t.Fatalf("precondition: base parent = %q, want root", got.ParentLine)
+	}
+	if err := e.Reparent(base.ID, rc.ID); err != nil {
+		t.Fatalf("Reparent: %v", err)
+	}
+	got, _ := e.lineByID(base.ID)
+	if got.ParentLine != rc.ID {
+		t.Fatalf("after reparent, base parent = %q, want rc %q", got.ParentLine, rc.ID)
+	}
+
+	// Cycle: rc cannot be reparented onto its now-descendant base.
+	if err := e.Reparent(rc.ID, base.ID); err == nil {
+		t.Fatal("reparent onto a descendant must be refused (cycle)")
+	}
+	// The root cannot be reparented.
+	if err := e.Reparent(root.ID, rc.ID); err == nil {
+		t.Fatal("reparenting the root must be refused")
+	}
+}
