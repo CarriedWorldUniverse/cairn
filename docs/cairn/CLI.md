@@ -60,21 +60,37 @@ Subcommands that operate on an existing repo accept:
 | Flag | Default | Meaning |
 |------|---------|---------|
 | `--repo <dir>` | `.` | Repo root — cairn walks up from here to find `.cairn`, so you can run from any subfolder (like git finds `.git`). Run from inside a branch folder and commands default to **that branch** (like git's current branch); `commit -m …` needs no branch argument |
-| `--author <name>` | `$CAIRN_AUTHOR`, else `$USER`, else `cairn` | Author recorded on operations |
+| `--author <name>` | `$CAIRN_AUTHOR` (else cairn's configured identity) | Author override for a single operation |
 
-Persistent config (stored in the repo, set with `cairn config`):
+### Identity
+
+cairn owns its commit identity — it does **not** silently inherit your git config. It
+resolves the author of a sealed commit from, in order:
+
+1. the `--author` flag / `$CAIRN_AUTHOR` (one-off override), then
+2. the **repo** config (`cairn config user.name`), then
+3. the **global** config (`cairn config --global user.name`, shared by all your repos), then
+4. on a terminal with nothing set, a one-time first-use prompt (see [`cairn setup`](#cairn-setup));
+   non-interactively (CI/agents) it falls back to your `git config` as a last resort.
+
+The global config lives under your OS user-config dir (`~/.config/cairn/config` on Linux,
+`%AppData%\cairn\config` on Windows). Email resolves the same way, also honouring
+`$CAIRN_EMAIL` / `$GIT_AUTHOR_EMAIL`.
+
+Config keys (repo or `--global`):
 
 | Key | Meaning |
 |-----|---------|
 | `user.name` | Name written into sealed commits |
 | `user.email` | Email written into sealed commits |
-| `autosync` | When truthy, `commit` does a best-effort `pull` from `origin` afterward |
+| `autosync` | (repo only) When truthy, `commit` does a best-effort `pull` from `origin` afterward |
 
 Environment:
 
 | Variable | Used for |
 |----------|----------|
-| `CAIRN_AUTHOR` | Default `--author` |
+| `CAIRN_AUTHOR` | One-off `--author` default (name) |
+| `CAIRN_EMAIL` / `GIT_AUTHOR_EMAIL` | One-off author email override |
 | `CAIRN_TOKEN` / `GITHUB_TOKEN` | HTTPS auth for `push`/`fetch`/`pull`/`clone` (also reads `git credential` and ssh-agent/keys for SSH remotes) |
 
 Auth never prompts interactively (`GIT_TERMINAL_PROMPT=0`) — a missing credential fails
@@ -87,9 +103,10 @@ with a clear message instead of hanging.
 cairn init myproject
 cd myproject
 
-# 2. tell cairn who you are (written into sealed commits)
-cairn config user.name  "Ada Lovelace"
-cairn config user.email "ada@example.com"
+# 2. tell cairn who you are (once, globally, for every repo)
+cairn setup                                  # interactive; or set it directly:
+cairn config --global user.name  "Ada Lovelace"
+cairn config --global user.email "ada@example.com"
 
 # 3. edit files inside the main/ folder, then see what changed
 echo "hello" > main/README.md
@@ -134,13 +151,27 @@ cairn clone https://github.com/me/proj.git
 cairn clone git@github.com:me/proj.git proj
 ```
 
-#### `cairn config <key> [value]`
-Get (one argument) or set (two arguments) a config value. Keys: `user.name`,
-`user.email`, `autosync`.
+#### `cairn setup`
+Set your commit identity (name + email), stored **globally** for every repo. Run once
+on a new machine. It pre-fills suggestions from your `git config` (so it feels like
+`gh`'s git-config step) — press Enter to accept or type your own. cairn also runs this
+automatically the first time you `commit` on a terminal with no identity set yet.
 ```sh
-cairn config user.email "ada@example.com"   # set
-cairn config user.email                      # get
-cairn config autosync true                   # enable commit-time auto-pull
+cairn setup
+# cairn setup — your commit identity (stored globally for all repos).
+# Your name [Ada Lovelace]:
+# Your email [ada@example.com]:
+```
+
+#### `cairn config [--global] <key> [value]`
+Get (one argument) or set (two arguments) a config value. Without `--global` it reads/writes
+**this repo's** config; with `--global` it reads/writes your **user-level** config (shared by
+all repos — repo settings override it). Keys: `user.name`, `user.email`, `autosync` (repo only).
+```sh
+cairn config --global user.name "Ada Lovelace"  # set your global identity
+cairn config user.email "ada@work.example"       # override email in this repo only
+cairn config user.email                          # get (repo, falling through to global)
+cairn config autosync true                       # enable commit-time auto-pull
 ```
 
 ### Lines (branches)
@@ -322,16 +353,18 @@ cairn remote add origin https://github.com/me/proj.git
 cairn remote add team git@host:team/proj.git --cairn
 ```
 
-#### `cairn push [remote] [branch]` — `--force`
-Publish lines + tags (default `origin`). If the remote moved, push auto-pulls and retries
-once; `--force` overwrites a diverged remote branch.
-
-With a `branch` argument, push **only that line** (plus tags) — e.g. feed one feature line
-to the remote to open a PR, without touching the remote-tracked `main`:
+#### `cairn push [remote] [branch]` — `--force` `--all`
+Publish to `origin` (default). By default push publishes **only the line you're standing in**
+(like git pushes the current branch) — so a push from inside a feature folder never touches
+`main`. Pass an explicit `branch`, or `--all` to publish every line:
 ```sh
-cairn push origin feat      # publish just 'feat'
+cd feat && cairn push        # publishes just 'feat'
+cairn push origin feat       # explicit single line
+cairn push --all             # every line + tags
 ```
-(The single-line push does not auto-pull-retry — a diverged branch surfaces the clear error.)
+Only **sealed** commits are published — the auto-snapshot working state is local, like git's
+working tree, and never pushed. `--force` overwrites a diverged remote branch; the all-lines
+push auto-pulls + retries once on divergence (single-line surfaces the clear error instead).
 
 #### `cairn fetch [remote]`
 Fetch a remote into tracking refs (default `origin`) without reconciling.

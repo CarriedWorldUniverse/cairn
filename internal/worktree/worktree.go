@@ -11,6 +11,7 @@ import (
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
+	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
@@ -110,21 +111,41 @@ func Open(root, author string) (*Repo, error) {
 // $GIT_AUTHOR_EMAIL, else ""). It returns the resolved name so the caller can use
 // it as the Repo's author (recorded on change rows via CreateChange).
 func resolveIdentity(eng *change.Engine, author string) string {
-	name := author
-	if v, ok, _ := eng.GetConfig("user.name"); ok && v != "" {
-		name = v
-	}
-	email := ""
-	if v, ok, _ := eng.GetConfig("user.email"); ok && v != "" {
-		email = v
-	} else if v := os.Getenv("CAIRN_EMAIL"); v != "" {
-		email = v
-	} else if v := os.Getenv("GIT_AUTHOR_EMAIL"); v != "" {
-		email = v
-	}
+	// cairn OWNS its identity — it is not silently inherited from git config.
+	// Precedence: explicit (--author / $CAIRN_* env) → repo cairn config → global
+	// cairn config. When nothing is set the CLI runs first-use setup (see the
+	// cmd layer's ensureIdentity), pre-filling suggestions from git config.
+	name := firstNonEmpty(author, repoConfig(eng, "user.name"), userconfig.Get("user.name"))
+	email := firstNonEmpty(
+		os.Getenv("CAIRN_EMAIL"), os.Getenv("GIT_AUTHOR_EMAIL"),
+		repoConfig(eng, "user.email"), userconfig.Get("user.email"))
 	eng.SetIdentity(name, email)
 	return name
 }
+
+func repoConfig(eng *change.Engine, key string) string {
+	if v, ok, _ := eng.GetConfig(key); ok {
+		return v
+	}
+	return ""
+}
+
+func firstNonEmpty(vs ...string) string {
+	for _, v := range vs {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// Identity returns the resolved author name and email (either may be "" when
+// nothing is configured yet).
+func (r *Repo) Identity() (name, email string) { return r.eng.Identity() }
+
+// SetIdentity overrides the author identity for this session (used by first-use
+// setup after it collects and stores the identity globally).
+func (r *Repo) SetIdentity(name, email string) { r.eng.SetIdentity(name, email) }
 
 // cacheDir returns the path to the content-addressed blob cache shared by all
 // materializations in this working copy.

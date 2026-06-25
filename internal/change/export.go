@@ -1,6 +1,7 @@
 package change
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -134,25 +135,75 @@ func (e *Engine) openChangeIDs() (map[string]bool, error) {
 // abandoned lines are not projected: a folded line's history lives in its parent.
 func (e *Engine) exportLines() error {
 	rows, err := e.db.Query(
-		`SELECT name, tip_commit FROM line WHERE status = 'open' AND tip_commit != ''`)
+		`SELECT id, name, tip_commit FROM line WHERE status = 'open' AND tip_commit != ''`)
 	if err != nil {
 		return fmt.Errorf("change.Export: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
+	type lineRef struct{ id, name, tip string }
+	var lines []lineRef
 	for rows.Next() {
-		var name, tip string
-		if err := rows.Scan(&name, &tip); err != nil {
+		var lr lineRef
+		if err := rows.Scan(&lr.id, &lr.name, &lr.tip); err != nil {
 			return fmt.Errorf("change.Export: %w", err)
 		}
-		if err := e.setRef(plumbing.NewBranchReferenceName(name), tip); err != nil {
-			return err
-		}
+		lines = append(lines, lr)
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("change.Export: %w", err)
 	}
+	// Project the SEALED tip, never the working snapshot. cairn's working change
+	// is one auto-amended commit on top of the sealed tip (local-only, like git's
+	// working tree); a branch ref a clone or push publishes must point at sealed
+	// history, not a "(working)" snapshot. A line with only un-sealed work has no
+	// sealed tip yet and is not projected.
+	for _, lr := range lines {
+		st, err := e.sealedTip(Line{ID: lr.id, TipCommit: lr.tip})
+		if err != nil {
+			return fmt.Errorf("change.Export: %w", err)
+		}
+		if st == "" {
+			continue
+		}
+		if err := e.setRef(plumbing.NewBranchReferenceName(lr.name), st); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// sealedTip returns the line's most recent SEALED commit — what a push/export
+// publishes. The working snapshot sits as one auto-amended commit on top of the
+// sealed tip, so when line.TipCommit is that working commit its first parent is
+// the sealed tip; otherwise the tip is itself sealed. Returns "" when the line
+// has only un-sealed work (nothing to publish yet).
+func (e *Engine) sealedTip(line Line) (string, error) {
+	if line.TipCommit == "" {
+		return "", nil
+	}
+	open, err := e.OpenChangeForLine(line.ID)
+	if errors.Is(err, ErrNotFound) {
+		return line.TipCommit, nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if open.HeadCommit != line.TipCommit {
+		return line.TipCommit, nil
+	}
+	// The tip IS the open change's head. Publish it as-is unless it's an
+	// auto-snapshot working commit (the "(working)" placeholder amended by
+	// SnapshotWorking) — a real commit made directly on an open change (e.g. via
+	// the engine Commit primitive or cherry-pick) is genuine history and stays.
+	c, cerr := e.git.CommitObject(plumbing.NewHash(line.TipCommit))
+	if cerr != nil {
+		return "", fmt.Errorf("change.sealedTip: %w", cerr)
+	}
+	if strings.TrimSpace(stripChangeID(c.Message)) != workingDescription {
+		return line.TipCommit, nil
+	}
+	return e.firstParent(line.TipCommit)
 }
 
 // exportChanges projects open changes with a head onto refs/cairn/change/<id>.
