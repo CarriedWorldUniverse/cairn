@@ -158,8 +158,9 @@ func (e *Engine) fetchRemote(url string) error {
 			"+refs/tags/*:refs/tags/*",
 			"+refs/cairn/*:refs/cairn/*",
 		},
-		Tags: git.AllTags,
-		Auth: auth,
+		Tags:     git.AllTags,
+		Auth:     auth,
+		Progress: e.progress,
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchRemote: %w", err)

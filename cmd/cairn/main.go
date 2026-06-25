@@ -332,7 +332,8 @@ func cmdClone(args []string) error {
 	if ents, err := os.ReadDir(dir); err == nil && len(ents) > 0 {
 		return fmt.Errorf("destination %s already exists and is not empty", dir)
 	}
-	r, err := worktree.Clone(url, dir, *author)
+	fmt.Fprintf(os.Stderr, "cairn: cloning %s into %s …\n", url, dir)
+	r, err := worktree.Clone(url, dir, *author, os.Stderr)
 	if err != nil {
 		return mapRemoteErr(err)
 	}
@@ -369,6 +370,7 @@ func cmdExpress(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	fmt.Fprintf(os.Stderr, "cairn: expressing %s …\n", branch)
 	if err := r.Express(branch, *from); err != nil {
 		return mapErr(err)
 	}

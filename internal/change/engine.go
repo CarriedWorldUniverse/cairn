@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -32,17 +33,23 @@ const RootLineName = "main"
 // Engine is the per-repo change engine. The bare go-git repo and the SQLite
 // catalogue live side by side under dir.
 type Engine struct {
-	dir     string
-	git     *git.Repository
-	db      *sql.DB
-	now     func() time.Time
-	idName  string
-	idEmail string
+	dir      string
+	git      *git.Repository
+	db       *sql.DB
+	now      func() time.Time
+	idName   string
+	idEmail  string
+	progress io.Writer
 }
 
 // SetIdentity configures the author identity used for all commits this engine
 // writes. Empty values fall back to safe placeholders in writeCommit.
 func (e *Engine) SetIdentity(name, email string) { e.idName, e.idEmail = name, email }
+
+// SetProgress sets the writer that network fetch progress (the git sideband:
+// counting/compressing/receiving objects) is streamed to during clone/fetch.
+// nil (the default) disables progress output. The CLI points this at os.Stderr.
+func (e *Engine) SetProgress(w io.Writer) { e.progress = w }
 
 // Open opens (creating if needed) the change engine rooted at dir. It opens or
 // initialises a bare go-git object store at dir/objects.git and the SQLite

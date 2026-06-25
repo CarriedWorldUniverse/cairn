@@ -2,6 +2,7 @@ package worktree
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -13,7 +14,10 @@ import (
 // onto the root line and every other head onto a flat child line) and then
 // expresses the default branch as a folder on disk. The returned Repo is ready
 // to express the other imported lines, commit, fold, etc.
-func Clone(url, dir, author string) (*Repo, error) {
+//
+// progress, if non-nil, receives the git fetch sideband (counting/receiving
+// objects) so the caller can show clone progress; pass nil to stay silent.
+func Clone(url, dir, author string, progress io.Writer) (*Repo, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("worktree.Clone: %w", err)
 	}
@@ -22,6 +26,7 @@ func Clone(url, dir, author string) (*Repo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("worktree.Clone: %w", err)
 	}
+	eng.SetProgress(progress)
 	def, err := eng.ImportFromRemote(url)
 	if err != nil {
 		_ = eng.Close()
