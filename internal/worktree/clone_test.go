@@ -172,3 +172,32 @@ func TestReopenAfterCloneNonMainDefault(t *testing.T) {
 		t.Fatalf("default branch %q not expressed after reopen: %v", def, r2.Ls())
 	}
 }
+
+// TestCloneBaseIsForkCommitNotTip: a flat-imported branch's base is the FORK
+// commit (its merge-base with the default branch), not its own tip — so `ahead`
+// reflects the real divergence, not zero. (feature forked from the default at the
+// init commit and has one commit beyond it.)
+func TestCloneBaseIsForkCommitNotTip(t *testing.T) {
+	skipOnWindows(t)
+	url, _ := makeOriginRepoWT(t)
+	dir := filepath.Join(t.TempDir(), "repo")
+	r, err := Clone(url, dir, "tester", nil)
+	if err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	feat, err := r.eng.LineByName("feature")
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	if feat.BaseCommit == feat.TipCommit {
+		t.Fatal("imported branch base must be the fork commit, not its own tip")
+	}
+	h, err := r.eng.LineHeight(feat)
+	if err != nil {
+		t.Fatalf("LineHeight: %v", err)
+	}
+	if h < 1 {
+		t.Fatalf("ahead = %d, want >= 1 (the commit since the fork)", h)
+	}
+}

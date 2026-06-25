@@ -82,10 +82,20 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 		}
 
-		// Every non-default head becomes a flat child line off the root.
+		// Every non-default head becomes a flat child line off the root. Its base
+		// is the FORK COMMIT — the merge-base with the default branch — not the
+		// branch's own tip. The base is a COMMIT, not a branch: it's the commit the
+		// branch diverged from, which lives in the default branch (a valid parent)
+		// whenever the intervening branch has merged there. This makes `ahead` the
+		// real divergence from trunk rather than "commits since clone". Unrelated
+		// histories (no common ancestor) fall back to the tip.
 		for name, sha := range heads {
 			if name == def {
 				continue
+			}
+			base := sha
+			if mb, mberr := e.mergeBase(sha, defTip); mberr == nil && mb != "" {
+				base = mb
 			}
 			var existingID string
 			err := tx.QueryRow(`SELECT id FROM line WHERE name=?`, name).Scan(&existingID)
@@ -94,7 +104,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 				if _, err := tx.Exec(
 					`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
 					 VALUES(?,?,?,?,?,'open',?,?)`,
-					newID(), name, rootID, sha, sha, ts, ts); err != nil {
+					newID(), name, rootID, sha, base, ts, ts); err != nil {
 					return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 				}
 			case err != nil:
@@ -102,7 +112,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 			default:
 				if _, err := tx.Exec(
 					`UPDATE line SET tip_commit=?, base_commit=?, updated_at=? WHERE id=?`,
-					sha, sha, ts, existingID); err != nil {
+					sha, base, ts, existingID); err != nil {
 					return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 				}
 			}
