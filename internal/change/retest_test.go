@@ -50,6 +50,45 @@ func TestCreateLineForksFromSealedTip(t *testing.T) {
 	}
 }
 
+// TestGetLineTreeAheadIgnoresWorkingSnapshot guards the cosmetic ahead=1 bug: a
+// line whose tip is a no-op "(working)" auto-snapshot (e.g. a freshly cloned
+// main) must read ahead=0 in `cairn tree`, matching `cairn status`.
+func TestGetLineTreeAheadIgnoresWorkingSnapshot(t *testing.T) {
+	e := newTestEngine(t)
+	e.SetIdentity("Dev", "dev@x.io")
+	main, _ := e.LineByName("main")
+	ch1, _ := e.CreateChange(main.ID, "dev")
+	res, err := e.Commit(ch1.ID, map[string][]byte{"a.txt": []byte("v1\n")}, nil, "seal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sealed := res.HeadCommit
+
+	feat, err := e.CreateLine("feat", main.ID) // base = main's sealed tip
+	if err != nil {
+		t.Fatal(err)
+	}
+	if feat.BaseCommit != sealed {
+		t.Fatalf("setup: feat base = %s, want %s", feat.BaseCommit, sealed)
+	}
+	// A no-op working snapshot on feat (same content) → feat tip is a "(working)".
+	wch, _ := e.CreateChange(feat.ID, "dev")
+	e.SetIdentity("cairn", "cairn@users.noreply.cairn")
+	if _, _, err := e.SnapshotWorking(wch.ID, map[string]TreeEntry{"a.txt": blobEntry(t, e, "v1\n")}); err != nil {
+		t.Fatal(err)
+	}
+
+	nodes, err := e.GetLineTree()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range nodes {
+		if n.Line.ID == feat.ID && n.Ahead != 0 {
+			t.Fatalf("feat ahead = %d, want 0 — a (working) snapshot must not count as ahead", n.Ahead)
+		}
+	}
+}
+
 // makeAnnotatedTag builds and stores an annotated tag OBJECT (not a lightweight
 // ref) pointing at commitSHA, returning the tag object's hash — what a cloned
 // annotated tag's ref/catalogue row points at.

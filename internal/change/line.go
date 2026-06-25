@@ -202,7 +202,10 @@ func (e *Engine) GetLineage(lineID string) ([]Line, error) {
 }
 
 // GetLineTree returns all non-abandoned lines as tree nodes, each with its
-// parent line and a Phase-1 ahead approximation.
+// parent line and how many SEALED commits it is ahead of its base. The open
+// "(working)" auto-snapshot at a line's tip is local working state (like git's
+// working tree) and never counts — so a freshly cloned line whose only delta is
+// its no-op working snapshot reads ahead=0, matching `cairn status`.
 func (e *Engine) GetLineTree() ([]LineNode, error) {
 	rows, err := e.db.Query(
 		`SELECT id, name, parent_line, tip_commit, base_commit, status
@@ -220,10 +223,19 @@ func (e *Engine) GetLineTree() ([]LineNode, error) {
 			return nil, fmt.Errorf("change.GetLineTree: %w", err)
 		}
 		l.ParentLine = parent.String
-		// Phase-1: approximation (0/1), real commit-distance is a Phase-2 refinement.
+		// Ahead = SEALED commits between this line's base and its tip. Strip a
+		// "(working)" head first (an unsealed auto-snapshot is local working state,
+		// never "ahead" — exactly as Status does), then count first-parent commits
+		// down to (excluding) the base, or to the root when the base is empty.
+		st, err := e.sealedTip(l)
+		if err != nil {
+			return nil, fmt.Errorf("change.GetLineTree: %w", err)
+		}
 		ahead := 0
-		if l.TipCommit != "" && l.TipCommit != l.BaseCommit {
-			ahead = 1
+		for cur := st; cur != "" && cur != l.BaseCommit && ahead < describeWalkCap; ahead++ {
+			if cur, err = e.firstParent(cur); err != nil {
+				return nil, fmt.Errorf("change.GetLineTree: %w", err)
+			}
 		}
 		nodes = append(nodes, LineNode{Line: l, Parent: l.ParentLine, Ahead: ahead})
 	}
