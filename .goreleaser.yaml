@@ -34,18 +34,12 @@ checksum:
 snapshot:
   version_template: "{{ incpatch .Version }}-snapshot"
 
+# main is squash-merged PR titles (no conventional-commit prefixes), so
+# github-native — GitHub's own PR-based "What's Changed" notes between this tag
+# and the previous one — gives a tight, accurate changelog. Categories and
+# exclusions are configured in .github/release.yml.
 changelog:
-  use: github
-  sort: asc
-  groups:
-    - title: Features
-      regexp: '^.*?feat(\(.+\))??!?:.+$'
-      order: 0
-    - title: Fixes
-      regexp: '^.*?fix(\(.+\))??!?:.+$'
-      order: 1
-    - title: Others
-      order: 999
+  use: github-native
 
 release:
   footer: |
