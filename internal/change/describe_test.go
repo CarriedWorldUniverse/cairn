@@ -32,6 +32,39 @@ func TestDescribeVersion(t *testing.T) {
 	}
 }
 
+// TestDescribeVersionSkipsNonSemverTags is the regression for `version`/`release`
+// hard-failing when the NEAREST tag is not semver (e.g. "v1" or an inherited
+// "forgejo-archive"). Non-semver tags must not anchor a derived version; the walk
+// continues to the nearest real version tag.
+func TestDescribeVersionSkipsNonSemverTags(t *testing.T) {
+	e := newTestEngine(t)
+	root, err := e.RootLine()
+	if err != nil {
+		t.Fatal(err)
+	}
+	c1 := seedLineTip(t, e, root.ID, map[string][]byte{"a.txt": []byte("1")})
+	if err := e.Tag("v1.2.3", c1, "tester"); err != nil {
+		t.Fatal(err)
+	}
+	// A NEARER commit carries only non-semver tags — they must be ignored.
+	c2 := seedLineTip(t, e, root.ID, map[string][]byte{"b.txt": []byte("2")})
+	if err := e.Tag("v1", c2, "tester"); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Tag("forgejo-archive", c2, "tester"); err != nil {
+		t.Fatal(err)
+	}
+	c3 := seedLineTip(t, e, root.ID, map[string][]byte{"c.txt": []byte("3")})
+
+	tag, dist, err := e.DescribeVersion(c3)
+	if err != nil {
+		t.Fatalf("DescribeVersion errored on a non-semver nearer tag: %v", err)
+	}
+	if tag != "v1.2.3" || dist != 2 {
+		t.Fatalf("DescribeVersion(c3) = %q, %d; want the nearest SEMVER tag v1.2.3 at dist 2", tag, dist)
+	}
+}
+
 func TestDescribeVersionNoTag(t *testing.T) {
 	e := newTestEngine(t)
 	root, err := e.RootLine()
