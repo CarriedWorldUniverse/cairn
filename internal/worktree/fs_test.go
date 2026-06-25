@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -91,3 +92,71 @@ func TestMaterializeClearsStaleFiles(t *testing.T) {
 		t.Fatal("stale gone.txt not removed after re-materialize")
 	}
 }
+
+// TestMaterializeIncremental verifies the in-place (non-teardown) Materialize:
+// ignored files survive, an unchanged file keeps its mtime (so the stat-cache
+// stays warm), and a tracked file removed in the new commit is deleted.
+func TestMaterializeIncremental(t *testing.T) {
+	eng, err := change.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = eng.Close() })
+	main, _ := eng.LineByName("main")
+
+	ch1, _ := eng.CreateChange(main.ID, "t")
+	r1, err := eng.Commit(ch1.ID, map[string][]byte{
+		".gitignore": []byte("bin/\n"),
+		"keep.txt":   []byte("keep\n"),
+		"gone.txt":   []byte("gone\n"),
+	}, nil, "")
+	if err != nil {
+		t.Fatalf("commit r1: %v", err)
+	}
+
+	cacheDir := filepath.Join(t.TempDir(), "cache")
+	dir := filepath.Join(t.TempDir(), "wc")
+	if err := Materialize(eng, cacheDir, r1.HeadCommit, dir); err != nil {
+		t.Fatalf("materialize r1: %v", err)
+	}
+	// An ignored build artifact (untracked) and a fixed mtime on the unchanged file.
+	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bin", "out.dll"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stamp := timeStamp()
+	if err := os.Chtimes(filepath.Join(dir, "keep.txt"), stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+
+	// New commit: keep.txt unchanged, gone.txt removed.
+	ch2, _ := eng.CreateChange(main.ID, "t")
+	r2, err := eng.Commit(ch2.ID, map[string][]byte{
+		".gitignore": []byte("bin/\n"),
+		"keep.txt":   []byte("keep\n"),
+	}, nil, "")
+	if err != nil {
+		t.Fatalf("commit r2: %v", err)
+	}
+	if err := Materialize(eng, cacheDir, r2.HeadCommit, dir); err != nil {
+		t.Fatalf("materialize r2: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "bin", "out.dll")); err != nil {
+		t.Fatalf("ignored bin/out.dll must be preserved across materialize: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gone.txt")); !os.IsNotExist(err) {
+		t.Fatal("gone.txt removed in r2 must be deleted from the working copy")
+	}
+	fi, err := os.Stat(filepath.Join(dir, "keep.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !fi.ModTime().Equal(stamp) {
+		t.Fatalf("keep.txt mtime changed (%v != %v) — unchanged file was rewritten", fi.ModTime(), stamp)
+	}
+}
+
+func timeStamp() time.Time { return time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC) }

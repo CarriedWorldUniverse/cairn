@@ -5,6 +5,7 @@ go 1.26.3
 require (
 	github.com/CarriedWorldUniverse/cwb-proto v0.0.0-20260602062341-a81606db89f6
 	github.com/gliderlabs/ssh v0.3.8
+	github.com/go-git/go-billy/v5 v5.6.2
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/pmezard/go-difflib v1.0.0
 	golang.org/x/crypto v0.49.0
@@ -24,7 +25,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect

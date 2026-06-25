@@ -2,6 +2,7 @@ package worktree
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -12,15 +13,27 @@ import (
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 )
 
-// Materialize writes the files of commitSha into dir, replacing any existing
-// contents so stale files from a prior materialization are cleared. Each
-// distinct file body is content-addressed (sha256) into a shared blob cache
-// under cacheDir/blobs, and the working-copy file is produced by reflinking
-// (copy-on-write) the cached blob, falling back to a plain copy on filesystems
-// without reflink support.
+// Materialize writes the files of commitSha into dir IN PLACE, touching only what
+// changed: it writes/updates files whose content or mode differs, deletes tracked
+// files no longer present, and leaves everything else alone. It deliberately does
+// NOT tear the folder down and rebuild it. Two reasons, both load-bearing on a
+// real tree on Windows:
+//
+//  1. Removing the whole folder fails when anything holds a handle on it — a
+//     shell sitting in the folder, or an editor with a file open (the unlinkat
+//     "being used by another process" seen on commit at scale).
+//  2. A full rebuild rewrites every file, changing every mtime, which defeats the
+//     snapshot stat-cache → every later command re-hashes the whole tree.
+//
+// Ignored files (build output, .vs/ that an editor or Visual Studio holds open)
+// and .git/.cairn are never touched — the deletion pass uses the same walk as the
+// snapshot, which skips them. Changed files are written through the shared blob
+// cache (content-addressed, reflinked copy-on-write) into a temp sibling and
+// renamed over, so a reader never sees a half-written file.
 func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	files, err := eng.Files(commitSha)
 	if err != nil {
@@ -34,80 +47,146 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	// Ensure dir's parent exists. A branch name may contain "/" (e.g.
-	// "docs/readme-refresh"), so dir can be nested under a folder that was never
-	// created — e.g. after a clone that expressed only the root. Both the temp
-	// dir below and the final rename need the parent to exist.
-	if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
+	// Ensure the branch folder exists; never remove it (see the doc comment).
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	// Build into a unique sibling temp dir first, then swap — so a failure
-	// mid-build leaves the existing working copy intact (the slow writes happen
-	// before anything destructive). A sibling of dir is on the same filesystem →
-	// os.Rename is atomic. MkdirTemp gives a fresh unique name so concurrent or
-	// retried Materialize calls can't collide on a fixed path.
-	tmp, err := os.MkdirTemp(filepath.Dir(dir), filepath.Base(dir)+".cairn-tmp-")
-	if err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
-	}
-	// MkdirTemp creates the dir 0o700; the working copy expects 0o755.
-	if err := os.Chmod(tmp, 0o755); err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("worktree.Materialize: %w", err)
-	}
+
+	// 1. Write/update each target file only when it differs from what's on disk.
 	for p, data := range files {
-		full := filepath.Join(tmp, filepath.FromSlash(p))
+		full := filepath.Join(dir, filepath.FromSlash(p))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			os.RemoveAll(tmp)
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-
-		// Symlink: write the target string as an actual symlink, bypassing the
-		// blob cache/reflink path (a symlink's content is its target).
 		if modes[p] == change.ModeSymlink {
-			_ = os.Remove(full) // tmp is fresh, but be defensive
+			if symlinkUpToDate(full, string(data)) {
+				continue
+			}
+			_ = os.Remove(full)
 			if err := os.Symlink(string(data), full); err != nil {
-				os.RemoveAll(tmp)
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
 			continue
 		}
-
+		if regularUpToDate(full, data, modes[p] == change.ModeExecutable) {
+			continue
+		}
 		sum := sha256.Sum256(data)
-		key := hex.EncodeToString(sum[:])
-		cacheBlob := filepath.Join(blobs, key)
-		if _, err := os.Stat(cacheBlob); errors.Is(err, os.ErrNotExist) {
+		cacheBlob := filepath.Join(blobs, hex.EncodeToString(sum[:]))
+		if _, serr := os.Stat(cacheBlob); errors.Is(serr, os.ErrNotExist) {
 			if err := writeFileAtomic(cacheBlob, data); err != nil {
-				os.RemoveAll(tmp)
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
-		} else if err != nil {
-			os.RemoveAll(tmp)
+		} else if serr != nil {
+			return fmt.Errorf("worktree.Materialize: %w", serr)
+		}
+		if err := placeFile(cacheBlob, full, modes[p] == change.ModeExecutable); err != nil {
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		if err := reflinkOrCopy(cacheBlob, full); err != nil {
-			os.RemoveAll(tmp)
+	}
+
+	// 2. Delete on-disk files no longer in the target. The walk uses the target as
+	//    the tracked set, so .git/.cairn and IGNORED files (build output, .vs/) are
+	//    skipped — left untouched, which is both correct and why the full-teardown
+	//    unlinkat is gone.
+	target := make(map[string]struct{}, len(files))
+	for p := range files {
+		target[p] = struct{}{}
+	}
+	var stale []string
+	if werr := walkWorktree(dir, target, func(slashRel, path string, _ fs.DirEntry) error {
+		if _, ok := target[slashRel]; !ok {
+			stale = append(stale, path)
+		}
+		return nil
+	}); werr != nil {
+		return fmt.Errorf("worktree.Materialize: %w", werr)
+	}
+	for _, path := range stale {
+		if err := winretry.Do(func() error { return os.Remove(path) }); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		if modes[p] == change.ModeExecutable {
-			if err := os.Chmod(full, 0o755); err != nil {
-				os.RemoveAll(tmp)
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-		}
 	}
-	// Swap: remove the old dir, then atomically rename temp into place. Both ops
-	// retry transient Windows file locks (AV/indexer holding a handle) — the
-	// rename race seen with `express --from`. On POSIX these are plain calls.
-	if err := removeAllWithRetry(dir); err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("worktree.Materialize: %w", err)
-	}
-	if err := renameWithRetry(tmp, dir); err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("worktree.Materialize: %w", err)
-	}
+	// 3. Prune directories the deletion emptied (best-effort; a still-held or
+	//    non-empty dir is simply left).
+	pruneEmptyDirs(dir, target)
 	return nil
+}
+
+// regularUpToDate reports whether the regular file at full already has exactly
+// data as its content and the right executable bit — so it can be left untouched
+// (preserving its mtime, which keeps the snapshot stat-cache warm).
+func regularUpToDate(full string, data []byte, wantExec bool) bool {
+	fi, err := os.Lstat(full)
+	if err != nil || !fi.Mode().IsRegular() {
+		return false
+	}
+	if fi.Size() != int64(len(data)) {
+		return false
+	}
+	if (fi.Mode()&0o111 != 0) != wantExec {
+		return false
+	}
+	cur, err := os.ReadFile(full)
+	return err == nil && bytes.Equal(cur, data)
+}
+
+// symlinkUpToDate reports whether full is already a symlink pointing at target.
+func symlinkUpToDate(full, target string) bool {
+	fi, err := os.Lstat(full)
+	if err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		return false
+	}
+	got, err := os.Readlink(full)
+	return err == nil && got == target
+}
+
+// placeFile installs the cached blob at full (atomic replace via a temp sibling +
+// rename, so a concurrent reader never sees a half-written file and an open
+// destination doesn't block an in-place truncate on Windows), with the exec bit.
+func placeFile(cacheBlob, full string, exec bool) error {
+	tmp := full + ".cairn-wtmp"
+	_ = os.Remove(tmp)
+	if err := reflinkOrCopy(cacheBlob, tmp); err != nil {
+		return err
+	}
+	mode := os.FileMode(0o644)
+	if exec {
+		mode = 0o755
+	}
+	if err := os.Chmod(tmp, mode); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return renameWithRetry(tmp, full)
+}
+
+// pruneEmptyDirs removes directories the deletion pass emptied, deepest-first.
+// It never removes dir itself, and skips .git/.cairn and any directory that still
+// contains a target path (so it won't disturb ignored subtrees like .vs/, which
+// hold no target path but are also never walked into). Best-effort: a removal
+// that fails (non-empty, or held open) is silently left.
+func pruneEmptyDirs(dir string, target map[string]struct{}) {
+	var dirs []string
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			name := d.Name()
+			if path != dir && (name == ".git" || name == ".cairn") {
+				return filepath.SkipDir
+			}
+			if path != dir {
+				dirs = append(dirs, path)
+			}
+		}
+		return nil
+	})
+	// Deepest first.
+	for i := len(dirs) - 1; i >= 0; i-- {
+		_ = os.Remove(dirs[i]) // only succeeds when empty
+	}
 }
 
 // writeFileAtomic writes data to path via a temp file in the same directory

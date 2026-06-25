@@ -16,8 +16,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	gitcache "github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 	_ "modernc.org/sqlite"
 )
 
@@ -55,10 +59,16 @@ func (e *Engine) SetProgress(w io.Writer) { e.progress = w }
 // initialises a bare go-git object store at dir/objects.git and the SQLite
 // catalogue at dir/cairn.db, applies the schema, and ensures the root line.
 func Open(dir string) (*Engine, error) {
+	// Build the bare git object store on a filesystem whose Rename retries
+	// transient Windows file locks. go-git writes every object to a temp file then
+	// renames it into the store; on a large tree that rename races antivirus /
+	// search-indexer handles and fails with "Access is denied" — near-certain at
+	// scale on Windows. On non-Windows the wrapper is a no-op pass-through.
 	gitDir := filepath.Join(dir, "objects.git")
-	g, err := git.PlainOpen(gitDir)
+	store := filesystem.NewStorage(winretry.FS(osfs.New(gitDir)), gitcache.NewObjectLRUDefault())
+	g, err := git.Open(store, nil)
 	if errors.Is(err, git.ErrRepositoryNotExists) {
-		g, err = git.PlainInit(gitDir, true)
+		g, err = git.Init(store, nil)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("change.Open: git: %w", err)
