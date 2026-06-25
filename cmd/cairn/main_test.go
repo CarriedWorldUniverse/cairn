@@ -64,6 +64,42 @@ func TestRepoDiscoveryFromSubfolder(t *testing.T) {
 	}
 }
 
+// TestBranchInferenceFromCWD: running a command from inside an expressed branch
+// folder defaults to that branch (like git's current branch); from the root it
+// defaults to the root line. Slash branches use their flat folder name.
+func TestBranchInferenceFromCWD(t *testing.T) {
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("b\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "main", "-m", "base")
+	mustRun(t, "express", "--repo", root, "--from", "main", "base/5-0")
+
+	// --repo pointing at the flat folder (or a subdir of it) infers base/5-0.
+	folder := filepath.Join(root, "base-5-0")
+	out := captureRun(t, "status", "--repo", folder)
+	if !strings.Contains(out, "branch:    base/5-0") {
+		t.Fatalf("status from inside base-5-0 did not infer the branch:\n%s", out)
+	}
+	// From the repo root it stays on the root line.
+	out = captureRun(t, "status", "--repo", root)
+	if !strings.Contains(out, "branch:    main") {
+		t.Fatalf("status from the root should default to main:\n%s", out)
+	}
+	// commit with no branch arg, from inside the folder, commits that branch.
+	if err := os.WriteFile(filepath.Join(folder, "g.txt"), []byte("wip\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"commit", "--repo", folder, "-m", "from folder"}); err != nil {
+		t.Fatalf("commit (inferred branch) from folder: %v", err)
+	}
+	// commit with no branch arg, from the root, still requires a branch.
+	if err := run([]string{"commit", "--repo", root, "-m", "x"}); err == nil {
+		t.Fatal("commit with no branch from the root must require a branch")
+	}
+}
+
 // TestVersionFlag covers the top-level --version/-v build-version flag (distinct
 // from the `version` subcommand, which derives the repo's semver). It defaults
 // to "dev" and is overridden at link time by GoReleaser.

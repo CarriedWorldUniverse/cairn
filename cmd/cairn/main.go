@@ -235,7 +235,41 @@ func openRepo(repo, author string) (*worktree.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return worktree.Open(root, author)
+	r, err := worktree.Open(root, author)
+	if err != nil {
+		return nil, err
+	}
+	// If the user is standing inside an expressed branch folder, record it as the
+	// branch hint so commands that omit a branch act on it (like git's current
+	// branch). repo (default ".") is where they stand; map its top folder under
+	// the root back to a branch.
+	if b, ok := branchFromDir(r, repo, root); ok {
+		r.SetBranchHint(b)
+	}
+	return r, nil
+}
+
+// branchFromDir resolves the expressed branch whose folder dir (default ".") sits
+// inside, relative to the repo root. Returns ("", false) at the root or outside
+// any branch folder.
+func branchFromDir(r *worktree.Repo, dir, root string) (string, bool) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", false
+	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return "", false
+	}
+	rel = filepath.ToSlash(rel)
+	if rel == "." || rel == ".." || strings.HasPrefix(rel, "../") {
+		return "", false
+	}
+	first := rel
+	if i := strings.IndexByte(rel, '/'); i >= 0 {
+		first = rel[:i]
+	}
+	return r.BranchForFolder(first)
 }
 
 // openRepoSynced opens a repo and immediately snapshots every expressed folder
@@ -436,15 +470,19 @@ func cmdCommit(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	if fs.NArg() < 1 {
-		return errors.New("branch required")
-	}
-	branch := fs.Arg(0)
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	var branch string
+	if fs.NArg() > 0 {
+		branch = fs.Arg(0)
+	} else if b, ok := r.CWDBranch(); ok {
+		branch = b // run from inside a branch folder → commit that branch
+	} else {
+		return errors.New("branch required (or run from inside a branch folder)")
+	}
 	res, err := r.Commit(branch, *msg)
 	if err != nil {
 		return mapErr(err)

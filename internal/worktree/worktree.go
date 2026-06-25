@@ -43,6 +43,12 @@ type Repo struct {
 	// from the most recent Commit, so the CLI can surface it. Empty means autosync
 	// was off (or no commit has run); see LastSyncNote.
 	lastSyncNote string
+
+	// branchHint is the branch whose expressed folder the user is standing in
+	// (set by the CLI when a command is run from inside a branch folder). When
+	// set, it is the default branch for commands that omit one. Empty means at the
+	// repo root (or not inside any branch folder) → fall back to the root line.
+	branchHint string
 }
 
 // StatusInfo reports the state of an expressed branch: its lineage (root-first
@@ -688,11 +694,35 @@ func (r *Repo) DiffCommits(a, b string) ([]change.FileDiff, error) {
 // NULL line), whatever it is called. After a clone of a remote whose default
 // branch is e.g. "master", this is "master" rather than the literal "main".
 func (r *Repo) DefaultBranch() (string, error) {
+	// If the user is standing inside a branch folder, that branch is the default —
+	// like git acting on your current branch. Otherwise fall back to the root line.
+	if r.branchHint != "" {
+		return r.branchHint, nil
+	}
 	root, err := r.eng.RootLine()
 	if err != nil {
 		return "", fmt.Errorf("worktree.DefaultBranch: %w", err)
 	}
 	return root.Name, nil
+}
+
+// SetBranchHint records the branch whose expressed folder the user is standing in
+// (computed by the CLI from the working directory). See DefaultBranch / CWDBranch.
+func (r *Repo) SetBranchHint(branch string) { r.branchHint = branch }
+
+// CWDBranch returns the branch whose expressed folder the user is in, if any. Used
+// by commands (e.g. commit) that require a branch but can infer it from location.
+func (r *Repo) CWDBranch() (string, bool) { return r.branchHint, r.branchHint != "" }
+
+// BranchForFolder returns the branch whose expressed working folder is folder
+// (the flat on-disk name, e.g. "base-5-0" for branch "base/5-0"), if any.
+func (r *Repo) BranchForFolder(folder string) (string, bool) {
+	for branch, e := range r.st.Expressed {
+		if e.Path == folder {
+			return branch, true
+		}
+	}
+	return "", false
 }
 
 // Tree returns the line tree from the engine.
