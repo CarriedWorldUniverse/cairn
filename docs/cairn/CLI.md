@@ -52,6 +52,8 @@ A few concepts make the whole CLI consistent:
 - **History editing is bounded on purpose.** `reword`/`squash`/`drop` only work on **your
   own un-folded leaf line** (a line with no children, above its base, not the trunk). This
   preserves the multi-agent guarantee that nobody's foundation can be rewritten under them.
+  The one deliberate exception is `reauthor`, a whole-repo identity rewrite (every line, root
+  included) — its job is to fix attribution everywhere at once.
 
 ## Global flags, config & environment
 
@@ -309,6 +311,35 @@ Remove a sealed commit from its line.
 Apply a commit from another line onto `<branch>` (default: the current/root line) as a new
 sealed commit with a fresh identity. Your in-progress working change is kept separate and
 rebased on top. Conflicts are recorded as data (no `--abort`/`--continue` dance).
+
+#### `cairn reauthor --old-email <glob> [--old-name <glob>] --name <new> --email <new> [--dry-run]`
+Bulk-rewrite the author **and** committer identity of every matching commit across the
+**whole repo** — every line, the root included — like `git filter-repo`'s mailmap. Unlike
+`reword`/`squash`/`drop`, this is *not* bounded to a leaf line: it exists precisely to fix
+attribution everywhere at once (e.g. commits made before you ran `cairn setup` that carry the
+`cairn <name@users.noreply.cairn>` placeholder).
+
+- **Match** the old identity by `--old-email` and/or `--old-name`. Both accept glob syntax
+  (`*@users.noreply.cairn` catches every placeholder). At least one filter is required —
+  reauthor refuses to match the entire history by accident.
+- **Set** the new `--name` and/or `--email` (omit one to leave it unchanged).
+- **Preserves** each commit's tree, message, and original timestamp exactly — only identity
+  and the resulting parent links change. Because changing identity changes a commit's hash,
+  every descendant is transparently rebuilt onto the rewritten parent and all internal
+  references (line tips, tags, stashes, bisect state) are remapped in one transaction.
+- `--dry-run` reports how many commits would change without writing anything.
+
+```sh
+# Fix every placeholder commit in the repo, in one shot:
+cairn reauthor --old-email '*@users.noreply.cairn' \
+  --name "Jacinta" --email "jacinta@darksoft.co.nz"
+
+# Preview first:
+cairn reauthor --old-name cairn --name "Jacinta" --email me@x.io --dry-run
+```
+
+After a reauthor, `push --force` to publish the rewritten history to a remote (the commit
+SHAs changed, so it is not a fast-forward).
 
 ### Stash
 
