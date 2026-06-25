@@ -240,10 +240,51 @@ func repoFlags(fs *flag.FlagSet) (repo, author *string) {
 	return repo, author
 }
 
+// parseArgs parses fs while tolerating flags that appear AFTER positional
+// arguments. Go's flag package stops at the first non-flag token, so
+// `cairn commit <branch> -m msg` would silently drop -m (the message would
+// default to "snapshot"). parseArgs reorders the tokens so every flag precedes
+// the positionals, then parses once — leaving fs.Arg/fs.NArg/fs.Args working as
+// usual. A literal "--" ends flag scanning: everything after it is positional.
+func parseArgs(fs *flag.FlagSet, args []string) error {
+	var flags, positionals []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--":
+			positionals = append(positionals, args[i+1:]...)
+			i = len(args)
+		case len(a) > 1 && a[0] == '-':
+			flags = append(flags, a)
+			// A non-boolean flag written as "-flag value" (no "=") consumes the
+			// next token as its value, so keep them adjacent when reordering.
+			name := strings.SplitN(strings.TrimLeft(a, "-"), "=", 2)[0]
+			if !strings.Contains(a, "=") && !isBoolFlag(fs, name) && i+1 < len(args) {
+				flags = append(flags, args[i+1])
+				i++
+			}
+		default:
+			positionals = append(positionals, a)
+		}
+	}
+	return fs.Parse(append(flags, positionals...))
+}
+
+// isBoolFlag reports whether the named flag is a boolean flag (consumes no
+// value), e.g. --force / --cairn / --dry-run.
+func isBoolFlag(fs *flag.FlagSet, name string) bool {
+	f := fs.Lookup(name)
+	if f == nil {
+		return false
+	}
+	bf, ok := f.Value.(interface{ IsBoolFlag() bool })
+	return ok && bf.IsBoolFlag()
+}
+
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	author := fs.String("author", defaultAuthor(), "commit author")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	dir := "."
@@ -271,7 +312,7 @@ func cmdInit(args []string) error {
 func cmdClone(args []string) error {
 	fs := flag.NewFlagSet("clone", flag.ContinueOnError)
 	author := fs.String("author", defaultAuthor(), "commit author")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -316,7 +357,7 @@ func cmdExpress(args []string) error {
 	fs := flag.NewFlagSet("express", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	from := fs.String("from", "", "parent branch to fork from")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -339,7 +380,7 @@ func cmdUnexpress(args []string) error {
 	fs := flag.NewFlagSet("unexpress", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "discard un-sealed work")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -357,7 +398,7 @@ func cmdCommit(args []string) error {
 	fs := flag.NewFlagSet("commit", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	msg := fs.String("m", "", "commit message")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -398,7 +439,7 @@ func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "discard un-sealed work")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -416,7 +457,7 @@ func cmdAbandon(args []string) error {
 	fs := flag.NewFlagSet("abandon", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "discard un-sealed work")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -433,7 +474,7 @@ func cmdAbandon(args []string) error {
 func cmdStatus(args []string) error {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -481,7 +522,7 @@ func cmdStatus(args []string) error {
 func cmdDiff(args []string) error {
 	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -525,7 +566,7 @@ func cmdDiff(args []string) error {
 func cmdTree(args []string) error {
 	fs := flag.NewFlagSet("tree", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -546,7 +587,7 @@ func cmdTree(args []string) error {
 func cmdLs(args []string) error {
 	fs := flag.NewFlagSet("ls", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -569,7 +610,7 @@ func cmdLs(args []string) error {
 func cmdResolve(args []string) error {
 	fs := flag.NewFlagSet("resolve", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 2 {
@@ -596,7 +637,7 @@ func cmdRemote(args []string) error {
 	}
 	fs := flag.NewFlagSet("remote", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -618,7 +659,7 @@ func cmdRemoteAdd(args []string) error {
 	fs := flag.NewFlagSet("remote add", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	cairn := fs.Bool("cairn", false, "register as a cairn remote — enables full-fidelity push (line tree + change-ids + open conflicts); default is plain git projection")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 2 {
@@ -648,7 +689,7 @@ func cmdPush(args []string) error {
 	fs := flag.NewFlagSet("push", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "force-overwrite a diverged remote branch")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	remote := "origin"
@@ -677,7 +718,7 @@ func cmdPush(args []string) error {
 func cmdFetch(args []string) error {
 	fs := flag.NewFlagSet("fetch", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	remote := "origin"
@@ -703,7 +744,7 @@ func cmdFetch(args []string) error {
 func cmdPull(args []string) error {
 	fs := flag.NewFlagSet("pull", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	remote := "origin"
@@ -740,7 +781,7 @@ func cmdPull(args []string) error {
 func cmdConfig(args []string) error {
 	fs := flag.NewFlagSet("config", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -776,7 +817,7 @@ func cmdConfig(args []string) error {
 func cmdTag(args []string) error {
 	fs := flag.NewFlagSet("tag", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -815,7 +856,7 @@ func cmdVersion(args []string) error {
 	repo, author := repoFlags(fs)
 	target := fs.String("target", "", "render for ecosystem: npm|nuget|pypi|oci|go")
 	releaseForm := fs.Bool("release", false, "print the clean release version that `cairn release` would tag")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -866,7 +907,7 @@ func cmdVersionBump(args []string) error {
 	}
 	fs := flag.NewFlagSet("version bump", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := parseArgs(fs, args[1:]); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -889,7 +930,7 @@ func cmdRelease(args []string) error {
 	repo, author := repoFlags(fs)
 	target := fs.String("target", "", "ecosystem: npm|nuget|pypi|oci")
 	dryRun := fs.Bool("dry-run", false, "show the plan without tagging or publishing")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if *target == "" {
@@ -960,7 +1001,7 @@ func cmdRelease(args []string) error {
 func cmdUndo(args []string) error {
 	fs := flag.NewFlagSet("undo", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -980,7 +1021,7 @@ func cmdUndo(args []string) error {
 func cmdOplog(args []string) error {
 	fs := flag.NewFlagSet("oplog", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -1008,7 +1049,7 @@ func cmdOplog(args []string) error {
 func cmdBlame(args []string) error {
 	fs := flag.NewFlagSet("blame", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -1049,7 +1090,7 @@ func cmdLog(args []string) error {
 	fs := flag.NewFlagSet("log", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	n := fs.Int("n", 20, "max commits to show")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -1097,7 +1138,7 @@ func cmdLog(args []string) error {
 func cmdShow(args []string) error {
 	fs := flag.NewFlagSet("show", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() != 1 {
@@ -1197,7 +1238,7 @@ func cmdStashPush(args []string) error {
 	fs := flag.NewFlagSet("stash", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	msg := fs.String("m", "", "stash message")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -1226,7 +1267,7 @@ func cmdStashPush(args []string) error {
 func cmdStashPop(args []string) error {
 	fs := flag.NewFlagSet("stash pop", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -1257,7 +1298,7 @@ func cmdStashPop(args []string) error {
 func cmdStashList(args []string) error {
 	fs := flag.NewFlagSet("stash list", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo(*repo, *author)
@@ -1306,7 +1347,7 @@ func reportEdit(res change.CommitResult, verb string) error {
 func cmdReword(args []string) error {
 	fs := flag.NewFlagSet("reword", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 2 {
@@ -1331,7 +1372,7 @@ func cmdReword(args []string) error {
 func cmdSquash(args []string) error {
 	fs := flag.NewFlagSet("squash", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -1355,7 +1396,7 @@ func cmdSquash(args []string) error {
 func cmdDrop(args []string) error {
 	fs := flag.NewFlagSet("drop", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -1384,7 +1425,7 @@ func cmdDrop(args []string) error {
 func cmdCherryPick(args []string) error {
 	fs := flag.NewFlagSet("cherry-pick", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
@@ -1424,7 +1465,7 @@ func cmdCherryPick(args []string) error {
 func cmdStashDrop(args []string) error {
 	fs := flag.NewFlagSet("stash drop", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	var id int64
@@ -1611,7 +1652,7 @@ func cmdBisectStart(args []string) error {
 	repo, author := repoFlags(fs)
 	good := fs.String("good", "", "known-good commit")
 	bad := fs.String("bad", "", "known-bad commit")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if *good == "" || *bad == "" {
@@ -1638,7 +1679,7 @@ func cmdBisectStart(args []string) error {
 func cmdBisectMark(args []string, verdict string) error {
 	fs := flag.NewFlagSet("bisect "+verdict, flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -1656,7 +1697,7 @@ func cmdBisectMark(args []string, verdict string) error {
 func cmdBisectSkip(args []string) error {
 	fs := flag.NewFlagSet("bisect skip", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepoSynced(*repo, *author)
@@ -1674,7 +1715,7 @@ func cmdBisectSkip(args []string) error {
 func cmdBisectStatus(args []string) error {
 	fs := flag.NewFlagSet("bisect status", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	// Read-only: open without a pre-sync so a midpoint/first-bad on disk is never
@@ -1700,7 +1741,7 @@ func cmdBisectStatus(args []string) error {
 func cmdBisectReset(args []string) error {
 	fs := flag.NewFlagSet("bisect reset", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	// Open WITHOUT a pre-sync: after convergence the session is gone, so a sync

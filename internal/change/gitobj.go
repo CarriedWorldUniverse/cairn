@@ -11,6 +11,23 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+// treeEntryLess orders tree entries the way git canonically does: by name, but a
+// directory (sub-tree) entry sorts as if its name ended in "/". This matters when
+// a directory name is a prefix of a sibling file name — e.g. dir "app" vs file
+// "app.go": git compares "app/" vs "app.go", and '.' (0x2e) < '/' (0x2f), so the
+// file sorts first. A plain string comparison gets this backwards and go-git's
+// tree encoder rejects the result with "entries in tree are not sorted".
+func treeEntryLess(a, b object.TreeEntry) bool {
+	an, bn := a.Name, b.Name
+	if a.Mode == filemode.Dir {
+		an += "/"
+	}
+	if b.Mode == filemode.Dir {
+		bn += "/"
+	}
+	return an < bn
+}
+
 // writeBlob stores data as a git blob object and returns its hash.
 func (e *Engine) writeBlob(data []byte) (plumbing.Hash, error) {
 	obj := e.git.Storer.NewEncodedObject()
@@ -96,8 +113,8 @@ func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, err
 		treeEntries = append(treeEntries, object.TreeEntry{Name: dir, Mode: filemode.Dir, Hash: h})
 	}
 
-	// git requires tree entries sorted by name.
-	sort.Slice(treeEntries, func(i, j int) bool { return treeEntries[i].Name < treeEntries[j].Name })
+	// git requires tree entries in its canonical (directory-aware) order.
+	sort.Slice(treeEntries, func(i, j int) bool { return treeEntryLess(treeEntries[i], treeEntries[j]) })
 
 	tree := &object.Tree{Entries: treeEntries}
 	obj := e.git.Storer.NewEncodedObject()
@@ -214,8 +231,8 @@ func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) 
 		entries = append(entries, object.TreeEntry{Name: dir, Mode: filemode.Dir, Hash: h})
 	}
 
-	// git requires tree entries sorted by name.
-	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+	// git requires tree entries in its canonical (directory-aware) order.
+	sort.Slice(entries, func(i, j int) bool { return treeEntryLess(entries[i], entries[j]) })
 
 	tree := &object.Tree{Entries: entries}
 	obj := e.git.Storer.NewEncodedObject()
