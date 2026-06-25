@@ -222,6 +222,11 @@ cairn never blocks on a conflict. A command that produces overlapping work recor
 conflict on the file, finishes, and **exits with code `2`**. The file holds conflict
 markers; `status` lists it.
 
+You can keep working, but **`commit` refuses while a conflict is unresolved** (like git's
+unmerged-paths block): you must edit out the `<<<<<<<` markers and `cairn resolve <path>`
+each conflicted file first. This prevents a later commit from silently baking the marker
+text into history and dropping the conflict.
+
 #### `cairn resolve <branch> <path>`
 Mark a conflicted file resolved after you have edited it to the desired content.
 ```sh

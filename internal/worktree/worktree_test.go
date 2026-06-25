@@ -3,6 +3,7 @@ package worktree
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -300,5 +301,66 @@ func TestExpressFolderCollisionRefused(t *testing.T) {
 	}
 	if err := r.Express("feat-x", "main"); err == nil {
 		t.Fatal("expected a folder-collision error for feat-x vs feat/x")
+	}
+}
+
+// TestRepoCommitRefusesUnresolvedConflict is the seal gate: committing again over
+// an unresolved conflict must be REFUSED (not silently bake the <<<<<<< markers
+// into history and drop the conflict). The conflict stays tracked until resolved.
+func TestRepoCommitRefusesUnresolvedConflict(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("exp", "main"); err != nil {
+		t.Fatalf("express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("X\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "m"); err != nil {
+		t.Fatalf("main adv: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := r.Commit("exp", "c1")
+	if err != nil {
+		t.Fatalf("first commit: %v", err)
+	}
+	if len(res.Conflicts) == 0 {
+		t.Fatal("expected a conflict on the first commit")
+	}
+	// Commit AGAIN without resolving → must be refused.
+	if _, err := r.Commit("exp", "c2"); err == nil {
+		t.Fatal("commit over an unresolved conflict must be refused")
+	} else if !strings.Contains(err.Error(), "unresolved conflict") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// The conflict is still tracked (not lost).
+	st, err := r.Status("exp")
+	if err != nil {
+		t.Fatalf("status: %v", err)
+	}
+	if len(st.Conflicts) == 0 {
+		t.Fatal("conflict should still be tracked after the refusal")
+	}
+	// Resolve, then commit succeeds.
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Resolve("exp", "f.txt"); err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if _, err := r.Commit("exp", "done"); err != nil {
+		t.Fatalf("commit after resolve: %v", err)
 	}
 }

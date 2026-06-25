@@ -292,6 +292,22 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	if err := r.syncBranch(branch, entry); err != nil {
 		return change.CommitResult{}, err
 	}
+	// Refuse to seal while the working change still has UNRESOLVED conflicts (like
+	// git's unmerged-paths block). The working snapshot taken above still contains
+	// the conflict markers; sealing would accept that marker text as the
+	// resolution and silently drop the conflict, baking "<<<<<<<" into history.
+	// The user must edit out the markers and `cairn resolve <path>` first.
+	if open, cerr := r.eng.Conflicts(entry.ChangeID); cerr != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", cerr)
+	} else if len(open) > 0 {
+		paths := make([]string, len(open))
+		for i, c := range open {
+			paths[i] = c.Path
+		}
+		return change.CommitResult{}, fmt.Errorf(
+			"worktree.Commit: %d unresolved conflict(s) in: %s — edit out the <<<<<<< markers, run 'cairn resolve %s <path>' for each, then commit",
+			len(open), strings.Join(paths, ", "), branch)
+	}
 	prevChangeID := entry.ChangeID
 	newChangeID, conflicts, err := r.eng.Seal(entry.ChangeID, message)
 	if err != nil {
