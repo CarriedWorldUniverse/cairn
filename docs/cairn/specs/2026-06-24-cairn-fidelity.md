@@ -15,7 +15,7 @@ A versioned JSON document capturing the cairn-specific catalogue (everything git
   "version": 1,
   "lines":   [{ "id","name","parent_line","tip_commit","base_commit","status" }],
   "changes": [{ "id","line_id","author","head_commit","status","sealed","has_conflict" }],
-  "conflicts":[{ "change_id","path","base_blob","ours_blob","theirs_blob","marked_blob","status" }]
+  "conflicts":[{ "id","change_id","path","base_blob","parent_blob","change_blob","marked_blob","status" }]
 }
 ```
 - All shas/blobs referenced are git objects already pushed via the normal refs (the meta references them by hash; it carries no new content beyond the catalogue rows). The conflict blob hashes are the existing conflict-object blobs (already in the object store and reachable, so they survive the push).

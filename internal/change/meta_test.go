@@ -33,6 +33,12 @@ func readMetaDoc(t *testing.T, e *Engine, commitSha string) metaDoc {
 // buildMetaFixture builds a line tree (root main -> a -> b), a sealed change on a
 // line, and a conflict row (via a merge-forward conflict on a child line). It
 // returns the line ids for assertions.
+// buildMetaFixture exercises the raw-engine path: it Seals a conflicting change
+// directly (no ReassignConflicts), so the conflict rows sit on the SEALED change
+// rather than the fresh working change. The worktree layer (worktree.Commit)
+// reassigns conflicts to the open working change before any push, so this fixture
+// deliberately represents an engine-internal state to test export/import of a
+// conflict row by itself — the production round-trip is covered by the cmd e2e.
 func buildMetaFixture(t *testing.T, e *Engine) (rootID, aID, bID string) {
 	t.Helper()
 	main, err := e.LineByName("main")
