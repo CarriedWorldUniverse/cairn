@@ -51,7 +51,7 @@ func SaveState(path string, s *State) error {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return fmt.Errorf("worktree.SaveState: %w", err)
 	}
-	if err := os.Rename(tmp, path); err != nil {
+	if err := renameWithRetry(tmp, path); err != nil {
 		return fmt.Errorf("worktree.SaveState: %w", err)
 	}
 	return nil

@@ -96,12 +96,14 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 			}
 		}
 	}
-	// Swap: remove the old dir, then atomically rename temp into place.
-	if err := os.RemoveAll(dir); err != nil {
+	// Swap: remove the old dir, then atomically rename temp into place. Both ops
+	// retry transient Windows file locks (AV/indexer holding a handle) — the
+	// rename race seen with `express --from`. On POSIX these are plain calls.
+	if err := removeAllWithRetry(dir); err != nil {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
-	if err := os.Rename(tmp, dir); err != nil {
+	if err := renameWithRetry(tmp, dir); err != nil {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
@@ -126,7 +128,7 @@ func writeFileAtomic(path string, data []byte) error {
 		os.Remove(tmpName)
 		return err
 	}
-	if err := os.Rename(tmpName, path); err != nil {
+	if err := renameWithRetry(tmpName, path); err != nil {
 		os.Remove(tmpName)
 		return err
 	}
