@@ -280,9 +280,17 @@ func (e *Engine) redactForPush(refSpecs []config.RefSpec) (func(), error) {
 	}
 	for _, rs := range commitRefs {
 		name, orig := rs.name, rs.orig
-		redSHA := mapping[orig.String()]
-		if redSHA == "" || redSHA == orig.String() {
-			continue // ref unchanged by redaction
+		// Peel to the underlying commit so an annotated tag (whose ref points at a
+		// tag object, not a commit) is repointed at its REDACTED target — otherwise
+		// the tag would back-door the real commit. Converting an annotated tag to a
+		// lightweight redacted tag loses the annotation but never a private byte.
+		target, ok := e.peelToCommit(orig.String())
+		if !ok {
+			continue // ref does not resolve to a commit (e.g. tag->tree); nothing to redact
+		}
+		redSHA := mapping[target]
+		if redSHA == "" || redSHA == target {
+			continue // target commit unchanged by redaction
 		}
 		if err := setRef(name, redSHA); err != nil {
 			restore()

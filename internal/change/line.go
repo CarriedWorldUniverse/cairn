@@ -37,12 +37,21 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 	if err != nil {
 		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
 	}
+	// Fork from the parent's SEALED tip, not its working snapshot. The parent's
+	// expressed folder is always an auto-snapshot "(working)" commit (authored by
+	// the placeholder identity); forking off that would make it a permanent
+	// ancestor of the new line — and it would surface in a pushed PR. Like
+	// `git branch`, fork from committed state. sealedTip strips a "(working)" head.
+	forkPoint, err := e.sealedTip(parent)
+	if err != nil {
+		return Line{}, fmt.Errorf("change.CreateLine: %w", err)
+	}
 	l := Line{
 		ID:         newID(),
 		Name:       name,
 		ParentLine: parent.ID,
-		TipCommit:  parent.TipCommit,
-		BaseCommit: parent.TipCommit,
+		TipCommit:  forkPoint,
+		BaseCommit: forkPoint,
 		Status:     "open",
 	}
 	now := e.now().UTC().Format(time.RFC3339Nano)
