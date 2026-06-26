@@ -954,6 +954,11 @@ func (r *Repo) UnmarkPrivate(path string) error { return r.eng.UnmarkPrivate(pat
 // ListPrivate returns every privacy flag, ordered by path.
 func (r *Repo) ListPrivate() ([]change.PrivateEntry, error) { return r.eng.ListPrivate() }
 
+// PathOnRemote returns the remote-tracking refs that already carry path (short
+// names like "origin/main"), so the CLI can warn that withholding won't remove
+// an already-pushed copy.
+func (r *Repo) PathOnRemote(path string) ([]string, error) { return r.eng.PathOnRemote(path) }
+
 // PendingBump returns the recorded explicit bump intent ("" if none).
 func (r *Repo) PendingBump() (string, error) {
 	v, _, err := r.eng.GetConfig("version.pending_bump")

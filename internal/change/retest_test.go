@@ -89,6 +89,46 @@ func TestGetLineTreeAheadIgnoresWorkingSnapshot(t *testing.T) {
 	}
 }
 
+// TestPathOnRemote guards the already-pushed warning: PathOnRemote reports the
+// remote-tracking refs whose tip already carries a path (file or folder), and is
+// empty for an absent path or a repo with no remote-tracking refs.
+func TestPathOnRemote(t *testing.T) {
+	e := newTestEngine(t)
+	e.SetIdentity("Dev", "dev@x.io")
+	main, _ := e.LineByName("main")
+	ch, _ := e.CreateChange(main.ID, "dev")
+	res, err := e.Commit(ch.ID, map[string][]byte{
+		"secrets/creds.env": []byte("S\n"),
+		"app.go":            []byte("code\n"),
+	}, nil, "c1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No remote-tracking refs yet → nothing reported.
+	if hits, _ := e.PathOnRemote("secrets/creds.env"); len(hits) != 0 {
+		t.Fatalf("with no tracking refs, hits = %v, want none", hits)
+	}
+
+	// Simulate a fetched remote-tracking ref at this commit.
+	if err := e.git.Storer.SetReference(plumbing.NewHashReference(
+		"refs/remotes/origin/main", plumbing.NewHash(res.HeadCommit))); err != nil {
+		t.Fatal(err)
+	}
+
+	if hits, _ := e.PathOnRemote("secrets/creds.env"); len(hits) != 1 || hits[0] != "origin/main" {
+		t.Fatalf("file path hits = %v, want [origin/main]", hits)
+	}
+	// A folder flag (covers the subtree) is also detected via its tree entry.
+	if hits, _ := e.PathOnRemote("secrets"); len(hits) != 1 || hits[0] != "origin/main" {
+		t.Fatalf("folder path hits = %v, want [origin/main]", hits)
+	}
+	// An unpushed path is not reported.
+	if hits, _ := e.PathOnRemote("local-only.txt"); len(hits) != 0 {
+		t.Fatalf("absent path hits = %v, want none", hits)
+	}
+}
+
 // makeAnnotatedTag builds and stores an annotated tag OBJECT (not a lightweight
 // ref) pointing at commitSHA, returning the tag object's hash — what a cloned
 // annotated tag's ref/catalogue row points at.

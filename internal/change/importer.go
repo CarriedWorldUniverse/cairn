@@ -174,6 +174,10 @@ func (e *Engine) fetchRemote(url string) error {
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			"+refs/heads/*:refs/heads/*",
+			// Also record remote-tracking refs (like `git clone` does) so the
+			// repo knows what is already on origin — e.g. `cairn private` warns
+			// when a path being withheld is already pushed.
+			"+refs/heads/*:refs/remotes/" + originRemote + "/*",
 			"+refs/tags/*:refs/tags/*",
 			"+refs/cairn/*:refs/cairn/*",
 		},
