@@ -2,6 +2,7 @@ package credstore
 
 import (
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ func isolate(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
 	t.Setenv("HOME", dir)
+	t.Setenv("AppData", dir) // os.UserConfigDir uses %AppData% on Windows
 }
 
 func TestSetGetDelete(t *testing.T) {
@@ -48,6 +50,9 @@ func TestSetGetDelete(t *testing.T) {
 }
 
 func TestFilePerm0600(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not honor Unix file permissions")
+	}
 	isolate(t)
 	if err := Set("github.com", "tok"); err != nil {
 		t.Fatal(err)
