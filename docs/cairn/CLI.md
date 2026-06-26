@@ -98,6 +98,19 @@ Environment:
 Auth never prompts interactively (`GIT_TERMINAL_PROMPT=0`) — a missing credential fails
 with a clear message instead of hanging.
 
+### Ignore files
+
+cairn honors **`.gitignore` in every directory** (standard gitignore syntax — anchoring `/`,
+dir-only `bin/`, `**` globs, negation `!`, with deeper directories and later lines overriding
+shallower ones), exactly like git, plus a cairn-specific **`.cairnignore`** with the same syntax
+(applied alongside `.gitignore` per directory; cairn rules win ties). Ignore rules only affect
+**untracked** paths — a file that's already committed is never silently dropped even if it later
+matches a pattern. Only **in-tree** ignore files are read (no global/`core.excludesFile` or
+`info/exclude`), so a repo snapshots the same file set on every machine — important for
+reproducible multi-agent convergence. For *secrets* that must never be pushed, use
+[`cairn private`](#privacy-withholding-from-pushes) (enforced + tracked), not ignore (which only
+skips *untracked* files).
+
 ## Quick start
 
 ```sh
