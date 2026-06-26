@@ -8,15 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-// embargoRefPrefix is the namespace a cairn client pushes real embargoed content
-// to. The server RELOCATES these refs (and their delta objects) out of the public
-// bare into a per-repo embargo bare, so the public bare — which `git-upload-pack`
-// serves to everyone — never advertises them or holds their objects.
-const embargoRefPrefix = "refs/cairn/embargo/"
+// The embargo ref namespace (change.EmbargoRefPrefix = "refs/cairn/embargo/") is
+// what a cairn client pushes real embargoed content to. The server RELOCATES
+// these refs (and their objects) out of the public bare into a per-repo embargo
+// bare, so the public bare — which git-upload-pack serves to everyone — never
+// advertises them or holds their objects.
 
 // EmbargoStoragePath is the per-repo embargo (private) bare, a sibling of the
 // public bare. It holds the real embargoed commits; via git alternates it borrows
@@ -64,7 +65,7 @@ func (s *Service) RelocateEmbargoRefs(ctx context.Context, repoID string) (int, 
 	}
 	var names []string
 	_ = iter.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Type() == plumbing.HashReference && strings.HasPrefix(ref.Name().String(), embargoRefPrefix) {
+		if ref.Type() == plumbing.HashReference && strings.HasPrefix(ref.Name().String(), change.EmbargoRefPrefix) {
 			names = append(names, ref.Name().String())
 		}
 		return nil
