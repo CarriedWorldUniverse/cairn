@@ -73,9 +73,12 @@ is the shared first step regardless of destination.
       `EmbargoStoragePath`/`ensureEmbargoBare`; post-receive hook (`cmd/cairn-server`) calls it.
       After a push, embargoed refs are segregated into the embargo bare and no public ref reaches
       them (provably frozen). Client still refuses embargo→cairn (no leak until 4b-2).
-    - **4b-2 — client dual-push + capped public meta.** Replace the refusal: one atomic push of
-      capped public refs + uncapped `refs/cairn/embargo/*`; the public `refs/cairn/meta` is
-      **capped** at `PublicTip` (it currently carries real tips, which would dangle a public clone).
+    - **4b-2 — client dual-push (DONE).** The refusal is replaced by a dual projection: the public
+      side gets capped `refs/heads`/`refs/tags` and **no cairn meta** (a public clone reconstructs
+      the frozen **flat** graph — valid, embargo-free; full cairn fidelity returns on disclose),
+      while the REAL tips + full `ExportMeta` go to `refs/cairn/embargo/*` (the server relocates
+      them via 4b-1). This sidesteps building a capped meta. Verified end-to-end: client push →
+      relocation → public bare has no ref reaching the embargoed fix; the embargo bare holds it.
     - **4b-3 — gated serve.** Wire the per-identity gate (recipient → embargo bare, else public
       bare) into the SSH/HTTP serve. Authorized clone gets the real embargoed content.
     - **4b-4 — disclose migration + paired gc.** Prune disclosed embargo refs; gc the bares safely.

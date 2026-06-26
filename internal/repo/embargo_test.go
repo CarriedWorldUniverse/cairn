@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
@@ -65,7 +66,7 @@ func TestRelocateEmbargoRefs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refName := embargoRefPrefix + "heads/main"
+	refName := change.EmbargoRefPrefix + "heads/main"
 	embSHA := stageEmbargoRef(t, r.StoragePath, refName, "SUPER_SECRET_FIX\n")
 
 	n, err := svc.RelocateEmbargoRefs(ctx, r.ID)

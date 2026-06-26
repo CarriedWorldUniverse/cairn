@@ -16,6 +16,11 @@ import (
 //
 // Embargo flags travel in refs/cairn/meta so a cairn server can enforce them.
 
+// EmbargoRefPrefix is the ref namespace a cairn client pushes the REAL (uncapped)
+// embargoed tips + full meta to. The server relocates these into a per-repo gated
+// private store; the public bare keeps only the capped projection.
+const EmbargoRefPrefix = "refs/cairn/embargo/"
+
 // MarkEmbargo flags a commit as embargoed (idempotent). The caller resolves the
 // revision to a full sha first.
 func (e *Engine) MarkEmbargo(commitSHA string) error {

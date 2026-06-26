@@ -150,34 +150,51 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 	// Remote kind seam: a "cairn" remote receives a full-fidelity push that
 	// includes refs/cairn/meta (the serialized change-graph snapshot). A plain
 	// "git" remote receives only the standard heads/tags projection (no cairn refs).
-	if e.remoteKind(remoteName) == "cairn" {
-		metaCommit, err := e.ExportMeta()
-		if err != nil {
-			return fmt.Errorf("%s: meta: %w", label, err)
+	isCairn := e.remoteKind(remoteName) == "cairn"
+	if isCairn {
+		hasEmb, herr := e.HasEmbargo()
+		if herr != nil {
+			return fmt.Errorf("%s: %w", label, herr)
 		}
-		if err := e.git.Storer.SetReference(
-			plumbing.NewHashReference(
-				plumbing.ReferenceName("refs/cairn/meta"),
-				plumbing.NewHash(metaCommit),
-			),
-		); err != nil {
-			return fmt.Errorf("%s: set meta ref: %w", label, err)
+		if hasEmb {
+			// Embargo + cairn server: the PUBLIC bare gets only the capped heads/tags
+			// — no cairn meta and no per-change refs — so a public clone reconstructs
+			// the frozen FLAT projection (valid, free of embargoed content; full cairn
+			// fidelity is restored when the embargo is disclosed). The REAL (uncapped)
+			// tips + full meta go to the private refs/cairn/embargo/* namespace, which
+			// the server relocates into its gated private store for authorized clones.
+			cleanup, serr := e.stageEmbargoRefs()
+			if serr != nil {
+				return fmt.Errorf("%s: stage embargo: %w", label, serr)
+			}
+			defer cleanup()
+			refSpecs = append(refSpecs, config.RefSpec("+"+EmbargoRefPrefix+"*:"+EmbargoRefPrefix+"*"))
+		} else {
+			metaCommit, err := e.ExportMeta()
+			if err != nil {
+				return fmt.Errorf("%s: meta: %w", label, err)
+			}
+			if err := e.git.Storer.SetReference(
+				plumbing.NewHashReference(
+					plumbing.ReferenceName("refs/cairn/meta"),
+					plumbing.NewHash(metaCommit),
+				),
+			); err != nil {
+				return fmt.Errorf("%s: set meta ref: %w", label, err)
+			}
+			// Push ALL cairn refs (meta + the per-change refs). refs/heads publishes
+			// only SEALED tips, so the working-snapshot commits a cairn->cairn clone
+			// needs for full fidelity are reachable only via refs/cairn/change/<id>.
+			refSpecs = append(refSpecs, config.RefSpec("+refs/cairn/*:refs/cairn/*"))
 		}
-		// Push ALL cairn refs (meta + the per-change refs), not just meta. refs/heads
-		// now publishes only SEALED tips, so the working-snapshot commits a
-		// cairn->cairn clone needs for full fidelity are reachable only via the
-		// refs/cairn/change/<id> refs. Force, since an open change's working head is
-		// re-amended (a fresh, non-descendant commit) on every snapshot.
-		refSpecs = append(refSpecs, config.RefSpec("+refs/cairn/*:refs/cairn/*"))
 	}
 
 	// Embargo: cap each public ref (refs/heads/*, refs/tags/*) at its embargo
 	// boundary so embargoed commits (and everything after) are held out of the
-	// public projection. Runs BEFORE redaction so privacy then redacts the capped
-	// commit. No-op when nothing is embargoed. (Gated distribution of the real
-	// embargoed content to a cairn server's private store is Slice 4b — for now an
-	// embargo push to a cairn remote is refused rather than leaking it.)
-	embRestore, err := e.embargoCapForPush(refSpecs, e.remoteKind(remoteName) == "cairn")
+	// public projection. The refs/cairn/embargo/* namespace is exempt (it carries
+	// the real tips for the gated store). Runs BEFORE redaction so privacy then
+	// redacts the capped commit. No-op when nothing is embargoed.
+	embRestore, err := e.embargoCapForPush(refSpecs, isCairn)
 	if err != nil {
 		return fmt.Errorf("%s: %w", label, err)
 	}
@@ -352,9 +369,6 @@ func (e *Engine) embargoCapForPush(refSpecs []config.RefSpec, isCairn bool) (fun
 	if !on {
 		return noop, nil
 	}
-	if isCairn {
-		return noop, errors.New("embargo: gated distribution to a cairn server is not yet implemented (Slice 4b); push to a git remote for the public freeze, or 'cairn disclose <commit>' first")
-	}
 
 	iter, err := e.git.References()
 	if err != nil {
@@ -367,6 +381,11 @@ func (e *Engine) embargoCapForPush(refSpecs []config.RefSpec, isCairn bool) (fun
 	var caps []snap
 	ferr := iter.ForEach(func(ref *plumbing.Reference) error {
 		if ref.Type() != plumbing.HashReference || !refSpecsMatch(refSpecs, ref.Name()) {
+			return nil
+		}
+		// The refs/cairn/embargo/* namespace deliberately carries the REAL (uncapped)
+		// tips for the server's gated private store — never cap it.
+		if strings.HasPrefix(ref.Name().String(), EmbargoRefPrefix) {
 			return nil
 		}
 		caps = append(caps, snap{ref.Name(), ref.Hash()})
@@ -403,6 +422,61 @@ func (e *Engine) embargoCapForPush(refSpecs []config.RefSpec, isCairn bool) (fun
 		restores = append(restores, func() { _ = e.git.Storer.SetReference(plumbing.NewHashReference(name, orig)) })
 	}
 	return restore, nil
+}
+
+// stageEmbargoRefs publishes the REAL (uncapped) projection into the private
+// refs/cairn/embargo/* namespace for a cairn push: the full meta and each line's
+// real sealed tip. The server relocates these into its gated private store; the
+// public refs are capped separately (embargoCapForPush). Returns a cleanup that
+// removes the staged refs after the push — they are push-time staging, not part
+// of the local repo's refs. Must run AFTER Export (so refs/heads carry the real
+// sealed tips) and BEFORE embargoCapForPush caps them.
+func (e *Engine) stageEmbargoRefs() (func(), error) {
+	noop := func() {}
+	metaCommit, err := e.ExportMeta() // full, uncapped meta (real tips + embargo[])
+	if err != nil {
+		return noop, err
+	}
+	var staged []plumbing.ReferenceName
+	cleanup := func() {
+		for _, rn := range staged {
+			_ = e.git.Storer.RemoveReference(rn)
+		}
+	}
+	set := func(name, sha string) error {
+		rn := plumbing.ReferenceName(name)
+		if err := e.git.Storer.SetReference(plumbing.NewHashReference(rn, plumbing.NewHash(sha))); err != nil {
+			return err
+		}
+		staged = append(staged, rn)
+		return nil
+	}
+	if err := set(EmbargoRefPrefix+"meta", metaCommit); err != nil {
+		cleanup()
+		return noop, err
+	}
+	// Each line's real sealed tip (refs/heads/* still hold them pre-cap).
+	iter, err := e.git.References()
+	if err != nil {
+		cleanup()
+		return noop, err
+	}
+	type head struct{ branch, sha string }
+	var heads []head
+	_ = iter.ForEach(func(ref *plumbing.Reference) error {
+		n := ref.Name().String()
+		if ref.Type() == plumbing.HashReference && strings.HasPrefix(n, "refs/heads/") {
+			heads = append(heads, head{strings.TrimPrefix(n, "refs/heads/"), ref.Hash().String()})
+		}
+		return nil
+	})
+	for _, h := range heads {
+		if err := set(EmbargoRefPrefix+"heads/"+h.branch, h.sha); err != nil {
+			cleanup()
+			return noop, err
+		}
+	}
+	return cleanup, nil
 }
 
 // refSpecsMatch reports whether any refspec's source side matches the ref name.
