@@ -2,8 +2,11 @@ package change
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // Privacy modes. omit removes a withheld path from the pushed projection
@@ -85,6 +88,57 @@ func (e *Engine) HasPrivate() (bool, error) {
 		return false, fmt.Errorf("change.HasPrivate: %w", err)
 	}
 	return n > 0, nil
+}
+
+// PathOnRemote reports which remote-tracking refs (refs/remotes/<remote>/<branch>)
+// already carry repoPath in their tip — i.e. the path has already been pushed
+// there. Returned names are short ("origin/main"), sorted. Withholding a path
+// stops FUTURE pushes from carrying it, but it does NOT remove an already-pushed
+// copy (orphaned objects linger, are recoverable by SHA, and exist in clones/
+// forks), so the caller warns the user to rotate the secret. The check is against
+// what cairn last fetched (the local tracking refs), looking at each ref's tip
+// tree — the realistic "I just committed and pushed this" case.
+func (e *Engine) PathOnRemote(repoPath string) ([]string, error) {
+	repoPath = cleanPrivacyPath(repoPath)
+	if repoPath == "" {
+		return nil, nil
+	}
+	iter, err := e.git.References()
+	if err != nil {
+		return nil, fmt.Errorf("change.PathOnRemote: %w", err)
+	}
+	defer iter.Close()
+	var hits []string
+	err = iter.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() != plumbing.HashReference {
+			return nil
+		}
+		name := ref.Name().String()
+		if !strings.HasPrefix(name, "refs/remotes/") {
+			return nil
+		}
+		commitSHA, ok := e.peelToCommit(ref.Hash().String())
+		if !ok {
+			return nil
+		}
+		c, cerr := e.git.CommitObject(plumbing.NewHash(commitSHA))
+		if cerr != nil {
+			return nil
+		}
+		tree, terr := c.Tree()
+		if terr != nil {
+			return nil
+		}
+		if _, ferr := tree.FindEntry(repoPath); ferr == nil {
+			hits = append(hits, strings.TrimPrefix(name, "refs/remotes/"))
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("change.PathOnRemote: %w", err)
+	}
+	sort.Strings(hits)
+	return hits, nil
 }
 
 // PrivacyMatch reports whether the repo path repoPath is withheld, and with what

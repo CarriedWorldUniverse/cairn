@@ -426,6 +426,11 @@ cairn private secrets            # the secrets/ folder never leaves your machine
 cairn private config/prod.env    # a single file
 cairn private docs --shape-only  # docs/ paths visible, contents withheld
 ```
+If the path is **already on a remote** (it's in a remote-tracking ref — i.e. you cloned it, or
+pushed it before withholding), `cairn private` prints a **warning**: withholding only stops *future*
+pushes from carrying it — the copy already on the remote is **not removed** (it lingers as a
+recoverable object and exists in any clones/forks). **Rotate the secret.** This is the same hard
+truth as `git filter-repo` + force-push: a pushed secret is compromised.
 
 #### `cairn private ls`
 List withheld paths and their modes.

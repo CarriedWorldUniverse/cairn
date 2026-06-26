@@ -1142,6 +1142,15 @@ func cmdPrivate(args []string) error {
 		mode = "shape-only"
 	}
 	fmt.Fprintf(os.Stderr, "cairn: withholding %s from pushes (%s)\n", path, mode)
+	// Footgun guard: if this path is already on a remote, withholding it does NOT
+	// remove the copy that's already out there — the secret is compromised.
+	if remotes, rerr := r.PathOnRemote(path); rerr == nil && len(remotes) > 0 {
+		fmt.Fprintf(os.Stderr,
+			"cairn: WARNING — %s is already present on %s. Withholding stops FUTURE pushes\n"+
+				"  from carrying it, but the copy already on the remote is NOT removed (it lingers as\n"+
+				"  a recoverable object and in any existing clones/forks). Rotate the secret.\n",
+			path, strings.Join(remotes, ", "))
+	}
 	return nil
 }
 
