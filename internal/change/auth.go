@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/credstore"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	httpauth "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -21,6 +22,11 @@ func authFor(rawurl string) (transport.AuthMethod, error) {
 	if strings.HasPrefix(rawurl, "http://") || strings.HasPrefix(rawurl, "https://") {
 		if tok := firstEnv("CAIRN_TOKEN", "GITHUB_TOKEN", "GITLAB_TOKEN"); tok != "" {
 			return &httpauth.BasicAuth{Username: "x-access-token", Password: tok}, nil
+		}
+		if h := hostOf(rawurl); h != "" { // cairn's own user-level credential store (set via `cairn login`)
+			if tok := credstore.Get(h); tok != "" {
+				return &httpauth.BasicAuth{Username: "x-access-token", Password: tok}, nil
+			}
 		}
 		if user, pass, ok := gitCredentialFill(rawurl); ok {
 			return &httpauth.BasicAuth{Username: user, Password: pass}, nil

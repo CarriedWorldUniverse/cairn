@@ -149,6 +149,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 // fetchRemote ensures an "origin" remote at url and fetches all heads + tags
 // into the bare store. Idempotent (re-fetch is fine).
 func (e *Engine) fetchRemote(url string) error {
+	url = storeAndStrip(url) // never persist credentials in the repo remote; move them to the user-level credstore
 	rem, err := e.git.Remote(originRemote)
 	if errors.Is(err, git.ErrRemoteNotFound) {
 		rem, err = e.git.CreateRemote(&config.RemoteConfig{Name: originRemote, URLs: []string{url}})

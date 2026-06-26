@@ -30,6 +30,7 @@ func (e *Engine) AddRemote(name, url, kind string) error {
 	if kind == "" {
 		kind = "git"
 	}
+	url = storeAndStrip(url) // never persist credentials in the repo remote; move them to the user-level credstore
 	rem, err := e.git.Remote(name)
 	if errors.Is(err, git.ErrRemoteNotFound) {
 		_, err = e.git.CreateRemote(&config.RemoteConfig{Name: name, URLs: []string{url}})

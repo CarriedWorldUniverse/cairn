@@ -16,7 +16,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -27,6 +29,7 @@ import (
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/credstore"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
@@ -92,6 +95,9 @@ subcommands:
   undo                          revert the last operation
   oplog                         show the operation history
   setup                         set your commit identity (name/email), stored globally
+  login <host>                  store an access token for a host (stdin: echo $TOK | cairn login github.com)
+  logout <host>                 remove a host's stored credential
+  auth                          list hosts with stored credentials (never the tokens)
   config [--global] <key> [value]  get/set a config value (--global = user-level, all repos)
   tag <name> [branch]           tag the tip of a branch (default: root branch)
   private <path> [--shape-only] withhold a file/folder from every push (omit by default)
@@ -182,6 +188,12 @@ func run(args []string) error {
 		return cmdConfig(rest)
 	case "setup":
 		return cmdSetup(rest)
+	case "login":
+		return cmdLogin(rest)
+	case "logout":
+		return cmdLogout(rest)
+	case "auth":
+		return cmdAuth(rest)
 	case "tag":
 		return cmdTag(rest)
 	case "private":
@@ -310,6 +322,81 @@ func cmdSetup(args []string) error {
 	fmt.Fprintln(os.Stderr, "cairn setup — your commit identity (stored globally for all repos).")
 	_, _, err := collectIdentity(userconfig.Get("user.name"), userconfig.Get("user.email"))
 	return err
+}
+
+// cmdLogin stores an access token for a host in the user-level credential store
+// (0600, outside every repo). The token is read from stdin when piped
+// (agent-friendly: `echo $TOK | cairn login github.com`), else prompted on a TTY.
+func cmdLogin(args []string) error {
+	fs := flag.NewFlagSet("login", flag.ContinueOnError)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn login <host>   (token from stdin: echo $TOK | cairn login github.com)")
+	}
+	host := fs.Arg(0)
+	var token string
+	if fi, _ := os.Stdin.Stat(); fi != nil && (fi.Mode()&os.ModeCharDevice) == 0 {
+		b, err := io.ReadAll(os.Stdin) // piped
+		if err != nil {
+			return fmt.Errorf("login: read token: %w", err)
+		}
+		token = strings.TrimSpace(string(b))
+	} else {
+		fmt.Fprintf(os.Stderr, "Access token for %s: ", host)
+		sc := bufio.NewScanner(os.Stdin)
+		if sc.Scan() {
+			token = strings.TrimSpace(sc.Text())
+		}
+	}
+	if token == "" {
+		return errors.New("login: empty token")
+	}
+	if err := credstore.Set(host, token); err != nil {
+		return err
+	}
+	p, _ := credstore.Path()
+	fmt.Printf("saved credential for %s (%s)\n", host, p)
+	return nil
+}
+
+// cmdLogout removes a host's stored credential.
+func cmdLogout(args []string) error {
+	fs := flag.NewFlagSet("logout", flag.ContinueOnError)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn logout <host>")
+	}
+	host := fs.Arg(0)
+	if err := credstore.Delete(host); err != nil {
+		return err
+	}
+	fmt.Printf("removed credential for %s\n", host)
+	return nil
+}
+
+// cmdAuth lists the hosts that have a stored credential (never the tokens) plus
+// any auth-related env vars that would take precedence.
+func cmdAuth(args []string) error {
+	hosts := credstore.Hosts()
+	if len(hosts) == 0 {
+		fmt.Println("no stored credentials (use: cairn login <host>)")
+	} else {
+		p, _ := credstore.Path()
+		fmt.Printf("stored credentials (%s):\n", p)
+		for _, h := range hosts {
+			fmt.Printf("  %s\n", h)
+		}
+	}
+	for _, k := range []string{"CAIRN_TOKEN", "GITHUB_TOKEN", "GITLAB_TOKEN"} {
+		if os.Getenv(k) != "" {
+			fmt.Printf("env %s is set (takes precedence over the store)\n", k)
+		}
+	}
+	return nil
 }
 
 func firstNonEmptyStr(vs ...string) string {
@@ -515,14 +602,26 @@ func cmdClone(args []string) error {
 	if ents, err := os.ReadDir(dir); err == nil && len(ents) > 0 {
 		return fmt.Errorf("destination %s already exists and is not empty", dir)
 	}
-	fmt.Fprintf(os.Stderr, "cairn: cloning %s into %s …\n", url, dir)
+	fmt.Fprintf(os.Stderr, "cairn: cloning %s into %s …\n", redactURL(url), dir)
 	r, err := worktree.Clone(url, dir, *author, os.Stderr)
 	if err != nil {
 		return mapRemoteErr(err)
 	}
 	defer r.Close()
-	fmt.Fprintf(os.Stderr, "cairn: cloned %s -> %s\n", url, dir)
+	fmt.Fprintf(os.Stderr, "cairn: cloned %s -> %s\n", redactURL(url), dir)
 	return nil
+}
+
+// redactURL hides any embedded credential in a URL before it is printed, so a
+// token passed in a clone/remote URL never lands in terminal output, logs or CI.
+// The host/path stay visible; the userinfo becomes "***".
+func redactURL(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.User == nil {
+		return raw
+	}
+	u.User = nil // drop the credential from the displayed URL (host/path stay)
+	return u.String()
 }
 
 // dirFromURL derives a clone destination directory from a remote URL: the last
@@ -890,7 +989,7 @@ func cmdRemoteAdd(args []string) error {
 	if err := r.AddRemote(name, url, kind); err != nil {
 		return mapErr(err)
 	}
-	fmt.Fprintf(os.Stderr, "cairn: added remote %s  %s  (%s)\n", name, url, kind)
+	fmt.Fprintf(os.Stderr, "cairn: added remote %s  %s  (%s)\n", name, redactURL(url), kind)
 	return nil
 }
 
