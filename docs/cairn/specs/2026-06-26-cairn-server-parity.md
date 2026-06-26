@@ -79,8 +79,14 @@ is the shared first step regardless of destination.
       while the REAL tips + full `ExportMeta` go to `refs/cairn/embargo/*` (the server relocates
       them via 4b-1). This sidesteps building a capped meta. Verified end-to-end: client push →
       relocation → public bare has no ref reaching the embargoed fix; the embargo bare holds it.
-    - **4b-3 — gated serve.** Wire the per-identity gate (recipient → embargo bare, else public
-      bare) into the SSH/HTTP serve. Authorized clone gets the real embargoed content.
+    - **4b-3 — gated serve (DONE).** The per-identity gate is wired into both serve ingresses via
+      `repo.Service.BareForServe(ctx, repoID, agentID, verb)`: a `git-upload-pack` from an authorized
+      recipient (the `embargo_recipient` ACL) over a repo that has an embargo bare is served the
+      embargo bare (real content); every other case (non-recipient, no embargo bare, or a
+      `git-receive-pack` push) falls back to the frozen public bare. SSH keys on the casket-resolved
+      `agent.ID`; HTTP on the trusted `X-CWB-Subject`. The ACL is managed by operator subcommands
+      (`cairn-server embargo-grant|embargo-revoke|embargo-recipients`) — gRPC is blocked (services are
+      protoc-generated from an external proto with no local toolchain).
     - **4b-4 — disclose migration + paired gc.** Prune disclosed embargo refs; gc the bares safely.
 - **Slice 5 — per-identity read gating.** A herald-identity → private-store ACL check at the fetch
   boundary decides real bytes vs redacted shape. (cairn owns the path-ACL; herald is the identity

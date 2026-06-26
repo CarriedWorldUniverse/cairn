@@ -66,6 +66,17 @@ func main() {
 	if len(os.Args) >= 3 && os.Args[1] == "post-receive" {
 		os.Exit(runPostReceive(os.Args[2]))
 	}
+	// Operator subcommands: the embargo recipient ACL (gated serve).
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "embargo-grant":
+			os.Exit(runEmbargoGrant(os.Args[2:]))
+		case "embargo-revoke":
+			os.Exit(runEmbargoRevoke(os.Args[2:]))
+		case "embargo-recipients":
+			os.Exit(runEmbargoRecipients(os.Args[2:]))
+		}
+	}
 
 	httpAddr := env("CAIRN_HTTP_ADDR", ":8100")
 	dbPath := env("CAIRN_DB", "/var/lib/nexus/cairn.db")

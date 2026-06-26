@@ -104,7 +104,11 @@ func (s *Server) handleSession(sess glssh.Session) {
 	}
 
 	// Pump the pack protocol via the system git binary against the bare repo.
-	cmd := exec.CommandContext(ctx, verb, r.StoragePath)
+	// Embargo gate: an authorized recipient fetching gets the embargo bare (real
+	// content); everyone else gets the public bare (frozen). Push always targets
+	// the public bare. No-op when the repo has no embargo bare.
+	bareDir := s.cfg.Core.BareForServe(ctx, r.ID, agent.ID, verb)
+	cmd := exec.CommandContext(ctx, verb, bareDir)
 	cmd.Stdin = sess
 	cmd.Stdout = sess
 	cmd.Stderr = sess.Stderr()

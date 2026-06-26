@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/go-git/go-git/v5"
@@ -20,8 +21,10 @@ import (
 // advertises them or holds their objects.
 
 // EmbargoStoragePath is the per-repo embargo (private) bare, a sibling of the
-// public bare. It holds the real embargoed commits; via git alternates it borrows
-// the frozen base from the public bare, so no public object is duplicated.
+// public bare. It holds the real embargoed commits and is self-sufficient — the
+// relocation fetch copies the full reachable set into it (it does NOT borrow the
+// public bare via git alternates), so the public bare can gc the dangling bytes
+// freely. The cost is base duplication, a later space optimization.
 func (s *Service) EmbargoStoragePath(id string) string {
 	return filepath.Join(s.repoRoot, id+".embargo.git")
 }
@@ -48,8 +51,8 @@ func (s *Service) ensureEmbargoBare(id string) error {
 // objects) into the embargo bare, then deletes that ref from the public bare.
 // After this no public ref reaches the embargoed content, so git-upload-pack
 // never advertises or serves it to a public clone — the public projection is
-// frozen — while the embargo bare holds the real content (borrowing the frozen
-// base via alternates). The now-dangling embargoed object may physically linger
+// frozen — while the self-sufficient embargo bare holds the real content. The
+// now-dangling embargoed object may physically linger
 // in the public bare until gc; that is not a serve leak (reachability, not
 // physical presence, is what a clone receives) — paired-gc is a later hardening.
 // Returns the number of refs relocated. The post-receive hook calls this.
@@ -78,9 +81,8 @@ func (s *Service) RelocateEmbargoRefs(ctx context.Context, repoID string) (int, 
 	}
 	emb := s.EmbargoStoragePath(repoID)
 	for _, name := range names {
-		// Pull the ref + its delta objects into the embargo bare (alternates supply
-		// the frozen base, so only the embargo-only delta is copied), then drop the
-		// ref from the public bare.
+		// Pull the ref + its full reachable object set into the self-sufficient
+		// embargo bare, then drop the ref from the public bare.
 		if err := gitRun(ctx, emb, "fetch", "--no-tags", pub, name+":"+name); err != nil {
 			return 0, fmt.Errorf("repo.RelocateEmbargoRefs: fetch %s: %w", name, err)
 		}
@@ -89,6 +91,84 @@ func (s *Service) RelocateEmbargoRefs(ctx context.Context, repoID string) (int, 
 		}
 	}
 	return len(names), nil
+}
+
+// GrantEmbargoRecipient authorizes agentID to fetch repoID's embargoed content.
+// Idempotent. (cairn owns this ACL; herald supplies the identity.)
+func (s *Service) GrantEmbargoRecipient(ctx context.Context, repoID, agentID, grantedBy string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO embargo_recipient(repo_id, agent_id, granted_by, created_at) VALUES(?,?,?,?)
+		 ON CONFLICT(repo_id, agent_id) DO NOTHING`,
+		repoID, agentID, grantedBy, now)
+	if err != nil {
+		return fmt.Errorf("repo.GrantEmbargoRecipient: %w", err)
+	}
+	return nil
+}
+
+// RevokeEmbargoRecipient removes agentID's grant. Idempotent. (Note: a recipient
+// who already cloned keeps that copy — revocation only stops FUTURE fetches.)
+func (s *Service) RevokeEmbargoRecipient(ctx context.Context, repoID, agentID string) error {
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM embargo_recipient WHERE repo_id=? AND agent_id=?`, repoID, agentID)
+	if err != nil {
+		return fmt.Errorf("repo.RevokeEmbargoRecipient: %w", err)
+	}
+	return nil
+}
+
+// IsEmbargoRecipient reports whether agentID may fetch repoID's embargoed content.
+func (s *Service) IsEmbargoRecipient(ctx context.Context, repoID, agentID string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM embargo_recipient WHERE repo_id=? AND agent_id=?`, repoID, agentID).Scan(&n)
+	if err != nil {
+		return false, fmt.Errorf("repo.IsEmbargoRecipient: %w", err)
+	}
+	return n > 0, nil
+}
+
+// ListEmbargoRecipients returns the agent-ids authorized to fetch repoID's
+// embargoed content (sorted), for the ops `embargo-recipients` subcommand.
+func (s *Service) ListEmbargoRecipients(ctx context.Context, repoID string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT agent_id FROM embargo_recipient WHERE repo_id=? ORDER BY agent_id`, repoID)
+	if err != nil {
+		return nil, fmt.Errorf("repo.ListEmbargoRecipients: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []string
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			return nil, fmt.Errorf("repo.ListEmbargoRecipients: %w", err)
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// BareForServe picks which bare git-upload-pack serves to a caller: the per-repo
+// embargo bare (real embargoed content) for an authorized recipient fetching, or
+// the public bare (frozen projection) for everyone else. The gate is per-identity
+// BARE SELECTION — the shell-out git-upload-pack can't filter one bare's
+// advertisement, but it can be pointed at a different bare. Only clone/fetch
+// (git-upload-pack) is gated; a push (git-receive-pack) always targets the public
+// bare (the client pushes embargo refs there; post-receive relocates them).
+func (s *Service) BareForServe(ctx context.Context, repoID, agentID, verb string) string {
+	pub := s.storagePath(repoID)
+	if verb != "git-upload-pack" {
+		return pub
+	}
+	emb := s.EmbargoStoragePath(repoID)
+	if _, err := os.Stat(emb); err != nil {
+		return pub // no embargo bare → nothing gated
+	}
+	if ok, err := s.IsEmbargoRecipient(ctx, repoID, agentID); err == nil && ok {
+		return emb
+	}
+	return pub
 }
 
 // gitRun runs a system-git command against the given --git-dir. The cairn server
