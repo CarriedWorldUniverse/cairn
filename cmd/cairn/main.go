@@ -102,7 +102,9 @@ subcommands:
   tag <name> [branch]           tag the tip of a branch (default: root branch)
   private <path> [--shape-only] withhold a file/folder from every push (omit by default)
   private ls                    list withheld paths
-  disclose <path>               stop withholding a path
+  embargo <commit>              hold a commit (+ all after it) out of the public projection
+  embargo ls                    list embargoed commits
+  disclose <path|commit>        stop withholding a path, or lift an embargo (make public)
   version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
@@ -198,6 +200,8 @@ func run(args []string) error {
 		return cmdTag(rest)
 	case "private":
 		return cmdPrivate(rest)
+	case "embargo":
+		return cmdEmbargo(rest)
 	case "disclose":
 		return cmdDisclose(rest)
 	case "version":
@@ -1253,9 +1257,50 @@ func cmdPrivate(args []string) error {
 	return nil
 }
 
-// cmdDisclose stops withholding a path: the next push includes its real content.
+// cmdEmbargo holds a commit (and everything after it) out of the public
+// projection, or lists embargoed commits. Distinct from `private` (secrets that
+// are never pushed): an embargoed commit is content you DO intend to distribute,
+// just gated and not-yet-public — pushed to a git remote it is held back; served
+// from a cairn server it goes to authorized recipients now (gated), the patch-gap.
 //
-//	cairn disclose <path>
+//	cairn embargo <commit>
+//	cairn embargo ls
+func cmdEmbargo(args []string) error {
+	fs := flag.NewFlagSet("embargo", flag.ContinueOnError)
+	repo, author := repoFlags(fs)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn embargo <commit>  |  cairn embargo ls")
+	}
+	r, err := openRepo(*repo, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if fs.Arg(0) == "ls" {
+		shas, err := r.ListEmbargo()
+		if err != nil {
+			return mapErr(err)
+		}
+		for _, s := range shas {
+			fmt.Println(s)
+		}
+		return nil
+	}
+	sha, err := r.MarkEmbargo(fs.Arg(0))
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(os.Stderr, "cairn: embargoed %s — held out of the public projection until 'cairn disclose %s'\n", sha[:min(8, len(sha))], fs.Arg(0))
+	return nil
+}
+
+// cmdDisclose makes something public again: it lifts an embargo if the argument
+// is an embargoed commit, otherwise it stops withholding a private path.
+//
+//	cairn disclose <path|commit>
 func cmdDisclose(args []string) error {
 	fs := flag.NewFlagSet("disclose", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
@@ -1263,18 +1308,25 @@ func cmdDisclose(args []string) error {
 		return err
 	}
 	if fs.NArg() < 1 {
-		return errors.New("usage: cairn disclose <path>")
+		return errors.New("usage: cairn disclose <path|commit>")
 	}
-	path := fs.Arg(0)
+	arg := fs.Arg(0)
 	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
-	if err := r.UnmarkPrivate(path); err != nil {
+	// An embargoed commit takes precedence; otherwise treat the arg as a private path.
+	if handled, err := r.DiscloseCommit(arg); err != nil {
+		return mapErr(err)
+	} else if handled {
+		fmt.Fprintf(os.Stderr, "cairn: disclosed embargo on %s (now public)\n", arg)
+		return nil
+	}
+	if err := r.UnmarkPrivate(arg); err != nil {
 		return mapErr(err)
 	}
-	fmt.Fprintf(os.Stderr, "cairn: disclosed %s (no longer withheld)\n", path)
+	fmt.Fprintf(os.Stderr, "cairn: disclosed %s (no longer withheld)\n", arg)
 	return nil
 }
 

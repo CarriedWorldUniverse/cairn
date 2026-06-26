@@ -959,6 +959,38 @@ func (r *Repo) ListPrivate() ([]change.PrivateEntry, error) { return r.eng.ListP
 // an already-pushed copy.
 func (r *Repo) PathOnRemote(path string) ([]string, error) { return r.eng.PathOnRemote(path) }
 
+// MarkEmbargo flags a commit (any revision — full/short sha, tag) as embargoed:
+// it and everything after it are held out of the public projection until
+// disclosed. Returns the resolved full sha.
+func (r *Repo) MarkEmbargo(rev string) (string, error) {
+	sha, err := r.eng.ResolveCommit(rev)
+	if err != nil {
+		return "", err
+	}
+	return sha, r.eng.MarkEmbargo(sha)
+}
+
+// ListEmbargo returns the embargoed commit shas.
+func (r *Repo) ListEmbargo() ([]string, error) { return r.eng.ListEmbargo() }
+
+// DiscloseCommit lifts an embargo if rev resolves to an embargoed commit. It
+// returns handled=true when it did; handled=false (no error) means rev is not an
+// embargoed commit, so the caller can fall back to disclosing a privacy path.
+func (r *Repo) DiscloseCommit(rev string) (handled bool, err error) {
+	sha, rerr := r.eng.ResolveCommit(rev)
+	if rerr != nil {
+		return false, nil // not a resolvable commit → not an embargo disclose
+	}
+	emb, err := r.eng.IsEmbargoed(sha)
+	if err != nil {
+		return false, err
+	}
+	if !emb {
+		return false, nil
+	}
+	return true, r.eng.UnmarkEmbargo(sha)
+}
+
 // PendingBump returns the recorded explicit bump intent ("" if none).
 func (r *Repo) PendingBump() (string, error) {
 	v, _, err := r.eng.GetConfig("version.pending_bump")

@@ -49,9 +49,22 @@ is the shared first step regardless of destination.
   change-graph state without a full clone.
 - **Slice 2 — convergence-correct protection.** Pre-receive validates `refs/cairn/meta` consistency
   and change-sealed semantics, not just git fast-forward.
-- **Slice 4 — private store + redacted projection on serve.** Server holds a second object store
-  for private blobs; serves the redacted graph to public clones (reusing `redactTree`/`redactForPush`
-  at the *serve* boundary). First privacy slice.
+- **Slice 4 — the embargo tier.** *Decision (2026-06-26): the server tier is **embargo**, not
+  "secrets on the server."* Two distinct concepts: a `private` path is a **secret** — never pushed,
+  even to a cairn server (unchanged); an **embargoed commit** is content you DO distribute, just
+  **gated and not-yet-public** (the patch-gap). The real embargoed bytes live on a trusted,
+  herald-gated cairn server in **plaintext** (gated by identity like GitHub holds private repos —
+  no client-side keys, since encryption was rejected for key-custody reasons).
+  - **4a — client embargo model (DONE).** `cairn embargo <commit>` / `embargo ls` /
+    `disclose <commit>`; `embargo` table; flags travel in `refs/cairn/meta` (so the server can read
+    them via Slice 0's engine); push to a **git** remote freezes the public tip at the embargo
+    boundary (`PublicTip`, composed before redaction in `embargoCapForPush`). An embargo push to a
+    **cairn** remote is refused (4b not built — avoids leaking via `refs/cairn/*`).
+  - **4b — server private store + gated serve.** Server holds the real embargoed content in a
+    per-repo private store; the public bare serves the frozen/redacted graph (`git-upload-pack`
+    serves the bare directly — so the bare holding only public content needs no per-request
+    redaction); authorized fetch overlays the private store. The cairn-remote push sends the real
+    embargoed content to the private store.
 - **Slice 5 — per-identity read gating.** A herald-identity → private-store ACL check at the fetch
   boundary decides real bytes vs redacted shape. (cairn owns the path-ACL; herald is the identity
   oracle.)

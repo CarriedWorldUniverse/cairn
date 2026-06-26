@@ -448,9 +448,28 @@ truth as `git filter-repo` + force-push: a pushed secret is compromised.
 #### `cairn private ls`
 List withheld paths and their modes.
 
-#### `cairn disclose <path>`
-Stop withholding a path; the next push includes its real content. (Anything already pushed before
-you withheld it is, of course, already on the remote — withhold *before* the first push.)
+#### `cairn embargo <commit>` / `cairn embargo ls`
+Hold a commit — and **everything after it** — out of the **public** projection, while still
+intending to *distribute* it. This is **distinct from `private`**: a private path is a secret that
+is *never* pushed; an embargoed commit is content you *do* ship, just **gated and not-yet-public**.
+On a push to a plain git remote, the public tip is **frozen at the commit before the embargo**, so
+the embargoed commits are held back. The patch-gap (NEX-25): land a security fix, embargo it, and a
+cairn server hands the *real* bytes to authorized recipients **now** while the public repo stays
+frozen — so it can't be patch-diffed into an n-day before customers are protected.
+```sh
+cairn commit main -m "fix CVE-..."   # seal the fix
+cairn embargo <its-sha>              # held out of public pushes until disclosed
+cairn embargo ls                     # list embargoed commits
+```
+> Gated distribution of embargoed content to a **cairn server** (real-to-authorized) is the server
+> tier (in progress). For now an embargo push to a *cairn* remote is refused (to avoid leaking it
+> via `refs/cairn/*`); the public-freeze applies to plain git remotes.
+
+#### `cairn disclose <path|commit>`
+Make something public again. If the argument is an **embargoed commit**, it **lifts the embargo**
+(the public tip advances on the next push). Otherwise it **stops withholding a private path** (the
+next push includes its real content). (A secret already pushed before you withheld it is already on
+the remote — withhold *before* the first push.)
 
 > **What's redacted:** every pushed surface — `refs/heads/*` (sealed history), `refs/tags/*`,
 > and, for a cairn remote, the live working snapshots (`refs/cairn/change/*`) and the change-graph

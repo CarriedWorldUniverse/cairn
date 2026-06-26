@@ -171,6 +171,18 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 		refSpecs = append(refSpecs, config.RefSpec("+refs/cairn/*:refs/cairn/*"))
 	}
 
+	// Embargo: cap each public ref (refs/heads/*, refs/tags/*) at its embargo
+	// boundary so embargoed commits (and everything after) are held out of the
+	// public projection. Runs BEFORE redaction so privacy then redacts the capped
+	// commit. No-op when nothing is embargoed. (Gated distribution of the real
+	// embargoed content to a cairn server's private store is Slice 4b — for now an
+	// embargo push to a cairn remote is refused rather than leaking it.)
+	embRestore, err := e.embargoCapForPush(refSpecs, e.remoteKind(remoteName) == "cairn")
+	if err != nil {
+		return fmt.Errorf("%s: %w", label, err)
+	}
+	defer embRestore()
+
 	// Privacy: if any path is withheld, repoint the refs about to be pushed at a
 	// redacted projection (private bytes stripped from every reachable tree), push
 	// those, and restore the real refs afterward. No-op (and byte-identical to a
@@ -320,6 +332,75 @@ func (e *Engine) redactForPush(refSpecs []config.RefSpec) (func(), error) {
 				})
 			}
 		}
+	}
+	return restore, nil
+}
+
+// embargoCapForPush caps each public ref (refs/heads/*, refs/tags/*) about to be
+// pushed at its embargo boundary (PublicTip), so embargoed commits and their
+// descendants are held out of the public projection, and returns a restore func
+// (run via defer). No-op when nothing is embargoed. A cairn-remote push with
+// embargoed content is refused: serving the real embargoed bytes to authorized
+// recipients from a gated private store is the server tier (Slice 4b), not yet
+// built — refusing here prevents leaking embargoed content through refs/cairn/*.
+func (e *Engine) embargoCapForPush(refSpecs []config.RefSpec, isCairn bool) (func(), error) {
+	noop := func() {}
+	on, err := e.HasEmbargo()
+	if err != nil {
+		return noop, err
+	}
+	if !on {
+		return noop, nil
+	}
+	if isCairn {
+		return noop, errors.New("embargo: gated distribution to a cairn server is not yet implemented (Slice 4b); push to a git remote for the public freeze, or 'cairn disclose <commit>' first")
+	}
+
+	iter, err := e.git.References()
+	if err != nil {
+		return noop, fmt.Errorf("embargoCapForPush: refs: %w", err)
+	}
+	type snap struct {
+		name plumbing.ReferenceName
+		orig plumbing.Hash
+	}
+	var caps []snap
+	ferr := iter.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() != plumbing.HashReference || !refSpecsMatch(refSpecs, ref.Name()) {
+			return nil
+		}
+		caps = append(caps, snap{ref.Name(), ref.Hash()})
+		return nil
+	})
+	if ferr != nil {
+		return noop, fmt.Errorf("embargoCapForPush: %w", ferr)
+	}
+
+	var restores []func()
+	restore := func() {
+		for i := len(restores) - 1; i >= 0; i-- {
+			restores[i]()
+		}
+	}
+	for _, s := range caps {
+		public, err := e.PublicTip(s.orig.String())
+		if err != nil {
+			restore()
+			return noop, fmt.Errorf("embargoCapForPush: %w", err)
+		}
+		if public == "" {
+			restore()
+			return noop, fmt.Errorf("embargo: %s is embargoed to its root; nothing public to push (disclose its base commit first)", s.name)
+		}
+		if public == s.orig.String() {
+			continue // not capped
+		}
+		name, orig := s.name, s.orig
+		if err := e.git.Storer.SetReference(plumbing.NewHashReference(name, plumbing.NewHash(public))); err != nil {
+			restore()
+			return noop, fmt.Errorf("embargoCapForPush: set %s: %w", name, err)
+		}
+		restores = append(restores, func() { _ = e.git.Storer.SetReference(plumbing.NewHashReference(name, orig)) })
 	}
 	return restore, nil
 }
