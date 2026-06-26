@@ -213,16 +213,29 @@ func (e *Engine) GetLineTree() ([]LineNode, error) {
 	if err != nil {
 		return nil, fmt.Errorf("change.GetLineTree: %w", err)
 	}
-	defer rows.Close()
-
-	var nodes []LineNode
+	// Read all line rows FIRST, then close the cursor, before any per-line work:
+	// the ahead computation issues nested queries (sealedTip → OpenChangeForLine),
+	// and querying while this cursor is open needs a second connection — which
+	// deadlocks a single-connection engine (the in-memory server engine).
+	var lines []Line
 	for rows.Next() {
 		var l Line
 		var parent sql.NullString
 		if err := rows.Scan(&l.ID, &l.Name, &parent, &l.TipCommit, &l.BaseCommit, &l.Status); err != nil {
+			_ = rows.Close()
 			return nil, fmt.Errorf("change.GetLineTree: %w", err)
 		}
 		l.ParentLine = parent.String
+		lines = append(lines, l)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, fmt.Errorf("change.GetLineTree: %w", err)
+	}
+	_ = rows.Close()
+
+	var nodes []LineNode
+	for _, l := range lines {
 		// Ahead = SEALED commits between this line's base and its tip. Strip a
 		// "(working)" head first (an unsealed auto-snapshot is local working state,
 		// never "ahead" — exactly as Status does), then count first-parent commits
@@ -238,9 +251,6 @@ func (e *Engine) GetLineTree() ([]LineNode, error) {
 			}
 		}
 		nodes = append(nodes, LineNode{Line: l, Parent: l.ParentLine, Ahead: ahead})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("change.GetLineTree: %w", err)
 	}
 	return nodes, nil
 }
