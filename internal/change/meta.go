@@ -18,6 +18,9 @@ type metaDoc struct {
 	Lines     []metaLine   `json:"lines"`
 	Changes   []metaChange `json:"changes"`
 	Conflicts []metaConf   `json:"conflicts"`
+	// Embargo carries the commit-level embargo flags so a cairn server can enforce
+	// the public/gated boundary. Optional (older metas omit it).
+	Embargo []string `json:"embargo,omitempty"`
 }
 type metaLine struct {
 	ID, Name, ParentLine, TipCommit, BaseCommit, Status string
@@ -102,6 +105,24 @@ func (e *Engine) buildMetaDoc() (metaDoc, error) {
 		return metaDoc{}, err
 	}
 	_ = frows.Close()
+	// embargo (commit-level flags)
+	erows, err := e.db.Query(`SELECT commit_sha FROM embargo ORDER BY commit_sha`)
+	if err != nil {
+		return metaDoc{}, fmt.Errorf("change.ExportMeta: embargo: %w", err)
+	}
+	for erows.Next() {
+		var sha string
+		if err := erows.Scan(&sha); err != nil {
+			_ = erows.Close()
+			return metaDoc{}, err
+		}
+		doc.Embargo = append(doc.Embargo, sha)
+	}
+	if err := erows.Err(); err != nil {
+		_ = erows.Close()
+		return metaDoc{}, err
+	}
+	_ = erows.Close()
 	return doc, nil
 }
 
@@ -161,7 +182,7 @@ func (e *Engine) importMeta(metaCommit string, tx *sql.Tx, ts string) (defaultBr
 
 	// clear the init-created catalogue (the meta is authoritative for a fresh clone).
 	// Order respects FK references (conflict -> change -> line).
-	for _, q := range []string{`DELETE FROM conflict`, `DELETE FROM change`, `DELETE FROM line`} {
+	for _, q := range []string{`DELETE FROM conflict`, `DELETE FROM change`, `DELETE FROM line`, `DELETE FROM embargo`} {
 		if _, err := tx.Exec(q); err != nil {
 			return "", fmt.Errorf("change.importMeta: clear: %w", err)
 		}
@@ -230,6 +251,13 @@ func (e *Engine) importMeta(metaCommit string, tx *sql.Tx, ts string) (defaultBr
 			 VALUES(?,?,?,?,?,?,?,?,?)`,
 			cf.ID, cf.ChangeID, cf.Path, cf.BaseBlob, cf.ParentBlob, cf.ChangeBlob, cf.MarkedBlob, cf.Status, ts); err != nil {
 			return "", fmt.Errorf("change.importMeta: conflict: %w", err)
+		}
+	}
+	// install embargo flags (commit-level).
+	for _, sha := range doc.Embargo {
+		if _, err := tx.Exec(`INSERT INTO embargo(commit_sha, created_at) VALUES(?,?)
+			 ON CONFLICT(commit_sha) DO NOTHING`, sha, ts); err != nil {
+			return "", fmt.Errorf("change.importMeta: embargo: %w", err)
 		}
 	}
 	return defaultBranch, nil
