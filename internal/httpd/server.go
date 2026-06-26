@@ -102,7 +102,16 @@ func (s *Server) handleGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.serveBackend(w, r, rp)
+	// Embargo gate: an authorized recipient fetching (upload-pack) is served the
+	// embargo bare (real content); everyone else gets the public bare (frozen).
+	// A write (receive-pack) always targets the public bare. No-op without an
+	// embargo bare.
+	verb := "git-upload-pack"
+	if write {
+		verb = "git-receive-pack"
+	}
+	bareDir := s.cfg.Core.BareForServe(r.Context(), rp.ID, id.Subject, verb)
+	s.serveBackend(w, r, bareDir)
 }
 
 // isWriteRequest reports whether a Smart-HTTP request mutates the repo
@@ -117,11 +126,12 @@ func isWriteRequest(rest, rawQuery string) bool {
 	return false
 }
 
-// serveBackend runs `git http-backend` as a CGI handler over the bare repo.
-// GIT_PROJECT_ROOT points at the repo's parent dir; PATH_INFO is /<id>.git/<rest>.
-func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, rp repo.Repo) {
-	root := filepath.Dir(rp.StoragePath)  // repoRoot
-	base := filepath.Base(rp.StoragePath) // <id>.git
+// serveBackend runs `git http-backend` as a CGI handler over bareDir (the public
+// or, for an authorized embargo fetch, the embargo bare). GIT_PROJECT_ROOT points
+// at the repo's parent dir; PATH_INFO is /<bare>/<rest>.
+func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, bareDir string) {
+	root := filepath.Dir(bareDir)  // repoRoot
+	base := filepath.Base(bareDir) // <id>.git or <id>.embargo.git
 	m := pathRe.FindStringSubmatch(r.URL.Path)
 	rest := ""
 	if m != nil {

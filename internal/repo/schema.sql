@@ -43,3 +43,14 @@ CREATE TABLE IF NOT EXISTS pull_request (
 -- At most one OPEN pr per (repo, source, target).
 CREATE UNIQUE INDEX IF NOT EXISTS pr_open_uniq
   ON pull_request(repo_id, source_ref, target_ref) WHERE state = 'open';
+
+-- embargo_recipient: identities authorized to fetch a repo's EMBARGOED content
+-- (the real bytes from the per-repo embargo bare). cairn owns this ACL — herald
+-- scopes are too coarse (org-level repo:read/write). All-or-nothing per repo.
+CREATE TABLE IF NOT EXISTS embargo_recipient (
+  repo_id    TEXT NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
+  agent_id   TEXT NOT NULL,  -- herald agent id (SSH agent.ID; HTTP X-CWB-Subject)
+  granted_by TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (repo_id, agent_id)
+);
