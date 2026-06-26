@@ -156,6 +156,12 @@ func (s *Service) ListEmbargoRecipients(ctx context.Context, repoID string) ([]s
 // advertisement, but it can be pointed at a different bare. Only clone/fetch
 // (git-upload-pack) is gated; a push (git-receive-pack) always targets the public
 // bare (the client pushes embargo refs there; post-receive relocates them).
+//
+// The gate keys on whether the embargo bare still holds ANY gated head ref
+// (refs/cairn/embargo/heads/*), not merely on the directory existing: once every
+// branch is disclosed (PruneDisclosedEmbargo renamed them out), recipients fall
+// back to the full-fidelity public bare even while the now-redundant bare lingers
+// awaiting gc — so the gate flips without an rm on the serve hot path.
 func (s *Service) BareForServe(ctx context.Context, repoID, agentID, verb string) string {
 	pub := s.storagePath(repoID)
 	if verb != "git-upload-pack" {
@@ -165,10 +171,182 @@ func (s *Service) BareForServe(ctx context.Context, repoID, agentID, verb string
 	if _, err := os.Stat(emb); err != nil {
 		return pub // no embargo bare → nothing gated
 	}
+	if !hasEmbargoHeads(emb) {
+		return pub // fully disclosed (no gated heads left) → serve the public bare
+	}
 	if ok, err := s.IsEmbargoRecipient(ctx, repoID, agentID); err == nil && ok {
 		return emb
 	}
 	return pub
+}
+
+// PruneDisclosedEmbargo reconciles the embargo bare after a disclose re-push. When
+// an embargo is lifted (client `disclose` + the next normal push), the disclosed
+// branch's content re-enters the PUBLIC projection — the client uncaps it and
+// force-pushes full meta. Its refs/cairn/embargo/heads/<branch> in the embargo
+// bare is then redundant and, left in place, would make BareForServe keep serving
+// recipients the stale gated copy. For each such ref whose tip is BOTH an ancestor
+// of a public head/tag AND physically present in the public bare, it is disclosed:
+// rename it to refs/heads/<branch> inside the embargo bare (a recipient still
+// cloning the bare for OTHER gated branches keeps full visibility of the disclosed
+// one), then drop the gated embargo ref. Reachability is computed from
+// refs/heads/* + refs/tags/* ONLY (never refs/cairn/*), so a still-embargoed
+// commit — held out of public by PublicTip — can never be selected. The
+// object-presence check guards against deleting a gate before public actually
+// holds the bytes. Idempotent and self-healing: any error skips that ref, and the
+// next push re-evaluates from scratch. Returns the count disclosed. Run AFTER
+// RelocateEmbargoRefs (it must not see partially-relocated state).
+func (s *Service) PruneDisclosedEmbargo(ctx context.Context, repoID string) (int, error) {
+	emb := s.EmbargoStoragePath(repoID)
+	if _, err := os.Stat(emb); err != nil {
+		return 0, nil // no embargo bare → nothing to reconcile
+	}
+	pub := s.storagePath(repoID)
+	pubTips, err := publicRefTips(pub)
+	if err != nil {
+		return 0, fmt.Errorf("repo.PruneDisclosedEmbargo: public refs: %w", err)
+	}
+	if len(pubTips) == 0 {
+		return 0, nil
+	}
+
+	g, err := git.PlainOpen(emb)
+	if err != nil {
+		return 0, fmt.Errorf("repo.PruneDisclosedEmbargo: open embargo: %w", err)
+	}
+	iter, err := g.References()
+	if err != nil {
+		return 0, fmt.Errorf("repo.PruneDisclosedEmbargo: refs: %w", err)
+	}
+	headsPrefix := change.EmbargoRefPrefix + "heads/"
+	type cand struct{ name, branch, tip string }
+	var cands []cand
+	_ = iter.ForEach(func(ref *plumbing.Reference) error {
+		n := ref.Name().String()
+		if ref.Type() == plumbing.HashReference && strings.HasPrefix(n, headsPrefix) {
+			cands = append(cands, cand{name: n, branch: strings.TrimPrefix(n, headsPrefix), tip: ref.Hash().String()})
+		}
+		return nil
+	})
+
+	disclosed := 0
+	for _, c := range cands {
+		// Disclosed iff the tip both re-entered the public projection (ancestor of a
+		// public head/tag) AND is physically present in the public bare.
+		if !objectPresent(ctx, pub, c.tip) || !isAncestorOfAny(ctx, pub, c.tip, pubTips) {
+			continue
+		}
+		// Keep the disclosed branch visible as a normal head in the embargo bare,
+		// then drop the gated ref. On any error, skip — the next push retries.
+		if err := gitRun(ctx, emb, "update-ref", "refs/heads/"+c.branch, c.tip); err != nil {
+			continue
+		}
+		if err := gitRun(ctx, emb, "update-ref", "-d", c.name); err != nil {
+			continue
+		}
+		disclosed++
+	}
+	return disclosed, nil
+}
+
+// GCRepo reclaims dangling objects and reaps a fully-disclosed embargo bare. It
+// runs `git gc` on the public bare (reclaiming the embargoed objects left dangling
+// by RelocateEmbargoRefs); pruneNow uses --prune=now for an explicit quiet-window
+// run, otherwise git's default grace expiry protects objects an in-flight
+// receive-pack wrote but has not yet ref-linked. If the embargo bare exists with
+// no gated heads left (fully disclosed), its content is pure duplication of public
+// and the whole directory is removed (instant byte reclaim); otherwise it is gc'd
+// in place (repack after a partial disclosure). gc on the public bare cannot harm
+// the embargo bare — the two share no object storage (no git alternates). Returns
+// whether the embargo bare was reaped. Operator-invoked (`cairn-server gc`), never
+// on the push hot path: gc is the one object-rewriting op and is kept serialized
+// and schedulable, off the race surface of concurrent pushes/clones.
+func (s *Service) GCRepo(ctx context.Context, repoID string, pruneNow bool) (bool, error) {
+	gcArgs := []string{"gc"}
+	if pruneNow {
+		gcArgs = append(gcArgs, "--prune=now")
+	}
+	pub := s.storagePath(repoID)
+	if err := gitRun(ctx, pub, gcArgs...); err != nil {
+		return false, fmt.Errorf("repo.GCRepo: public gc: %w", err)
+	}
+	emb := s.EmbargoStoragePath(repoID)
+	if _, err := os.Stat(emb); err != nil {
+		return false, nil // no embargo bare
+	}
+	if !hasEmbargoHeads(emb) {
+		if err := os.RemoveAll(emb); err != nil {
+			return false, fmt.Errorf("repo.GCRepo: reap embargo bare: %w", err)
+		}
+		return true, nil
+	}
+	if err := gitRun(ctx, emb, gcArgs...); err != nil {
+		return false, fmt.Errorf("repo.GCRepo: embargo gc: %w", err)
+	}
+	return false, nil
+}
+
+// hasEmbargoHeads reports whether embPath holds any gated head ref
+// (refs/cairn/embargo/heads/*). On any read error it returns false — the
+// non-leak-safe default (serve/keep the public bare), never over-serve.
+func hasEmbargoHeads(embPath string) bool {
+	g, err := git.PlainOpen(embPath)
+	if err != nil {
+		return false
+	}
+	iter, err := g.References()
+	if err != nil {
+		return false
+	}
+	prefix := change.EmbargoRefPrefix + "heads/"
+	found := false
+	_ = iter.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() == plumbing.HashReference && strings.HasPrefix(ref.Name().String(), prefix) {
+			found = true
+		}
+		return nil
+	})
+	return found
+}
+
+// publicRefTips returns the tip SHAs of a bare's refs/heads/* and refs/tags/*
+// only — the truly-public reachability frontier (never refs/cairn/*, so a
+// not-yet-relocated or still-embargoed ref can't widen it).
+func publicRefTips(pub string) ([]string, error) {
+	g, err := git.PlainOpen(pub)
+	if err != nil {
+		return nil, err
+	}
+	iter, err := g.References()
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	_ = iter.ForEach(func(ref *plumbing.Reference) error {
+		n := ref.Name().String()
+		if ref.Type() == plumbing.HashReference && (strings.HasPrefix(n, "refs/heads/") || strings.HasPrefix(n, "refs/tags/")) {
+			out = append(out, ref.Hash().String())
+		}
+		return nil
+	})
+	return out, nil
+}
+
+// objectPresent reports whether gitDir physically holds the object (cat-file -e).
+func objectPresent(ctx context.Context, gitDir, sha string) bool {
+	return gitRun(ctx, gitDir, "cat-file", "-e", sha) == nil
+}
+
+// isAncestorOfAny reports whether tip is an ancestor of (or equal to) any of the
+// given ref tips in gitDir (git merge-base --is-ancestor exits 0 for ancestor,
+// and a commit is its own ancestor — covering tip == public head).
+func isAncestorOfAny(ctx context.Context, gitDir, tip string, refTips []string) bool {
+	for _, r := range refTips {
+		if gitRun(ctx, gitDir, "merge-base", "--is-ancestor", tip, r) == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // gitRun runs a system-git command against the given --git-dir. The cairn server

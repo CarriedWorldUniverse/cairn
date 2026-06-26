@@ -75,6 +75,8 @@ func main() {
 			os.Exit(runEmbargoRevoke(os.Args[2:]))
 		case "embargo-recipients":
 			os.Exit(runEmbargoRecipients(os.Args[2:]))
+		case "gc":
+			os.Exit(runGC(os.Args[2:]))
 		}
 	}
 

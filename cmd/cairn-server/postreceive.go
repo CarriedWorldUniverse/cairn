@@ -25,13 +25,28 @@ func runPostReceive(repoID string) int {
 	}
 	defer core.Close()
 
-	n, err := core.RelocateEmbargoRefs(context.Background(), repoID)
+	ctx := context.Background()
+	n, err := core.RelocateEmbargoRefs(ctx, repoID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "cairn post-receive: relocate embargo:", err)
 		return 1
 	}
 	if n > 0 {
 		fmt.Fprintf(os.Stderr, "cairn: segregated %d embargo ref(s) into the private store\n", n)
+	}
+
+	// Reconcile disclosures: a branch whose embargo was lifted has re-entered the
+	// public projection on this push, so retire its gated ref (renaming it to a
+	// normal head in the embargo bare) and let BareForServe fall back to public.
+	// Runs AFTER relocation so it never sees partially-relocated state. Idempotent;
+	// a failure self-heals on the next push (post-receive cannot reject).
+	d, err := core.PruneDisclosedEmbargo(ctx, repoID)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cairn post-receive: prune disclosed embargo:", err)
+		return 0 // the refs already landed; don't fail the push — retry next time
+	}
+	if d > 0 {
+		fmt.Fprintf(os.Stderr, "cairn: retired %d disclosed embargo branch(es)\n", d)
 	}
 	return 0
 }
