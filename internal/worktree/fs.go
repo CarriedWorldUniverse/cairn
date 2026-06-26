@@ -214,10 +214,11 @@ func writeFileAtomic(path string, data []byte) error {
 	return nil
 }
 
-// loadIgnorePatterns reads patterns from a gitignore-style file (one per line,
-// blank lines and lines starting with '#' skipped). Missing files are silently
-// ignored. Returns nil patterns if the file does not exist.
-func loadIgnorePatterns(path string) ([]gitignore.Pattern, error) {
+// loadIgnoreFile reads patterns from a gitignore-style file (one per line, blank
+// lines and '#' comments skipped). Each pattern is scoped to domain (the
+// directory's slash-split path, nil for the root), so a pattern in a nested
+// .gitignore only affects that directory's subtree. Missing files yield nil.
+func loadIgnoreFile(path string, domain []string) ([]gitignore.Pattern, error) {
 	f, err := os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
@@ -234,9 +235,27 @@ func loadIgnorePatterns(path string) ([]gitignore.Pattern, error) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		patterns = append(patterns, gitignore.ParsePattern(line, nil))
+		// ParsePattern copies domain, so passing a reused slice is safe.
+		patterns = append(patterns, gitignore.ParsePattern(line, domain))
 	}
 	return patterns, sc.Err()
+}
+
+// loadDirPatterns loads one directory's ignore patterns: .gitignore then
+// .cairnignore (cairn rules appended after, so they win ties within a directory
+// via gitignore's last-match-wins), both scoped to domain.
+func loadDirPatterns(absDir string, domain []string) ([]gitignore.Pattern, error) {
+	var ps []gitignore.Pattern
+	// TODO(scope-b): at the root (domain==nil) prepend .cairn/info/exclude here
+	// (lowest precedence) if repo-local uncommitted excludes are ever adopted.
+	for _, name := range []string{".gitignore", ".cairnignore"} {
+		p, err := loadIgnoreFile(filepath.Join(absDir, name), domain)
+		if err != nil {
+			return nil, err
+		}
+		ps = append(ps, p...)
+	}
+	return ps, nil
 }
 
 // hasTrackedPrefix reports whether any tracked path lies under the directory
@@ -257,9 +276,10 @@ func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
 // Scan reads all regular files (and symlinks) under dir into a content map
 // keyed by slash-separated path relative to dir, plus a sparse modes map
 // carrying the non-regular kind/permission of each entry (absent ⇒ regular).
-// It honors .gitignore and .cairnignore at the root of dir, and
-// unconditionally skips any .git/ or .cairn/ directory subtree. Symlinks are
-// stored as their target string and never followed.
+// It honors .gitignore and .cairnignore in every directory (each scoped to its
+// subtree, with git precedence + negation), and unconditionally skips any .git/
+// or .cairn/ directory subtree. Symlinks are stored as their target string and
+// never followed.
 //
 // tracked is the set of paths already committed at the branch's tip. Following
 // git semantics, ignore patterns only affect UNTRACKED paths: a path present
@@ -298,76 +318,101 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 	return out, modes, nil
 }
 
-// walkWorktree performs the shared Slice-C worktree walk: it loads root-level
-// .gitignore/.cairnignore, descends dir, unconditionally skips .git/.cairn
-// subtrees, applies gitignore (honouring the tracked set per git semantics so
-// tracked paths and ignored dirs containing tracked paths survive), and invokes
-// fn once per surviving file/symlink entry with its slash-separated relative
-// path, absolute path, and dir-entry. Callers supply fn to read or cache.
+// ignoreFrame is one directory's cumulative ignore matcher during the walk: the
+// patterns from this directory's .gitignore/.cairnignore appended onto every
+// ancestor's, in shallow→deep order. gitignore matches last-match-wins, so a
+// deeper directory (and a later line) overrides a shallower one and negation
+// re-includes work. depth is the directory's path-component count (root = 0) so
+// the stack unwinds correctly as the pre-order walk returns up the tree.
+type ignoreFrame struct {
+	depth    int
+	patterns []gitignore.Pattern
+	matcher  gitignore.Matcher
+}
+
+// walkWorktree performs the shared worktree walk: it honours .gitignore AND
+// .cairnignore in EVERY directory (each scoped to its own subtree, with git's
+// precedence + negation), loading them lazily during this single pre-order pass
+// (no second tree traversal). It unconditionally skips .git/.cairn subtrees and
+// honours the tracked set per git semantics (tracked paths, and ignored dirs
+// containing tracked paths, survive). fn is invoked once per surviving file/
+// symlink with its slash-separated relative path, absolute path, and dir-entry.
+//
+// Caveat (matches git): a negation cannot re-include a file under a directory
+// ignored as a directory, because that directory is not descended — except when
+// it holds a tracked path, which cairn descends to preserve.
 func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, path string, d fs.DirEntry) error) error {
-	// Load ignore patterns from root-level .gitignore and .cairnignore.
-	var patterns []gitignore.Pattern
-	for _, name := range []string{".gitignore", ".cairnignore"} {
-		ps, err := loadIgnorePatterns(filepath.Join(dir, name))
-		if err != nil {
-			return err
-		}
-		patterns = append(patterns, ps...)
+	rootPatterns, err := loadDirPatterns(dir, nil)
+	if err != nil {
+		return err
 	}
-	m := gitignore.NewMatcher(patterns)
+	// stack[len-1] is the frame for the directory currently being descended; the
+	// root frame (depth 0) is never popped.
+	stack := []ignoreFrame{{depth: 0, patterns: rootPatterns, matcher: gitignore.NewMatcher(rootPatterns)}}
 
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
 		rel, err := filepath.Rel(dir, path)
 		if err != nil {
 			return err
 		}
-
-		// The root dir itself: rel == "."; nothing to match.
 		if rel == "." {
-			return nil
+			return nil // the root dir; its frame is already on the stack
 		}
-
 		slashRel := filepath.ToSlash(rel)
 		parts := strings.Split(slashRel, "/")
 
-		// Unconditionally skip .git and .cairn directories (and any path
-		// component that is .git or .cairn, for nested cases like sub/.git/).
+		// Unwind frames for subtrees we have left: the applicable frame is the one
+		// for this entry's PARENT directory (depth == len(parts)-1).
+		parentDepth := len(parts) - 1
+		for len(stack) > 1 && stack[len(stack)-1].depth > parentDepth {
+			stack = stack[:len(stack)-1]
+		}
+		top := stack[len(stack)-1]
+
 		if d.IsDir() {
 			name := d.Name()
 			if name == ".git" || name == ".cairn" {
 				return filepath.SkipDir
 			}
-			// Also guard against nested components (e.g. "sub/.git").
 			for _, part := range parts {
 				if part == ".git" || part == ".cairn" {
 					return filepath.SkipDir
 				}
 			}
-			// Apply gitignore matcher for directories: if matched, skip the
-			// subtree ONLY when no tracked path lies under it. If a tracked file
-			// lives inside, descend so it survives (the per-file tracked check
-			// keeps it; untracked siblings are still filtered).
-			if m.Match(parts, true) {
-				if !hasTrackedPrefix(tracked, slashRel) {
-					return filepath.SkipDir
-				}
+			// Skip decision for this dir uses the PARENT matcher (a directory cannot
+			// ignore itself via its own .gitignore). Only skip when nothing tracked
+			// lives inside; otherwise descend so tracked files survive.
+			if top.matcher.Match(parts, true) && !hasTrackedPrefix(tracked, slashRel) {
+				return filepath.SkipDir
+			}
+			// Descend: push this dir's frame (parent patterns ++ this dir's own).
+			dirPatterns, derr := loadDirPatterns(path, parts)
+			if derr != nil {
+				return derr
+			}
+			if len(dirPatterns) == 0 {
+				// No ignore files here — reuse the parent's matcher (hot path; most
+				// directories have none), only tracking depth.
+				stack = append(stack, ignoreFrame{depth: len(parts), patterns: top.patterns, matcher: top.matcher})
+			} else {
+				merged := make([]gitignore.Pattern, 0, len(top.patterns)+len(dirPatterns))
+				merged = append(merged, top.patterns...)
+				merged = append(merged, dirPatterns...)
+				stack = append(stack, ignoreFrame{depth: len(parts), patterns: merged, matcher: gitignore.NewMatcher(merged)})
 			}
 			return nil
 		}
 
-		// File entry: skip if matched by an ignore pattern, but only when the
-		// path is UNTRACKED. An already-tracked file is never ignored (git
-		// semantics) so a committed-then-ignored path is not silently dropped.
-		if m.Match(parts, false) {
+		// File/symlink: skip if matched, but never drop a TRACKED path (git
+		// semantics — a committed-then-ignored path is not silently lost).
+		if top.matcher.Match(parts, false) {
 			if _, ok := tracked[slashRel]; !ok {
 				return nil
 			}
 		}
-
 		return fn(slashRel, path, d)
 	})
 }
