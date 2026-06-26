@@ -51,17 +51,20 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/protect"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	"github.com/CarriedWorldUniverse/cairn/internal/sshd"
+	gossh "golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/health"
 	grpc_health_v1 "google.golang.org/grpc/health/grpc_health_v1"
-	gossh "golang.org/x/crypto/ssh"
 )
 
 func main() {
-	// Hidden subcommand invoked by the per-repo pre-receive hook.
+	// Hidden subcommands invoked by the per-repo git hooks.
 	if len(os.Args) >= 3 && os.Args[1] == "pre-receive" {
 		os.Exit(runPreReceive(os.Args[2]))
+	}
+	if len(os.Args) >= 3 && os.Args[1] == "post-receive" {
+		os.Exit(runPostReceive(os.Args[2]))
 	}
 
 	httpAddr := env("CAIRN_HTTP_ADDR", ":8100")
@@ -84,8 +87,15 @@ func main() {
 		if err := os.MkdirAll(hooksDir, 0o755); err != nil {
 			return err
 		}
-		hook := filepath.Join(hooksDir, "pre-receive")
-		return os.WriteFile(hook, []byte(protect.HookScript(selfPath, repoID)), 0o755)
+		// pre-receive: branch protection (rejects bad pushes).
+		if err := os.WriteFile(filepath.Join(hooksDir, "pre-receive"),
+			[]byte(protect.HookScript(selfPath, repoID)), 0o755); err != nil {
+			return err
+		}
+		// post-receive: segregate any pushed refs/cairn/embargo/* into the private
+		// store (runs after the refs land, so objects are out of quarantine).
+		post := "#!/bin/sh\nexec " + selfPath + " post-receive " + repoID + "\n"
+		return os.WriteFile(filepath.Join(hooksDir, "post-receive"), []byte(post), 0o755)
 	})
 
 	// TLS material (cwb-ca mTLS): one cert serves every role — the client cert

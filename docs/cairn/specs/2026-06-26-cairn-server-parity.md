@@ -60,11 +60,25 @@ is the shared first step regardless of destination.
     them via Slice 0's engine); push to a **git** remote freezes the public tip at the embargo
     boundary (`PublicTip`, composed before redaction in `embargoCapForPush`). An embargo push to a
     **cairn** remote is refused (4b not built — avoids leaking via `refs/cairn/*`).
-  - **4b — server private store + gated serve.** Server holds the real embargoed content in a
-    per-repo private store; the public bare serves the frozen/redacted graph (`git-upload-pack`
-    serves the bare directly — so the bare holding only public content needs no per-request
-    redaction); authorized fetch overlays the private store. The cairn-remote push sends the real
-    embargoed content to the private store.
+  - **4b — server private store + gated serve.** *Architecture decision (2026-06-26): two bares per
+    repo (`<id>.git` public/frozen + `<id>.embargo.git` real), so per-identity content split becomes
+    per-identity **bare selection** — the shell-out `git-upload-pack` can't filter one stream's
+    refs, but it can be pointed at a different bare.* Recipient ACL owned by **cairn**
+    (`embargo_recipient` table keyed by herald agent-id; herald scopes are too coarse). Receive
+    model: **receive-then-relocate** (one atomic push → public bare → a post-receive step moves
+    `refs/cairn/embargo/*` into the embargo bare; the embargo bare is self-sufficient — the
+    relocation fetch copies the full reachable set, so public can gc the dangling bytes; base
+    duplication is a later space optimization).
+    - **4b-1 — server substrate (DONE).** `repo.Service.RelocateEmbargoRefs` + lazy
+      `EmbargoStoragePath`/`ensureEmbargoBare`; post-receive hook (`cmd/cairn-server`) calls it.
+      After a push, embargoed refs are segregated into the embargo bare and no public ref reaches
+      them (provably frozen). Client still refuses embargo→cairn (no leak until 4b-2).
+    - **4b-2 — client dual-push + capped public meta.** Replace the refusal: one atomic push of
+      capped public refs + uncapped `refs/cairn/embargo/*`; the public `refs/cairn/meta` is
+      **capped** at `PublicTip` (it currently carries real tips, which would dangle a public clone).
+    - **4b-3 — gated serve.** Wire the per-identity gate (recipient → embargo bare, else public
+      bare) into the SSH/HTTP serve. Authorized clone gets the real embargoed content.
+    - **4b-4 — disclose migration + paired gc.** Prune disclosed embargo refs; gc the bares safely.
 - **Slice 5 — per-identity read gating.** A herald-identity → private-store ACL check at the fetch
   boundary decides real bytes vs redacted shape. (cairn owns the path-ACL; herald is the identity
   oracle.)
