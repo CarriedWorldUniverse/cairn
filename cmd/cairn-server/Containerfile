@@ -7,12 +7,13 @@
 # Runtime config via env (see cmd/cairn-server/main.go):
 #   CAIRN_HTTP_ADDR, CAIRN_SSH_ADDR, CAIRN_DB, CAIRN_REPO_ROOT,
 #   CAIRN_HOST_KEY (base64 ed25519 private), HERALD_BASE_URL
-FROM docker.io/library/golang:1.26 AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26 AS build
+ARG TARGETARCH
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/cairn-server ./cmd/cairn-server
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/cairn-server ./cmd/cairn-server
 
 FROM docker.io/library/alpine:3.20
 # git-daemon provides git-http-backend (the Smart-HTTP CGI cairn shells out to);
