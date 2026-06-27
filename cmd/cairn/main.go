@@ -1320,7 +1320,8 @@ func cmdDisclose(args []string) error {
 	if handled, err := r.DiscloseCommit(arg); err != nil {
 		return mapErr(err)
 	} else if handled {
-		fmt.Fprintf(os.Stderr, "cairn: disclosed embargo on %s (now public)\n", arg)
+		fmt.Fprintf(os.Stderr, "cairn: disclosed embargo on %s\n", arg)
+		fmt.Fprintln(os.Stderr, "cairn: it becomes public on your next push (the push is what publishes it)")
 		return nil
 	}
 	if err := r.UnmarkPrivate(arg); err != nil {

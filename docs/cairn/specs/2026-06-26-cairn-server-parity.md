@@ -1,7 +1,11 @@
 # cairn server → convergence-core parity
 
 **Date:** 2026-06-26
-**Status:** roadmap + Slice 0 landed. Destination chosen by the owner: the **privacy/embargo enforcement point**.
+**Status:** roadmap + Slice 0 and the full **embargo tier (Slice 4 / 4a–4b-4)** landed. Destination
+chosen by the owner: the **privacy/embargo enforcement point**. The patch-gap loop is end-to-end:
+client marks/dual-pushes → server relocates into a gated bare → recipient ACL serves real content →
+disclose re-push reconciles the gate back to public → gc reclaims. Slices 1/2 (introspection API,
+convergence-correct protection) and 7 (multi-agent live hub) remain.
 
 ## Architecture reality (why this is needed)
 
@@ -87,7 +91,32 @@ is the shared first step regardless of destination.
       `agent.ID`; HTTP on the trusted `X-CWB-Subject`. The ACL is managed by operator subcommands
       (`cairn-server embargo-grant|embargo-revoke|embargo-recipients`) — gRPC is blocked (services are
       protoc-generated from an external proto with no local toolchain).
-    - **4b-4 — disclose migration + paired gc.** Prune disclosed embargo refs; gc the bares safely.
+    - **4b-4 — disclose migration + paired gc (DONE).** Disclose stays CLIENT-driven (no new
+      server op, no disclose signal): `cairn disclose` + the next normal push already restore full
+      public fidelity (once `HasEmbargo()` is false the push takes the full-meta branch). The server
+      closes the one gap — the stale embargo bare — by REACHABILITY, not trust:
+      `repo.Service.PruneDisclosedEmbargo` (run in post-receive after `RelocateEmbargoRefs`) retires
+      each `refs/cairn/embargo/heads/<branch>` whose tip is BOTH an ancestor of a public head/tag AND
+      physically present in the public bare — renaming it to a normal `refs/heads/<branch>` inside the
+      embargo bare (so a recipient still cloning for OTHER gated branches keeps visibility of the
+      disclosed one) and dropping the gated ref. Reachability is computed from `refs/heads/*` +
+      `refs/tags/*` ONLY, so a still-embargoed commit (held out by `PublicTip`) can never be selected.
+      `BareForServe` now gates on the presence of a gated head ref (not mere directory existence), so
+      once every branch is disclosed it falls back to the public bare WITHOUT an `rm` racing a live
+      recipient clone. Byte reclaim is the operator/cron op `cairn-server gc <repo-id> [--now]`: it
+      `git gc`s the public bare (reclaiming the objects `RelocateEmbargoRefs` left dangling) and reaps
+      a fully-disclosed embargo bare (`os.RemoveAll`); it is the one object-rewriting op so it is kept
+      off the push hot path. gc on the public bare provably cannot harm the self-sufficient embargo
+      bare (no shared object storage / no alternates). *Design adversarially audited (workflow):
+      caught + fixed a critical hole (pruning by ancestry would never retire the orphan
+      `refs/cairn/embargo/meta`, so the gate must key on head-ref presence, not the directory) plus
+      object-presence, rm-race, and partial-disclosure-visibility holes.* **Documented v1 behaviors:**
+      disclose couples to publication (ANY cairn push after disclose publishes the disclosed content,
+      since `HasEmbargo()` is then false — the `cairn disclose` hint makes this explicit); routine
+      grace-mode gc defers byte reclaim by git's prune window (use `--now` post-disclosure); a
+      redact+embargo+disclose where the private set CHANGES between the two pushes can leave a
+      redacted embargo tip that isn't an ancestor of the differently-redacted public tip → that branch
+      stays gated until re-disclosed (rare; the stable-private path matches SHAs and prunes cleanly).
 - **Slice 5 — per-identity read gating.** A herald-identity → private-store ACL check at the fetch
   boundary decides real bytes vs redacted shape. (cairn owns the path-ACL; herald is the identity
   oracle.)

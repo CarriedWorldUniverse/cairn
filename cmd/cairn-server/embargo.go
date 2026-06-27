@@ -77,6 +77,39 @@ func runEmbargoRecipients(args []string) int {
 	})
 }
 
+// runGC reclaims dangling objects on a repo's bare(s) and reaps a fully-disclosed
+// embargo bare. gc is the one object-rewriting op, so it is an explicit operator/
+// cron step (off the push hot path). `--now` forces immediate prune for a known
+// quiet window; without it, git's default grace expiry protects in-flight pushes.
+//
+//	cairn-server gc <repo-id> [--now]
+func runGC(args []string) int {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "usage: cairn-server gc <repo-id> [--now]")
+		return 2
+	}
+	repoID := args[0]
+	pruneNow := false
+	for _, a := range args[1:] {
+		if a == "--now" {
+			pruneNow = true
+		}
+	}
+	return withCore(func(core *repo.Service) int {
+		reaped, err := core.GCRepo(context.Background(), repoID, pruneNow)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cairn gc:", err)
+			return 1
+		}
+		if reaped {
+			fmt.Printf("gc %s: done; reaped fully-disclosed embargo bare\n", repoID)
+		} else {
+			fmt.Printf("gc %s: done\n", repoID)
+		}
+		return 0
+	})
+}
+
 // withCore opens the repo core from the server's env config, runs fn, and closes
 // it — the shared boilerplate for the ops subcommands.
 func withCore(fn func(*repo.Service) int) int {

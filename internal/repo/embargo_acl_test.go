@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 	"testing"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
 // TestEmbargoRecipientACL exercises the recipient ACL CRUD: grant (idempotent),
@@ -80,10 +82,13 @@ func TestBareForServe(t *testing.T) {
 		t.Fatalf("no embargo bare: BareForServe = %s, want public %s", got, pub)
 	}
 
-	// Create the embargo bare. Now the recipient's fetch resolves to it.
+	// Create the embargo bare WITH a gated head ref. The gate keys on gated-head
+	// presence (not mere directory existence), so the recipient's fetch resolves to
+	// the embargo bare only while it actually holds gated content.
 	if err := svc.ensureEmbargoBare(r.ID); err != nil {
 		t.Fatal(err)
 	}
+	stageEmbargoRef(t, emb, change.EmbargoRefPrefix+"heads/main", "gated\n")
 	if got := svc.BareForServe(ctx, r.ID, "agent-7", "git-upload-pack"); got != emb {
 		t.Fatalf("recipient fetch: BareForServe = %s, want embargo %s", got, emb)
 	}
