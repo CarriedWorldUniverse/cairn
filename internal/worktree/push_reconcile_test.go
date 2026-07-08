@@ -150,8 +150,39 @@ func TestPushBranchReconcileCleanMergeScopedToOneLine(t *testing.T) {
 	advanceRemoteBranchWT(t, bare, "b2", "remote2.txt", "R2\n")
 	b2AfterDiverge := remoteBranchSHA(t, bare, "b2")
 
+	// b2's LOCAL state (catalogue tip + expressed folder) before the b1-scoped
+	// reconcile: this is the property that actually distinguishes a scoped
+	// pullBranch from a mutation to the all-lines r.Pull(remote) — asserting
+	// only on b2's REMOTE ref (below) passes under BOTH implementations,
+	// because neither one pushes b2 back out. Local mutation is where an
+	// all-lines-pull regression actually shows up.
+	b2LineBefore, err := r.eng.LineByName("b2")
+	if err != nil {
+		t.Fatalf("LineByName b2 (before): %v", err)
+	}
+	b2ExpressedPath := filepath.Join(root, r.st.Expressed["b2"].Path)
+	if _, err := os.Stat(filepath.Join(b2ExpressedPath, "remote2.txt")); err == nil {
+		t.Fatalf("test bug: b2's expressed folder already has remote2.txt before reconcile")
+	}
+
 	if err := r.PushBranchReconcile("origin", "b1"); err != nil {
 		t.Fatalf("PushBranchReconcile: %v", err)
+	}
+
+	// b2's LOCAL catalogue tip must be byte-identical: a b1-scoped reconcile
+	// must not pull/merge b2 at all.
+	b2LineAfter, err := r.eng.LineByName("b2")
+	if err != nil {
+		t.Fatalf("LineByName b2 (after): %v", err)
+	}
+	if b2LineAfter.TipCommit != b2LineBefore.TipCommit {
+		t.Fatalf("b2 local tip changed: before=%s after=%s (PushBranchReconcile leaked scope to b2's local state)",
+			b2LineBefore.TipCommit, b2LineAfter.TipCommit)
+	}
+	// b2's expressed folder must NOT have been re-materialized with the
+	// remote's new file: a b1-scoped reconcile only re-materializes b1.
+	if _, err := os.Stat(filepath.Join(b2ExpressedPath, "remote2.txt")); err == nil {
+		t.Fatalf("b2's expressed folder was re-materialized with remote2.txt by a b1-scoped reconcile")
 	}
 
 	bareRepo, err := git.PlainOpen(bare)

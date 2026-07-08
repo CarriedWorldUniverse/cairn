@@ -937,13 +937,20 @@ func (r *Repo) PushBranch(remote, branch string, force bool) error {
 	}
 	err = r.eng.PushToRemoteBranch(remote, branch, force)
 	if err != nil && !force && change.IsNonFastForward(err) {
-		// Wrap (not replace) the engine's diverged error: %w keeps its
-		// 'cairn undo' hint sentence as the single source of truth for that
-		// remedy, while this layer adds the branch-scoped push remedies the
-		// engine (which serves other callers too) doesn't know about.
+		// Build the final message from THIS layer's branch-scoped remedies
+		// (name, --reconcile, cairn pull, --force) plus only the engine's
+		// 'cairn undo' hint sentence — not its generic "fetch/sync first or
+		// push --force" prose, which would just duplicate the remedies above.
+		// %w wraps the underlying (unwrapped) engine error, not the engine's
+		// prose, so errors.Is/change.IsNonFastForward and mapRemoteErr's
+		// errors.As still see the real cause.
+		cause := err
+		if u := errors.Unwrap(err); u != nil {
+			cause = u
+		}
 		return fmt.Errorf(
-			"worktree.PushBranch: remote branch %q has advanced; run 'cairn push --reconcile' to pull+retry just this line, 'cairn pull' (reconciles ALL lines) then push, or 'cairn push --force' to overwrite: %w",
-			branch, err)
+			"worktree.PushBranch: remote branch %q has advanced; run 'cairn push --reconcile' to pull+retry just this line, 'cairn pull' (reconciles ALL lines) then push, or 'cairn push --force' to overwrite. If you folded/committed into this branch locally and didn't mean to, 'cairn undo' rewinds it: %w",
+			branch, cause)
 	}
 	return err
 }

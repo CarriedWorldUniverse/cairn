@@ -405,7 +405,7 @@ Publish to `origin` (default). By default push publishes **only the line you're 
 cd feat && cairn push            # publishes just 'feat'
 cairn push origin feat           # explicit single line
 cairn push --all                 # every line + tags
-cairn push --reconcile           # single-line: pull+retry just this line on divergence
+cd feat && cairn push --reconcile  # single-line: pull+retry just this line on divergence
 ```
 Only **sealed** commits are published — the auto-snapshot working state is local, like git's
 working tree, and never pushed. `--force` overwrites a diverged remote branch; the all-lines

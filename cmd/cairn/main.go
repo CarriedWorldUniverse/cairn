@@ -1218,11 +1218,12 @@ func cmdPush(args []string) error {
 		return nil
 	}
 	if *reconcile {
-		// No single line resolved (no explicit branch, --all not set, and cwd
-		// isn't inside a branch folder) → this would fall through to the
-		// all-lines Push below, which already auto-reconciles; --reconcile is
-		// meaningless there.
-		return errors.New("--reconcile applies to a single-line push (not --all)")
+		// No single line resolved: --all was NOT passed (that conflict is
+		// already rejected above) and cwd isn't inside a branch folder, so
+		// there's nothing for --reconcile to scope to. Distinct from the
+		// --reconcile+--all message above: the operator never typed --all
+		// here, so telling them "not --all" would be confusing.
+		return errors.New("--reconcile needs a single line to push — pass a branch, or run it from inside an expressed branch folder")
 	}
 	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
 	// once) so "push just works". A successful auto-retry is intentionally silent
