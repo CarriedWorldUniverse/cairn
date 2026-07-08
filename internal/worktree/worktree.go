@@ -868,7 +868,16 @@ func (r *Repo) Tree() ([]change.LineNode, error) {
 // conflict, it stops with a clear "resolve, then push" error rather than retrying,
 // leaving the conflict markers on disk for the operator to resolve.
 func (r *Repo) Push(remote string, force bool) error {
-	err := r.eng.PushToRemote(remote, force)
+	// Serialize with the cross-process working-copy lock (#84, sibling of #81):
+	// concurrent `cairn push` processes on ONE shared clone otherwise race on
+	// the shared push/reconcile state and a branch can silently fail to land.
+	// The lock is reentrant, so the diverged-retry path's Pull below shares it.
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	err = r.eng.PushToRemote(remote, force)
 	if err == nil || force || !change.IsNonFastForward(err) {
 		return err
 	}
@@ -891,6 +900,16 @@ func (r *Repo) Push(remote string, force bool) error {
 // divergence; a diverged remote branch surfaces the clear "diverged" error so
 // the operator pulls deliberately.
 func (r *Repo) PushBranch(remote, branch string, force bool) error {
+	// Serialize with the cross-process working-copy lock (#84): this is the
+	// single-line push the issue's repro exercises (`cairn push origin <branch>`).
+	// Concurrent single-line pushes from ONE shared clone otherwise race on the
+	// shared push/re-materialize state (tracking refs, projection) and a branch
+	// can silently fail to land even though the push reports success.
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if _, err := r.eng.LineByName(branch); err != nil {
 		return fmt.Errorf("worktree.PushBranch: %w", err)
 	}
