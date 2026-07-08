@@ -113,4 +113,30 @@ func TestE2E_DiffSingleFile(t *testing.T) {
 	if !strings.Contains(out, "VaultTests.cs") || !strings.Contains(out, "other.txt") {
 		t.Fatalf("whole-tree diff should show both:\n%s", out)
 	}
+
+	// A mistyped branch must stay a LOUD error, not silently print an empty
+	// diff (it matches no path on disk and nothing in the diff).
+	if err := run([]string{"diff", "--repo", root, "mian"}); err == nil {
+		t.Fatalf("mistyped branch should error, not print an empty diff")
+	}
+
+	// An existing-but-unchanged file legitimately prints nothing (like git).
+	if err := os.WriteFile(filepath.Join(root, def, "untouched.txt"), []byte("same\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, def)
+	out = mustRunOut(t, "diff", "--repo", root, "untouched.txt")
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("unchanged existing file should print empty diff, got:\n%s", out)
+	}
+
+	// A deleted (previously committed) file still shows in its filtered diff —
+	// the on-disk existence guard must not block it.
+	if err := os.Remove(filepath.Join(root, def, "other.txt")); err != nil {
+		t.Fatal(err)
+	}
+	out = mustRunOut(t, "diff", "--repo", root, "other.txt")
+	if !strings.Contains(out, "other.txt") {
+		t.Fatalf("deleted file should appear in its filtered diff, got:\n%s", out)
+	}
 }

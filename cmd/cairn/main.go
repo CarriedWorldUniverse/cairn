@@ -854,6 +854,7 @@ func cmdDiff(args []string) error {
 	}
 	defer r.Close()
 	var diffs []change.FileDiff
+	var bareArg string // set when a lone positional was auto-promoted to a pathspec
 	switch fs.NArg() {
 	case 0:
 		branch, derr := r.DefaultBranch()
@@ -869,6 +870,7 @@ func cmdDiff(args []string) error {
 		if r.IsExpressed(arg) {
 			diffs, err = r.WorkingDiff(arg)
 		} else if len(paths) == 0 {
+			bareArg = arg
 			paths = []string{arg}
 			branch, derr := r.DefaultBranch()
 			if derr != nil {
@@ -891,6 +893,14 @@ func cmdDiff(args []string) error {
 	if len(paths) > 0 {
 		diffs = filterDiffsByPaths(diffs, paths)
 	}
+	// Guard the bare-arg promotion: if the auto-promoted pathspec matched
+	// nothing AND nothing by that name exists on disk, the arg was most likely
+	// a mistyped branch — error loudly rather than printing an empty diff that
+	// reads as "no changes". (A deleted-but-committed file still appears in the
+	// diff, and an existing-but-unchanged file legitimately prints nothing.)
+	if bareArg != "" && len(diffs) == 0 && !pathExistsNear(bareArg, *repo) {
+		return mapErr(fmt.Errorf("worktree.WorkingDiff: %q is neither an expressed branch nor a path in the working copy", bareArg))
+	}
 	for _, d := range diffs {
 		if d.Binary {
 			fmt.Printf("Binary files differ: %s\n", d.Path)
@@ -903,6 +913,32 @@ func cmdDiff(args []string) error {
 		}
 	}
 	return nil
+}
+
+// pathExistsNear reports whether p exists relative to the current directory,
+// the repo root, or any expressed branch folder (diff paths are tree-relative,
+// so on disk the file lives at <repo>/<branch-folder>/<p>). Used to distinguish
+// a real (but unchanged) pathspec from a mistyped branch name.
+func pathExistsNear(p, repo string) bool {
+	if _, err := os.Stat(p); err == nil {
+		return true
+	}
+	if _, err := os.Stat(filepath.Join(repo, p)); err == nil {
+		return true
+	}
+	ents, err := os.ReadDir(repo)
+	if err != nil {
+		return false
+	}
+	for _, e := range ents {
+		if !e.IsDir() || e.Name() == ".cairn" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(repo, e.Name(), p)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // indexOfDashDash returns the index of the first standalone "--" in args, or -1.
