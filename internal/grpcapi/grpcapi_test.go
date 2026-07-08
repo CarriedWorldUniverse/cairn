@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -406,6 +407,112 @@ func TestRecordPullCheck_Validation(t *testing.T) {
 	// unknown pull -> NotFound
 	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: "nope", Name: "ci", State: "pass"}); code(err) != codes.NotFound {
 		t.Errorf("unknown pull code = %v, want NotFound", code(err))
+	}
+}
+
+// TestPullChecksGateMerge_PendingBlocks proves "pending" (not just "fail")
+// blocks MergePull. Mutation-proof: temporarily changing nonPassingChecks to
+// treat only CheckStateFail as blocking makes this test FAIL (verified by
+// hand during review; see the builder's report for the exact revert/observe
+// steps) — restoring the real (state != pass) check makes it PASS again.
+func TestPullChecksGateMerge_PendingBlocks(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "security-review", State: "pending", Summary: "awaiting reviewer",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck: %v", err)
+	}
+
+	_, err = c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if code(err) != codes.FailedPrecondition {
+		t.Fatalf("merge-with-pending-check code = %v, want FailedPrecondition", code(err))
+	}
+	if err == nil || !containsAll(err.Error(), "security-review", "pending") {
+		t.Fatalf("merge-refusal error = %v, want it to name check %q and state %q", err, "security-review", "pending")
+	}
+}
+
+// TestPullChecksGateMerge_NamesAllFailing proves the refusal names every
+// non-passing check, not just the first.
+func TestPullChecksGateMerge_NamesAllFailing(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck ci: %v", err)
+	}
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "security-review", State: "pending",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck security-review: %v", err)
+	}
+	// A passing check must NOT be named.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "lint", State: "pass",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck lint: %v", err)
+	}
+
+	_, err = c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if code(err) != codes.FailedPrecondition {
+		t.Fatalf("merge-with-multiple-failing code = %v, want FailedPrecondition", code(err))
+	}
+	if err == nil || !containsAll(err.Error(), "ci", "fail", "security-review", "pending") {
+		t.Fatalf("merge-refusal error = %v, want it to name both failing checks", err)
+	}
+	if err != nil && strings.Contains(err.Error(), "lint") {
+		t.Fatalf("merge-refusal error = %v, must NOT name the passing check", err)
+	}
+}
+
+// TestRecordPullCheck_LedgerCommentFailureStillRecords proves the check
+// persists (and is returned/listable) even when the best-effort ledger
+// comment fails, matching the discard behaviour documented on RecordPullCheck.
+func TestRecordPullCheck_LedgerCommentFailureStillRecords(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}, commentErr: errors.New("ledger unreachable")}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass",
+	})
+	if err != nil {
+		t.Fatalf("RecordPullCheck (ledger comment failing): %v", err)
+	}
+	if rec.Check.GetState() != "pass" || rec.Check.GetName() != "ci" {
+		t.Fatalf("check not recorded despite ledger comment failure: %+v", rec.Check)
+	}
+	if led.commentCalls != 1 {
+		t.Fatalf("ledger CommentIssue calls = %d, want 1 (attempted, best-effort)", led.commentCalls)
+	}
+
+	list, err := c.pull.ListPullChecks(mdCtx("org-1", "repo:read"), &cairnv1.ListPullChecksRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if err != nil || len(list.Checks) != 1 {
+		t.Fatalf("ListPullChecks after ledger comment failure: %v %+v", err, list.Checks)
 	}
 }
 

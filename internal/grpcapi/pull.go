@@ -131,7 +131,8 @@ func (p *pullServer) ListPulls(ctx context.Context, req *cairnv1.ListPullsReques
 
 // RecordPullCheck mirrors POST .../pulls/{id}/checks: scope repo:write, pull
 // must be open. Upserts by (pull, name); best-effort comments the linked
-// ledger issue, matching MergePull's best-effort-comment pattern.
+// ledger issue — unlike MergePull, any comment failure here is discarded, not
+// surfaced on the response (RecordPullCheckResponse has no error field for it).
 func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPullCheckRequest) (*cairnv1.RecordPullCheckResponse, error) {
 	id, err := authed(ctx, req.Org, "repo:write")
 	if err != nil {
@@ -170,11 +171,13 @@ func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPul
 		return nil, status.Errorf(codes.Internal, "record check: %v", err)
 	}
 
+	// Best-effort ledger comment: the check has already been recorded above,
+	// so a comment failure here does not fail the RPC. Unlike MergePull,
+	// which surfaces its comment error via MergeResult.ledger_comment_error,
+	// RecordPullCheckResponse has no such field — the error is silently
+	// discarded, not merely deferred to the caller.
 	body := "check " + req.Name + ": " + req.State + " — " + req.Summary
-	if cErr := p.s.ledger.CommentIssue(ctx, id.forwardHeader(), pull.LedgerIssueKey, body); cErr != nil {
-		// best-effort, matching MergePull: the check still records.
-		_ = cErr
-	}
+	_ = p.s.ledger.CommentIssue(ctx, id.forwardHeader(), pull.LedgerIssueKey, body)
 	return &cairnv1.RecordPullCheckResponse{Check: toProtoPullCheck(*check)}, nil
 }
 

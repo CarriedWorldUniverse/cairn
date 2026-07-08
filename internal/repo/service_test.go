@@ -188,6 +188,25 @@ func TestDeleteRepo_RemovesDependentRows(t *testing.T) {
 		t.Fatalf("CreatePull: %v", err)
 	}
 
+	// Insert a pull_check via the service method.
+	if err := svc.RecordPullCheck(ctx, &PullCheck{
+		PullID: pr.ID, Name: "ci", State: CheckStatePass, RecordedBy: "agent-1",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck: %v", err)
+	}
+
+	// Disable FK enforcement on this connection before deleting: schema.sql
+	// also declares ON DELETE CASCADE on pull_check/pull_request/push_event,
+	// which — when the pool happens to reuse a connection with PRAGMA
+	// foreign_keys=ON — would silently clean up dependents even if
+	// DeleteRepo's own explicit DELETEs were removed, masking a regression.
+	// Turning FK off here forces this test to depend solely on DeleteRepo's
+	// own explicit statements, per the "cascade is unreliable across pool
+	// connections" comment on DeleteRepo itself.
+	if _, err := svc.db.ExecContext(ctx, `PRAGMA foreign_keys=OFF`); err != nil {
+		t.Fatalf("PRAGMA foreign_keys=OFF: %v", err)
+	}
+
 	// Delete the repo.
 	if err := svc.DeleteRepo(ctx, r.ID); err != nil {
 		t.Fatalf("DeleteRepo: %v", err)
@@ -213,6 +232,17 @@ func TestDeleteRepo_RemovesDependentRows(t *testing.T) {
 	}
 	if prCount != 0 {
 		t.Fatalf("pull_request rows remaining: got %d, want 0", prCount)
+	}
+
+	// Assert no pull_check rows remain for pr.ID.
+	var checkCount int
+	if err := svc.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM pull_check WHERE pull_id=?`, pr.ID,
+	).Scan(&checkCount); err != nil {
+		t.Fatalf("count pull_check: %v", err)
+	}
+	if checkCount != 0 {
+		t.Fatalf("pull_check rows remaining: got %d, want 0", checkCount)
 	}
 }
 
