@@ -140,3 +140,55 @@ func TestE2E_DiffSingleFile(t *testing.T) {
 		t.Fatalf("deleted file should appear in its filtered diff, got:\n%s", out)
 	}
 }
+
+// TestE2E_DiffPathspecForms covers the pathspec canonicalization the review
+// pass demanded: `./`-prefixed, absolute, and cwd-relative-from-inside-the-
+// branch-folder specs must all match (git rewrites pathspecs the same way),
+// and a bogus explicit `--` pathspec must error loudly, not print nothing.
+func TestE2E_DiffPathspecForms(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	def := soleExpressedDir(t, root)
+
+	if err := os.MkdirAll(filepath.Join(root, def, "tests", "UnitTests"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join("tests", "UnitTests", "Vault.cs")
+	if err := os.WriteFile(filepath.Join(root, def, target), []byte("orig\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, def)
+	if err := os.WriteFile(filepath.Join(root, def, target), []byte("orig\nCHANGED\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// From INSIDE the branch folder (branch-hint territory), all these forms
+	// must show the change:
+	t.Chdir(filepath.Join(root, def))
+	for _, spec := range []string{
+		"tests/UnitTests/Vault.cs",       // canonical tree-relative
+		"./tests/UnitTests/Vault.cs",     // ./-prefixed
+		filepath.Join(root, def, target), // absolute
+	} {
+		out := mustRunOut(t, "diff", "--repo", root, "--", spec)
+		if !strings.Contains(out, "CHANGED") {
+			t.Errorf("spec %q: diff missing change:\n%s", spec, out)
+		}
+	}
+	// Bare form from inside the file's own directory.
+	t.Chdir(filepath.Join(root, def, "tests", "UnitTests"))
+	out := mustRunOut(t, "diff", "--repo", root, "Vault.cs")
+	if !strings.Contains(out, "CHANGED") {
+		t.Errorf("cwd-relative bare spec: diff missing change:\n%s", out)
+	}
+	out = mustRunOut(t, "diff", "--repo", root, "--", "Vault.cs")
+	if !strings.Contains(out, "CHANGED") {
+		t.Errorf("cwd-relative -- spec: diff missing change:\n%s", out)
+	}
+
+	// A bogus explicit `--` pathspec errors loudly instead of printing nothing.
+	if err := run([]string{"diff", "--repo", root, "--", "no/such/file.cs"}); err == nil {
+		t.Errorf("bogus -- pathspec should error, not print an empty diff")
+	}
+}
