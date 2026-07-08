@@ -80,7 +80,8 @@ subcommands:
   reparent <branch> <parent>  set a branch's parent line (fix stacked topology after a git import)
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
-  diff [branch] | diff <a> <b>  show the working change vs its parent, or commit-vs-commit
+  diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
+  diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
   tree                          print the line tree
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch
@@ -834,6 +835,14 @@ func cmdStatus(args []string) error {
 // cmdDiff prints the unified diff for working-vs-tip (default or named branch) or
 // commit-vs-commit. Binary files print a "Binary files differ" line.
 func cmdDiff(args []string) error {
+	// Split off pathspecs after a literal "--" (git-style): everything after it
+	// filters the diff to those files/dirs. `cairn diff -- <file>` diffs one file
+	// of the current line against its sealed parent (#89).
+	var paths []string
+	if i := indexOfDashDash(args); i >= 0 {
+		paths = args[i+1:]
+		args = args[:i]
+	}
 	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	if err := parseArgs(fs, args); err != nil {
@@ -846,22 +855,41 @@ func cmdDiff(args []string) error {
 	defer r.Close()
 	var diffs []change.FileDiff
 	switch fs.NArg() {
-	case 0, 1:
-		branch := fs.Arg(0)
-		if branch == "" {
-			branch, err = r.DefaultBranch()
-			if err != nil {
-				return mapErr(err)
-			}
+	case 0:
+		branch, derr := r.DefaultBranch()
+		if derr != nil {
+			return mapErr(derr)
 		}
 		diffs, err = r.WorkingDiff(branch)
+	case 1:
+		// One positional: a branch if it is expressed, otherwise treat it as a
+		// file path filter on the current/default line — so `cairn diff <path>`
+		// (the natural single-file form) works without the explicit "--" (#89).
+		arg := fs.Arg(0)
+		if r.IsExpressed(arg) {
+			diffs, err = r.WorkingDiff(arg)
+		} else if len(paths) == 0 {
+			paths = []string{arg}
+			branch, derr := r.DefaultBranch()
+			if derr != nil {
+				return mapErr(derr)
+			}
+			diffs, err = r.WorkingDiff(branch)
+		} else {
+			// A base was given alongside explicit `--` paths but is not an
+			// expressed line — surface it clearly rather than silently diffing.
+			return mapErr(fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", arg))
+		}
 	case 2:
 		diffs, err = r.DiffCommits(fs.Arg(0), fs.Arg(1))
 	default:
-		return errors.New("usage: cairn diff [branch] | cairn diff <commitA> <commitB>")
+		return errors.New("usage: cairn diff [branch] [-- <path>...] | cairn diff <commitA> <commitB> [-- <path>...]")
 	}
 	if err != nil {
 		return mapErr(err)
+	}
+	if len(paths) > 0 {
+		diffs = filterDiffsByPaths(diffs, paths)
 	}
 	for _, d := range diffs {
 		if d.Binary {
@@ -875,6 +903,46 @@ func cmdDiff(args []string) error {
 		}
 	}
 	return nil
+}
+
+// indexOfDashDash returns the index of the first standalone "--" in args, or -1.
+func indexOfDashDash(args []string) int {
+	for i, a := range args {
+		if a == "--" {
+			return i
+		}
+	}
+	return -1
+}
+
+// filterDiffsByPaths keeps only diffs whose path matches one of the pathspecs:
+// an exact file match, or a directory prefix (spec is a parent dir of the path).
+// Backslashes are normalised to "/" so Windows-style paths match the tree's
+// forward-slash paths. An empty pathspec set returns diffs unchanged.
+func filterDiffsByPaths(diffs []change.FileDiff, paths []string) []change.FileDiff {
+	if len(paths) == 0 {
+		return diffs
+	}
+	specs := make([]string, 0, len(paths))
+	for _, p := range paths {
+		// Normalise backslashes explicitly (filepath.ToSlash is a no-op for "\"
+		// off Windows) so a Windows-style pathspec matches the tree's "/" paths.
+		p = strings.TrimSuffix(strings.ReplaceAll(p, `\`, "/"), "/")
+		if p != "" {
+			specs = append(specs, p)
+		}
+	}
+	out := diffs[:0:0]
+	for _, d := range diffs {
+		dp := strings.ReplaceAll(d.Path, `\`, "/")
+		for _, spec := range specs {
+			if dp == spec || strings.HasPrefix(dp, spec+"/") {
+				out = append(out, d)
+				break
+			}
+		}
+	}
+	return out
 }
 
 func cmdTree(args []string) error {
