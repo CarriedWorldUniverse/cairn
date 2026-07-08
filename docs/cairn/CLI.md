@@ -443,6 +443,20 @@ List the repo's pull requests (default `--state open`).
 #### `cairn pr view <id>`
 Show one pull request's id, state, branches, title, and linked ledger issue key.
 
+#### `cairn pr diff <id>` — `--repo <dir>` `--remote <name>`
+Print the pull request's unified diff (`target...source`) to stdout — the `gh pr diff`
+equivalent, suitable for piping into a review/judge gate. This is the one `pr` verb that
+is **not** a pure gRPC call: it resolves the PR's branch names via `pr view`, then fetches
+`--remote`'s tracking refs into `--repo` (default `.`; a read-only fetch, no reconcile) and
+diffs **locally** from those tracking refs — so it works even in a clone where neither
+line was ever `express`ed. `--remote` (default `origin`) must be a git remote of `--repo`
+that addresses the **same** repo the gRPC server (`--org`/`--repo-slug`) is addressing —
+cairn does not itself correlate a gRPC org/slug to a git remote URL, so pick the remote
+name deliberately in v1.
+```sh
+cairn pr diff a1b2c3 --repo . --remote origin
+```
+
 #### `cairn pr merge <id>`
 Fast-forward-merge an open pull request and best-effort comment the linked ledger issue.
 A diverged source fails with the server's exact guidance, e.g.:

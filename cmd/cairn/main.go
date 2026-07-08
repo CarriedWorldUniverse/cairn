@@ -97,6 +97,7 @@ subcommands:
   pr open <source> <target> -m <title>  open a pull request against cairn-server (idempotent)
   pr list                       list a repo's pull requests (--state open|merged|all)
   pr view <id>                  show one pull request
+  pr diff <id>                  print the pull request's unified diff (--remote)
   pr merge <id>                 fast-forward-merge an open pull request
   blame <path> [branch]         show per-line author/date/commit
   log [branch] [-n N]           show commit history
@@ -1319,6 +1320,7 @@ verbs:
                                        source/target returns the existing PR)
   list                                 list a repo's PRs (--state open|merged|all)
   view <id>                            show one PR
+  diff <id>                            print the PR's unified diff (--remote, default origin)
   merge <id>                           fast-forward-merge an open PR
 
 connection flags (every verb):
@@ -1336,14 +1338,21 @@ connection flags (every verb):
                         own CAIRN_DEV_INSECURE=1)
 
 'pr open' additionally needs --project <key> (the ledger project the tracking
-issue is filed under); --description and --dod are optional.`
+issue is filed under); --description and --dod are optional.
+
+'pr diff' additionally accepts --repo (default .) and --remote (default origin):
+it resolves the PR's source/target branch names via 'pr view', fetches --remote's
+tracking refs (no reconcile — works even if neither line was ever expressed
+locally), and prints the unified diff target...source, like 'gh pr diff'. --remote
+must be a git remote of --repo that addresses the SAME repo the gRPC server
+(--org/--repo-slug) is addressing — cairn does not itself correlate the two.`
 
 // cmdPR dispatches the `pr` verbs. With no verb it prints usage and errors
 // (mirrors `cairn bisect`/`cairn stash`'s no-subcommand behaviour).
 func cmdPR(args []string) error {
 	if len(args) == 0 {
 		fmt.Println(prUsage)
-		return errors.New("usage: cairn pr open|list|view|merge")
+		return errors.New("usage: cairn pr open|list|view|diff|merge")
 	}
 	verb, rest := args[0], args[1:]
 	switch verb {
@@ -1353,6 +1362,8 @@ func cmdPR(args []string) error {
 		return cmdPRList(rest)
 	case "view":
 		return cmdPRView(rest)
+	case "diff":
+		return cmdPRDiff(rest)
 	case "merge":
 		return cmdPRMerge(rest)
 	case "help", "-h", "--help":
@@ -1495,6 +1506,62 @@ func cmdPRView(args []string) error {
 	fmt.Printf("ledger:   %s\n", pull.GetLedgerIssueKey())
 	if pull.GetUrl() != "" {
 		fmt.Printf("url:      %s\n", pull.GetUrl())
+	}
+	return nil
+}
+
+// cmdPRDiff prints a PR's unified diff (target...source), the `gh pr diff`
+// equivalent: it resolves the PR's branch names server-side (`pr view`), then
+// diffs LOCALLY from --remote's tracking refs (fetched read-only, no
+// reconcile) — so it works in a clone that has never expressed either line,
+// and never needs the gRPC server to compute or store a diff.
+func cmdPRDiff(args []string) error {
+	fs := flag.NewFlagSet("pr diff", flag.ContinueOnError)
+	conn := prConnFlags(fs)
+	repoDir, author := repoFlags(fs)
+	remote := fs.String("remote", "origin", "git remote to diff tracking refs from (must address the same repo as --org/--repo-slug)")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn pr diff <id>")
+	}
+	cli, ctx, err := conn.dial(context.Background(), "repo:read")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	pull, err := cli.View(ctx, *conn.org, *conn.slug, fs.Arg(0))
+	if err != nil {
+		return mapPRErr(err)
+	}
+
+	r, err := openRepo(*repoDir, *author)
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	if err := r.Fetch(*remote); err != nil {
+		return mapRemoteErr(err)
+	}
+
+	targetRef := "refs/remotes/" + *remote + "/" + pull.GetTarget()
+	sourceRef := "refs/remotes/" + *remote + "/" + pull.GetSource()
+	diffs, err := r.DiffCommits(targetRef, sourceRef)
+	if err != nil {
+		return mapErr(fmt.Errorf("pr diff: resolving %s...%s on remote %q (branches %s -> %s): %w",
+			pull.GetTarget(), pull.GetSource(), *remote, pull.GetSource(), pull.GetTarget(), err))
+	}
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
 	}
 	return nil
 }
