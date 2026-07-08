@@ -34,8 +34,12 @@ type PullSummary struct {
 // (refs/remotes/<remote>/*) plus all tags, WITHOUT touching refs/heads. This is
 // the read-only half of a pull: local lines (which live in the SQLite catalogue
 // and in refs/heads) are never clobbered, so they may hold uncommitted work that
-// reconcile then merges against the fetched remote tips.
-func (e *Engine) fetchTracking(remoteName string) error {
+// reconcile then merges against the fetched remote tips. prune additionally
+// removes tracking refs whose remote-side branch is gone (go-git's Prune),
+// so a deleted remote branch stops resolving to a stale local tracking ref —
+// see fetchTrackingPruned, used by `pr diff` only; plain PullFromRemote/Fetch
+// keep prune off so their well-established non-pruning behavior is unchanged.
+func (e *Engine) fetchTracking(remoteName string, prune bool) error {
 	rem, err := e.git.Remote(remoteName)
 	if errors.Is(err, git.ErrRemoteNotFound) {
 		return fmt.Errorf("change.fetchTracking: no remote %q", remoteName)
@@ -52,8 +56,9 @@ func (e *Engine) fetchTracking(remoteName string) error {
 			config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
 			"+refs/cairn/*:refs/cairn/*",
 		},
-		Tags: git.AllTags,
-		Auth: auth,
+		Tags:  git.AllTags,
+		Auth:  auth,
+		Prune: prune,
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchTracking: %w", err)
@@ -64,9 +69,18 @@ func (e *Engine) fetchTracking(remoteName string) error {
 // FetchTracking fetches remoteName's heads into tracking refs without touching
 // local lines — the read-only "fetch" verb. It is a thin exported wrapper over
 // fetchTracking so the worktree layer can offer `cairn fetch` without exposing
-// the reconcile half of a pull.
+// the reconcile half of a pull. Does NOT prune (unchanged behavior).
 func (e *Engine) FetchTracking(remoteName string) error {
-	return e.fetchTracking(remoteName)
+	return e.fetchTracking(remoteName, false)
+}
+
+// FetchTrackingPruned is FetchTracking with go-git's Prune on: a tracking ref
+// whose remote-side branch was deleted is removed rather than left stale, so
+// a subsequent revision lookup against it fails clearly instead of silently
+// resolving to the last-known (now-orphaned) tip. Used by `pr diff`, where a
+// stale tracking ref would otherwise diff against deleted content silently.
+func (e *Engine) FetchTrackingPruned(remoteName string) error {
+	return e.fetchTracking(remoteName, true)
 }
 
 // remoteHeads returns short-name → commit-sha for every hash reference under
@@ -106,7 +120,7 @@ func (e *Engine) remoteHeads(remoteName string) (map[string]string, error) {
 // recorded as data on the line's active change). The per-line catalogue writes
 // are transactional.
 func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
-	if err := e.fetchTracking(remoteName); err != nil {
+	if err := e.fetchTracking(remoteName, false); err != nil {
 		return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
 	}
 	rheads, err := e.remoteHeads(remoteName)

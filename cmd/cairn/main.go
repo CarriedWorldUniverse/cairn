@@ -1341,11 +1341,14 @@ connection flags (every verb):
 issue is filed under); --description and --dod are optional.
 
 'pr diff' additionally accepts --repo (default .) and --remote (default origin):
-it resolves the PR's source/target branch names via 'pr view', fetches --remote's
-tracking refs (no reconcile — works even if neither line was ever expressed
-locally), and prints the unified diff target...source, like 'gh pr diff'. --remote
-must be a git remote of --repo that addresses the SAME repo the gRPC server
-(--org/--repo-slug) is addressing — cairn does not itself correlate the two.`
+it resolves the PR's source/target branch names via 'pr view', prune-fetches
+--remote's tracking refs (no reconcile — works even if neither line was ever
+expressed locally), and prints the unified diff MERGE-BASE(target,source)..source
+— target...source semantics, like 'gh pr diff': only what source introduced
+since it forked, never a spurious revert of target commits source never saw.
+Unrelated histories (no common ancestor) error clearly. --remote must be a git
+remote of --repo that addresses the SAME repo the gRPC server (--org/--repo-slug)
+is addressing — cairn does not itself correlate the two.`
 
 // cmdPR dispatches the `pr` verbs. With no verb it prints usage and errors
 // (mirrors `cairn bisect`/`cairn stash`'s no-subcommand behaviour).
@@ -1541,13 +1544,25 @@ func cmdPRDiff(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	if err := r.Fetch(*remote); err != nil {
+	// Pruned fetch: a tracking ref for a branch since deleted on the remote must
+	// NOT be left stale (a plain fetch never removes tracking refs) — a deleted
+	// PR branch should fail clearly here, not silently diff against its last-
+	// known tip.
+	if err := r.FetchPruned(*remote); err != nil {
 		return mapRemoteErr(err)
 	}
 
 	targetRef := "refs/remotes/" + *remote + "/" + pull.GetTarget()
 	sourceRef := "refs/remotes/" + *remote + "/" + pull.GetSource()
-	diffs, err := r.DiffCommits(targetRef, sourceRef)
+	// target...source (three-dot / merge-base) semantics, like `gh pr diff`:
+	// diffs ONLY what source introduced since it forked from target, so target
+	// advancing with commits source never saw never shows up as a spurious
+	// revert — a literal tip-to-tip diff (DiffCommits) would get that wrong.
+	diffs, err := r.DiffMergeBase(targetRef, sourceRef)
+	if errors.Is(err, change.ErrNoCommonAncestor) {
+		return fmt.Errorf("pr diff: %s and %s (remote %q) share no common history — nothing to diff",
+			pull.GetTarget(), pull.GetSource(), *remote)
+	}
 	if err != nil {
 		return mapErr(fmt.Errorf("pr diff: resolving %s...%s on remote %q (branches %s -> %s): %w",
 			pull.GetTarget(), pull.GetSource(), *remote, pull.GetSource(), pull.GetTarget(), err))

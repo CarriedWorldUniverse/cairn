@@ -165,6 +165,230 @@ func makeBareRepoWithBranches(t *testing.T, baseBranch, tipBranch string, baseCo
 	return bare
 }
 
+// makeBareRepoWithDivergedTarget builds a bare repo where targetBranch
+// advances with an UNRELATED commit AFTER sourceBranch forks from it — the
+// shape that exposes the difference between a tip-to-tip diff and a
+// merge-base (target...source) diff: target's post-fork commit must never
+// appear in a target...source diff, but WOULD appear (as a spurious deletion
+// hunk) in a naive tip-to-tip diff, since source's tree simply lacks whatever
+// file target gained after the fork.
+func makeBareRepoWithDivergedTarget(t *testing.T, targetBranch, sourceBranch string) string {
+	t.Helper()
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	work := t.TempDir()
+	wrepo, err := git.PlainInit(work, false)
+	if err != nil {
+		t.Fatalf("PlainInit work: %v", err)
+	}
+	wt, err := wrepo.Worktree()
+	if err != nil {
+		t.Fatalf("Worktree: %v", err)
+	}
+	sig := &object.Signature{Name: "o", Email: "o@x", When: time.Unix(0, 0).UTC()}
+
+	if err := wrepo.Storer.SetReference(plumbing.NewSymbolicReference(plumbing.HEAD, plumbing.NewBranchReferenceName(targetBranch))); err != nil {
+		t.Fatalf("point HEAD at %s: %v", targetBranch, err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "shared.txt"), []byte("one\ntwo\nthree\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add("shared.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("base", &git.CommitOptions{Author: sig}); err != nil {
+		t.Fatalf("commit base: %v", err)
+	}
+	head, err := wrepo.Head()
+	if err != nil {
+		t.Fatalf("Head: %v", err)
+	}
+	baseHash := head.Hash()
+
+	// sourceBranch forks from base and adds its OWN change.
+	if err := wrepo.Storer.SetReference(plumbing.NewHashReference(plumbing.NewBranchReferenceName(sourceBranch), baseHash)); err != nil {
+		t.Fatalf("set %s ref: %v", sourceBranch, err)
+	}
+	if err := wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName(sourceBranch)}); err != nil {
+		t.Fatalf("checkout %s: %v", sourceBranch, err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "shared.txt"), []byte("one\ntwo\nFEATURE_CHANGE\nthree\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add("shared.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("source work", &git.CommitOptions{Author: sig}); err != nil {
+		t.Fatalf("commit source: %v", err)
+	}
+
+	// targetBranch advances AFTER the fork with a commit source never saw.
+	if err := wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName(targetBranch)}); err != nil {
+		t.Fatalf("checkout %s: %v", targetBranch, err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "target-only.txt"), []byte("MAIN_ONLY_CONTENT\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Add("target-only.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wt.Commit("target advances", &git.CommitOptions{Author: sig}); err != nil {
+		t.Fatalf("commit target advance: %v", err)
+	}
+
+	if _, err := wrepo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{bare}}); err != nil {
+		t.Fatalf("CreateRemote: %v", err)
+	}
+	if err := wrepo.Push(&git.PushOptions{RemoteName: "origin", RefSpecs: []config.RefSpec{
+		config.RefSpec("refs/heads/*:refs/heads/*"),
+	}}); err != nil {
+		t.Fatalf("push seed: %v", err)
+	}
+	return bare
+}
+
+// TestE2E_PRDiff_MergeBaseExcludesTargetOnlyChanges asserts `pr diff` uses
+// target...source (merge-base) semantics: when target advances with a commit
+// source never saw (AFTER source forked from it), that unrelated change must
+// NOT appear in the diff.
+//
+// Checked against the OLD tip-to-tip behavior: with cmdPRDiff calling
+// DiffCommits(targetRef, sourceRef) instead of DiffMergeBase, this test
+// FAILS — "target-only.txt"/"MAIN_ONLY_CONTENT" leaks into the output as a
+// spurious deletion hunk, because a literal tree diff of target's tip against
+// source's tip sees target-only.txt as present in target and absent in
+// source, with no way to know it was never source's to begin with.
+func TestE2E_PRDiff_MergeBaseExcludesTargetOnlyChanges(t *testing.T) {
+	skipOnWindows(t)
+	bare := makeBareRepoWithDivergedTarget(t, "main", "feature")
+	addr := startPRDiffServer(t, "org-1", "widgets", "main", "feature")
+
+	dir := filepath.Join(t.TempDir(), "work")
+	mustRun(t, "clone", bare, dir)
+	mustRun(t, "remote", "add", "--repo", dir, "origin", bare)
+	mustRun(t, "fetch", "--repo", dir, "origin")
+
+	opened := mustRunOut(t, "pr", "open", "feature", "main", "-m", "Add feature", "--project", "WID",
+		"--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1")
+	id := firstField(t, opened)
+
+	out := mustRunOut(t, "pr", "diff", id,
+		"--repo", dir, "--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1")
+
+	if !strings.Contains(out, "FEATURE_CHANGE") {
+		t.Fatalf("pr diff missing source's own change; got:\n%s", out)
+	}
+	if strings.Contains(out, "MAIN_ONLY_CONTENT") || strings.Contains(out, "target-only.txt") {
+		t.Fatalf("pr diff leaked target's post-fork-only change as a spurious hunk (tip-to-tip, not merge-base); got:\n%s", out)
+	}
+}
+
+// TestE2E_PRDiff_NoCommonAncestor asserts a clear error (not a crash or an
+// empty/nonsensical diff) when target and source share no history.
+func TestE2E_PRDiff_NoCommonAncestor(t *testing.T) {
+	skipOnWindows(t)
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	sig := &object.Signature{Name: "o", Email: "o@x", When: time.Unix(0, 0).UTC()}
+
+	pushOrphanBranch := func(branch, content string) {
+		work := t.TempDir()
+		wrepo, err := git.PlainInit(work, false)
+		if err != nil {
+			t.Fatalf("PlainInit work: %v", err)
+		}
+		wt, err := wrepo.Worktree()
+		if err != nil {
+			t.Fatalf("Worktree: %v", err)
+		}
+		if err := wrepo.Storer.SetReference(plumbing.NewSymbolicReference(plumbing.HEAD, plumbing.NewBranchReferenceName(branch))); err != nil {
+			t.Fatalf("point HEAD at %s: %v", branch, err)
+		}
+		if err := os.WriteFile(filepath.Join(work, "f.txt"), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := wt.Add("f.txt"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := wt.Commit(branch, &git.CommitOptions{Author: sig}); err != nil {
+			t.Fatalf("commit %s: %v", branch, err)
+		}
+		if _, err := wrepo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{bare}}); err != nil {
+			t.Fatalf("CreateRemote: %v", err)
+		}
+		if err := wrepo.Push(&git.PushOptions{RemoteName: "origin", RefSpecs: []config.RefSpec{
+			config.RefSpec("refs/heads/*:refs/heads/*"),
+		}}); err != nil {
+			t.Fatalf("push %s: %v", branch, err)
+		}
+	}
+	// Two independent, unrelated commit histories on separate branches — no
+	// shared ancestor.
+	pushOrphanBranch("main", "main root\n")
+	pushOrphanBranch("orphan", "orphan root\n")
+
+	addr := startPRDiffServer(t, "org-1", "widgets", "main", "orphan")
+
+	dir := filepath.Join(t.TempDir(), "work")
+	mustRun(t, "clone", bare, dir)
+	mustRun(t, "remote", "add", "--repo", dir, "origin", bare)
+	mustRun(t, "fetch", "--repo", dir, "origin")
+
+	opened := mustRunOut(t, "pr", "open", "orphan", "main", "-m", "Add orphan", "--project", "WID",
+		"--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1")
+	id := firstField(t, opened)
+
+	err := run([]string{"pr", "diff", id,
+		"--repo", dir, "--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1"})
+	if err == nil {
+		t.Fatal("pr diff of branches with no common ancestor: want error, got nil")
+	}
+	if !strings.Contains(err.Error(), "no common history") {
+		t.Fatalf("pr diff no-common-ancestor error = %q, want it to mention \"no common history\"", err.Error())
+	}
+}
+
+// TestE2E_PRDiff_DeletedSourceBranch asserts a clear error (not a silent,
+// stale diff) when the PR's source branch has been deleted on the remote
+// since it was last fetched — the pruned fetch in cmdPRDiff must drop the
+// now-orphaned tracking ref rather than leave it resolving to its last-known
+// tip.
+func TestE2E_PRDiff_DeletedSourceBranch(t *testing.T) {
+	skipOnWindows(t)
+	bare := makeBareRepoWithBranches(t, "main", "feature", "x\n", "y\n")
+	addr := startPRDiffServer(t, "org-1", "widgets", "main", "feature")
+
+	dir := filepath.Join(t.TempDir(), "work")
+	mustRun(t, "clone", bare, dir)
+	mustRun(t, "remote", "add", "--repo", dir, "origin", bare)
+	mustRun(t, "fetch", "--repo", dir, "origin") // populates a tracking ref for feature
+
+	opened := mustRunOut(t, "pr", "open", "feature", "main", "-m", "Add X", "--project", "WID",
+		"--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1")
+	id := firstField(t, opened)
+
+	bareRepo, err := git.PlainOpen(bare)
+	if err != nil {
+		t.Fatalf("PlainOpen bare: %v", err)
+	}
+	if err := bareRepo.Storer.RemoveReference(plumbing.NewBranchReferenceName("feature")); err != nil {
+		t.Fatalf("delete feature on remote: %v", err)
+	}
+
+	err = run([]string{"pr", "diff", id,
+		"--repo", dir, "--org", "org-1", "--repo-slug", "widgets", "--server", addr, "--insecure", "--subject", "agent-1"})
+	if err == nil {
+		t.Fatal("pr diff after remote branch deletion: want error, got nil")
+	}
+	if !strings.Contains(strings.ToLower(err.Error()), "not found") {
+		t.Fatalf("pr diff deleted-branch error = %q, want it to mention \"not found\"", err.Error())
+	}
+}
+
 // TestE2E_PRDiff_MatchesDirectDiff asserts `cairn pr diff` output contains the
 // same hunk content as diffing the two tracking refs directly.
 func TestE2E_PRDiff_MatchesDirectDiff(t *testing.T) {
