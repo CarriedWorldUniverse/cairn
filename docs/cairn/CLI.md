@@ -397,18 +397,23 @@ cairn remote add origin https://github.com/me/proj.git
 cairn remote add team git@host:team/proj.git --cairn
 ```
 
-#### `cairn push [remote] [branch]` — `--force` `--all`
+#### `cairn push [remote] [branch]` — `--force` `--all` `--reconcile`
 Publish to `origin` (default). By default push publishes **only the line you're standing in**
 (like git pushes the current branch) — so a push from inside a feature folder never touches
 `main`. Pass an explicit `branch`, or `--all` to publish every line:
 ```sh
-cd feat && cairn push        # publishes just 'feat'
-cairn push origin feat       # explicit single line
-cairn push --all             # every line + tags
+cd feat && cairn push            # publishes just 'feat'
+cairn push origin feat           # explicit single line
+cairn push --all                 # every line + tags
+cairn push --reconcile           # single-line: pull+retry just this line on divergence
 ```
 Only **sealed** commits are published — the auto-snapshot working state is local, like git's
 working tree, and never pushed. `--force` overwrites a diverged remote branch; the all-lines
-push auto-pulls + retries once on divergence (single-line surfaces the clear error instead).
+push auto-pulls + retries once on divergence. A single-line push does NOT auto-reconcile — a
+diverged remote branch surfaces a guided error naming the branch and the remedies: `cairn push
+--reconcile` (pull + retry just this line), `cairn pull` (reconciles ALL lines) then push, or
+`cairn push --force` to overwrite. `--reconcile` is single-line only — it is rejected together
+with `--all` or `--force`.
 
 #### `cairn fetch [remote]`
 Fetch a remote into tracking refs (default `origin`) without reconciling.

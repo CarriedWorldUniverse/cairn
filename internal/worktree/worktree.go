@@ -917,8 +917,10 @@ func (r *Repo) Push(remote string, force bool) error {
 // PushBranch publishes a SINGLE line (plus tags) to remote — for feeding one
 // feature line to a remote to open a PR, without touching other lines (notably
 // the remote-tracked main). Unlike Push it does not auto-pull-retry on
-// divergence; a diverged remote branch surfaces the clear "diverged" error so
-// the operator pulls deliberately.
+// divergence; a diverged remote branch surfaces a guided error naming the
+// branch and the remedies (`cairn push --reconcile`, `cairn pull`, or
+// `cairn push --force`) so the operator can choose deliberately, rather than
+// Push's blanket all-lines auto-reconcile.
 func (r *Repo) PushBranch(remote, branch string, force bool) error {
 	// Serialize with the cross-process working-copy lock (#84): this is the
 	// single-line push the issue's repro exercises (`cairn push origin <branch>`).
@@ -933,7 +935,76 @@ func (r *Repo) PushBranch(remote, branch string, force bool) error {
 	if _, err := r.eng.LineByName(branch); err != nil {
 		return fmt.Errorf("worktree.PushBranch: %w", err)
 	}
-	return r.eng.PushToRemoteBranch(remote, branch, force)
+	err = r.eng.PushToRemoteBranch(remote, branch, force)
+	if err != nil && !force && change.IsNonFastForward(err) {
+		// Wrap (not replace) the engine's diverged error: %w keeps its
+		// 'cairn undo' hint sentence as the single source of truth for that
+		// remedy, while this layer adds the branch-scoped push remedies the
+		// engine (which serves other callers too) doesn't know about.
+		return fmt.Errorf(
+			"worktree.PushBranch: remote branch %q has advanced; run 'cairn push --reconcile' to pull+retry just this line, 'cairn pull' (reconciles ALL lines) then push, or 'cairn push --force' to overwrite: %w",
+			branch, err)
+	}
+	return err
+}
+
+// PushBranchReconcile is the opt-in single-line counterpart to Push's
+// auto-reconcile (`cairn push --reconcile`): on a non-fast-forward rejection
+// it pulls + retries once, exactly like Push, but scoped to ONLY the named
+// branch — no other line's tracking refs or catalogue state are touched. If
+// the reconcile merge produces conflicts, it stops with a clear "resolve,
+// then push" error naming the branch rather than retrying. Never forces.
+func (r *Repo) PushBranchReconcile(remote, branch string) error {
+	// Serialize with the cross-process working-copy lock (#84), matching Push
+	// and PushBranch. Reentrant, so pullBranch below (called while held) is safe.
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if _, err := r.eng.LineByName(branch); err != nil {
+		return fmt.Errorf("worktree.PushBranchReconcile: %w", err)
+	}
+	err = r.eng.PushToRemoteBranch(remote, branch, false)
+	if err == nil || !change.IsNonFastForward(err) {
+		return err
+	}
+	// remote diverged → reconcile just this line + retry once
+	sum, perr := r.pullBranch(remote, branch)
+	if perr != nil {
+		return fmt.Errorf("worktree.PushBranchReconcile: %w", perr)
+	}
+	for _, lr := range sum.Lines {
+		if lr.Conflicts > 0 {
+			return fmt.Errorf("worktree.PushBranchReconcile: branch %q: %w", branch, ErrPushConflict)
+		}
+	}
+	return r.eng.PushToRemoteBranch(remote, branch, false)
+}
+
+// pullBranch fetches remote and reconciles ONLY branch (fast-forward or 3-way
+// merge, conflicts-as-data), then — if branch is expressed — re-materializes
+// just that one folder so disk reflects the result. Every other line's
+// catalogue state and expressed folder is left untouched, unlike Pull. Callers
+// must already hold the working-copy lock (it does not acquire one itself).
+func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
+	sum, err := r.eng.PullFromRemoteBranch(remote, branch)
+	if err != nil {
+		return sum, fmt.Errorf("worktree.pullBranch: %w", err)
+	}
+	if entry, ok := r.st.Expressed[branch]; ok {
+		line, lerr := r.eng.LineByName(branch)
+		if lerr == nil && line.TipCommit != "" {
+			dir := filepath.Join(r.root, entry.Path)
+			if merr := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); merr != nil {
+				return sum, fmt.Errorf("worktree.pullBranch: %w", merr)
+			}
+		}
+	}
+	if err := SaveState(r.stPath, r.st); err != nil {
+		return sum, fmt.Errorf("worktree.pullBranch: %w", err)
+	}
+	return sum, nil
 }
 
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
