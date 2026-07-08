@@ -20,7 +20,7 @@ under [`docs/cairn/`](.); for installation see the [README](../../README.md#inst
   - [Setup](#setup) · [Lines (branches)](#lines-branches) · [Saving work](#saving-work)
   - [Inspecting](#inspecting) · [Conflicts](#conflicts) · [Undo & history](#undo--history)
   - [History editing](#history-editing) · [Stash](#stash) · [Bisect](#bisect)
-  - [Remotes & collaboration](#remotes--collaboration) · [Privacy](#privacy-withholding-from-pushes) · [Versioning & release](#versioning--release)
+  - [Remotes & collaboration](#remotes--collaboration) · [Pull requests](#pull-requests) · [Privacy](#privacy-withholding-from-pushes) · [Versioning & release](#versioning--release)
 - [Exit codes](#exit-codes)
 - [Coming from git](#coming-from-git)
 
@@ -415,6 +415,54 @@ Fetch a remote into tracking refs (default `origin`) without reconciling.
 
 #### `cairn pull [remote]`
 Fetch and reconcile each line (default `origin`).
+
+### Pull requests
+
+`cairn pr` talks to cairn-**server**'s gRPC `PullService` directly — a separate transport
+from `push`/`fetch`/`pull` above (which speak git/cairn-native protocols to a remote).
+Opening a PR files a linked tracking issue in the ledger on your behalf; merging is
+**fast-forward only** (cairn never generates a merge commit) — a diverged source is
+rejected with guidance to rebase first, same as a protected-branch push rejection.
+
+#### `cairn pr open <source> <target> -m <title> --project <key>`
+Open a pull request from `source` into `target`. **Idempotent**: reopening the same
+`(repo, source, target)` returns the existing open PR unchanged instead of filing a
+duplicate ledger issue. `--description` and `--dod` (definition of done) are optional.
+```sh
+cairn pr open feature main -m "Add X" --project WID
+```
+
+#### `cairn pr list` — `--state open|merged|all`
+List the repo's pull requests (default `--state open`).
+
+#### `cairn pr view <id>`
+Show one pull request's id, state, branches, title, and linked ledger issue key.
+
+#### `cairn pr merge <id>`
+Fast-forward-merge an open pull request and best-effort comment the linked ledger issue.
+A diverged source fails with the server's exact guidance, e.g.:
+```
+not fast-forwardable; rebase feature onto main
+```
+
+#### Connection & identity (every `pr` verb)
+
+| Flag | Env | Default | Meaning |
+|------|-----|---------|---------|
+| `--org` | `CAIRN_ORG` | `pr.org` global config | Org the repo belongs to (**required**) |
+| `--repo-slug` | `CAIRN_REPO_SLUG` | `pr.repo-slug` global config | Repo slug (**required**) |
+| `--server` | `CAIRN_GRPC_ADDR` | `127.0.0.1:8102` | cairn-server's gRPC address |
+| `--subject` | `CAIRN_SUBJECT` | configured `user.email` | Caller identity, forwarded as `cwb-subject` |
+| `--tls-cert` / `--tls-key` / `--tls-ca` | `CAIRN_TLS_CERT` / `CAIRN_TLS_KEY` / `CAIRN_TLS_CA` | — | mTLS client cert/key + the `cwb-ca` — same trio cairn-server itself uses to dial ledger/herald |
+| `--insecure` | `CAIRN_DEV_INSECURE=1` | off | Skip mTLS (local dev only; cairn-server must also opt in with its own `CAIRN_DEV_INSECURE=1`) |
+
+The channel is **mTLS by default**: `pr` dials cairn-server's gRPC API directly and
+carries your identity as `cwb-*` gRPC metadata (the same mechanism the gateway injects
+for in-cluster callers) — set `--org`/`--subject` (or their config/env defaults) so the
+server can authorize the call; a request missing identity is rejected with
+`Unauthenticated`, and one for the wrong org/without the required scope with
+`PermissionDenied`. Set `--org`/`--repo-slug` once with `cairn config --global pr.org
+<org>` and `cairn config --global pr.repo-slug <slug>` to avoid repeating them.
 
 ### Privacy (withholding from pushes)
 

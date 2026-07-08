@@ -13,6 +13,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -30,11 +31,14 @@ import (
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/credstore"
+	"github.com/CarriedWorldUniverse/cairn/internal/prclient"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
+	cairnv1 "github.com/CarriedWorldUniverse/cwb-proto/gen/go/cwb/cairn/v1"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+	"google.golang.org/grpc/status"
 )
 
 // buildVersion is the release version of this binary, injected at link time by
@@ -90,6 +94,10 @@ subcommands:
   push [remote] [branch]        publish all lines + tags, or just <branch> (default origin, --force)
   fetch [remote]                fetch a remote into tracking refs (default origin)
   pull [remote]                 fetch + reconcile each line (default origin)
+  pr open <source> <target> -m <title>  open a pull request against cairn-server (idempotent)
+  pr list                       list a repo's pull requests (--state open|merged|all)
+  pr view <id>                  show one pull request
+  pr merge <id>                 fast-forward-merge an open pull request
   blame <path> [branch]         show per-line author/date/commit
   log [branch] [-n N]           show commit history
   show <commit>                 show a commit's metadata + diff
@@ -125,7 +133,7 @@ subcommands:
   bisect reset                  end the bisect; restore the working folder
   bisect run [--repo d] -- <cmd>   automate: 0=good, 125=skip, else=bad
 
-config keys: user.name, user.email, autosync
+config keys: user.name, user.email, autosync, pr.org, pr.repo-slug
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
 // run dispatches a subcommand. args is os.Args[1:].
@@ -187,6 +195,8 @@ func run(args []string) error {
 		return cmdFetch(rest)
 	case "pull":
 		return cmdPull(rest)
+	case "pr":
+		return cmdPR(rest)
 	case "config":
 		return cmdConfig(rest)
 	case "setup":
@@ -1271,6 +1281,235 @@ func cmdPull(args []string) error {
 		return errConflicts
 	}
 	return nil
+}
+
+const prUsage = `cairn pr — pull requests against a cairn-server repo
+
+usage: cairn pr <verb> [flags] [args]
+
+verbs:
+  open <source> <target> -m <title>   open a PR (idempotent: reopening the same
+                                       source/target returns the existing PR)
+  list                                 list a repo's PRs (--state open|merged|all)
+  view <id>                            show one PR
+  merge <id>                           fast-forward-merge an open PR
+
+connection flags (every verb):
+  --org <org>          the org the repo belongs to (default $CAIRN_ORG, else
+                        the 'pr.org' global config key)
+  --repo-slug <slug>   the repo's slug (default $CAIRN_REPO_SLUG, else the
+                        'pr.repo-slug' global config key)
+  --server <addr>       cairn-server's gRPC address (default $CAIRN_GRPC_ADDR,
+                        else 127.0.0.1:8102)
+  --subject <id>        caller identity forwarded as cwb-subject (default
+                        $CAIRN_SUBJECT, else the configured user.email)
+  --tls-cert/--tls-key/--tls-ca <path>  mTLS client cert/key/CA (default
+                        $CAIRN_TLS_CERT/_KEY/_CA)
+  --insecure             skip mTLS (local dev only; requires cairn-server's
+                        own CAIRN_DEV_INSECURE=1)
+
+'pr open' additionally needs --project <key> (the ledger project the tracking
+issue is filed under); --description and --dod are optional.`
+
+// cmdPR dispatches the `pr` verbs. With no verb it prints usage and errors
+// (mirrors `cairn bisect`/`cairn stash`'s no-subcommand behaviour).
+func cmdPR(args []string) error {
+	if len(args) == 0 {
+		fmt.Println(prUsage)
+		return errors.New("usage: cairn pr open|list|view|merge")
+	}
+	verb, rest := args[0], args[1:]
+	switch verb {
+	case "open":
+		return cmdPROpen(rest)
+	case "list":
+		return cmdPRList(rest)
+	case "view":
+		return cmdPRView(rest)
+	case "merge":
+		return cmdPRMerge(rest)
+	case "help", "-h", "--help":
+		fmt.Println(prUsage)
+		return nil
+	default:
+		fmt.Println(prUsage)
+		return fmt.Errorf("unknown pr verb %q", verb)
+	}
+}
+
+// prConn is the connection + identity config shared by every `pr` verb,
+// bound to a flag.FlagSet by prConnFlags.
+type prConn struct {
+	org, slug, server, subject, tlsCert, tlsKey, tlsCA *string
+	insecure                                           *bool
+}
+
+// prConnFlags registers the connection/identity flags common to every `pr`
+// verb, defaulting from environment then global config (see prUsage).
+func prConnFlags(fs *flag.FlagSet) *prConn {
+	return &prConn{
+		org:      fs.String("org", firstNonEmptyStr(os.Getenv("CAIRN_ORG"), userconfig.Get("pr.org")), "org the repo belongs to"),
+		slug:     fs.String("repo-slug", firstNonEmptyStr(os.Getenv("CAIRN_REPO_SLUG"), userconfig.Get("pr.repo-slug")), "repo slug"),
+		server:   fs.String("server", firstNonEmptyStr(os.Getenv("CAIRN_GRPC_ADDR"), "127.0.0.1:8102"), "cairn-server gRPC address"),
+		subject:  fs.String("subject", firstNonEmptyStr(os.Getenv("CAIRN_SUBJECT"), userconfig.Get("user.email")), "caller identity (cwb-subject)"),
+		tlsCert:  fs.String("tls-cert", os.Getenv("CAIRN_TLS_CERT"), "mTLS client certificate (PEM)"),
+		tlsKey:   fs.String("tls-key", os.Getenv("CAIRN_TLS_KEY"), "mTLS client key (PEM)"),
+		tlsCA:    fs.String("tls-ca", os.Getenv("CAIRN_TLS_CA"), "mTLS CA certificate (PEM)"),
+		insecure: fs.Bool("insecure", os.Getenv("CAIRN_DEV_INSECURE") == "1", "skip mTLS (local dev only)"),
+	}
+}
+
+// dial validates the required org/slug are set and opens a prclient.Client +
+// an identity-bearing context for the call.
+func (c *prConn) dial(ctx context.Context, scopes ...string) (*prclient.Client, context.Context, error) {
+	if *c.org == "" {
+		return nil, nil, errors.New("pr: --org required (or $CAIRN_ORG / 'cairn config --global pr.org <org>')")
+	}
+	if *c.slug == "" {
+		return nil, nil, errors.New("pr: --repo-slug required (or $CAIRN_REPO_SLUG / 'cairn config --global pr.repo-slug <slug>')")
+	}
+	if *c.subject == "" {
+		return nil, nil, errors.New("pr: --subject required (or $CAIRN_SUBJECT, or run 'cairn setup' to set user.email)")
+	}
+	cli, err := prclient.NewClient(*c.server, *c.tlsCert, *c.tlsKey, *c.tlsCA, *c.insecure)
+	if err != nil {
+		return nil, nil, fmt.Errorf("pr: %w", err)
+	}
+	idCtx := prclient.WithIdentity(ctx, prclient.Identity{Subject: *c.subject, Org: *c.org, Scopes: scopes})
+	return cli, idCtx, nil
+}
+
+// printPull prints a pull in the one-line list/view format.
+func printPull(p *cairnv1.Pull) {
+	fmt.Printf("%s\t%s\t%s -> %s\t%s\t%s\n", p.GetId(), p.GetState(), p.GetSource(), p.GetTarget(), p.GetTitle(), p.GetLedgerIssueKey())
+}
+
+// cmdPROpen opens a pull request. Reopening the same (repo, source, target)
+// returns the existing PR unchanged (server-side idempotency).
+func cmdPROpen(args []string) error {
+	fs := flag.NewFlagSet("pr open", flag.ContinueOnError)
+	conn := prConnFlags(fs)
+	project := fs.String("project", "", "ledger project the tracking issue is filed under")
+	title := fs.String("m", "", "PR title")
+	description := fs.String("description", "", "PR description")
+	dod := fs.String("dod", "", "definition of done")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 2 {
+		return errors.New("usage: cairn pr open <source> <target> -m <title> --project <key>")
+	}
+	source, target := fs.Arg(0), fs.Arg(1)
+	if *title == "" {
+		return errors.New("pr open: -m <title> required")
+	}
+	if *project == "" {
+		return errors.New("pr open: --project required")
+	}
+	cli, ctx, err := conn.dial(context.Background(), "repo:write")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	pull, err := cli.Open(ctx, *conn.org, *conn.slug, source, target, *title, *description, *dod, *project)
+	if err != nil {
+		return mapPRErr(err)
+	}
+	printPull(pull)
+	return nil
+}
+
+// cmdPRList lists a repo's pull requests.
+func cmdPRList(args []string) error {
+	fs := flag.NewFlagSet("pr list", flag.ContinueOnError)
+	conn := prConnFlags(fs)
+	state := fs.String("state", "open", "filter: open|merged|all")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	cli, ctx, err := conn.dial(context.Background(), "repo:read")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	pulls, err := cli.List(ctx, *conn.org, *conn.slug, *state)
+	if err != nil {
+		return mapPRErr(err)
+	}
+	for _, p := range pulls {
+		printPull(p)
+	}
+	return nil
+}
+
+// cmdPRView shows one pull request.
+func cmdPRView(args []string) error {
+	fs := flag.NewFlagSet("pr view", flag.ContinueOnError)
+	conn := prConnFlags(fs)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn pr view <id>")
+	}
+	cli, ctx, err := conn.dial(context.Background(), "repo:read")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	pull, err := cli.View(ctx, *conn.org, *conn.slug, fs.Arg(0))
+	if err != nil {
+		return mapPRErr(err)
+	}
+	fmt.Printf("id:       %s\n", pull.GetId())
+	fmt.Printf("state:    %s\n", pull.GetState())
+	fmt.Printf("branch:   %s -> %s\n", pull.GetSource(), pull.GetTarget())
+	fmt.Printf("title:    %s\n", pull.GetTitle())
+	fmt.Printf("ledger:   %s\n", pull.GetLedgerIssueKey())
+	if pull.GetUrl() != "" {
+		fmt.Printf("url:      %s\n", pull.GetUrl())
+	}
+	return nil
+}
+
+// cmdPRMerge fast-forward-merges a pull request. A diverged source surfaces
+// cairn-server's "not fast-forwardable; rebase X onto Y" guidance unchanged.
+func cmdPRMerge(args []string) error {
+	fs := flag.NewFlagSet("pr merge", flag.ContinueOnError)
+	conn := prConnFlags(fs)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn pr merge <id>")
+	}
+	cli, ctx, err := conn.dial(context.Background(), "repo:write")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	res, err := cli.Merge(ctx, *conn.org, *conn.slug, fs.Arg(0))
+	if err != nil {
+		return mapPRErr(err)
+	}
+	fmt.Printf("merged %s -> %s @ %s\n", res.GetId(), res.GetTarget(), res.GetMergedSha())
+	if res.GetLedgerCommentError() != "" {
+		fmt.Fprintf(os.Stderr, "cairn: pull merged, but the ledger comment failed: %s\n", res.GetLedgerCommentError())
+	}
+	return nil
+}
+
+// mapPRErr strips the "rpc error: code = X desc = " envelope from a gRPC
+// status error so the server's message (e.g. "not fast-forwardable; rebase
+// feature onto main") surfaces to the operator unadorned.
+func mapPRErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	if st, ok := status.FromError(err); ok {
+		return errors.New(st.Message())
+	}
+	return err
 }
 
 // cmdConfig gets or sets a config value. With one arg it prints the value (an
