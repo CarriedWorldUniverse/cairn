@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -247,6 +248,174 @@ func TestMergePull_Errors(t *testing.T) {
 	if _, err := c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: "nope"}); code(err) != codes.NotFound {
 		t.Errorf("unknown merge code = %v, want NotFound", code(err))
 	}
+}
+
+// seedFFRepo seeds a repo with main=A, feature=A→B (feature strictly ahead of
+// main), so MergePull's FastForward call succeeds once checks allow it.
+func seedFFRepo(t *testing.T, core *repo.Service, org, slug string) repo.Repo {
+	t.Helper()
+	r, err := core.CreateRepo(context.Background(), org, slug)
+	if err != nil {
+		t.Fatalf("CreateRepo: %v", err)
+	}
+	path, err := core.StoragePathForID(context.Background(), r.ID)
+	if err != nil {
+		t.Fatalf("StoragePathForID: %v", err)
+	}
+	g, err := git.PlainOpen(path)
+	if err != nil {
+		t.Fatalf("PlainOpen: %v", err)
+	}
+	mk := func(msg string, parents ...plumbing.Hash) plumbing.Hash {
+		c := &object.Commit{
+			Author:       object.Signature{Name: "t", Email: "t@t", When: time.Unix(0, 0).UTC()},
+			Committer:    object.Signature{Name: "t", Email: "t@t", When: time.Unix(0, 0).UTC()},
+			Message:      msg,
+			TreeHash:     plumbing.ZeroHash,
+			ParentHashes: parents,
+		}
+		enc := g.Storer.NewEncodedObject()
+		if err := c.Encode(enc); err != nil {
+			t.Fatalf("encode commit: %v", err)
+		}
+		h, err := g.Storer.SetEncodedObject(enc)
+		if err != nil {
+			t.Fatalf("set object: %v", err)
+		}
+		return h
+	}
+	a := mk("A")
+	b := mk("B", a)
+	setRef := func(name string, h plumbing.Hash) {
+		if err := g.Storer.SetReference(plumbing.NewHashReference(plumbing.NewBranchReferenceName(name), h)); err != nil {
+			t.Fatalf("set ref %s: %v", name, err)
+		}
+	}
+	setRef("main", a)
+	setRef("feature", b)
+	return r
+}
+
+// --- RecordPullCheck / ListPullChecks / MergePull check-gating ---
+
+func TestPullChecksGateMerge(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	// Record a failing check.
+	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail", Summary: "build broke", EvidenceUrl: "https://ci/1",
+	})
+	if err != nil {
+		t.Fatalf("RecordPullCheck: %v", err)
+	}
+	if rec.Check.GetRecordedBy() != "agent-1" || rec.Check.GetRecordedAt() == "" {
+		t.Fatalf("RecordPullCheck response missing recorder/time: %+v", rec.Check)
+	}
+	if rec.Check.GetState() != "fail" || rec.Check.GetName() != "ci" {
+		t.Fatalf("unexpected check: %+v", rec.Check)
+	}
+
+	// ListPullChecks reflects it, with recorder identity + timestamp.
+	list, err := c.pull.ListPullChecks(mdCtx("org-1", "repo:read"), &cairnv1.ListPullChecksRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if err != nil {
+		t.Fatalf("ListPullChecks: %v", err)
+	}
+	if len(list.Checks) != 1 || list.Checks[0].GetName() != "ci" || list.Checks[0].GetRecordedBy() != "agent-1" {
+		t.Fatalf("ListPullChecks = %+v", list.Checks)
+	}
+
+	// Merge refused: a failing check names itself and its state.
+	_, err = c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if code(err) != codes.FailedPrecondition {
+		t.Fatalf("merge-with-failing-check code = %v, want FailedPrecondition", code(err))
+	}
+	if err == nil || !containsAll(err.Error(), "ci", "fail") {
+		t.Fatalf("merge-refusal error = %v, want it to name check %q and state %q", err, "ci", "fail")
+	}
+
+	// Re-record the same name as "pass" (upsert: still one check) -> merge succeeds.
+	rec2, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "green",
+	})
+	if err != nil {
+		t.Fatalf("RecordPullCheck (pass): %v", err)
+	}
+	if rec2.Check.GetId() != rec.Check.GetId() {
+		t.Fatalf("upsert produced a new check id: %s != %s", rec2.Check.GetId(), rec.Check.GetId())
+	}
+	list2, err := c.pull.ListPullChecks(mdCtx("org-1", "repo:read"), &cairnv1.ListPullChecksRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if err != nil || len(list2.Checks) != 1 {
+		t.Fatalf("ListPullChecks after upsert: %v %+v", err, list2.Checks)
+	}
+
+	if _, err := c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: pid}); err != nil {
+		t.Fatalf("MergePull after check passes: %v", err)
+	}
+}
+
+func TestMergePull_NoChecksMergesAsBefore(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	// No checks recorded -> merge proceeds exactly as before this feature.
+	resp, err := c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: open.Pull.GetId()})
+	if err != nil {
+		t.Fatalf("MergePull (no checks): %v", err)
+	}
+	if resp.Result.GetState() != "merged" {
+		t.Fatalf("unexpected merge result: %+v", resp.Result)
+	}
+}
+
+func TestRecordPullCheck_Validation(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	// invalid state -> InvalidArgument
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "bogus"}); code(err) != codes.InvalidArgument {
+		t.Errorf("bogus state code = %v, want InvalidArgument", code(err))
+	}
+	// missing name -> InvalidArgument
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, State: "pass"}); code(err) != codes.InvalidArgument {
+		t.Errorf("missing name code = %v, want InvalidArgument", code(err))
+	}
+	// reader scope cannot record -> PermissionDenied
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:read"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass"}); code(err) != codes.PermissionDenied {
+		t.Errorf("reader RecordPullCheck code = %v, want PermissionDenied", code(err))
+	}
+	// unknown pull -> NotFound
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: "nope", Name: "ci", State: "pass"}); code(err) != codes.NotFound {
+		t.Errorf("unknown pull code = %v, want NotFound", code(err))
+	}
+}
+
+func containsAll(s string, subs ...string) bool {
+	for _, sub := range subs {
+		if !strings.Contains(s, sub) {
+			return false
+		}
+	}
+	return true
 }
 
 // --- ListRepos ---
