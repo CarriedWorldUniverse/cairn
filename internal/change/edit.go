@@ -29,6 +29,18 @@ func (e *Engine) sealedChain(lineID string) ([]sealStep, error) {
 	if err != nil {
 		return nil, err
 	}
+	return e.sealedChainAbove(lineID, line.BaseCommit)
+}
+
+// sealedChainAbove is sealedChain generalized to stop at an arbitrary commit
+// `stop` (exclusive) instead of the line's base — the sealed commits strictly
+// above `stop`, base→top. reconcile uses it with the merge-base so a rebase
+// replays only the LOCAL divergent commits onto the remote tip.
+func (e *Engine) sealedChainAbove(lineID, stop string) ([]sealStep, error) {
+	line, err := e.lineByID(lineID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Locate the open working change on the line and find the top sealed commit.
 	var openHead string
@@ -58,7 +70,7 @@ func (e *Engine) sealedChain(lineID string) ([]sealStep, error) {
 	// the adopted parent state), and the ParentTree is the tree of the first-parent
 	// of the run's BOTTOM commit (the previous change's head, or the base).
 	var steps []sealStep
-	for c := top; c != "" && c != line.BaseCommit; {
+	for c := top; c != "" && c != stop; {
 		runCID := e.changeIDOf(c)
 		if runCID == "" {
 			break // reached a non-cairn commit; the editable chain ends here
@@ -71,7 +83,7 @@ func (e *Engine) sealedChain(lineID string) ([]sealStep, error) {
 			if err != nil {
 				return nil, fmt.Errorf("change.sealedChain: %w", err)
 			}
-			if parent == "" || parent == line.BaseCommit || e.changeIDOf(parent) != runCID {
+			if parent == "" || parent == stop || e.changeIDOf(parent) != runCID {
 				c = parent
 				break
 			}
@@ -203,6 +215,16 @@ func (e *Engine) rewriteChain(lineID string, origChain, newSeq []sealStep) ([]Co
 	if err != nil {
 		return nil, err
 	}
+	return e.rewriteChainOnto(lineID, line.BaseCommit, origChain, newSeq)
+}
+
+// rewriteChainOnto is rewriteChain generalized to replay the chain onto an
+// arbitrary `baseCommit` instead of the line's own base. It is the primitive
+// reconcile uses to REBASE the local divergent commits onto the remote tip —
+// producing linear history rather than a "merge remote-tracking" commit — while
+// reusing rewriteChain's proven per-step 3-way replay, working-change rebase,
+// conflict recording, and single-transaction catalogue update.
+func (e *Engine) rewriteChainOnto(lineID, baseCommit string, origChain, newSeq []sealStep) ([]Conflict, error) {
 	before, err := e.viewMap()
 	if err != nil {
 		return nil, fmt.Errorf("change.rewriteChain: %w", err)
@@ -212,7 +234,7 @@ func (e *Engine) rewriteChain(lineID string, origChain, newSeq []sealStep) ([]Co
 	// (prevTree), theirs = this step's original tree, base = this step's original
 	// parent tree (ParentTree). When the parent is unchanged (ours==base), the
 	// 3-way merge yields theirs unchanged — exactly what reword needs.
-	prevCommit := line.BaseCommit
+	prevCommit := baseCommit
 	prevTree, err := e.treeHashOf(prevCommit)
 	if err != nil {
 		return nil, fmt.Errorf("change.rewriteChain: %w", err)

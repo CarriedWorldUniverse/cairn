@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -189,5 +190,55 @@ func TestE2E_PushForceBypassesRetry(t *testing.T) {
 	got, _ := os.ReadFile(filepath.Join(C, def, "readme.txt"))
 	if string(got) != "B-version\n" {
 		t.Fatalf("force push didn't win: %q", got)
+	}
+}
+
+// TestE2E_PushDivergentRebasesLinear: a CLEAN divergence (local commits vs an
+// independently-advanced remote) must reconcile by REBASING — linear history,
+// no 2-parent "merge remote-tracking" commit. Regression test for the
+// double-commit report.
+func TestE2E_PushDivergentRebasesLinear(t *testing.T) {
+	skipOnWindows(t)
+	origin := makeSeededBareRepo(t)
+	B := filepath.Join(t.TempDir(), "B")
+	mustRun(t, "clone", origin, B)
+	def := soleExpressedDir(t, B)
+
+	// Two local commits on distinct files.
+	if err := os.WriteFile(filepath.Join(B, def, "b.txt"), []byte("B\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", B, def)
+	if err := os.WriteFile(filepath.Join(B, def, "c.txt"), []byte("C\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", B, def)
+
+	// Remote advances an independent file → clean divergence.
+	advanceSeededBareRepo(t, origin, "remote.txt", "R\n")
+
+	// Push reconciles by rebasing the two local commits onto the remote tip.
+	mustRun(t, "push", "--repo", B)
+
+	// Origin history must be linear: every commit has ≤1 parent (no merge).
+	repo, err := git.PlainOpen(origin)
+	if err != nil {
+		t.Fatalf("open origin: %v", err)
+	}
+	ref, err := repo.Reference(plumbing.NewBranchReferenceName(def), true)
+	if err != nil {
+		t.Fatalf("ref %s: %v", def, err)
+	}
+	iter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
+	if err != nil {
+		t.Fatalf("log: %v", err)
+	}
+	if err := iter.ForEach(func(c *object.Commit) error {
+		if c.NumParents() > 1 {
+			t.Fatalf("merge commit after clean divergent push: %q (%d parents)", strings.TrimSpace(c.Message), c.NumParents())
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("iterate history: %v", err)
 	}
 }

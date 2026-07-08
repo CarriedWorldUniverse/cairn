@@ -213,8 +213,14 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		return LineResult{Line: lineName, Status: "fast-forward"}, nil
 
 	default:
-		// Diverged: a real 3-way merge needs a change to attach the merge head and
-		// any conflicts. Create one now only if the line had none.
+		// Diverged: local and remote both moved past the merge-base. Prefer a
+		// REBASE — replay the local commits onto the remote tip R for LINEAR
+		// history (no "merge remote-tracking" commit) — but ONLY when the
+		// divergence is clean and a real working change exists to land on. A
+		// conflicting or ill-defined divergence keeps the 2-parent merge, whose
+		// conflicts stay resolvable on the working change exactly as before
+		// (so `resolve` keeps working; nothing is lost silently).
+		origHasChange := hasChange
 		if !hasChange {
 			author := e.idName
 			if author == "" {
@@ -253,9 +259,29 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		if err != nil {
 			return LineResult{}, err
 		}
-		// A 2-parent merge commit: [L, R]. When the local side has no commit yet
-		// (l==""), parent only on R so the merge is still a real descendant of the
-		// remote tip and remains pushable.
+
+		// Clean divergence with a pre-existing working change → REBASE for LINEAR
+		// history. mergeTrees is side-effect-free (it returns conflicts as data
+		// and only writes a content-addressed tree), so we discard `merged` and
+		// replay the local commits onto R instead. rewriteChainOnto reuses the
+		// proven per-step 3-way replay, working-change rebase, and single-tx
+		// catalogue update. A clean 3-way here means the per-step replay is clean
+		// too (the local edits don't touch the remote's regions).
+		if len(conflicts) == 0 && base != "" && origHasChange {
+			chain, cerr := e.sealedChainAbove(lineID, base)
+			if cerr != nil {
+				return LineResult{}, cerr
+			}
+			rconf, cerr := e.rewriteChainOnto(lineID, r, chain, chain)
+			if cerr != nil {
+				return LineResult{}, cerr
+			}
+			return LineResult{Line: lineName, Status: "rebased", Conflicts: len(rconf)}, nil
+		}
+
+		// Conflicting or ill-defined divergence → a 2-parent merge commit [L, R].
+		// When the local side has no commit yet (l==""), parent only on R so the
+		// merge is still a real descendant of the remote tip and remains pushable.
 		parents := []string{r}
 		if l != "" {
 			parents = []string{l, r}

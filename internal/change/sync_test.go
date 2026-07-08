@@ -109,6 +109,20 @@ func assertTwoParents(t *testing.T, e *Engine, sha string) {
 	}
 }
 
+// assertOneParent asserts a commit is linear (single parent) — a divergent
+// reconcile now REBASES rather than merging, so the tip is a normal one-parent
+// commit, never a 2-parent "merge remote-tracking".
+func assertOneParent(t *testing.T, e *Engine, sha string) {
+	t.Helper()
+	c, err := e.git.CommitObject(plumbing.NewHash(sha))
+	if err != nil {
+		t.Fatalf("CommitObject %s: %v", sha, err)
+	}
+	if len(c.ParentHashes) != 1 {
+		t.Fatalf("rebased tip %s has %d parents, want 1 (linear, no merge commit)", sha, len(c.ParentHashes))
+	}
+}
+
 // mustFilesPlusLocal reads the tip files of commit and adds local.txt.
 func mustFilesPlusLocal(t *testing.T, e *Engine, commit string) map[string][]byte {
 	t.Helper()
@@ -203,19 +217,20 @@ func TestPullDivergentCleanMerge(t *testing.T) {
 		t.Fatalf("Files: %v", err)
 	}
 	if string(files["local.txt"]) != "L\n" || string(files["remote.txt"]) != "R\n" {
-		t.Fatalf("clean merge missing a side: %v", files)
+		t.Fatalf("clean rebase missing a side: %v", files)
 	}
-	// merged commit has 2 parents
-	assertTwoParents(t, e, root2.TipCommit)
+	// A divergent reconcile now REBASES: the tip is a linear one-parent commit
+	// (local change replayed onto the remote tip), never a 2-parent merge.
+	assertOneParent(t, e, root2.TipCommit)
 	var ok bool
 	for _, lr := range sum.Lines {
 		if lr.Line == def {
 			ok = true
-			if lr.Status != "merged" {
-				t.Fatalf("status = %q, want merged", lr.Status)
+			if lr.Status != "rebased" {
+				t.Fatalf("status = %q, want rebased", lr.Status)
 			}
 			if lr.Conflicts != 0 {
-				t.Fatalf("clean merge reported %d conflicts", lr.Conflicts)
+				t.Fatalf("clean rebase reported %d conflicts", lr.Conflicts)
 			}
 		}
 	}
