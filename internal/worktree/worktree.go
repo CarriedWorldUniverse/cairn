@@ -50,6 +50,13 @@ type Repo struct {
 	// set, it is the default branch for commands that omit one. Empty means at the
 	// repo root (or not inside any branch folder) → fall back to the root line.
 	branchHint string
+
+	// lockFile/lockDepth back the cross-process working-copy lock (issue #81).
+	// Every wc.json-mutating method takes it via lockState() first; it is
+	// reentrant within this process (Commit → autoSync → Pull) so nested calls
+	// share the one held OS lock. nil/0 = not held.
+	lockFile  *os.File
+	lockDepth int
 }
 
 // StatusInfo reports the state of an expressed branch: its lineage (root-first
@@ -159,12 +166,64 @@ func (r *Repo) Close() error {
 	return nil
 }
 
+// lockState takes the cross-process working-copy lock and reloads wc.json so
+// this operation sees other processes' committed state — the fix for issue
+// #81, where concurrent `express` did an unlocked reload-modify-save of
+// wc.json and clobbered each other's expressed-lines entries (a later commit
+// then reported "branch not expressed" and a naive push shipped an empty
+// branch). Every wc.json-mutating method calls this first and defers the
+// returned release.
+//
+// It is REENTRANT within this process: nested calls (Commit → autoSync →
+// Pull; Open → Express; methods that call Unexpress) share the single held OS
+// lock and, crucially, do NOT reload — only the outermost acquisition reloads,
+// so an inner call can't drop the outer op's in-progress state. Cross-process
+// it is mutually exclusive, so concurrent cairn invocations on one shared
+// working copy serialize instead of racing.
+func (r *Repo) lockState() (func(), error) {
+	if r.lockDepth > 0 {
+		r.lockDepth++
+		return r.releaseState, nil
+	}
+	f, err := openWCLock(filepath.Dir(r.stPath))
+	if err != nil {
+		return nil, fmt.Errorf("worktree: lock working copy: %w", err)
+	}
+	r.lockFile = f
+	r.lockDepth = 1
+	fresh, err := LoadState(r.stPath)
+	if err != nil {
+		r.releaseState()
+		return nil, err
+	}
+	r.st = fresh
+	return r.releaseState, nil
+}
+
+// releaseState drops one level of the reentrant lock, releasing the OS lock
+// when the outermost holder returns.
+func (r *Repo) releaseState() {
+	if r.lockDepth == 0 {
+		return
+	}
+	r.lockDepth--
+	if r.lockDepth == 0 && r.lockFile != nil {
+		closeWCLock(r.lockFile)
+		r.lockFile = nil
+	}
+}
+
 // Express materializes a branch as a folder under root, creating its line if it
 // does not exist. For the root line, branch must equal change.RootLineName and
 // parent is ignored. For any other branch, an absent line is forked off parent
 // (defaulting to the structural root). Re-expressing an already-expressed
 // branch is a no-op.
 func (r *Repo) Express(branch, parent string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if _, ok := r.st.Expressed[branch]; ok {
 		return nil
 	}
@@ -326,6 +385,11 @@ func (r *Repo) syncBranch(branch string, entry Entry) error {
 // re-materializes to the new working tip. The CommitResult carries the sealed
 // head and any conflicts recorded.
 func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
@@ -535,6 +599,11 @@ func (r *Repo) Abandon(branch string, force bool) error {
 // force allows discarding uncommitted changes; without it, Unexpress refuses if
 // the branch has uncommitted edits.
 func (r *Repo) Unexpress(branch string, force bool) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	// Structural root guard: refuse only when the branch resolves to the root
 	// line (ParentLine == ""). If the line is already gone (ErrNotFound — e.g.
 	// after a fold/abandon removed it), don't block; proceed to remove the
@@ -844,6 +913,11 @@ func (r *Repo) Fetch(remote string) error {
 // disk reflects the result. Conflicts are returned as data on the PullSummary,
 // not as an error.
 func (r *Repo) Pull(remote string) (change.PullSummary, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.PullSummary{}, err
+	}
+	defer unlock()
 	sum, err := r.eng.PullFromRemote(remote)
 	if err != nil {
 		return sum, fmt.Errorf("worktree.Pull: %w", err)
