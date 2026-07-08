@@ -307,6 +307,18 @@ func (r *Repo) Express(branch, parent string) error {
 // cache makes an unchanged folder cheap. Self-healing: a corrupt/missing cache is
 // treated as empty (full rescan), never an error.
 func (r *Repo) SyncWorking() error {
+	// Serialize with the cross-process working-copy lock (#86): this scans EVERY
+	// expressed branch, reading each line's tip from the shared cairn.db and its
+	// commit object from the shared git store. Without the lock a concurrent
+	// builder committing a SIBLING branch mid-scan advances that tip and writes a
+	// new commit object this process's go-git object cache hasn't seen, so the
+	// snapshot aborts "commitTree: object not found". The lock (also reloading
+	// wc.json) makes the scan see one consistent snapshot of tips + objects.
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if active, err := r.eng.BisectActive(); err != nil {
 		return fmt.Errorf("worktree.SyncWorking: %w", err)
 	} else if active {
