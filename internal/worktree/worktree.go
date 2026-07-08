@@ -836,6 +836,14 @@ func (r *Repo) SetBranchHint(branch string) { r.branchHint = branch }
 // by commands (e.g. commit) that require a branch but can infer it from location.
 func (r *Repo) CWDBranch() (string, bool) { return r.branchHint, r.branchHint != "" }
 
+// IsExpressed reports whether the named branch has an expressed working folder.
+// Used by commands (e.g. diff) to disambiguate a positional arg between a branch
+// name and a file path.
+func (r *Repo) IsExpressed(branch string) bool {
+	_, ok := r.st.Expressed[branch]
+	return ok
+}
+
 // Reparent changes branch's recorded parent line to newParent (by name), so a
 // stacked branch flat-projected onto the root at import can be restored to its
 // real parent. See change.Reparent.
