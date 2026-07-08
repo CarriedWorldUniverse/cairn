@@ -3,6 +3,7 @@ package grpcapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -26,13 +27,14 @@ import (
 
 // fakeLedger records calls and returns scripted results.
 type fakeLedger struct {
-	calls        int
-	gotFwd       http.Header
-	gotIn        ledgerclient.IssueInput
-	result       ledgerclient.IssueResult
-	err          error
-	commentCalls int
-	commentErr   error
+	calls          int
+	gotFwd         http.Header
+	gotIn          ledgerclient.IssueInput
+	result         ledgerclient.IssueResult
+	err            error
+	commentCalls   int
+	commentErr     error
+	gotCommentBody string
 }
 
 func (f *fakeLedger) CreateIssue(_ context.Context, fwd http.Header, in ledgerclient.IssueInput) (ledgerclient.IssueResult, error) {
@@ -40,8 +42,9 @@ func (f *fakeLedger) CreateIssue(_ context.Context, fwd http.Header, in ledgercl
 	f.gotFwd, f.gotIn = fwd, in
 	return f.result, f.err
 }
-func (f *fakeLedger) CommentIssue(_ context.Context, _ http.Header, _, _ string) error {
+func (f *fakeLedger) CommentIssue(_ context.Context, _ http.Header, _, body string) error {
 	f.commentCalls++
+	f.gotCommentBody = body
 	return f.commentErr
 }
 
@@ -410,6 +413,108 @@ func TestRecordPullCheck_Validation(t *testing.T) {
 	}
 }
 
+// TestRecordPullCheck_LengthCaps table-tests the byte-length caps on
+// name/summary/evidence_url.
+func TestRecordPullCheck_LengthCaps(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	tests := []struct {
+		name string
+		req  *cairnv1.RecordPullCheckRequest
+	}{
+		{"name over 128 bytes", &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: strings.Repeat("n", 129), State: "pass"}},
+		{"summary over 8192 bytes", &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: strings.Repeat("s", 8193)}},
+		{"evidence_url over 2048 bytes", &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", EvidenceUrl: "https://x/" + strings.Repeat("u", 2048)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), tt.req); code(err) != codes.InvalidArgument {
+				t.Errorf("code = %v, want InvalidArgument (err=%v)", code(err), err)
+			}
+		})
+	}
+
+	// Exactly at the caps is allowed.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: strings.Repeat("n", 128), State: "pass",
+		Summary: strings.Repeat("s", 8192), EvidenceUrl: "https://x/" + strings.Repeat("u", 2037),
+	}); err != nil {
+		t.Fatalf("at-cap RecordPullCheck: %v", err)
+	}
+}
+
+// TestRecordPullCheck_ControlCharsRejected proves control characters
+// (including ANSI ESC, newline, CR) in name/summary are rejected, and that a
+// clean check's MergePull refusal string and ledger comment body carry no
+// ESC byte — since both render check name/summary/state verbatim into
+// terminal/UI-visible strings, a control char there is a terminal/ledger
+// injection vector.
+func TestRecordPullCheck_ControlCharsRejected(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	esc := "\x1b[31mfake\x1b[0m"
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci" + esc, State: "pass",
+	}); code(err) != codes.InvalidArgument {
+		t.Errorf("ANSI-in-name code = %v, want InvalidArgument", code(err))
+	}
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci\nrm -rf", State: "pass",
+	}); code(err) != codes.InvalidArgument {
+		t.Errorf("newline-in-name code = %v, want InvalidArgument", code(err))
+	}
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "green" + esc,
+	}); code(err) != codes.InvalidArgument {
+		t.Errorf("ANSI-in-summary code = %v, want InvalidArgument", code(err))
+	}
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "line1\r\nline2",
+	}); code(err) != codes.InvalidArgument {
+		t.Errorf("CRLF-in-summary code = %v, want InvalidArgument", code(err))
+	}
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", EvidenceUrl: "https://x/" + esc,
+	}); code(err) != codes.InvalidArgument {
+		t.Errorf("ANSI-in-evidence_url code = %v, want InvalidArgument", code(err))
+	}
+
+	// A VALID (clean) check still records; its ledger comment body and the
+	// MergePull refusal string it drives both carry no ESC byte.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail", Summary: "build broke, clean summary",
+	}); err != nil {
+		t.Fatalf("RecordPullCheck (clean): %v", err)
+	}
+	if strings.ContainsRune(led.gotCommentBody, '\x1b') {
+		t.Fatalf("ledger comment body contains ESC byte: %q", led.gotCommentBody)
+	}
+
+	_, mergeErr := c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if mergeErr == nil {
+		t.Fatal("MergePull with failing check: want refusal, got nil")
+	}
+	if strings.ContainsRune(mergeErr.Error(), '\x1b') {
+		t.Fatalf("MergePull refusal error contains ESC byte: %q", mergeErr.Error())
+	}
+}
+
 // TestPullChecksGateMerge_PendingBlocks proves "pending" (not just "fail")
 // blocks MergePull. Mutation-proof: temporarily changing nonPassingChecks to
 // treat only CheckStateFail as blocking makes this test FAIL (verified by
@@ -513,6 +618,49 @@ func TestRecordPullCheck_LedgerCommentFailureStillRecords(t *testing.T) {
 	list, err := c.pull.ListPullChecks(mdCtx("org-1", "repo:read"), &cairnv1.ListPullChecksRequest{Org: "org-1", Slug: "widgets", Id: pid})
 	if err != nil || len(list.Checks) != 1 {
 		t.Fatalf("ListPullChecks after ledger comment failure: %v %+v", err, list.Checks)
+	}
+}
+
+// TestRecordPullCheck_DistinctNameCap proves the RPC layer surfaces the
+// repo-layer distinct-check-name cap as FailedPrecondition, and that an
+// upsert of an already-recorded name at the cap is still allowed.
+func TestRecordPullCheck_DistinctNameCap(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	for i := 0; i < repo.MaxPullChecks; i++ {
+		name := fmt.Sprintf("check-%d", i)
+		if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+			Org: "org-1", Slug: "widgets", Id: pid, Name: name, State: "pass",
+		}); err != nil {
+			t.Fatalf("RecordPullCheck %s (within cap): %v", name, err)
+		}
+	}
+
+	// The 65th distinct name is refused.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "check-overflow", State: "pass",
+	}); code(err) != codes.FailedPrecondition {
+		t.Fatalf("65th distinct name code = %v, want FailedPrecondition", code(err))
+	}
+
+	// Upserting an existing name at the cap is still allowed.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		Org: "org-1", Slug: "widgets", Id: pid, Name: "check-0", State: "fail",
+	}); err != nil {
+		t.Fatalf("upsert at cap: %v", err)
+	}
+
+	list, err := c.pull.ListPullChecks(mdCtx("org-1", "repo:read"), &cairnv1.ListPullChecksRequest{Org: "org-1", Slug: "widgets", Id: pid})
+	if err != nil || len(list.Checks) != repo.MaxPullChecks {
+		t.Fatalf("ListPullChecks after cap tests: %v len=%d, want %d", err, len(list.Checks), repo.MaxPullChecks)
 	}
 }
 

@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -144,5 +145,45 @@ func TestRecordListPullChecks(t *testing.T) {
 	// Invalid state is rejected.
 	if err := svc.RecordPullCheck(ctx, &PullCheck{PullID: p.ID, Name: "ci", State: "bogus"}); err == nil {
 		t.Fatal("RecordPullCheck invalid state: want error, got nil")
+	}
+}
+
+func TestRecordPullCheck_DistinctNameCap(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestService(t)
+	r, _ := svc.CreateRepo(ctx, "org-1", "widgets")
+	p := Pull{RepoID: r.ID, Source: "feature", Target: "main", Title: "x", LedgerIssueKey: "WID-1", OpenedBy: "a"}
+	if err := svc.CreatePull(ctx, &p); err != nil {
+		t.Fatalf("CreatePull: %v", err)
+	}
+
+	// Fill the pull with MaxPullChecks distinct names — all must succeed.
+	for i := 0; i < MaxPullChecks; i++ {
+		name := fmt.Sprintf("check-%d", i)
+		if err := svc.RecordPullCheck(ctx, &PullCheck{PullID: p.ID, Name: name, State: CheckStatePass}); err != nil {
+			t.Fatalf("RecordPullCheck %s (within cap): %v", name, err)
+		}
+	}
+	checks, err := svc.ListPullChecks(ctx, p.ID)
+	if err != nil || len(checks) != MaxPullChecks {
+		t.Fatalf("ListPullChecks after filling cap: %v len=%d, want %d", err, len(checks), MaxPullChecks)
+	}
+
+	// The 65th DISTINCT name is rejected.
+	if err := svc.RecordPullCheck(ctx, &PullCheck{PullID: p.ID, Name: "check-overflow", State: CheckStatePass}); !errors.Is(err, ErrTooManyChecks) {
+		t.Fatalf("RecordPullCheck 65th distinct name err = %v, want ErrTooManyChecks", err)
+	}
+	// The count did not change.
+	if checks, err := svc.ListPullChecks(ctx, p.ID); err != nil || len(checks) != MaxPullChecks {
+		t.Fatalf("ListPullChecks after rejected overflow: %v len=%d, want %d", err, len(checks), MaxPullChecks)
+	}
+
+	// Upserting an EXISTING name at the cap is still allowed (no new name).
+	if err := svc.RecordPullCheck(ctx, &PullCheck{PullID: p.ID, Name: "check-0", State: CheckStateFail}); err != nil {
+		t.Fatalf("RecordPullCheck upsert at cap: %v", err)
+	}
+	checks, err = svc.ListPullChecks(ctx, p.ID)
+	if err != nil || len(checks) != MaxPullChecks {
+		t.Fatalf("ListPullChecks after upsert at cap: %v len=%d, want %d", err, len(checks), MaxPullChecks)
 	}
 }

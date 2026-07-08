@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"unicode"
 
 	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
@@ -11,6 +12,42 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// RecordPullCheck field caps and character constraints. name/summary/
+// evidence_url flow verbatim into (a) the best-effort ledger comment body and
+// (b) MergePull's FailedPrecondition refusal string (nonPassingChecks), both
+// of which are rendered in terminals/UIs — so control characters (including
+// ANSI escapes, newlines, CR) are terminal/ledger injection vectors and are
+// rejected outright rather than stripped, for a clean, unsurprising contract.
+const (
+	maxCheckNameBytes        = 128
+	maxCheckSummaryBytes     = 8192
+	maxCheckEvidenceURLBytes = 2048
+)
+
+// hasControlRune reports whether s contains any Unicode control character
+// (this includes tab, newline, CR, and ESC 0x1b). Plain spaces are not
+// control characters and are allowed.
+func hasControlRune(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasControlOrNonPrintableRune is the stricter check used for check names:
+// names are a tame token set, so anything that is not a printable character
+// (which also excludes all control characters) is rejected.
+func hasControlOrNonPrintableRune(s string) bool {
+	for _, r := range s {
+		if !unicode.IsPrint(r) {
+			return true
+		}
+	}
+	return false
+}
 
 // pullServer implements cairnv1.PullServiceServer over the repo core + ledger.
 type pullServer struct {
@@ -141,6 +178,24 @@ func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPul
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name required")
 	}
+	if len(req.Name) > maxCheckNameBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "name exceeds %d bytes", maxCheckNameBytes)
+	}
+	if hasControlOrNonPrintableRune(req.Name) {
+		return nil, status.Error(codes.InvalidArgument, "name contains control or non-printable characters")
+	}
+	if len(req.Summary) > maxCheckSummaryBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "summary exceeds %d bytes", maxCheckSummaryBytes)
+	}
+	if hasControlRune(req.Summary) {
+		return nil, status.Error(codes.InvalidArgument, "summary contains control characters")
+	}
+	if len(req.EvidenceUrl) > maxCheckEvidenceURLBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "evidence_url exceeds %d bytes", maxCheckEvidenceURLBytes)
+	}
+	if hasControlRune(req.EvidenceUrl) {
+		return nil, status.Error(codes.InvalidArgument, "evidence_url contains control characters")
+	}
 	switch req.State {
 	case repo.CheckStatePass, repo.CheckStateFail, repo.CheckStatePending:
 	default:
@@ -168,6 +223,9 @@ func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPul
 		RecordedBy:  id.Subject,
 	}
 	if err := p.s.core.RecordPullCheck(ctx, check); err != nil {
+		if errors.Is(err, repo.ErrTooManyChecks) {
+			return nil, status.Errorf(codes.FailedPrecondition, "pull already has %d distinct checks recorded (max)", repo.MaxPullChecks)
+		}
 		return nil, status.Errorf(codes.Internal, "record check: %v", err)
 	}
 
