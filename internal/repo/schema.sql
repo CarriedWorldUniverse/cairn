@@ -44,6 +44,23 @@ CREATE TABLE IF NOT EXISTS pull_request (
 CREATE UNIQUE INDEX IF NOT EXISTS pr_open_uniq
   ON pull_request(repo_id, source_ref, target_ref) WHERE state = 'open';
 
+-- pull_check: a recorded check verdict on a pull (CI, review, security, ...).
+-- Re-recording the same (pull_id, name) upserts — one row per named check.
+-- MergePull refuses to fast-forward while any recorded check is not 'pass'.
+CREATE TABLE IF NOT EXISTS pull_check (
+  id            TEXT PRIMARY KEY,             -- 16-byte hex
+  pull_id       TEXT NOT NULL REFERENCES pull_request(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,                -- e.g. "ci", "security-review"
+  state         TEXT NOT NULL,                -- 'pass' | 'fail' | 'pending'
+  summary       TEXT NOT NULL DEFAULT '',
+  evidence_url  TEXT NOT NULL DEFAULT '',
+  recorded_by   TEXT NOT NULL,                -- X-CWB-Subject of the recorder
+  recorded_at   TEXT NOT NULL                 -- RFC3339
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS pull_check_pull_name_uniq
+  ON pull_check(pull_id, name);
+
 -- embargo_recipient: identities authorized to fetch a repo's EMBARGOED content
 -- (the real bytes from the per-repo embargo bare). cairn owns this ACL — herald
 -- scopes are too coarse (org-level repo:read/write). All-or-nothing per repo.

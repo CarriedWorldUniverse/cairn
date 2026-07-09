@@ -3,6 +3,8 @@ package grpcapi
 import (
 	"context"
 	"errors"
+	"time"
+	"unicode"
 
 	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
@@ -10,6 +12,42 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// RecordPullCheck field caps and character constraints. name/summary/
+// evidence_url flow verbatim into (a) the best-effort ledger comment body and
+// (b) MergePull's FailedPrecondition refusal string (nonPassingChecks), both
+// of which are rendered in terminals/UIs — so control characters (including
+// ANSI escapes, newlines, CR) are terminal/ledger injection vectors and are
+// rejected outright rather than stripped, for a clean, unsurprising contract.
+const (
+	maxCheckNameBytes        = 128
+	maxCheckSummaryBytes     = 8192
+	maxCheckEvidenceURLBytes = 2048
+)
+
+// hasControlRune reports whether s contains any Unicode control character
+// (this includes tab, newline, CR, and ESC 0x1b). Plain spaces are not
+// control characters and are allowed.
+func hasControlRune(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasControlOrNonPrintableRune is the stricter check used for check names:
+// names are a tame token set, so anything that is not a printable character
+// (which also excludes all control characters) is rejected.
+func hasControlOrNonPrintableRune(s string) bool {
+	for _, r := range s {
+		if !unicode.IsPrint(r) {
+			return true
+		}
+	}
+	return false
+}
 
 // pullServer implements cairnv1.PullServiceServer over the repo core + ledger.
 type pullServer struct {
@@ -128,8 +166,107 @@ func (p *pullServer) ListPulls(ctx context.Context, req *cairnv1.ListPullsReques
 	return &cairnv1.ListPullsResponse{Pulls: out}, nil
 }
 
+// RecordPullCheck mirrors POST .../pulls/{id}/checks: scope repo:write, pull
+// must be open. Upserts by (pull, name); best-effort comments the linked
+// ledger issue — unlike MergePull, any comment failure here is discarded, not
+// surfaced on the response (RecordPullCheckResponse has no error field for it).
+func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPullCheckRequest) (*cairnv1.RecordPullCheckResponse, error) {
+	id, err := authed(ctx, req.Org, "repo:write")
+	if err != nil {
+		return nil, err
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name required")
+	}
+	if len(req.Name) > maxCheckNameBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "name exceeds %d bytes", maxCheckNameBytes)
+	}
+	if hasControlOrNonPrintableRune(req.Name) {
+		return nil, status.Error(codes.InvalidArgument, "name contains control or non-printable characters")
+	}
+	if len(req.Summary) > maxCheckSummaryBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "summary exceeds %d bytes", maxCheckSummaryBytes)
+	}
+	if hasControlRune(req.Summary) {
+		return nil, status.Error(codes.InvalidArgument, "summary contains control characters")
+	}
+	if len(req.EvidenceUrl) > maxCheckEvidenceURLBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "evidence_url exceeds %d bytes", maxCheckEvidenceURLBytes)
+	}
+	if hasControlRune(req.EvidenceUrl) {
+		return nil, status.Error(codes.InvalidArgument, "evidence_url contains control characters")
+	}
+	switch req.State {
+	case repo.CheckStatePass, repo.CheckStateFail, repo.CheckStatePending:
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "state must be one of pass|fail|pending, got %q", req.State)
+	}
+
+	rp, err := p.s.core.GetRepo(ctx, req.Org, req.Slug)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "repo not found")
+	}
+	pull, err := p.s.core.GetPull(ctx, rp.ID, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "pull not found")
+	}
+	if pull.State != repo.PullStateOpen {
+		return nil, status.Error(codes.Aborted, "pull is not open")
+	}
+
+	check := &repo.PullCheck{
+		PullID:      pull.ID,
+		Name:        req.Name,
+		State:       req.State,
+		Summary:     req.Summary,
+		EvidenceURL: req.EvidenceUrl,
+		RecordedBy:  id.Subject,
+	}
+	if err := p.s.core.RecordPullCheck(ctx, check); err != nil {
+		if errors.Is(err, repo.ErrTooManyChecks) {
+			return nil, status.Errorf(codes.FailedPrecondition, "pull already has %d distinct checks recorded (max)", repo.MaxPullChecks)
+		}
+		return nil, status.Errorf(codes.Internal, "record check: %v", err)
+	}
+
+	// Best-effort ledger comment: the check has already been recorded above,
+	// so a comment failure here does not fail the RPC. Unlike MergePull,
+	// which surfaces its comment error via MergeResult.ledger_comment_error,
+	// RecordPullCheckResponse has no such field — the error is silently
+	// discarded, not merely deferred to the caller.
+	body := "check " + req.Name + ": " + req.State + " — " + req.Summary
+	_ = p.s.ledger.CommentIssue(ctx, id.forwardHeader(), pull.LedgerIssueKey, body)
+	return &cairnv1.RecordPullCheckResponse{Check: toProtoPullCheck(*check)}, nil
+}
+
+// ListPullChecks mirrors GET .../pulls/{id}/checks: scope repo:read.
+func (p *pullServer) ListPullChecks(ctx context.Context, req *cairnv1.ListPullChecksRequest) (*cairnv1.ListPullChecksResponse, error) {
+	if _, err := authed(ctx, req.Org, "repo:read"); err != nil {
+		return nil, err
+	}
+	rp, err := p.s.core.GetRepo(ctx, req.Org, req.Slug)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "repo not found")
+	}
+	pull, err := p.s.core.GetPull(ctx, rp.ID, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "pull not found")
+	}
+	checks, err := p.s.core.ListPullChecks(ctx, pull.ID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	out := make([]*cairnv1.PullCheck, 0, len(checks))
+	for _, c := range checks {
+		out = append(out, toProtoPullCheck(c))
+	}
+	return &cairnv1.ListPullChecksResponse{Checks: out}, nil
+}
+
 // MergePull mirrors POST .../pulls/{id}/merge: fast-forward-only merge, mark
-// merged, best-effort comment the linked ledger issue.
+// merged, best-effort comment the linked ledger issue. Refuses to merge while
+// any recorded check on the pull is not "pass" (zero recorded checks merges
+// exactly as before this feature — back-compat).
 func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullRequest) (*cairnv1.MergePullResponse, error) {
 	id, err := authed(ctx, req.Org, "repo:write")
 	if err != nil {
@@ -145,6 +282,14 @@ func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullReques
 	}
 	if pull.State != repo.PullStateOpen {
 		return nil, status.Error(codes.Aborted, "pull is not open")
+	}
+
+	checks, err := p.s.core.ListPullChecks(ctx, pull.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list checks: %v", err)
+	}
+	if failing := nonPassingChecks(checks); len(failing) > 0 {
+		return nil, status.Errorf(codes.FailedPrecondition, "checks not passing: %s", failing)
 	}
 
 	mergedSHA, ffErr := p.s.core.FastForward(ctx, rp.ID, pull.Source, pull.Target)
@@ -173,4 +318,35 @@ func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullReques
 		result.LedgerCommentError = cErr.Error()
 	}
 	return &cairnv1.MergePullResponse{Result: result}, nil
+}
+
+// nonPassingChecks names every recorded check that is not "pass", as
+// "<name>=<state>" comma-joined, for the MergePull refusal message. Empty
+// when there are zero recorded checks or all are "pass".
+func nonPassingChecks(checks []repo.PullCheck) string {
+	var out string
+	for _, c := range checks {
+		if c.State == repo.CheckStatePass {
+			continue
+		}
+		if out != "" {
+			out += ", "
+		}
+		out += c.Name + "=" + c.State
+	}
+	return out
+}
+
+// toProtoPullCheck maps a repo.PullCheck to the wire message.
+func toProtoPullCheck(c repo.PullCheck) *cairnv1.PullCheck {
+	return &cairnv1.PullCheck{
+		Id:          c.ID,
+		PullId:      c.PullID,
+		Name:        c.Name,
+		State:       c.State,
+		Summary:     c.Summary,
+		EvidenceUrl: c.EvidenceURL,
+		RecordedBy:  c.RecordedBy,
+		RecordedAt:  c.RecordedAt.Format(time.RFC3339),
+	}
 }

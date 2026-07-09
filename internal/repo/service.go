@@ -66,6 +66,26 @@ type Pull struct {
 	CreatedAt      time.Time
 }
 
+// PullCheck states. RecordPullCheck rejects anything else.
+const (
+	CheckStatePass    = "pass"
+	CheckStateFail    = "fail"
+	CheckStatePending = "pending"
+)
+
+// PullCheck is a row in the pull_check catalogue: a named check verdict on a
+// pull, upserted by (pull, name).
+type PullCheck struct {
+	ID          string
+	PullID      string
+	Name        string
+	State       string
+	Summary     string
+	EvidenceURL string
+	RecordedBy  string
+	RecordedAt  time.Time
+}
+
 // Ref is a single git reference (branch/tag) in a repo.
 type Ref struct {
 	Name string // full ref, e.g. refs/heads/main
@@ -323,6 +343,113 @@ func (s *Service) SetPullState(ctx context.Context, repoID, id, state string) er
 	return nil
 }
 
+// MaxPullChecks caps the number of DISTINCT check names a single pull may
+// carry. Upserting an existing name never counts against the cap — only
+// recording a genuinely new name does — so a check can always be re-recorded
+// (e.g. re-running CI) without hitting the ceiling.
+const MaxPullChecks = 64
+
+// ErrTooManyChecks is returned by RecordPullCheck when recording a NEW check
+// name would push a pull's distinct check count past MaxPullChecks.
+var ErrTooManyChecks = errors.New("repo: too many distinct checks on this pull")
+
+// RecordPullCheck upserts a named check verdict on a pull: a second call with
+// the same (pull, name) replaces state/summary/evidence_url/recorder/time.
+// Recording a name not already present on the pull is rejected with
+// ErrTooManyChecks once the pull already carries MaxPullChecks distinct names.
+func (s *Service) RecordPullCheck(ctx context.Context, c *PullCheck) error {
+	if c.PullID == "" || c.Name == "" {
+		return errors.New("repo.RecordPullCheck: pull_id and name required")
+	}
+	switch c.State {
+	case CheckStatePass, CheckStateFail, CheckStatePending:
+	default:
+		return fmt.Errorf("repo.RecordPullCheck: invalid state %q", c.State)
+	}
+	c.RecordedAt = time.Now().UTC()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("repo.RecordPullCheck: begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// The distinct-name cap only applies to NEW names; upserting an existing
+	// name is always allowed regardless of how many other names exist.
+	var exists bool
+	if err := tx.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM pull_check WHERE pull_id=? AND name=?)`, c.PullID, c.Name,
+	).Scan(&exists); err != nil {
+		return fmt.Errorf("repo.RecordPullCheck: exists: %w", err)
+	}
+	if !exists {
+		var count int
+		if err := tx.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM pull_check WHERE pull_id=?`, c.PullID,
+		).Scan(&count); err != nil {
+			return fmt.Errorf("repo.RecordPullCheck: count: %w", err)
+		}
+		if count >= MaxPullChecks {
+			return ErrTooManyChecks
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO pull_check(id, pull_id, name, state, summary, evidence_url, recorded_by, recorded_at)
+		 VALUES(?,?,?,?,?,?,?,?)
+		 ON CONFLICT(pull_id, name) DO UPDATE SET
+		   state=excluded.state, summary=excluded.summary,
+		   evidence_url=excluded.evidence_url, recorded_by=excluded.recorded_by,
+		   recorded_at=excluded.recorded_at`,
+		newID(), c.PullID, c.Name, c.State, c.Summary, c.EvidenceURL, c.RecordedBy,
+		c.RecordedAt.Format(time.RFC3339)); err != nil {
+		return fmt.Errorf("repo.RecordPullCheck: %w", err)
+	}
+	// The upsert keeps the pre-existing row's id on a repeat name; read it
+	// back so the caller (and the RPC response) always reflects the true id.
+	row := tx.QueryRowContext(ctx,
+		`SELECT id FROM pull_check WHERE pull_id=? AND name=?`, c.PullID, c.Name)
+	if err := row.Scan(&c.ID); err != nil {
+		return fmt.Errorf("repo.RecordPullCheck: reload id: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("repo.RecordPullCheck: commit: %w", err)
+	}
+	return nil
+}
+
+const pullCheckCols = `id, pull_id, name, state, summary, evidence_url, recorded_by, recorded_at`
+
+func scanPullCheck(row interface{ Scan(...any) error }) (PullCheck, error) {
+	var c PullCheck
+	var recordedAt string
+	if err := row.Scan(&c.ID, &c.PullID, &c.Name, &c.State, &c.Summary,
+		&c.EvidenceURL, &c.RecordedBy, &recordedAt); err != nil {
+		return PullCheck{}, err
+	}
+	c.RecordedAt, _ = time.Parse(time.RFC3339, recordedAt)
+	return c, nil
+}
+
+// ListPullChecks returns a pull's recorded checks, name-ordered.
+func (s *Service) ListPullChecks(ctx context.Context, pullID string) ([]PullCheck, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT `+pullCheckCols+` FROM pull_check WHERE pull_id=? ORDER BY name`, pullID)
+	if err != nil {
+		return nil, fmt.Errorf("repo.ListPullChecks: %w", err)
+	}
+	defer rows.Close()
+	var out []PullCheck
+	for rows.Next() {
+		c, err := scanPullCheck(rows)
+		if err != nil {
+			return nil, fmt.Errorf("repo.ListPullChecks: scan: %w", err)
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
 func scanRepo(row interface{ Scan(...any) error }) (Repo, error) {
 	var r Repo
 	var created, updated string
@@ -397,6 +524,10 @@ func (s *Service) DeleteRepo(ctx context.Context, id string) error {
 		return fmt.Errorf("repo.DeleteRepo: begin: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx,
+		`DELETE FROM pull_check WHERE pull_id IN (SELECT id FROM pull_request WHERE repo_id=?)`, id); err != nil {
+		return fmt.Errorf("repo.DeleteRepo: pull_check: %w", err)
+	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM pull_request WHERE repo_id=?`, id); err != nil {
 		return fmt.Errorf("repo.DeleteRepo: pull_request: %w", err)
 	}
