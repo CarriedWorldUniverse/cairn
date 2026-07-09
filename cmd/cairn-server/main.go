@@ -24,6 +24,16 @@
 //	                  fatal if certs unset and this is not set)
 //	CAIRN_PUBLIC_BASE optional public base URL for PR/ExternalRef links ("" omits)
 //
+// Push-triggered pack-store replication (all of BIN/STORE/KEY/RECIPIENTS/SPOOL
+// required to enable; see internal/replica):
+//
+//	CAIRN_REPLICA_BIN        porterpack binary path
+//	CAIRN_REPLICA_STORE      localdir pack-store path
+//	CAIRN_REPLICA_KEY        recipient private key file
+//	CAIRN_REPLICA_RECIPIENTS comma-separated recipient pubkey files
+//	CAIRN_REPLICA_SPOOL      spool directory (shared with the post-receive hook)
+//	CAIRN_REPLICA_INTERVAL   Go duration between spool scans (default 60s)
+//
 // cairn is intentionally dual-transport: the Smart-HTTP git server (:8100)
 // stays plain HTTP behind interchange's reverse-proxy (header-trust) and SSH is
 // unchanged, while the JSON API moved to gRPC (:8102) over mTLS. git cannot be
@@ -31,6 +41,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/tls"
 	"crypto/x509"
@@ -49,6 +60,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/httpd"
 	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
 	"github.com/CarriedWorldUniverse/cairn/internal/protect"
+	"github.com/CarriedWorldUniverse/cairn/internal/replica"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	"github.com/CarriedWorldUniverse/cairn/internal/sshd"
 	gossh "golang.org/x/crypto/ssh"
@@ -110,6 +122,14 @@ func main() {
 		post := "#!/bin/sh\nexec " + selfPath + " post-receive " + repoID + "\n"
 		return os.WriteFile(filepath.Join(hooksDir, "post-receive"), []byte(post), 0o755)
 	})
+
+	// Push-triggered pack-store replication: the post-receive hook marks dirty
+	// repos in the spool; this Runner drains it on a debounced tick. Disabled
+	// (Enabled() false) unless every CAIRN_REPLICA_* var is set.
+	if rc := replica.ConfigFromEnv(); rc.Enabled() {
+		log.Printf("cairn: replication enabled -> store=%s interval=%s", rc.Store, rc.Interval)
+		go rc.Run(context.Background())
+	}
 
 	// TLS material (cwb-ca mTLS): one cert serves every role — the client cert
 	// dialing herald (by-fingerprint) + ledger (PR-as-issue), and the server
