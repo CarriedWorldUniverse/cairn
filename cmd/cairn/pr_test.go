@@ -13,7 +13,7 @@ func TestPRNoVerbPrintsUsage(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for `cairn pr` with no verb, got nil")
 	}
-	for _, verb := range []string{"open", "list", "view", "merge"} {
+	for _, verb := range []string{"open", "list", "view", "diff", "merge"} {
 		if !strings.Contains(prUsage, verb) {
 			t.Errorf("pr usage missing verb %q", verb)
 		}
@@ -35,7 +35,13 @@ func TestPRUnknownVerb(t *testing.T) {
 // TestPRDialRequiresOrgAndSlug asserts every `pr` verb fails fast (before
 // dialing any network address) when --org/--repo-slug aren't supplied and
 // there's no env/config default — a clear, local error, not a dial timeout.
+// isolateIdentityEnv is required here: prConnFlags falls back to the HOST's
+// real global config (pr.org/pr.repo-slug) when the env vars are unset, so
+// without it this test is non-hermetic — it fails on any machine that has
+// `cairn config --global pr.org ...` set (exactly what our own docs tell
+// users to do).
 func TestPRDialRequiresOrgAndSlug(t *testing.T) {
+	isolateIdentityEnv(t)
 	t.Setenv("CAIRN_ORG", "")
 	t.Setenv("CAIRN_REPO_SLUG", "")
 	err := run([]string{"pr", "list", "--server", "127.0.0.1:0"})

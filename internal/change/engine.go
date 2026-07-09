@@ -197,6 +197,66 @@ func (e *Engine) ResolveCommit(rev string) (string, error) {
 	return h.String(), nil
 }
 
+// ErrNoCommonAncestor is returned by MergeBase when a and b share no common
+// history (genuinely unrelated histories) — there is no valid merge-base to
+// diff from.
+var ErrNoCommonAncestor = errors.New("change: no common ancestor")
+
+// MergeBase resolves the best common ancestor of two revisions (any form
+// ResolveCommit accepts) to its full hash — the merge-base git itself uses for
+// a `target...source` three-dot diff. Returns ErrNoCommonAncestor if a and b
+// share no history.
+func (e *Engine) MergeBase(a, b string) (string, error) {
+	ha, err := e.ResolveCommit(a)
+	if err != nil {
+		return "", fmt.Errorf("change.MergeBase: %w", err)
+	}
+	hb, err := e.ResolveCommit(b)
+	if err != nil {
+		return "", fmt.Errorf("change.MergeBase: %w", err)
+	}
+	ca, err := e.git.CommitObject(plumbing.NewHash(ha))
+	if err != nil {
+		return "", fmt.Errorf("change.MergeBase: load %s: %w", a, err)
+	}
+	cb, err := e.git.CommitObject(plumbing.NewHash(hb))
+	if err != nil {
+		return "", fmt.Errorf("change.MergeBase: load %s: %w", b, err)
+	}
+	bases, err := ca.MergeBase(cb)
+	if err != nil {
+		return "", fmt.Errorf("change.MergeBase: %s...%s: %w", a, b, err)
+	}
+	if len(bases) == 0 {
+		return "", fmt.Errorf("change.MergeBase: %s and %s: %w", a, b, ErrNoCommonAncestor)
+	}
+	return bases[0].Hash.String(), nil
+}
+
+// DiffMergeBase returns the per-path diff introduced by source since it
+// forked from target — target...source ("three-dot") semantics, resolving the
+// merge-base of the two revisions and diffing FROM THERE to source's tip. This
+// is what `gh pr diff`/GitHub's PR diff compute, and is deliberately distinct
+// from DiffCommits' literal tip-to-tip diff: it stays correct as target
+// advances with commits source never saw (those never appear as spurious
+// revert hunks). Returns ErrNoCommonAncestor if target and source share no
+// history.
+func (e *Engine) DiffMergeBase(target, source string) ([]FileDiff, error) {
+	mb, err := e.MergeBase(target, source)
+	if err != nil {
+		return nil, fmt.Errorf("change.DiffMergeBase: %w", err)
+	}
+	fullSource, err := e.ResolveCommit(source)
+	if err != nil {
+		return nil, fmt.Errorf("change.DiffMergeBase: %w", err)
+	}
+	diffs, err := e.DiffCommits(mb, fullSource)
+	if err != nil {
+		return nil, fmt.Errorf("change.DiffMergeBase: %w", err)
+	}
+	return diffs, nil
+}
+
 // LineByName loads a line by its unique name, or returns ErrNotFound.
 func (e *Engine) LineByName(name string) (Line, error) {
 	row := e.db.QueryRow(

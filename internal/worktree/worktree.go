@@ -812,6 +812,21 @@ func (r *Repo) DiffCommits(a, b string) ([]change.FileDiff, error) {
 	return diffs, nil
 }
 
+// DiffMergeBase returns the per-path diff from the merge-base of a and b to
+// b's tip — target...source ("three-dot") semantics, passing through to the
+// change engine. Unlike DiffCommits (a literal tip-to-tip diff), this stays
+// correct when a (the target) has advanced with commits b never saw: only the
+// changes b actually introduced appear, never a spurious revert of a's
+// unrelated commits. Returns change.ErrNoCommonAncestor if a and b share no
+// history.
+func (r *Repo) DiffMergeBase(a, b string) ([]change.FileDiff, error) {
+	diffs, err := r.eng.DiffMergeBase(a, b)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.DiffMergeBase: %w", err)
+	}
+	return diffs, nil
+}
+
 // DefaultBranch returns the name of the structural root line (the parent_line IS
 // NULL line), whatever it is called. After a clone of a remote whose default
 // branch is e.g. "master", this is "master" rather than the literal "main".
@@ -1016,10 +1031,21 @@ func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
 
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
 // without reconciling local lines — the read-only half of a pull. Local work is
-// never clobbered.
+// never clobbered. Does not prune (unchanged behavior — see FetchPruned).
 func (r *Repo) Fetch(remote string) error {
 	if err := r.eng.FetchTracking(remote); err != nil {
 		return fmt.Errorf("worktree.Fetch: %w", err)
+	}
+	return nil
+}
+
+// FetchPruned is Fetch with pruning on: a tracking ref whose remote-side
+// branch was deleted is removed instead of left stale. Used by `pr diff` so a
+// PR branch deleted on the remote fails with a clear "not found" error rather
+// than silently diffing against the last-known (now-deleted) tip.
+func (r *Repo) FetchPruned(remote string) error {
+	if err := r.eng.FetchTrackingPruned(remote); err != nil {
+		return fmt.Errorf("worktree.FetchPruned: %w", err)
 	}
 	return nil
 }

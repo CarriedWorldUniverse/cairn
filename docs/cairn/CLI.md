@@ -443,6 +443,32 @@ List the repo's pull requests (default `--state open`).
 #### `cairn pr view <id>`
 Show one pull request's id, state, branches, title, and linked ledger issue key.
 
+#### `cairn pr diff <id>` — `--repo <dir>` `--remote <name>`
+Print the pull request's unified diff to stdout — the `gh pr diff` equivalent, suitable
+for piping into a review/judge gate. This is the one `pr` verb that is **not** a pure
+gRPC call: it resolves the PR's branch names via `pr view`, then **prune-fetches**
+`--remote`'s tracking refs into `--repo` (default `.`; read-only, no reconcile) and diffs
+**locally** from those tracking refs — so it works even in a clone where neither line
+was ever `express`ed. `--remote` (default `origin`) must be a git remote of `--repo` that
+addresses the **same** repo the gRPC server (`--org`/`--repo-slug`) is addressing — cairn
+does not itself correlate a gRPC org/slug to a git remote URL, so pick the remote name
+deliberately in v1.
+```sh
+cairn pr diff a1b2c3 --repo . --remote origin
+```
+**Semantics: `target...source` (merge-base), not a literal tip-to-tip diff.** The output
+is the merge-base of `target` and `source` diffed against `source`'s tip — exactly what
+`target` gained on `source`'s line since it forked, and nothing else. This matters once
+`target` has moved on: if `target` picks up commits `source` never saw, a naive tip-to-tip
+diff would show them as spurious deletions (reverting content `source` simply never had).
+`cairn diff <a> <b>` (the plain two-ref form, [above](#inspecting)) is unaffected — it
+stays a literal tip-to-tip diff, by design.
+
+`target` and `source` sharing no history at all (unrelated branches) is a clear error, not
+an empty or nonsensical diff. The tracking-ref fetch **prunes** stale refs, so if the PR's
+source (or target) branch has since been deleted on the remote, `pr diff` fails clearly
+instead of silently diffing against its last-known (now-deleted) tip.
+
 #### `cairn pr merge <id>`
 Fast-forward-merge an open pull request and best-effort comment the linked ledger issue.
 A diverged source fails with the server's exact guidance, e.g.:
