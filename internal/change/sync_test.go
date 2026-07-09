@@ -382,6 +382,262 @@ func TestPullNoChangeNoOrphan(t *testing.T) {
 	}
 }
 
+// pushNewBranchDirect clones the bare, creates a NEW branch (never imported
+// into the engine e, so no local line by that name exists), commits path=
+// content, and pushes it straight to the bare — for exercising
+// PullFromRemoteBranch's "remote has the branch, but no open local line by
+// that name" no-op path.
+func pushNewBranchDirect(t *testing.T, bare, branch, path, content string) {
+	t.Helper()
+	work := t.TempDir()
+	repo, err := git.PlainClone(work, false, &git.CloneOptions{URL: bare})
+	if err != nil {
+		t.Fatalf("clone bare: %v", err)
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		t.Fatalf("worktree: %v", err)
+	}
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branch),
+		Create: true,
+	}); err != nil {
+		t.Fatalf("checkout -b %s: %v", branch, err)
+	}
+	full := filepath.Join(work, path)
+	if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+	if _, err := wt.Add(path); err != nil {
+		t.Fatalf("add %s: %v", path, err)
+	}
+	if _, err := wt.Commit("new branch "+branch, &git.CommitOptions{
+		Author: &object.Signature{Name: "o", Email: "o@x"},
+	}); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if err := repo.Push(&git.PushOptions{
+		RemoteName: "origin",
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(plumbing.NewBranchReferenceName(branch) + ":" + plumbing.NewBranchReferenceName(branch)),
+		},
+	}); err != nil {
+		t.Fatalf("push %s: %v", branch, err)
+	}
+}
+
+// TestPullFromRemoteBranchNoSuchRemoteBranch: the remote has no branch by that
+// name — PullFromRemoteBranch is a silent no-op, not an error.
+func TestPullFromRemoteBranchNoSuchRemoteBranch(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, _ := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	sum, err := e.PullFromRemoteBranch("origin", "no-such-branch")
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	if len(sum.Lines) != 0 {
+		t.Fatalf("expected no-op summary, got %+v", sum)
+	}
+}
+
+// TestPullFromRemoteBranchNoOpenLocalLine: the remote HAS the branch, but no
+// open local line by that name exists — a silent no-op (mirrors
+// PullFromRemote skipping lines with no remote counterpart, just from the
+// other direction).
+func TestPullFromRemoteBranchNoOpenLocalLine(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, _ := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	pushNewBranchDirect(t, bare, "orphan", "orphan.txt", "O\n")
+	sum, err := e.PullFromRemoteBranch("origin", "orphan")
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	if len(sum.Lines) != 0 {
+		t.Fatalf("expected no-op summary (no local line 'orphan'), got %+v", sum)
+	}
+}
+
+// TestPullFromRemoteBranchUpToDate: local already at the remote tip — no-op,
+// status "up-to-date", tip unmoved.
+func TestPullFromRemoteBranchUpToDate(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	root, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	before := root.TipCommit
+	sum, err := e.PullFromRemoteBranch("origin", def)
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	root2, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	if root2.TipCommit != before {
+		t.Fatalf("up-to-date pull moved the tip: %s -> %s", before, root2.TipCommit)
+	}
+	if len(sum.Lines) != 1 || sum.Lines[0].Status != "up-to-date" {
+		t.Fatalf("summary = %+v, want single up-to-date result", sum.Lines)
+	}
+}
+
+// TestPullFromRemoteBranchFastForward: remote-only advance adopts the remote
+// tip wholesale (fast-forward), scoped to just the named branch.
+func TestPullFromRemoteBranchFastForward(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	advanceOrigin(t, bare, def, "added.txt", "X\n")
+	sum, err := e.PullFromRemoteBranch("origin", def)
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	root, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	files, err := e.Files(root.TipCommit)
+	if err != nil {
+		t.Fatalf("Files: %v", err)
+	}
+	if string(files["added.txt"]) != "X\n" {
+		t.Fatalf("ff pull did not bring added.txt: %v", files)
+	}
+	if len(sum.Lines) != 1 || sum.Lines[0].Status != "fast-forward" {
+		t.Fatalf("summary = %+v, want single fast-forward result", sum.Lines)
+	}
+}
+
+// TestPullFromRemoteBranchDivergentCleanMerge: a clean divergence rebases (as
+// PullFromRemote does), scoped to the named branch only.
+func TestPullFromRemoteBranchDivergentCleanMerge(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	root, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	ch, err := e.CreateChange(root.ID, "local")
+	if err != nil {
+		t.Fatalf("CreateChange: %v", err)
+	}
+	if _, err := e.Commit(ch.ID, mustFilesPlusLocal(t, e, root.TipCommit), nil, ""); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	advanceOrigin(t, bare, def, "remote.txt", "R\n")
+	sum, err := e.PullFromRemoteBranch("origin", def)
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	root2, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	files, err := e.Files(root2.TipCommit)
+	if err != nil {
+		t.Fatalf("Files: %v", err)
+	}
+	if string(files["local.txt"]) != "L\n" || string(files["remote.txt"]) != "R\n" {
+		t.Fatalf("clean rebase missing a side: %v", files)
+	}
+	assertOneParent(t, e, root2.TipCommit)
+	if len(sum.Lines) != 1 || sum.Lines[0].Status != "rebased" || sum.Lines[0].Conflicts != 0 {
+		t.Fatalf("summary = %+v, want single clean rebased result", sum.Lines)
+	}
+}
+
+// TestPullFromRemoteBranchDivergentConflict: a same-region divergence records
+// a conflict on the branch's active change, and does not error.
+func TestPullFromRemoteBranchDivergentConflict(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare, def := originWithCommit(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	if _, err := e.ImportFromRemote(bare); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	root, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	ch, err := e.CreateChange(root.ID, "local")
+	if err != nil {
+		t.Fatalf("CreateChange: %v", err)
+	}
+	if _, err := e.Commit(ch.ID, map[string][]byte{"readme.txt": []byte("local edit\n")}, nil, ""); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	advanceOrigin(t, bare, def, "readme.txt", "remote edit\n")
+	sum, err := e.PullFromRemoteBranch("origin", def)
+	if err != nil {
+		t.Fatalf("PullFromRemoteBranch: %v", err)
+	}
+	if len(sum.Lines) != 1 || sum.Lines[0].Conflicts == 0 {
+		t.Fatalf("expected a single conflicted result, got %+v", sum.Lines)
+	}
+	c, err := e.LineByName(def)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	var changeID string
+	if err := e.db.QueryRow(
+		`SELECT id FROM change WHERE line_id=? AND status='open' ORDER BY updated_at DESC LIMIT 1`,
+		c.ID).Scan(&changeID); err != nil {
+		t.Fatalf("find change: %v", err)
+	}
+	conflicts, err := e.Conflicts(changeID)
+	if err != nil {
+		t.Fatalf("Conflicts: %v", err)
+	}
+	if len(conflicts) == 0 {
+		t.Fatalf("Conflicts(%s) listed none", changeID)
+	}
+}
+
 func TestPullUpToDate(t *testing.T) {
 	skipOnWindowsSync(t)
 	bare, def := originWithCommit(t)
