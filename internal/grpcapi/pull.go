@@ -166,12 +166,17 @@ func (p *pullServer) ListPulls(ctx context.Context, req *cairnv1.ListPullsReques
 	return &cairnv1.ListPullsResponse{Pulls: out}, nil
 }
 
-// RecordPullCheck mirrors POST .../pulls/{id}/checks: scope repo:write, pull
-// must be open. Upserts by (pull, name); best-effort comments the linked
+// RecordPullCheck mirrors POST .../pulls/{id}/checks: scope checks:attest,
+// pull must be open. Upserts by (pull, name); best-effort comments the linked
 // ledger issue — unlike MergePull, any comment failure here is discarded, not
 // surfaced on the response (RecordPullCheckResponse has no error field for it).
+//
+// checks:attest is distinct from repo:write by design (cairn#99, cairn#105):
+// separation of duties means a builder holding only repo:write (able to push
+// branches and open pulls) cannot also self-attest that its own gate checks
+// passed. Recording a check verdict requires the narrower checks:attest scope.
 func (p *pullServer) RecordPullCheck(ctx context.Context, req *cairnv1.RecordPullCheckRequest) (*cairnv1.RecordPullCheckResponse, error) {
-	id, err := authed(ctx, req.Org, "repo:write")
+	id, err := authed(ctx, req.Org, "checks:attest")
 	if err != nil {
 		return nil, err
 	}
