@@ -1168,14 +1168,24 @@ func cmdRemoteAdd(args []string) error {
 }
 
 // cmdPush publishes the change-graph's branches + tags to a remote (default
-// "origin"). --force overwrites a diverged remote branch.
+// "origin"). --force overwrites a diverged remote branch. --reconcile (single-
+// line push only) pulls + retries just that one line on divergence instead of
+// surfacing the guided "diverged" error; it is rejected together with --all
+// (which has its own all-lines auto-reconcile) or --force (which never pulls).
 func cmdPush(args []string) error {
 	fs := flag.NewFlagSet("push", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "force-overwrite a diverged remote branch")
 	all := fs.Bool("all", false, "push all lines, not just the current one")
+	reconcile := fs.Bool("reconcile", false, "single-line push: pull+retry just this line on a diverged remote")
 	if err := parseArgs(fs, args); err != nil {
 		return err
+	}
+	if *reconcile && *all {
+		return errors.New("--reconcile applies to a single-line push (not --all)")
+	}
+	if *reconcile && *force {
+		return errors.New("--reconcile and --force are contradictory")
 	}
 	// push [remote] [branch]: 2 args → only <branch> to <remote>; otherwise the
 	// branch defaults to the line you're standing in (like git pushes the current
@@ -1200,13 +1210,30 @@ func cmdPush(args []string) error {
 		}
 	}
 	if branch != "" {
-		// Single-line push: no auto-pull-retry (a diverged branch surfaces the
-		// clear "diverged" error).
+		if *reconcile {
+			// Opt-in single-line reconcile: pulls + retries just this line on
+			// divergence (scoped, unlike Push's all-lines auto-reconcile).
+			if err := r.PushBranchReconcile(remote, branch); err != nil {
+				return mapRemoteErr(err)
+			}
+			fmt.Printf("pushed %s -> %s\n", branch, remote)
+			return nil
+		}
+		// Single-line push: no auto-pull-retry (a diverged branch surfaces a
+		// guided "diverged" error naming --reconcile/--pull/--force).
 		if err := r.PushBranch(remote, branch, *force); err != nil {
 			return mapRemoteErr(err)
 		}
 		fmt.Printf("pushed %s -> %s\n", branch, remote)
 		return nil
+	}
+	if *reconcile {
+		// No single line resolved: --all was NOT passed (that conflict is
+		// already rejected above) and cwd isn't inside a branch folder, so
+		// there's nothing for --reconcile to scope to. Distinct from the
+		// --reconcile+--all message above: the operator never typed --all
+		// here, so telling them "not --all" would be confusing.
+		return errors.New("--reconcile needs a single line to push — pass a branch, or run it from inside an expressed branch folder")
 	}
 	// r.Push auto-reconciles a diverged remote (pull + 3-way merge, then retry
 	// once) so "push just works". A successful auto-retry is intentionally silent

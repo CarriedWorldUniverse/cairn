@@ -156,6 +156,46 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 	return sum, nil
 }
 
+// PullFromRemoteBranch is PullFromRemote scoped to ONE named open line — the
+// engine primitive behind `cairn push --reconcile`'s single-line reconcile.
+// It fetches remoteName into tracking refs (the same fetchTracking as
+// PullFromRemote — all remote branches land in refs/remotes/<remote>/*, a
+// read-only local mirror), but reconciles (and writes catalogue state for)
+// ONLY branch. Every other open line's tip/change is left untouched. A
+// missing remote branch or missing/closed local line is a no-op, not an
+// error (mirrors PullFromRemote silently skipping lines with no remote
+// counterpart).
+func (e *Engine) PullFromRemoteBranch(remoteName, branch string) (PullSummary, error) {
+	if err := e.fetchTracking(remoteName); err != nil {
+		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+	}
+	rheads, err := e.remoteHeads(remoteName)
+	if err != nil {
+		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+	}
+	r, ok := rheads[branch]
+	if !ok {
+		return PullSummary{}, nil // remote has no such branch; nothing to reconcile
+	}
+
+	var id, tip string
+	err = e.db.QueryRow(
+		`SELECT id, tip_commit FROM line WHERE name=? AND status='open'`, branch,
+	).Scan(&id, &tip)
+	if errors.Is(err, sql.ErrNoRows) {
+		return PullSummary{}, nil // no open local line by that name; nothing to reconcile
+	}
+	if err != nil {
+		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+	}
+
+	res, err := e.reconcileLine(id, branch, tip, r)
+	if err != nil {
+		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+	}
+	return PullSummary{Lines: []LineResult{res}}, nil
+}
+
 // reconcileLine reconciles one open line against its remote tip R. L is the
 // line's active open-change head (or the line tip if the change has no commit
 // yet). The catalogue writes (conflict rows, change head, line tip) commit or
