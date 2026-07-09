@@ -260,9 +260,16 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 
 	case base == l && l != "":
 		// Fast-forward: adopt the remote tip wholesale. When the line has an open
-		// change, advance its head too; otherwise advance only the line tip — no
-		// change is created.
-		if err := e.applyHead(changeID, lineID, r, 0); err != nil {
+		// change WITH a snapshot, advance its head too; a NEVER-SNAPSHOTTED open
+		// change stays headless (#103 second symptom: adopting r as its head made
+		// the next folder sync AMEND onto r's parent — amends keep the working
+		// commit's parent — presenting the remote commit's own changes as local
+		// work). A headless change re-snapshots with parent = the new line tip.
+		ffChange := changeID
+		if changeHead == "" {
+			ffChange = ""
+		}
+		if err := e.applyHead(ffChange, lineID, r, 0); err != nil {
 			return LineResult{}, err
 		}
 		return LineResult{Line: lineName, Status: "fast-forward"}, nil

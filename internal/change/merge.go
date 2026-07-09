@@ -151,16 +151,47 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			}
 
 		case inOurs && !inTheirs:
-			// Present only on the parent side: added on parent, or the change
-			// deleted it (whether or not the parent also modified it). Phase-1
-			// rule: keep the side that still has content — the parent's.
+			// Present only on the parent/ours side. Real 3-way semantics (#103 —
+			// the old "keep the side that still has content" rule made deletions
+			// NEVER propagate, resurrecting moved/deleted trees on reconcile):
+			//  - not in base            → genuinely added on ours → keep it.
+			//  - in base, ours == base  → theirs DELETED an untouched file → the
+			//                             deletion wins → drop it.
+			//  - in base, ours != base  → modify(ours)/delete(theirs) → keep the
+			//                             surviving content and record a conflict
+			//                             (same keep-content posture as binary
+			//                             conflicts; resolve decides).
+			if !inBase {
+				merged[p] = ov
+				continue
+			}
+			if bytes.Equal(bv, ov) {
+				continue // deletion propagates
+			}
 			merged[p] = ov
+			c, err := e.buildConflict(changeID, p, bv, ov, nil, ov)
+			if err != nil {
+				return "", nil, err
+			}
+			conflicts = append(conflicts, c)
 
 		case !inOurs && inTheirs:
-			// Present only on the change side: added on the change, or the
-			// parent deleted it (whether or not the change also modified it).
-			// Phase-1 rule: keep the side that still has content — the change's.
+			// Present only on the change/theirs side — mirror of the case above
+			// (#103: ours deleted/moved it; a theirs snapshot that never touched
+			// the file must not resurrect it).
+			if !inBase {
+				merged[p] = tv
+				continue
+			}
+			if bytes.Equal(bv, tv) {
+				continue // deletion propagates
+			}
 			merged[p] = tv
+			c, err := e.buildConflict(changeID, p, bv, nil, tv, tv)
+			if err != nil {
+				return "", nil, err
+			}
+			conflicts = append(conflicts, c)
 
 		default:
 			// Present only in base: deleted on both sides. Drop it.

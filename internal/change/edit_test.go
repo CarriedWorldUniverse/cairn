@@ -23,13 +23,15 @@ func buildChildLineWith3SealedSameFile(t *testing.T, e *Engine) (childLineID str
 		t.Fatalf("CreateLine(child): %v", err)
 	}
 
-	// Each step modifies x.txt with successive content.
+	// Each step modifies x.txt with successive content. Snapshots are the WHOLE
+	// folder (the SnapshotWorking contract): base.txt rides along unchanged.
 	contents := []string{"1\n", "2\n", "3\n"}
 	msgs = []string{"S1", "S2", "S3"}
 	cur := openChange(t, e, child.ID)
 	for i, m := range msgs {
 		if _, _, err := e.SnapshotWorking(cur, map[string]TreeEntry{
-			"x.txt": blobEntry(t, e, contents[i]),
+			"base.txt": blobEntry(t, e, "base\n"),
+			"x.txt":    blobEntry(t, e, contents[i]),
 		}); err != nil {
 			t.Fatalf("SnapshotWorking %s: %v", m, err)
 		}
@@ -78,9 +80,13 @@ func buildChildLineWith3Sealed(t *testing.T, e *Engine) (childLineID string, com
 	files := []string{"s1.txt", "s2.txt", "s3.txt"}
 	cur := openChange(t, e, child.ID)
 	for i, m := range msgs {
-		if _, _, err := e.SnapshotWorking(cur, map[string]TreeEntry{
-			files[i]: blobEntry(t, e, m+" content\n"),
-		}); err != nil {
+		// Snapshot the WHOLE folder (the SnapshotWorking contract): each step's
+		// folder holds base.txt plus every file added so far.
+		entries := map[string]TreeEntry{"base.txt": blobEntry(t, e, "base\n")}
+		for j := 0; j <= i; j++ {
+			entries[files[j]] = blobEntry(t, e, msgs[j]+" content\n")
+		}
+		if _, _, err := e.SnapshotWorking(cur, entries); err != nil {
 			t.Fatalf("SnapshotWorking %s: %v", m, err)
 		}
 		next, conflicts, err := e.Seal(cur, m)
