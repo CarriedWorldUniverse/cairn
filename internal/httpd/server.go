@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/cgi"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -140,15 +141,28 @@ func (s *Server) serveBackend(w http.ResponseWriter, r *http.Request, bareDir st
 	// -c http.receivepack=true enables push over Smart-HTTP for every repo
 	// (cairn has already enforced repo:write scope before reaching here; the
 	// receive-pack toggle in git is otherwise off by default).
+	env := []string{
+		"GIT_PROJECT_ROOT=" + root,
+		"GIT_HTTP_EXPORT_ALL=1",
+		"PATH_INFO=/" + base + rest,
+	}
+	// net/http/cgi does NOT inherit the parent process environment, so the
+	// server-side hooks (pre-/post-receive shelling back into cairn-server)
+	// would otherwise run without cairn's own config. Pass through every var
+	// the hook subcommands read; the SSH ingress inherits env natively, and
+	// this keeps the two paths behaviorally identical. (CAIRN_DB and
+	// CAIRN_REPO_ROOT previously worked over HTTP only because their
+	// defaults matched the deployment's values.)
+	for _, key := range []string{"CAIRN_DB", "CAIRN_REPO_ROOT", "CAIRN_REPLICA_SPOOL"} {
+		if v := os.Getenv(key); v != "" {
+			env = append(env, key+"="+v)
+		}
+	}
 	h := &cgi.Handler{
 		Path: s.gitPath,
 		Args: []string{"-c", "http.receivepack=true", "http-backend"},
 		Dir:  root,
-		Env: []string{
-			"GIT_PROJECT_ROOT=" + root,
-			"GIT_HTTP_EXPORT_ALL=1",
-			"PATH_INFO=/" + base + rest,
-		},
+		Env:  env,
 	}
 	h.ServeHTTP(w, r)
 }
