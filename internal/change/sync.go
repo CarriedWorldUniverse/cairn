@@ -180,7 +180,8 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 // error (mirrors PullFromRemote silently skipping lines with no remote
 // counterpart).
 func (e *Engine) PullFromRemoteBranch(remoteName, branch string) (PullSummary, error) {
-	if err := e.fetchTracking(remoteName); err != nil {
+	// no prune: reconcile semantics match PullFromRemote (see fetchTracking's prune param, added for pr diff)
+	if err := e.fetchTracking(remoteName, false); err != nil {
 		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
 	}
 	rheads, err := e.remoteHeads(remoteName)
