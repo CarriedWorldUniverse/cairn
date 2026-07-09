@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/replica"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 )
 
@@ -48,5 +49,20 @@ func runPostReceive(repoID string) int {
 	if d > 0 {
 		fmt.Fprintf(os.Stderr, "cairn: retired %d disclosed embargo branch(es)\n", d)
 	}
+
+	// Replication: mark the repo dirty in the spool for the server's Runner to
+	// pick up. Off the push path entirely — a marking failure must not fail
+	// the hook (the push already landed); log and keep the embargo exit code.
+	if spoolDir := os.Getenv("CAIRN_REPLICA_SPOOL"); spoolDir != "" {
+		repoPath, err := core.StoragePathForID(ctx, repoID)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cairn post-receive: replica: resolve storage path:", err)
+			return 0
+		}
+		if err := (replica.Spool{Dir: spoolDir}).Mark(repoID, repoPath); err != nil {
+			fmt.Fprintln(os.Stderr, "cairn post-receive: replica: mark:", err)
+		}
+	}
+
 	return 0
 }
