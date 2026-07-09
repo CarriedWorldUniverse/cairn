@@ -60,7 +60,7 @@ func TestUsageListsAllCommands(t *testing.T) {
 	required := []string{
 		"init", "clone", "express", "unexpress", "commit",
 		"fold", "abandon", "status", "tree", "ls", "resolve",
-		"remote", "push", "fetch", "pull", "config",
+		"remote", "push", "fetch", "pull", "pr", "config",
 		"tag", "version", "release",
 		"diff", "log", "show", "undo", "oplog",
 	}
