@@ -719,6 +719,32 @@ func TestMergePull_EmptyProtectionMergesAsBefore(t *testing.T) {
 	}
 }
 
+// TestMergePull_MalformedProtectionMergesAsBefore proves a repo whose
+// Protection JSON is corrupted/unparseable is treated as "no required-checks
+// policy" (same lenient posture as prereceive.go for DefaultBranch) rather
+// than refusing the merge outright — the malformed-JSON path is logged (see
+// requiredCheckViolations), not merge-blocking.
+func TestMergePull_MalformedProtectionMergesAsBefore(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	r := seedFFRepo(t, core, "org-1", "widgets")
+	if err := core.SetProtection(context.Background(), r.ID, `{not valid json`); err != nil {
+		t.Fatalf("SetProtection: %v", err)
+	}
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	resp, err := c.pull.MergePull(mdCtx("org-1", "repo:write"), &cairnv1.MergePullRequest{Org: "org-1", Slug: "widgets", Id: open.Pull.GetId()})
+	if err != nil {
+		t.Fatalf("MergePull (malformed protection, no checks): %v", err)
+	}
+	if resp.Result.GetState() != "merged" {
+		t.Fatalf("unexpected merge result: %+v", resp.Result)
+	}
+}
+
 // TestMergePull_RequiredChecksNamesAllAbsentAndFailing proves the refusal
 // names every violating required check (absent or non-pass), not just the
 // first.

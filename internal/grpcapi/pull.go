@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 	"unicode"
 
@@ -277,8 +278,9 @@ func (p *pullServer) ListPullChecks(ctx context.Context, req *cairnv1.ListPullCh
 // required-checks policy (protect.Rule.RequiredChecks, via its protection
 // JSON), also refuses unless every required check is both recorded AND
 // passing — closing the fail-open gap where an absent required check merged
-// freely (cairn#99/#110). A repo with no such policy behaves exactly as
-// before.
+// freely (cairn#99/#110). Required-check names must match the recorded check
+// name EXACTLY (case- and whitespace-sensitive); a mismatch reads as absent
+// and fails closed. A repo with no such policy behaves exactly as before.
 func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullRequest) (*cairnv1.MergePullResponse, error) {
 	id, err := authed(ctx, req.Org, "repo:write")
 	if err != nil {
@@ -303,7 +305,7 @@ func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullReques
 	if failing := nonPassingChecks(checks); len(failing) > 0 {
 		return nil, status.Errorf(codes.FailedPrecondition, "checks not passing: %s", failing)
 	}
-	if violations := requiredCheckViolations(rp.Protection, checks); violations != "" {
+	if violations := requiredCheckViolations(rp.ID, rp.Protection, checks); violations != "" {
 		return nil, status.Errorf(codes.FailedPrecondition, "required checks not satisfied: %s", violations)
 	}
 
@@ -361,9 +363,25 @@ func nonPassingChecks(checks []repo.PullCheck) string {
 // is recorded and passing. This is additive to nonPassingChecks: it is the
 // enforcement half of cairn#99/#110 that closes the "required check simply
 // never recorded" gap, which nonPassingChecks alone cannot see.
-func requiredCheckViolations(protection string, checks []repo.PullCheck) string {
+//
+// Required-check names match the recorded check name EXACTLY (case- and
+// whitespace-sensitive); any mismatch (e.g. "CI" vs "ci", trailing space)
+// reads as the required check being absent, and fails closed.
+//
+// A malformed/unparseable Protection JSON is intentionally NOT treated as a
+// merge-time error (consistency with prereceive.go, and refusing outright
+// could brick DefaultBranch-only rules written before this field existed) —
+// but it IS logged loudly, since a corrupted policy on a repo that has
+// actually opted in must be observable rather than silently indistinguishable
+// from "never opted in".
+func requiredCheckViolations(repoID, protection string, checks []repo.PullCheck) string {
 	var rule protect.Rule
-	if err := json.Unmarshal([]byte(protection), &rule); err != nil || len(rule.RequiredChecks) == 0 {
+	if err := json.Unmarshal([]byte(protection), &rule); err != nil {
+		slog.Error("repo protection JSON unparseable — required-checks policy NOT enforced",
+			"repo_id", repoID, "error", err)
+		return ""
+	}
+	if len(rule.RequiredChecks) == 0 {
 		return ""
 	}
 	states := make(map[string]string, len(checks))
