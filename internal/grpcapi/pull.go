@@ -2,11 +2,14 @@ package grpcapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 	"unicode"
 
 	ledgerclient "github.com/CarriedWorldUniverse/cairn/internal/ledger"
+	"github.com/CarriedWorldUniverse/cairn/internal/protect"
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
 	cairnv1 "github.com/CarriedWorldUniverse/cwb-proto/gen/go/cwb/cairn/v1"
 	"google.golang.org/grpc/codes"
@@ -271,7 +274,13 @@ func (p *pullServer) ListPullChecks(ctx context.Context, req *cairnv1.ListPullCh
 // MergePull mirrors POST .../pulls/{id}/merge: fast-forward-only merge, mark
 // merged, best-effort comment the linked ledger issue. Refuses to merge while
 // any recorded check on the pull is not "pass" (zero recorded checks merges
-// exactly as before this feature — back-compat).
+// exactly as before this feature — back-compat). If the repo opts into a
+// required-checks policy (protect.Rule.RequiredChecks, via its protection
+// JSON), also refuses unless every required check is both recorded AND
+// passing — closing the fail-open gap where an absent required check merged
+// freely (cairn#99/#110). Required-check names must match the recorded check
+// name EXACTLY (case- and whitespace-sensitive); a mismatch reads as absent
+// and fails closed. A repo with no such policy behaves exactly as before.
 func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullRequest) (*cairnv1.MergePullResponse, error) {
 	id, err := authed(ctx, req.Org, "repo:write")
 	if err != nil {
@@ -295,6 +304,9 @@ func (p *pullServer) MergePull(ctx context.Context, req *cairnv1.MergePullReques
 	}
 	if failing := nonPassingChecks(checks); len(failing) > 0 {
 		return nil, status.Errorf(codes.FailedPrecondition, "checks not passing: %s", failing)
+	}
+	if violations := requiredCheckViolations(rp.ID, rp.Protection, checks); violations != "" {
+		return nil, status.Errorf(codes.FailedPrecondition, "required checks not satisfied: %s", violations)
 	}
 
 	mergedSHA, ffErr := p.s.core.FastForward(ctx, rp.ID, pull.Source, pull.Target)
@@ -338,6 +350,58 @@ func nonPassingChecks(checks []repo.PullCheck) string {
 			out += ", "
 		}
 		out += c.Name + "=" + c.State
+	}
+	return out
+}
+
+// requiredCheckViolations names every required check (per the repo's
+// protection rule) that is either not recorded on the pull at all or recorded
+// in a non-pass state ("<name>=absent" / "<name>=<state>"), comma-joined.
+// Empty when the repo has no required-checks policy (malformed/empty
+// protection JSON parses as no policy — the same lenient, fail-open-only-for-
+// unset posture prereceive.go uses for DefaultBranch) or every required check
+// is recorded and passing. This is additive to nonPassingChecks: it is the
+// enforcement half of cairn#99/#110 that closes the "required check simply
+// never recorded" gap, which nonPassingChecks alone cannot see.
+//
+// Required-check names match the recorded check name EXACTLY (case- and
+// whitespace-sensitive); any mismatch (e.g. "CI" vs "ci", trailing space)
+// reads as the required check being absent, and fails closed.
+//
+// A malformed/unparseable Protection JSON is intentionally NOT treated as a
+// merge-time error (consistency with prereceive.go, and refusing outright
+// could brick DefaultBranch-only rules written before this field existed) —
+// but it IS logged loudly, since a corrupted policy on a repo that has
+// actually opted in must be observable rather than silently indistinguishable
+// from "never opted in".
+func requiredCheckViolations(repoID, protection string, checks []repo.PullCheck) string {
+	var rule protect.Rule
+	if err := json.Unmarshal([]byte(protection), &rule); err != nil {
+		slog.Error("repo protection JSON unparseable — required-checks policy NOT enforced",
+			"repo_id", repoID, "error", err)
+		return ""
+	}
+	if len(rule.RequiredChecks) == 0 {
+		return ""
+	}
+	states := make(map[string]string, len(checks))
+	for _, c := range checks {
+		states[c.Name] = c.State
+	}
+	var out string
+	for _, name := range rule.RequiredChecks {
+		state, recorded := states[name]
+		if recorded && state == repo.CheckStatePass {
+			continue
+		}
+		if out != "" {
+			out += ", "
+		}
+		if !recorded {
+			out += name + "=absent"
+		} else {
+			out += name + "=" + state
+		}
 	}
 	return out
 }

@@ -11,9 +11,13 @@ import (
 
 const zeroSHA = "0000000000000000000000000000000000000000"
 
-// Rule is the minimal per-repo protection: just which branch is default.
+// Rule is the minimal per-repo protection: which branch is default, plus an
+// opt-in list of required pull checks. RequiredChecks is additive and
+// nil/empty by default, so existing "{}" / DefaultBranch-only rules parse
+// unchanged and merges behave exactly as before this field existed.
 type Rule struct {
-	DefaultBranch string `json:"default_branch"`
+	DefaultBranch  string   `json:"default_branch"`
+	RequiredChecks []string `json:"required_checks,omitempty"`
 }
 
 // Update is one proposed ref change from a push.

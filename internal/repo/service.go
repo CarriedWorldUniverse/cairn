@@ -200,6 +200,27 @@ func (s *Service) CreateRepo(ctx context.Context, orgID, slug string) (Repo, err
 	return r, nil
 }
 
+// SetProtection overwrites a repo's protection JSON. Used to opt a repo into
+// required-checks enforcement (MergePull parses this JSON via protect.Rule);
+// also the seam tests use to set up required-checks fixtures without a
+// dedicated admin RPC.
+func (s *Service) SetProtection(ctx context.Context, repoID, protection string) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE repo SET protection = ?, updated_at = ? WHERE id = ?`,
+		protection, time.Now().UTC().Format(time.RFC3339), repoID)
+	if err != nil {
+		return fmt.Errorf("repo.SetProtection: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repo.SetProtection: rows affected: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // CreatePull inserts an open pull request. The partial-unique index rejects a
 // second open PR for the same (repo, source, target). Populates p.ID/State.
 func (s *Service) CreatePull(ctx context.Context, p *Pull) error {
