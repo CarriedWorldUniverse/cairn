@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/repo"
@@ -126,6 +127,12 @@ func TestHTTPReaderCannotPush(t *testing.T) {
 // through explicitly or server-side hooks run unconfigured over HTTP (they
 // inherit natively over SSH). A post-receive hook dumps the var it saw.
 func TestHTTPHookEnvPassthrough(t *testing.T) {
+	// The post-receive hook is a POSIX /bin/sh script the server-side git
+	// exec's; Windows can't run it (no shebang, no .exe). cairn-server runs on
+	// Linux, so skip on Windows rather than rewrite the hook as a .bat.
+	if runtime.GOOS == "windows" {
+		t.Skip("server-side post-receive hook is a POSIX /bin/sh script; unsupported on Windows")
+	}
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
