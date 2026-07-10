@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 	"time"
@@ -135,6 +136,13 @@ func TestConfigFromEnv(t *testing.T) {
 // status. The status can be changed later by rewriting the same path.
 func writeFakePorterpack(t *testing.T, path, logFile string, exitCode int) {
 	t.Helper()
+	// The fake porterpack is a POSIX /bin/sh script; Windows can't exec it
+	// (no shebang, no .exe). The product targets Linux (k3s) + macOS, so the
+	// runner tests that shell out to it are skipped on Windows rather than
+	// rewritten as a .bat — coverage stays where the product runs.
+	if runtime.GOOS == "windows" {
+		t.Skip("replica runner test uses a POSIX /bin/sh fake porterpack; unsupported on Windows")
+	}
 	script := "#!/bin/sh\necho \"$@\" >> " + logFile + "\nexit " + strconv.Itoa(exitCode) + "\n"
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatalf("write fake porterpack: %v", err)
