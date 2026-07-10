@@ -314,7 +314,7 @@ func TestPullChecksGateMerge(t *testing.T) {
 	pid := open.Pull.GetId()
 
 	// Record a failing check.
-	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail", Summary: "build broke", EvidenceUrl: "https://ci/1",
 	})
 	if err != nil {
@@ -346,7 +346,7 @@ func TestPullChecksGateMerge(t *testing.T) {
 	}
 
 	// Re-record the same name as "pass" (upsert: still one check) -> merge succeeds.
-	rec2, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	rec2, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "green",
 	})
 	if err != nil {
@@ -396,11 +396,11 @@ func TestRecordPullCheck_Validation(t *testing.T) {
 	pid := open.Pull.GetId()
 
 	// invalid state -> InvalidArgument
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "bogus"}); code(err) != codes.InvalidArgument {
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "bogus"}); code(err) != codes.InvalidArgument {
 		t.Errorf("bogus state code = %v, want InvalidArgument", code(err))
 	}
 	// missing name -> InvalidArgument
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, State: "pass"}); code(err) != codes.InvalidArgument {
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, State: "pass"}); code(err) != codes.InvalidArgument {
 		t.Errorf("missing name code = %v, want InvalidArgument", code(err))
 	}
 	// reader scope cannot record -> PermissionDenied
@@ -408,8 +408,35 @@ func TestRecordPullCheck_Validation(t *testing.T) {
 		t.Errorf("reader RecordPullCheck code = %v, want PermissionDenied", code(err))
 	}
 	// unknown pull -> NotFound
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: "nope", Name: "ci", State: "pass"}); code(err) != codes.NotFound {
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: "nope", Name: "ci", State: "pass"}); code(err) != codes.NotFound {
 		t.Errorf("unknown pull code = %v, want NotFound", code(err))
+	}
+}
+
+// TestRecordPullCheck_RepoWriteAloneDenied is the cairn#99 self-attest probe:
+// a builder identity holding only repo:write (enough to push branches and
+// open pulls) must NOT be able to record a check verdict on its own pull —
+// that requires the separate checks:attest scope (cairn#105). Confirms the
+// separation of duties: repo:write is neither necessary nor sufficient here.
+func TestRecordPullCheck_RepoWriteAloneDenied(t *testing.T) {
+	led := &fakeLedger{result: ledgerclient.IssueResult{Key: "WID-1"}}
+	c, core := newTest(t, led)
+	seedFFRepo(t, core, "org-1", "widgets")
+	open, err := c.pull.OpenPull(mdCtx("org-1", "repo:write"),
+		&cairnv1.OpenPullRequest{Org: "org-1", Slug: "widgets", Source: "feature", Target: "main", Title: "Add X", Project: "WID"})
+	if err != nil {
+		t.Fatalf("OpenPull: %v", err)
+	}
+	pid := open.Pull.GetId()
+
+	// repo:write alone -> PermissionDenied (self-attest must be refused).
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass"}); code(err) != codes.PermissionDenied {
+		t.Errorf("repo:write-only RecordPullCheck code = %v, want PermissionDenied", code(err))
+	}
+
+	// checks:attest -> succeeds.
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass"}); err != nil {
+		t.Fatalf("checks:attest RecordPullCheck: %v", err)
 	}
 }
 
@@ -436,14 +463,14 @@ func TestRecordPullCheck_LengthCaps(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), tt.req); code(err) != codes.InvalidArgument {
+			if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), tt.req); code(err) != codes.InvalidArgument {
 				t.Errorf("code = %v, want InvalidArgument (err=%v)", code(err), err)
 			}
 		})
 	}
 
 	// Exactly at the caps is allowed.
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: strings.Repeat("n", 128), State: "pass",
 		Summary: strings.Repeat("s", 8192), EvidenceUrl: "https://x/" + strings.Repeat("u", 2037),
 	}); err != nil {
@@ -469,27 +496,27 @@ func TestRecordPullCheck_ControlCharsRejected(t *testing.T) {
 	pid := open.Pull.GetId()
 
 	esc := "\x1b[31mfake\x1b[0m"
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci" + esc, State: "pass",
 	}); code(err) != codes.InvalidArgument {
 		t.Errorf("ANSI-in-name code = %v, want InvalidArgument", code(err))
 	}
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci\nrm -rf", State: "pass",
 	}); code(err) != codes.InvalidArgument {
 		t.Errorf("newline-in-name code = %v, want InvalidArgument", code(err))
 	}
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "green" + esc,
 	}); code(err) != codes.InvalidArgument {
 		t.Errorf("ANSI-in-summary code = %v, want InvalidArgument", code(err))
 	}
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", Summary: "line1\r\nline2",
 	}); code(err) != codes.InvalidArgument {
 		t.Errorf("CRLF-in-summary code = %v, want InvalidArgument", code(err))
 	}
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass", EvidenceUrl: "https://x/" + esc,
 	}); code(err) != codes.InvalidArgument {
 		t.Errorf("ANSI-in-evidence_url code = %v, want InvalidArgument", code(err))
@@ -497,7 +524,7 @@ func TestRecordPullCheck_ControlCharsRejected(t *testing.T) {
 
 	// A VALID (clean) check still records; its ledger comment body and the
 	// MergePull refusal string it drives both carry no ESC byte.
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail", Summary: "build broke, clean summary",
 	}); err != nil {
 		t.Fatalf("RecordPullCheck (clean): %v", err)
@@ -531,7 +558,7 @@ func TestPullChecksGateMerge_PendingBlocks(t *testing.T) {
 	}
 	pid := open.Pull.GetId()
 
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "security-review", State: "pending", Summary: "awaiting reviewer",
 	}); err != nil {
 		t.Fatalf("RecordPullCheck: %v", err)
@@ -559,18 +586,18 @@ func TestPullChecksGateMerge_NamesAllFailing(t *testing.T) {
 	}
 	pid := open.Pull.GetId()
 
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "fail",
 	}); err != nil {
 		t.Fatalf("RecordPullCheck ci: %v", err)
 	}
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "security-review", State: "pending",
 	}); err != nil {
 		t.Fatalf("RecordPullCheck security-review: %v", err)
 	}
 	// A passing check must NOT be named.
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "lint", State: "pass",
 	}); err != nil {
 		t.Fatalf("RecordPullCheck lint: %v", err)
@@ -602,7 +629,7 @@ func TestRecordPullCheck_LedgerCommentFailureStillRecords(t *testing.T) {
 	}
 	pid := open.Pull.GetId()
 
-	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	rec, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "ci", State: "pass",
 	})
 	if err != nil {
@@ -637,7 +664,7 @@ func TestRecordPullCheck_DistinctNameCap(t *testing.T) {
 
 	for i := 0; i < repo.MaxPullChecks; i++ {
 		name := fmt.Sprintf("check-%d", i)
-		if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+		if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 			Org: "org-1", Slug: "widgets", Id: pid, Name: name, State: "pass",
 		}); err != nil {
 			t.Fatalf("RecordPullCheck %s (within cap): %v", name, err)
@@ -645,14 +672,14 @@ func TestRecordPullCheck_DistinctNameCap(t *testing.T) {
 	}
 
 	// The 65th distinct name is refused.
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "check-overflow", State: "pass",
 	}); code(err) != codes.FailedPrecondition {
 		t.Fatalf("65th distinct name code = %v, want FailedPrecondition", code(err))
 	}
 
 	// Upserting an existing name at the cap is still allowed.
-	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "repo:write"), &cairnv1.RecordPullCheckRequest{
+	if _, err := c.pull.RecordPullCheck(mdCtx("org-1", "checks:attest"), &cairnv1.RecordPullCheckRequest{
 		Org: "org-1", Slug: "widgets", Id: pid, Name: "check-0", State: "fail",
 	}); err != nil {
 		t.Fatalf("upsert at cap: %v", err)
