@@ -178,7 +178,7 @@ func TestResolvePreservesOtherModes(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "child", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Resolve("child", "f.txt"); err != nil {
+	if err := r.Resolve("child", "f.txt", false); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
 

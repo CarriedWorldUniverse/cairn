@@ -102,6 +102,9 @@ func (s *ChangeService) Conflicts(ctx context.Context, changeID string) ([]chang
 }
 
 // ResolveConflict records the resolved contents for a conflicting path.
+// NOTE: unlike worktree.Resolve, this facade does NOT refuse content that still
+// contains diff3 conflict markers (#114) — when it gets wired to a live
+// transport, add the diff3.HasMarkers guard (with an explicit force override).
 func (s *ChangeService) ResolveConflict(ctx context.Context, changeID, path string, resolved []byte) error {
 	return mapErr(s.eng.ResolveConflict(changeID, path, resolved))
 }

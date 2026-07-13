@@ -88,7 +88,7 @@ subcommands:
   diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
   tree                          print the line tree
   ls                            list expressed branches
-  resolve <branch> <path>       resolve a conflict on a branch
+  resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content; refuses lingering <<<<<<< markers (--force to accept)
   remote                        list configured remotes
   remote add <name> <url>       register a remote (--cairn for a cairn remote)
   push [remote] [branch]        publish all lines + tags, or just <branch> (default origin, --force)
@@ -1095,11 +1095,12 @@ func cmdLs(args []string) error {
 func cmdResolve(args []string) error {
 	fs := flag.NewFlagSet("resolve", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	force := fs.Bool("force", false, "accept the content even if it still contains conflict markers")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() < 2 {
-		return errors.New("usage: cairn resolve <branch> <path>")
+		return errors.New("usage: cairn resolve [--force] <branch> <path>")
 	}
 	branch := fs.Arg(0)
 	path := fs.Arg(1)
@@ -1108,7 +1109,7 @@ func cmdResolve(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.Resolve(branch, path))
+	return mapErr(r.Resolve(branch, path, *force))
 }
 
 // cmdRemote lists remotes (no args) or adds one (remote add <name> <url>
