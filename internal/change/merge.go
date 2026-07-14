@@ -110,9 +110,58 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		switch {
 		case inOurs && inTheirs:
 			if oe.SHA == te.SHA {
-				// Both sides agree (content-identical).
-				merged[p] = oe
-				continue
+				if oe.Mode == te.Mode {
+					// Both sides fully agree (content AND mode).
+					merged[p] = oe
+					continue
+				}
+				// Content identical, modes differ (e.g. chmod +x, or a
+				// regular<->symlink flip with identical bytes). Resolve by
+				// which side actually TOUCHED the mode relative to base — the
+				// untouched side's mode is silently overridden by the side
+				// that changed it. This is NOT a blanket "theirs wins" (that
+				// was the pre-#124-review bug: it dropped a mode change made
+				// on ours when theirs never touched the path) — it must also
+				// not become a blanket "ours wins" (the mirror bug that would
+				// introduce). Both directions are handled explicitly below.
+				oursUntouched := inBase && be.SHA == oe.SHA && be.Mode == oe.Mode
+				theirsUntouched := inBase && be.SHA == te.SHA && be.Mode == te.Mode
+				switch {
+				case oursUntouched && !theirsUntouched:
+					// ours never touched this path; theirs' mode change wins.
+					merged[p] = te
+					continue
+				case theirsUntouched && !oursUntouched:
+					// theirs never touched this path; ours' mode change wins.
+					merged[p] = oe
+					continue
+				default:
+					// Neither side is untouched vs base (both independently
+					// changed the mode, or there is no base to compare
+					// against): a genuine mode-vs-mode conflict — same
+					// keep-content posture as the other conflict branches
+					// (resolve decides). Content survives regardless of which
+					// side "wins" the tree entry, since this branch's guard
+					// (oe.SHA==te.SHA) means ours and theirs already carry
+					// identical bytes; load it once and reuse for both
+					// slots. Base's content is loaded separately (it need
+					// not match ours/theirs here).
+					bv, err := e.blobOrNil(be, inBase)
+					if err != nil {
+						return "", nil, err
+					}
+					v, err := e.readBlob(te.SHA)
+					if err != nil {
+						return "", nil, err
+					}
+					merged[p] = te
+					c, err := e.buildConflict(changeID, p, bv, v, v, v)
+					if err != nil {
+						return "", nil, err
+					}
+					conflicts = append(conflicts, c)
+					continue
+				}
 			}
 			// Both present and differ. If one side never touched the file
 			// (equal to base, content AND mode), take the other side wholesale —
