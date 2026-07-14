@@ -91,7 +91,7 @@ func TestRepoConflictThenResolve(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Resolve("exp", "f.txt"); err != nil {
+	if err := r.Resolve("exp", "f.txt", false); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
 	// Resolve writes the resolution into the OPEN working change (an unsealed
@@ -151,7 +151,7 @@ func TestRepoConflictResolveThenCommitClean(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Resolve("exp", "f.txt"); err != nil {
+	if err := r.Resolve("exp", "f.txt", false); err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
 	res2, err := r.Commit("exp", "resolved")
@@ -357,10 +357,76 @@ func TestRepoCommitRefusesUnresolvedConflict(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("resolved\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Resolve("exp", "f.txt"); err != nil {
+	if err := r.Resolve("exp", "f.txt", false); err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
 	if _, err := r.Commit("exp", "done"); err != nil {
 		t.Fatalf("commit after resolve: %v", err)
+	}
+}
+
+// TestResolveRefusesLingeringMarkers is the regression for issue #114: `cairn
+// resolve` used to accept the file's on-disk content as the resolution even
+// when it still contained the diff3 conflict markers — closing the conflict
+// row, so `cairn status` reported no conflicts while the markers lived on in
+// the file (and in the new tip commit). Resolve must refuse marker-laden
+// content (keeping the conflict open and visible in status) unless forced.
+func TestResolveRefusesLingeringMarkers(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("base\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("exp", "main"); err != nil {
+		t.Fatalf("express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("X\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "mainedit"); err != nil {
+		t.Fatalf("main adv: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "exp", "f.txt"), []byte("Y\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, err := r.Commit("exp", "expedit")
+	if err != nil {
+		t.Fatalf("exp commit: %v", err)
+	}
+	if len(res.Conflicts) == 0 {
+		t.Fatal("expected conflict")
+	}
+	// The conflicted seal materialized the marker-laden file to disk. Resolving
+	// WITHOUT editing the markers out must be refused...
+	if err := r.Resolve("exp", "f.txt", false); err == nil {
+		t.Fatal("Resolve accepted content that still contains conflict markers")
+	} else if !strings.Contains(err.Error(), "conflict markers") {
+		t.Fatalf("Resolve error should name the markers, got: %v", err)
+	}
+	// ...and the conflict must stay open — status keeps reporting it.
+	st, err := r.Status("exp")
+	if err != nil {
+		t.Fatalf("Status: %v", err)
+	}
+	if len(st.Conflicts) != 1 || st.Conflicts[0] != "f.txt" {
+		t.Fatalf("status conflicts = %v, want [f.txt]", st.Conflicts)
+	}
+	// force overrides for content that intentionally keeps the marker text.
+	if err := r.Resolve("exp", "f.txt", true); err != nil {
+		t.Fatalf("Resolve(force): %v", err)
+	}
+	st, err = r.Status("exp")
+	if err != nil {
+		t.Fatalf("Status after force: %v", err)
+	}
+	if len(st.Conflicts) != 0 {
+		t.Fatalf("status conflicts after forced resolve = %v, want none", st.Conflicts)
 	}
 }

@@ -285,8 +285,12 @@ unmerged-paths block): you must edit out the `<<<<<<<` markers and `cairn resolv
 each conflicted file first. This prevents a later commit from silently baking the marker
 text into history and dropping the conflict.
 
-#### `cairn resolve <branch> <path>`
-Mark a conflicted file resolved after you have edited it to the desired content.
+#### `cairn resolve <branch> <path>` — `--force`
+Mark a conflicted file resolved after you have edited it to the desired content. The
+file's current on-disk bytes become the resolution — so `resolve` **refuses** while the
+file still contains the `<<<<<<< / ======= / >>>>>>>` markers (otherwise the conflict
+would vanish from `status` with the markers still in the file). Pass `--force` only if
+the marker-like text is intentional content.
 ```sh
 cairn status feature        # shows the conflicted path
 $EDITOR feature/foo.txt      # remove the markers, keep what you want

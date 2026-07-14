@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/change/diff3"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
@@ -656,7 +657,10 @@ func (r *Repo) Unexpress(branch string, force bool) error {
 
 // Resolve resolves a conflicting path on an expressed branch by taking the file's
 // current on-disk content as the resolution, then re-materializes the branch.
-func (r *Repo) Resolve(branch, path string) error {
+// It refuses content that still contains diff3 conflict markers (unless force):
+// accepting it would close the conflict row — so status stops reporting the
+// conflict — while the markers live on in the file and the new tip commit.
+func (r *Repo) Resolve(branch, path string, force bool) error {
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return fmt.Errorf("worktree.Resolve: branch %q is not expressed", branch)
@@ -665,6 +669,11 @@ func (r *Repo) Resolve(branch, path string) error {
 	data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
 	if err != nil {
 		return fmt.Errorf("worktree.Resolve: %w", err)
+	}
+	if !force && diff3.HasMarkers(data) {
+		return fmt.Errorf(
+			"worktree.Resolve: %q still contains conflict markers (<<<<<<< / ======= / >>>>>>>) — edit them out and re-run, or pass --force if the content is intentional",
+			path)
 	}
 	if err := r.eng.ResolveConflict(entry.ChangeID, path, data); err != nil {
 		return fmt.Errorf("worktree.Resolve: %w", err)
