@@ -60,8 +60,23 @@ func (e *Engine) fileModesFromTree(treeHash string) (map[string]EntryMode, error
 	if err != nil {
 		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
 	}
+	// See readTree's identical guard (#126, item B): tree.Files() below has no
+	// duplicate-name protection of its own. readTreeRefs shares the same tree
+	// object and does no blob-content reads, so validating via it first here
+	// (result discarded) is a metadata-only cost.
+	if _, err := e.readTreeRefs(treeHash); err != nil {
+		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
+	}
 	out := map[string]EntryMode{}
 	err = tree.Files().ForEach(func(f *object.File) error {
+		// Mirror readTree's validation (#126): this is the one remaining
+		// tree.Files() walk without it. Not currently reachable to disk (its
+		// output only feeds mode lookups, never a materialize path), but
+		// leaving it unchecked is an asymmetry a future caller could trip
+		// over — close it here too.
+		if err := validTreePath(f.Name); err != nil {
+			return fmt.Errorf("change.fileModesFromTree: %w", err)
+		}
 		switch f.Mode {
 		case filemode.Executable:
 			out[f.Name] = ModeExecutable
