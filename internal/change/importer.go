@@ -172,6 +172,15 @@ func (e *Engine) fetchRemote(url string) error {
 	if err != nil {
 		return fmt.Errorf("change.fetchRemote: %w", err)
 	}
+	// Snapshot before the fetch — see fetchTracking's identical defense in
+	// sync.go for why: the "+refs/cairn/*:refs/cairn/*" refspec below also
+	// matches refs/cairn/push/<op-id>/* (go-git's glob has no "/" boundary
+	// awareness), so a clone/import from a polluted remote could otherwise
+	// import a foreign pin ref straight into the new local store.
+	before, serr := e.pushPinRefNames()
+	if serr != nil {
+		return fmt.Errorf("change.fetchRemote: %w", serr)
+	}
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			"+refs/heads/*:refs/heads/*",
@@ -188,6 +197,9 @@ func (e *Engine) fetchRemote(url string) error {
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchRemote: %w", err)
+	}
+	if perr := e.pruneImportedPushPins(before, rem, auth); perr != nil {
+		return fmt.Errorf("change.fetchRemote: %w", perr)
 	}
 	return nil
 }

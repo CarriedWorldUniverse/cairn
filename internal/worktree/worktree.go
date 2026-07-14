@@ -190,6 +190,47 @@ func (r *Repo) Close() error {
 // When adding a new verb: if it writes any of the above, copy the
 // `unlock, err := r.lockState(); if err != nil { return ... }; defer unlock()`
 // idiom used throughout this file — do not invent a new locking pattern.
+//
+// LOCK ORDER (issue #98 Phase B): a second lock, the per-remote
+// .cairn/remote-<remote>.lock (see openRemoteLock), guards ALL network I/O
+// to a given remote — both push and fetch — so a slow push/pull does not
+// block every other wc.lock-holding operation on a shared clone (Status,
+// Commit, a sibling branch's push, ...). The two locks nest in ONE direction
+// only: wc.lock, THEN (optionally) remote.lock — never the reverse.
+// Concretely:
+//   - Push's network phase (NetworkPush) and Fetch/FetchPruned's network
+//     phase take ONLY remote.lock, never wc.lock, so they never block (or get
+//     blocked by) a concurrent wc.lock holder.
+//   - Network ops (push AND fetch) to the SAME remote serialize on that
+//     remote's remote.lock — correct, since they share tracking/ref state on
+//     that remote (this is also what closed a real race: two concurrent
+//     PushBranch NetworkPush calls to one remote raced go-git's unsynchronized
+//     file-transport ref writes on the bare side; wc.lock had accidentally
+//     been shielding this pre-Phase-B). Two DIFFERENT remotes' network ops
+//     never contend with each other.
+//   - Pull/pullBranch's LOCAL reconcile phase holds wc.lock and, for its
+//     brief read of tracking refs (remoteHeads), also takes remote.lock —
+//     wc.lock is already held at that point, so this is wc→remote, the
+//     allowed direction.
+//   - autoSync (Commit → Pull) holds wc.lock throughout, including across
+//     Pull's own network phase: wc.lock is acquired first (by Commit) and
+//     remote.lock is taken and released inside it — still wc→remote, never
+//     the reverse, so no deadlock; autoSync just does not get the "other
+//     processes keep working during the fetch" benefit, which is an accepted
+//     concession (see the #98 issue).
+//
+// Residual gap (pre-existing, out of scope for #98): remote.lock is a LOCAL
+// advisory lock in THIS clone's .cairn directory. It does nothing for two
+// SEPARATE clones pushing to the same filesystem bare remote concurrently —
+// go-git's file transport has no server-side locking, so that race (distinct
+// from the one just fixed, which was two ops sharing ONE clone) remains.
+// Real multi-writer deployments go through cairn-server, which does its own
+// serialization; this lock only protects operations sharing one working copy.
+//
+// Lock lifecycle states across a push: unlocked → wc(prepare/pin) →
+// network(no wc.lock; remote.lock for the push+fetch network phase) →
+// wc(apply/cleanup) → unlocked. Never acquire wc.lock while holding
+// remote.lock.
 func (r *Repo) lockState() (func(), error) {
 	if r.lockDepth > 0 {
 		r.lockDepth++
@@ -221,6 +262,46 @@ func (r *Repo) releaseState() {
 		closeWCLock(r.lockFile)
 		r.lockFile = nil
 	}
+}
+
+// remoteLockName returns the per-remote lock filename for remote, sanitized
+// so an arbitrary remote name (which may contain characters unsafe in a
+// filename, e.g. on Windows) never escapes the .cairn directory. Two
+// different remote names sanitizing to the same filename is an accepted,
+// harmless conservative fallback: they'd just serialize network ops against
+// each other, never lose isolation from anything else.
+func remoteLockName(remote string) string {
+	var b strings.Builder
+	b.WriteString("remote-")
+	for _, c := range remote {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9', c == '-', c == '_', c == '.':
+			b.WriteRune(c)
+		default:
+			b.WriteByte('_')
+		}
+	}
+	b.WriteString(".lock")
+	return b.String()
+}
+
+// withRemoteLock runs fn while holding the exclusive per-remote lock
+// (.cairn/remote-<remote>.lock; issue #98 Phase B), released when fn
+// returns. It serializes every network operation (push AND fetch) against a
+// given remote — see the lock-order invariant documented on lockState(),
+// including why push and fetch share this one lock rather than each having
+// their own (a real ref-write race between two concurrent NetworkPush calls
+// to one remote). This lock is NOT reentrant (unlike wc.lock) and is always
+// acquired for a short, bounded duration (one network round-trip, or one
+// brief tracking-ref read): a withRemoteLock caller must never try to
+// acquire wc.lock while inside fn.
+func (r *Repo) withRemoteLock(remote string, fn func() error) error {
+	f, err := openLockFile(filepath.Dir(r.stPath), remoteLockName(remote))
+	if err != nil {
+		return fmt.Errorf("worktree: lock remote(%s): %w", remote, err)
+	}
+	defer closeLockFile(f)
+	return fn()
 }
 
 // Express materializes a branch as a folder under root, creating its line if it
@@ -955,12 +1036,16 @@ func (r *Repo) Push(remote string, force bool) error {
 	// concurrent `cairn push` processes on ONE shared clone otherwise race on
 	// the shared push/reconcile state and a branch can silently fail to land.
 	// The lock is reentrant, so the diverged-retry path's Pull below shares it.
+	// The network phase itself (see pushViaPin) releases this lock (#98 Phase
+	// B) so a slow push doesn't block every other process on this clone.
 	unlock, err := r.lockState()
 	if err != nil {
 		return err
 	}
 	defer unlock()
-	err = r.eng.PushToRemote(remote, force)
+	err = r.pushViaPin(remote, func() (*change.PreparedPush, error) {
+		return r.eng.PreparePushToRemote(remote, force)
+	})
 	if err == nil || force || !change.IsNonFastForward(err) {
 		return err
 	}
@@ -974,7 +1059,58 @@ func (r *Repo) Push(remote string, force bool) error {
 			return fmt.Errorf("worktree.Push: %w", ErrPushConflict)
 		}
 	}
-	return r.eng.PushToRemote(remote, force)
+	return r.pushViaPin(remote, func() (*change.PreparedPush, error) {
+		return r.eng.PreparePushToRemote(remote, force)
+	})
+}
+
+// pushViaPin runs one pin→network→cleanup push cycle (issue #98 Phase B):
+// prepare (pin the outgoing refs) is run under whatever lock the caller
+// already holds; the network phase (NetworkPush) then runs with the wc.lock
+// RELEASED — instead serialized against every OTHER network op to the SAME
+// remote via withRemoteLock (see the lock-order invariant on lockState():
+// this closes a real race where two concurrent NetworkPush calls to one
+// remote raced go-git's unsynchronized file-transport ref writes on the bare
+// side) — so a slow push does not block every other wc.lock-holding
+// operation on this clone, only same-remote network ops; cleanup
+// (FinishPush, removing the pinned refs) re-acquires the wc.lock. The
+// wc.lock is only released/re-acquired when this call is the OUTERMOST lock
+// holder (lockDepth==1) — a nested call (e.g. Push's diverged-retry calling
+// itself while something else up the stack also holds the lock) instead
+// keeps the lock held across the network phase too, so an enclosing
+// caller's lock invariant is never violated. That is a narrower case than
+// the top-level CLI entry points this is built for, so it only forgoes the
+// concurrency benefit, never correctness.
+func (r *Repo) pushViaPin(remote string, prepare func() (*change.PreparedPush, error)) error {
+	pp, err := prepare()
+	if err != nil {
+		return err
+	}
+	outermost := r.lockDepth == 1
+	if outermost {
+		r.releaseState()
+	}
+	netErr := r.withRemoteLock(remote, func() error { return r.eng.NetworkPush(pp) })
+	if outermost {
+		if _, lerr := r.lockState(); lerr != nil {
+			// Re-lock failed (e.g. the lock file vanished). FinishPush only
+			// touches git refs, not wc.json, so it's still safe to run
+			// best-effort without the lock rather than leak the pinned refs.
+			_ = r.eng.FinishPush(pp)
+			if netErr != nil {
+				return netErr
+			}
+			return fmt.Errorf("worktree: re-lock after push: %w", lerr)
+		}
+	}
+	finErr := r.eng.FinishPush(pp)
+	if netErr != nil {
+		return netErr
+	}
+	if finErr != nil {
+		return fmt.Errorf("worktree: cleanup pinned push refs: %w", finErr)
+	}
+	return nil
 }
 
 // PushBranch publishes a SINGLE line (plus tags) to remote — for feeding one
@@ -998,7 +1134,9 @@ func (r *Repo) PushBranch(remote, branch string, force bool) error {
 	if _, err := r.eng.LineByName(branch); err != nil {
 		return fmt.Errorf("worktree.PushBranch: %w", err)
 	}
-	err = r.eng.PushToRemoteBranch(remote, branch, force)
+	err = r.pushViaPin(remote, func() (*change.PreparedPush, error) {
+		return r.eng.PreparePushToRemoteBranch(remote, branch, force)
+	})
 	if err != nil && !force && change.IsNonFastForward(err) {
 		// Build the final message from THIS layer's branch-scoped remedies
 		// (name, --reconcile, cairn pull, --force) plus only the engine's
@@ -1035,7 +1173,9 @@ func (r *Repo) PushBranchReconcile(remote, branch string) error {
 	if _, err := r.eng.LineByName(branch); err != nil {
 		return fmt.Errorf("worktree.PushBranchReconcile: %w", err)
 	}
-	err = r.eng.PushToRemoteBranch(remote, branch, false)
+	err = r.pushViaPin(remote, func() (*change.PreparedPush, error) {
+		return r.eng.PreparePushToRemoteBranch(remote, branch, false)
+	})
 	if err == nil || !change.IsNonFastForward(err) {
 		return err
 	}
@@ -1049,16 +1189,28 @@ func (r *Repo) PushBranchReconcile(remote, branch string) error {
 			return fmt.Errorf("worktree.PushBranchReconcile: branch %q: %w", branch, ErrPushConflict)
 		}
 	}
-	return r.eng.PushToRemoteBranch(remote, branch, false)
+	return r.pushViaPin(remote, func() (*change.PreparedPush, error) {
+		return r.eng.PreparePushToRemoteBranch(remote, branch, false)
+	})
 }
 
 // pullBranch fetches remote and reconciles ONLY branch (fast-forward or 3-way
 // merge, conflicts-as-data), then — if branch is expressed — re-materializes
 // just that one folder so disk reflects the result. Every other line's
-// catalogue state and expressed folder is left untouched, unlike Pull. Callers
-// must already hold the working-copy lock (it does not acquire one itself).
+// catalogue state and expressed folder is left untouched, unlike Pull.
+// Callers must already hold the working-copy lock (it does not acquire one
+// itself) — the LOCAL reconcile below needs it; the network fetch inside
+// fetchNetwork/remoteHeadsSafe takes only the per-remote remote.lock (issue
+// #98 Phase B; see the lock-order invariant on lockState()).
 func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
-	sum, err := r.eng.PullFromRemoteBranch(remote, branch)
+	if err := r.fetchNetwork(remote, false); err != nil {
+		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
+	}
+	rheads, err := r.remoteHeadsSafe(remote)
+	if err != nil {
+		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
+	}
+	sum, err := r.eng.ReconcileBranch(rheads, branch)
 	if err != nil {
 		return sum, fmt.Errorf("worktree.pullBranch: %w", err)
 	}
@@ -1077,16 +1229,46 @@ func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
 	return sum, nil
 }
 
+// fetchNetwork runs the network phase of a fetch (FetchTracking or, when
+// prune is set, FetchTrackingPruned) under ONLY the per-remote remote.lock —
+// NOT wc.lock (issue #98 Phase B): a tracking-ref-only fetch writes no
+// wc.json/catalogue state, so it never needs to block (or be blocked by) an
+// unrelated wc.lock-holding command (Status, Commit, a sibling push, ...) on
+// this clone.
+func (r *Repo) fetchNetwork(remote string, prune bool) error {
+	return r.withRemoteLock(remote, func() error {
+		if prune {
+			return r.eng.FetchTrackingPruned(remote)
+		}
+		return r.eng.FetchTracking(remote)
+	})
+}
+
+// remoteHeadsSafe reads the fetched tracking refs for remote under the same
+// per-remote remote.lock a concurrent fetchNetwork writes them under (issue
+// #98 Phase B): tracking refs are written by a remote.lock holder and read
+// here by reconcile, so without sharing the lock a concurrent fetch could
+// tear the read mid-update (go-git's cross-process ref race). flock offers
+// no shared/read mode, so the read simply takes the exclusive lock too — the
+// read is brief and fetches are rare, so this costs nothing observable.
+func (r *Repo) remoteHeadsSafe(remote string) (map[string]string, error) {
+	var out map[string]string
+	err := r.withRemoteLock(remote, func() error {
+		var e error
+		out, e = r.eng.RemoteHeads(remote)
+		return e
+	})
+	return out, err
+}
+
 // Fetch fetches the named remote into tracking refs (refs/remotes/<remote>/*)
 // without reconciling local lines — the read-only half of a pull. Local work is
 // never clobbered. Does not prune (unchanged behavior — see FetchPruned).
+// Takes only the per-remote remote.lock, not wc.lock (issue #98 Phase B) — it
+// writes no wc.json/catalogue state, so it never blocks (or is blocked by) an
+// unrelated command on this clone.
 func (r *Repo) Fetch(remote string) error {
-	unlock, err := r.lockState()
-	if err != nil {
-		return err
-	}
-	defer unlock()
-	if err := r.eng.FetchTracking(remote); err != nil {
+	if err := r.fetchNetwork(remote, false); err != nil {
 		return fmt.Errorf("worktree.Fetch: %w", err)
 	}
 	return nil
@@ -1095,14 +1277,10 @@ func (r *Repo) Fetch(remote string) error {
 // FetchPruned is Fetch with pruning on: a tracking ref whose remote-side
 // branch was deleted is removed instead of left stale. Used by `pr diff` so a
 // PR branch deleted on the remote fails with a clear "not found" error rather
-// than silently diffing against the last-known (now-deleted) tip.
+// than silently diffing against the last-known (now-deleted) tip. Takes only
+// the per-remote remote.lock, not wc.lock (issue #98 Phase B); see Fetch.
 func (r *Repo) FetchPruned(remote string) error {
-	unlock, err := r.lockState()
-	if err != nil {
-		return err
-	}
-	defer unlock()
-	if err := r.eng.FetchTrackingPruned(remote); err != nil {
+	if err := r.fetchNetwork(remote, true); err != nil {
 		return fmt.Errorf("worktree.FetchPruned: %w", err)
 	}
 	return nil
@@ -1113,13 +1291,26 @@ func (r *Repo) FetchPruned(remote string) error {
 // re-materializes every expressed folder to its line's (possibly merged) tip so
 // disk reflects the result. Conflicts are returned as data on the PullSummary,
 // not as an error.
+//
+// The network fetch runs under ONLY the per-remote remote.lock (issue #98
+// Phase B), not wc.lock, so a slow pull's network phase does not block other
+// wc.lock-holding commands on this clone; the LOCAL reconcile (which writes
+// the catalogue and expressed folders) then runs under wc.lock as before,
+// briefly re-taking remote.lock for its tracking-ref read (remoteHeadsSafe).
 func (r *Repo) Pull(remote string) (change.PullSummary, error) {
+	if err := r.fetchNetwork(remote, false); err != nil {
+		return change.PullSummary{}, fmt.Errorf("worktree.Pull: %w", err)
+	}
 	unlock, err := r.lockState()
 	if err != nil {
 		return change.PullSummary{}, err
 	}
 	defer unlock()
-	sum, err := r.eng.PullFromRemote(remote)
+	rheads, err := r.remoteHeadsSafe(remote)
+	if err != nil {
+		return change.PullSummary{}, fmt.Errorf("worktree.Pull: %w", err)
+	}
+	sum, err := r.eng.ReconcileLines(rheads)
 	if err != nil {
 		return sum, fmt.Errorf("worktree.Pull: %w", err)
 	}
