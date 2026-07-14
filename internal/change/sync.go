@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 // syncAuthor is the author recorded on merge commits the engine synthesises when
@@ -29,6 +30,12 @@ type LineResult struct {
 type PullSummary struct {
 	Lines []LineResult
 }
+
+// testFetchDelay, when non-nil, is invoked by fetchTracking just before the
+// actual rem.Fetch call — a test seam for injecting artificial network
+// latency into the fetch network phase, mirroring testNetworkDelay in
+// push.go. Never set outside tests.
+var testFetchDelay func()
 
 // fetchTracking fetches remoteName's heads into tracking refs
 // (refs/remotes/<remote>/*) plus all tags, WITHOUT touching refs/heads. This is
@@ -51,6 +58,24 @@ func (e *Engine) fetchTracking(remoteName string, prune bool) error {
 	if err != nil {
 		return fmt.Errorf("change.fetchTracking: %w", err)
 	}
+	// Snapshot which refs/cairn/push/* pins already exist locally BEFORE the
+	// fetch. This repo may have its OWN in-flight PreparePush pins sitting
+	// there right now (a concurrent process's push mid-network-phase, on this
+	// very clone) — those are legitimate and must survive; only pins that
+	// appear as a RESULT of this fetch are foreign and get pruned below. See
+	// pruneImportedPushPins.
+	before, serr := e.pushPinRefNames()
+	if serr != nil {
+		return fmt.Errorf("change.fetchTracking: %w", serr)
+	}
+	// Placed AFTER the before-snapshot (not before it): the delay models the
+	// network round-trip itself, which is exactly the window a concurrent
+	// PreparePush on this clone can create its own new, legitimate pin in —
+	// the TOCTOU pruneImportedPushPins' advertised-on-remote check defends
+	// against (see its doc comment).
+	if testFetchDelay != nil {
+		testFetchDelay()
+	}
 	err = rem.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{
 			config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
@@ -63,7 +88,107 @@ func (e *Engine) fetchTracking(remoteName string, prune bool) error {
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchTracking: %w", err)
 	}
+	// Defense-in-depth against the "pin leak" hazard (issue #98 Phase B
+	// review): the "+refs/cairn/*:refs/cairn/*" refspec above matches ANY ref
+	// whose name starts with "refs/cairn/" — go-git's glob has no "/"
+	// boundary awareness — including a remote's refs/cairn/push/<op-id>/*
+	// (another op's in-flight pin, a crash orphan, or a previously-polluted
+	// remote). pinOutgoingRefs already refuses to re-pin/re-publish anything
+	// under that prefix locally, but if one somehow lands on a remote we
+	// still must not import and keep it: a self-perpetuating leak (fetch →
+	// local refs/cairn/push/* → a later full-fidelity push republishes it
+	// forever) starts the moment it's imported. Delete any pin ref this fetch
+	// just pulled in that wasn't already there before it ran.
+	if perr := e.pruneImportedPushPins(before, rem, auth); perr != nil {
+		return fmt.Errorf("change.fetchTracking: %w", perr)
+	}
 	return nil
+}
+
+// pushPinRefNames returns the set of local ref names currently under
+// refs/cairn/push/* (see pushPinRefPrefix in push.go).
+func (e *Engine) pushPinRefNames() (map[plumbing.ReferenceName]bool, error) {
+	iter, err := e.git.References()
+	if err != nil {
+		return nil, fmt.Errorf("pushPinRefNames: refs: %w", err)
+	}
+	out := map[plumbing.ReferenceName]bool{}
+	if err := iter.ForEach(func(ref *plumbing.Reference) error {
+		if strings.HasPrefix(ref.Name().String(), pushPinRefPrefix) {
+			out[ref.Name()] = true
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("pushPinRefNames: %w", err)
+	}
+	return out, nil
+}
+
+// pruneImportedPushPins removes a local ref under refs/cairn/push/* only when
+// it is BOTH (a) not in before (i.e. it appeared as a result of this fetch)
+// AND (b) actually advertised by rem right now — a TOCTOU fix (security
+// re-review): before/after alone cannot distinguish "this fetch imported a
+// foreign pin from the remote" from "a concurrent PreparePush on THIS clone
+// created its own legitimate pin during the fetch's network round-trip" —
+// pins are created under wc.lock while a fetch runs under remote.lock, with
+// no shared lock between the two, so that race is real. A remote can only
+// ever advertise a ref that pinOutgoingRefs itself put there (it refuses to
+// pin anything already under this prefix — see pinOutgoingRefs), so a
+// locally-created pin is NEVER advertised by the remote and (b) correctly
+// lets it survive, while a genuinely-imported foreign pin — by definition
+// something the remote advertised — fails (b) into being pruned.
+//
+// The rem.List call (an extra round-trip) is made LAZILY: only when there is
+// at least one (not in before) candidate. The common case — no candidates —
+// costs nothing.
+func (e *Engine) pruneImportedPushPins(before map[plumbing.ReferenceName]bool, rem *git.Remote, auth transport.AuthMethod) error {
+	after, err := e.pushPinRefNames()
+	if err != nil {
+		return err
+	}
+	var candidates []plumbing.ReferenceName
+	for name := range after {
+		if !before[name] {
+			candidates = append(candidates, name)
+		}
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	advertised, err := remoteAdvertisedRefNames(rem, auth)
+	if err != nil {
+		return fmt.Errorf("pruneImportedPushPins: %w", err)
+	}
+	for _, name := range candidates {
+		if !advertised[name] {
+			continue // created locally during the fetch's network round-trip, not imported — survives
+		}
+		if err := e.git.Storer.RemoveReference(name); err != nil {
+			return fmt.Errorf("pruneImportedPushPins: remove %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+// remoteAdvertisedRefNames lists rem's currently advertised ref names. An
+// empty remote (nothing has ever landed) advertises none — go-git reports
+// ErrEmptyRemoteRepository rather than an empty list — which is treated as
+// "nothing advertised" (a no-op set) rather than an error.
+func remoteAdvertisedRefNames(rem *git.Remote, auth transport.AuthMethod) (map[plumbing.ReferenceName]bool, error) {
+	refs, err := rem.List(&git.ListOptions{Auth: auth})
+	if err != nil {
+		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+			return map[plumbing.ReferenceName]bool{}, nil
+		}
+		return nil, fmt.Errorf("remoteAdvertisedRefNames: list: %w", err)
+	}
+	out := make(map[plumbing.ReferenceName]bool, len(refs))
+	for _, r := range refs {
+		if r.Type() == plumbing.HashReference {
+			out[r.Name()] = true
+		}
+	}
+	return out, nil
 }
 
 // FetchTracking fetches remoteName's heads into tracking refs without touching
@@ -81,6 +206,17 @@ func (e *Engine) FetchTracking(remoteName string) error {
 // stale tracking ref would otherwise diff against deleted content silently.
 func (e *Engine) FetchTrackingPruned(remoteName string) error {
 	return e.fetchTracking(remoteName, true)
+}
+
+// RemoteHeads is the exported form of remoteHeads: short-name → commit-sha for
+// every hash reference under refs/remotes/<remoteName>/, skipping the
+// remote's HEAD pointer. It is the READ half of a pull's reconcile — the
+// worktree layer (issue #98 Phase B) calls it while holding the per-remote
+// remote.lock (the same lock a concurrent Fetch/Pull/Push's network phase
+// writes tracking/pushed refs under), so this read can never tear a
+// concurrent writer's refs.
+func (e *Engine) RemoteHeads(remoteName string) (map[string]string, error) {
+	return e.remoteHeads(remoteName)
 }
 
 // remoteHeads returns short-name → commit-sha for every hash reference under
@@ -127,10 +263,23 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 	if err != nil {
 		return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
 	}
+	sum, err := e.ReconcileLines(rheads)
+	if err != nil {
+		return sum, fmt.Errorf("change.PullFromRemote: %w", err)
+	}
+	return sum, nil
+}
 
+// ReconcileLines is the LOCAL half of PullFromRemote (issue #98 Phase B): it
+// reconciles every open local line against the already-fetched remote tips in
+// rheads (short branch name → commit sha, as returned by RemoteHeads). It does
+// no network I/O and writes only the local catalogue (line tips, change
+// heads, conflict rows) — the state the worktree layer's wc.lock guards. See
+// PullFromRemote for the combined fetch+reconcile convenience wrapper.
+func (e *Engine) ReconcileLines(rheads map[string]string) (PullSummary, error) {
 	rows, err := e.db.Query(`SELECT id, name, tip_commit FROM line WHERE status='open'`)
 	if err != nil {
-		return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
+		return PullSummary{}, fmt.Errorf("change.ReconcileLines: %w", err)
 	}
 	type lineRow struct {
 		id, name, tip string
@@ -140,13 +289,13 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 		var lr lineRow
 		if err := rows.Scan(&lr.id, &lr.name, &lr.tip); err != nil {
 			_ = rows.Close()
-			return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
+			return PullSummary{}, fmt.Errorf("change.ReconcileLines: %w", err)
 		}
 		lines = append(lines, lr)
 	}
 	if err := rows.Err(); err != nil {
 		_ = rows.Close()
-		return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
+		return PullSummary{}, fmt.Errorf("change.ReconcileLines: %w", err)
 	}
 	_ = rows.Close()
 
@@ -163,7 +312,7 @@ func (e *Engine) PullFromRemote(remoteName string) (PullSummary, error) {
 		}
 		res, err := e.reconcileLine(lr.id, lr.name, lr.tip, r)
 		if err != nil {
-			return PullSummary{}, fmt.Errorf("change.PullFromRemote: %w", err)
+			return PullSummary{}, fmt.Errorf("change.ReconcileLines: %w", err)
 		}
 		sum.Lines = append(sum.Lines, res)
 	}
@@ -188,25 +337,38 @@ func (e *Engine) PullFromRemoteBranch(remoteName, branch string) (PullSummary, e
 	if err != nil {
 		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
 	}
+	sum, err := e.ReconcileBranch(rheads, branch)
+	if err != nil {
+		return sum, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+	}
+	return sum, nil
+}
+
+// ReconcileBranch is the LOCAL half of PullFromRemoteBranch (issue #98 Phase
+// B): it reconciles ONLY branch against the already-fetched remote tips in
+// rheads (as returned by RemoteHeads). It does no network I/O. Every other
+// open line's tip/change is left untouched. A missing remote branch or
+// missing/closed local line is a no-op, not an error.
+func (e *Engine) ReconcileBranch(rheads map[string]string, branch string) (PullSummary, error) {
 	r, ok := rheads[branch]
 	if !ok {
 		return PullSummary{}, nil // remote has no such branch; nothing to reconcile
 	}
 
 	var id, tip string
-	err = e.db.QueryRow(
+	err := e.db.QueryRow(
 		`SELECT id, tip_commit FROM line WHERE name=? AND status='open'`, branch,
 	).Scan(&id, &tip)
 	if errors.Is(err, sql.ErrNoRows) {
 		return PullSummary{}, nil // no open local line by that name; nothing to reconcile
 	}
 	if err != nil {
-		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+		return PullSummary{}, fmt.Errorf("change.ReconcileBranch: %w", err)
 	}
 
 	res, err := e.reconcileLine(id, branch, tip, r)
 	if err != nil {
-		return PullSummary{}, fmt.Errorf("change.PullFromRemoteBranch: %w", err)
+		return PullSummary{}, fmt.Errorf("change.ReconcileBranch: %w", err)
 	}
 	return PullSummary{Lines: []LineResult{res}}, nil
 }

@@ -1,7 +1,9 @@
 package change
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -10,6 +12,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 // RemoteInfo describes a configured remote: its name, its first configured URL,
@@ -131,37 +134,114 @@ func branchRefSpecs(branch string, force bool) []config.RefSpec {
 	}
 }
 
-// push is the shared implementation behind PushToRemote/PushToRemoteBranch.
-// label names the calling function for error wrapping so messages point at the
-// real entry point (PushToRemote vs PushToRemoteBranch). branch scopes the
-// conflict gate (see checkConflictGate): the single line being published for
-// PushToRemoteBranch, or "" (every line) for PushToRemote.
+// push is the shared implementation behind PushToRemote/PushToRemoteBranch —
+// the unlocked, single-call convenience path used when there is no worktime
+// lock to release around the network phase (i.e. engine-level callers/tests
+// that talk to the Engine directly). It just runs the three PreparePush /
+// NetworkPush / FinishPush phases back to back. The worktree layer, which
+// DOES hold a cross-process lock, calls the three phases itself so it can
+// release that lock for NetworkPush (issue #98 Phase B).
 func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpec, force bool) error {
+	pp, err := e.PreparePush(label, remoteName, branch, refSpecs, force)
+	if err != nil {
+		return err
+	}
+	netErr := e.NetworkPush(pp)
+	finErr := e.FinishPush(pp)
+	if netErr != nil {
+		return netErr
+	}
+	if finErr != nil {
+		return fmt.Errorf("%s: cleanup pinned refs: %w", label, finErr)
+	}
+	return nil
+}
+
+// pushPin is one outgoing ref pinned into the private refs/cairn/push/<op-id>/*
+// namespace during PreparePush's Phase 1: a private, immutable-content copy of
+// the exact ref state the network phase will publish, so a concurrent mutator
+// of the REAL ref (refs/heads/*, refs/tags/*, refs/cairn/*) can never tear what
+// NetworkPush reads.
+type pushPin struct {
+	pinned      plumbing.ReferenceName // refs/cairn/push/<op-id>/<original path minus "refs/">
+	target      plumbing.ReferenceName // the real ref name this publishes to on the remote
+	forceUpdate bool
+	expected    plumbing.Hash // the SHA pinned == the SHA we expect to land on the remote
+}
+
+// PreparedPush is the frozen, network-ready state produced by PreparePush: a
+// pinned, private snapshot of every outgoing ref plus the resolved remote/auth
+// to publish it with. Every PreparedPush MUST be passed to FinishPush exactly
+// once — on both the success and the failure path — to remove its pinned refs;
+// see FinishPush.
+type PreparedPush struct {
+	label      string
+	remoteName string
+	opID       string
+	force      bool
+	auth       transport.AuthMethod
+	pins       []pushPin
+}
+
+// testNetworkDelay, when non-nil, is invoked by NetworkPush just before the
+// actual rem.Push call — a test seam for injecting artificial network latency
+// (a local bare-repo remote has no real latency to exercise the "network phase
+// runs without the lock" behavior) without touching the network phase's
+// logic. Never set outside tests.
+var testNetworkDelay func()
+
+// testSkipRealPush, when non-nil and returning true, makes NetworkPush skip
+// the actual rem.Push call while still running post-push verification — a
+// test seam for issue #117's failure mode: go-git's file transport can report
+// success without the ref actually landing on the remote. Never set outside
+// tests.
+var testSkipRealPush func() bool
+
+// testPinError, when non-nil, is consulted by pinOutgoingRefs for the pinned
+// ref name about to be written — a test seam for injecting a mid-loop pin
+// failure (there is no cheap real-world way to make a specific SetReference
+// call fail deterministically), so the partial-pin rollback path can be
+// exercised directly. Never set outside tests.
+var testPinError func(pinned plumbing.ReferenceName) error
+
+// PreparePush runs the LOCKED half of a push: the conflict gate, Export, all
+// redaction/embargo staging, and — the issue #98 Phase B change — pinning the
+// exact refs about to be published into the private refs/cairn/push/<op-id>/*
+// namespace, so NetworkPush (Phase 2, run WITHOUT the caller's lock) reads
+// only content this op owns. Loose git objects are content-addressed and
+// immutable, and the pinned refs are private to this op's op-id, so a
+// concurrent mutator of the real refs cannot tear what NetworkPush reads.
+//
+// Callers must hold whatever lock guards the local repo state (the worktree
+// layer's wc.lock) for the duration of PreparePush, may then release it for
+// NetworkPush, and must call FinishPush — under the lock again — on every
+// path (success or error) to remove the pinned refs.
+func (e *Engine) PreparePush(label, remoteName, branch string, refSpecs []config.RefSpec, force bool) (*PreparedPush, error) {
 	// Remote kind seam: a "cairn" remote receives a full-fidelity push that
 	// includes refs/cairn/meta (the serialized change-graph snapshot). A plain
 	// "git" remote receives only the standard heads/tags projection (no cairn refs).
 	isCairn := e.remoteKind(remoteName) == "cairn"
 
 	if err := e.checkConflictGate(label, branch, isCairn, force); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := e.Export(); err != nil {
-		return fmt.Errorf("%s: %w", label, err)
+		return nil, fmt.Errorf("%s: %w", label, err)
 	}
 
 	rem, err := e.git.Remote(remoteName)
 	if errors.Is(err, git.ErrRemoteNotFound) {
-		return fmt.Errorf("%s: no remote %q", label, remoteName)
+		return nil, fmt.Errorf("%s: no remote %q", label, remoteName)
 	}
 	if err != nil {
-		return fmt.Errorf("%s: %w", label, err)
+		return nil, fmt.Errorf("%s: %w", label, err)
 	}
 
 	if isCairn {
 		hasEmb, herr := e.HasEmbargo()
 		if herr != nil {
-			return fmt.Errorf("%s: %w", label, herr)
+			return nil, fmt.Errorf("%s: %w", label, herr)
 		}
 		if hasEmb {
 			// Embargo + cairn server: the PUBLIC bare gets only the capped heads/tags
@@ -172,14 +252,17 @@ func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpe
 			// the server relocates into its gated private store for authorized clones.
 			cleanup, serr := e.stageEmbargoRefs()
 			if serr != nil {
-				return fmt.Errorf("%s: stage embargo: %w", label, serr)
+				return nil, fmt.Errorf("%s: stage embargo: %w", label, serr)
 			}
+			// cleanup removes the staged refs/cairn/embargo/* refs; it must run
+			// AFTER we've pinned them below, so it is deferred first (LIFO — runs
+			// last, after the redaction/embargo-cap restores and the pin capture).
 			defer cleanup()
 			refSpecs = append(refSpecs, config.RefSpec("+"+EmbargoRefPrefix+"*:"+EmbargoRefPrefix+"*"))
 		} else {
 			metaCommit, err := e.ExportMeta()
 			if err != nil {
-				return fmt.Errorf("%s: meta: %w", label, err)
+				return nil, fmt.Errorf("%s: meta: %w", label, err)
 			}
 			if err := e.git.Storer.SetReference(
 				plumbing.NewHashReference(
@@ -187,7 +270,7 @@ func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpe
 					plumbing.NewHash(metaCommit),
 				),
 			); err != nil {
-				return fmt.Errorf("%s: set meta ref: %w", label, err)
+				return nil, fmt.Errorf("%s: set meta ref: %w", label, err)
 			}
 			// Push ALL cairn refs (meta + the per-change refs). refs/heads publishes
 			// only SEALED tips, so the working-snapshot commits a cairn->cairn clone
@@ -203,7 +286,7 @@ func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpe
 	// redacts the capped commit. No-op when nothing is embargoed.
 	embRestore, err := e.embargoCapForPush(refSpecs, isCairn)
 	if err != nil {
-		return fmt.Errorf("%s: %w", label, err)
+		return nil, fmt.Errorf("%s: %w", label, err)
 	}
 	defer embRestore()
 
@@ -213,33 +296,300 @@ func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpe
 	// plain push) when nothing is flagged private.
 	restore, err := e.redactForPush(refSpecs)
 	if err != nil {
-		return fmt.Errorf("%s: redact: %w", label, err)
+		return nil, fmt.Errorf("%s: redact: %w", label, err)
 	}
 	defer restore()
 
 	auth, err := e.authForRemote(rem)
 	if err != nil {
-		return fmt.Errorf("%s: %w", label, err)
+		return nil, fmt.Errorf("%s: %w", label, err)
 	}
-	err = rem.Push(&git.PushOptions{
-		RemoteName: remoteName,
-		RefSpecs:   refSpecs,
-		Force:      force,
-		Auth:       auth,
-	})
-	if err == nil || errors.Is(err, git.NoErrAlreadyUpToDate) {
+
+	// Pin: capture the FINAL local ref state (post-Export, post-embargo-cap,
+	// post-redaction — exactly what a same-process, same-moment push would have
+	// published) into refs/cairn/push/<op-id>/*, private to this op. The deferred
+	// restores above then put the real refs back to their normal state before
+	// this function returns, while NetworkPush publishes from the pinned copies.
+	opID, err := randomOpID()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", label, err)
+	}
+	pins, err := e.pinOutgoingRefs(opID, refSpecs)
+	if err != nil {
+		return nil, fmt.Errorf("%s: pin refs: %w", label, err)
+	}
+
+	return &PreparedPush{
+		label:      label,
+		remoteName: remoteName,
+		opID:       opID,
+		force:      force,
+		auth:       auth,
+		pins:       pins,
+	}, nil
+}
+
+// randomOpID returns a random 16-hex-char id (8 bytes) for scoping a push's
+// pinned refs to refs/cairn/push/<op-id>/*, so concurrent pushes never collide.
+func randomOpID() (string, error) {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("randomOpID: %w", err)
+	}
+	return hex.EncodeToString(b[:]), nil
+}
+
+// pushPinRefPrefix is the private namespace pinned refs live under
+// (refs/cairn/push/<op-id>/...). It is also the namespace pinOutgoingRefs and
+// the fetch network phase both refuse to ever touch as a SOURCE (see the
+// exclusion below and stripForeignPushPins) — see the "pin leak" fix: go-git's
+// refspec glob matching has no "/" boundary awareness, so a wildcard refspec
+// like "refs/cairn/*:refs/cairn/*" or "refs/cairn/*" ALSO matches
+// refs/cairn/push/<op-id>/*, meaning a naive pin/fetch pass would happily
+// re-pin (and then permanently publish) another op's — or a crash orphan's,
+// or a previously-fetched foreign — pinned refs. They must never be pinned,
+// published, or imported; only PreparePush (which creates them) and
+// FinishPush (which removes them) ever touch this namespace.
+const pushPinRefPrefix = "refs/cairn/push/"
+
+// pinOutgoingRefs enumerates every local hash ref matching refSpecs' source
+// side — EXCLUDING anything already under pushPinRefPrefix (see its doc) —
+// copies each into refs/cairn/push/<opID>/<path-without-"refs/">, and
+// records its real target ref name (via the matching RefSpec's Dst) and
+// force-update flag for NetworkPush to publish from.
+//
+// If pinning fails partway through, every pin already created in this call is
+// removed (best-effort) before returning the error, so a partial failure
+// never leaves orphaned pins for FinishPush to never see (PreparePush returns
+// nil on error, so its caller has no PreparedPush to pass to FinishPush).
+func (e *Engine) pinOutgoingRefs(opID string, refSpecs []config.RefSpec) ([]pushPin, error) {
+	iter, err := e.git.References()
+	if err != nil {
+		return nil, fmt.Errorf("pinOutgoingRefs: refs: %w", err)
+	}
+	var pins []pushPin
+	rollback := func() {
+		for _, p := range pins {
+			_ = e.git.Storer.RemoveReference(p.pinned)
+		}
+	}
+	ferr := iter.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() != plumbing.HashReference {
+			return nil // skip symbolic refs (HEAD)
+		}
+		if strings.HasPrefix(ref.Name().String(), pushPinRefPrefix) {
+			return nil // never re-pin/re-publish another op's (or an orphaned) pin
+		}
+		spec, ok := matchingRefSpec(refSpecs, ref.Name())
+		if !ok {
+			return nil
+		}
+		dst := spec.Dst(ref.Name())
+		pinned := plumbing.ReferenceName(pushPinRefPrefix + opID + "/" + strings.TrimPrefix(ref.Name().String(), "refs/"))
+		if testPinError != nil {
+			if terr := testPinError(pinned); terr != nil {
+				return fmt.Errorf("pinOutgoingRefs: pin %s: %w", ref.Name(), terr)
+			}
+		}
+		if err := e.git.Storer.SetReference(plumbing.NewHashReference(pinned, ref.Hash())); err != nil {
+			return fmt.Errorf("pinOutgoingRefs: pin %s: %w", ref.Name(), err)
+		}
+		pins = append(pins, pushPin{
+			pinned:      pinned,
+			target:      dst,
+			forceUpdate: spec.IsForceUpdate(),
+			expected:    ref.Hash(),
+		})
 		return nil
+	})
+	if ferr != nil {
+		rollback()
+		return nil, ferr
 	}
-	// go-git v5.13.2 reports a non-fast-forward rejection as a plain error
-	// "non-fast-forward update: <ref>" (remote.go), not the typed
-	// ErrNonFastForwardUpdate (that one is for worktree pull). Match the message
-	// robustly so a diverged remote gives a clear, actionable error.
-	if IsNonFastForward(err) {
+	return pins, nil
+}
+
+// matchingRefSpec returns the first refspec in refSpecs whose source side
+// matches name.
+func matchingRefSpec(refSpecs []config.RefSpec, name plumbing.ReferenceName) (config.RefSpec, bool) {
+	for _, s := range refSpecs {
+		if s.Match(name) {
+			return s, true
+		}
+	}
+	return config.RefSpec(""), false
+}
+
+// NetworkPush is the UNLOCKED half of a push (issue #98 Phase B): it publishes
+// pp's pinned refs to their real target names on the remote, then verifies —
+// by listing the remote's advertised refs (no extra object fetch) — that every
+// pushed ref now equals the pinned SHA. go-git's file transport can report
+// success without the ref landing (issue #117's root cause), so verification
+// is mandatory, not optional. Safe to run without any lock: the pinned refs it
+// reads are private to pp's op-id and immutable (content-addressed objects,
+// refs nothing else writes).
+func (e *Engine) NetworkPush(pp *PreparedPush) error {
+	if len(pp.pins) == 0 {
+		return nil // nothing matched the refspecs (e.g. an empty repo) — no-op
+	}
+	rem, err := e.git.Remote(pp.remoteName)
+	if err != nil {
+		return fmt.Errorf("%s: %w", pp.label, err)
+	}
+
+	specs := make([]config.RefSpec, 0, len(pp.pins))
+	for _, p := range pp.pins {
+		prefix := ""
+		if p.forceUpdate {
+			prefix = "+"
+		}
+		specs = append(specs, config.RefSpec(prefix+p.pinned.String()+":"+p.target.String()))
+	}
+
+	if testNetworkDelay != nil {
+		testNetworkDelay()
+	}
+
+	skip := testSkipRealPush != nil && testSkipRealPush()
+	if !skip {
+		err = rem.Push(&git.PushOptions{
+			RemoteName: pp.remoteName,
+			RefSpecs:   specs,
+			Force:      pp.force,
+			Auth:       pp.auth,
+		})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			// go-git v5.13.2 reports a non-fast-forward rejection as a plain error
+			// "non-fast-forward update: <ref>" (remote.go), not the typed
+			// ErrNonFastForwardUpdate (that one is for worktree pull). Match the
+			// message robustly so a diverged remote gives a clear, actionable error.
+			if IsNonFastForward(err) {
+				return fmt.Errorf(
+					"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force. If you folded/committed into this branch locally and didn't mean to, 'cairn undo' rewinds it: %w",
+					pp.label, pp.remoteName, err)
+			}
+			return fmt.Errorf("%s: %w", pp.label, err)
+		}
+	}
+
+	return e.verifyPush(pp, rem)
+}
+
+// verifyPush lists the remote's advertised refs and checks that every pin's
+// target ref now equals the pinned SHA — the fix for issue #117: go-git's
+// file transport can swallow a subprocess failure and report a push as
+// successful when the ref never actually moved, so success must be verified
+// from the remote's own advertised state, not trusted from a nil error.
+//
+// An exact-SHA mismatch is not automatically a failure: NetworkPush runs
+// without the caller's wc.lock, so between our rem.Push and this List another
+// process can legitimately have pushed further (e.g. fast-forwarded past our
+// commit). If the advertised SHA is a commit we HAVE locally and our pinned
+// SHA is its ancestor, that's a benign race — someone built on our push — and
+// is treated as success. If the advertised SHA is not a commit we have
+// locally at all, we cannot tell a legitimate concurrent push apart from ours
+// never landing; residual ambiguity: the error names the possibility rather
+// than asserting failure outright, and points at `fetch` to disambiguate.
+//
+// Threat model boundary (security review): this defends against an HONEST
+// remote whose transport swallowed a failure (issue #117 — go-git's file
+// transport can report success without the ref actually landing). It is NOT
+// a defense against a LYING or compromised remote: rem.List just asks that
+// same remote what it currently has, so a malicious remote can advertise any
+// SHA it likes — including a fabricated one it also happily serves objects
+// for, which would satisfy the ancestor check above. A nil return here means
+// "the remote we talked to says our push landed," not "an independently
+// verified, tamper-proof landing." It provides no integrity guarantee
+// against a hostile remote.
+func (e *Engine) verifyPush(pp *PreparedPush, rem *git.Remote) error {
+	refs, err := rem.List(&git.ListOptions{Auth: pp.auth})
+	// An empty remote (nothing has ever landed) advertises no refs at all —
+	// go-git reports this as ErrEmptyRemoteRepository rather than an empty
+	// list. Treat it as "no refs advertised" so the per-pin check below
+	// reports the expected "did not land" error naming the ref, instead of a
+	// generic transport error.
+	if err != nil && !errors.Is(err, transport.ErrEmptyRemoteRepository) {
+		return fmt.Errorf("%s: verify push: list remote refs: %w", pp.label, err)
+	}
+	byName := make(map[plumbing.ReferenceName]plumbing.Hash, len(refs))
+	for _, r := range refs {
+		if r.Type() == plumbing.HashReference {
+			byName[r.Name()] = r.Hash()
+		}
+	}
+	for _, p := range pp.pins {
+		got, ok := byName[p.target]
+		if !ok {
+			return fmt.Errorf(
+				"%s: push did not land: remote ref %s is missing (want %s — verified via post-push remote listing — issue #117)",
+				pp.label, p.target, p.expected)
+		}
+		if got == p.expected {
+			continue
+		}
+		if e.commitExistsLocally(got) {
+			if e.remoteAdvancedPastOurPush(p.expected, got) {
+				continue // legitimate concurrent push landed on top of ours
+			}
+			return fmt.Errorf(
+				"%s: push did not land: remote ref %s is %s (known locally, but not a descendant of the pinned %s — verified via post-push remote listing — issue #117)",
+				pp.label, p.target, got, p.expected)
+		}
 		return fmt.Errorf(
-			"%s: remote %q diverged (non-fast-forward); fetch/sync first or push --force. If you folded/committed into this branch locally and didn't mean to, 'cairn undo' rewinds it: %w",
-			label, remoteName, err)
+			"%s: push did not land: remote %s advanced to %s which is not known locally — if another push raced ours, fetch and inspect; otherwise the push did not land (want %s — verified via post-push remote listing — issue #117)",
+			pp.label, p.target, got, p.expected)
 	}
-	return fmt.Errorf("%s: %w", label, err)
+	return nil
+}
+
+// commitExistsLocally reports whether h is a commit object present in this
+// engine's local store.
+func (e *Engine) commitExistsLocally(h plumbing.Hash) bool {
+	_, err := e.git.CommitObject(h)
+	return err == nil
+}
+
+// remoteAdvancedPastOurPush reports whether got — a commit the caller has
+// already confirmed is known locally (see commitExistsLocally) — has
+// expected as an ancestor: the "someone raced our push and fast-forwarded
+// past it" case, distinguished from "our push never landed" (see
+// verifyPush). false also covers "our own pinned ref isn't a commit" (e.g. a
+// lightweight tag we don't ancestor-check) and "got diverged from expected"
+// (a real failure).
+func (e *Engine) remoteAdvancedPastOurPush(expected, got plumbing.Hash) bool {
+	if !e.commitExistsLocally(expected) {
+		return false
+	}
+	base, err := e.mergeBase(expected.String(), got.String())
+	return err == nil && base == expected.String()
+}
+
+// FinishPush removes pp's pinned refs (refs/cairn/push/<op-id>/*). It is
+// best-effort and MUST be called on every PreparedPush exactly once, on both
+// the success and the failure path (defer it right after PreparePush
+// succeeds), so a crash or an early return never leaks pinned refs. Errors
+// removing individual refs are collected and joined, but every ref is still
+// attempted.
+func (e *Engine) FinishPush(pp *PreparedPush) error {
+	var errs []error
+	for _, p := range pp.pins {
+		if err := e.git.Storer.RemoveReference(p.pinned); err != nil {
+			errs = append(errs, fmt.Errorf("remove %s: %w", p.pinned, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// PreparePushToRemote is the Phase-1 (locked) half of PushToRemote: see
+// PreparePush.
+func (e *Engine) PreparePushToRemote(remoteName string, force bool) (*PreparedPush, error) {
+	return e.PreparePush("change.PushToRemote", remoteName, "", gitRefSpecs(force), force)
+}
+
+// PreparePushToRemoteBranch is the Phase-1 (locked) half of
+// PushToRemoteBranch: see PreparePush.
+func (e *Engine) PreparePushToRemoteBranch(remoteName, branch string, force bool) (*PreparedPush, error) {
+	return e.PreparePush("change.PushToRemoteBranch", remoteName, branch, branchRefSpecs(branch, force), force)
 }
 
 // ErrPushHasConflict is returned by checkConflictGate when a push to a plain

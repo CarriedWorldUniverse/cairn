@@ -102,22 +102,12 @@ func TestLockCoverageBlocksConcurrentAccess(t *testing.T) {
 		})
 	})
 
-	t.Run("Fetch", func(t *testing.T) {
-		bare, def := seedBareRemoteWT(t)
-		root := t.TempDir()
-		r0, err := Clone(bare, root, "t", nil)
-		if err != nil {
-			t.Fatalf("clone: %v", err)
-		}
-		_ = def
-		if err := r0.Close(); err != nil {
-			t.Fatalf("close r0: %v", err)
-		}
-
-		assertBlocksOnWCLock(t, root, "Fetch", func(r *Repo) error {
-			return r.Fetch("origin")
-		})
-	})
+	// Fetch's coverage moved to fetch_lock_test.go: issue #98 Phase B
+	// deliberately took Fetch/FetchPruned OFF wc.lock (they write no
+	// wc.json/catalogue state) and onto their own per-remote remote.lock, so a
+	// slow fetch no longer blocks (or is blocked by) unrelated wc.lock
+	// commands. TestFetchDoesNotBlockOnWCLock and
+	// TestFetchSerializesOnFetchLock there are that coverage's replacement.
 
 	t.Run("Status", func(t *testing.T) {
 		root := t.TempDir()
