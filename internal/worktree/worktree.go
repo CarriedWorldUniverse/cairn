@@ -181,6 +181,15 @@ func (r *Repo) Close() error {
 // so an inner call can't drop the outer op's in-progress state. Cross-process
 // it is mutually exclusive, so concurrent cairn invocations on one shared
 // working copy serialize instead of racing.
+//
+// INVARIANT (issue #98 Phase A): every exported Repo/releaseAdapter method
+// that mutates shared state — go-git refs, the SQLite catalogue, wc.json, or
+// an expressed folder's on-disk content — takes this lock as its first
+// statement, before reading r.st (so it sees the freshly-reloaded state, not
+// a pre-lock snapshot). A pure read with no side effect does not need it.
+// When adding a new verb: if it writes any of the above, copy the
+// `unlock, err := r.lockState(); if err != nil { return ... }; defer unlock()`
+// idiom used throughout this file — do not invent a new locking pattern.
 func (r *Repo) lockState() (func(), error) {
 	if r.lockDepth > 0 {
 		r.lockDepth++
@@ -520,6 +529,11 @@ func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 // reflects the adopted work. force allows discarding uncommitted changes; without
 // it, Fold refuses if the branch has uncommitted edits.
 func (r *Repo) Fold(branch string, force bool) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if !force {
 		dirty, derr := r.isDirty(branch)
 		if derr != nil {
@@ -586,6 +600,11 @@ func (r *Repo) Fold(branch string, force bool) error {
 // unexpresses the branch. force allows discarding uncommitted changes; without it,
 // Abandon refuses if the branch has uncommitted edits.
 func (r *Repo) Abandon(branch string, force bool) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if !force {
 		dirty, derr := r.isDirty(branch)
 		if derr != nil {
@@ -661,6 +680,11 @@ func (r *Repo) Unexpress(branch string, force bool) error {
 // accepting it would close the conflict row — so status stops reporting the
 // conflict — while the markers live on in the file and the new tip commit.
 func (r *Repo) Resolve(branch, path string, force bool) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return fmt.Errorf("worktree.Resolve: branch %q is not expressed", branch)
@@ -692,6 +716,11 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 
 // Status reports the state of an expressed branch.
 func (r *Repo) Status(branch string) (StatusInfo, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return StatusInfo{}, err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: branch %q is not expressed", branch)
@@ -777,6 +806,11 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 // (empty head) yields an empty diff. Callers must SyncWorking first to capture
 // on-disk edits into the working commit.
 func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
@@ -872,6 +906,11 @@ func (r *Repo) IsExpressed(branch string) bool {
 // stacked branch flat-projected onto the root at import can be restored to its
 // real parent. See change.Reparent.
 func (r *Repo) Reparent(branch, newParent string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Reparent: %w", err)
@@ -1042,6 +1081,11 @@ func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
 // without reconciling local lines — the read-only half of a pull. Local work is
 // never clobbered. Does not prune (unchanged behavior — see FetchPruned).
 func (r *Repo) Fetch(remote string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := r.eng.FetchTracking(remote); err != nil {
 		return fmt.Errorf("worktree.Fetch: %w", err)
 	}
@@ -1053,6 +1097,11 @@ func (r *Repo) Fetch(remote string) error {
 // PR branch deleted on the remote fails with a clear "not found" error rather
 // than silently diffing against the last-known (now-deleted) tip.
 func (r *Repo) FetchPruned(remote string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := r.eng.FetchTrackingPruned(remote); err != nil {
 		return fmt.Errorf("worktree.FetchPruned: %w", err)
 	}
@@ -1092,7 +1141,14 @@ func (r *Repo) Pull(remote string) (change.PullSummary, error) {
 
 // AddRemote registers (or re-points) a git remote and records its cairn kind
 // ("git" or "cairn"; defaulting to "git" when empty).
-func (r *Repo) AddRemote(name, url, kind string) error { return r.eng.AddRemote(name, url, kind) }
+func (r *Repo) AddRemote(name, url, kind string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return r.eng.AddRemote(name, url, kind)
+}
 
 // Remotes returns every configured remote with its URL and cairn kind.
 func (r *Repo) Remotes() ([]change.RemoteInfo, error) { return r.eng.ListRemotes() }
@@ -1101,7 +1157,14 @@ func (r *Repo) Remotes() ([]change.RemoteInfo, error) { return r.eng.ListRemotes
 func (r *Repo) GetConfig(key string) (string, bool, error) { return r.eng.GetConfig(key) }
 
 // SetConfig stores value under key.
-func (r *Repo) SetConfig(key, value string) error { return r.eng.SetConfig(key, value) }
+func (r *Repo) SetConfig(key, value string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return r.eng.SetConfig(key, value)
+}
 
 // Ls returns a copy of the currently expressed branch entries.
 func (r *Repo) Ls() map[string]Entry {
@@ -1153,6 +1216,11 @@ func (r *Repo) IsWorkingCommit(sha string) (bool, error) { return r.eng.IsWorkin
 
 // Tag names the tip of branch with the given tag name.
 func (r *Repo) Tag(name, branch string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return fmt.Errorf("worktree.Tag: %w", err)
@@ -1167,6 +1235,11 @@ func (r *Repo) Tag(name, branch string) error {
 // (the default) drops it from the pushed projection entirely; shapeOnly keeps the
 // path but replaces its bytes with a placeholder.
 func (r *Repo) MarkPrivate(path string, shapeOnly bool) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	mode := change.PrivacyOmit
 	if shapeOnly {
 		mode = change.PrivacyShapeOnly
@@ -1175,7 +1248,14 @@ func (r *Repo) MarkPrivate(path string, shapeOnly bool) error {
 }
 
 // UnmarkPrivate stops withholding a path. Idempotent.
-func (r *Repo) UnmarkPrivate(path string) error { return r.eng.UnmarkPrivate(path) }
+func (r *Repo) UnmarkPrivate(path string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return r.eng.UnmarkPrivate(path)
+}
 
 // ListPrivate returns every privacy flag, ordered by path.
 func (r *Repo) ListPrivate() ([]change.PrivateEntry, error) { return r.eng.ListPrivate() }
@@ -1189,6 +1269,11 @@ func (r *Repo) PathOnRemote(path string) ([]string, error) { return r.eng.PathOn
 // it and everything after it are held out of the public projection until
 // disclosed. Returns the resolved full sha.
 func (r *Repo) MarkEmbargo(rev string) (string, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return "", err
+	}
+	defer unlock()
 	sha, err := r.eng.ResolveCommit(rev)
 	if err != nil {
 		return "", err
@@ -1203,6 +1288,11 @@ func (r *Repo) ListEmbargo() ([]string, error) { return r.eng.ListEmbargo() }
 // returns handled=true when it did; handled=false (no error) means rev is not an
 // embargoed commit, so the caller can fall back to disclosing a privacy path.
 func (r *Repo) DiscloseCommit(rev string) (handled bool, err error) {
+	unlock, lerr := r.lockState()
+	if lerr != nil {
+		return false, lerr
+	}
+	defer unlock()
 	sha, rerr := r.eng.ResolveCommit(rev)
 	if rerr != nil {
 		return false, nil // not a resolvable commit → not an embargo disclose
@@ -1225,6 +1315,11 @@ func (r *Repo) PendingBump() (string, error) {
 
 // SetPendingBump records explicit bump intent for the next release.
 func (r *Repo) SetPendingBump(level string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	return r.eng.SetConfig("version.pending_bump", level)
 }
 
@@ -1288,6 +1383,11 @@ type releaseAdapter struct {
 // working-delta isDirty sees the stamped-but-uncommitted manifest and the
 // guardrail refuses a second release on a stamped tree.
 func (a *releaseAdapter) Dirty() (bool, error) {
+	unlock, err := a.r.lockState()
+	if err != nil {
+		return false, err
+	}
+	defer unlock()
 	entry, ok := a.r.st.Expressed[a.branch]
 	if !ok {
 		return false, nil
@@ -1350,12 +1450,47 @@ func (a *releaseAdapter) manifestPath(eco string) (string, error) {
 }
 
 func (a *releaseAdapter) WriteManifest(path string, b []byte) error {
+	unlock, err := a.r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	return os.WriteFile(path, b, 0o644)
 }
 
-func (a *releaseAdapter) CreateTag(name string) error { return a.r.Tag(name, a.branch) }
-func (a *releaseAdapter) DeleteTag(name string) error { return a.r.eng.DeleteTag(name) }
-func (a *releaseAdapter) ClearPendingBump() error     { return a.r.SetPendingBump("") }
+// CreateTag delegates to Repo.Tag, which itself takes the wc.lock; the lock
+// here is redundant (reentrant) but kept explicit so this entry point reads
+// correctly in isolation.
+func (a *releaseAdapter) CreateTag(name string) error {
+	unlock, err := a.r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return a.r.Tag(name, a.branch)
+}
+
+// DeleteTag writes the catalogue directly (bypassing Repo.Tag), so it takes
+// its own lock.
+func (a *releaseAdapter) DeleteTag(name string) error {
+	unlock, err := a.r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return a.r.eng.DeleteTag(name)
+}
+
+// ClearPendingBump delegates to Repo.SetPendingBump, which itself takes the
+// wc.lock; the lock here is redundant (reentrant) but kept explicit.
+func (a *releaseAdapter) ClearPendingBump() error {
+	unlock, err := a.r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return a.r.SetPendingBump("")
+}
 
 func (a *releaseAdapter) TagExists(name string) (bool, error) {
 	tags, err := a.r.eng.ListTags()
@@ -1375,6 +1510,11 @@ func (a *releaseAdapter) TagExists(name string) (bool, error) {
 // Phase-1 limitation: it restores line tips only — it does not delete lines that
 // the undone operation created.
 func (r *Repo) Undo() error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := r.eng.Undo(); err != nil {
 		return fmt.Errorf("worktree.Undo: %w", err)
 	}
@@ -1448,6 +1588,11 @@ func (r *Repo) BisectStatus() (change.BisectInfo, error) { return r.eng.BisectIn
 // It refuses if the branch has un-sealed work (the session would shadow it), then
 // materializes the first midpoint into the branch folder for the operator to test.
 func (r *Repo) BisectStart(branch, good, bad string) (change.BisectStep, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.BisectStep{}, err
+	}
+	defer unlock()
 	dirty, err := r.isDirty(branch)
 	if err != nil {
 		return change.BisectStep{}, fmt.Errorf("worktree.BisectStart: %w", err)
@@ -1483,6 +1628,11 @@ func (r *Repo) BisectStart(branch, good, bad string) (change.BisectStep, error) 
 // BisectMark records the verdict ("good"|"bad") for the current commit and
 // materializes the next midpoint (or the first-bad answer on Done).
 func (r *Repo) BisectMark(verdict string) (change.BisectStep, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.BisectStep{}, err
+	}
+	defer unlock()
 	info, err := r.eng.BisectInfo()
 	if err != nil {
 		return change.BisectStep{}, fmt.Errorf("worktree.BisectMark: %w", err)
@@ -1502,6 +1652,11 @@ func (r *Repo) BisectMark(verdict string) (change.BisectStep, error) {
 
 // BisectSkip steps over an untestable midpoint and materializes the new current.
 func (r *Repo) BisectSkip() (change.BisectStep, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.BisectStep{}, err
+	}
+	defer unlock()
 	info, err := r.eng.BisectInfo()
 	if err != nil {
 		return change.BisectStep{}, fmt.Errorf("worktree.BisectSkip: %w", err)
@@ -1525,6 +1680,11 @@ func (r *Repo) BisectSkip() (change.BisectStep, error) {
 // (after convergence) precisely so the auto-snapshot stays suspended until here —
 // so reset always finds a live session unless none was ever started.
 func (r *Repo) BisectReset() error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	info, err := r.eng.BisectInfo()
 	if err != nil {
 		return fmt.Errorf("worktree.BisectReset: %w", err)
@@ -1585,6 +1745,11 @@ func (r *Repo) rematerialize(branch string, entry Entry) error {
 // sealed tip (folder is reset to the clean committed state). Errors "nothing to
 // stash" when the working change has no un-sealed edits.
 func (r *Repo) Stash(branch, message string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return fmt.Errorf("worktree.Stash: branch %q is not expressed", branch)
@@ -1602,6 +1767,11 @@ func (r *Repo) Stash(branch, message string) error {
 // working change, then re-materializes the folder so the restored files appear
 // on disk. The stash entry is dropped after a successful apply.
 func (r *Repo) StashPop(branch string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	entry, ok := r.st.Expressed[branch]
 	if !ok {
 		return fmt.Errorf("worktree.StashPop: branch %q is not expressed", branch)
@@ -1619,7 +1789,14 @@ func (r *Repo) StashPop(branch string) error {
 func (r *Repo) StashList() ([]change.StashEntry, error) { return r.eng.StashList() }
 
 // StashDrop deletes a stash entry without applying it. id 0 drops the top.
-func (r *Repo) StashDrop(id int64) error { return r.eng.StashDrop(id) }
+func (r *Repo) StashDrop(id int64) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return r.eng.StashDrop(id)
+}
 
 // OperationLog returns the full operation log in chronological order.
 func (r *Repo) OperationLog() ([]change.Operation, error) {
@@ -1692,6 +1869,11 @@ func (r *Repo) lineNameOfCommit(commit string) (string, error) {
 // Reword changes the commit message of a sealed commit on its line.
 // The branch folder is re-materialized to the rebased tip.
 func (r *Repo) Reword(commit, message string) (change.CommitResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+	defer unlock()
 	return r.applyEdit(commit, func() ([]change.Conflict, error) {
 		return r.eng.Reword(commit, message)
 	})
@@ -1700,6 +1882,11 @@ func (r *Repo) Reword(commit, message string) (change.CommitResult, error) {
 // Squash folds a sealed commit into its parent on the same line.
 // The branch folder is re-materialized to the rebased tip.
 func (r *Repo) Squash(commit string) (change.CommitResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+	defer unlock()
 	return r.applyEdit(commit, func() ([]change.Conflict, error) {
 		return r.eng.Squash(commit)
 	})
@@ -1708,6 +1895,11 @@ func (r *Repo) Squash(commit string) (change.CommitResult, error) {
 // Drop removes a sealed commit from its line, rebasing later commits.
 // The branch folder is re-materialized to the rebased tip.
 func (r *Repo) Drop(commit string) (change.CommitResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+	defer unlock()
 	return r.applyEdit(commit, func() ([]change.Conflict, error) {
 		return r.eng.Drop(commit)
 	})
@@ -1719,6 +1911,11 @@ func (r *Repo) Drop(commit string) (change.CommitResult, error) {
 // afterward; we still re-materialize each so its working state tracks the new
 // commit SHAs. A dry run touches nothing.
 func (r *Repo) Reauthor(spec change.ReauthorSpec) (change.ReauthorResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.ReauthorResult{}, err
+	}
+	defer unlock()
 	res, err := r.eng.Reauthor(spec)
 	if err != nil {
 		return change.ReauthorResult{}, err
@@ -1739,6 +1936,11 @@ func (r *Repo) Reauthor(spec change.ReauthorSpec) (change.ReauthorResult, error)
 // new line tip and any conflicts (conflicts-as-data). If branch is expressed its
 // folder is re-materialized to reflect the pick.
 func (r *Repo) CherryPick(branch, commit string) (change.CommitResult, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return change.CommitResult{}, err
+	}
+	defer unlock()
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.CherryPick: %w", err)
