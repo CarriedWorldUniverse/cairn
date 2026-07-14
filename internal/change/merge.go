@@ -1,7 +1,6 @@
 package change
 
 import (
-	"bytes"
 	"sort"
 	"strings"
 
@@ -75,72 +74,77 @@ func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree, adop
 // theirsTree (the change's snapshot) against baseTree, writes the merged result,
 // and returns its hex hash plus any conflicts. baseTree may be "" (treated as an
 // empty tree).
+//
+// This is meta-first: base/ours/theirs are read as SHA+mode metadata only
+// (readTreeRefs), never full content. Every one of the "one side untouched" /
+// "both agree" / "deletion propagates" shortcuts below is decided by comparing
+// SHAs (content-addressed, so SHA equality IS byte equality) — no blob content
+// is loaded for any of those paths. Blob content is fetched (readBlob) ONLY for
+// a path reaching genuine divergence (both sides present, differ, and neither
+// matches base) — the sole case where an actual diff3/binary-conflict decision
+// needs bytes. The merged tree is then written by REFERENCE (writeTreeRefs):
+// every path whose content is carried over from an existing blob costs zero
+// blob writes/rehashes; only genuinely new merged content is written fresh.
 func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (string, []Conflict, error) {
-	base, err := e.maybeReadTree(baseTree)
+	base, err := e.readTreeRefs(baseTree)
 	if err != nil {
 		return "", nil, err
 	}
-	ours, err := e.readTree(oursTree)
+	ours, err := e.readTreeRefs(oursTree)
 	if err != nil {
 		return "", nil, err
 	}
-	theirs, err := e.readTree(theirsTree)
+	theirs, err := e.readTreeRefs(theirsTree)
 	if err != nil {
 		return "", nil, err
 	}
 
-	// Per-path modes from each contributing side (tree shas). theirs = the local
-	// change's snapshot, ours = the parent line's tip.
-	oursModes, err := e.fileModesFromTree(oursTree)
-	if err != nil {
-		return "", nil, err
-	}
-	theirsModes, err := e.fileModesFromTree(theirsTree)
-	if err != nil {
-		return "", nil, err
-	}
-	// Base modes feed the one-sided "untouched" tests below: a mode-only edit
-	// (chmod, regular<->symlink with identical bytes) must count as a
-	// modification, or a delete on the other side would silently drop it.
-	// Sparse map (absent => ModeRegular); nil for an empty base tree.
-	var baseModes map[string]EntryMode
-	if baseTree != "" {
-		if baseModes, err = e.fileModesFromTree(baseTree); err != nil {
-			return "", nil, err
-		}
-	}
-
-	merged := map[string][]byte{}
+	merged := map[string]TreeEntry{}
 	var conflicts []Conflict
 
-	for _, p := range unionKeys(base, ours, theirs) {
-		bv, inBase := base[p]
-		ov, inOurs := ours[p]
-		tv, inTheirs := theirs[p]
+	for _, p := range unionKeysMeta(base, ours, theirs) {
+		be, inBase := base[p]
+		oe, inOurs := ours[p]
+		te, inTheirs := theirs[p]
 
 		switch {
 		case inOurs && inTheirs:
-			if bytes.Equal(ov, tv) {
-				// Both sides agree.
-				merged[p] = ov
+			if oe.SHA == te.SHA {
+				// Both sides agree (content-identical).
+				merged[p] = oe
 				continue
 			}
 			// Both present and differ. If one side never touched the file
-			// (equal to base), take the other side wholesale.
-			if inBase && bytes.Equal(bv, ov) {
-				merged[p] = tv
+			// (equal to base, content AND mode), take the other side wholesale —
+			// no content load needed, just the reference.
+			if inBase && be.SHA == oe.SHA && be.Mode == oe.Mode {
+				merged[p] = te
 				continue
 			}
-			if inBase && bytes.Equal(bv, tv) {
-				merged[p] = ov
+			if inBase && be.SHA == te.SHA && be.Mode == te.Mode {
+				merged[p] = oe
 				continue
 			}
-			// Genuine divergence: check for binary before attempting line-merge.
+			// Genuine divergence: only NOW load content, to decide binary vs.
+			// line-mergeable and build the actual merged bytes.
+			bv, err := e.blobOrNil(be, inBase)
+			if err != nil {
+				return "", nil, err
+			}
+			ov, err := e.readBlob(oe.SHA)
+			if err != nil {
+				return "", nil, err
+			}
+			tv, err := e.readBlob(te.SHA)
+			if err != nil {
+				return "", nil, err
+			}
 			if isBinary(bv) || isBinary(ov) || isBinary(tv) {
 				// Binary whole-file conflict: keep the change/theirs side verbatim
 				// (theirs = the change's snapshot in mergeForward) and record a
-				// conflict without emitting any text markers.
-				merged[p] = tv
+				// conflict without emitting any text markers. theirs' blob already
+				// exists — reference it, don't rewrite it.
+				merged[p] = te
 				c, err := e.buildConflict(changeID, p, bv, ov, tv, tv)
 				if err != nil {
 					return "", nil, err
@@ -151,7 +155,11 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			// Three-way line merge for text files.
 			res := diff3.Merge3(splitLines(bv), splitLines(ov), splitLines(tv))
 			mergedBytes := []byte(strings.Join(res.Merged, ""))
-			merged[p] = mergedBytes
+			h, err := e.writeBlob(mergedBytes)
+			if err != nil {
+				return "", nil, err
+			}
+			merged[p] = TreeEntry{SHA: h.String(), Mode: te.Mode}
 			if res.Conflict {
 				c, err := e.buildConflict(changeID, p, bv, ov, tv, mergedBytes)
 				if err != nil {
@@ -172,13 +180,21 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			//                             (same keep-content posture as binary
 			//                             conflicts; resolve decides).
 			if !inBase {
-				merged[p] = ov
+				merged[p] = oe
 				continue
 			}
-			if bytes.Equal(bv, ov) && baseModes[p] == oursModes[p] {
+			if be.SHA == oe.SHA && be.Mode == oe.Mode {
 				continue // content AND mode untouched — deletion propagates
 			}
-			merged[p] = ov
+			merged[p] = oe
+			bv, err := e.readBlob(be.SHA)
+			if err != nil {
+				return "", nil, err
+			}
+			ov, err := e.readBlob(oe.SHA)
+			if err != nil {
+				return "", nil, err
+			}
 			c, err := e.buildConflict(changeID, p, bv, ov, nil, ov)
 			if err != nil {
 				return "", nil, err
@@ -190,13 +206,21 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			// (#103: ours deleted/moved it; a theirs snapshot that never touched
 			// the file must not resurrect it).
 			if !inBase {
-				merged[p] = tv
+				merged[p] = te
 				continue
 			}
-			if bytes.Equal(bv, tv) && baseModes[p] == theirsModes[p] {
+			if be.SHA == te.SHA && be.Mode == te.Mode {
 				continue // content AND mode untouched — deletion propagates
 			}
-			merged[p] = tv
+			merged[p] = te
+			bv, err := e.readBlob(be.SHA)
+			if err != nil {
+				return "", nil, err
+			}
+			tv, err := e.readBlob(te.SHA)
+			if err != nil {
+				return "", nil, err
+			}
 			c, err := e.buildConflict(changeID, p, bv, nil, tv, tv)
 			if err != nil {
 				return "", nil, err
@@ -208,40 +232,21 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		}
 	}
 
-	// Thread modes alongside merged content. A path's mode MUST follow the side
-	// whose content was kept — a symlink's target string is only valid WITH
-	// ModeSymlink, else it is committed as a regular file. The merged content for
-	// any path came from theirs when theirs has it (the inOurs&&inTheirs and the
-	// theirs-only branches above all retain theirs' bytes on agreement/merge/add),
-	// else from ours. So: if the path exists on theirs, take theirsModes[p]; else
-	// take oursModes[p]. Only record non-regular modes (sparse map).
-	mergedModes := map[string]EntryMode{}
-	for p := range merged {
-		var mode EntryMode
-		if _, inTheirs := theirs[p]; inTheirs {
-			mode = theirsModes[p]
-		} else {
-			mode = oursModes[p]
-		}
-		if mode != ModeRegular {
-			mergedModes[p] = mode
-		}
-	}
-
-	tree, err := e.writeTree(merged, mergedModes)
+	tree, err := e.writeTreeRefs(merged)
 	if err != nil {
 		return "", nil, err
 	}
 	return tree.String(), conflicts, nil
 }
 
-// maybeReadTree reads a tree into a path->bytes map, returning an empty map when
-// treeHash is "".
-func (e *Engine) maybeReadTree(treeHash string) (map[string][]byte, error) {
-	if treeHash == "" {
-		return map[string][]byte{}, nil
+// blobOrNil reads entry's blob content, or returns nil when present is false
+// (mirroring the zero-value []byte a missing map lookup used to yield before
+// this package went meta-first).
+func (e *Engine) blobOrNil(entry TreeEntry, present bool) ([]byte, error) {
+	if !present {
+		return nil, nil
 	}
-	return e.readTree(treeHash)
+	return e.readBlob(entry.SHA)
 }
 
 // splitLines splits b into lines, each retaining its trailing "\n", matching the
@@ -253,8 +258,9 @@ func splitLines(b []byte) []string {
 	return strings.SplitAfter(string(b), "\n")
 }
 
-// unionKeys returns the sorted union of all keys across the given maps.
-func unionKeys(maps ...map[string][]byte) []string {
+// unionKeysMeta returns the sorted union of all keys across the given
+// path->TreeEntry metadata maps.
+func unionKeysMeta(maps ...map[string]TreeEntry) []string {
 	set := map[string]struct{}{}
 	for _, m := range maps {
 		for k := range m {
