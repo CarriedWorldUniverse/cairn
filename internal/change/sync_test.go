@@ -671,3 +671,195 @@ func TestPullUpToDate(t *testing.T) {
 		}
 	}
 }
+
+// originWithCommitOnMain seeds a bare repo exactly like originWithCommit, but
+// forces the pushed branch name to "main" — RootLineName — so it lines up
+// with the never-imported root line an Open on an empty dir bootstraps (see
+// ensureRootLine: tip_commit=="" on a fresh repo). originWithCommit can't be
+// reused as-is here: go-git's PlainInit defaults the first branch to "master"
+// pre-first-commit, so a same-named remote branch takes a second checkout -b.
+func originWithCommitOnMain(t *testing.T) string {
+	t.Helper()
+	bare := t.TempDir()
+	if _, err := git.PlainInit(bare, true); err != nil {
+		t.Fatalf("PlainInit bare: %v", err)
+	}
+	work := t.TempDir()
+	repo, err := git.PlainInit(work, false)
+	if err != nil {
+		t.Fatalf("PlainInit work: %v", err)
+	}
+	if _, err := repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{bare}}); err != nil {
+		t.Fatalf("CreateRemote: %v", err)
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		t.Fatalf("worktree: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "readme.txt"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatalf("write readme: %v", err)
+	}
+	if _, err := wt.Add("readme.txt"); err != nil {
+		t.Fatalf("add readme: %v", err)
+	}
+	if _, err := wt.Commit("seed", &git.CommitOptions{
+		Author: &object.Signature{Name: "o", Email: "o@x"},
+	}); err != nil {
+		t.Fatalf("commit seed: %v", err)
+	}
+	// A commit must exist before a branch checkout can target it (checkout -b
+	// on a pre-first-commit repo errors "reference not found").
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+		Create: true,
+	}); err != nil {
+		t.Fatalf("checkout -b main: %v", err)
+	}
+	if err := repo.Push(&git.PushOptions{
+		RemoteName: "origin",
+		RefSpecs: []config.RefSpec{
+			config.RefSpec("refs/heads/main:refs/heads/main"),
+		},
+	}); err != nil {
+		t.Fatalf("push main: %v", err)
+	}
+	return bare
+}
+
+// TestPullEmptyLineAdoptsRemoteTip is #116: a brand-new local line has zero
+// commits (tip_commit=="", no snapshotted open change — exactly the root
+// line's state right after Open on an empty dir, before any import/commit)
+// and its name matches a remote branch that already has commits. The old
+// mergeBase("", r)=="" fell through the diverged default branch and tried to
+// merge trees against a "" (zero-hash) local tree, erroring "object not
+// found". Pull must instead degrade to a fast-forward: adopt the remote tip.
+func TestPullEmptyLineAdoptsRemoteTip(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare := originWithCommitOnMain(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+
+	root, err := e.LineByName(RootLineName)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	if root.TipCommit != "" {
+		t.Fatalf("precondition: fresh root line tip_commit = %q, want empty", root.TipCommit)
+	}
+
+	if err := e.AddRemote("origin", bare, "git"); err != nil {
+		t.Fatalf("AddRemote: %v", err)
+	}
+	sum, err := e.PullFromRemote("origin")
+	if err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+
+	root2, err := e.LineByName(RootLineName)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	if root2.TipCommit == "" {
+		t.Fatalf("empty-line pull left the tip empty")
+	}
+	rheads, err := e.remoteHeads("origin")
+	if err != nil {
+		t.Fatalf("remoteHeads: %v", err)
+	}
+	if root2.TipCommit != rheads[RootLineName] {
+		t.Fatalf("line tip = %s, want remote tip %s", root2.TipCommit, rheads[RootLineName])
+	}
+	files, err := e.Files(root2.TipCommit)
+	if err != nil {
+		t.Fatalf("Files: %v", err)
+	}
+	if string(files["readme.txt"]) != "hello\n" {
+		t.Fatalf("adopted tip missing remote content: %v", files)
+	}
+
+	var found bool
+	for _, lr := range sum.Lines {
+		if lr.Line == RootLineName {
+			found = true
+			if lr.Status != "fast-forward" {
+				t.Fatalf("status = %q, want fast-forward", lr.Status)
+			}
+			if lr.Conflicts != 0 {
+				t.Fatalf("empty-line adoption reported %d conflicts, want 0", lr.Conflicts)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("no LineResult for %q: %+v", RootLineName, sum.Lines)
+	}
+
+	// No open change existed before the pull (nothing was ever snapshotted on
+	// the root line) and none is created by it — the fast-forward path passes
+	// "" as the change id precisely to avoid manufacturing one (see #103: a
+	// change adopted as headless re-snapshots later with parent = the new tip,
+	// rather than presenting the remote's own commit as local work).
+	var changeCount int
+	if err := e.db.QueryRow(`SELECT COUNT(*) FROM change WHERE line_id=?`, root2.ID).Scan(&changeCount); err != nil {
+		t.Fatalf("count changes: %v", err)
+	}
+	if changeCount != 0 {
+		t.Fatalf("empty-line pull created %d change row(s), want 0 (line stays headless)", changeCount)
+	}
+}
+
+// TestPullEmptyLineWithHeadlessChangeStaysHeadless covers the variant where an
+// open change already exists on the empty line but has never been snapshotted
+// (head_commit==""). #103's rule applies: the pull must NOT give that change a
+// head — only the line tip may advance — so a later folder-sync snapshot still
+// parents on the (now-adopted) line tip rather than amending onto the remote
+// commit's own parent.
+func TestPullEmptyLineWithHeadlessChangeStaysHeadless(t *testing.T) {
+	skipOnWindowsSync(t)
+	bare := originWithCommitOnMain(t)
+	e, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+
+	root, err := e.LineByName(RootLineName)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	ch, err := e.CreateChange(root.ID, "local")
+	if err != nil {
+		t.Fatalf("CreateChange: %v", err)
+	}
+	if ch.HeadCommit != "" {
+		t.Fatalf("precondition: fresh change head_commit = %q, want empty", ch.HeadCommit)
+	}
+
+	if err := e.AddRemote("origin", bare, "git"); err != nil {
+		t.Fatalf("AddRemote: %v", err)
+	}
+	if _, err := e.PullFromRemote("origin"); err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+
+	root2, err := e.LineByName(RootLineName)
+	if err != nil {
+		t.Fatalf("LineByName: %v", err)
+	}
+	rheads, err := e.remoteHeads("origin")
+	if err != nil {
+		t.Fatalf("remoteHeads: %v", err)
+	}
+	if root2.TipCommit != rheads[RootLineName] {
+		t.Fatalf("line tip = %s, want remote tip %s", root2.TipCommit, rheads[RootLineName])
+	}
+	var headAfter string
+	if err := e.db.QueryRow(`SELECT head_commit FROM change WHERE id=?`, ch.ID).Scan(&headAfter); err != nil {
+		t.Fatalf("query change head: %v", err)
+	}
+	if headAfter != "" {
+		t.Fatalf("headless change head_commit = %q after pull, want it to stay empty", headAfter)
+	}
+}
