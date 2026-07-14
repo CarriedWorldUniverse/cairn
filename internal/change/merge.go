@@ -99,6 +99,16 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 	if err != nil {
 		return "", nil, err
 	}
+	// Base modes feed the one-sided "untouched" tests below: a mode-only edit
+	// (chmod, regular<->symlink with identical bytes) must count as a
+	// modification, or a delete on the other side would silently drop it.
+	// Sparse map (absent => ModeRegular); nil for an empty base tree.
+	var baseModes map[string]EntryMode
+	if baseTree != "" {
+		if baseModes, err = e.fileModesFromTree(baseTree); err != nil {
+			return "", nil, err
+		}
+	}
 
 	merged := map[string][]byte{}
 	var conflicts []Conflict
@@ -155,8 +165,8 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 			// the old "keep the side that still has content" rule made deletions
 			// NEVER propagate, resurrecting moved/deleted trees on reconcile):
 			//  - not in base            → genuinely added on ours → keep it.
-			//  - in base, ours == base  → theirs DELETED an untouched file → the
-			//                             deletion wins → drop it.
+			//  - in base, ours == base  (content AND mode) → theirs DELETED an
+			//                             untouched file → the deletion wins.
 			//  - in base, ours != base  → modify(ours)/delete(theirs) → keep the
 			//                             surviving content and record a conflict
 			//                             (same keep-content posture as binary
@@ -165,8 +175,8 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 				merged[p] = ov
 				continue
 			}
-			if bytes.Equal(bv, ov) {
-				continue // deletion propagates
+			if bytes.Equal(bv, ov) && baseModes[p] == oursModes[p] {
+				continue // content AND mode untouched — deletion propagates
 			}
 			merged[p] = ov
 			c, err := e.buildConflict(changeID, p, bv, ov, nil, ov)
@@ -183,8 +193,8 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 				merged[p] = tv
 				continue
 			}
-			if bytes.Equal(bv, tv) {
-				continue // deletion propagates
+			if bytes.Equal(bv, tv) && baseModes[p] == theirsModes[p] {
+				continue // content AND mode untouched — deletion propagates
 			}
 			merged[p] = tv
 			c, err := e.buildConflict(changeID, p, bv, nil, tv, tv)

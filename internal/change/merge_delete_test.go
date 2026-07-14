@@ -97,6 +97,63 @@ func TestMergeTreesDeletePropagation(t *testing.T) {
 		}
 	})
 
+	t.Run("mode-only change vs delete -> kept + conflict, mode preserved", func(t *testing.T) {
+		// bytes identical everywhere; ours flips f.sh to executable, theirs
+		// deletes it. A mode-only edit is a modification: the delete must NOT
+		// silently win (it would drop the chmod with no record).
+		writeM := func(files map[string][]byte, modes map[string]EntryMode) string {
+			h, err := e.writeTree(files, modes)
+			if err != nil {
+				t.Fatalf("writeTree: %v", err)
+			}
+			return h.String()
+		}
+		baseT := writeM(map[string][]byte{"f.sh": a}, nil)
+		oursT := writeM(map[string][]byte{"f.sh": a}, map[string]EntryMode{"f.sh": ModeExecutable})
+		theirsT := writeM(map[string][]byte{}, nil)
+		mergedTree, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		files, err := e.readTree(mergedTree)
+		if err != nil {
+			t.Fatalf("readTree: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("conflicts = %d, want 1 (mode-change/delete)", len(conflicts))
+		}
+		if string(files["f.sh"]) != string(a) {
+			t.Errorf("surviving content lost, got %q", files["f.sh"])
+		}
+		modes, err := e.fileModesFromTree(mergedTree)
+		if err != nil {
+			t.Fatalf("fileModesFromTree: %v", err)
+		}
+		if modes["f.sh"] != ModeExecutable {
+			t.Errorf("executable mode dropped from surviving side")
+		}
+	})
+
+	t.Run("delete vs mode-only change (mirror) -> kept + conflict", func(t *testing.T) {
+		writeM := func(files map[string][]byte, modes map[string]EntryMode) string {
+			h, err := e.writeTree(files, modes)
+			if err != nil {
+				t.Fatalf("writeTree: %v", err)
+			}
+			return h.String()
+		}
+		baseT := writeM(map[string][]byte{"f.sh": a}, nil)
+		oursT := writeM(map[string][]byte{}, nil)
+		theirsT := writeM(map[string][]byte{"f.sh": a}, map[string]EntryMode{"f.sh": ModeExecutable})
+		_, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("conflicts = %d, want 1 (delete/mode-change)", len(conflicts))
+		}
+	})
+
 	t.Run("true adds on either side survive", func(t *testing.T) {
 		merged, conflicts := mergeTreesForTest(t, e,
 			map[string][]byte{},
