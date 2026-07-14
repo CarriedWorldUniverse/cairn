@@ -11,6 +11,90 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+// validTreeEntryName rejects a single tree-entry name that is unsafe to
+// materialize into a worktree path (#126). A hostile remote can author a tree
+// whose entry names are "..", "", ".", or contain a separator/NUL; cairn's read
+// walk joins names into slash-paths that worktree.Materialize filepath.Joins
+// against the branch folder, so an unchecked ".." escapes the folder and lets a
+// pull/clone write arbitrary files. Validate per COMPONENT at every tree
+// boundary (read AND write) so no consumer can be handed a traversal path.
+// windowsReservedDeviceNames are the legacy DOS device names Windows reserves
+// at the filesystem-driver level — opening "CON", or "CON.txt", or
+// "CON.anything" addresses the console device, not a regular file, REGARDLESS
+// of the directory it's "in". Matched case-insensitively against the name's
+// base (the part before its FIRST '.', matching Windows' own matching rule)
+// so both the bare name and any dotted/extended form are caught.
+var windowsReservedDeviceNames = map[string]struct{}{
+	"CON": {}, "PRN": {}, "AUX": {}, "NUL": {},
+	"COM1": {}, "COM2": {}, "COM3": {}, "COM4": {}, "COM5": {}, "COM6": {}, "COM7": {}, "COM8": {}, "COM9": {},
+	"LPT1": {}, "LPT2": {}, "LPT3": {}, "LPT4": {}, "LPT5": {}, "LPT6": {}, "LPT7": {}, "LPT8": {}, "LPT9": {},
+}
+
+func validTreeEntryName(name string) error {
+	switch name {
+	case "":
+		return fmt.Errorf("empty tree entry name")
+	case ".", "..":
+		return fmt.Errorf("tree entry name %q is a path-traversal component", name)
+	}
+	if strings.ContainsAny(name, "/\\\x00") {
+		return fmt.Errorf("tree entry name %q contains a separator or NUL", name)
+	}
+	// Windows strips TRAILING '.' and ' ' characters from each path component
+	// at the filesystem-driver level before resolving it — a normalization
+	// that applies regardless of which app opens the path. So a name that
+	// only LOOKS benign here can reduce, on Windows, to "", ".", or ".." once
+	// those trailing characters are dropped (e.g. ".. ", "...", "..  "),
+	// making it a traversal component there even though it isn't one of the
+	// literal names already rejected above. Re-run the same check against the
+	// trailing-stripped form. This only strips a TRAILING run, so legitimate
+	// names like "..a", "a.", ".hidden" (nothing trailing to strip, or the
+	// stripped form still isn't "", ".", "..") are untouched.
+	if stripped := strings.TrimRight(name, ". "); stripped != name {
+		switch stripped {
+		case "", ".", "..":
+			return fmt.Errorf("tree entry name %q strips (on Windows) to a path-traversal component", name)
+		}
+	}
+	// ':' introduces an NTFS Alternate Data Stream (e.g. "file.txt:hidden" is
+	// a second, hidden data fork of "file.txt", not a separate file) — a
+	// well-known Windows-specific smuggling vector cairn has no legitimate
+	// use for. Reject it outright.
+	if strings.Contains(name, ":") {
+		return fmt.Errorf("tree entry name %q contains ':' (NTFS alternate data stream)", name)
+	}
+	// Windows reserved device name (see windowsReservedDeviceNames): match
+	// the base up to the FIRST '.', case-insensitively, matching Windows' own
+	// device-name resolution rule.
+	base := name
+	if i := strings.IndexByte(base, '.'); i >= 0 {
+		base = base[:i]
+	}
+	if _, reserved := windowsReservedDeviceNames[strings.ToUpper(base)]; reserved {
+		return fmt.Errorf("tree entry name %q is a reserved Windows device name", name)
+	}
+	return nil
+}
+
+// validTreePath validates a full "/"-separated tree path component-by-component
+// via validTreeEntryName, also rejecting a leading "/" (absolute). It is the
+// whole-path form of the guard, for boundaries that see joined paths (readTree's
+// tree.Files() flattening, the writeTree/writeTreeRefs input maps).
+func validTreePath(path string) error {
+	if path == "" {
+		return fmt.Errorf("empty path")
+	}
+	if strings.HasPrefix(path, "/") {
+		return fmt.Errorf("path %q begins with /", path)
+	}
+	for _, seg := range strings.Split(path, "/") {
+		if err := validTreeEntryName(seg); err != nil {
+			return fmt.Errorf("path %q: %w", path, err)
+		}
+	}
+	return nil
+}
+
 // treeEntryLess orders tree entries the way git canonically does: by name, but a
 // directory (sub-tree) entry sorts as if its name ended in "/". This matters when
 // a directory name is a prefix of a sibling file name — e.g. dir "app" vs file
@@ -73,6 +157,11 @@ func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, err
 	// subdir entries by the remaining path (same as buildTree does for data).
 	subdirs := map[string]map[string]TreeEntry{}
 	immediate := map[string]TreeEntry{}
+	for path := range entries {
+		if err := validTreePath(path); err != nil {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTreeRefs: %w", err)
+		}
+	}
 	for path, entry := range entries {
 		if i := strings.IndexByte(path, '/'); i >= 0 {
 			dir := path[:i]
@@ -151,7 +240,27 @@ func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEnt
 	if err != nil {
 		return fmt.Errorf("change.readTreeRefs: tree %s: %w", treeHash, err)
 	}
+	// A name cannot legitimately appear twice at one tree level — as two
+	// entries with the same name (regardless of kind), or as both a leaf and
+	// a subtree. go-git's decoder does not enforce this on READ (only the
+	// write side, buildTree/writeTreeRefs, rejects it when cairn itself
+	// builds a tree), so a hostile remote can hand us an on-the-wire tree
+	// object with e.g. two "evil" entries — one a symlink, one a directory —
+	// and collectTreeRefs would silently yield both "evil" (as a symlink) and
+	// "evil/pwned" (walking into the directory), a collision fix A's
+	// materialize-side guard treats as defense in depth but that should never
+	// reach a consumer in the first place (#126). Reject outright at the read
+	// boundary, mirroring the write-side "file and directory at the same
+	// level" guard.
+	seen := make(map[string]struct{}, len(tree.Entries))
 	for _, ent := range tree.Entries {
+		if err := validTreeEntryName(ent.Name); err != nil {
+			return fmt.Errorf("change.readTreeRefs: %w", err)
+		}
+		if _, dup := seen[ent.Name]; dup {
+			return fmt.Errorf("change.readTreeRefs: tree %s has a duplicate entry name %q (invalid tree)", treeHash, ent.Name)
+		}
+		seen[ent.Name] = struct{}{}
 		path := ent.Name
 		if prefix != "" {
 			path = prefix + "/" + ent.Name
@@ -205,14 +314,8 @@ func (e *Engine) readBlob(sha string) ([]byte, error) {
 // carries per-path kind/permission (absent ⇒ regular; nil ⇒ all regular).
 func (e *Engine) writeTree(files map[string][]byte, modes map[string]EntryMode) (plumbing.Hash, error) {
 	for path := range files {
-		if path == "" {
-			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: empty path")
-		}
-		if strings.HasPrefix(path, "/") {
-			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: path %q begins with /", path)
-		}
-		if strings.Contains(path, "//") {
-			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: path %q contains empty segment", path)
+		if err := validTreePath(path); err != nil {
+			return plumbing.ZeroHash, fmt.Errorf("change.writeTree: %w", err)
 		}
 	}
 	return e.buildTree(files, modes)
@@ -381,8 +484,25 @@ func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("change.readTree: %w", err)
 	}
+	// go-git's tree.Files() below is a flattening walk of its own that does
+	// NOT share collectTreeRefs's per-level duplicate-name guard (#126, item
+	// B): a hostile tree with two same-named entries at one level — one a
+	// symlink, one a directory — is accepted by go-git's decoder, and
+	// tree.Files() happily yields BOTH "evil" (the symlink's target bytes)
+	// and "evil/pwned" (walking into the directory entry), the exact
+	// collision materialize must never see. readTreeRefs shares the same
+	// underlying tree object and performs no blob-content reads, so running
+	// it here first (its result is discarded) validates the tree's structure
+	// — traversal names AND the duplicate-name guard — at the cost of one
+	// extra metadata-only walk, not a second blob-content pass.
+	if _, err := e.readTreeRefs(treeHash); err != nil {
+		return nil, fmt.Errorf("change.readTree: %w", err)
+	}
 	out := map[string][]byte{}
 	err = tree.Files().ForEach(func(f *object.File) error {
+		if err := validTreePath(f.Name); err != nil {
+			return fmt.Errorf("change.readTree: %w", err)
+		}
 		content, err := f.Contents()
 		if err != nil {
 			return fmt.Errorf("change.readTree: contents %q: %w", f.Name, err)

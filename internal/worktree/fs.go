@@ -53,6 +53,72 @@ func MaterializeSynced(eng *change.Engine, cacheDir, commitSha, dir string, hint
 	return materialize(eng, cacheDir, commitSha, dir, hint)
 }
 
+// containedJoin joins a "/"-separated tree path onto dir and verifies the result
+// stays within dir — the sink-side guard against path traversal (#126). The
+// change layer's validTreeEntryName already rejects ".." entry names at the read
+// boundary, so this is defense in depth: it turns any future gap that yields an
+// escaping path into a refusal here rather than an out-of-folder write.
+func containedJoin(dir, slashRel string) (string, error) {
+	full := filepath.Join(dir, filepath.FromSlash(slashRel))
+	rel, err := filepath.Rel(dir, full)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path %q escapes the branch folder", slashRel)
+	}
+	return full, nil
+}
+
+// removeSymlinkComponents walks the directory components of full strictly
+// between dir and filepath.Dir(full) inclusive, and removes any component that
+// is CURRENTLY on disk a symlink (#126, cross-pull symlink-then-directory
+// escape). containedJoin's guard is purely lexical (filepath.Rel against the
+// intended path); it cannot see that a PRIOR materialize pass left an on-disk
+// symlink at one of full's parent components (e.g. a tree that had "linkdir"
+// as a symlink to "../../outside"). If a LATER tree replaces that same name
+// with a directory (e.g. "linkdir/pwned"), os.MkdirAll's internal Stat FOLLOWS
+// the symlink and happily "creates" (finds existing) the directory at whatever
+// the symlink points to — so the subsequent file write goes through the
+// symlink and lands outside dir entirely. Removing a symlink component here is
+// safe: it is cairn-managed content inside the branch folder being superseded
+// by a real directory in the target tree, and it's exactly what the deletion
+// pass (walkWorktree, which uses Lstat/WalkDir semantics and never follows
+// symlinks) would remove anyway once the tree no longer names that path as a
+// symlink — this just does so before MkdirAll could write through it.
+//
+// This only runs for a path actually being WRITTEN (called from inside the
+// write branch, after the up-to-date checks already returned false), so an
+// unchanged file never pays this walk.
+func removeSymlinkComponents(dir, full string) error {
+	target := filepath.Dir(full)
+	rel, err := filepath.Rel(dir, target)
+	if err != nil || rel == "." {
+		return nil
+	}
+	cur := dir
+	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+		cur = filepath.Join(cur, part)
+		fi, err := os.Lstat(cur)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil // nothing here yet; MkdirAll will create it cleanly
+			}
+			return err
+		}
+		if fi.Mode()&os.ModeSymlink != 0 {
+			if err := os.Remove(cur); err != nil {
+				return err
+			}
+			continue
+		}
+		if !fi.IsDir() {
+			// A regular file occupies this component's name; leave it — the
+			// subsequent MkdirAll will surface the appropriate "not a
+			// directory" error itself.
+			return nil
+		}
+	}
+	return nil
+}
+
 // materialize is the shared implementation behind Materialize/MaterializeSynced.
 // It is meta-first: it reads the target tree as path->TreeEntry (SHA+mode,
 // see change.Engine.FilesMeta) rather than full content, and loads a blob's
@@ -77,8 +143,11 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 
 	// 1. Write/update each target file only when it differs from what's on disk.
 	for p, entry := range meta {
-		full := filepath.Join(dir, filepath.FromSlash(p))
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		full, err := containedJoin(dir, p)
+		if err != nil {
+			// Defense in depth: change.FilesMeta already rejects traversal entry
+			// names (#126), so an escape here means a new tree-read path bypassed
+			// that guard — refuse to write rather than escape the branch folder.
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		if entry.Mode == change.ModeSymlink {
@@ -89,6 +158,15 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 			if err != nil {
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
+			// Actually writing this path: neutralize any on-disk symlink left
+			// in an ancestor component before creating dirs (#126, see
+			// removeSymlinkComponents doc).
+			if err := removeSymlinkComponents(dir, full); err != nil {
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
+			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
 			_ = os.Remove(full)
 			if err := os.Symlink(string(data), full); err != nil {
 				return fmt.Errorf("worktree.Materialize: %w", err)
@@ -97,6 +175,15 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 		}
 		if regularUpToDateBySHA(full, entry, hint[p]) {
 			continue
+		}
+		// Actually writing this path: neutralize any on-disk symlink left in
+		// an ancestor component before creating dirs (#126, see
+		// removeSymlinkComponents doc).
+		if err := removeSymlinkComponents(dir, full); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		data, err := eng.ReadBlob(entry.SHA)
 		if err != nil {
