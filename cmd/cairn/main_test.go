@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
 func TestCLIInitExpressCommit(t *testing.T) {
@@ -35,6 +37,27 @@ func TestCLIInitExpressCommit(t *testing.T) {
 func TestRunUnknownSubcommand(t *testing.T) {
 	if err := run([]string{"bogus"}); err == nil {
 		t.Fatal("expected error for unknown subcommand")
+	}
+}
+
+// TestMapErrPushConflictWordingDistinctFromFold is the review-flagged wording
+// fix: mapErr must render change.ErrPushHasConflict with push-appropriate
+// remedies, not fold.go's "resolve conflicts before folding" text (which it
+// used to get by matching the broader change.ErrHasConflict case first, since
+// ErrPushHasConflict didn't exist and the push gate wrapped ErrHasConflict
+// directly).
+func TestMapErrPushConflictWordingDistinctFromFold(t *testing.T) {
+	got := mapErr(change.ErrPushHasConflict).Error()
+	if !strings.Contains(got, "push") {
+		t.Fatalf("mapErr(ErrPushHasConflict) = %q, want push-specific wording", got)
+	}
+	if strings.Contains(got, "folding") {
+		t.Fatalf("mapErr(ErrPushHasConflict) = %q, must not contain fold wording", got)
+	}
+
+	foldGot := mapErr(change.ErrHasConflict).Error()
+	if !strings.Contains(foldGot, "folding") {
+		t.Fatalf("mapErr(ErrHasConflict) = %q, want fold wording unchanged", foldGot)
 	}
 }
 

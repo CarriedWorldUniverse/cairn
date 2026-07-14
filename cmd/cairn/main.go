@@ -1174,6 +1174,10 @@ func cmdRemoteAdd(args []string) error {
 // line push only) pulls + retries just that one line on divergence instead of
 // surfacing the guided "diverged" error; it is rejected together with --all
 // (which has its own all-lines auto-reconcile) or --force (which never pulls).
+// A line with an open conflict is refused on a push to a plain git remote
+// (conflict markers would otherwise ship as plain file content) unless
+// --force is passed; a --cairn remote is exempt (conflicts-as-data travels
+// with it by design).
 func cmdPush(args []string) error {
 	fs := flag.NewFlagSet("push", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
@@ -2208,6 +2212,10 @@ func mapErr(err error) error {
 	switch {
 	case err == nil:
 		return nil
+	case errors.Is(err, change.ErrPushHasConflict):
+		// The gate's own error already names the branch(es) and the full set of
+		// remedies — pass it through rather than restating them.
+		return err
 	case errors.Is(err, change.ErrHasConflict):
 		return fmt.Errorf("resolve conflicts before folding: %w", err)
 	case errors.Is(err, change.ErrNotFound):
