@@ -174,6 +174,14 @@ func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEnt
 	return nil
 }
 
+// ReadBlob reads the contents of a git blob by hex sha. It is the exported
+// wrapper over readBlob used by callers outside the change package that need
+// to lazily fetch one path's content after a meta-only comparison (e.g.
+// worktree.Materialize, on a path FilesMeta says changed).
+func (e *Engine) ReadBlob(sha string) ([]byte, error) {
+	return e.readBlob(sha)
+}
+
 // readBlob reads the contents of a git blob by hash.
 func (e *Engine) readBlob(sha string) ([]byte, error) {
 	b, err := e.git.BlobObject(plumbing.NewHash(sha))

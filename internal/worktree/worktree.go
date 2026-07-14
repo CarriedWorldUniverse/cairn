@@ -418,7 +418,7 @@ func (r *Repo) SyncWorking() error {
 		return nil
 	}
 	for branch, entry := range r.st.Expressed {
-		if err := r.syncBranch(branch, entry); err != nil {
+		if _, err := r.syncBranch(branch, entry); err != nil {
 			return err
 		}
 	}
@@ -436,26 +436,33 @@ func (r *Repo) syncOne(branch string, entry Entry) error {
 	} else if active {
 		return nil
 	}
-	return r.syncBranch(branch, entry)
+	_, err := r.syncBranch(branch, entry)
+	return err
 }
 
 // syncBranch snapshots one expressed branch's folder into its open working
 // change via amend-in-place, using the per-branch snapshot cache for cheap
-// rescans. A corrupt/missing cache is treated as empty (full rescan).
-func (r *Repo) syncBranch(branch string, entry Entry) error {
+// rescans. A corrupt/missing cache is treated as empty (full rescan). It
+// returns the freshly-rebuilt per-path stat cache (path->wcCacheEntry, one
+// entry per surviving on-disk path with its blob SHA) it just computed, so a
+// caller re-materializing this SAME folder right afterwards (worktree.Commit)
+// can pass it to MaterializeSynced as a hint — the scan and the materialize
+// then share one source of truth for "what's already on disk," instead of the
+// materialize re-deriving it from scratch.
+func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, error) {
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
-		return fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
 	// paths, so a committed-then-ignored file is never dropped from the scan.
 	var tracked map[string]struct{}
 	if line.TipCommit != "" {
-		committed, ferr := r.eng.Files(line.TipCommit)
+		committed, ferr := r.eng.FilesMeta(line.TipCommit)
 		if ferr != nil {
-			return fmt.Errorf("worktree.syncBranch: %w", ferr)
+			return nil, fmt.Errorf("worktree.syncBranch: %w", ferr)
 		}
-		tracked = trackedSet(committed)
+		tracked = trackedSetMeta(committed)
 	}
 	cachePath := filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
 	cache, err := loadWCCache(cachePath)
@@ -465,20 +472,20 @@ func (r *Repo) syncBranch(branch string, entry Entry) error {
 	scanStartNs := time.Now().UnixNano()
 	entries, newCache, cacheChanged, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
 	if err != nil {
-		return fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
-		return fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	if cacheChanged {
 		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
-			return fmt.Errorf("worktree.syncBranch: %w", err)
+			return nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
 		if err := saveWCCache(cachePath, newCache); err != nil {
-			return fmt.Errorf("worktree.syncBranch: %w", err)
+			return nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
 	}
-	return nil
+	return newCache, nil
 }
 
 // Commit seals the open working change of an expressed branch: it first
@@ -497,7 +504,8 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
 	}
-	if err := r.syncBranch(branch, entry); err != nil {
+	syncedCache, err := r.syncBranch(branch, entry)
+	if err != nil {
 		return change.CommitResult{}, err
 	}
 	// Refuse to seal while the working change still has UNRESOLVED conflicts (like
@@ -536,7 +544,12 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 	}
 	if line.TipCommit != "" {
-		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path)); err != nil {
+		// syncedCache is this SAME folder's just-computed on-disk fingerprints
+		// (from the syncBranch call above, immediately before Seal) — pass it as
+		// a hint so re-materializing the (mostly unchanged) folder to the new tip
+		// costs one Lstat per already-correct path instead of a git-store blob
+		// fetch+hash.
+		if err := MaterializeSynced(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), syncedCache); err != nil {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
@@ -547,7 +560,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	// it has a head to resolve against, then move the conflict rows onto it — so
 	// `status`/`resolve` operate on the working change as the operator expects.
 	if len(conflicts) > 0 {
-		if err := r.syncBranch(branch, entry); err != nil {
+		if _, err := r.syncBranch(branch, entry); err != nil {
 			return change.CommitResult{}, err
 		}
 		if err := r.eng.ReassignConflicts(prevChangeID, entry.ChangeID); err != nil {
@@ -1583,7 +1596,7 @@ func (a *releaseAdapter) Dirty() (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	if err := a.r.syncBranch(a.branch, entry); err != nil {
+	if _, err := a.r.syncBranch(a.branch, entry); err != nil {
 		return false, fmt.Errorf("worktree.releaseAdapter.Dirty: %w", err)
 	}
 	return a.r.isDirty(a.branch)
@@ -1945,7 +1958,7 @@ func (r *Repo) Stash(branch, message string) error {
 	if !ok {
 		return fmt.Errorf("worktree.Stash: branch %q is not expressed", branch)
 	}
-	if err := r.syncBranch(branch, entry); err != nil {
+	if _, err := r.syncBranch(branch, entry); err != nil {
 		return err
 	}
 	if _, err := r.eng.StashPush(entry.ChangeID, message); err != nil {
@@ -1967,7 +1980,7 @@ func (r *Repo) StashPop(branch string) error {
 	if !ok {
 		return fmt.Errorf("worktree.StashPop: branch %q is not expressed", branch)
 	}
-	if err := r.syncBranch(branch, entry); err != nil {
+	if _, err := r.syncBranch(branch, entry); err != nil {
 		return err
 	}
 	if err := r.eng.StashApply(entry.ChangeID, 0, true); err != nil {
@@ -2242,6 +2255,20 @@ func sameModes(a, b map[string]change.EntryMode) bool {
 // trackedSet turns a committed file map's keys into a set of tracked paths for
 // Scan. A nil files map yields a nil set ("nothing tracked").
 func trackedSet(files map[string][]byte) map[string]struct{} {
+	if files == nil {
+		return nil
+	}
+	tracked := make(map[string]struct{}, len(files))
+	for k := range files {
+		tracked[k] = struct{}{}
+	}
+	return tracked
+}
+
+// trackedSetMeta is trackedSet's content-lazy counterpart: it builds the same
+// tracked-path set from a FilesMeta result (path->TreeEntry, no content) so
+// syncBranch never loads blob content just to know which paths are tracked.
+func trackedSetMeta(files map[string]change.TreeEntry) map[string]struct{} {
 	if files == nil {
 		return nil
 	}

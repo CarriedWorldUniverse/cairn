@@ -171,3 +171,100 @@ func TestMergeTreesDeletePropagation(t *testing.T) {
 		}
 	})
 }
+
+// TestMergeTreesModeVsMode is the #124-review regression: when both sides
+// carry IDENTICAL content (so the fast "both sides agree" SHA-equality check
+// would otherwise fire) but their MODES differ, mergeTrees must not silently
+// take one side wholesale (dropping the other side's mode change with no
+// record). The untouched side's mode must lose to the side that actually
+// changed it — in EITHER direction — and a mode change on both sides at once
+// must be recorded as a real conflict, not silently resolved either way.
+func TestMergeTreesModeVsMode(t *testing.T) {
+	e := newTestEngine(t)
+	c := []byte("#!/bin/sh\necho hi\n")
+
+	writeM := func(files map[string][]byte, modes map[string]EntryMode) string {
+		h, err := e.writeTree(files, modes)
+		if err != nil {
+			t.Fatalf("writeTree: %v", err)
+		}
+		return h.String()
+	}
+	modeOf := func(tree, path string) EntryMode {
+		modes, err := e.fileModesFromTree(tree)
+		if err != nil {
+			t.Fatalf("fileModesFromTree: %v", err)
+		}
+		return modes[path] // absent -> ModeRegular, the sparse-map default
+	}
+
+	t.Run("theirs chmod, ours untouched -> theirs' mode wins, 0 conflicts", func(t *testing.T) {
+		baseT := writeM(map[string][]byte{"f.sh": c}, nil)
+		oursT := writeM(map[string][]byte{"f.sh": c}, nil) // == base, untouched
+		theirsT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		mergedTree, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("conflicts = %d, want 0", len(conflicts))
+		}
+		if got := modeOf(mergedTree, "f.sh"); got != ModeExecutable {
+			t.Errorf("mode = %v, want ModeExecutable (theirs' chmod dropped)", got)
+		}
+	})
+
+	t.Run("ours chmod, theirs untouched -> ours' mode wins, 0 conflicts (mirror)", func(t *testing.T) {
+		// This direction regressed on old main (theirs unconditionally won any
+		// mode-carrying tie) — regression-locks the #124-review fix.
+		baseT := writeM(map[string][]byte{"f.sh": c}, nil)
+		oursT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		theirsT := writeM(map[string][]byte{"f.sh": c}, nil) // == base, untouched
+		mergedTree, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("conflicts = %d, want 0", len(conflicts))
+		}
+		if got := modeOf(mergedTree, "f.sh"); got != ModeExecutable {
+			t.Errorf("mode = %v, want ModeExecutable (ours' chmod dropped)", got)
+		}
+	})
+
+	t.Run("both flip mode differently -> conflict recorded, content kept", func(t *testing.T) {
+		baseT := writeM(map[string][]byte{"f.sh": c}, nil)
+		oursT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		theirsT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeSymlink})
+		mergedTree, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("conflicts = %d, want 1 (mode-vs-mode)", len(conflicts))
+		}
+		files, err := e.readTree(mergedTree)
+		if err != nil {
+			t.Fatalf("readTree: %v", err)
+		}
+		if string(files["f.sh"]) != string(c) {
+			t.Errorf("surviving content changed, got %q want %q", files["f.sh"], c)
+		}
+	})
+
+	t.Run("content and mode both equal -> fast path unchanged, 0 conflicts", func(t *testing.T) {
+		baseT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		oursT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		theirsT := writeM(map[string][]byte{"f.sh": c}, map[string]EntryMode{"f.sh": ModeExecutable})
+		mergedTree, conflicts, err := e.mergeTrees("test-change", baseT, oursT, theirsT)
+		if err != nil {
+			t.Fatalf("mergeTrees: %v", err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("conflicts = %d, want 0", len(conflicts))
+		}
+		if got := modeOf(mergedTree, "f.sh"); got != ModeExecutable {
+			t.Errorf("mode = %v, want ModeExecutable preserved", got)
+		}
+	})
+}

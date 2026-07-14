@@ -2,7 +2,6 @@ package worktree
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 )
 
@@ -35,11 +35,34 @@ import (
 // cache (content-addressed, reflinked copy-on-write) into a temp sibling and
 // renamed over, so a reader never sees a half-written file.
 func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
-	files, err := eng.Files(commitSha)
-	if err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
-	}
-	modes, err := eng.FileModes(commitSha)
+	return materialize(eng, cacheDir, commitSha, dir, nil)
+}
+
+// MaterializeSynced is Materialize's fast-path variant for a folder that was
+// JUST scanned (e.g. worktree.Repo.Commit's syncBranch immediately before
+// Seal): hint is that scan's per-path stat fingerprint (mtimeNs, size, blob
+// SHA, mode), typically the branch's on-disk wc-cache. For a path present in
+// hint whose CURRENT on-disk stat (one Lstat) still matches the hint AND whose
+// hint SHA/mode already equals the target tree's entry, Materialize trusts it
+// outright — no content read, no hash — because the hint was built from a scan
+// of this SAME directory moments ago, under the same wc.lock hold this call is
+// also under. Every other path falls back to the normal lazy on-disk hash
+// comparison (see regularUpToDateBySHA). A nil/empty hint behaves exactly like
+// Materialize.
+func MaterializeSynced(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) error {
+	return materialize(eng, cacheDir, commitSha, dir, hint)
+}
+
+// materialize is the shared implementation behind Materialize/MaterializeSynced.
+// It is meta-first: it reads the target tree as path->TreeEntry (SHA+mode,
+// see change.Engine.FilesMeta) rather than full content, and loads a blob's
+// bytes (change.Engine.ReadBlob) ONLY for a path that regularUpToDateBySHA /
+// symlinkUpToDateBySHA determine actually needs writing — so an unchanged file
+// (the common case on a steady-state Commit/Pull/Express) costs at most one
+// Lstat (hint hit) or one local file read+hash (fallback), never a git-store
+// blob fetch+decompress.
+func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) error {
+	meta, err := eng.FilesMeta(commitSha)
 	if err != nil {
 		return fmt.Errorf("worktree.Materialize: %w", err)
 	}
@@ -53,14 +76,18 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	}
 
 	// 1. Write/update each target file only when it differs from what's on disk.
-	for p, data := range files {
+	for p, entry := range meta {
 		full := filepath.Join(dir, filepath.FromSlash(p))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		if modes[p] == change.ModeSymlink {
-			if symlinkUpToDate(full, string(data)) {
+		if entry.Mode == change.ModeSymlink {
+			if symlinkUpToDateBySHA(full, entry.SHA) {
 				continue
+			}
+			data, err := eng.ReadBlob(entry.SHA)
+			if err != nil {
+				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
 			_ = os.Remove(full)
 			if err := os.Symlink(string(data), full); err != nil {
@@ -68,8 +95,12 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 			}
 			continue
 		}
-		if regularUpToDate(full, data, modes[p] == change.ModeExecutable) {
+		if regularUpToDateBySHA(full, entry, hint[p]) {
 			continue
+		}
+		data, err := eng.ReadBlob(entry.SHA)
+		if err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		sum := sha256.Sum256(data)
 		cacheBlob := filepath.Join(blobs, hex.EncodeToString(sum[:]))
@@ -80,7 +111,7 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 		} else if serr != nil {
 			return fmt.Errorf("worktree.Materialize: %w", serr)
 		}
-		if err := placeFile(cacheBlob, full, modes[p] == change.ModeExecutable); err != nil {
+		if err := placeFile(cacheBlob, full, entry.Mode == change.ModeExecutable); err != nil {
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
 	}
@@ -89,8 +120,8 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	//    the tracked set, so .git/.cairn and IGNORED files (build output, .vs/) are
 	//    skipped — left untouched, which is both correct and why the full-teardown
 	//    unlinkat is gone.
-	target := make(map[string]struct{}, len(files))
-	for p := range files {
+	target := make(map[string]struct{}, len(meta))
+	for p := range meta {
 		target[p] = struct{}{}
 	}
 	var stale []string
@@ -113,32 +144,55 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	return nil
 }
 
-// regularUpToDate reports whether the regular file at full already has exactly
-// data as its content and the right executable bit — so it can be left untouched
-// (preserving its mtime, which keeps the snapshot stat-cache warm).
-func regularUpToDate(full string, data []byte, wantExec bool) bool {
+// regularUpToDateBySHA reports whether the regular file at full already
+// carries exactly entry's content and mode, so it can be left untouched
+// (preserving mtime, which keeps the snapshot stat-cache warm) — without ever
+// fetching/decompressing the git-store blob for an up-to-date file:
+//   - hint fast path: when hint (this path's freshly-scanned fingerprint; the
+//     zero value when absent) has a non-empty BlobSHA and its recorded
+//     (mtimeNs, size, mode) still match a fresh Lstat of full, AND its SHA
+//     already equals entry.SHA with the same mode, the file is trusted
+//     outright — one Lstat, no content read at all.
+//   - fallback: read the on-disk file (unavoidable — it's the very content
+//     being verified) and hash it locally with the same blob-hash function git
+//     uses (plumbing.ComputeHash), comparing against entry.SHA. This still
+//     costs a local disk read, but never touches the git object store for a
+//     path that turns out unchanged.
+func regularUpToDateBySHA(full string, entry change.TreeEntry, hint wcCacheEntry) bool {
 	fi, err := os.Lstat(full)
 	if err != nil || !fi.Mode().IsRegular() {
 		return false
 	}
-	if fi.Size() != int64(len(data)) {
-		return false
-	}
+	wantExec := entry.Mode == change.ModeExecutable
 	if (fi.Mode()&0o111 != 0) != wantExec {
 		return false
 	}
+	if hint.BlobSHA != "" && hint.Mode == entry.Mode && hint.BlobSHA == entry.SHA &&
+		hint.MtimeNs == fi.ModTime().UnixNano() && hint.Size == fi.Size() {
+		return true
+	}
 	cur, err := os.ReadFile(full)
-	return err == nil && bytes.Equal(cur, data)
+	if err != nil {
+		return false
+	}
+	return plumbing.ComputeHash(plumbing.BlobObject, cur).String() == entry.SHA
 }
 
-// symlinkUpToDate reports whether full is already a symlink pointing at target.
-func symlinkUpToDate(full, target string) bool {
+// symlinkUpToDateBySHA reports whether full is already a symlink whose target
+// string hashes (as a git blob) to sha — so it can be left untouched without
+// ever fetching the git-store blob for an up-to-date symlink. Reading the
+// on-disk target via Readlink is a cheap syscall (unlike a regular file, there
+// is no separate "content" to avoid loading).
+func symlinkUpToDateBySHA(full, sha string) bool {
 	fi, err := os.Lstat(full)
 	if err != nil || fi.Mode()&os.ModeSymlink == 0 {
 		return false
 	}
-	got, err := os.Readlink(full)
-	return err == nil && got == target
+	target, err := os.Readlink(full)
+	if err != nil {
+		return false
+	}
+	return plumbing.ComputeHash(plumbing.BlobObject, []byte(target)).String() == sha
 }
 
 // placeFile installs the cached blob at full (atomic replace via a temp sibling +
