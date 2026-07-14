@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -19,3 +19,33 @@ jobs:
       - run: go build ./...
       - run: go test ./...
       - run: go vet ./...
+  # Windows coverage (#113): the full suite no longer runs on windows-latest —
+  # POSIX-sh test fixtures kept turning main red, and every red main blocked
+  # every open PR. Compile coverage is kept via cross-compilation (build + vet
+  # type-check the whole tree, tests included, in seconds with zero fixture
+  # risk), and the genuinely Windows-sensitive RUNTIME code — the wc.lock
+  # cross-process locking from #84/#90/#92 (internal/worktree, with
+  # internal/winretry underneath) — keeps a native runtime leg scoped to that
+  # package.
+  windows-cross-compile:
+    name: windows cross-compile
+    runs-on: ubuntu-latest
+    env:
+      GOOS: windows
+      GOARCH: amd64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - run: go build ./...
+      - run: go vet ./...
+  windows-lock-tests:
+    name: windows lock tests (worktree)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - run: go test ./internal/worktree/...
