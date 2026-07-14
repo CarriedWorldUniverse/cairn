@@ -96,13 +96,13 @@ func (e *Engine) remoteKind(name string) string {
 // a non-force push is surfaced as a clear "diverged" error advising fetch/sync or
 // --force; an already-up-to-date push is treated as success.
 func (e *Engine) PushToRemote(remoteName string, force bool) error {
-	return e.push("change.PushToRemote", remoteName, gitRefSpecs(force), force)
+	return e.push("change.PushToRemote", remoteName, "", gitRefSpecs(force), force)
 }
 
 // PushToRemoteBranch is PushToRemote restricted to a single branch (plus tags):
 // it publishes refs/heads/<branch> and refs/tags/* only.
 func (e *Engine) PushToRemoteBranch(remoteName, branch string, force bool) error {
-	return e.push("change.PushToRemoteBranch", remoteName, branchRefSpecs(branch, force), force)
+	return e.push("change.PushToRemoteBranch", remoteName, branch, branchRefSpecs(branch, force), force)
 }
 
 // gitRefSpecs returns the all-branches + all-tags refspecs, force-prefixed when
@@ -133,8 +133,19 @@ func branchRefSpecs(branch string, force bool) []config.RefSpec {
 
 // push is the shared implementation behind PushToRemote/PushToRemoteBranch.
 // label names the calling function for error wrapping so messages point at the
-// real entry point (PushToRemote vs PushToRemoteBranch).
-func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force bool) error {
+// real entry point (PushToRemote vs PushToRemoteBranch). branch scopes the
+// conflict gate (see checkConflictGate): the single line being published for
+// PushToRemoteBranch, or "" (every line) for PushToRemote.
+func (e *Engine) push(label, remoteName, branch string, refSpecs []config.RefSpec, force bool) error {
+	// Remote kind seam: a "cairn" remote receives a full-fidelity push that
+	// includes refs/cairn/meta (the serialized change-graph snapshot). A plain
+	// "git" remote receives only the standard heads/tags projection (no cairn refs).
+	isCairn := e.remoteKind(remoteName) == "cairn"
+
+	if err := e.checkConflictGate(label, branch, isCairn, force); err != nil {
+		return err
+	}
+
 	if err := e.Export(); err != nil {
 		return fmt.Errorf("%s: %w", label, err)
 	}
@@ -147,10 +158,6 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 		return fmt.Errorf("%s: %w", label, err)
 	}
 
-	// Remote kind seam: a "cairn" remote receives a full-fidelity push that
-	// includes refs/cairn/meta (the serialized change-graph snapshot). A plain
-	// "git" remote receives only the standard heads/tags projection (no cairn refs).
-	isCairn := e.remoteKind(remoteName) == "cairn"
 	if isCairn {
 		hasEmb, herr := e.HasEmbargo()
 		if herr != nil {
@@ -233,6 +240,181 @@ func (e *Engine) push(label, remoteName string, refSpecs []config.RefSpec, force
 			label, remoteName, err)
 	}
 	return fmt.Errorf("%s: %w", label, err)
+}
+
+// ErrPushHasConflict is returned by checkConflictGate when a push to a plain
+// git remote is refused because an in-scope line still has an open conflict.
+// It is deliberately distinct from two other, differently-caused sentinels:
+//   - change.ErrHasConflict (fold.go) fires on FoldLine and reads "resolve
+//     before folding" — wrapping it here would print folding advice on a
+//     refused push.
+//   - worktree.ErrPushConflict fires when Push's own auto-reconcile (a pull
+//     triggered by a non-fast-forward rejection) produces a NEW conflict
+//     mid-retry; this sentinel instead covers a conflict that already existed
+//     going into the push.
+var ErrPushHasConflict = errors.New("change: line has open conflicts; resolve before pushing")
+
+// checkConflictGate refuses a push to a plain "git" remote while any in-scope
+// line still has an open conflict.
+//
+// Design decision (issue #93): a conflicted reconcile commits a 2-parent merge
+// whose file content is the literal diff3 conflict markers ("<<<<<<< ours" /
+// "=======" / ">>>>>>> theirs") as the line's new tip — that's how cairn
+// represents "conflicted" internally (conflicts-as-data). A plain git remote
+// has no such representation: it just stores bytes, so pushing that tip
+// silently PUBLISHES the raw markers as if they were resolved content. So a
+// "git" remote refuses the push (unless force) until the conflict is
+// resolved. A "cairn" remote is exempt from the line-tip check: conflicts-as-
+// data is part of its full-fidelity design (the line tree + open conflicts
+// travel with the push, same as any other change-graph state) — that's the
+// #93-settled decision. BUT the shipped cairn server serves plain git on the
+// wire (httpd/sshd's git-upload-pack), so a marker-laden refs/heads commit IS
+// readable by an ordinary git client with repo:read; this exemption stands
+// pending a server-side gate, not because there is genuinely nothing to
+// protect against.
+//
+// branch scopes the check to a single line's name (PushToRemoteBranch, gating
+// on just that branch's line); "" checks every line (PushToRemote). A branch
+// name with no matching cairn line (e.g. a remote-only ref) is not gated —
+// there is no line state to check. force bypasses the gate, matching the
+// existing --force semantics elsewhere in push.
+//
+// A branch-scoped push additionally checks every tag for a conflicted target:
+// branchRefSpecs always appends refs/tags/* alongside the single named branch
+// (see branchRefSpecs), so a tag pointing at a DIFFERENT, still-conflicted
+// line's tip would otherwise leak the marker-laden commit even though the
+// pushed branch itself is clean. A whole-repo push (branch == "") already
+// covers every line via conflictedLineNames, so it skips the extra tag query.
+func (e *Engine) checkConflictGate(label, branch string, isCairn, force bool) error {
+	if force || isCairn {
+		return nil
+	}
+	var lineID string
+	if branch != "" {
+		line, err := e.LineByName(branch)
+		if errors.Is(err, ErrNotFound) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("%s: %w", label, err)
+		}
+		lineID = line.ID
+	}
+	names, err := e.conflictedLineNames(lineID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", label, err)
+	}
+	if len(names) > 0 {
+		return fmt.Errorf(
+			"%s: line(s) %s have open conflicts; resolve them ('cairn resolve <branch> <path>') then push again, or 'cairn undo' to rewind the reconcile merge, or pass --force to publish the conflict markers anyway: %w",
+			label, strings.Join(names, ", "), ErrPushHasConflict)
+	}
+
+	if branch != "" {
+		tags, terr := e.conflictedTagNames()
+		if terr != nil {
+			return fmt.Errorf("%s: %w", label, terr)
+		}
+		if len(tags) > 0 {
+			return fmt.Errorf(
+				"%s: tag(s) %s point at commits with open conflicts; delete the tag ('cairn tag -d <name>') or resolve the underlying line ('cairn resolve <branch> <path>') then push again, or pass --force to publish the conflict markers anyway: %w",
+				label, formatConflictedTags(tags), ErrPushHasConflict)
+		}
+	}
+	return nil
+}
+
+// conflictedTag names a tag found by conflictedTagNames, together with the
+// (live, open-conflicted) line whose content it points at.
+type conflictedTag struct {
+	Tag  string
+	Line string
+}
+
+// formatConflictedTags renders conflictedTagNames' results for an error
+// message: "leak (line exp), other (line feat2)".
+func formatConflictedTags(tags []conflictedTag) string {
+	parts := make([]string, len(tags))
+	for i, ct := range tags {
+		parts[i] = fmt.Sprintf("%s (line %s)", ct.Tag, ct.Line)
+	}
+	return strings.Join(parts, ", ")
+}
+
+// conflictedTagNames returns every tag whose commit_sha matches either the
+// tip_commit of a live, open-conflicted line, or the head_commit of a live
+// change carrying an open conflict row — the same live-open-conflict
+// line/change set conflictedLineNames uses (c.status='open' AND
+// l.status='open' AND ch.status='open'), just joined against the tag table
+// instead of grouped by line name. Sorted by tag name.
+func (e *Engine) conflictedTagNames() ([]conflictedTag, error) {
+	rows, err := e.db.Query(
+		`SELECT DISTINCT t.name, l.name
+		 FROM tag t
+		 JOIN change ch ON ch.status = 'open'
+		 JOIN line l ON l.id = ch.line_id AND l.status = 'open'
+		 JOIN conflict c ON c.change_id = ch.id AND c.status = 'open'
+		 WHERE t.commit_sha = l.tip_commit OR t.commit_sha = ch.head_commit
+		 ORDER BY t.name`)
+	if err != nil {
+		return nil, fmt.Errorf("change.conflictedTagNames: %w", err)
+	}
+	defer rows.Close()
+	var out []conflictedTag
+	for rows.Next() {
+		var ct conflictedTag
+		if err := rows.Scan(&ct.Tag, &ct.Line); err != nil {
+			return nil, fmt.Errorf("change.conflictedTagNames: %w", err)
+		}
+		out = append(out, ct)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("change.conflictedTagNames: %w", err)
+	}
+	return out, nil
+}
+
+// conflictedLineNames returns the sorted, de-duplicated names of every LIVE
+// line with at least one open conflict. When onlyLineID is non-empty it
+// restricts the check to that single line; empty checks every line in the
+// catalogue. Mirrors FoldLine's has_conflict lookup (fold.go) but reports the
+// offending line names rather than just a count.
+//
+// l.status='open' AND ch.status='open' filters to live lines/changes only:
+// AbandonLine (fold.go) flips a line's and its changes' status to 'abandoned'
+// without touching the conflict table, so an abandoned line can leave an
+// orphaned open conflict row behind. Without this filter that orphan would
+// permanently block every whole-repo push even though the conflicted line no
+// longer exists in any meaningful sense — mirroring FoldLine's own live-lines
+// intent (it only ever looks at 'open' changes for the fold it's performing).
+func (e *Engine) conflictedLineNames(onlyLineID string) ([]string, error) {
+	q := `SELECT DISTINCT l.name FROM line l
+		JOIN change ch ON ch.line_id = l.id
+		JOIN conflict c ON c.change_id = ch.id
+		WHERE c.status = 'open' AND l.status = 'open' AND ch.status = 'open'`
+	var args []any
+	if onlyLineID != "" {
+		q += ` AND l.id = ?`
+		args = append(args, onlyLineID)
+	}
+	q += ` ORDER BY l.name`
+	rows, err := e.db.Query(q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("change.conflictedLineNames: %w", err)
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var n string
+		if err := rows.Scan(&n); err != nil {
+			return nil, fmt.Errorf("change.conflictedLineNames: %w", err)
+		}
+		names = append(names, n)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("change.conflictedLineNames: %w", err)
+	}
+	return names, nil
 }
 
 // redactForPush implements the privacy guarantee at the push boundary. When any
