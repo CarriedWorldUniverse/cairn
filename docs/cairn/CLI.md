@@ -419,6 +419,14 @@ diverged remote branch surfaces a guided error naming the branch and the remedie
 `cairn push --force` to overwrite. `--reconcile` is single-line only — it is rejected together
 with `--all` or `--force`.
 
+**Conflict gate.** A line with an open conflict (a reconcile merge left unresolved) is refused
+on push to a plain git remote — its file content is literal diff3 conflict markers, and a git
+remote has no way to represent "conflicted", so publishing it would silently ship broken text.
+The error names the branch; resolve with `cairn resolve <branch> <path>` then push again, or
+`cairn undo` to rewind the reconcile merge, or `--force` to publish the markers anyway. This
+gate does not apply to a `--cairn` remote: conflicts-as-data travels with the push there by
+design, the same as any other change-graph state.
+
 #### `cairn fetch [remote]`
 Fetch a remote into tracking refs (default `origin`) without reconciling.
 
