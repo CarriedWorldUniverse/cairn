@@ -248,6 +248,24 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 		return LineResult{Line: lineName, Status: "up-to-date"}, nil
 	}
 
+	if l == "" {
+		// #116: a brand-new local line has no commits at all (tip_commit=="" and
+		// no snapshotted open change), so l=="" here — and since l only falls
+		// back to lineTip when changeHead=="", the open change (if any) is
+		// necessarily headless too. mergeBase("", r) also returns "" (gitobj.go
+		// treats an empty input as "no base"), which would otherwise satisfy
+		// neither `base == r` nor `base == l && l != ""` below and fall into the
+		// diverged default branch — merging against a "" (zero-hash) local tree,
+		// which errors "object not found". There is nothing local to preserve,
+		// so treat it as a degenerate fast-forward: adopt r wholesale. Pass ""
+		// as the change id so a headless change stays headless (#103), later
+		// re-snapshotting with parent = the new line tip.
+		if err := e.applyHead("", lineID, r, 0); err != nil {
+			return LineResult{}, err
+		}
+		return LineResult{Line: lineName, Status: "fast-forward"}, nil
+	}
+
 	base, err := e.mergeBase(l, r)
 	if err != nil {
 		return LineResult{}, err
