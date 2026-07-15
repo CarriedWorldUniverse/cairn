@@ -591,6 +591,21 @@ cairn release --target npm --dry-run
 cairn release --target npm
 ```
 
+#### `cairn update` — `--check` `--force`
+Replace this binary in place with the latest published cairn release (repo-free —
+it never touches a working copy). Queries GitHub releases, compares against the
+build version (`cairn --version`), downloads the matching platform archive,
+verifies it against the release's `checksums.txt` (SHA-256), and atomically swaps
+the executable. `--check` only reports whether a newer release exists; `--force`
+reinstalls the latest release even when this build is not older (and is required
+for source builds, which report version `dev`). If the binary lives in a
+root-owned directory, run `sudo cairn update`. An API token is optional (the repo
+is public) and resolves like push auth: `CAIRN_TOKEN` > `GITHUB_TOKEN` > credstore.
+```sh
+cairn update --check       # "0.1.20 is available (running 0.1.19)"
+cairn update               # download, verify, swap; no-op if already current
+```
+
 ### Misc
 
 - `cairn --version` / `cairn -v` — print the **build** version of the binary (the release

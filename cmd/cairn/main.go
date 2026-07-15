@@ -33,6 +33,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/credstore"
 	"github.com/CarriedWorldUniverse/cairn/internal/prclient"
 	"github.com/CarriedWorldUniverse/cairn/internal/release"
+	"github.com/CarriedWorldUniverse/cairn/internal/selfupdate"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
@@ -118,6 +119,7 @@ subcommands:
   version [--target eco] [--release]  print the derived version (stdout only, CI-safe)
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
+  update                        replace this binary with the latest release (--check to only report, --force to reinstall)
   stash [-m msg] [branch]   shelve the working change; reset the folder to the sealed state
   stash pop [branch]        restore the most recent stash onto branch
   stash list                list the stash stack
@@ -220,6 +222,8 @@ func run(args []string) error {
 		return cmdVersion(rest)
 	case "release":
 		return cmdRelease(rest)
+	case "update":
+		return cmdUpdate(rest)
 	case "stash":
 		return cmdStash(rest)
 	case "reword":
@@ -1990,6 +1994,49 @@ func cmdRelease(args []string) error {
 	fmt.Fprintf(os.Stderr, "cairn: released %s (%s) tagged %s\n", rendered, *target, opts.TagName)
 	if *target == "npm" || *target == "pypi" || *target == "nuget" {
 		fmt.Fprintf(os.Stderr, "cairn: manifest stamped but not committed — run `cairn commit %s` before the next release or a pull\n", branch)
+	}
+	return nil
+}
+
+// cmdUpdate replaces the running binary with the latest GitHub release
+// (internal/selfupdate: query, checksum-verify, atomic swap). Repo-free: it
+// never touches a working copy. The API token (optional — the repo is public;
+// it only lifts the anonymous rate limit) resolves like push auth:
+// CAIRN_TOKEN > GITHUB_TOKEN > credstore.
+func cmdUpdate(args []string) error {
+	fs := flag.NewFlagSet("update", flag.ContinueOnError)
+	check := fs.Bool("check", false, "report whether a newer release exists, without installing")
+	force := fs.Bool("force", false, "install the latest release even if this build is not older (required for dev builds)")
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	token := os.Getenv("CAIRN_TOKEN")
+	if token == "" {
+		token = os.Getenv("GITHUB_TOKEN")
+	}
+	if token == "" {
+		token = credstore.Get("github.com")
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("locate current binary: %w", err)
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	res, err := selfupdate.New(token).Update(ctx, buildVersion, exe, *check, *force)
+	if err != nil {
+		return err
+	}
+	switch {
+	case res.Updated:
+		fmt.Fprintf(os.Stderr, "cairn: updated %s → %s (%s)\n", res.Current, res.Latest, res.Target)
+	case *check && res.Newer:
+		fmt.Fprintf(os.Stderr, "cairn: %s is available (running %s) — run `cairn update` to install\n", res.Latest, res.Current)
+	default:
+		fmt.Fprintf(os.Stderr, "cairn: already up to date (%s)\n", res.Current)
 	}
 	return nil
 }

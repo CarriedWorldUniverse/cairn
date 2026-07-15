@@ -81,6 +81,10 @@ On **Windows**, download the `.zip`, extract `cairn.exe`, and add its folder to 
 Verify any download against the release's `checksums.txt` (SHA-256). To build from
 source instead: `go build ./cmd/cairn`.
 
+Once installed, the binary keeps itself current: `cairn update` replaces it in place
+with the latest release (checksum-verified; `sudo` if it lives in a root-owned dir),
+and `cairn update --check` just reports whether one is available.
+
 Full command reference (all subcommands, flags, examples, and a git→cairn cheat-sheet):
 **[`docs/cairn/CLI.md`](docs/cairn/CLI.md)**. Or run `cairn help`.
 
