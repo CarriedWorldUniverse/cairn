@@ -17,6 +17,31 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 )
 
+// warnf reports a non-fatal scan condition (currently: an unreadable untracked
+// path being skipped, #130) to the operator. It's a package-level var, not a
+// direct fmt.Fprintf call, so tests can swap it to capture the message instead
+// of writing to stderr.
+var warnf = func(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "cairn: warning: "+format+"\n", args...)
+}
+
+// unreadableErr classifies a read/stat failure for slashRel hit mid-scan: a
+// TRACKED path's unreadable content is always fatal (skipping it would make the
+// rebuilt snapshot silently drop/delete a committed file — a wc-cache or
+// worktree scan is not allowed to "un-commit" anything), so its error is
+// returned unchanged. An UNTRACKED path's failure is instead reported via
+// warnf and swallowed (nil), matching git's own tolerance of unreadable
+// untracked files (#130, e.g. an OS-locked file under an ungitignored
+// Visual Studio .vs/ folder on Windows) — the caller is expected to otherwise
+// skip/omit the path when this returns nil.
+func unreadableErr(tracked map[string]struct{}, slashRel string, err error) error {
+	if _, ok := tracked[slashRel]; ok {
+		return err
+	}
+	warnf("skipping unreadable untracked path %s: %v", slashRel, err)
+	return nil
+}
+
 // Materialize writes the files of commitSha into dir IN PLACE, touching only what
 // changed: it writes/updates files whose content or mode differs, deletes tracked
 // files no longer present, and leaves everything else alone. It deliberately does
@@ -426,7 +451,10 @@ func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
 // git semantics, ignore patterns only affect UNTRACKED paths: a path present
 // in tracked is never dropped, even when it (or its directory) matches an
 // ignore pattern. A nil tracked set means "nothing tracked" → every ignored
-// path is skipped (the historical behaviour).
+// path is skipped (the historical behaviour). An UNTRACKED path (or directory)
+// that turns out unreadable is warned about and silently omitted rather than
+// aborting the whole scan (#130); a TRACKED path's unreadable content remains
+// a hard error.
 func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, error) {
 	out := map[string][]byte{}
 	modes := map[string]change.EntryMode{}
@@ -436,7 +464,7 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 		if d.Type()&os.ModeSymlink != 0 {
 			target, err := os.Readlink(path)
 			if err != nil {
-				return err
+				return unreadableErr(tracked, slashRel, err)
 			}
 			out[slashRel] = []byte(target)
 			modes[slashRel] = change.ModeSymlink
@@ -445,7 +473,7 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			return unreadableErr(tracked, slashRel, err)
 		}
 		out[slashRel] = data
 		if info, ierr := d.Info(); ierr == nil && info.Mode()&0o111 != 0 {
@@ -482,6 +510,13 @@ type ignoreFrame struct {
 // Caveat (matches git): a negation cannot re-include a file under a directory
 // ignored as a directory, because that directory is not descended — except when
 // it holds a tracked path, which cairn descends to preserve.
+//
+// An unreadable DIRECTORY (a ReadDir/stat failure reported mid-walk, #130) is
+// warned about and skipped via filepath.SkipDir when no tracked path lies
+// under it (hasTrackedPrefix); if a tracked path DOES live under it, that's a
+// hard error (descending it is exactly how a tracked file would be found and
+// preserved, so silently skipping could lose it). The scan ROOT itself failing
+// is always a hard error regardless of tracked.
 func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, path string, d fs.DirEntry) error) error {
 	rootPatterns, err := loadDirPatterns(dir, nil)
 	if err != nil {
@@ -492,17 +527,33 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 	stack := []ignoreFrame{{depth: 0, patterns: rootPatterns, matcher: gitignore.NewMatcher(rootPatterns)}}
 
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
+		rel, relErr := filepath.Rel(dir, path)
+		if relErr != nil {
+			if err != nil {
+				return err
+			}
+			return relErr
 		}
 		if rel == "." {
-			return nil // the root dir; its frame is already on the stack
+			// The root dir; its frame is already on the stack. A non-nil err here
+			// means the scan root itself is unreadable/missing — always fatal,
+			// regardless of tracked (there is nowhere left to fall back to).
+			return err
 		}
 		slashRel := filepath.ToSlash(rel)
+
+		if err != nil {
+			// WalkDir reports a ReadDir/stat failure by invoking fn with the
+			// failing directory's own path/DirEntry and this non-nil err (see
+			// filepath.WalkDir's docs). d may be nil in some failure modes, so
+			// don't rely on it here.
+			if hasTrackedPrefix(tracked, slashRel) {
+				return fmt.Errorf("worktree: unreadable directory %s: %w", slashRel, err)
+			}
+			warnf("skipping unreadable untracked path %s: %v", slashRel, err)
+			return filepath.SkipDir
+		}
+
 		parts := strings.Split(slashRel, "/")
 
 		// Unwind frames for subtrees we have left: the applicable frame is the one
@@ -530,9 +581,17 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 				return filepath.SkipDir
 			}
 			// Descend: push this dir's frame (parent patterns ++ this dir's own).
+			// A permission failure here (e.g. a chmod-0000 directory: opening its
+			// .gitignore fails before WalkDir even attempts its own ReadDir) gets
+			// the same unreadable-directory treatment as a ReadDir error reported
+			// directly by WalkDir (#130).
 			dirPatterns, derr := loadDirPatterns(path, parts)
 			if derr != nil {
-				return derr
+				if hasTrackedPrefix(tracked, slashRel) {
+					return fmt.Errorf("worktree: unreadable directory %s: %w", slashRel, derr)
+				}
+				warnf("skipping unreadable untracked path %s: %v", slashRel, derr)
+				return filepath.SkipDir
 			}
 			if len(dirPatterns) == 0 {
 				// No ignore files here — reuse the parent's matcher (hot path; most

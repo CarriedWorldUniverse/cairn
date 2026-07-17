@@ -64,7 +64,10 @@ func saveWCCache(path string, c map[string]wcCacheEntry) error {
 // are dropped), and a bool cacheChanged that is true whenever the new cache
 // differs from the input (a miss was taken, or a path vanished). Callers can
 // skip saveWCCache when cacheChanged is false. scanStartNs is captured by the
-// caller (time.Now().UnixNano()) before the walk and passed in.
+// caller (time.Now().UnixNano()) before the walk and passed in. An UNTRACKED
+// path that turns out unreadable (stat or content) is warned about and dropped
+// from both entries and the rebuilt cache (#130); a TRACKED path's unreadable
+// content remains a hard error.
 func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, error) {
 	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
 	// collected by the (serial) directory walk. The slow per-file step — reading
@@ -84,7 +87,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 	if err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
 		info, err := d.Info()
 		if err != nil {
-			return err
+			return unreadableErr(tracked, slashRel, err)
 		}
 		mode := change.ModeRegular
 		if info.Mode()&0o111 != 0 {
@@ -143,7 +146,15 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 	for i, it := range items {
 		r := results[i]
 		if r.err != nil {
-			return nil, nil, false, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
+			if _, ok := tracked[it.slashRel]; ok {
+				return nil, nil, false, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
+			}
+			// Untracked and unreadable (#130): warn and drop it from both the
+			// returned entries and the rebuilt cache, rather than aborting the
+			// whole scan.
+			warnf("skipping unreadable untracked path %s: %v", it.slashRel, r.err)
+			changed = true
+			continue
 		}
 		mode := it.mode
 		if it.symlink {
