@@ -58,7 +58,7 @@ func TestMaterializeScanRoundTrip(t *testing.T) {
 	if err := Materialize(eng, cacheDir, r.HeadCommit, dir); err != nil {
 		t.Fatalf("Materialize: %v", err)
 	}
-	got, _, err := Scan(dir, nil)
+	got, _, _, err := Scan(dir, nil)
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}

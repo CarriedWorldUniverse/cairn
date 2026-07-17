@@ -65,10 +65,12 @@ func saveWCCache(path string, c map[string]wcCacheEntry) error {
 // differs from the input (a miss was taken, or a path vanished). Callers can
 // skip saveWCCache when cacheChanged is false. scanStartNs is captured by the
 // caller (time.Now().UnixNano()) before the walk and passed in. An UNTRACKED
-// path that turns out unreadable (stat or content) is warned about and dropped
-// from both entries and the rebuilt cache (#130); a TRACKED path's unreadable
-// content remains a hard error.
-func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, error) {
+// path that turns out unreadable (stat or content) is warned about (capped,
+// see skipTracker) and dropped from both entries and the rebuilt cache — its
+// slash-separated path (directories with a trailing "/") is returned in the
+// skipped result so a caller can surface it structurally (#130); a TRACKED
+// path's unreadable content remains a hard error.
+func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
 	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
 	// collected by the (serial) directory walk. The slow per-file step — reading
 	// a cache-missed file's content — is then done in PARALLEL, because on Windows
@@ -84,10 +86,11 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		mode     change.EntryMode
 	}
 	var items []scanItem
-	if err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
+	skip := &skipTracker{}
+	if err := walkWorktree(dir, tracked, skip, func(slashRel, path string, d fs.DirEntry) error {
 		info, err := d.Info()
 		if err != nil {
-			return unreadableErr(tracked, slashRel, err)
+			return unreadableErr(tracked, slashRel, err, skip)
 		}
 		mode := change.ModeRegular
 		if info.Mode()&0o111 != 0 {
@@ -100,7 +103,8 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		})
 		return nil
 	}); err != nil {
-		return nil, nil, false, fmt.Errorf("worktree.CachedScan: %w", err)
+		skip.finish()
+		return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
 	}
 
 	// Per-item resolution. A cache HIT reuses the stored SHA (no read). A MISS
@@ -147,12 +151,13 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		r := results[i]
 		if r.err != nil {
 			if _, ok := tracked[it.slashRel]; ok {
-				return nil, nil, false, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
+				skip.finish()
+				return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
 			}
-			// Untracked and unreadable (#130): warn and drop it from both the
-			// returned entries and the rebuilt cache, rather than aborting the
-			// whole scan.
-			warnf("skipping unreadable untracked path %s: %v", it.slashRel, r.err)
+			// Untracked and unreadable (#130): record + warn (capped) and drop it
+			// from both the returned entries and the rebuilt cache, rather than
+			// aborting the whole scan.
+			skip.skip(it.slashRel, r.err)
 			changed = true
 			continue
 		}
@@ -167,7 +172,8 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		}
 		sha, err := eng.WriteBlob(r.data)
 		if err != nil {
-			return nil, nil, false, fmt.Errorf("worktree.CachedScan: %w", err)
+			skip.finish()
+			return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
 		}
 		entries[it.slashRel] = change.TreeEntry{SHA: sha, Mode: mode}
 		newCache[it.slashRel] = wcCacheEntry{MtimeNs: it.mtimeNs, Size: it.size, BlobSHA: sha, Mode: mode}
@@ -177,7 +183,8 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 	if !changed && len(newCache) != len(cache) {
 		changed = true
 	}
-	return entries, newCache, changed, nil
+	skip.finish()
+	return entries, newCache, changed, skip.Paths, nil
 }
 
 // parallelFor runs fn(0)..fn(n-1) across a bounded pool of workers. The worker

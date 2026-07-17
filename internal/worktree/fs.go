@@ -25,20 +25,83 @@ var warnf = func(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "cairn: warning: "+format+"\n", args...)
 }
 
+// maxIndividualSkipWarnings caps the per-file warnf lines a single scan emits
+// for unreadable-untracked skips (#130): a directory full of OS-locked junk
+// (e.g. a whole ungitignored .vs/) must not flood the terminal one line per
+// file. Every skipped path is still recorded in skipTracker.Paths — the
+// structural list threaded up to CommitResult/StatusInfo — regardless of the
+// warnf cap.
+const maxIndividualSkipWarnings = 10
+
+// skipTracker accumulates the unreadable-untracked paths skipped during ONE
+// Scan/CachedScan walk (#130): every skip is recorded in Paths (a directory
+// skip is recorded with a trailing "/"), while individual warnf lines are
+// capped at maxIndividualSkipWarnings; finish emits one summary line for the
+// remainder, if any. The zero value is ready to use. A nil *skipTracker is
+// valid and simply does not track/cap anything (a caller — e.g. materialize's
+// deletion-pass walk, which doesn't surface a skipped list — can pass a fresh
+// throwaway instance, or the same shared instance across the one walk it
+// cares about).
+type skipTracker struct {
+	Paths  []string
+	warned int
+}
+
+// skip records one skipped path (already warnf-message-shaped, e.g. with a
+// trailing "/" for a directory) and, unless the per-walk cap has been
+// reached, emits a warnf line about it.
+func (s *skipTracker) skip(slashRel string, err error) {
+	if s == nil {
+		return
+	}
+	s.Paths = append(s.Paths, slashRel)
+	if s.warned < maxIndividualSkipWarnings {
+		warnf("skipping unreadable untracked path %s: %v", DisplayPath(slashRel), err)
+		s.warned++
+	}
+}
+
+// finish emits the "…and N more" summary line when skip was called more
+// times than the warnf cap allowed. Call once, after the walk that used this
+// tracker completes.
+func (s *skipTracker) finish() {
+	if s == nil {
+		return
+	}
+	if extra := len(s.Paths) - s.warned; extra > 0 {
+		warnf("… and %d more unreadable untracked path(s) skipped", extra)
+	}
+}
+
+// DisplayPath renders p for a warning/log/stdout line: quoted (%q) whenever it
+// contains a byte a terminal could misinterpret — an ASCII control character
+// (< 0x20) or DEL (0x7f), e.g. an ESC-sequence-laden filename crafted to
+// inject terminal escape codes into `cairn commit`/`cairn status` output —
+// and left bare otherwise, so the overwhelmingly common case (an ordinary
+// path) stays clean and copy-pasteable.
+func DisplayPath(p string) string {
+	for i := 0; i < len(p); i++ {
+		if p[i] < 0x20 || p[i] == 0x7f {
+			return fmt.Sprintf("%q", p)
+		}
+	}
+	return p
+}
+
 // unreadableErr classifies a read/stat failure for slashRel hit mid-scan: a
 // TRACKED path's unreadable content is always fatal (skipping it would make the
 // rebuilt snapshot silently drop/delete a committed file — a wc-cache or
 // worktree scan is not allowed to "un-commit" anything), so its error is
-// returned unchanged. An UNTRACKED path's failure is instead reported via
-// warnf and swallowed (nil), matching git's own tolerance of unreadable
-// untracked files (#130, e.g. an OS-locked file under an ungitignored
-// Visual Studio .vs/ folder on Windows) — the caller is expected to otherwise
-// skip/omit the path when this returns nil.
-func unreadableErr(tracked map[string]struct{}, slashRel string, err error) error {
+// returned unchanged. An UNTRACKED path's failure is instead recorded on skip
+// (warned, capped, and added to its Paths — #130) and swallowed (nil), matching
+// git's own tolerance of unreadable untracked files (e.g. an OS-locked file
+// under an ungitignored Visual Studio .vs/ folder on Windows) — the caller is
+// expected to otherwise skip/omit the path when this returns nil.
+func unreadableErr(tracked map[string]struct{}, slashRel string, err error, skip *skipTracker) error {
 	if _, ok := tracked[slashRel]; ok {
 		return err
 	}
-	warnf("skipping unreadable untracked path %s: %v", slashRel, err)
+	skip.skip(slashRel, err)
 	return nil
 }
 
@@ -237,14 +300,40 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 		target[p] = struct{}{}
 	}
 	var stale []string
-	if werr := walkWorktree(dir, target, func(slashRel, path string, _ fs.DirEntry) error {
-		if _, ok := target[slashRel]; !ok {
-			stale = append(stale, path)
+	// This walk only decides what to DELETE; it doesn't surface a skipped list
+	// to any caller (unlike Scan/CachedScan, #130), so the tracker here is a
+	// throwaway — it still gets warnf's per-walk cap for free.
+	delSkip := &skipTracker{}
+	if werr := walkWorktree(dir, target, delSkip, func(slashRel, path string, d fs.DirEntry) error {
+		if _, ok := target[slashRel]; ok {
+			return nil
 		}
+		// An untracked path not in the target tree is normally stale (deleted
+		// below). But an OS-locked untracked regular file (chmod 0000 on
+		// Linux, a sharing violation on Windows, #130 — e.g. the very file a
+		// same-directory Commit's snapshot scan just had to skip) must be LEFT
+		// ALONE here too, exactly like Scan/CachedScan tolerate it: silently
+		// erasing it the moment the folder gets re-materialized would be
+		// STRICTLY WORSE than the original bug (a hard-abort at least never
+		// lost data). A cheap open+close readability probe (never a full
+		// read) decides; symlinks aren't probed (Readlink failure is a
+		// different, rarer failure mode, and os.Open would wrongly dereference
+		// the link target instead of testing the link itself).
+		if d.Type().IsRegular() {
+			if f, oerr := os.Open(path); oerr != nil {
+				delSkip.skip(slashRel, oerr)
+				return nil
+			} else {
+				_ = f.Close()
+			}
+		}
+		stale = append(stale, path)
 		return nil
 	}); werr != nil {
+		delSkip.finish()
 		return fmt.Errorf("worktree.Materialize: %w", werr)
 	}
+	delSkip.finish()
 	for _, path := range stale {
 		if err := winretry.Do(func() error { return os.Remove(path) }); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("worktree.Materialize: %w", err)
@@ -452,19 +541,23 @@ func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
 // in tracked is never dropped, even when it (or its directory) matches an
 // ignore pattern. A nil tracked set means "nothing tracked" → every ignored
 // path is skipped (the historical behaviour). An UNTRACKED path (or directory)
-// that turns out unreadable is warned about and silently omitted rather than
-// aborting the whole scan (#130); a TRACKED path's unreadable content remains
-// a hard error.
-func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, error) {
+// that turns out unreadable is warned about (capped, see skipTracker) and
+// silently omitted rather than aborting the whole scan (#130) — its
+// slash-separated path (directories with a trailing "/") is returned in the
+// third result so a caller can surface it structurally (not stderr-only,
+// e.g. `cairn commit`/`cairn status`); a TRACKED path's unreadable content
+// remains a hard error.
+func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, []string, error) {
 	out := map[string][]byte{}
 	modes := map[string]change.EntryMode{}
-	err := walkWorktree(dir, tracked, func(slashRel, path string, d fs.DirEntry) error {
+	skip := &skipTracker{}
+	err := walkWorktree(dir, tracked, skip, func(slashRel, path string, d fs.DirEntry) error {
 		// Symlink: store its target string, mark ModeSymlink, never follow it.
 		// (A symlink is not a dir, so WalkDir won't descend it — no loop risk.)
 		if d.Type()&os.ModeSymlink != 0 {
 			target, err := os.Readlink(path)
 			if err != nil {
-				return unreadableErr(tracked, slashRel, err)
+				return unreadableErr(tracked, slashRel, err, skip)
 			}
 			out[slashRel] = []byte(target)
 			modes[slashRel] = change.ModeSymlink
@@ -473,7 +566,7 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return unreadableErr(tracked, slashRel, err)
+			return unreadableErr(tracked, slashRel, err, skip)
 		}
 		out[slashRel] = data
 		if info, ierr := d.Info(); ierr == nil && info.Mode()&0o111 != 0 {
@@ -481,10 +574,11 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 		}
 		return nil
 	})
+	skip.finish()
 	if err != nil {
-		return nil, nil, fmt.Errorf("worktree.Scan: %w", err)
+		return nil, nil, nil, fmt.Errorf("worktree.Scan: %w", err)
 	}
-	return out, modes, nil
+	return out, modes, skip.Paths, nil
 }
 
 // ignoreFrame is one directory's cumulative ignore matcher during the walk: the
@@ -512,12 +606,16 @@ type ignoreFrame struct {
 // it holds a tracked path, which cairn descends to preserve.
 //
 // An unreadable DIRECTORY (a ReadDir/stat failure reported mid-walk, #130) is
-// warned about and skipped via filepath.SkipDir when no tracked path lies
-// under it (hasTrackedPrefix); if a tracked path DOES live under it, that's a
-// hard error (descending it is exactly how a tracked file would be found and
+// recorded on skip (warned, capped, added to skip.Paths with a trailing "/")
+// and skipped via filepath.SkipDir when no tracked path lies under it
+// (hasTrackedPrefix); if a tracked path DOES live under it, that's a hard
+// error (descending it is exactly how a tracked file would be found and
 // preserved, so silently skipping could lose it). The scan ROOT itself failing
-// is always a hard error regardless of tracked.
-func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, path string, d fs.DirEntry) error) error {
+// is always a hard error regardless of tracked. skip is shared with fn's own
+// unreadableErr calls (both file- and directory-level skips share one
+// per-walk warnf cap); a nil skip is valid and just skips silently sans
+// tracking/cap (see skipTracker).
+func walkWorktree(dir string, tracked map[string]struct{}, skip *skipTracker, fn func(slashRel, path string, d fs.DirEntry) error) error {
 	rootPatterns, err := loadDirPatterns(dir, nil)
 	if err != nil {
 		return err
@@ -550,7 +648,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 			if hasTrackedPrefix(tracked, slashRel) {
 				return fmt.Errorf("unreadable directory %s: %w", slashRel, err)
 			}
-			warnf("skipping unreadable untracked path %s: %v", slashRel, err)
+			skip.skip(slashRel+"/", err)
 			return filepath.SkipDir
 		}
 
@@ -590,7 +688,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 				if hasTrackedPrefix(tracked, slashRel) {
 					return fmt.Errorf("unreadable directory %s: %w", slashRel, derr)
 				}
-				warnf("skipping unreadable untracked path %s: %v", slashRel, derr)
+				skip.skip(slashRel+"/", derr)
 				return filepath.SkipDir
 			}
 			if len(dirPatterns) == 0 {

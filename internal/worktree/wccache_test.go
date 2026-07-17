@@ -70,7 +70,7 @@ func TestCachedScanReusesUnchanged(t *testing.T) {
 	}
 
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	entries1, cache1, changed1, err := CachedScan(eng, dir, nil, nil, start1)
+	entries1, cache1, changed1, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestCachedScanReusesUnchanged(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, _, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, _, changed2, _, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2 (should be a cache hit, no read): %v", err)
 	}
@@ -110,7 +110,7 @@ func TestCachedScanDetectsChange(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	entries1, cache1, _, err := CachedScan(eng, dir, nil, nil, start1)
+	entries1, cache1, _, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestCachedScanDetectsChange(t *testing.T) {
 		t.Fatalf("rewrite: %v", err)
 	}
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, cache2, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, cache2, changed2, _, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestCachedScanRacy(t *testing.T) {
 		"a.txt": {MtimeNs: mtimeNs, Size: info.Size(), BlobSHA: "0000000000000000000000000000000000000000", Mode: change.ModeRegular},
 	}
 	// scanStartNs at or below the file's mtime ⇒ racy ⇒ re-read.
-	entries, _, _, err := CachedScan(eng, dir, nil, cache, mtimeNs)
+	entries, _, _, _, err := CachedScan(eng, dir, nil, cache, mtimeNs)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestCachedScanDropsVanished(t *testing.T) {
 		t.Fatalf("write b: %v", err)
 	}
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	_, cache1, _, err := CachedScan(eng, dir, nil, nil, start1)
+	_, cache1, _, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestCachedScanDropsVanished(t *testing.T) {
 		t.Fatalf("remove b: %v", err)
 	}
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	entries2, cache2, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
+	entries2, cache2, changed2, _, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2: %v", err)
 	}
@@ -215,7 +215,7 @@ func TestCachedScanSymlink(t *testing.T) {
 		t.Fatalf("symlink: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, _, _, err := CachedScan(eng, dir, nil, nil, start)
+	entries, _, _, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -237,7 +237,7 @@ func TestCachedScanExecMode(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, cache, _, err := CachedScan(eng, dir, nil, nil, start)
+	entries, cache, _, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestCachedScanHonorsIgnore(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, _, _, err := CachedScan(eng, dir, nil, nil, start)
+	entries, _, _, _, err := CachedScan(eng, dir, nil, nil, start)
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
@@ -287,7 +287,7 @@ func TestCachedScanCacheChangedFlag(t *testing.T) {
 
 	// First scan: cold cache → cacheChanged must be true.
 	start1 := time.Now().UnixNano() + int64(time.Second)
-	_, cache1, changed1, err := CachedScan(eng, dir, nil, nil, start1)
+	_, cache1, changed1, _, err := CachedScan(eng, dir, nil, nil, start1)
 	if err != nil {
 		t.Fatalf("scan1: %v", err)
 	}
@@ -297,7 +297,7 @@ func TestCachedScanCacheChangedFlag(t *testing.T) {
 
 	// Second scan: warm cache, nothing touched → cacheChanged must be false.
 	start2 := time.Now().UnixNano() + int64(time.Second)
-	_, _, changed2, err := CachedScan(eng, dir, nil, cache1, start2)
+	_, _, changed2, _, err := CachedScan(eng, dir, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2: %v", err)
 	}
@@ -310,7 +310,7 @@ func TestCachedScanCacheChangedFlag(t *testing.T) {
 		t.Fatalf("rewrite: %v", err)
 	}
 	start3 := time.Now().UnixNano() + int64(time.Second)
-	_, _, changed3, err := CachedScan(eng, dir, nil, cache1, start3)
+	_, _, changed3, _, err := CachedScan(eng, dir, nil, cache1, start3)
 	if err != nil {
 		t.Fatalf("scan3: %v", err)
 	}

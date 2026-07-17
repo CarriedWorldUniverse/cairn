@@ -732,6 +732,12 @@ func cmdCommit(args []string) error {
 	case strings.HasPrefix(note, "skipped:"):
 		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
 	}
+	// Surface unreadable-untracked skips structurally on STDOUT (#130) — not
+	// just the scan's own capped stderr warnf lines, which are lost under
+	// redirection or a GUI wrapper. Exit code stays 0 either way (below);
+	// like git, cairn tolerates unreadable untracked content rather than
+	// failing the commit over it.
+	printSkippedUnreadable(res.SkippedUnreadable)
 	if len(res.Conflicts) > 0 {
 		paths := make([]string, 0, len(res.Conflicts))
 		for _, c := range res.Conflicts {
@@ -844,7 +850,36 @@ func cmdStatus(args []string) error {
 			fmt.Printf("  D %s\n", p)
 		}
 	}
+	// Surface unreadable-untracked skips structurally on STDOUT (#130); see
+	// the identical block in cmdCommit.
+	printSkippedUnreadable(st.SkippedUnreadable)
 	return nil
+}
+
+// printSkippedUnreadable prints the #130 structural notice for
+// unreadable-untracked paths a worktree scan had to skip, so the fact is
+// visible on STDOUT — not just via the scan's own capped stderr warnf lines
+// (see worktree.skipTracker), which are easy to lose under redirection or a
+// GUI wrapper. Prints nothing when paths is empty. Never changes a command's
+// exit code: like git, cairn tolerates unreadable untracked content rather
+// than failing commit/status over it — a strict "fail on skip" mode is a
+// deliberately separate, opt-in feature, out of scope for #130.
+func printSkippedUnreadable(paths []string) {
+	if len(paths) == 0 {
+		return
+	}
+	fmt.Printf("skipped %d unreadable untracked path(s) — not included in this commit:\n", len(paths))
+	const showMax = 10
+	shown := paths
+	if len(shown) > showMax {
+		shown = shown[:showMax]
+	}
+	for _, p := range shown {
+		fmt.Printf("  %s\n", worktree.DisplayPath(p))
+	}
+	if extra := len(paths) - len(shown); extra > 0 {
+		fmt.Printf("  … and %d more\n", extra)
+	}
 }
 
 // cmdDiff prints the unified diff for working-vs-tip (default or named branch) or

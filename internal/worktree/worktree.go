@@ -61,8 +61,9 @@ type Repo struct {
 }
 
 // StatusInfo reports the state of an expressed branch: its lineage (root-first
-// line names), how far ahead of its base it is, any open conflict paths, and the
-// set of currently expressed branch names.
+// line names), how far ahead of its base it is, any open conflict paths, the
+// set of currently expressed branch names, and any unreadable-untracked paths
+// the snapshot scan had to skip (#130).
 type StatusInfo struct {
 	Branch    string
 	Lineage   []string
@@ -72,6 +73,11 @@ type StatusInfo struct {
 	Added     []string
 	Modified  []string
 	Deleted   []string
+	// SkippedUnreadable lists slash-separated paths (directories with a
+	// trailing "/") that were unreadable and untracked, so the scan warned and
+	// omitted them instead of aborting (#130) — surfaced structurally here
+	// rather than only via a stderr warnf line.
+	SkippedUnreadable []string
 }
 
 // Open opens (creating if needed) the working copy rooted at root with the given
@@ -418,7 +424,7 @@ func (r *Repo) SyncWorking() error {
 		return nil
 	}
 	for branch, entry := range r.st.Expressed {
-		if _, err := r.syncBranch(branch, entry); err != nil {
+		if _, _, err := r.syncBranch(branch, entry); err != nil {
 			return err
 		}
 	}
@@ -429,15 +435,17 @@ func (r *Repo) SyncWorking() error {
 // the snapshot during an active bisect (the folder holds a historical commit).
 // Read/write methods call this so a command re-scans ONLY the branch it touches,
 // rather than every expressed folder — the cost that dominated `status` on a
-// large tree with several branches expressed.
-func (r *Repo) syncOne(branch string, entry Entry) error {
+// large tree with several branches expressed. It returns the slash-separated
+// paths skipped as unreadable-and-untracked during the scan (#130), if any, so
+// a caller (Status) can surface them.
+func (r *Repo) syncOne(branch string, entry Entry) ([]string, error) {
 	if active, err := r.eng.BisectActive(); err != nil {
-		return fmt.Errorf("worktree.syncOne: %w", err)
+		return nil, fmt.Errorf("worktree.syncOne: %w", err)
 	} else if active {
-		return nil
+		return nil, nil
 	}
-	_, err := r.syncBranch(branch, entry)
-	return err
+	_, skipped, err := r.syncBranch(branch, entry)
+	return skipped, err
 }
 
 // syncBranch snapshots one expressed branch's folder into its open working
@@ -448,11 +456,13 @@ func (r *Repo) syncOne(branch string, entry Entry) error {
 // caller re-materializing this SAME folder right afterwards (worktree.Commit)
 // can pass it to MaterializeSynced as a hint — the scan and the materialize
 // then share one source of truth for "what's already on disk," instead of the
-// materialize re-deriving it from scratch.
-func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, error) {
+// materialize re-deriving it from scratch — plus the slash-separated paths the
+// underlying CachedScan skipped as unreadable-and-untracked (#130; directories
+// carry a trailing "/"), for callers (Commit, Status) that surface it.
+func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, []string, error) {
 	line, err := r.eng.LineByName(branch)
 	if err != nil {
-		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
 	// paths, so a committed-then-ignored file is never dropped from the scan.
@@ -460,7 +470,7 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 	if line.TipCommit != "" {
 		committed, ferr := r.eng.FilesMeta(line.TipCommit)
 		if ferr != nil {
-			return nil, fmt.Errorf("worktree.syncBranch: %w", ferr)
+			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", ferr)
 		}
 		tracked = trackedSetMeta(committed)
 	}
@@ -470,22 +480,22 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, cacheChanged, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
+	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
 	if err != nil {
-		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
-		return nil, fmt.Errorf("worktree.syncBranch: %w", err)
+		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
 	if cacheChanged {
 		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
-			return nil, fmt.Errorf("worktree.syncBranch: %w", err)
+			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
 		if err := saveWCCache(cachePath, newCache); err != nil {
-			return nil, fmt.Errorf("worktree.syncBranch: %w", err)
+			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
 	}
-	return newCache, nil
+	return newCache, skipped, nil
 }
 
 // Commit seals the open working change of an expressed branch: it first
@@ -493,7 +503,8 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 // edits), stamps the message (adopting the parent line via merge-forward),
 // advances this branch to the fresh working change opened by the seal, and
 // re-materializes to the new working tip. The CommitResult carries the sealed
-// head and any conflicts recorded.
+// head, any conflicts recorded, and any unreadable-untracked paths the
+// snapshot scan had to skip (#130) — not included in this commit.
 func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	unlock, err := r.lockState()
 	if err != nil {
@@ -504,7 +515,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	if !ok {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: branch %q is not expressed", branch)
 	}
-	syncedCache, err := r.syncBranch(branch, entry)
+	syncedCache, skipped, err := r.syncBranch(branch, entry)
 	if err != nil {
 		return change.CommitResult{}, err
 	}
@@ -560,7 +571,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	// it has a head to resolve against, then move the conflict rows onto it — so
 	// `status`/`resolve` operate on the working change as the operator expects.
 	if len(conflicts) > 0 {
-		if _, err := r.syncBranch(branch, entry); err != nil {
+		if _, _, err := r.syncBranch(branch, entry); err != nil {
 			return change.CommitResult{}, err
 		}
 		if err := r.eng.ReassignConflicts(prevChangeID, entry.ChangeID); err != nil {
@@ -574,7 +585,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	// is captured as a note for the CLI, not propagated.
 	r.lastSyncNote = r.autoSync()
 
-	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts}, nil
+	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts, SkippedUnreadable: skipped}, nil
 }
 
 // autoSync runs the opt-in commit-time sync and returns a note describing the
@@ -819,7 +830,8 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	if !ok {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: branch %q is not expressed", branch)
 	}
-	if err := r.syncOne(branch, entry); err != nil {
+	skipped, err := r.syncOne(branch, entry)
+	if err != nil {
 		return StatusInfo{}, err
 	}
 	line, err := r.eng.LineByName(branch)
@@ -882,14 +894,15 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	}
 	sort.Strings(expressed)
 	return StatusInfo{
-		Branch:    branch,
-		Lineage:   names,
-		Ahead:     ahead,
-		Conflicts: paths,
-		Expressed: expressed,
-		Added:     added,
-		Modified:  modified,
-		Deleted:   deleted,
+		Branch:            branch,
+		Lineage:           names,
+		Ahead:             ahead,
+		Conflicts:         paths,
+		Expressed:         expressed,
+		Added:             added,
+		Modified:          modified,
+		Deleted:           deleted,
+		SkippedUnreadable: skipped,
 	}, nil
 }
 
@@ -909,7 +922,7 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	if !ok {
 		return nil, fmt.Errorf("worktree.WorkingDiff: branch %q is not expressed", branch)
 	}
-	if err := r.syncOne(branch, entry); err != nil {
+	if _, err := r.syncOne(branch, entry); err != nil {
 		return nil, err
 	}
 	ch, err := r.eng.GetChange(entry.ChangeID)
@@ -1596,7 +1609,7 @@ func (a *releaseAdapter) Dirty() (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	if _, err := a.r.syncBranch(a.branch, entry); err != nil {
+	if _, _, err := a.r.syncBranch(a.branch, entry); err != nil {
 		return false, fmt.Errorf("worktree.releaseAdapter.Dirty: %w", err)
 	}
 	return a.r.isDirty(a.branch)
@@ -1958,7 +1971,7 @@ func (r *Repo) Stash(branch, message string) error {
 	if !ok {
 		return fmt.Errorf("worktree.Stash: branch %q is not expressed", branch)
 	}
-	if _, err := r.syncBranch(branch, entry); err != nil {
+	if _, _, err := r.syncBranch(branch, entry); err != nil {
 		return err
 	}
 	if _, err := r.eng.StashPush(entry.ChangeID, message); err != nil {
@@ -1980,7 +1993,7 @@ func (r *Repo) StashPop(branch string) error {
 	if !ok {
 		return fmt.Errorf("worktree.StashPop: branch %q is not expressed", branch)
 	}
-	if _, err := r.syncBranch(branch, entry); err != nil {
+	if _, _, err := r.syncBranch(branch, entry); err != nil {
 		return err
 	}
 	if err := r.eng.StashApply(entry.ChangeID, 0, true); err != nil {
