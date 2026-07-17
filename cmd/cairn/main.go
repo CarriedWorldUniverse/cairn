@@ -869,6 +869,11 @@ func printSkippedUnreadable(paths []string) {
 		return
 	}
 	fmt.Printf("skipped %d unreadable untracked path(s) — not included in this commit:\n", len(paths))
+	// showMax is intentionally a SEPARATE cap from worktree's
+	// maxIndividualSkipWarnings: this one bounds the one-shot stdout summary
+	// printed here from the already-complete structural list (paths); that one
+	// bounds noisy per-scan stderr chatter emitted DURING the walk itself. No
+	// reason for the two to move together.
 	const showMax = 10
 	shown := paths
 	if len(shown) > showMax {

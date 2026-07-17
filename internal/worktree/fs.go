@@ -30,7 +30,11 @@ var warnf = func(format string, args ...any) {
 // (e.g. a whole ungitignored .vs/) must not flood the terminal one line per
 // file. Every skipped path is still recorded in skipTracker.Paths — the
 // structural list threaded up to CommitResult/StatusInfo — regardless of the
-// warnf cap.
+// warnf cap. This is intentionally a SEPARATE cap from cmd/cairn's
+// printSkippedUnreadable showMax: this one bounds noisy per-scan stderr
+// chatter during the walk itself, that one bounds the one-shot stdout summary
+// printed afterward from the (already complete) structural list — no reason
+// for the two to move together, so they aren't tied to one constant.
 const maxIndividualSkipWarnings = 10
 
 // skipTracker accumulates the unreadable-untracked paths skipped during ONE
@@ -49,14 +53,17 @@ type skipTracker struct {
 
 // skip records one skipped path (already warnf-message-shaped, e.g. with a
 // trailing "/" for a directory) and, unless the per-walk cap has been
-// reached, emits a warnf line about it.
+// reached, emits a warnf line about it. Both the path AND the error text are
+// sanitized before printing: a *fs.PathError's Error() string embeds the raw
+// (absolute) path verbatim, so an ANSI-payload filename would otherwise still
+// reach the terminal via the %v even with the path argument itself quoted.
 func (s *skipTracker) skip(slashRel string, err error) {
 	if s == nil {
 		return
 	}
 	s.Paths = append(s.Paths, slashRel)
 	if s.warned < maxIndividualSkipWarnings {
-		warnf("skipping unreadable untracked path %s: %v", DisplayPath(slashRel), err)
+		warnf("skipping unreadable untracked path %s: %s", DisplayPath(slashRel), DisplayErrText(err))
 		s.warned++
 	}
 }
@@ -80,12 +87,38 @@ func (s *skipTracker) finish() {
 // and left bare otherwise, so the overwhelmingly common case (an ordinary
 // path) stays clean and copy-pasteable.
 func DisplayPath(p string) string {
-	for i := 0; i < len(p); i++ {
-		if p[i] < 0x20 || p[i] == 0x7f {
-			return fmt.Sprintf("%q", p)
-		}
+	if containsUnsafeByte(p) {
+		return fmt.Sprintf("%q", p)
 	}
 	return p
+}
+
+// DisplayErrText renders err's message for a warning/log/stdout line, applying
+// the identical quoting rule as DisplayPath: a plain %v is NOT safe for an
+// error alongside an untrusted path, because e.g. *fs.PathError.Error()
+// embeds the raw (absolute) path verbatim — an ANSI-escape-laden filename
+// would inject into the terminal via the error text even when the path
+// argument printed next to it is already quoted. err == nil renders as "".
+func DisplayErrText(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	if containsUnsafeByte(msg) {
+		return fmt.Sprintf("%q", msg)
+	}
+	return msg
+}
+
+// containsUnsafeByte reports whether s contains a byte a terminal could
+// misinterpret: an ASCII control character (< 0x20) or DEL (0x7f).
+func containsUnsafeByte(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 || s[i] == 0x7f {
+			return true
+		}
+	}
+	return false
 }
 
 // unreadableErr classifies a read/stat failure for slashRel hit mid-scan: a
@@ -309,28 +342,36 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 			return nil
 		}
 		// An untracked path not in the target tree is normally stale (deleted
-		// below). But an OS-locked untracked regular file (chmod 0000 on
-		// Linux, a sharing violation on Windows, #130 — e.g. the very file a
+		// below). But an OS-locked untracked path (chmod 0000 on Linux, a
+		// sharing violation on Windows, #130 — e.g. the very file/symlink a
 		// same-directory Commit's snapshot scan just had to skip) must be LEFT
 		// ALONE here too, exactly like Scan/CachedScan tolerate it: silently
 		// erasing it the moment the folder gets re-materialized would be
 		// STRICTLY WORSE than the original bug (a hard-abort at least never
-		// lost data). A cheap open+close readability probe (never a full
-		// read) decides; symlinks aren't probed (Readlink failure is a
-		// different, rarer failure mode, and os.Open would wrongly dereference
-		// the link target instead of testing the link itself).
-		if d.Type().IsRegular() {
+		// lost data). A regular file is probed with a cheap open+close (never
+		// a full read); a symlink is probed with Readlink — which reads the
+		// LINK ITSELF (the small stored target string), never following it
+		// into the target, so this is exactly as safe/cheap for a symlink as
+		// the open+close probe is for a regular file (Windows reparse-point
+		// locks make a symlink's own Readlink fail the same way an OS-locked
+		// regular file's Open does).
+		switch {
+		case d.Type().IsRegular():
 			if f, oerr := os.Open(path); oerr != nil {
 				delSkip.skip(slashRel, oerr)
 				return nil
 			} else {
 				_ = f.Close()
 			}
+		case d.Type()&os.ModeSymlink != 0:
+			if _, oerr := os.Readlink(path); oerr != nil {
+				delSkip.skip(slashRel, oerr)
+				return nil
+			}
 		}
 		stale = append(stale, path)
 		return nil
 	}); werr != nil {
-		delSkip.finish()
 		return fmt.Errorf("worktree.Materialize: %w", werr)
 	}
 	delSkip.finish()
@@ -574,10 +615,13 @@ func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[strin
 		}
 		return nil
 	})
-	skip.finish()
 	if err != nil {
+		// Aborting on a hard error (a TRACKED path was unreadable, or the root
+		// itself was): the whole scan result is discarded, so don't emit a
+		// "...and N more" summary for a Paths list nobody will see.
 		return nil, nil, nil, fmt.Errorf("worktree.Scan: %w", err)
 	}
+	skip.finish()
 	return out, modes, skip.Paths, nil
 }
 

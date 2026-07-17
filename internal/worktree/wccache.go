@@ -103,7 +103,8 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		})
 		return nil
 	}); err != nil {
-		skip.finish()
+		// Aborting on a hard error: the whole scan result is discarded, so
+		// don't emit a "...and N more" summary nobody will see.
 		return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
 	}
 
@@ -151,7 +152,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		r := results[i]
 		if r.err != nil {
 			if _, ok := tracked[it.slashRel]; ok {
-				skip.finish()
+				// Aborting: same reasoning as above — no summary for a discarded result.
 				return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %s: %w", it.path, r.err)
 			}
 			// Untracked and unreadable (#130): record + warn (capped) and drop it
@@ -172,7 +173,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 		}
 		sha, err := eng.WriteBlob(r.data)
 		if err != nil {
-			skip.finish()
+			// Aborting: same reasoning as above.
 			return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
 		}
 		entries[it.slashRel] = change.TreeEntry{SHA: sha, Mode: mode}

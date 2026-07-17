@@ -1,7 +1,9 @@
 package worktree
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,6 +27,52 @@ func captureWarnings(t *testing.T) *[]string {
 	}
 	t.Cleanup(func() { warnf = orig })
 	return &got
+}
+
+// TestScanWarningSanitizesErrorText is the MUST-FIX regression for #130
+// round 2: warnf's %v of the underlying error is NOT safe on its own — a
+// *fs.PathError.Error() embeds the raw (absolute) path verbatim, so an
+// ESC-byte-laden path name still injects a raw 0x1b into the terminal via the
+// error text even when the path argument printed next to it is already
+// quoted. The error text must go through the same sanitization (DisplayErrText).
+func TestScanWarningSanitizesErrorText(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod-based unreadability is not meaningful on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("chmod ineffective as root")
+	}
+	warnings := captureWarnings(t)
+
+	dir := t.TempDir()
+	// The ESC byte lives in a DIRECTORY component so it also lands inside the
+	// os.ReadFile *fs.PathError's embedded absolute path, not just in slashRel
+	// (which DisplayPath already covers) — reproducing the reviewer's live
+	// od -c proof.
+	escDir := filepath.Join(dir, "esc\x1bdir")
+	if err := os.Mkdir(escDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	path := filepath.Join(escDir, "locked.txt")
+	if err := os.WriteFile(path, []byte("secret\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.Chmod(path, 0o000); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
+
+	if _, _, _, err := Scan(dir, nil); err != nil {
+		t.Fatalf("Scan: unexpected error: %v", err)
+	}
+	if len(*warnings) == 0 {
+		t.Fatalf("expected a warning about the skipped unreadable path, got none")
+	}
+	for _, w := range *warnings {
+		if strings.ContainsRune(w, 0x1b) {
+			t.Fatalf("captured warning contains a raw ESC (0x1b) byte: %q", w)
+		}
+	}
 }
 
 func TestScanSkipsUnreadableUntrackedFile(t *testing.T) {
@@ -355,5 +403,25 @@ func TestDisplayPath(t *testing.T) {
 				t.Fatalf("DisplayPath(%q) = %q, want %q", c.in, got, c.want)
 			}
 		})
+	}
+}
+
+func TestDisplayErrText(t *testing.T) {
+	if got := DisplayErrText(nil); got != "" {
+		t.Fatalf("DisplayErrText(nil) = %q, want empty", got)
+	}
+	plain := errors.New("permission denied")
+	if got := DisplayErrText(plain); got != "permission denied" {
+		t.Fatalf("DisplayErrText(plain) = %q, want bare message", got)
+	}
+	// A *fs.PathError.Error() embeds its Path field verbatim — exactly the
+	// shape that leaked a raw ESC byte before this fix.
+	esc := &fs.PathError{Op: "open", Path: "esc\x1bdir/locked.txt", Err: os.ErrPermission}
+	got := DisplayErrText(esc)
+	if strings.ContainsRune(got, 0x1b) {
+		t.Fatalf("DisplayErrText leaked a raw ESC byte: %q", got)
+	}
+	if !strings.HasPrefix(got, `"`) || !strings.HasSuffix(got, `"`) {
+		t.Fatalf("DisplayErrText(esc) = %q, want %%q-quoted", got)
 	}
 }
