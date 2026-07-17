@@ -548,7 +548,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 			// filepath.WalkDir's docs). d may be nil in some failure modes, so
 			// don't rely on it here.
 			if hasTrackedPrefix(tracked, slashRel) {
-				return fmt.Errorf("worktree: unreadable directory %s: %w", slashRel, err)
+				return fmt.Errorf("unreadable directory %s: %w", slashRel, err)
 			}
 			warnf("skipping unreadable untracked path %s: %v", slashRel, err)
 			return filepath.SkipDir
@@ -588,7 +588,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, fn func(slashRel, pat
 			dirPatterns, derr := loadDirPatterns(path, parts)
 			if derr != nil {
 				if hasTrackedPrefix(tracked, slashRel) {
-					return fmt.Errorf("worktree: unreadable directory %s: %w", slashRel, derr)
+					return fmt.Errorf("unreadable directory %s: %w", slashRel, derr)
 				}
 				warnf("skipping unreadable untracked path %s: %v", slashRel, derr)
 				return filepath.SkipDir

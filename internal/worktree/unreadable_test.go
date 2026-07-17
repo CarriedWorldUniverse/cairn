@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 )
@@ -156,5 +157,66 @@ func TestCachedScanSkipsUnreadableUntrackedFile(t *testing.T) {
 	}
 	if len(*warnings) == 0 {
 		t.Fatalf("expected a warning about the skipped unreadable path, got none")
+	}
+}
+
+func TestCachedScanErrorsOnUnreadableTrackedFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod-based unreadability is not meaningful on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("chmod ineffective as root")
+	}
+
+	eng := newCacheTestEngine(t)
+	dir := t.TempDir()
+	path := filepath.Join(dir, "locked.txt")
+	if err := os.WriteFile(path, []byte("secret\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.Chmod(path, 0o000); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
+
+	tracked := map[string]struct{}{"locked.txt": {}}
+	start := time.Now().UnixNano() + int64(time.Second)
+	_, _, _, err := CachedScan(eng, dir, tracked, nil, start)
+	if err == nil {
+		t.Fatalf("expected CachedScan to error on an unreadable TRACKED file, got nil")
+	}
+	if !strings.Contains(err.Error(), "locked.txt") {
+		t.Fatalf("expected error to mention the tracked path %q, got: %v", "locked.txt", err)
+	}
+}
+
+func TestScanErrorsOnTrackedFileUnderUnreadableDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod-based unreadability is not meaningful on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("chmod ineffective as root")
+	}
+
+	dir := t.TempDir()
+	sub := filepath.Join(dir, "locked-dir")
+	if err := os.Mkdir(sub, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	inner := filepath.Join(sub, "inside.txt")
+	if err := os.WriteFile(inner, []byte("hidden\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.Chmod(sub, 0o000); err != nil {
+		t.Fatalf("chmod dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(sub, 0o755) })
+
+	// A tracked path lives under the now-unreadable directory: skipping it
+	// (the untracked treatment) would silently drop a committed file from the
+	// snapshot, so this must be a hard error instead.
+	tracked := map[string]struct{}{"locked-dir/inside.txt": {}}
+	if _, _, err := Scan(dir, tracked); err == nil {
+		t.Fatalf("expected Scan to error when a tracked path lives under an unreadable directory, got nil")
 	}
 }
