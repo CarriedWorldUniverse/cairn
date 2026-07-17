@@ -4,7 +4,7 @@ import "testing"
 
 func scanSet(t *testing.T, dir string, tracked map[string]struct{}) map[string]bool {
 	t.Helper()
-	files, _, err := Scan(dir, tracked)
+	files, _, _, err := Scan(dir, tracked)
 	if err != nil {
 		t.Fatal(err)
 	}

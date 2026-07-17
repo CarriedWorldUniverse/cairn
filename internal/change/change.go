@@ -29,6 +29,13 @@ type Change struct {
 type CommitResult struct {
 	HeadCommit string
 	Conflicts  []Conflict
+	// SkippedUnreadable lists slash-separated worktree paths (directories with
+	// a trailing "/") that were unreadable and untracked when the commit's
+	// snapshot scanned the folder, so they were warned about and left out of
+	// this commit rather than aborting it (#130, worktree.Repo.Commit; the
+	// change-engine-level Commit below never populates this — it has no
+	// worktree scan of its own).
+	SkippedUnreadable []string
 }
 
 // reverseHexAlphabet renders nibbles in jj-style reverse hex so change-ids are
