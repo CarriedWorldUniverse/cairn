@@ -31,6 +31,15 @@ func FolderName(branch string) string {
 // the operator can resolve the conflict markers left on disk, then push again.
 var ErrPushConflict = errors.New("remote diverged and merging produced conflicts; resolve, then push")
 
+// ErrFolderMissing reports an expressed branch whose folder is gone from disk —
+// removed with `rm -rf` instead of `cairn unexpress` (#133). Such a branch is
+// never snapshotted: scanning a vanished folder yields an empty tree, so the
+// working change would record a phantom deletion of every tracked file. Blanket
+// pre-command syncs (SyncWorking) SKIP such a branch so one deleted folder
+// cannot wedge every command — including the `express`/`unexpress` that would
+// fix it. Operations targeting that branch surface it instead.
+var ErrFolderMissing = errors.New("expressed folder is missing")
+
 // Repo is the working-copy orchestrator that bridges expressed branch folders on
 // disk and the cairn change engine. Each expressed branch is a folder under root
 // holding the materialized files of an open change on the corresponding line.
@@ -321,7 +330,17 @@ func (r *Repo) Express(branch, parent string) error {
 		return err
 	}
 	defer unlock()
-	if _, ok := r.st.Expressed[branch]; ok {
+	if existing, ok := r.st.Expressed[branch]; ok {
+		// Already expressed — a no-op, UNLESS the folder was deleted out from
+		// under us (#133). Then re-express is the documented way back: restore
+		// the folder from the line tip rather than silently reporting success on
+		// a branch that still has no folder.
+		if _, serr := os.Stat(filepath.Join(r.root, existing.Path)); serr != nil {
+			if !errors.Is(serr, os.ErrNotExist) {
+				return fmt.Errorf("worktree.Express: %w", serr)
+			}
+			return r.restoreFolder(branch, existing)
+		}
 		return nil
 	}
 
@@ -425,6 +444,14 @@ func (r *Repo) SyncWorking() error {
 	}
 	for branch, entry := range r.st.Expressed {
 		if _, _, err := r.syncBranch(branch, entry); err != nil {
+			// #133: a folder deleted without `unexpress` must not wedge the whole
+			// repo. This blanket sync runs ahead of nearly every command, so
+			// failing here made even `ls`, `tree`, `express` and `unexpress`
+			// unusable — leaving no way to recover short of editing wc.json.
+			// Skip the branch; commands that target it still report the problem.
+			if errors.Is(err, ErrFolderMissing) {
+				continue
+			}
 			return err
 		}
 	}
@@ -474,13 +501,25 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		}
 		tracked = trackedSetMeta(committed)
 	}
+	// A folder deleted out from under cairn (#133) must not be scanned: the walk
+	// would yield nothing and the snapshot would seal a phantom deletion of every
+	// tracked path. Report it as ErrFolderMissing and let the caller decide.
+	dir := filepath.Join(r.root, entry.Path)
+	if _, serr := os.Stat(dir); serr != nil {
+		if errors.Is(serr, os.ErrNotExist) {
+			return nil, nil, fmt.Errorf(
+				"worktree.syncBranch: branch %q: %w: %s — run 'cairn express %s' to restore it, or 'cairn unexpress %s' to drop the record",
+				branch, ErrFolderMissing, entry.Path, branch, branch)
+		}
+		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
+	}
 	cachePath := filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
 	cache, err := loadWCCache(cachePath)
 	if err != nil {
 		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, filepath.Join(r.root, entry.Path), tracked, cache, scanStartNs)
+	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, cache, scanStartNs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
@@ -1953,6 +1992,28 @@ func (r *Repo) rematerialize(branch string, entry Entry) error {
 		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path)); err != nil {
 			return fmt.Errorf("worktree.rematerialize: %w", err)
 		}
+	}
+	return nil
+}
+
+// restoreFolder recreates an expressed branch's folder after it was deleted off
+// disk (#133), materializing the line's current tip — which, because every sync
+// amends the working change in place, is the last state cairn saw, un-sealed
+// edits included. A line with no tip yet just gets the empty folder back.
+func (r *Repo) restoreFolder(branch string, entry Entry) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.restoreFolder: %w", err)
+	}
+	dir := filepath.Join(r.root, entry.Path)
+	if line.TipCommit == "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("worktree.restoreFolder: %w", err)
+		}
+		return nil
+	}
+	if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+		return fmt.Errorf("worktree.restoreFolder: %w", err)
 	}
 	return nil
 }
