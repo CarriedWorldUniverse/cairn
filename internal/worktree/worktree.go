@@ -1980,10 +1980,11 @@ func (r *Repo) Stash(branch, message string) error {
 	return r.rematerialize(branch, entry)
 }
 
-// StashPop restores the most recent stash entry onto the expressed branch's
-// working change, then re-materializes the folder so the restored files appear
-// on disk. The stash entry is dropped after a successful apply.
-func (r *Repo) StashPop(branch string) error {
+// StashPop restores a stash entry onto the expressed branch's working change,
+// then re-materializes the folder so the restored files appear on disk. stashID
+// selects the entry by its `stash list` id; 0 selects the top of the stack. The
+// stash entry is dropped after a successful apply.
+func (r *Repo) StashPop(branch string, stashID int64) error {
 	unlock, err := r.lockState()
 	if err != nil {
 		return err
@@ -1996,7 +1997,7 @@ func (r *Repo) StashPop(branch string) error {
 	if _, _, err := r.syncBranch(branch, entry); err != nil {
 		return err
 	}
-	if err := r.eng.StashApply(entry.ChangeID, 0, true); err != nil {
+	if err := r.eng.StashApply(entry.ChangeID, stashID, true); err != nil {
 		return fmt.Errorf("worktree.StashPop: %w", err)
 	}
 	return r.rematerialize(branch, entry)

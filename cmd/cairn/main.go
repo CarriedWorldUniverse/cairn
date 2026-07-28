@@ -121,7 +121,7 @@ subcommands:
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
   update                        replace this binary with the latest release (--check to only report, --force to reinstall)
   stash [-m msg] [branch]   shelve the working change; reset the folder to the sealed state
-  stash pop [branch]        restore the most recent stash onto branch
+  stash pop [branch] [id]   restore a stash onto branch (default: most recent)
   stash list                list the stash stack
   stash drop [id]           discard a stash (default: most recent)
   reword <commit> <message> change the message of a sealed commit (history edit)
@@ -2367,35 +2367,61 @@ func cmdStashPush(args []string) error {
 	return nil
 }
 
-// cmdStashPop restores the most recent stash entry onto the working branch.
-// An optional trailing positional selects the branch (default: structural root).
+// cmdStashPop restores a stash entry onto the working branch. The optional
+// positionals select the branch (default: the folder you stand in, else the
+// structural root) and the stash id from `stash list` (default: most recent),
+// in either order — an id is what `stash drop` accepts, so `stash pop` takes
+// the same thing.
 func cmdStashPop(args []string) error {
 	fs := flag.NewFlagSet("stash pop", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
+	if fs.NArg() > 2 {
+		return fmt.Errorf("usage: cairn stash pop [branch] [id]")
+	}
 	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	// Classify each positional: an expressed branch name wins (so a line really
+	// named "5" is still reachable), otherwise a bare integer is a stash id.
 	var (
-		branch string
-		berr   error
+		branch  string
+		stashID int64
 	)
-	if fs.NArg() > 0 {
-		branch = fs.Arg(0)
-	} else {
+	for _, arg := range fs.Args() {
+		if !r.IsExpressed(arg) {
+			if id, perr := strconv.ParseInt(arg, 10, 64); perr == nil {
+				if stashID != 0 {
+					return fmt.Errorf("usage: cairn stash pop [branch] [id]")
+				}
+				stashID = id
+				continue
+			}
+		}
+		if branch != "" {
+			return fmt.Errorf("usage: cairn stash pop [branch] [id]")
+		}
+		branch = arg
+	}
+	if branch == "" {
+		var berr error
 		branch, berr = r.DefaultBranch()
 		if berr != nil {
 			return mapErr(berr)
 		}
 	}
-	if err := r.StashPop(branch); err != nil {
+	if err := r.StashPop(branch, stashID); err != nil {
 		return mapErr(err)
 	}
-	fmt.Fprintln(os.Stderr, "cairn: restored the most recent stash")
+	if stashID != 0 {
+		fmt.Fprintf(os.Stderr, "cairn: restored stash %d\n", stashID)
+	} else {
+		fmt.Fprintln(os.Stderr, "cairn: restored the most recent stash")
+	}
 	return nil
 }
 

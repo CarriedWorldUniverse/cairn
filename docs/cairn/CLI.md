@@ -366,7 +366,7 @@ expressed folders don't already cover. `pop` refuses onto a dirty folder.
 | Command | Action |
 |---------|--------|
 | `cairn stash [-m <msg>] [branch]` | Shelve the working change; reset the folder to the sealed state |
-| `cairn stash pop [branch]` | Restore the most recent stash onto `branch` |
+| `cairn stash pop [branch] [id]` | Restore a stash onto `branch` — `id` from `stash list` (default: most recent) |
 | `cairn stash list` | List the stash stack |
 | `cairn stash drop [id]` | Discard a stash (default: most recent) |
 
