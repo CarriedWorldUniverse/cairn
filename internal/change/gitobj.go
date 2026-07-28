@@ -477,6 +477,24 @@ func (e *Engine) mergeBase(a, b string) (string, error) {
 	return bases[0].Hash.String(), nil
 }
 
+// isAncestor reports whether commit a is an ancestor of (or identical to) b.
+// Used to decide whether a merge-forward must record the adopted parent-line tip
+// as a second parent: if that tip is already in the commit's ancestry, the merge
+// base is current and a redundant merge commit would only add noise.
+func (e *Engine) isAncestor(a, b string) (bool, error) {
+	if a == "" || b == "" {
+		return false, nil
+	}
+	if a == b {
+		return true, nil
+	}
+	base, err := e.mergeBase(a, b)
+	if err != nil {
+		return false, err
+	}
+	return base == a, nil
+}
+
 // readTree reads a tree (recursively) into a flat path->bytes map keyed by the
 // full "/"-separated path of each file.
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
