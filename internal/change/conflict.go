@@ -139,6 +139,24 @@ func (e *Engine) ReassignConflicts(fromChangeID, toChangeID string) error {
 // non-existent open conflict (or unknown change) returns ErrNotFound with no
 // head advance.
 func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
+	return e.resolveConflict(changeID, path, resolved, false)
+}
+
+// ResolveConflictDeleted resolves an open conflict the other way: the path is
+// DROPPED from the change's tree rather than given content. This is how a
+// modify/delete conflict is settled in favour of the deletion (#134) — the case
+// where the parent line changed a file this change removed. Without it such a
+// conflict was unresolvable: `resolve` sourced the resolution from the file on
+// disk, so a deleted file could never supply one, while `commit` refused to
+// seal while the conflict stayed open.
+func (e *Engine) ResolveConflictDeleted(changeID, path string) error {
+	return e.resolveConflict(changeID, path, nil, true)
+}
+
+// resolveConflict is the shared body of ResolveConflict / ResolveConflictDeleted:
+// deleted selects whether path is written with resolved content or removed from
+// the new tree.
+func (e *Engine) resolveConflict(changeID, path string, resolved []byte, deleted bool) error {
 	ch, err := e.GetChange(changeID)
 	if err != nil {
 		return err
@@ -192,7 +210,11 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
 	delete(modes, path)
-	files[path] = resolved
+	if deleted {
+		delete(files, path)
+	} else {
+		files[path] = resolved
+	}
 	newTree, err := e.writeTree(files, modes)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)

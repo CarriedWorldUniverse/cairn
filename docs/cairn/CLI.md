@@ -297,6 +297,15 @@ $EDITOR feature/foo.txt      # remove the markers, keep what you want
 cairn resolve feature foo.txt
 cairn commit feature -m "resolve foo"
 ```
+A **modify/delete** conflict — you removed a file the parent line changed — is resolved
+the same way, by the file's absence: leave it deleted and run `resolve`, and the removal
+becomes the resolution.
+```sh
+rm feature/foo.txt           # (already gone if you deleted it)
+cairn resolve feature foo.txt   # resolves in favour of the deletion
+cairn commit feature -m "drop foo"
+```
+To keep the file instead, restore the parent's content and `resolve` normally.
 
 ### Undo & history
 
