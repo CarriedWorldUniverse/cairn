@@ -89,7 +89,7 @@ subcommands:
   diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
   tree                          print the line tree
   ls                            list expressed branches
-  resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content; refuses lingering <<<<<<< markers (--force to accept)
+  resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
   remote                        list configured remotes
   remote add <name> <url>       register a remote (--cairn for a cairn remote)
   push [remote] [branch]        publish all lines + tags, or just <branch> (default origin, --force)

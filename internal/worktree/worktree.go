@@ -835,15 +835,28 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 	}
 	dir := filepath.Join(r.root, entry.Path)
 	data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
-	if err != nil {
-		return fmt.Errorf("worktree.Resolve: %w", err)
-	}
-	if !force && diff3.HasMarkers(data) {
-		return fmt.Errorf(
-			"worktree.Resolve: %q still contains conflict markers (<<<<<<< / ======= / >>>>>>>) — edit them out and re-run, or pass --force if the content is intentional",
-			path)
-	}
-	if err := r.eng.ResolveConflict(entry.ChangeID, path, data); err != nil {
+	switch {
+	case err == nil:
+		if !force && diff3.HasMarkers(data) {
+			return fmt.Errorf(
+				"worktree.Resolve: %q still contains conflict markers (<<<<<<< / ======= / >>>>>>>) — edit them out and re-run, or pass --force if the content is intentional",
+				path)
+		}
+		if err := r.eng.ResolveConflict(entry.ChangeID, path, data); err != nil {
+			return fmt.Errorf("worktree.Resolve: %w", err)
+		}
+	case errors.Is(err, os.ErrNotExist):
+		// The file is gone from the folder: the operator is resolving a
+		// modify/delete conflict in favour of the DELETION (#134). Sourcing the
+		// resolution from disk cannot express that, so an absent file used to
+		// dead-end here — `resolve` failed "no such file or directory" while
+		// `commit` refused to seal with the conflict open, leaving no way to
+		// land the removal short of restoring the file, resolving it, and
+		// deleting it again.
+		if err := r.eng.ResolveConflictDeleted(entry.ChangeID, path); err != nil {
+			return fmt.Errorf("worktree.Resolve: %w", err)
+		}
+	default:
 		return fmt.Errorf("worktree.Resolve: %w", err)
 	}
 	ch, err := r.eng.GetChange(entry.ChangeID)
