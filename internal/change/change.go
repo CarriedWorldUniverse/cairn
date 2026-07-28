@@ -160,7 +160,18 @@ func (e *Engine) Commit(changeID string, files map[string][]byte, modes map[stri
 	if err != nil {
 		return CommitResult{}, err
 	}
-	if merged != "" && merged != tree.String() {
+	// See Seal: re-commit when the merge changed the tree OR when the adopted
+	// parent tip is not yet an ancestor, so the merge base advances even for a
+	// tree-no-op merge.
+	needAdopt := false
+	if adoptedParent != "" {
+		anc, aerr := e.isAncestor(adoptedParent, head)
+		if aerr != nil {
+			return CommitResult{}, aerr
+		}
+		needAdopt = !anc
+	}
+	if merged != "" && (merged != tree.String() || needAdopt) {
 		// Record the adopted parent-line tip as a second parent so this is a true
 		// merge commit: the merge base advances, so a resolved conflict is not
 		// re-detected (and re-marked) on the next commit.

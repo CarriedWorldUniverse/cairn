@@ -85,7 +85,22 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	if err != nil {
 		return "", nil, err
 	}
-	if merged != "" && merged != treeSha {
+	// Re-commit when the merge changed the tree, OR when the adopted parent tip
+	// is not yet in this commit's ancestry. The second condition is what makes
+	// the merge base actually advance: a merge that happens to be a tree no-op
+	// (the change already carried the parent's content) still merged, and
+	// recording it is what stops the NEXT merge running against a stale
+	// ancestor. Without it a later deletion is diffed against a base predating
+	// the parent's change and resurrects as a false modify/delete conflict.
+	needAdopt := false
+	if adoptedParent != "" {
+		anc, aerr := e.isAncestor(adoptedParent, sealed)
+		if aerr != nil {
+			return "", nil, aerr
+		}
+		needAdopt = !anc
+	}
+	if merged != "" && (merged != treeSha || needAdopt) {
 		// Record the adopted parent-line tip as a second parent so this is a true
 		// merge commit: the merge base advances, so a resolved conflict is not
 		// re-detected (and re-marked) on the next seal.

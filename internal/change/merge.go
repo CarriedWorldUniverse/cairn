@@ -42,13 +42,23 @@ func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree, adop
 	if err != nil {
 		return "", "", nil, err
 	}
+	// Adopt the parent's SEALED tip, not its raw TipCommit. The parent's expressed
+	// folder keeps an auto-snapshot "(working)" commit at its tip that every sync
+	// re-amends, so adopting the raw tip merged this change against a commit that
+	// churns underfoot — and made the adopted parent a moving target that could
+	// never become a stable ancestor. CreateLine already forks a child from the
+	// parent's sealedTip; this makes the merge agree with the fork.
+	parentTip, err := e.sealedTip(parent)
+	if err != nil {
+		return "", "", nil, err
+	}
 	// Parent line has no commits yet: nothing to adopt.
-	if parent.TipCommit == "" {
+	if parentTip == "" {
 		t, err := e.commitTree(snapshotCommit)
 		return t, "", nil, err
 	}
 
-	oursTree, err := e.commitTree(parent.TipCommit)
+	oursTree, err := e.commitTree(parentTip)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -56,7 +66,7 @@ func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree, adop
 	if err != nil {
 		return "", "", nil, err
 	}
-	baseCommit, err := e.mergeBase(parent.TipCommit, snapshotCommit)
+	baseCommit, err := e.mergeBase(parentTip, snapshotCommit)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -67,7 +77,7 @@ func (e *Engine) mergeForward(changeID, snapshotCommit string) (mergedTree, adop
 		}
 	}
 	merged, conflicts, err := e.mergeTrees(changeID, baseTree, oursTree, theirsTree)
-	return merged, parent.TipCommit, conflicts, err
+	return merged, parentTip, conflicts, err
 }
 
 // mergeTrees performs a per-path three-way merge of oursTree (parent line) and
