@@ -117,6 +117,24 @@ func (e *Engine) mergeTrees(changeID, baseTree, oursTree, theirsTree string) (st
 		oe, inOurs := ours[p]
 		te, inTheirs := theirs[p]
 
+		// A gitlink names a commit in another repository, so none of the three
+		// sides has bytes in this store to load or three-way merge (#140).
+		// Resolve it purely by reference: agree, take the side that moved, or
+		// record a contentless conflict for `resolve` to decide.
+		if (inOurs && oe.Mode == ModeGitlink) || (inTheirs && te.Mode == ModeGitlink) || (inBase && be.Mode == ModeGitlink) {
+			m, c, err := e.mergeGitlink(changeID, p, be, oe, te, inBase, inOurs, inTheirs)
+			if err != nil {
+				return "", nil, err
+			}
+			if m != nil {
+				merged[p] = *m
+			}
+			if c != nil {
+				conflicts = append(conflicts, *c)
+			}
+			continue
+		}
+
 		switch {
 		case inOurs && inTheirs:
 			if oe.SHA == te.SHA {
@@ -332,4 +350,60 @@ func unionKeysMeta(maps ...map[string]TreeEntry) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// mergeGitlink three-way merges one path where at least one side is a gitlink
+// (#140). It mirrors the regular rules — agree, take the side that moved,
+// propagate a deletion the other side never touched — but decides entirely on
+// (SHA, mode) references, because a gitlink's SHA is a commit in ANOTHER
+// repository and calling readBlob on it is exactly the failure this fixes.
+//
+// A genuine divergence (both sides moved the pointer, or modify-vs-delete)
+// yields a conflict built with EMPTY content rather than the usual base/ours/
+// theirs bytes: there are no bytes here to show. `resolve` still records the
+// path so the operator must settle it, and the returned entry keeps the theirs
+// side, matching the keep-content posture of the binary-conflict branch.
+//
+// A nil entry means "not present in the merged tree" (the deletion cases).
+func (e *Engine) mergeGitlink(changeID, path string, be, oe, te TreeEntry, inBase, inOurs, inTheirs bool) (*TreeEntry, *Conflict, error) {
+	conflict := func(keep TreeEntry) (*TreeEntry, *Conflict, error) {
+		c, err := e.buildConflict(changeID, path, nil, nil, nil, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &keep, &c, nil
+	}
+	same := func(a, b TreeEntry) bool { return a.SHA == b.SHA && a.Mode == b.Mode }
+
+	switch {
+	case inOurs && inTheirs:
+		switch {
+		case same(oe, te):
+			return &oe, nil, nil
+		case inBase && same(be, oe):
+			return &te, nil, nil // ours never moved; theirs' pointer wins
+		case inBase && same(be, te):
+			return &oe, nil, nil // theirs never moved; ours' pointer wins
+		default:
+			return conflict(te)
+		}
+	case inOurs && !inTheirs:
+		if !inBase {
+			return &oe, nil, nil // added on ours
+		}
+		if same(be, oe) {
+			return nil, nil, nil // untouched on ours; theirs' deletion propagates
+		}
+		return conflict(oe)
+	case !inOurs && inTheirs:
+		if !inBase {
+			return &te, nil, nil // added on theirs
+		}
+		if same(be, te) {
+			return nil, nil, nil // untouched on theirs; ours' deletion propagates
+		}
+		return conflict(te)
+	default:
+		return nil, nil, nil // base only: deleted on both sides
+	}
 }

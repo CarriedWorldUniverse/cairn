@@ -159,6 +159,23 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	return materialize(eng, cacheDir, commitSha, dir, nil)
 }
 
+// gitlinkSet returns the slash-separated paths in a tree's meta that are
+// gitlinks — the directories walkWorktree must refuse to descend, because their
+// contents belong to another repository (#140). Returns nil when there are
+// none, which is the overwhelmingly common case and costs the walk nothing.
+func gitlinkSet(meta map[string]change.TreeEntry) map[string]struct{} {
+	var out map[string]struct{}
+	for p, entry := range meta {
+		if entry.Mode == change.ModeGitlink {
+			if out == nil {
+				out = map[string]struct{}{}
+			}
+			out[p] = struct{}{}
+		}
+	}
+	return out
+}
+
 // MaterializeSynced is Materialize's fast-path variant for a folder that was
 // JUST scanned (e.g. worktree.Repo.Commit's syncBranch immediately before
 // Seal): hint is that scan's per-path stat fingerprint (mtimeNs, size, blob
@@ -271,6 +288,20 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 			// that guard — refuse to write rather than escape the branch folder.
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
+		if entry.Mode == change.ModeGitlink {
+			// A gitlink's SHA is a commit in ANOTHER repository, so there is no
+			// blob here to write (#140). git leaves an empty directory for a
+			// submodule it has not initialized; do the same. Whatever the user
+			// checked out inside is theirs — the deletion pass below skips this
+			// subtree rather than sweeping it as untracked.
+			if err := removeSymlinkComponents(dir, full); err != nil {
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
+			if err := os.MkdirAll(full, 0o755); err != nil {
+				return fmt.Errorf("worktree.Materialize: %w", err)
+			}
+			continue
+		}
 		if entry.Mode == change.ModeSymlink {
 			if symlinkUpToDateBySHA(full, entry.SHA) {
 				continue
@@ -337,7 +368,7 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	// to any caller (unlike Scan/CachedScan, #130), so the tracker here is a
 	// throwaway — it still gets warnf's per-walk cap for free.
 	delSkip := &skipTracker{}
-	if werr := walkWorktree(dir, target, delSkip, func(slashRel, path string, d fs.DirEntry) error {
+	if werr := walkWorktree(dir, target, gitlinkSet(meta), delSkip, func(slashRel, path string, d fs.DirEntry) error {
 		if _, ok := target[slashRel]; ok {
 			return nil
 		}
@@ -382,7 +413,7 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	}
 	// 3. Prune directories the deletion emptied (best-effort; a still-held or
 	//    non-empty dir is simply left).
-	pruneEmptyDirs(dir, target)
+	pruneEmptyDirs(dir, gitlinkSet(meta))
 	return nil
 }
 
@@ -458,11 +489,16 @@ func placeFile(cacheBlob, full string, exec bool) error {
 }
 
 // pruneEmptyDirs removes directories the deletion pass emptied, deepest-first.
-// It never removes dir itself, and skips .git/.cairn and any directory that still
-// contains a target path (so it won't disturb ignored subtrees like .vs/, which
-// hold no target path but are also never walked into). Best-effort: a removal
-// that fails (non-empty, or held open) is silently left.
-func pruneEmptyDirs(dir string, target map[string]struct{}) {
+// It never removes dir itself, and skips .git/.cairn (so it won't disturb
+// ignored subtrees like .vs/, which are also never walked into). Best-effort: a
+// removal that fails (non-empty, or held open) is silently left.
+//
+// gitlinks are the tree's gitlink paths, which must be EXEMPT (#140): an
+// uninitialized submodule is a legitimately empty directory the target tree
+// names, so pruning it would undo the work materialize just did — and the walk
+// must not descend into an initialized one, whose empty directories belong to
+// the other repository.
+func pruneEmptyDirs(dir string, gitlinks map[string]struct{}) {
 	var dirs []string
 	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -472,6 +508,11 @@ func pruneEmptyDirs(dir string, target map[string]struct{}) {
 			name := d.Name()
 			if path != dir && (name == ".git" || name == ".cairn") {
 				return filepath.SkipDir
+			}
+			if rel, relErr := filepath.Rel(dir, path); relErr == nil {
+				if _, isGitlink := gitlinks[filepath.ToSlash(rel)]; isGitlink {
+					return filepath.SkipDir
+				}
 			}
 			if path != dir {
 				dirs = append(dirs, path)
@@ -588,11 +629,11 @@ func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
 // third result so a caller can surface it structurally (not stderr-only,
 // e.g. `cairn commit`/`cairn status`); a TRACKED path's unreadable content
 // remains a hard error.
-func Scan(dir string, tracked map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, []string, error) {
+func Scan(dir string, tracked map[string]struct{}, gitlinks map[string]struct{}) (map[string][]byte, map[string]change.EntryMode, []string, error) {
 	out := map[string][]byte{}
 	modes := map[string]change.EntryMode{}
 	skip := &skipTracker{}
-	err := walkWorktree(dir, tracked, skip, func(slashRel, path string, d fs.DirEntry) error {
+	err := walkWorktree(dir, tracked, gitlinks, skip, func(slashRel, path string, d fs.DirEntry) error {
 		// Symlink: store its target string, mark ModeSymlink, never follow it.
 		// (A symlink is not a dir, so WalkDir won't descend it — no loop risk.)
 		if d.Type()&os.ModeSymlink != 0 {
@@ -659,7 +700,7 @@ type ignoreFrame struct {
 // unreadableErr calls (both file- and directory-level skips share one
 // per-walk warnf cap); a nil skip is valid and just skips silently sans
 // tracking/cap (see skipTracker).
-func walkWorktree(dir string, tracked map[string]struct{}, skip *skipTracker, fn func(slashRel, path string, d fs.DirEntry) error) error {
+func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]struct{}, skip *skipTracker, fn func(slashRel, path string, d fs.DirEntry) error) error {
 	rootPatterns, err := loadDirPatterns(dir, nil)
 	if err != nil {
 		return err
@@ -709,6 +750,14 @@ func walkWorktree(dir string, tracked map[string]struct{}, skip *skipTracker, fn
 		if d.IsDir() {
 			name := d.Name()
 			if name == ".git" || name == ".cairn" {
+				return filepath.SkipDir
+			}
+			if _, isGitlink := gitlinks[slashRel]; isGitlink {
+				// A gitlink is a nested checkout belonging to ANOTHER repository
+				// (#140). Whatever lives inside is not cairn's to track: never
+				// scan it into this tree (which would collide with the gitlink
+				// entry itself at seal), and never sweep it as an untracked
+				// stray during the materialize deletion pass.
 				return filepath.SkipDir
 			}
 			for _, part := range parts {

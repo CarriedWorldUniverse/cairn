@@ -494,12 +494,18 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
 	// paths, so a committed-then-ignored file is never dropped from the scan.
 	var tracked map[string]struct{}
+	// Gitlinks in the tip: their directories are skipped by the scan, and their
+	// entries are carried into the snapshot below (#140).
+	var gitlinks map[string]struct{}
+	var committed map[string]change.TreeEntry
 	if line.TipCommit != "" {
-		committed, ferr := r.eng.FilesMeta(line.TipCommit)
+		var ferr error
+		committed, ferr = r.eng.FilesMeta(line.TipCommit)
 		if ferr != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", ferr)
 		}
 		tracked = trackedSetMeta(committed)
+		gitlinks = gitlinkSet(committed)
 	}
 	// A folder deleted out from under cairn (#133) must not be scanned: the walk
 	// would yield nothing and the snapshot would seal a phantom deletion of every
@@ -519,9 +525,21 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, cache, scanStartNs)
+	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, gitlinks, cache, scanStartNs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
+	}
+	// Carry gitlinks forward from the tip. A gitlink is a directory on disk with
+	// no content of its own, so the walk yields nothing for it — without this the
+	// snapshot would omit the entry and the next seal would silently DELETE the
+	// submodule from the tree (#140). cairn has no way to author a gitlink, so
+	// the tip's entry is by definition the current one; the consequence is that
+	// removing a submodule is not expressible through cairn, which is the safe
+	// side of the trade.
+	for p, ent := range committed {
+		if ent.Mode == change.ModeGitlink {
+			entries[p] = ent
+		}
 	}
 	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)

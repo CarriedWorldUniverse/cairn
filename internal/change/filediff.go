@@ -161,6 +161,20 @@ func (e *Engine) diffTreesMeta(old, new map[string]TreeEntry, oldLabel, newLabel
 	for _, p := range paths {
 		oe, inOld := old[p]
 		ne, inNew := new[p]
+		// A gitlink has no blob in this store to read or diff (#140). Report the
+		// pointer change as a binary-style entry — status only, no hunks — which
+		// is what git shows for a submodule too.
+		if (inOld && oe.Mode == ModeGitlink) || (inNew && ne.Mode == ModeGitlink) {
+			switch {
+			case inNew && !inOld:
+				out = append(out, FileDiff{Path: p, Status: Added, Binary: true})
+			case inOld && !inNew:
+				out = append(out, FileDiff{Path: p, Status: Deleted, Binary: true})
+			case oe.SHA != ne.SHA || oe.Mode != ne.Mode:
+				out = append(out, FileDiff{Path: p, Status: Modified, Binary: true})
+			}
+			continue
+		}
 		switch {
 		case inNew && !inOld:
 			nv, err := e.readBlob(ne.SHA)

@@ -204,6 +204,14 @@ A path-like branch name expresses as a single **flat** folder — `/` becomes `-
 unchanged (`tree`/`log`/`push` use `base/5-0`). If two branches would map to the same
 folder (e.g. `feat/x` and a literal `feat-x`), express refuses rather than clobber.
 
+**Gitlinks (submodules).** A tree entry recording a nested checkout (git mode `160000`,
+whether or not the repo has a `.gitmodules`) expresses as an **empty directory** — the same
+thing git does for a submodule it has not initialised. cairn does not fetch, populate, or
+update the nested repository: fill it yourself (`git submodule update`, or your own clone)
+and cairn leaves that subtree alone — it is neither scanned into your commits nor swept as
+untracked clutter. The pointer is carried forward unchanged by every commit, so **removing a
+submodule is not expressible through cairn**; do that in a git client.
+
 #### `cairn reparent <branch> <new-parent>`
 Set a line's parent. Cloning from a **git** remote flat-projects every branch as a child
 of the root (git records no branch parentage), so a *stacked* branch — `base/5-0` forked

@@ -191,6 +191,8 @@ func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, err
 			m = filemode.Executable
 		case ModeSymlink:
 			m = filemode.Symlink
+		case ModeGitlink:
+			m = filemode.Submodule
 		}
 		treeEntries = append(treeEntries, object.TreeEntry{Name: name, Mode: m, Hash: plumbing.NewHash(entry.SHA)})
 	}
@@ -277,6 +279,13 @@ func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEnt
 			mode = ModeExecutable
 		case filemode.Symlink:
 			mode = ModeSymlink
+		case filemode.Submodule:
+			// Gitlink: keep the entry, but mark it so no content path ever
+			// treats its commit SHA as a blob in this store (#140). Before
+			// this case existed it fell through to ModeRegular and the first
+			// materialize died on readBlob, taking every later command with
+			// it because materialize runs on all of them.
+			mode = ModeGitlink
 		}
 		out[path] = TreeEntry{SHA: ent.Hash.String(), Mode: mode}
 	}
