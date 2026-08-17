@@ -1,6 +1,7 @@
 package change
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -223,5 +224,116 @@ func TestDiffGitlinkReportsWithoutReadingContent(t *testing.T) {
 	}
 	if len(same) != 0 {
 		t.Errorf("unchanged gitlink produced %d diffs: %+v", len(same), same)
+	}
+}
+
+// TestResolveConflictPreservesGitlink is the second-order bug an adversarial
+// review of the #140 fix surfaced: resolving an UNRELATED conflict used to delete
+// the submodule from the tree. resolveConflict rebuilt the tip through the CONTENT
+// path (readTree → writeTree), and go-git's tree.Files() skips
+// filemode.Submodule, so the gitlink silently vanished from the rebuilt tree.
+// Rebuilding by reference (FilesMeta → writeTreeRefs) preserves it.
+func TestResolveConflictPreservesGitlink(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	seedLineTip(t, e, main.ID, map[string][]byte{"f.txt": []byte("base\n")})
+	exp, _ := e.CreateLine("exp", main.ID)
+
+	// main advances f.txt; exp edits the same region -> a conflict on f.txt.
+	mc, _ := e.CreateChange(main.ID, "m")
+	if _, err := e.Commit(mc.ID, map[string][]byte{"f.txt": []byte("X\n")}, nil, ""); err != nil {
+		t.Fatalf("main commit: %v", err)
+	}
+	ec, _ := e.CreateChange(exp.ID, "e")
+	r, err := e.Commit(ec.ID, map[string][]byte{"f.txt": []byte("Y\n")}, nil, "")
+	if err != nil {
+		t.Fatalf("exp commit: %v", err)
+	}
+	if len(r.Conflicts) == 0 {
+		t.Fatal("setup: expected a conflict on f.txt")
+	}
+
+	// The change's tree gains a gitlink, as a pull from a repo containing one does.
+	ch, _ := e.GetChange(ec.ID)
+	meta, err := e.FilesMeta(ch.HeadCommit)
+	if err != nil {
+		t.Fatalf("FilesMeta: %v", err)
+	}
+	meta["vendor/nested"] = TreeEntry{SHA: gitlinkSHA, Mode: ModeGitlink}
+	if _, _, err := e.SnapshotWorking(ec.ID, meta); err != nil {
+		t.Fatalf("SnapshotWorking: %v", err)
+	}
+
+	// Resolve the conflict on f.txt — nothing to do with the submodule.
+	if err := e.ResolveConflict(ec.ID, "f.txt", []byte("resolved\n")); err != nil {
+		t.Fatalf("ResolveConflict: %v", err)
+	}
+
+	after, _ := e.GetChange(ec.ID)
+	post, err := e.FilesMeta(after.HeadCommit)
+	if err != nil {
+		t.Fatalf("FilesMeta after resolve: %v", err)
+	}
+	ent, ok := post["vendor/nested"]
+	if !ok {
+		t.Fatal("resolving an unrelated conflict DELETED the gitlink from the tree")
+	}
+	if ent.Mode != ModeGitlink || ent.SHA != gitlinkSHA {
+		t.Errorf("gitlink corrupted by resolve: %+v", ent)
+	}
+	// The resolution itself must still have landed.
+	files, err := e.Files(after.HeadCommit)
+	if err != nil {
+		t.Fatalf("Files: %v", err)
+	}
+	if string(files["f.txt"]) != "resolved\n" {
+		t.Errorf("f.txt = %q, want the resolved content", files["f.txt"])
+	}
+}
+
+// TestFileModesReportsGitlink pins the mode reader that fed the bug above: it
+// walked tree.Files(), which drops submodule entries, so a gitlink read back as
+// an absent (i.e. regular) mode.
+func TestFileModesReportsGitlink(t *testing.T) {
+	e := newTestEngine(t)
+	main, _ := e.LineByName("main")
+	ch, _ := e.CreateChange(main.ID, "t")
+	blob, err := e.writeBlob([]byte("a\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, head, err := e.SnapshotWorking(ch.ID, map[string]TreeEntry{
+		"a.txt":         {SHA: blob.String(), Mode: ModeRegular},
+		"vendor/nested": {SHA: gitlinkSHA, Mode: ModeGitlink},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	modes, err := e.FileModes(head)
+	if err != nil {
+		t.Fatalf("FileModes: %v", err)
+	}
+	if modes["vendor/nested"] != ModeGitlink {
+		t.Errorf("FileModes reports %v for the gitlink, want ModeGitlink", modes["vendor/nested"])
+	}
+	if _, ok := modes["a.txt"]; ok {
+		t.Errorf("a regular file must stay absent from the sparse mode map: %v", modes)
+	}
+}
+
+// TestBuildTreeRejectsGitlink pins the loud failure on the content path: it
+// writes blobs from bytes, so it cannot represent a gitlink and must say so
+// instead of silently emitting a regular file (the original #140 corruption).
+func TestBuildTreeRejectsGitlink(t *testing.T) {
+	e := newTestEngine(t)
+	_, err := e.writeTree(
+		map[string][]byte{"vendor/nested": []byte("")},
+		map[string]EntryMode{"vendor/nested": ModeGitlink},
+	)
+	if err == nil {
+		t.Fatal("writeTree accepted a gitlink mode on the content path")
+	}
+	if !strings.Contains(err.Error(), "gitlink") {
+		t.Errorf("error does not name the cause: %v", err)
 	}
 }

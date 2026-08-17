@@ -198,3 +198,211 @@ func TestSealPreservesGitlink(t *testing.T) {
 		t.Error("b.txt missing: the ordinary part of the commit did not land")
 	}
 }
+
+// TestMaterializeFileToGitlinkTransition covers a path that is a regular FILE in
+// one tree and a gitlink in the next — upstream replacing a vendored file with a
+// nested checkout. MkdirAll fails with "not a directory" over an existing file,
+// which would have reproduced #140's wedge by another route.
+func TestMaterializeFileToGitlinkTransition(t *testing.T) {
+	eng, err := change.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = eng.Close() })
+	main, _ := eng.LineByName("main")
+	ch, _ := eng.CreateChange(main.ID, "t")
+
+	blob, err := eng.WriteBlob([]byte("i am a file\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, asFile, err := eng.SnapshotWorking(ch.ID, map[string]change.TreeEntry{
+		"vendor/nested": {SHA: blob, Mode: change.ModeRegular},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, asGitlink, err := eng.SnapshotWorking(ch.ID, map[string]change.TreeEntry{
+		"vendor/nested": {SHA: gitlinkSHA, Mode: change.ModeGitlink},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cacheDir := filepath.Join(t.TempDir(), "cache")
+	dir := filepath.Join(t.TempDir(), "wc")
+	if err := Materialize(eng, cacheDir, asFile, dir); err != nil {
+		t.Fatalf("Materialize the file tree: %v", err)
+	}
+	if err := Materialize(eng, cacheDir, asGitlink, dir); err != nil {
+		t.Fatalf("Materialize file→gitlink: %v", err)
+	}
+	fi, err := os.Stat(filepath.Join(dir, "vendor", "nested"))
+	if err != nil || !fi.IsDir() {
+		t.Fatalf("path is not a directory after the transition: %v", err)
+	}
+}
+
+// TestMaterializeSymlinkToGitlinkTransition is the more dangerous mirror: MkdirAll
+// FOLLOWS an existing symlink, so it succeeds silently and leaves disk disagreeing
+// with the tree — with the "submodule" resolving outside the branch folder, the
+// #126 write-through shape. The stale link must be replaced by a real directory.
+func TestMaterializeSymlinkToGitlinkTransition(t *testing.T) {
+	skipOnWindows(t)
+
+	eng, err := change.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = eng.Close() })
+	main, _ := eng.LineByName("main")
+	ch, _ := eng.CreateChange(main.ID, "t")
+
+	outside := t.TempDir() // deliberately outside the branch folder
+	link, err := eng.WriteBlob([]byte(outside))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, asSymlink, err := eng.SnapshotWorking(ch.ID, map[string]change.TreeEntry{
+		"vendor/nested": {SHA: link, Mode: change.ModeSymlink},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, asGitlink, err := eng.SnapshotWorking(ch.ID, map[string]change.TreeEntry{
+		"vendor/nested": {SHA: gitlinkSHA, Mode: change.ModeGitlink},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cacheDir := filepath.Join(t.TempDir(), "cache")
+	dir := filepath.Join(t.TempDir(), "wc")
+	if err := Materialize(eng, cacheDir, asSymlink, dir); err != nil {
+		t.Fatalf("Materialize the symlink tree: %v", err)
+	}
+	if err := Materialize(eng, cacheDir, asGitlink, dir); err != nil {
+		t.Fatalf("Materialize symlink→gitlink: %v", err)
+	}
+	fi, err := os.Lstat(filepath.Join(dir, "vendor", "nested"))
+	if err != nil {
+		t.Fatalf("Lstat: %v", err)
+	}
+	if fi.Mode()&os.ModeSymlink != 0 {
+		t.Fatalf("the path is still a symlink to %s; the tree says gitlink", outside)
+	}
+	if !fi.IsDir() {
+		t.Fatalf("the path is not a directory: mode %v", fi.Mode())
+	}
+}
+
+// TestResolveConflictedGitlink covers the dead-end an adversarial review of the
+// #140 fix found. Recording a conflict for a divergent gitlink pointer promised a
+// resolution path that did not exist: `resolve` sources the settled bytes from the
+// file on disk, but the path is a DIRECTORY, so ReadFile failed with "is a
+// directory" — while `commit` refused to seal while the conflict stayed open. The
+// line wedged exactly as #134's modify/delete conflict did.
+func TestResolveConflictedGitlink(t *testing.T) {
+	skipOnWindows(t)
+
+	const pointerA = "1111111111111111111111111111111111111111"
+	const pointerB = "2222222222222222222222222222222222222222"
+
+	r, _, dir := expressedWithCommit(t, "work")
+
+	snapshot := func(branch, sha string) {
+		t.Helper()
+		line, err := r.eng.LineByName(branch)
+		if err != nil {
+			t.Fatalf("LineByName(%s): %v", branch, err)
+		}
+		open, err := r.eng.OpenChangeForLine(line.ID)
+		if err != nil {
+			t.Fatalf("OpenChangeForLine(%s): %v", branch, err)
+		}
+		meta := map[string]change.TreeEntry{}
+		if line.TipCommit != "" {
+			meta, err = r.eng.FilesMeta(line.TipCommit)
+			if err != nil {
+				t.Fatalf("FilesMeta(%s): %v", branch, err)
+			}
+		}
+		meta["vendor/nested"] = change.TreeEntry{SHA: sha, Mode: change.ModeGitlink}
+		if _, _, err := r.eng.SnapshotWorking(open.ID, meta); err != nil {
+			t.Fatalf("SnapshotWorking(%s): %v", branch, err)
+		}
+	}
+
+	sealMain := func(msg string) {
+		t.Helper()
+		line, err := r.eng.LineByName("main")
+		if err != nil {
+			t.Fatalf("LineByName(main): %v", err)
+		}
+		open, err := r.eng.OpenChangeForLine(line.ID)
+		if err != nil {
+			t.Fatalf("OpenChangeForLine(main): %v", err)
+		}
+		if _, _, err := r.eng.Seal(open.ID, msg); err != nil {
+			t.Fatalf("Seal(main): %v", err)
+		}
+	}
+
+	// A shared base pointer on both sides, then each side moves it differently.
+	snapshot("main", gitlinkSHA)
+	sealMain("base pointer")
+	snapshot("work", gitlinkSHA)
+	if _, err := r.Commit("work", "adopt the submodule"); err != nil {
+		t.Fatalf("Commit (adopt): %v", err)
+	}
+	// main's move must be SEALED to become "ours" in the reconcile: mergeForward
+	// adopts the parent's sealedTip, not its churning (working) commit.
+	snapshot("main", pointerA)
+	sealMain("bump on main")
+	snapshot("work", pointerB)
+	if err := os.MkdirAll(filepath.Join(dir, "vendor", "nested"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := r.Commit("work", "bump the submodule")
+	if err != nil {
+		t.Fatalf("Commit (bump): %v", err)
+	}
+	if len(res.Conflicts) == 0 {
+		t.Fatal("no conflict recorded for a pointer both sides moved differently")
+	}
+
+	// The wedge: this used to fail with "is a directory".
+	if err := r.Resolve("work", "vendor/nested", false); err != nil {
+		t.Fatalf("Resolve a conflicted gitlink: %v", err)
+	}
+	line, _ := r.eng.LineByName("work")
+	open, _ := r.eng.OpenChangeForLine(line.ID)
+	still, err := r.eng.Conflicts(open.ID)
+	if err != nil {
+		t.Fatalf("Conflicts: %v", err)
+	}
+	for _, c := range still {
+		if c.Path == "vendor/nested" && c.Status == "open" {
+			t.Fatal("the gitlink conflict is still open after resolve")
+		}
+	}
+	// The entry must survive the resolution as a gitlink.
+	ch, _ := r.eng.GetChange(open.ID)
+	meta, err := r.eng.FilesMeta(ch.HeadCommit)
+	if err != nil {
+		t.Fatalf("FilesMeta: %v", err)
+	}
+	ent, ok := meta["vendor/nested"]
+	if !ok {
+		t.Fatal("resolve dropped the gitlink from the tree")
+	}
+	if ent.Mode != change.ModeGitlink {
+		t.Errorf("resolve turned the gitlink into mode %v", ent.Mode)
+	}
+	// And the folder must still hold a directory there, not a file.
+	fi, err := os.Lstat(filepath.Join(dir, "vendor", "nested"))
+	if err != nil || !fi.IsDir() {
+		t.Fatalf("gitlink path is not a directory after resolve: %v", err)
+	}
+}

@@ -297,6 +297,19 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 			if err := removeSymlinkComponents(dir, full); err != nil {
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
+			// A NON-DIRECTORY occupying the path must go first: a previous tree
+			// may have had a regular file or a symlink here (upstream replaced a
+			// vendored file with a nested checkout). MkdirAll would fail outright
+			// on a file — reproducing the very wedge this fixes — and on a
+			// symlink it would silently SUCCEED by following the link, leaving
+			// disk disagreeing with the tree and pointing outside the branch
+			// folder (the #126 write-through shape). An existing DIRECTORY is
+			// left alone: it may be the operator's populated submodule.
+			if fi, lerr := os.Lstat(full); lerr == nil && !fi.IsDir() {
+				if rerr := winretry.Do(func() error { return os.Remove(full) }); rerr != nil {
+					return fmt.Errorf("worktree.Materialize: %w", rerr)
+				}
+			}
 			if err := os.MkdirAll(full, 0o755); err != nil {
 				return fmt.Errorf("worktree.Materialize: %w", err)
 			}
