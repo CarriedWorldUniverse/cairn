@@ -139,7 +139,7 @@ func (e *Engine) ReassignConflicts(fromChangeID, toChangeID string) error {
 // non-existent open conflict (or unknown change) returns ErrNotFound with no
 // head advance.
 func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
-	return e.resolveConflict(changeID, path, resolved, false)
+	return e.resolveConflict(changeID, path, resolved, resolveContent)
 }
 
 // ResolveConflictDeleted resolves an open conflict the other way: the path is
@@ -150,13 +150,34 @@ func (e *Engine) ResolveConflict(changeID, path string, resolved []byte) error {
 // disk, so a deleted file could never supply one, while `commit` refused to
 // seal while the conflict stayed open.
 func (e *Engine) ResolveConflictDeleted(changeID, path string) error {
-	return e.resolveConflict(changeID, path, nil, true)
+	return e.resolveConflict(changeID, path, nil, resolveDeleted)
 }
 
-// resolveConflict is the shared body of ResolveConflict / ResolveConflictDeleted:
-// deleted selects whether path is written with resolved content or removed from
-// the new tree.
-func (e *Engine) resolveConflict(changeID, path string, resolved []byte, deleted bool) error {
+// ResolveConflictKeepEntry resolves an open conflict by KEEPING whatever tree
+// entry the merge already placed at path, supplying no content of its own. It
+// exists for a conflicted gitlink (#140): the entry is a commit id in another
+// repository, so `resolve`'s ordinary contract — read the settled bytes back
+// from the file on disk — cannot express the choice (the path is a directory,
+// and reading it fails). Without this the line wedged exactly as #134's
+// modify/delete conflict did: `resolve` could not source a resolution and
+// `commit` refused to seal while the conflict stayed open.
+func (e *Engine) ResolveConflictKeepEntry(changeID, path string) error {
+	return e.resolveConflict(changeID, path, nil, resolveKeepEntry)
+}
+
+// resolveMode selects what resolveConflict does to the path in the rebuilt tree.
+type resolveMode int
+
+const (
+	resolveContent   resolveMode = iota // write the supplied bytes as a regular file
+	resolveDeleted                      // drop the path from the tree (#134)
+	resolveKeepEntry                    // leave the merge's entry untouched (#140)
+)
+
+// resolveConflict is the shared body of the ResolveConflict* wrappers; mode
+// selects whether path is written with resolved content, removed from the new
+// tree, or left exactly as the merge placed it.
+func (e *Engine) resolveConflict(changeID, path string, resolved []byte, mode resolveMode) error {
 	ch, err := e.GetChange(changeID)
 	if err != nil {
 		return err
@@ -194,28 +215,34 @@ func (e *Engine) resolveConflict(changeID, path string, resolved []byte, deleted
 	// writes are content-addressed and idempotent, so they are safe to do
 	// mid-transaction (they are not DB ops); doing them after the existence
 	// check means no dangling objects on the ErrNotFound path above.
-	tree, err := e.commitTree(ch.HeadCommit)
+	// Rebuild the tree BY REFERENCE (FilesMeta + writeTreeRefs), not by reading
+	// every blob back out (readTree + writeTree). Reference-first is what keeps
+	// every OTHER path's identity intact — exec bit, symlink, and gitlink alike —
+	// and it loads no content for paths this resolution does not touch.
+	//
+	// The content path could not carry a gitlink at all: go-git's tree.Files()
+	// skips filemode.Submodule (plumbing/object/file.go), so a rebuild through it
+	// silently DROPPED the entry, meaning resolving any unrelated conflict
+	// deleted the submodule from the tree (#140).
+	meta, err := e.FilesMeta(ch.HeadCommit)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
-	files, err := e.readTree(tree)
-	if err != nil {
-		return fmt.Errorf("change.ResolveConflict: %w", err)
+	switch mode {
+	case resolveDeleted:
+		delete(meta, path)
+	case resolveKeepEntry:
+		// Leave meta[path] exactly as the merge placed it.
+	default:
+		blob, berr := e.writeBlob(resolved)
+		if berr != nil {
+			return fmt.Errorf("change.ResolveConflict: %w", berr)
+		}
+		// The resolved path carries user-merged regular bytes now, so any prior
+		// non-regular mode for it is dropped.
+		meta[path] = TreeEntry{SHA: blob.String(), Mode: ModeRegular}
 	}
-	// Preserve exec/symlink on every OTHER file in the head tree. The resolved
-	// path gets user-merged regular bytes, so it must be regular now — drop any
-	// prior non-regular mode for it.
-	modes, err := e.FileModes(ch.HeadCommit)
-	if err != nil {
-		return fmt.Errorf("change.ResolveConflict: %w", err)
-	}
-	delete(modes, path)
-	if deleted {
-		delete(files, path)
-	} else {
-		files[path] = resolved
-	}
-	newTree, err := e.writeTree(files, modes)
+	newTree, err := e.writeTreeRefs(meta)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}

@@ -82,7 +82,7 @@ func TestIgnoreDoesNotDropTrackedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	tracked := trackedSet(committed)
-	scanned, _, _, err := Scan(dir, tracked)
+	scanned, _, _, err := Scan(dir, tracked, nil)
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}

@@ -191,6 +191,8 @@ func (e *Engine) writeTreeRefs(entries map[string]TreeEntry) (plumbing.Hash, err
 			m = filemode.Executable
 		case ModeSymlink:
 			m = filemode.Symlink
+		case ModeGitlink:
+			m = filemode.Submodule
 		}
 		treeEntries = append(treeEntries, object.TreeEntry{Name: name, Mode: m, Hash: plumbing.NewHash(entry.SHA)})
 	}
@@ -277,6 +279,13 @@ func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEnt
 			mode = ModeExecutable
 		case filemode.Symlink:
 			mode = ModeSymlink
+		case filemode.Submodule:
+			// Gitlink: keep the entry, but mark it so no content path ever
+			// treats its commit SHA as a blob in this store (#140). Before
+			// this case existed it fell through to ModeRegular and the first
+			// materialize died on readBlob, taking every later command with
+			// it because materialize runs on all of them.
+			mode = ModeGitlink
 		}
 		out[path] = TreeEntry{SHA: ent.Hash.String(), Mode: mode}
 	}
@@ -377,6 +386,15 @@ func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) 
 			m = filemode.Executable
 		case ModeSymlink:
 			m = filemode.Symlink
+		case ModeGitlink:
+			// This is the CONTENT path: it writes a blob from the supplied
+			// bytes. A gitlink has no content — its SHA is a commit in another
+			// repository — so there is nothing correct to write here. Fail loud
+			// rather than silently emitting a regular file, which is how a
+			// gitlink got lost before (#140); rebuild such a tree by reference
+			// with writeTreeRefs instead.
+			return plumbing.ZeroHash, fmt.Errorf(
+				"change.buildTree: %q is a gitlink; rebuild the tree by reference (writeTreeRefs), not by content", name)
 		}
 		entries = append(entries, object.TreeEntry{Name: name, Mode: m, Hash: h})
 	}

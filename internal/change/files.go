@@ -2,10 +2,6 @@ package change
 
 import (
 	"fmt"
-
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/filemode"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // Files returns the path->bytes file map of the tree at the given commit sha.
@@ -51,42 +47,26 @@ func (e *Engine) FileModes(commitSha string) (map[string]EntryMode, error) {
 	return modes, nil
 }
 
-// fileModesFromTree returns the non-regular modes (executable/symlink) per path
-// for a TREE (not a commit). Regular files are omitted (absent ⇒ regular). It is
-// the shared mode-reader behind both FileModes (commit→tree) and the merge path,
-// which works in tree shas.
+// fileModesFromTree returns the non-regular modes (executable/symlink/gitlink)
+// per path for a TREE (not a commit). Regular files are omitted (absent ⇒
+// regular). It is the shared mode-reader behind both FileModes (commit→tree) and
+// the merge path, which works in tree shas.
+//
+// It reads through readTreeRefs rather than go-git's tree.Files(), which skips
+// filemode.Submodule entirely (plumbing/object/file.go) and so reported a
+// gitlink as an absent — i.e. regular — mode (#140). readTreeRefs also carries
+// the per-level duplicate-name guard (#126, item B) that tree.Files() lacks, so
+// this is one metadata-only walk instead of a validation walk plus a lossy one.
 func (e *Engine) fileModesFromTree(treeHash string) (map[string]EntryMode, error) {
-	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
+	entries, err := e.readTreeRefs(treeHash)
 	if err != nil {
-		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
-	}
-	// See readTree's identical guard (#126, item B): tree.Files() below has no
-	// duplicate-name protection of its own. readTreeRefs shares the same tree
-	// object and does no blob-content reads, so validating via it first here
-	// (result discarded) is a metadata-only cost.
-	if _, err := e.readTreeRefs(treeHash); err != nil {
 		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
 	}
 	out := map[string]EntryMode{}
-	err = tree.Files().ForEach(func(f *object.File) error {
-		// Mirror readTree's validation (#126): this is the one remaining
-		// tree.Files() walk without it. Not currently reachable to disk (its
-		// output only feeds mode lookups, never a materialize path), but
-		// leaving it unchecked is an asymmetry a future caller could trip
-		// over — close it here too.
-		if err := validTreePath(f.Name); err != nil {
-			return fmt.Errorf("change.fileModesFromTree: %w", err)
+	for path, entry := range entries {
+		if entry.Mode != ModeRegular {
+			out[path] = entry.Mode
 		}
-		switch f.Mode {
-		case filemode.Executable:
-			out[f.Name] = ModeExecutable
-		case filemode.Symlink:
-			out[f.Name] = ModeSymlink
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("change.fileModesFromTree: %w", err)
 	}
 	return out, nil
 }

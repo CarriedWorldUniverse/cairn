@@ -62,7 +62,7 @@ func TestScanWarningSanitizesErrorText(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
-	if _, _, _, err := Scan(dir, nil); err != nil {
+	if _, _, _, err := Scan(dir, nil, nil); err != nil {
 		t.Fatalf("Scan: unexpected error: %v", err)
 	}
 	if len(*warnings) == 0 {
@@ -94,7 +94,7 @@ func TestScanSkipsUnreadableUntrackedFile(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
-	out, _, skipped, err := Scan(dir, nil)
+	out, _, skipped, err := Scan(dir, nil, nil)
 	if err != nil {
 		t.Fatalf("Scan: unexpected error for unreadable untracked file: %v", err)
 	}
@@ -128,7 +128,7 @@ func TestScanErrorsOnUnreadableTrackedFile(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
 	tracked := map[string]struct{}{"locked.txt": {}}
-	if _, _, _, err := Scan(dir, tracked); err == nil {
+	if _, _, _, err := Scan(dir, tracked, nil); err == nil {
 		t.Fatalf("expected Scan to error on an unreadable TRACKED file, got nil")
 	}
 }
@@ -162,7 +162,7 @@ func TestScanSkipsUnreadableUntrackedSubdir(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(sub, 0o755) })
 
-	out, _, skipped, err := Scan(dir, nil)
+	out, _, skipped, err := Scan(dir, nil, nil)
 	if err != nil {
 		t.Fatalf("Scan: unexpected error for unreadable untracked subdir: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestCachedScanSkipsUnreadableUntrackedFile(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, cache, _, skipped, err := CachedScan(eng, dir, nil, nil, start)
+	entries, cache, _, skipped, err := CachedScan(eng, dir, nil, nil, nil, start)
 	if err != nil {
 		t.Fatalf("CachedScan: unexpected error for unreadable untracked file: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestCachedScanErrorsOnUnreadableTrackedFile(t *testing.T) {
 
 	tracked := map[string]struct{}{"locked.txt": {}}
 	start := time.Now().UnixNano() + int64(time.Second)
-	_, _, _, _, err := CachedScan(eng, dir, tracked, nil, start)
+	_, _, _, _, err := CachedScan(eng, dir, tracked, nil, nil, start)
 	if err == nil {
 		t.Fatalf("expected CachedScan to error on an unreadable TRACKED file, got nil")
 	}
@@ -275,7 +275,7 @@ func TestScanErrorsOnTrackedFileUnderUnreadableDir(t *testing.T) {
 	// (the untracked treatment) would silently drop a committed file from the
 	// snapshot, so this must be a hard error instead.
 	tracked := map[string]struct{}{"locked-dir/inside.txt": {}}
-	if _, _, _, err := Scan(dir, tracked); err == nil {
+	if _, _, _, err := Scan(dir, tracked, nil); err == nil {
 		t.Fatalf("expected Scan to error when a tracked path lives under an unreadable directory, got nil")
 	}
 }
@@ -309,7 +309,7 @@ func TestScanCapsIndividualWarningsAndSummarizes(t *testing.T) {
 		want = append(want, name)
 	}
 
-	_, _, skipped, err := Scan(dir, nil)
+	_, _, skipped, err := Scan(dir, nil, nil)
 	if err != nil {
 		t.Fatalf("Scan: unexpected error: %v", err)
 	}

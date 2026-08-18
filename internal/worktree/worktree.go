@@ -494,12 +494,18 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 	// Tracked = the committed tip's paths. Ignore patterns only affect untracked
 	// paths, so a committed-then-ignored file is never dropped from the scan.
 	var tracked map[string]struct{}
+	// Gitlinks in the tip: their directories are skipped by the scan, and their
+	// entries are carried into the snapshot below (#140).
+	var gitlinks map[string]struct{}
+	var committed map[string]change.TreeEntry
 	if line.TipCommit != "" {
-		committed, ferr := r.eng.FilesMeta(line.TipCommit)
+		var ferr error
+		committed, ferr = r.eng.FilesMeta(line.TipCommit)
 		if ferr != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", ferr)
 		}
 		tracked = trackedSetMeta(committed)
+		gitlinks = gitlinkSet(committed)
 	}
 	// A folder deleted out from under cairn (#133) must not be scanned: the walk
 	// would yield nothing and the snapshot would seal a phantom deletion of every
@@ -519,9 +525,21 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, cache, scanStartNs)
+	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, gitlinks, cache, scanStartNs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
+	}
+	// Carry gitlinks forward from the tip. A gitlink is a directory on disk with
+	// no content of its own, so the walk yields nothing for it — without this the
+	// snapshot would omit the entry and the next seal would silently DELETE the
+	// submodule from the tree (#140). cairn has no way to author a gitlink, so
+	// the tip's entry is by definition the current one; the consequence is that
+	// removing a submodule is not expressible through cairn, which is the safe
+	// side of the trade.
+	for p, ent := range committed {
+		if ent.Mode == change.ModeGitlink {
+			entries[p] = ent
+		}
 	}
 	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
@@ -834,6 +852,22 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 		return fmt.Errorf("worktree.Resolve: branch %q is not expressed", branch)
 	}
 	dir := filepath.Join(r.root, entry.Path)
+	// A conflicted gitlink cannot be resolved from disk: the path is a directory,
+	// and what conflicts is a commit id belonging to another repository, which no
+	// on-disk content can express (#140). Reading it fails with "is a directory",
+	// which used to wedge the line — `resolve` hard-errored while `commit` refused
+	// to seal with the conflict open, the same dead-end #134 fixed for
+	// modify/delete. Settle it by keeping the entry the merge placed.
+	gitlink, err := r.conflictPathIsGitlink(entry.ChangeID, path)
+	if err != nil {
+		return fmt.Errorf("worktree.Resolve: %w", err)
+	}
+	if gitlink {
+		if err := r.eng.ResolveConflictKeepEntry(entry.ChangeID, path); err != nil {
+			return fmt.Errorf("worktree.Resolve: %w", err)
+		}
+		return r.rematerializeAfterResolve(entry, dir)
+	}
 	data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
 	switch {
 	case err == nil:
@@ -859,6 +893,12 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 	default:
 		return fmt.Errorf("worktree.Resolve: %w", err)
 	}
+	return r.rematerializeAfterResolve(entry, dir)
+}
+
+// rematerializeAfterResolve brings the branch folder back in line with the
+// change's new head after a resolution landed. Shared by every resolve path.
+func (r *Repo) rematerializeAfterResolve(entry Entry, dir string) error {
 	ch, err := r.eng.GetChange(entry.ChangeID)
 	if err != nil {
 		return fmt.Errorf("worktree.Resolve: %w", err)
@@ -869,6 +909,24 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 		}
 	}
 	return nil
+}
+
+// conflictPathIsGitlink reports whether path is a gitlink in the change's
+// current head tree — the case `resolve` cannot source from disk (#140).
+func (r *Repo) conflictPathIsGitlink(changeID, path string) (bool, error) {
+	ch, err := r.eng.GetChange(changeID)
+	if err != nil {
+		return false, err
+	}
+	if ch.HeadCommit == "" {
+		return false, nil
+	}
+	meta, err := r.eng.FilesMeta(ch.HeadCommit)
+	if err != nil {
+		return false, err
+	}
+	// A missing path yields the zero TreeEntry, whose mode is ModeRegular.
+	return meta[path].Mode == change.ModeGitlink, nil
 }
 
 // Status reports the state of an expressed branch.

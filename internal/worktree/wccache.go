@@ -70,7 +70,7 @@ func saveWCCache(path string, c map[string]wcCacheEntry) error {
 // slash-separated path (directories with a trailing "/") is returned in the
 // skipped result so a caller can surface it structurally (#130); a TRACKED
 // path's unreadable content remains a hard error.
-func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
+func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, gitlinks map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
 	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
 	// collected by the (serial) directory walk. The slow per-file step — reading
 	// a cache-missed file's content — is then done in PARALLEL, because on Windows
@@ -87,7 +87,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, cac
 	}
 	var items []scanItem
 	skip := &skipTracker{}
-	if err := walkWorktree(dir, tracked, skip, func(slashRel, path string, d fs.DirEntry) error {
+	if err := walkWorktree(dir, tracked, gitlinks, skip, func(slashRel, path string, d fs.DirEntry) error {
 		info, err := d.Info()
 		if err != nil {
 			return unreadableErr(tracked, slashRel, err, skip)

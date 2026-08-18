@@ -8,4 +8,11 @@ const (
 	ModeRegular EntryMode = iota
 	ModeExecutable
 	ModeSymlink
+	// ModeGitlink is a gitlink entry (git mode 160000): a nested checkout
+	// recorded in the tree, whether or not the repo registers it in
+	// .gitmodules. Its SHA names a COMMIT IN ANOTHER REPOSITORY, so unlike
+	// every other mode there is no object in this store to read — any content
+	// path (materialize, scan, diff, merge) must resolve it by reference alone
+	// and never call readBlob on it (#140).
+	ModeGitlink
 )
