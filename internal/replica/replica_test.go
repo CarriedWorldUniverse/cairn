@@ -175,6 +175,33 @@ func waitForLog(t *testing.T, logFile string, wantLines int, deadline time.Durat
 	return ""
 }
 
+// waitForPendingEmpty polls the spool until no markers remain, failing at the
+// deadline. It is what makes TestRunnerEndToEnd deterministic: the invocation
+// log proves only that porterpack was STARTED, while the runner still has to
+// reap it, re-stat the marker and Clear it. Waiting on the log alone and then
+// cancelling killed porterpack mid-run — exec.CommandContext kills the child
+// on cancel — so a success turned into "signal: killed", runOnce took its
+// error path, and the marker was still there when the assertion ran. The gap
+// is a few hundred microseconds on an idle machine and far wider on a loaded
+// CI runner, which is why this only ever failed on macOS.
+func waitForPendingEmpty(t *testing.T, spool Spool, deadline time.Duration) {
+	t.Helper()
+	end := time.Now().Add(deadline)
+	var last map[string]string
+	for time.Now().Before(end) {
+		p, err := spool.Pending()
+		if err != nil {
+			t.Fatalf("pending: %v", err)
+		}
+		if len(p) == 0 {
+			return
+		}
+		last = p
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for the spool to drain after a successful snapshot; still pending: %v", last)
+}
+
 func TestRunnerEndToEnd(t *testing.T) {
 	dir := t.TempDir()
 	spoolDir := filepath.Join(dir, "spool")
@@ -205,6 +232,11 @@ func TestRunnerEndToEnd(t *testing.T) {
 	}()
 
 	content := waitForLog(t, logFile, 1, 5*time.Second)
+	// Wait for the marker to actually clear before cancelling. This IS the
+	// "marker cleared on success" assertion (bounded, so a real regression
+	// still fails) and it is what keeps the cancel below from killing
+	// porterpack mid-run — see waitForPendingEmpty.
+	waitForPendingEmpty(t, spool, 5*time.Second)
 	cancel()
 	<-done
 
@@ -213,14 +245,6 @@ func TestRunnerEndToEnd(t *testing.T) {
 		" -name widgets -repo " + repoPath
 	if got := trimOneLine(content); got != wantArgs {
 		t.Errorf("porterpack invoked with %q, want %q", got, wantArgs)
-	}
-
-	pending, err := spool.Pending()
-	if err != nil {
-		t.Fatalf("pending: %v", err)
-	}
-	if len(pending) != 0 {
-		t.Errorf("pending after success = %v, want empty (marker cleared)", pending)
 	}
 }
 
