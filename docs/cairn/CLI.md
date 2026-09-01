@@ -165,6 +165,13 @@ tree, change-ids, open conflicts — is reconstructed, not just the flat git pro
 cairn clone https://github.com/me/proj.git
 cairn clone git@github.com:me/proj.git proj
 ```
+The branch that becomes the root line is the one the remote's own `HEAD` names —
+`develop` stays `develop`. If cairn cannot reach the remote for that answer, it
+uses a sole branch when there is only one and otherwise **fails rather than
+guess**: a clone that quietly checked out the wrong branch just looks like an
+incomplete checkout, so re-run it instead. A remote with no default at all (a
+bare push target whose `HEAD` was never pointed anywhere) falls back to a
+conventional trunk name and says so on stderr.
 
 #### `cairn setup`
 Set your commit identity (name + email), stored **globally** for every repo. Run once

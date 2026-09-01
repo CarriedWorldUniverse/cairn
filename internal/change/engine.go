@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -30,6 +31,15 @@ var schemaSQL string
 
 // ErrNotFound is returned when a catalogue row does not exist.
 var ErrNotFound = errors.New("change: not found")
+
+// warnf reports a non-fatal condition the operator must know about but which
+// does not stop the operation — currently only detectDefault falling back to a
+// conventional trunk name on a remote with no default branch (#142). It is a
+// package-level var, not a direct Fprintf, so tests can capture the message;
+// it mirrors worktree.warnf's shape so both read the same on a terminal.
+var warnf = func(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "cairn: warning: "+format+"\n", args...)
+}
 
 // RootLineName is the name of the line that every engine bootstraps with.
 const RootLineName = "main"

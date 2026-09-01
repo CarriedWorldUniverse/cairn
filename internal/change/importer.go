@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -206,14 +208,24 @@ func (e *Engine) fetchRemote(url string) error {
 
 // detectDefault returns the remote's default branch short name.
 //
-// It first asks the remote for its advertised refs and looks for the HEAD
-// symbolic reference, which names the default branch directly. Over file://
-// transports go-git's Remote.List does not reliably surface a symbolic HEAD
-// (the local transport advertises HEAD as a plain hash, not a symref), so we
-// also fall back to the fetched heads: "main" if present, else a sole head,
-// else an error. A freshly-Open'd cairn bare repo has its own HEAD (pointing at
-// the local root line), so we never read e.git's local HEAD here — only the
-// remote's advertised HEAD and the fetched remote heads are trusted.
+// The remote's advertised HEAD symbolic reference is the ONLY authoritative
+// answer, so it is the only one trusted: it names the default branch directly,
+// and go-git reconstructs it even from a server too old to advertise the symref
+// capability (packp.AdvRefs.resolveHead). A freshly-Open'd cairn bare repo has
+// its own HEAD (pointing at the local root line), so e.git's local HEAD is
+// never read here — only the remote's advertisement and the fetched heads.
+//
+// Without that answer the fetched heads are the only evidence left, and a SOLE
+// head is the one unambiguous reading of them. Beyond that it depends on WHY
+// the answer is missing, and the two cases are not the same (#142):
+//   - the round-trip FAILED — the remote has an answer we did not get, so any
+//     pick can silently contradict it. Refuse. This is the reported bug: go-git
+//     capped the advertisement at 10s, a large repo overran it, and the old code
+//     guessed "main" — a develop-default repo cloned to the wrong branch while
+//     reporting success, which reads as a merely incomplete checkout.
+//   - the remote ANSWERED and has no default (an unborn or dangling HEAD, as on
+//     a bare push target) — nothing left to contradict, so a conventional trunk
+//     name is the best available reading. Take it, and warn that it was a guess.
 func (e *Engine) detectDefault() (string, error) {
 	rem, err := e.git.Remote(originRemote)
 	if err != nil {
@@ -223,30 +235,56 @@ func (e *Engine) detectDefault() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("change.detectDefault: %w", err)
 	}
-	refs, err := rem.List(&git.ListOptions{Auth: auth})
-	if err == nil {
+	refs, listErr := listAdvertisedRefs(rem, auth)
+	if listErr == nil {
 		for _, ref := range refs {
 			if ref.Name() == plumbing.HEAD && ref.Type() == plumbing.SymbolicReference {
 				return ref.Target().Short(), nil
 			}
 		}
 	}
-	// Fallback: ANY rem.List error (not only the file:// no-symbolic-HEAD case)
-	// drops us here, as does a List that returned but advertised no symbolic
-	// HEAD. In all of these we determine the default from the fetched heads.
+
 	heads, err := e.listHeads()
 	if err != nil {
 		return "", err
 	}
-	if _, ok := heads["main"]; ok {
-		return "main", nil
+	names := make([]string, 0, len(heads))
+	for name := range heads {
+		names = append(names, name)
 	}
-	if len(heads) == 1 {
-		for name := range heads {
-			return name, nil
+	sort.Strings(names)
+
+	// A sole head is the default by construction — the one reading of the
+	// fetched refs that involves no guess at all.
+	if len(names) == 1 {
+		return names[0], nil
+	}
+
+	// The round-trip FAILED: the remote has an answer we simply did not get, so
+	// any pick here can silently contradict it. Refuse. This is the #142 path —
+	// go-git's hidden 10s List cap turned a large repo's slow advertisement into
+	// a guess of "main", and a develop-default repo cloned to the wrong branch
+	// while reporting success.
+	if listErr != nil {
+		return "", fmt.Errorf(
+			"change.detectDefault: cannot determine the remote's default branch: asking the remote for its refs failed (%v), and the %d fetched branches (%s) give no unambiguous answer — re-run the clone rather than check out a branch picked at random",
+			listErr, len(names), strings.Join(names, ", "))
+	}
+
+	// The remote answered and has no default branch to give: its HEAD is unborn
+	// or dangling (a bare repo used only as a push target is the common case).
+	// There is no remote answer left to contradict, so fall back to the
+	// conventional trunk names — but SAY SO, because this one is a guess.
+	for _, conventional := range []string{"main", "master", "trunk", "develop"} {
+		if _, ok := heads[conventional]; ok {
+			warnf("%s advertises no default branch (its HEAD is unset or dangling); treating %q as the root line, out of %s",
+				originRemote, conventional, strings.Join(names, ", "))
+			return conventional, nil
 		}
 	}
-	return "", fmt.Errorf("change.detectDefault: cannot determine default branch")
+	return "", fmt.Errorf(
+		"change.detectDefault: cannot determine the remote's default branch: it advertises no default (its HEAD is unset or dangling) and none of the %d fetched branches (%s) is a conventional trunk name — point the remote's HEAD at a branch, or clone and express the branch you want",
+		len(names), strings.Join(names, ", "))
 }
 
 // listHeads returns short-name → commit-sha for refs/heads/* in the store.

@@ -175,7 +175,7 @@ func (e *Engine) pruneImportedPushPins(before map[plumbing.ReferenceName]bool, r
 // ErrEmptyRemoteRepository rather than an empty list — which is treated as
 // "nothing advertised" (a no-op set) rather than an error.
 func remoteAdvertisedRefNames(rem *git.Remote, auth transport.AuthMethod) (map[plumbing.ReferenceName]bool, error) {
-	refs, err := rem.List(&git.ListOptions{Auth: auth})
+	refs, err := listAdvertisedRefs(rem, auth)
 	if err != nil {
 		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
 			return map[plumbing.ReferenceName]bool{}, nil

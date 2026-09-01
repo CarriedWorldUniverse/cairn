@@ -502,7 +502,7 @@ func (e *Engine) NetworkPush(pp *PreparedPush) error {
 // verified, tamper-proof landing." It provides no integrity guarantee
 // against a hostile remote.
 func (e *Engine) verifyPush(pp *PreparedPush, rem *git.Remote) error {
-	refs, err := rem.List(&git.ListOptions{Auth: pp.auth})
+	refs, err := listAdvertisedRefs(rem, pp.auth)
 	// An empty remote (nothing has ever landed) advertises no refs at all —
 	// go-git reports this as ErrEmptyRemoteRepository rather than an empty
 	// list. Treat it as "no refs advertised" so the per-pin check below
