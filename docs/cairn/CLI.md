@@ -662,3 +662,23 @@ cairn update               # download, verify, swap; no-op if already current
 | `git reset --hard` / `git reflog` + reset | `cairn undo` (walks the op-log) |
 | `git push` / `git fetch` / `git pull` | `cairn push` / `fetch` / `pull` |
 | resolving a merge conflict (blocks you) | keep working; `cairn resolve <line> <path>` when ready |
+
+### Git spellings cairn answers to
+
+Where a git verb means exactly what a cairn verb means, cairn accepts the git
+spelling as a plain alias — same command, same flags, no behaviour of its own:
+
+| Git spelling | Runs |
+|---|---|
+| `cairn merge <branch>` | `cairn fold <branch>` |
+| `cairn branch <name>` | `cairn express <name>` |
+| `cairn checkout -b <name>` | `cairn express <name>` |
+| `cairn switch -c <name>` | `cairn express <name>` |
+
+Where a git verb has **no** cairn equivalent, cairn refuses to fake it and
+prints the translation instead of a usage dump — `add`, `rm`, `mv`, `rebase`,
+`reset`, `revert`, `worktree`, and `checkout`/`switch` onto an existing branch
+each explain what to run in its place. (`git checkout -b <name> <start-point>`
+is one of these: it names a parent, so cairn points you at
+`cairn express <name> --from <start-point>` rather than silently forking off the
+wrong line.)

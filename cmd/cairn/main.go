@@ -136,6 +136,14 @@ subcommands:
   bisect reset                  end the bisect; restore the working folder
   bisect run [--repo d] -- <cmd>   automate: 0=good, 125=skip, else=bad
 
+git spellings (aliases for the cairn verb above):
+  merge <branch>                = fold <branch>
+  branch <name>                 = express <name>
+  checkout -b <name>            = express <name>
+  switch -c <name>              = express <name>
+(other git verbs — add, checkout <branch>, rebase, reset, rm, mv — have no cairn
+equivalent; running one prints the translation.)
+
 config keys: user.name, user.email, autosync, pr.org, pr.repo-slug
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
@@ -239,6 +247,12 @@ func run(args []string) error {
 	case "bisect":
 		return cmdBisect(rest)
 	default:
+		// A git spelling gets either its cairn alias or a one-line correction
+		// (#139) — printed INSTEAD of the usage wall, so the correction is what
+		// the reader actually sees at the moment the reflex misfires.
+		if handled, err := runGitShaped(sub, rest); handled {
+			return err
+		}
 		fmt.Println(usage)
 		return fmt.Errorf("unknown subcommand %q", sub)
 	}
