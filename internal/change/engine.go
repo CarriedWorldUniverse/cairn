@@ -69,6 +69,22 @@ func (e *Engine) Identity() (name, email string) { return e.idName, e.idEmail }
 // nil (the default) disables progress output. The CLI points this at os.Stderr.
 func (e *Engine) SetProgress(w io.Writer) { e.progress = w }
 
+// Progressf reports one line of NON-sideband progress to the same writer
+// SetProgress installed — the phases that run after the pack has landed and
+// used to leave the terminal silent for as long as they took (#146).
+//
+// A nil writer makes it a no-op, and worktree.Clone is the only caller that
+// ever installs one. That is what keeps this safe to call from shared code
+// like materialize, which ten other verbs (pull, express, resolve, bisect …)
+// also reach: their engines carry no progress writer, so their output is
+// unchanged. Progress is a property of the CLONE, not of the operation.
+func (e *Engine) Progressf(format string, args ...any) {
+	if e.progress == nil {
+		return
+	}
+	fmt.Fprintf(e.progress, format, args...)
+}
+
 // Open opens (creating if needed) the change engine rooted at dir. It opens or
 // initialises a bare go-git object store at dir/objects.git and the SQLite
 // catalogue at dir/cairn.db, applies the schema, and ensures the root line.
