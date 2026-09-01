@@ -159,6 +159,11 @@ func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
 	return materialize(eng, cacheDir, commitSha, dir, nil)
 }
 
+// materializeProgressEvery is how many tree paths materialize walks between
+// progress updates. Small enough that a slow disk still shows movement, large
+// enough that the reporting is noise next to the file I/O it describes.
+const materializeProgressEvery = 250
+
 // gitlinkSet returns the slash-separated paths in a tree's meta that are
 // gitlinks — the directories walkWorktree must refuse to descend, because their
 // contents belong to another repository (#140). Returns nil when there are
@@ -280,7 +285,18 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	}
 
 	// 1. Write/update each target file only when it differs from what's on disk.
+	//
+	// The counter below is the clone's only signal during what is, on a large
+	// tree, the longest phase after the pack lands (#146). It updates every
+	// materializeProgressEvery paths rather than per path: at 100k files a
+	// per-file write would cost more than the work it reports on. Progress is
+	// a no-op unless a progress writer was installed, which only a clone does.
+	total, seen := len(meta), 0
 	for p, entry := range meta {
+		seen++
+		if seen%materializeProgressEvery == 0 {
+			eng.Progressf("\rcairn: materializing … %d/%d files", seen, total)
+		}
 		full, err := containedJoin(dir, p)
 		if err != nil {
 			// Defense in depth: change.FilesMeta already rejects traversal entry
@@ -366,6 +382,13 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 		if err := placeFile(cacheBlob, full, entry.Mode == change.ModeExecutable); err != nil {
 			return fmt.Errorf("worktree.Materialize: %w", err)
 		}
+	}
+
+	if total > 0 {
+		// Always land on the true total: the modulo above will have skipped it
+		// whenever total is not an exact multiple, and a counter that stops at
+		// 99500/100000 reads as a hang — the very thing this fixes.
+		eng.Progressf("\rcairn: materializing … %d/%d files\n", total, total)
 	}
 
 	// 2. Delete on-disk files no longer in the target. The walk uses the target as

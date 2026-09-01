@@ -165,6 +165,12 @@ tree, change-ids, open conflicts — is reconstructed, not just the flat git pro
 cairn clone https://github.com/me/proj.git
 cairn clone git@github.com:me/proj.git proj
 ```
+Progress is reported for every phase, not just the download: after git's own sideband
+(`Enumerating/Compressing/Total …`) cairn reports resolving the default branch, mapping
+branches onto the line tree, recording tags, and a running file count while materializing.
+On a large repo the phases after the pack can take a while, and each one says so rather
+than leaving the terminal looking hung.
+
 The branch that becomes the root line is the one the remote's own `HEAD` names —
 `develop` stays `develop`. If cairn cannot reach the remote for that answer, it
 uses a sole branch when there is only one and otherwise **fails rather than

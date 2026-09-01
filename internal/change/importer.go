@@ -58,6 +58,10 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		}
 	} else {
 		// Flat-projection path (no cairn metadata on the remote).
+		// detectDefault opens a SECOND network round-trip (the ref
+		// advertisement), so it is announced before it blocks rather than
+		// after — on a slow remote it is the longest silent phase there is.
+		e.Progressf("cairn: resolving the remote's default branch …\n")
 		def, err = e.detectDefault()
 		if err != nil {
 			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
@@ -91,10 +95,16 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		// whenever the intervening branch has merged there. This makes `ahead` the
 		// real divergence from trunk rather than "commits since clone". Unrelated
 		// histories (no common ancestor) fall back to the tip.
+		mapped, toMap := 0, len(heads)-1
 		for name, sha := range heads {
 			if name == def {
 				continue
 			}
+			// One mergeBase per branch against the default tip — the cost
+			// grows with the branch count, and on a repo with hundreds it is
+			// minutes. Count it out loud.
+			mapped++
+			e.Progressf("\rcairn: mapping branches onto the line tree … %d/%d", mapped, toMap)
 			base := sha
 			if mb, mberr := e.mergeBase(sha, defTip); mberr == nil && mb != "" {
 				base = mb
@@ -119,6 +129,13 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 				}
 			}
 		}
+		if toMap > 0 {
+			e.Progressf("\n")
+		}
+	}
+
+	if len(tags) > 0 {
+		e.Progressf("cairn: recording %d tag(s) …\n", len(tags))
 	}
 
 	// Record each tag (name is PRIMARY KEY; upsert the commit on re-import).
