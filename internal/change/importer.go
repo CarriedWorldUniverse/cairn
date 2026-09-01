@@ -95,6 +95,11 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		// whenever the intervening branch has merged there. This makes `ahead` the
 		// real divergence from trunk rather than "commits since clone". Unrelated
 		// histories (no common ancestor) fall back to the tip.
+		// Trunk's ancestry, computed ONCE and reused for every branch (#148).
+		// A nil set (only when the tip commit is unreadable) drops each branch
+		// back to the pairwise mergeBase below, which is slow but correct.
+		trunk, trunkErr := e.ancestorSet(defTip)
+
 		mapped, toMap := 0, len(heads)-1
 		for name, sha := range heads {
 			if name == def {
@@ -106,7 +111,11 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 			mapped++
 			e.Progressf("\rcairn: mapping branches onto the line tree … %d/%d", mapped, toMap)
 			base := sha
-			if mb, mberr := e.mergeBase(sha, defTip); mberr == nil && mb != "" {
+			if trunkErr == nil {
+				if mb, mberr := e.mergeBaseIn(sha, trunk); mberr == nil && mb != "" {
+					base = mb
+				}
+			} else if mb, mberr := e.mergeBase(sha, defTip); mberr == nil && mb != "" {
 				base = mb
 			}
 			var existingID string

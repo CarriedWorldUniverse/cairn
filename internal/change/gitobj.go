@@ -1,6 +1,7 @@
 package change
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
 // validTreeEntryName rejects a single tree-entry name that is unsafe to
@@ -493,6 +495,65 @@ func (e *Engine) mergeBase(a, b string) (string, error) {
 	// Phase-1 lines are single-parent (linear ancestry), so MergeBase yields at
 	// most one common ancestor; taking bases[0] is unambiguous here.
 	return bases[0].Hash.String(), nil
+}
+
+// ancestorSet returns every commit reachable from tip, tip included.
+//
+// It exists so a clone can compute the default branch's ancestry ONCE instead
+// of per branch (#148). go-git's Commit.MergeBase rebuilds an ancestor index on
+// every call, so mapping N branches onto trunk re-walked trunk N times: on a
+// 1000-branch repo that was ~44s of a ~47s clone, against 27ms for `git clone`.
+func (e *Engine) ancestorSet(tip string) (map[plumbing.Hash]struct{}, error) {
+	if tip == "" {
+		return nil, nil
+	}
+	c, err := e.git.CommitObject(plumbing.NewHash(tip))
+	if err != nil {
+		return nil, fmt.Errorf("change.ancestorSet: commit %s: %w", tip, err)
+	}
+	set := map[plumbing.Hash]struct{}{}
+	iter := object.NewCommitPreorderIter(c, nil, nil)
+	defer iter.Close()
+	if err := iter.ForEach(func(x *object.Commit) error {
+		set[x.Hash] = struct{}{}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("change.ancestorSet: %w", err)
+	}
+	return set, nil
+}
+
+// mergeBaseIn returns the merge base of head against the branch whose ancestry
+// is set (from ancestorSet) — the most recent commit reachable from head that
+// trunk can also reach. "" means the histories are unrelated.
+//
+// The walk is in committer-time-descending order, which is the same ordering
+// go-git's own MergeBase sorts by, so the first commit found in set is the most
+// recent common ancestor. Cost is proportional to how far head has DIVERGED,
+// not to the length of trunk — which is the whole point: short-lived branches
+// stop within a few commits.
+func (e *Engine) mergeBaseIn(head string, set map[plumbing.Hash]struct{}) (string, error) {
+	if head == "" || len(set) == 0 {
+		return "", nil
+	}
+	c, err := e.git.CommitObject(plumbing.NewHash(head))
+	if err != nil {
+		return "", fmt.Errorf("change.mergeBaseIn: commit %s: %w", head, err)
+	}
+	var found string
+	iter := object.NewCommitIterCTime(c, nil, nil)
+	defer iter.Close()
+	err = iter.ForEach(func(x *object.Commit) error {
+		if _, ok := set[x.Hash]; ok {
+			found = x.Hash.String()
+			return storer.ErrStop
+		}
+		return nil
+	})
+	if err != nil && !errors.Is(err, storer.ErrStop) {
+		return "", fmt.Errorf("change.mergeBaseIn: %w", err)
+	}
+	return found, nil
 }
 
 // isAncestor reports whether commit a is an ancestor of (or identical to) b.
