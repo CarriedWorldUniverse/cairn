@@ -527,6 +527,33 @@ func openRepoSynced(repo, author string) (*worktree.Repo, error) {
 	return r, nil
 }
 
+// openRepoSyncedVerbose is openRepoSynced for the verbs that can run for
+// minutes on a large tree — express, unexpress, fold, pull. Progress is turned
+// on BEFORE the working-copy sync, because on a big repo that sync is itself a
+// slow prelude, and a command that prints nothing while it runs is
+// indistinguishable from one that has hung (#153). The quick read-only verbs
+// keep openRepoSynced and stay silent, so their output remains scriptable.
+func openRepoSyncedVerbose(repo, author string) (*worktree.Repo, error) {
+	r, err := openRepo(repo, author)
+	if err != nil {
+		return nil, err
+	}
+	r.SetProgress(os.Stderr)
+	if err := r.SyncWorking(); err != nil {
+		_ = r.Close()
+		return nil, fmt.Errorf("snapshotting working copy: %w", err)
+	}
+	return r, nil
+}
+
+// reportElapsed prints how long a slow verb took, so a long run is attributable
+// afterwards rather than merely endured. Sub-second runs print nothing.
+func reportElapsed(verb string, started time.Time) {
+	if d := time.Since(started); d >= time.Second {
+		fmt.Fprintf(os.Stderr, "cairn: %s took %s\n", verb, change.FormatDur(d))
+	}
+}
+
 // repoFlags registers --repo and --author on fs, returning the bound vars.
 func repoFlags(fs *flag.FlagSet) (repo, author *string) {
 	repo = fs.String("repo", ".", "repo root directory")
@@ -681,11 +708,12 @@ func cmdExpress(args []string) error {
 		return errors.New("branch required")
 	}
 	branch := fs.Arg(0)
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepoSyncedVerbose(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	defer reportElapsed("express", time.Now())
 	fmt.Fprintf(os.Stderr, "cairn: expressing %s …\n", branch)
 	if err := r.Express(branch, *from); err != nil {
 		return mapErr(err)
@@ -704,11 +732,12 @@ func cmdUnexpress(args []string) error {
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepoSyncedVerbose(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	defer reportElapsed("unexpress", time.Now())
 	return mapErr(r.Unexpress(fs.Arg(0), *force))
 }
 
@@ -774,11 +803,12 @@ func cmdFold(args []string) error {
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
 	}
-	r, err := openRepoSynced(*repo, *author)
+	r, err := openRepoSyncedVerbose(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
+	defer reportElapsed("fold", time.Now())
 	return mapErr(r.Fold(fs.Arg(0), *force))
 }
 
@@ -1354,6 +1384,10 @@ func cmdPull(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	// pull re-materializes every expressed folder, so it belongs with the slow
+	// verbs even though it opens the repo without the sync prelude.
+	r.SetProgress(os.Stderr)
+	defer reportElapsed("pull", time.Now())
 	sum, err := r.Pull(remote)
 	if err != nil {
 		return mapRemoteErr(err)
