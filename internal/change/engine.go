@@ -69,6 +69,20 @@ func (e *Engine) Identity() (name, email string) { return e.idName, e.idEmail }
 // nil (the default) disables progress output. The CLI points this at os.Stderr.
 func (e *Engine) SetProgress(w io.Writer) { e.progress = w }
 
+// FormatDur renders a phase duration compactly for progress output: "812ms",
+// "44.4s", "6m12s". Bare seconds past a minute are useless for the thing this
+// exists for — telling an operator which clone phase ate the wall clock.
+func FormatDur(d time.Duration) string {
+	switch {
+	case d < time.Second:
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	case d < time.Minute:
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	default:
+		return fmt.Sprintf("%dm%02ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
+}
+
 // Progressf reports one line of NON-sideband progress to the same writer
 // SetProgress installed — the phases that run after the pack has landed and
 // used to leave the terminal silent for as long as they took (#146).

@@ -25,9 +25,14 @@ const originRemote = "origin"
 // It is idempotent — re-importing the same remote re-fetches and upserts without
 // creating duplicate lines or tags. Returns the default branch short name.
 func (e *Engine) ImportFromRemote(url string) (string, error) {
+	// Every phase reports its own elapsed time (#152). Announcing a phase told
+	// an operator WHERE a slow clone was sitting but nothing about what it
+	// cost, which left attributing a 30-minute clone to guesswork.
+	phase := time.Now()
 	if err := e.fetchRemote(url); err != nil {
 		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 	}
+	e.Progressf("cairn: fetched objects in %s\n", FormatDur(time.Since(phase)))
 	tags, err := e.listTags()
 	if err != nil {
 		return "", fmt.Errorf("change.ImportFromRemote: %w", err)
@@ -61,8 +66,10 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		// detectDefault opens a SECOND network round-trip (the ref
 		// advertisement), so it is announced before it blocks rather than
 		// after — on a slow remote it is the longest silent phase there is.
-		e.Progressf("cairn: resolving the remote's default branch …\n")
+		e.Progressf("cairn: resolving the remote's default branch …")
+		phase = time.Now()
 		def, err = e.detectDefault()
+		e.Progressf(" %s\n", FormatDur(time.Since(phase)))
 		if err != nil {
 			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 		}
@@ -101,6 +108,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		trunk, trunkErr := e.ancestorSet(defTip)
 
 		mapped, toMap := 0, len(heads)-1
+		phase = time.Now()
 		for name, sha := range heads {
 			if name == def {
 				continue
@@ -139,12 +147,13 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 			}
 		}
 		if toMap > 0 {
-			e.Progressf("\n")
+			e.Progressf(" %s\n", FormatDur(time.Since(phase)))
 		}
 	}
 
 	if len(tags) > 0 {
-		e.Progressf("cairn: recording %d tag(s) …\n", len(tags))
+		e.Progressf("cairn: recording %d tag(s) …", len(tags))
+		defer func(t time.Time) { e.Progressf(" %s\n", FormatDur(time.Since(t))) }(time.Now())
 	}
 
 	// Record each tag (name is PRIMARY KEY; upsert the commit on re-import).
