@@ -161,7 +161,8 @@ func unreadableErr(tracked map[string]struct{}, slashRel string, err error, skip
 // cache (content-addressed, reflinked copy-on-write) into a temp sibling and
 // renamed over, so a reader never sees a half-written file.
 func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
-	return materialize(eng, cacheDir, commitSha, dir, nil)
+	_, err := materialize(eng, cacheDir, commitSha, dir, nil)
+	return err
 }
 
 // materializeProgressEvery is how many tree paths materialize walks between
@@ -198,6 +199,26 @@ func gitlinkSet(meta map[string]change.TreeEntry) map[string]struct{} {
 // comparison (see regularUpToDateBySHA). A nil/empty hint behaves exactly like
 // Materialize.
 func MaterializeSynced(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) error {
+	_, err := materialize(eng, cacheDir, commitSha, dir, hint)
+	return err
+}
+
+// MaterializeSeeded is MaterializeSynced plus the per-path stat fingerprints of
+// everything it left on disk, ready to seed the branch's wc-cache (#154).
+//
+// Materialize rewrites every changed file, which changes every mtime — and the
+// wc-cache fingerprints on mtime, so a materialize INVALIDATES the whole cache
+// it just made stale. The next scan is then a guaranteed 100% miss: it reads
+// every file's content back off disk (each read scanned by antivirus on
+// Windows) and writes every blob back into the object store SERIALLY, having
+// just read those same blobs out of it. On a 40k-file tree that was minutes.
+//
+// The fix is not to do that work faster but to not do it: materialize already
+// knows each path's blob SHA and mode, and can stat the file it just wrote, so
+// it can hand back exactly the fingerprints the scan would have computed. The
+// returned map is only safe to persist when err is nil — a partial materialize
+// describes a half-written folder (see Repo.seedWCCache).
+func MaterializeSeeded(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
 	return materialize(eng, cacheDir, commitSha, dir, hint)
 }
 
@@ -275,18 +296,18 @@ func removeSymlinkComponents(dir, full string) error {
 // (the common case on a steady-state Commit/Pull/Express) costs at most one
 // Lstat (hint hit) or one local file read+hash (fallback), never a git-store
 // blob fetch+decompress.
-func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) error {
+func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
 	meta, err := eng.FilesMeta(commitSha)
 	if err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return nil, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	blobs := filepath.Join(cacheDir, "blobs")
 	if err := os.MkdirAll(blobs, 0o755); err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return nil, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	// Ensure the branch folder exists; never remove it (see the doc comment).
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return nil, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 
 	// 1. Write/update each target file only when it differs from what's on disk.
@@ -323,6 +344,12 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 		errMu.Unlock()
 	}
 
+	// Per-path fingerprints of what each worker leaves on disk, for seeding the
+	// branch's wc-cache (#154). Guarded by its own mutex rather than sharded:
+	// one map insert per file is nothing next to the write that precedes it.
+	fingerprints := make(map[string]wcCacheEntry, total)
+	var fpMu sync.Mutex
+
 	var wg sync.WaitGroup
 	for i := 0; i < materializeWorkers(); i++ {
 		wg.Add(1)
@@ -334,9 +361,15 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 					return
 				default:
 				}
-				if err := writeEntry(eng, dir, blobs, j.path, j.entry, hint[j.path], cowCache); err != nil {
+				fp, ok, err := writeEntry(eng, dir, blobs, j.path, j.entry, hint[j.path], cowCache)
+				if err != nil {
 					fail(err)
 					return
+				}
+				if ok {
+					fpMu.Lock()
+					fingerprints[j.path] = fp
+					fpMu.Unlock()
 				}
 				if n := atomic.AddInt64(&seen, 1); n%materializeProgressEvery == 0 {
 					progressMu.Lock()
@@ -357,7 +390,10 @@ feed:
 	close(jobs)
 	wg.Wait()
 	if firstErr != nil {
-		return firstErr
+		// A partial materialize describes a half-written folder: return no
+		// fingerprints at all, so no caller can persist a cache that claims
+		// paths were written when they were not.
+		return nil, firstErr
 	}
 
 	if total > 0 {
@@ -415,18 +451,18 @@ feed:
 		stale = append(stale, path)
 		return nil
 	}); werr != nil {
-		return fmt.Errorf("worktree.Materialize: %w", werr)
+		return nil, fmt.Errorf("worktree.Materialize: %w", werr)
 	}
 	delSkip.finish()
 	for _, path := range stale {
 		if err := winretry.Do(func() error { return os.Remove(path) }); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return nil, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 	}
 	// 3. Prune directories the deletion emptied (best-effort; a still-held or
 	//    non-empty dir is simply left).
 	pruneEmptyDirs(dir, gitlinkSet(meta))
-	return nil
+	return fingerprints, nil
 }
 
 // materializeWorkers bounds the materialize pool. Capped well below a big
@@ -463,13 +499,13 @@ func materializeWorkers() int {
 // or safe to share (meta/hint are read-only, MkdirAll is idempotent, and
 // removeSymlinkComponents already tolerates a component another worker removed
 // first).
-func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry, hint wcCacheEntry, cowCache bool) error {
+func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry, hint wcCacheEntry, cowCache bool) (wcCacheEntry, bool, error) {
 	full, err := containedJoin(dir, p)
 	if err != nil {
 		// Defense in depth: change.FilesMeta already rejects traversal entry
 		// names (#126), so an escape here means a new tree-read path bypassed
 		// that guard — refuse to write rather than escape the branch folder.
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	if entry.Mode == change.ModeGitlink {
 		// A gitlink's SHA is a commit in ANOTHER repository, so there is no
@@ -478,7 +514,7 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 		// checked out inside is theirs — the deletion pass below skips this
 		// subtree rather than sweeping it as untracked.
 		if err := removeSymlinkComponents(dir, full); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		// A NON-DIRECTORY occupying the path must go first: a previous tree
 		// may have had a regular file or a symlink here (upstream replaced a
@@ -490,52 +526,58 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 		// left alone: it may be the operator's populated submodule.
 		if fi, lerr := os.Lstat(full); lerr == nil && !fi.IsDir() {
 			if rerr := winretry.Do(func() error { return os.Remove(full) }); rerr != nil {
-				return fmt.Errorf("worktree.Materialize: %w", rerr)
+				return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", rerr)
 			}
 		}
 		if err := os.MkdirAll(full, 0o755); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		return nil
+		// A gitlink is a directory with no content of its own; walkWorktree
+		// never descends it and CachedScan records nothing for it, so seeding
+		// one would put an entry in the cache that no scan can ever match.
+		return wcCacheEntry{}, false, nil
 	}
 	if entry.Mode == change.ModeSymlink {
 		if symlinkUpToDateBySHA(full, entry.SHA) {
-			return nil
+			return fingerprintOf(full, entry.SHA, change.ModeSymlink)
 		}
 		data, err := eng.ReadBlob(entry.SHA)
 		if err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		// Actually writing this path: neutralize any on-disk symlink left
 		// in an ancestor component before creating dirs (#126, see
 		// removeSymlinkComponents doc).
 		if err := removeSymlinkComponents(dir, full); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		_ = os.Remove(full)
 		if err := os.Symlink(string(data), full); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
-		return nil
+		return fingerprintOf(full, entry.SHA, change.ModeSymlink)
 	}
 	if regularUpToDateBySHA(full, entry, hint) {
-		return nil
+		// Not written, but VERIFIED: regularUpToDateBySHA only returns true
+		// once the on-disk content is known to equal entry.SHA, so its
+		// fingerprint is as sound as a freshly written one.
+		return fingerprintOf(full, entry.SHA, entry.Mode)
 	}
 	// Actually writing this path: neutralize any on-disk symlink left in
 	// an ancestor component before creating dirs (#126, see
 	// removeSymlinkComponents doc).
 	if err := removeSymlinkComponents(dir, full); err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	data, err := eng.ReadBlob(entry.SHA)
 	if err != nil {
-		return fmt.Errorf("worktree.Materialize: %w", err)
+		return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 	}
 	sum := sha256.Sum256(data)
 	cacheBlob := filepath.Join(blobs, hex.EncodeToString(sum[:]))
@@ -546,7 +588,7 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 		// Warm cache: clone out of it. On a reflink filesystem that is a CoW
 		// clone and costs almost nothing.
 		if err := placeFile(cacheBlob, full, isExec); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 	case errors.Is(serr, os.ErrNotExist):
 		// Cold: write ONCE, straight to the target. The old path wrote the blob
@@ -555,7 +597,7 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 		// two full data writes. Halving file creations is what matters most on
 		// Windows, where every creation is AV-scanned.
 		if err := writeBlobToTarget(full, data, isExec); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
+			return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", err)
 		}
 		// Fill the cache only where doing so is nearly free. Without reflink
 		// this would be a second full copy — the very cost just removed — so
@@ -565,9 +607,45 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 			_ = reflinkOrCopy(full, cacheBlob)
 		}
 	default:
-		return fmt.Errorf("worktree.Materialize: %w", serr)
+		return wcCacheEntry{}, false, fmt.Errorf("worktree.Materialize: %w", serr)
 	}
-	return nil
+	// Fingerprint AFTER the content is in place: the stat must describe the
+	// bytes just written, and writeBlobToTarget/placeFile both land via rename,
+	// which carries the temp file's mtime onto the target.
+	fp, ok, ferr := fingerprintOf(full, entry.SHA, entry.Mode)
+	if ferr != nil {
+		return wcCacheEntry{}, false, ferr
+	}
+	// Guard the write-vs-stat window: if something replaced the file between
+	// the rename and the stat, the size will almost always disagree with what
+	// was written. Drop the seed for that path rather than assert a SHA for
+	// content that may no longer be there — a missing entry only costs the
+	// next scan one file read, while a wrong one is silently stale.
+	if ok && fp.Size != int64(len(data)) {
+		return wcCacheEntry{}, false, nil
+	}
+	return fp, ok, nil
+}
+
+// fingerprintOf builds the wc-cache fingerprint for a path materialize has just
+// written or verified, pairing a fresh Lstat with the blob SHA and mode the
+// tree says it holds. The stat fields must come from Lstat (not from the blob)
+// so they are exactly what CachedScan will compare against: notably a symlink's
+// size is the platform's own reported size, which is not len(target) everywhere.
+//
+// A path that cannot be stat'd is simply not seeded (ok false, no error): the
+// file is on disk either way, and the next scan will read it as it always did.
+func fingerprintOf(full, sha string, mode change.EntryMode) (wcCacheEntry, bool, error) {
+	st, err := os.Lstat(full)
+	if err != nil {
+		return wcCacheEntry{}, false, nil
+	}
+	return wcCacheEntry{
+		MtimeNs: st.ModTime().UnixNano(),
+		Size:    st.Size(),
+		BlobSHA: sha,
+		Mode:    mode,
+	}, true, nil
 }
 
 // regularUpToDateBySHA reports whether the regular file at full already

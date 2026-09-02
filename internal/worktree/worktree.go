@@ -175,6 +175,34 @@ func (r *Repo) SetIdentity(name, email string) { r.eng.SetIdentity(name, email) 
 // materializations in this working copy.
 func (r *Repo) cacheDir() string { return filepath.Join(r.root, ".cairn", "cache") }
 
+// wcCachePath is where a branch's snapshot stat-cache lives.
+func (r *Repo) wcCachePath(branch string) string {
+	return filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
+}
+
+// seedWCCache records the fingerprints a materialize just produced as this
+// branch's snapshot stat-cache (#154), so the next scan is all hits instead of
+// a full re-read and re-encode of the tree materialize itself just wrote.
+//
+// The recorded head is deliberately EMPTY. A seed proves what is on disk; it
+// says nothing about what was snapshotted into the working change, which is the
+// other half of #155's skip guard. With no head the guard cannot fire off a
+// seed, so the next sync still snapshots — it just does so without re-reading
+// 40k files first — and records a real head for the skip to use afterwards.
+//
+// Best-effort by design: a cache that cannot be written costs speed, never
+// correctness, and must not fail the express/commit that produced it.
+func (r *Repo) seedWCCache(branch string, fingerprints map[string]wcCacheEntry) error {
+	if fingerprints == nil {
+		return nil
+	}
+	path := r.wcCachePath(branch)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("worktree.seedWCCache: %w", err)
+	}
+	return saveWCCache(path, fingerprints, "")
+}
+
 // SetProgress streams this repo's progress to w — the same writer the clone
 // path installs. It is opt-in per COMMAND rather than always on: the verbs that
 // can run for minutes on a big tree (express, unexpress, fold, pull) turn it on
@@ -401,7 +429,14 @@ func (r *Repo) Express(branch, parent string) error {
 	// safe and avoids the leak.
 	dir := filepath.Join(r.root, folder)
 	if line.TipCommit != "" {
-		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+		fps, merr := MaterializeSeeded(r.eng, r.cacheDir(), line.TipCommit, dir, nil)
+		if merr != nil {
+			return fmt.Errorf("worktree.Express: %w", merr)
+		}
+		// Express writes the whole tree, which changes every mtime and so would
+		// leave the next command facing a 100% cache miss over the folder it
+		// just created. Seed it instead (#154).
+		if err := r.seedWCCache(branch, fps); err != nil {
 			return fmt.Errorf("worktree.Express: %w", err)
 		}
 	} else if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -535,7 +570,7 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		}
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
 	}
-	cachePath := filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
+	cachePath := r.wcCachePath(branch)
 	cache, cachedHead, err := loadWCCache(cachePath)
 	if err != nil {
 		// SELF-HEAL: corrupt cache → full rescan, and no recorded head, so the
@@ -660,7 +695,11 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 		// a hint so re-materializing the (mostly unchanged) folder to the new tip
 		// costs one Lstat per already-correct path instead of a git-store blob
 		// fetch+hash.
-		if err := MaterializeSynced(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), syncedCache); err != nil {
+		fps, merr := MaterializeSeeded(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), syncedCache)
+		if merr != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", merr)
+		}
+		if err := r.seedWCCache(branch, fps); err != nil {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
 		}
 	}
@@ -2126,7 +2165,13 @@ func (r *Repo) rematerialize(branch string, entry Entry) error {
 		return fmt.Errorf("worktree.rematerialize: %w", err)
 	}
 	if line.TipCommit != "" {
-		if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path)); err != nil {
+		fps, err := MaterializeSeeded(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), nil)
+		if err != nil {
+			return fmt.Errorf("worktree.rematerialize: %w", err)
+		}
+		// Seed the stat-cache with what was just written, so the next command's
+		// scan does not re-read the whole tree it produced (#154).
+		if err := r.seedWCCache(branch, fps); err != nil {
 			return fmt.Errorf("worktree.rematerialize: %w", err)
 		}
 	}
@@ -2149,7 +2194,11 @@ func (r *Repo) restoreFolder(branch string, entry Entry) error {
 		}
 		return nil
 	}
-	if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+	fps, err := MaterializeSeeded(r.eng, r.cacheDir(), line.TipCommit, dir, nil)
+	if err != nil {
+		return fmt.Errorf("worktree.restoreFolder: %w", err)
+	}
+	if err := r.seedWCCache(branch, fps); err != nil {
 		return fmt.Errorf("worktree.restoreFolder: %w", err)
 	}
 	return nil
