@@ -134,6 +134,36 @@ func branchRefSpecs(branch string, force bool) []config.RefSpec {
 	}
 }
 
+// checkBranchIsPublishable refuses a branch-scoped push that would match no
+// source ref, so a push can never report success while publishing nothing
+// (#159). It runs AFTER Export, against the projection the push will actually
+// use, rather than inferring publishability from catalogue state — the ref is
+// the thing the refspec resolves, so the ref is the thing to check.
+//
+// A branch with no cairn line at all is left alone: PushBranch rejects those
+// up front, and checkConflictGate deliberately tolerates a remote-only ref.
+func (e *Engine) checkBranchIsPublishable(label, branch string) error {
+	if _, err := e.git.Reference(plumbing.NewBranchReferenceName(branch), false); err == nil {
+		return nil
+	}
+	line, lerr := e.LineByName(branch)
+	if lerr != nil {
+		// No line and no projected ref: nothing this engine can publish under
+		// that name, and silently succeeding is the bug being fixed.
+		return fmt.Errorf(
+			"%s: branch %q has nothing to publish: no line by that name and no refs/heads/%s to push",
+			label, branch, branch)
+	}
+	if line.Status == "abandoned" {
+		return fmt.Errorf(
+			"%s: branch %q is abandoned, so it publishes nothing: an abandoned line is not projected to refs/heads/%s. Re-create the line (express it under a new name and commit) if you meant to publish this work",
+			label, branch, branch)
+	}
+	return fmt.Errorf(
+		"%s: branch %q has nothing to publish: it has no sealed commit yet, so there is no refs/heads/%s to push. Run 'cairn commit %s -m ...' first",
+		label, branch, branch, branch)
+}
+
 // push is the shared implementation behind PushToRemote/PushToRemoteBranch —
 // the unlocked, single-call convenience path used when there is no worktime
 // lock to release around the network phase (i.e. engine-level callers/tests
@@ -228,6 +258,21 @@ func (e *Engine) PreparePush(label, remoteName, branch string, refSpecs []config
 
 	if err := e.Export(); err != nil {
 		return nil, fmt.Errorf("%s: %w", label, err)
+	}
+
+	// A branch-scoped push whose branch has no projected ref would publish
+	// NOTHING while reporting success (#159). branchRefSpecs always builds
+	// "refs/heads/<b>:refs/heads/<b>", but Export projects a head only for a
+	// line with status='open' that has a sealed tip — so an abandoned line
+	// leaves the refspec matching no source, go-git finds no work to do, and
+	// every layer above prints "pushed <b> -> <remote>" and exits 0 having
+	// created no ref on the remote. That makes the documented
+	// `cairn commit && cairn push` idiom unsafe, since the push is the step
+	// meant to PROVE the work landed. Fail closed and say which case it is.
+	if branch != "" {
+		if err := e.checkBranchIsPublishable(label, branch); err != nil {
+			return nil, err
+		}
 	}
 
 	rem, err := e.git.Remote(remoteName)
