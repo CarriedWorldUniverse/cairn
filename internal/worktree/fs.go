@@ -9,7 +9,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
@@ -286,102 +290,72 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 
 	// 1. Write/update each target file only when it differs from what's on disk.
 	//
-	// The counter below is the clone's only signal during what is, on a large
-	// tree, the longest phase after the pack lands (#146). It updates every
-	// materializeProgressEvery paths rather than per path: at 100k files a
-	// per-file write would cost more than the work it reports on. Progress is
-	// a no-op unless a progress writer was installed, which only a clone does.
-	total, seen := len(meta), 0
-	for p, entry := range meta {
-		seen++
-		if seen%materializeProgressEvery == 0 {
-			eng.Progressf("\rcairn: materializing … %d/%d files", seen, total)
+	// Parallel (#151). readBlob is zlib decompression — pure CPU — and the
+	// writes are syscall-bound, so the old serial loop spent ~19s of a
+	// 40k-file/259MB clone on a single core while the other fifteen idled.
+	// The pool is BOUNDED rather than unbounded: on Windows every file
+	// creation is scanned by AV and renames already need winretry, so past a
+	// handful of workers more concurrency buys contention, not throughput.
+	total := len(meta)
+	var seen int64
+	var progressMu sync.Mutex
+
+	// reflinkSupported PROBES by creating temp files, so it is evaluated ONCE
+	// here and never per file.
+	cowCache := reflinkSupported(blobs)
+
+	type entryJob struct {
+		path  string
+		entry change.TreeEntry
+	}
+	jobs := make(chan entryJob)
+	stop := make(chan struct{})
+	var errMu sync.Mutex
+	var firstErr error
+	fail := func(err error) {
+		errMu.Lock()
+		if firstErr == nil {
+			firstErr = err
+			close(stop) // closed exactly once, under the lock
 		}
-		full, err := containedJoin(dir, p)
-		if err != nil {
-			// Defense in depth: change.FilesMeta already rejects traversal entry
-			// names (#126), so an escape here means a new tree-read path bypassed
-			// that guard — refuse to write rather than escape the branch folder.
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
-		if entry.Mode == change.ModeGitlink {
-			// A gitlink's SHA is a commit in ANOTHER repository, so there is no
-			// blob here to write (#140). git leaves an empty directory for a
-			// submodule it has not initialized; do the same. Whatever the user
-			// checked out inside is theirs — the deletion pass below skips this
-			// subtree rather than sweeping it as untracked.
-			if err := removeSymlinkComponents(dir, full); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			// A NON-DIRECTORY occupying the path must go first: a previous tree
-			// may have had a regular file or a symlink here (upstream replaced a
-			// vendored file with a nested checkout). MkdirAll would fail outright
-			// on a file — reproducing the very wedge this fixes — and on a
-			// symlink it would silently SUCCEED by following the link, leaving
-			// disk disagreeing with the tree and pointing outside the branch
-			// folder (the #126 write-through shape). An existing DIRECTORY is
-			// left alone: it may be the operator's populated submodule.
-			if fi, lerr := os.Lstat(full); lerr == nil && !fi.IsDir() {
-				if rerr := winretry.Do(func() error { return os.Remove(full) }); rerr != nil {
-					return fmt.Errorf("worktree.Materialize: %w", rerr)
+		errMu.Unlock()
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < materializeWorkers(); i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				if err := writeEntry(eng, dir, blobs, j.path, j.entry, hint[j.path], cowCache); err != nil {
+					fail(err)
+					return
+				}
+				if n := atomic.AddInt64(&seen, 1); n%materializeProgressEvery == 0 {
+					progressMu.Lock()
+					eng.Progressf("\rcairn: materializing … %d/%d files", n, total)
+					progressMu.Unlock()
 				}
 			}
-			if err := os.MkdirAll(full, 0o755); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			continue
+		}()
+	}
+feed:
+	for p, entry := range meta {
+		select {
+		case <-stop:
+			break feed
+		case jobs <- entryJob{p, entry}:
 		}
-		if entry.Mode == change.ModeSymlink {
-			if symlinkUpToDateBySHA(full, entry.SHA) {
-				continue
-			}
-			data, err := eng.ReadBlob(entry.SHA)
-			if err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			// Actually writing this path: neutralize any on-disk symlink left
-			// in an ancestor component before creating dirs (#126, see
-			// removeSymlinkComponents doc).
-			if err := removeSymlinkComponents(dir, full); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			_ = os.Remove(full)
-			if err := os.Symlink(string(data), full); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-			continue
-		}
-		if regularUpToDateBySHA(full, entry, hint[p]) {
-			continue
-		}
-		// Actually writing this path: neutralize any on-disk symlink left in
-		// an ancestor component before creating dirs (#126, see
-		// removeSymlinkComponents doc).
-		if err := removeSymlinkComponents(dir, full); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
-		data, err := eng.ReadBlob(entry.SHA)
-		if err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
-		sum := sha256.Sum256(data)
-		cacheBlob := filepath.Join(blobs, hex.EncodeToString(sum[:]))
-		if _, serr := os.Stat(cacheBlob); errors.Is(serr, os.ErrNotExist) {
-			if err := writeFileAtomic(cacheBlob, data); err != nil {
-				return fmt.Errorf("worktree.Materialize: %w", err)
-			}
-		} else if serr != nil {
-			return fmt.Errorf("worktree.Materialize: %w", serr)
-		}
-		if err := placeFile(cacheBlob, full, entry.Mode == change.ModeExecutable); err != nil {
-			return fmt.Errorf("worktree.Materialize: %w", err)
-		}
+	}
+	close(jobs)
+	wg.Wait()
+	if firstErr != nil {
+		return firstErr
 	}
 
 	if total > 0 {
@@ -453,6 +427,147 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	return nil
 }
 
+// materializeWorkers bounds the materialize pool. Capped well below a big
+// machine's core count on purpose: the work is as much syscall as CPU, and on
+// Windows each file creation is AV-scanned and renames already retry under
+// contention (winretry), so a wide pool there costs more than it returns.
+func materializeWorkers() int {
+	// Escape hatch for the environments where the right number is not the
+	// core count — notably a Windows box whose AV scans every file creation,
+	// where fewer workers can beat more.
+	if v := os.Getenv("CAIRN_MATERIALIZE_WORKERS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	// Capped at 4 on measurement, not taste: on a 40k-file/259MB clone the
+	// wall time was 22.6s / 17.2s / 14.7s / 14.9s at 1 / 2 / 4 / 8 workers.
+	// It plateaus because the remaining bottleneck is inside go-git's object
+	// store (its LRU object cache and packfile reads serialize), not in this
+	// loop — so more workers past 4 buy nothing here and cost AV contention
+	// on Windows.
+	n := runtime.NumCPU()
+	if n > 4 {
+		n = 4
+	}
+	if n < 1 {
+		n = 1
+	}
+	return n
+}
+
+// writeEntry materializes ONE tree entry into the branch folder. It is the
+// body of the parallel loop above; everything it touches is either per-entry
+// or safe to share (meta/hint are read-only, MkdirAll is idempotent, and
+// removeSymlinkComponents already tolerates a component another worker removed
+// first).
+func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry, hint wcCacheEntry, cowCache bool) error {
+	full, err := containedJoin(dir, p)
+	if err != nil {
+		// Defense in depth: change.FilesMeta already rejects traversal entry
+		// names (#126), so an escape here means a new tree-read path bypassed
+		// that guard — refuse to write rather than escape the branch folder.
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
+	if entry.Mode == change.ModeGitlink {
+		// A gitlink's SHA is a commit in ANOTHER repository, so there is no
+		// blob here to write (#140). git leaves an empty directory for a
+		// submodule it has not initialized; do the same. Whatever the user
+		// checked out inside is theirs — the deletion pass below skips this
+		// subtree rather than sweeping it as untracked.
+		if err := removeSymlinkComponents(dir, full); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		// A NON-DIRECTORY occupying the path must go first: a previous tree
+		// may have had a regular file or a symlink here (upstream replaced a
+		// vendored file with a nested checkout). MkdirAll would fail outright
+		// on a file — reproducing the very wedge this fixes — and on a
+		// symlink it would silently SUCCEED by following the link, leaving
+		// disk disagreeing with the tree and pointing outside the branch
+		// folder (the #126 write-through shape). An existing DIRECTORY is
+		// left alone: it may be the operator's populated submodule.
+		if fi, lerr := os.Lstat(full); lerr == nil && !fi.IsDir() {
+			if rerr := winretry.Do(func() error { return os.Remove(full) }); rerr != nil {
+				return fmt.Errorf("worktree.Materialize: %w", rerr)
+			}
+		}
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		return nil
+	}
+	if entry.Mode == change.ModeSymlink {
+		if symlinkUpToDateBySHA(full, entry.SHA) {
+			return nil
+		}
+		data, err := eng.ReadBlob(entry.SHA)
+		if err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		// Actually writing this path: neutralize any on-disk symlink left
+		// in an ancestor component before creating dirs (#126, see
+		// removeSymlinkComponents doc).
+		if err := removeSymlinkComponents(dir, full); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		_ = os.Remove(full)
+		if err := os.Symlink(string(data), full); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		return nil
+	}
+	if regularUpToDateBySHA(full, entry, hint) {
+		return nil
+	}
+	// Actually writing this path: neutralize any on-disk symlink left in
+	// an ancestor component before creating dirs (#126, see
+	// removeSymlinkComponents doc).
+	if err := removeSymlinkComponents(dir, full); err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
+	data, err := eng.ReadBlob(entry.SHA)
+	if err != nil {
+		return fmt.Errorf("worktree.Materialize: %w", err)
+	}
+	sum := sha256.Sum256(data)
+	cacheBlob := filepath.Join(blobs, hex.EncodeToString(sum[:]))
+	isExec := entry.Mode == change.ModeExecutable
+	_, serr := os.Stat(cacheBlob)
+	switch {
+	case serr == nil:
+		// Warm cache: clone out of it. On a reflink filesystem that is a CoW
+		// clone and costs almost nothing.
+		if err := placeFile(cacheBlob, full, isExec); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+	case errors.Is(serr, os.ErrNotExist):
+		// Cold: write ONCE, straight to the target. The old path wrote the blob
+		// into the cache and then copied it back out, costing every file two
+		// creates and two renames — and on a filesystem without reflink (NTFS)
+		// two full data writes. Halving file creations is what matters most on
+		// Windows, where every creation is AV-scanned.
+		if err := writeBlobToTarget(full, data, isExec); err != nil {
+			return fmt.Errorf("worktree.Materialize: %w", err)
+		}
+		// Fill the cache only where doing so is nearly free. Without reflink
+		// this would be a second full copy — the very cost just removed — so
+		// the cache stays cold there and the next materialize re-reads the
+		// blob. Best-effort: a failed cache fill must never fail the checkout.
+		if cowCache {
+			_ = reflinkOrCopy(full, cacheBlob)
+		}
+	default:
+		return fmt.Errorf("worktree.Materialize: %w", serr)
+	}
+	return nil
+}
+
 // regularUpToDateBySHA reports whether the regular file at full already
 // carries exactly entry's content and mode, so it can be left untouched
 // (preserving mtime, which keeps the snapshot stat-cache warm) — without ever
@@ -517,6 +632,29 @@ func placeFile(cacheBlob, full string, exec bool) error {
 	if exec {
 		mode = 0o755
 	}
+	if err := os.Chmod(tmp, mode); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return renameWithRetry(tmp, full)
+}
+
+// writeBlobToTarget writes data straight to the worktree path, atomically and
+// with the right mode — the cold-cache path, replacing "write into the cache,
+// then copy back out" with a single write. It mirrors placeFile's shape (same
+// temp name, same retrying rename) so both leave identical on-disk state.
+func writeBlobToTarget(full string, data []byte, exec bool) error {
+	tmp := full + ".cairn-wtmp"
+	_ = os.Remove(tmp)
+	mode := os.FileMode(0o644)
+	if exec {
+		mode = 0o755
+	}
+	if err := os.WriteFile(tmp, data, mode); err != nil {
+		return err
+	}
+	// WriteFile's mode is subject to umask; chmod pins it exactly as placeFile
+	// does, so the executable bit survives a restrictive umask.
 	if err := os.Chmod(tmp, mode); err != nil {
 		_ = os.Remove(tmp)
 		return err
