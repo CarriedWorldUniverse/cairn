@@ -87,8 +87,15 @@ func TestSeedNeverHidesAnEditAfterMaterialize(t *testing.T) {
 	}
 
 	before := headOf(t, r, def)
-	time.Sleep(10 * time.Millisecond)
-	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("edited after materialize\n"), 0o644); err != nil {
+	edited := filepath.Join(dir, "readme.txt")
+	if err := os.WriteFile(edited, []byte("edited after materialize\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// See TestSeedNeverHidesASameSizeEdit: a distinct mtime, set explicitly
+	// rather than slept for, so the test does not depend on the filesystem's
+	// timestamp granularity.
+	past := time.Now().Add(-5 * time.Second)
+	if err := os.Chtimes(edited, past, past); err != nil {
 		t.Fatal(err)
 	}
 	if err := r.SyncWorking(); err != nil {
@@ -114,8 +121,16 @@ func TestSeedNeverHidesASameSizeEdit(t *testing.T) {
 	for i := range replacement {
 		replacement[i] = 'z'
 	}
-	time.Sleep(10 * time.Millisecond)
 	if err := os.WriteFile(p, replacement, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Pin the mtime to a distinct instant in the recent past rather than
+	// relying on a sleep to outrun the filesystem's timestamp granularity —
+	// which is nanoseconds on some filesystems and a whole second on others.
+	// Still safely before the scan start, so this is the ordinary case and not
+	// the racy one.
+	past := time.Now().Add(-5 * time.Second)
+	if err := os.Chtimes(p, past, past); err != nil {
 		t.Fatal(err)
 	}
 
