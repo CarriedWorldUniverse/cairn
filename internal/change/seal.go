@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -120,7 +119,7 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 
 	newID = newChangeID()
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return "", nil, fmt.Errorf("change.Seal: begin tx: %w", err)
@@ -171,7 +170,7 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	sealBefore := before
 	var snapID, sealBeforeJSON string
 	switch err := tx.QueryRow(
-		`SELECT id, view_before FROM operation WHERE op_type=? AND detail=? ORDER BY id DESC LIMIT 1`,
+		`SELECT id, view_before FROM operation WHERE op_type=? AND detail=? ORDER BY rowid DESC LIMIT 1`,
 		opSnapshot, ch.ID).Scan(&snapID, &sealBeforeJSON); {
 	case err == nil:
 		var snapBefore map[string]string

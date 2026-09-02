@@ -3,7 +3,6 @@ package change
 import (
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 // Conflict is a row in the conflict catalogue: a single path that could not be
@@ -101,7 +100,7 @@ func (e *Engine) Conflicts(changeID string) ([]Conflict, error) {
 // worktree reassigns them there, where the operator resolves against the working
 // commit. Idempotent: reassigning zero rows just clears the source flag.
 func (e *Engine) ReassignConflicts(fromChangeID, toChangeID string) error {
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.ReassignConflicts: begin tx: %w", err)
@@ -187,7 +186,7 @@ func (e *Engine) resolveConflict(changeID, path string, resolved []byte, mode re
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: begin tx: %w", err)

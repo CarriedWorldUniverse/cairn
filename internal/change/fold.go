@@ -3,7 +3,6 @@ package change
 import (
 	"errors"
 	"fmt"
-	"time"
 )
 
 // ErrHasConflict is returned by FoldLine when the line (any of its changes)
@@ -89,7 +88,7 @@ func (e *Engine) FoldLine(lineID string) error {
 	if err != nil {
 		return fmt.Errorf("change.FoldLine: %w", err)
 	}
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.FoldLine: begin tx: %w", err)
@@ -145,7 +144,7 @@ func (e *Engine) AbandonLine(lineID string) error {
 	if err != nil {
 		return fmt.Errorf("change.AbandonLine: %w", err)
 	}
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.AbandonLine: begin tx: %w", err)

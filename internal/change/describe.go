@@ -2,7 +2,6 @@ package change
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -147,7 +146,7 @@ func (e *Engine) ChangeIDOf(commitSha string) (string, error) {
 // change has no working commit yet, so the next snapshot roots on the line tip;
 // this is how undo-reconciliation restarts a working commit on the restored tip.
 func (e *Engine) SetWorkingHead(changeID, head string) error {
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	now := stamp(e.now())
 	if _, err := e.db.Exec(
 		`UPDATE change SET head_commit=?, updated_at=? WHERE id=?`,
 		head, now, changeID); err != nil {

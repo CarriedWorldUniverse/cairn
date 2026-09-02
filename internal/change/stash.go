@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -105,7 +104,7 @@ func (e *Engine) StashPush(changeID, message string) (int64, error) {
 		return 0, fmt.Errorf("change.StashPush: write reset commit: %w", err)
 	}
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("change.StashPush: begin tx: %w", err)
@@ -235,7 +234,7 @@ func (e *Engine) StashApply(changeID string, stashID int64, drop bool) error {
 		return fmt.Errorf("change.StashApply: %w", err)
 	}
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.StashApply: begin tx: %w", err)

@@ -50,7 +50,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 
 	var def string
 	if hasMeta {

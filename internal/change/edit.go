@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -318,7 +317,7 @@ func (e *Engine) rewriteChainOnto(lineID, baseCommit string, origChain, newSeq [
 		conflicted[c.ChangeID] = struct{}{}
 	}
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("change.rewriteChain: begin tx: %w", err)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -548,7 +547,7 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 // path). A "" changeID means the line has no open change, so only the line tip
 // moves and no change is touched or created.
 func (e *Engine) applyHead(changeID, lineID, head string, hasConflict int) error {
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("reconcile: begin tx: %w", err)
@@ -574,7 +573,7 @@ func (e *Engine) applyHead(changeID, lineID, head string, hasConflict int) error
 // and advances the owning line tip — all in one transaction, exactly as Commit
 // persists merge conflicts as data.
 func (e *Engine) applyMerge(changeID, lineID, head string, hasConflict int, conflicts []Conflict) error {
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("reconcile: begin tx: %w", err)

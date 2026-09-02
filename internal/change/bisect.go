@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 )
 
 // BisectInfo is the snapshot of an active bisect session for status reporting.
@@ -144,7 +143,7 @@ func (e *Engine) BisectStart(lineID, branch, good, bad string) (BisectStep, erro
 	mi := gi + (bi-gi)/2
 	current := chain[mi].Commit
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	if _, err := e.db.Exec(
 		`INSERT INTO bisect(id, line_id, branch, good_sha, bad_sha, current_sha, restore_tip, started_at)
 		 VALUES(1,?,?,?,?,?,?,?)`,

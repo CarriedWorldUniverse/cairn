@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -40,7 +39,7 @@ func (e *Engine) MarkPrivate(path, mode string) error {
 	if cp == "" {
 		return fmt.Errorf("change.MarkPrivate: empty path")
 	}
-	at := e.now().UTC().Format(time.RFC3339Nano)
+	at := stamp(e.now())
 	if _, err := e.db.Exec(
 		`INSERT INTO privacy(path, mode, created_at) VALUES(?,?,?)
 		 ON CONFLICT(path) DO UPDATE SET mode=excluded.mode`,
