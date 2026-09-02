@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
@@ -299,6 +300,7 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	total := len(meta)
 	var seen int64
 	var progressMu sync.Mutex
+	started := time.Now()
 
 	// reflinkSupported PROBES by creating temp files, so it is evaluated ONCE
 	// here and never per file.
@@ -362,7 +364,7 @@ feed:
 		// Always land on the true total: the modulo above will have skipped it
 		// whenever total is not an exact multiple, and a counter that stops at
 		// 99500/100000 reads as a hang — the very thing this fixes.
-		eng.Progressf("\rcairn: materializing … %d/%d files\n", total, total)
+		eng.Progressf("\rcairn: materializing … %d/%d files %s\n", total, total, change.FormatDur(time.Since(started)))
 	}
 
 	// 2. Delete on-disk files no longer in the target. The walk uses the target as

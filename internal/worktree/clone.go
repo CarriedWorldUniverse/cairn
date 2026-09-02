@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -18,6 +19,7 @@ import (
 // progress, if non-nil, receives the git fetch sideband (counting/receiving
 // objects) so the caller can show clone progress; pass nil to stay silent.
 func Clone(url, dir, author string, progress io.Writer) (*Repo, error) {
+	cloneStart := time.Now()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("worktree.Clone: %w", err)
 	}
@@ -44,5 +46,9 @@ func Clone(url, dir, author string, progress io.Writer) (*Repo, error) {
 		_ = eng.Close()
 		return nil, fmt.Errorf("worktree.Clone: %w", err)
 	}
+	// The total is what makes the per-phase numbers auditable: they must add
+	// up to roughly this, and anything unaccounted for is a phase still
+	// reporting nothing.
+	eng.Progressf("cairn: clone total %s\n", change.FormatDur(time.Since(cloneStart)))
 	return r, nil
 }
