@@ -23,26 +23,50 @@ type wcCacheEntry struct {
 	Mode    change.EntryMode `json:"k"`
 }
 
-// loadWCCache reads the snapshot cache JSON at path. A missing file yields an
-// empty map (not an error): a first-ever scan has no cache.
-func loadWCCache(path string) (map[string]wcCacheEntry, error) {
+// wcCacheFile is the on-disk cache: the per-path fingerprints plus the working
+// commit those fingerprints were last snapshotted INTO.
+//
+// Head is what lets syncBranch skip re-snapshotting an unchanged branch (#155).
+// An unchanged scan proves the entries are identical to last time; Head proves
+// nothing else moved the working change in the meantime (a stash, an undo, a
+// sibling process). Both must hold, or the snapshot runs as before.
+type wcCacheFile struct {
+	Entries map[string]wcCacheEntry `json:"e"`
+	Head    string                  `json:"h"`
+}
+
+// loadWCCache reads the snapshot cache JSON at path, returning the per-path
+// fingerprints and the working commit they were snapshotted into. A missing
+// file yields an empty map (not an error): a first-ever scan has no cache.
+//
+// It also reads the OLD format — a bare map with no recorded head — which is
+// what every cache written before #155 looks like. Those load with head "",
+// which fails the skip guard, so the first sync after an upgrade snapshots
+// exactly as it always did and records a head for next time. Degrading to the
+// slow-but-correct path is the only safe way to fail here.
+func loadWCCache(path string) (map[string]wcCacheEntry, string, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return map[string]wcCacheEntry{}, nil
+		return map[string]wcCacheEntry{}, "", nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", fmt.Errorf("worktree.loadWCCache: %w", err)
 	}
+	var f wcCacheFile
+	if err := json.Unmarshal(data, &f); err == nil && f.Entries != nil {
+		return f.Entries, f.Head, nil
+	}
+	// Pre-#155 format: a bare path→fingerprint map, no head.
 	out := map[string]wcCacheEntry{}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", fmt.Errorf("worktree.loadWCCache: %w", err)
 	}
-	return out, nil
+	return out, "", nil
 }
 
 // saveWCCache writes the snapshot cache JSON to path atomically (temp + rename).
-func saveWCCache(path string, c map[string]wcCacheEntry) error {
-	data, err := json.Marshal(c)
+func saveWCCache(path string, c map[string]wcCacheEntry, head string) error {
+	data, err := json.Marshal(wcCacheFile{Entries: c, Head: head})
 	if err != nil {
 		return fmt.Errorf("worktree.saveWCCache: %w", err)
 	}

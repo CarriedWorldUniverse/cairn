@@ -536,9 +536,11 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
 	}
 	cachePath := filepath.Join(r.root, ".cairn", "wc-cache", branch+".json")
-	cache, err := loadWCCache(cachePath)
+	cache, cachedHead, err := loadWCCache(cachePath)
 	if err != nil {
-		cache = map[string]wcCacheEntry{} // SELF-HEAL: corrupt cache → full rescan
+		// SELF-HEAL: corrupt cache → full rescan, and no recorded head, so the
+		// snapshot below runs unconditionally.
+		cache, cachedHead = map[string]wcCacheEntry{}, ""
 	}
 	scanStartNs := time.Now().UnixNano()
 	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, gitlinks, cache, scanStartNs)
@@ -557,14 +559,39 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 			entries[p] = ent
 		}
 	}
-	if _, _, err := r.eng.SnapshotWorking(entry.ChangeID, entries); err != nil {
-		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
+	// Skip the snapshot only when BOTH hold (#155):
+	//
+	//   - the scan is unchanged, so `entries` is provably identical to what was
+	//     snapshotted last time (every path matched on mtime, size and mode,
+	//     none vanished) — the same fact that already lets saveWCCache be
+	//     skipped; and
+	//   - the change's head is still the exact commit that snapshot produced,
+	//     so nothing else has moved it since (stash, undo, a sibling process).
+	//
+	// Both true ⇒ SnapshotWorking would rebuild the identical tree and hit its
+	// own no-op check — but only AFTER writeTreeRefs has walked and written the
+	// whole tree, which is the ~1s this avoids on a 40k-file branch. Either
+	// false ⇒ snapshot exactly as before. A sealed change never skips: its
+	// working commit is not the amend-in-place one this reasoning is about.
+	head := cachedHead
+	ch, cerr := r.eng.GetChange(entry.ChangeID)
+	canSkip := cerr == nil && !ch.Sealed && !cacheChanged &&
+		cachedHead != "" && ch.HeadCommit == cachedHead
+	if !canSkip {
+		_, newHead, serr := r.eng.SnapshotWorking(entry.ChangeID, entries)
+		if serr != nil {
+			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
+		}
+		head = newHead
 	}
-	if cacheChanged {
+	// Persist when the fingerprints changed OR when the recorded head is stale
+	// — the latter is what upgrades a pre-#155 cache, and what stops a skip
+	// from being decided against an out-of-date head next time.
+	if cacheChanged || head != cachedHead {
 		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
-		if err := saveWCCache(cachePath, newCache); err != nil {
+		if err := saveWCCache(cachePath, newCache, head); err != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
 	}
@@ -988,7 +1015,10 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
-	diffs, err := r.WorkingDiff(branch)
+	// Reuse the scan syncOne just did above, under this same lock — see
+	// workingDiffSynced. Calling the public WorkingDiff here re-scanned and
+	// re-snapshotted the whole branch a second time.
+	diffs, err := r.workingDiffSynced(entry)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
@@ -1051,6 +1081,26 @@ func (r *Repo) WorkingDiff(branch string) ([]change.FileDiff, error) {
 	if _, err := r.syncOne(branch, entry); err != nil {
 		return nil, err
 	}
+	return r.workingDiffSynced(entry)
+}
+
+// workingDiffSynced is WorkingDiff's body WITHOUT the snapshot sync — for a
+// caller that has already synced this branch, under the same lock, moments ago
+// (#154).
+//
+// It is deliberately NOT a general "skip the sync" switch. Status was scanning
+// and re-snapshotting the same 40k-file branch TWICE per invocation — once for
+// itself, then again inside WorkingDiff — which on a large tree was ~1s of pure
+// duplicate work, and worse, it built the report from two DIFFERENT instants:
+// `ahead` from the first scan, `changes` from the second. Reusing the first
+// scan is both faster and more correct, because the whole report now describes
+// one coherent moment.
+//
+// Callers that MUTATE the folder mid-command (Commit sealing, Resolve
+// re-materializing) must keep calling the syncing WorkingDiff — which is why
+// this is a private variant taking an already-resolved entry, rather than a
+// memo on the Repo that every path would silently inherit.
+func (r *Repo) workingDiffSynced(entry Entry) ([]change.FileDiff, error) {
 	ch, err := r.eng.GetChange(entry.ChangeID)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)

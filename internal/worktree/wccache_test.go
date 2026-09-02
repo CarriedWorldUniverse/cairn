@@ -38,22 +38,28 @@ func TestWCCacheRoundTrip(t *testing.T) {
 		"bin/run":  {MtimeNs: 456, Size: 9, BlobSHA: "cafebabe", Mode: change.ModeExecutable},
 		"dir/link": {MtimeNs: 789, Size: 5, BlobSHA: "0badf00d", Mode: change.ModeSymlink},
 	}
-	if err := saveWCCache(path, c); err != nil {
+	if err := saveWCCache(path, c, "headsha"); err != nil {
 		t.Fatalf("saveWCCache: %v", err)
 	}
-	got, err := loadWCCache(path)
+	got, head, err := loadWCCache(path)
 	if err != nil {
 		t.Fatalf("loadWCCache: %v", err)
 	}
 	if !reflect.DeepEqual(got, c) {
 		t.Fatalf("round-trip mismatch:\n got %v\nwant %v", got, c)
 	}
+	if head != "headsha" {
+		t.Fatalf("head round-trip = %q, want %q", head, "headsha")
+	}
 }
 
 func TestWCCacheLoadMissing(t *testing.T) {
-	got, err := loadWCCache(filepath.Join(t.TempDir(), "nope.json"))
+	got, head, err := loadWCCache(filepath.Join(t.TempDir(), "nope.json"))
 	if err != nil {
 		t.Fatalf("loadWCCache missing: %v", err)
+	}
+	if head != "" {
+		t.Fatalf("missing file yielded head %q, want empty", head)
 	}
 	if len(got) != 0 {
 		t.Fatalf("expected empty map for missing file, got %v", got)
