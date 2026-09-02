@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 )
 
 // Line is a row in the line catalogue: a named history (like a branch) with a
@@ -54,7 +53,7 @@ func (e *Engine) CreateLine(name, parentLineID string) (Line, error) {
 		BaseCommit: forkPoint,
 		Status:     "open",
 	}
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	now := stamp(e.now())
 	_, err = e.db.Exec(
 		`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
 		 VALUES(?,?,?,?,?,?,?,?)`,
@@ -114,7 +113,7 @@ func (e *Engine) Reparent(lineID, newParentID string) error {
 	if err != nil {
 		return fmt.Errorf("change.Reparent: %w", err)
 	}
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	now := stamp(e.now())
 	if _, err := e.db.Exec(
 		`UPDATE line SET parent_line=?, base_commit=?, updated_at=? WHERE id=?`,
 		newParentID, base, now, lineID); err != nil {

@@ -2,7 +2,6 @@ package change
 
 import (
 	"fmt"
-	"time"
 )
 
 // Embargo is the COMMIT-level half of the privacy model, distinct from the
@@ -24,7 +23,7 @@ const EmbargoRefPrefix = "refs/cairn/embargo/"
 // MarkEmbargo flags a commit as embargoed (idempotent). The caller resolves the
 // revision to a full sha first.
 func (e *Engine) MarkEmbargo(commitSHA string) error {
-	at := e.now().UTC().Format(time.RFC3339Nano)
+	at := stamp(e.now())
 	if _, err := e.db.Exec(
 		`INSERT INTO embargo(commit_sha, created_at) VALUES(?,?)
 		 ON CONFLICT(commit_sha) DO NOTHING`, commitSHA, at); err != nil {

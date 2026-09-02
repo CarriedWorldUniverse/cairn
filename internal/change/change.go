@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 )
 
 // Change is a row in the change catalogue: a stable, named unit of work on a
@@ -65,7 +64,7 @@ func (e *Engine) CreateChange(lineID, author string) (Change, error) {
 		Author: author,
 		Status: "open",
 	}
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	now := stamp(e.now())
 	_, err := e.db.Exec(
 		`INSERT INTO change(id, line_id, author, head_commit, status, has_conflict, sealed, created_at, updated_at)
 		 VALUES(?,?,?,'',?,0,0,?,?)`,
@@ -193,7 +192,7 @@ func (e *Engine) Commit(changeID string, files map[string][]byte, modes map[stri
 	// tip — commit or roll back together, so a failure can't orphan conflict
 	// rows or leave a stale tip. The go-git blob/tree/commit writes above are
 	// content-addressed and idempotent, so they stay outside the transaction.
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return CommitResult{}, fmt.Errorf("change.Commit: begin tx: %w", err)

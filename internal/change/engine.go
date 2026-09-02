@@ -190,7 +190,7 @@ func (e *Engine) ensureRootLine() error {
 	if count > 0 {
 		return nil
 	}
-	now := e.now().UTC().Format(time.RFC3339Nano)
+	now := stamp(e.now())
 	if _, err := e.db.Exec(
 		`INSERT INTO line(id, name, parent_line, tip_commit, base_commit, status, created_at, updated_at)
 		 VALUES(?,?,NULL,'','','open',?,?)`,

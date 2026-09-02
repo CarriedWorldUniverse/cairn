@@ -75,7 +75,7 @@ func (e *Engine) LoadFromMeta() (bool, error) {
 		return false, fmt.Errorf("change.LoadFromMeta: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	if _, err := e.importMeta(ref.Hash().String(), tx, ts); err != nil {
 		return false, fmt.Errorf("change.LoadFromMeta: %w", err)
 	}

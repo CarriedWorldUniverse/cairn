@@ -3,7 +3,6 @@ package change
 import (
 	"fmt"
 	"path"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -341,7 +340,7 @@ func (e *Engine) remapCatalogue(spec ReauthorSpec, mapping map[string]string) er
 		{"bisect", "good_sha"}, {"bisect", "bad_sha"},
 		{"bisect", "current_sha"}, {"bisect", "restore_tip"},
 	}
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return fmt.Errorf("change.remapCatalogue: begin: %w", err)

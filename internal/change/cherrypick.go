@@ -2,7 +2,6 @@ package change
 
 import (
 	"fmt"
-	"time"
 )
 
 // opCherryPick is the op-log type for a cherry-pick: it appends a sealed commit
@@ -147,7 +146,7 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) (newSealedChangeI
 		}
 	}
 
-	ts := e.now().UTC().Format(time.RFC3339Nano)
+	ts := stamp(e.now())
 	tx, err := e.db.Begin()
 	if err != nil {
 		return "", nil, fmt.Errorf("change.CherryPick: begin: %w", err)

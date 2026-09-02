@@ -2,7 +2,6 @@ package change
 
 import (
 	"fmt"
-	"time"
 )
 
 // Tag is a row in the tag catalogue: a stable, human-readable name pointing at
@@ -17,7 +16,7 @@ type Tag struct {
 // Tag records a tag named name at commitSha, attributed to tagger. The tag name
 // is a PRIMARY KEY, so re-tagging an existing name returns a wrapped error.
 func (e *Engine) Tag(name, commitSha, tagger string) error {
-	at := e.now().UTC().Format(time.RFC3339Nano)
+	at := stamp(e.now())
 	if _, err := e.db.Exec(
 		`INSERT INTO tag(name, commit_sha, tagger, at) VALUES(?,?,?,?)`,
 		name, commitSha, tagger, at); err != nil {
