@@ -3,6 +3,7 @@ package worktree
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -173,6 +174,13 @@ func (r *Repo) SetIdentity(name, email string) { r.eng.SetIdentity(name, email) 
 // cacheDir returns the path to the content-addressed blob cache shared by all
 // materializations in this working copy.
 func (r *Repo) cacheDir() string { return filepath.Join(r.root, ".cairn", "cache") }
+
+// SetProgress streams this repo's progress to w — the same writer the clone
+// path installs. It is opt-in per COMMAND rather than always on: the verbs that
+// can run for minutes on a big tree (express, unexpress, fold, pull) turn it on
+// so they stop looking hung, while the quick read-only ones stay silent and
+// keep their output scriptable (#153).
+func (r *Repo) SetProgress(w io.Writer) { r.eng.SetProgress(w) }
 
 // Close releases the underlying change engine.
 func (r *Repo) Close() error {
@@ -423,6 +431,14 @@ func (r *Repo) Express(branch, parent string) error {
 // cache makes an unchanged folder cheap. Self-healing: a corrupt/missing cache is
 // treated as empty (full rescan), never an error.
 func (r *Repo) SyncWorking() error {
+	syncStart := time.Now()
+	defer func() {
+		// Only worth a line when it actually cost something: on a small repo
+		// this is microseconds and the noise would swamp the command's output.
+		if d := time.Since(syncStart); d > time.Second {
+			r.eng.Progressf("cairn: synced working copy in %s\n", change.FormatDur(d))
+		}
+	}()
 	// Serialize with the cross-process working-copy lock (#86): this scans EVERY
 	// expressed branch, reading each line's tip from the shared cairn.db and its
 	// commit object from the shared git store. Without the lock a concurrent
