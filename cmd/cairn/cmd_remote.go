@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	cairnv1 "github.com/CarriedWorldUniverse/cwb-proto/gen/go/cwb/cairn/v1"
 )
@@ -189,15 +188,17 @@ func cmdPull(args []string) error {
 	if fs.NArg() > 0 {
 		remote = fs.Arg(0)
 	}
-	pullStarted := time.Now()
-	r, err := openRepo(*repo, *author)
+	// pull re-materializes every expressed folder, so it MUST run the sync
+	// prelude first (#182): opening without it meant the folders were rewritten
+	// from their line tips with un-sealed edits never snapshotted — reverted,
+	// and untracked new files deleted by the materialize sweep. Repo.Pull also
+	// syncs defensively; this keeps the CLI's timing and progress consistent
+	// with the other slow verbs.
+	r, pullStarted, err := openRepoSyncedVerbose(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
 	defer r.Close()
-	// pull re-materializes every expressed folder, so it belongs with the slow
-	// verbs even though it opens the repo without the sync prelude.
-	r.SetProgress(os.Stderr)
 	defer reportElapsed("pull", pullStarted)
 	sum, err := r.Pull(remote)
 	if err != nil {

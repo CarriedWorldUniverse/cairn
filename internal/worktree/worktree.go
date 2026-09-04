@@ -1458,6 +1458,16 @@ func (r *Repo) PushBranchReconcile(remote, branch string) error {
 // fetchNetwork/remoteHeadsSafe takes only the per-remote remote.lock (issue
 // #98 Phase B; see the lock-order invariant on lockState()).
 func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
+	// See Pull: never rewrite a folder that has not been snapshotted (#182) —
+	// but ONLY this line's folder. pullBranch is the scoped reconcile behind
+	// `push --reconcile`, and it must not touch any other line's working
+	// change (TestPushBranchReconcileCleanMergeScopedToOneLine pins that).
+	// A folder deleted out from under cairn (#133) is not an error here.
+	if entry, expressed := r.st.Expressed[branch]; expressed {
+		if _, err := r.syncOne(branch, entry); err != nil && !errors.Is(err, ErrFolderMissing) {
+			return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
+		}
+	}
 	if err := r.fetchNetwork(remote, false); err != nil {
 		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
 	}
@@ -1561,6 +1571,15 @@ func (r *Repo) Pull(remote string) (change.PullSummary, error) {
 		return change.PullSummary{}, err
 	}
 	defer unlock()
+	// Snapshot every expressed folder BEFORE anything is re-materialized
+	// (#182). The folder IS the working change — there is no staging area and
+	// nothing the operator could have stashed — so re-materializing from the
+	// line tip without this reverted un-sealed edits and, via materialize's
+	// deletion sweep, removed untracked new files outright. lockState is
+	// reentrant, so this is safe under the lock already held.
+	if err := r.SyncWorking(); err != nil {
+		return change.PullSummary{}, fmt.Errorf("worktree.Pull: %w", err)
+	}
 	rheads, err := r.remoteHeadsSafe(remote)
 	if err != nil {
 		return change.PullSummary{}, fmt.Errorf("worktree.Pull: %w", err)
