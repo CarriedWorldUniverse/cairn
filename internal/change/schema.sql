@@ -48,7 +48,12 @@ CREATE TABLE IF NOT EXISTS operation (
   view_before TEXT NOT NULL,
   view_after  TEXT NOT NULL,
   detail      TEXT NOT NULL DEFAULT '{}',
-  at          TEXT NOT NULL
+  at          TEXT NOT NULL,
+  -- seq is the log's ORDER: an explicit, monotonic sequence assigned at insert
+  -- (#173). Ordering by rowid worked (#157) but rests on a property SQLite only
+  -- practically guarantees for a TEXT PRIMARY KEY table — VACUUM may renumber
+  -- rowids. seq is backfilled from rowid for existing repos by migrate.
+  seq         INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS remote_kind (
   name TEXT PRIMARY KEY,

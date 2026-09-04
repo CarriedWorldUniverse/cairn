@@ -144,12 +144,13 @@ func TestParentOpChainsToTheImmediatelyPrecedingOp(t *testing.T) {
 	}
 }
 
-// THE test for the rowid change specifically. Fixed-width stamps make new ids
-// sort correctly on their own, so every test above passes under ORDER BY id too
-// — they cannot tell the two halves of the fix apart. What ORDER BY id can
+// THE test for ordering-by-sequence specifically. Fixed-width stamps make new
+// ids sort correctly on their own, so every test above passes under ORDER BY id
+// too — they cannot tell the two halves of the fix apart. What ORDER BY id can
 // never repair is a repo written by an EARLIER cairn, whose ids are already
-// trimmed and already mis-sorted. Ordering by rowid fixes those in place, with
-// no migration, and this is the only test that proves it.
+// trimmed and already mis-sorted. Ordering by seq (#173; rowid before it, #157)
+// fixes those in place, and this is the test that proves it. The migration
+// backfill itself is covered in migrate_idempotent_test.go.
 func TestOpLogOrderIsCorrectForLegacyTrimmedIDs(t *testing.T) {
 	e, err := Open(t.TempDir())
 	if err != nil {
@@ -163,8 +164,8 @@ func TestOpLogOrderIsCorrectForLegacyTrimmedIDs(t *testing.T) {
 	for i, tm := range trickyTimes() {
 		id := tm.Format(time.RFC3339Nano) + "-legacy00"
 		if _, err := e.db.Exec(
-			`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
-			 VALUES(?,?,?,?,?,?,'{}',?)`,
+			`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at, seq)
+			 VALUES(?,?,?,?,?,?,'{}',?, COALESCE((SELECT MAX(seq) FROM operation),0)+1)`,
 			id, "commit", actors[i], "", "{}", "{}", id); err != nil {
 			t.Fatalf("insert legacy op %d: %v", i, err)
 		}
