@@ -48,7 +48,7 @@ func TestSeededCacheMatchesAColdScan(t *testing.T) {
 	r, _, dir, seeded := materializeSeededInto(t)
 
 	// A cold scan: no prior cache, so every path is read and hashed for real.
-	_, scanned, _, _, err := CachedScan(r.eng, dir, nil, nil, nil, time.Now().UnixNano())
+	_, scanned, _, _, err := CachedScan(r.eng, dir, nil, nil, nil, nil, time.Now().UnixNano())
 	if err != nil {
 		t.Fatalf("CachedScan: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestSeedMakesTheNextScanAllHits(t *testing.T) {
 	// The scan must start strictly after the materialized mtimes, exactly as a
 	// real command's scan would.
 	time.Sleep(10 * time.Millisecond)
-	_, _, changed, _, err := CachedScan(r.eng, dir, nil, nil, seeded, time.Now().UnixNano())
+	_, _, changed, _, err := CachedScan(r.eng, dir, nil, nil, nil, seeded, time.Now().UnixNano())
 	if err != nil {
 		t.Fatalf("CachedScan: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestSeedNeverHidesASameSizeEdit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entries, _, changed, _, err := CachedScan(r.eng, dir, nil, nil, seeded, time.Now().UnixNano())
+	entries, _, changed, _, err := CachedScan(r.eng, dir, nil, nil, nil, seeded, time.Now().UnixNano())
 	if err != nil {
 		t.Fatalf("CachedScan: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestSeedObeysTheRacyWindow(t *testing.T) {
 		Mode:    seeded["readme.txt"].Mode,
 	}
 
-	entries, _, _, _, err := CachedScan(r.eng, dir, nil, nil, seeded, racy.UnixNano())
+	entries, _, _, _, err := CachedScan(r.eng, dir, nil, nil, nil, seeded, racy.UnixNano())
 	if err != nil {
 		t.Fatalf("CachedScan: %v", err)
 	}

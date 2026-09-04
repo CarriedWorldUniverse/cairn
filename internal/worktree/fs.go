@@ -326,6 +326,10 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 	// reflinkSupported PROBES by creating temp files, so it is evaluated ONCE
 	// here and never per file.
 	cowCache := reflinkSupported(blobs)
+	// Likewise probed ONCE: whether this folder's filesystem can show the
+	// executable bit (#161). Where it cannot, an up-to-date file is not
+	// rewritten merely because the bit the tree records is invisible here.
+	execOK := execBitProbe(dir)
 
 	type entryJob struct {
 		path  string
@@ -361,7 +365,7 @@ func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[s
 					return
 				default:
 				}
-				fp, ok, err := writeEntry(eng, dir, blobs, j.path, j.entry, hint[j.path], cowCache)
+				fp, ok, err := writeEntry(eng, dir, blobs, j.path, j.entry, hint[j.path], cowCache, execOK)
 				if err != nil {
 					fail(err)
 					return
@@ -499,7 +503,7 @@ func materializeWorkers() int {
 // or safe to share (meta/hint are read-only, MkdirAll is idempotent, and
 // removeSymlinkComponents already tolerates a component another worker removed
 // first).
-func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry, hint wcCacheEntry, cowCache bool) (wcCacheEntry, bool, error) {
+func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry, hint wcCacheEntry, cowCache, execOK bool) (wcCacheEntry, bool, error) {
 	full, err := containedJoin(dir, p)
 	if err != nil {
 		// Defense in depth: change.FilesMeta already rejects traversal entry
@@ -560,7 +564,7 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 		}
 		return fingerprintOf(full, entry.SHA, change.ModeSymlink)
 	}
-	if regularUpToDateBySHA(full, entry, hint) {
+	if regularUpToDateBySHA(full, entry, hint, execOK) {
 		// Not written, but VERIFIED: regularUpToDateBySHA only returns true
 		// once the on-disk content is known to equal entry.SHA, so its
 		// fingerprint is as sound as a freshly written one.
@@ -633,6 +637,12 @@ func writeEntry(eng *change.Engine, dir, blobs, p string, entry change.TreeEntry
 // so they are exactly what CachedScan will compare against: notably a symlink's
 // size is the platform's own reported size, which is not len(target) everywhere.
 //
+// Mode is the TREE's mode, and that is right in both regimes (#161): where the
+// filesystem shows the exec bit, materialize has just written or verified it
+// to match the tree, so a stat-derived mode would be identical; where it
+// cannot, CachedScan itself records the tree's mode for a tracked path, so
+// this is exactly what the scan will compare against.
+//
 // A path that cannot be stat'd is simply not seeded (ok false, no error): the
 // file is on disk either way, and the next scan will read it as it always did.
 func fingerprintOf(full, sha string, mode change.EntryMode) (wcCacheEntry, bool, error) {
@@ -662,13 +672,16 @@ func fingerprintOf(full, sha string, mode change.EntryMode) (wcCacheEntry, bool,
 //     uses (plumbing.ComputeHash), comparing against entry.SHA. This still
 //     costs a local disk read, but never touches the git object store for a
 //     path that turns out unchanged.
-func regularUpToDateBySHA(full string, entry change.TreeEntry, hint wcCacheEntry) bool {
+func regularUpToDateBySHA(full string, entry change.TreeEntry, hint wcCacheEntry, execOK bool) bool {
 	fi, err := os.Lstat(full)
 	if err != nil || !fi.Mode().IsRegular() {
 		return false
 	}
+	// The exec bit is a difference only where the filesystem can show one
+	// (#161). Where it cannot, the tree's mode is carried by the scan (see
+	// CachedScan/trackedModes) and a content match is the whole test.
 	wantExec := entry.Mode == change.ModeExecutable
-	if (fi.Mode()&0o111 != 0) != wantExec {
+	if execOK && (fi.Mode()&0o111 != 0) != wantExec {
 		return false
 	}
 	if hint.BlobSHA != "" && hint.Mode == entry.Mode && hint.BlobSHA == entry.SHA &&
