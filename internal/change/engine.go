@@ -14,7 +14,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
@@ -154,27 +153,60 @@ func newID() string {
 	return hex.EncodeToString(b[:])
 }
 
-// migrate applies idempotent ALTER TABLE migrations so repos created before a
-// column was added pick it up. Each statement is run unconditionally; a
-// "duplicate column name" error (the column already exists, e.g. a fresh repo
-// where schema.sql already created it) is ignored. Add new column migrations to
-// this list as the schema evolves.
+// migrate applies idempotent ADD COLUMN migrations so repos created before a
+// column existed pick it up. Each migration names the table and column it
+// adds; the column's presence is checked with PRAGMA table_info BEFORE the
+// ALTER runs, so idempotency rests on the catalogue's actual shape rather than
+// on parsing SQLite's "duplicate column name" message (#166). Add new column
+// migrations to this list as the schema evolves.
 func migrate(db *sql.DB) error {
-	migrations := []string{
-		`ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`,
+	migrations := []struct {
+		table, column, ddl string
+	}{
+		{"change", "sealed", `ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`},
 		// tracks_remote marks a line that ARRIVED from a remote (set on clone/
 		// import, never on push). The fold guard warns before folding into one.
-		`ALTER TABLE line ADD COLUMN tracks_remote INTEGER NOT NULL DEFAULT 0`,
+		{"line", "tracks_remote", `ALTER TABLE line ADD COLUMN tracks_remote INTEGER NOT NULL DEFAULT 0`},
 	}
 	for _, m := range migrations {
-		if _, err := db.Exec(m); err != nil {
-			if strings.Contains(err.Error(), "duplicate column name") {
-				continue
-			}
+		has, err := hasColumn(db, m.table, m.column)
+		if err != nil {
+			return fmt.Errorf("change.migrate: %w", err)
+		}
+		if has {
+			continue
+		}
+		if _, err := db.Exec(m.ddl); err != nil {
 			return fmt.Errorf("change.migrate: %w", err)
 		}
 	}
 	return nil
+}
+
+// hasColumn reports whether table already has column, via PRAGMA table_info.
+func hasColumn(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%q)", table))
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			cid     int
+			name    string
+			ctype   string
+			notnull int
+			dflt    sql.NullString
+			pk      int
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }
 
 // ensureRootLine inserts the root line ("main", no parent) if no root exists.
