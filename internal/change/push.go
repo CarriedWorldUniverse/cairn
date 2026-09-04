@@ -211,6 +211,9 @@ type PreparedPush struct {
 	force      bool
 	auth       transport.AuthMethod
 	pins       []pushPin
+	// refs is the reference view the network phase pushes against: every
+	// local ref as it stood under the lock, pins included (#177).
+	refs []*plumbing.Reference
 }
 
 // testNetworkDelay, when non-nil, is invoked by NetworkPush just before the
@@ -364,6 +367,13 @@ func (e *Engine) PreparePush(label, remoteName, branch string, refSpecs []config
 		return nil, fmt.Errorf("%s: pin refs: %w", label, err)
 	}
 
+	// Freeze the refs NOW, while the lock is held and the pins are in place:
+	// the network phase must never read a live loose ref (#177).
+	refs, err := snapshotRefs(e.git.Storer)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", label, err)
+	}
+
 	return &PreparedPush{
 		label:      label,
 		remoteName: remoteName,
@@ -371,6 +381,7 @@ func (e *Engine) PreparePush(label, remoteName, branch string, refSpecs []config
 		force:      force,
 		auth:       auth,
 		pins:       pins,
+		refs:       refs,
 	}, nil
 }
 
@@ -477,10 +488,15 @@ func (e *Engine) NetworkPush(pp *PreparedPush) error {
 	if len(pp.pins) == 0 {
 		return nil // nothing matched the refspecs (e.g. an empty repo) — no-op
 	}
-	rem, err := e.git.Remote(pp.remoteName)
+	real, err := e.git.Remote(pp.remoteName)
 	if err != nil {
 		return fmt.Errorf("%s: %w", pp.label, err)
 	}
+	// Push through a remote bound to the FROZEN reference view captured in
+	// PreparePush, so the haves and refspec sources come from the snapshot and
+	// a concurrent process rewriting loose refs cannot be observed (#177).
+	// Objects and the post-push remote-tracking writes go to the real store.
+	rem := git.NewRemote(newFrozenRefStorer(e.git.Storer, pp.refs), real.Config())
 
 	specs := make([]config.RefSpec, 0, len(pp.pins))
 	for _, p := range pp.pins {
