@@ -94,7 +94,14 @@ func saveWCCache(path string, c map[string]wcCacheEntry, head string) error {
 // slash-separated path (directories with a trailing "/") is returned in the
 // skipped result so a caller can surface it structurally (#130); a TRACKED
 // path's unreadable content remains a hard error.
-func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, gitlinks map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
+// trackedModes carries the committed tip's mode for each tracked path. It is
+// consulted only when dir's filesystem cannot represent the executable bit
+// (execBitProbe, #161): there, a tracked path keeps the mode the tree already
+// holds — git's core.fileMode=false — instead of the bit the filesystem cannot
+// show, and an untracked path is regular. Where the bit is representable the
+// filesystem is authoritative, exactly as before. nil is fine.
+func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, trackedModes map[string]change.EntryMode, gitlinks map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
+	execOK := execBitProbe(dir)
 	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
 	// collected by the (serial) directory walk. The slow per-file step — reading
 	// a cache-missed file's content — is then done in PARALLEL, because on Windows
@@ -117,7 +124,12 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, git
 			return unreadableErr(tracked, slashRel, err, skip)
 		}
 		mode := change.ModeRegular
-		if info.Mode()&0o111 != 0 {
+		switch {
+		case execOK:
+			if info.Mode()&0o111 != 0 {
+				mode = change.ModeExecutable
+			}
+		case trackedModes[slashRel] == change.ModeExecutable:
 			mode = change.ModeExecutable
 		}
 		items = append(items, scanItem{

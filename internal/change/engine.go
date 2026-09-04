@@ -162,11 +162,19 @@ func newID() string {
 func migrate(db *sql.DB) error {
 	migrations := []struct {
 		table, column, ddl string
+		// after runs once, right after the column is added — for a backfill
+		// that must see the pre-migration rows.
+		after []string
 	}{
-		{"change", "sealed", `ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`},
+		{"change", "sealed", `ALTER TABLE change ADD COLUMN sealed INTEGER NOT NULL DEFAULT 0`, nil},
 		// tracks_remote marks a line that ARRIVED from a remote (set on clone/
 		// import, never on push). The fold guard warns before folding into one.
-		{"line", "tracks_remote", `ALTER TABLE line ADD COLUMN tracks_remote INTEGER NOT NULL DEFAULT 0`},
+		{"line", "tracks_remote", `ALTER TABLE line ADD COLUMN tracks_remote INTEGER NOT NULL DEFAULT 0`, nil},
+		// seq makes the operation log's order explicit (#173): existing rows
+		// take their rowid, which is the insertion order #157 established as
+		// the truth, so a migrated log reads identically to before.
+		{"operation", "seq", `ALTER TABLE operation ADD COLUMN seq INTEGER NOT NULL DEFAULT 0`,
+			[]string{`UPDATE operation SET seq = rowid WHERE seq = 0`}},
 	}
 	for _, m := range migrations {
 		has, err := hasColumn(db, m.table, m.column)
@@ -179,6 +187,16 @@ func migrate(db *sql.DB) error {
 		if _, err := db.Exec(m.ddl); err != nil {
 			return fmt.Errorf("change.migrate: %w", err)
 		}
+		for _, q := range m.after {
+			if _, err := db.Exec(q); err != nil {
+				return fmt.Errorf("change.migrate: %w", err)
+			}
+		}
+	}
+	// Unconditional and idempotent: a fresh repo's schema.sql declares seq but
+	// cannot declare this index before migrate has backfilled an old one.
+	if _, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_operation_seq ON operation(seq)`); err != nil {
+		return fmt.Errorf("change.migrate: %w", err)
 	}
 	return nil
 }

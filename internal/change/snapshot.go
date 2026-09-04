@@ -121,7 +121,7 @@ func (e *Engine) SnapshotWorking(changeID string, entries map[string]TreeEntry) 
 // UPDATEs that row's view_after and timestamp in place — so a burst of
 // auto-snapshots is a single undo step, with view_before still the pre-burst
 // view. Otherwise it INSERTs a new snapshot op exactly as recordOp does
-// (parent_op = the last op by rowid, so the op chain stays intact), storing the
+// (parent_op = the last op by seq, so the op chain stays intact), storing the
 // changeID in detail and the pre-snapshot view in view_before.
 func (e *Engine) recordSnapshotOp(tx *sql.Tx, changeID, actor string, before, after map[string]string, ts string) error {
 	afterJSON, err := json.Marshal(after)
@@ -132,7 +132,7 @@ func (e *Engine) recordSnapshotOp(tx *sql.Tx, changeID, actor string, before, af
 	// Inspect the most recent op for coalescing.
 	var lastID, lastType, lastDetail string
 	err = tx.QueryRow(
-		`SELECT id, op_type, detail FROM operation ORDER BY rowid DESC LIMIT 1`).
+		`SELECT id, op_type, detail FROM operation ORDER BY seq DESC LIMIT 1`).
 		Scan(&lastID, &lastType, &lastDetail)
 	switch {
 	case err == nil && lastType == opSnapshot && lastDetail == changeID:
@@ -148,7 +148,7 @@ func (e *Engine) recordSnapshotOp(tx *sql.Tx, changeID, actor string, before, af
 	}
 
 	// Insert a fresh snapshot op (mirrors recordOp's insert, with detail set to
-	// the changeID and parent_op selected inline as the last op by rowid).
+	// the changeID and parent_op selected inline as the last op by seq).
 	beforeJSON, err := json.Marshal(before)
 	if err != nil {
 		return fmt.Errorf("change.recordSnapshotOp: marshal before: %w", err)
@@ -156,8 +156,8 @@ func (e *Engine) recordSnapshotOp(tx *sql.Tx, changeID, actor string, before, af
 	now := e.now().UTC()
 	id := stamp(now) + "-" + newID()[:8]
 	if _, err := tx.Exec(
-		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
-		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY rowid DESC LIMIT 1),''), ?,?,?,?)`,
+		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at, seq)
+		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY seq DESC LIMIT 1),''), ?,?,?,?, COALESCE((SELECT MAX(seq) FROM operation),0)+1)`,
 		id, opSnapshot, actor, string(beforeJSON), string(afterJSON), changeID, ts); err != nil {
 		return fmt.Errorf("change.recordSnapshotOp: %w", err)
 	}

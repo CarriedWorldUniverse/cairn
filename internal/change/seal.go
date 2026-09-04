@@ -170,7 +170,7 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	sealBefore := before
 	var snapID, sealBeforeJSON string
 	switch err := tx.QueryRow(
-		`SELECT id, view_before FROM operation WHERE op_type=? AND detail=? ORDER BY rowid DESC LIMIT 1`,
+		`SELECT id, view_before FROM operation WHERE op_type=? AND detail=? ORDER BY seq DESC LIMIT 1`,
 		opSnapshot, ch.ID).Scan(&snapID, &sealBeforeJSON); {
 	case err == nil:
 		var snapBefore map[string]string
