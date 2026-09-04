@@ -592,7 +592,7 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		cache, cachedHead = map[string]wcCacheEntry{}, ""
 	}
 	scanStartNs := time.Now().UnixNano()
-	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, gitlinks, cache, scanStartNs)
+	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, execModes(committed), gitlinks, cache, scanStartNs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 	}
@@ -2567,4 +2567,20 @@ func parentNameForHint(r *Repo, l change.Line) string {
 		return root.Name
 	}
 	return "main"
+}
+
+// execModes returns the executable entries of a tip's meta, keyed by path —
+// what CachedScan needs to keep a tracked path's mode on a filesystem that
+// cannot represent the bit (#161). nil when there are none, the common case.
+func execModes(meta map[string]change.TreeEntry) map[string]change.EntryMode {
+	var out map[string]change.EntryMode
+	for p, e := range meta {
+		if e.Mode == change.ModeExecutable {
+			if out == nil {
+				out = map[string]change.EntryMode{}
+			}
+			out[p] = e.Mode
+		}
+	}
+	return out
 }

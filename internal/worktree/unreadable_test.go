@@ -201,7 +201,7 @@ func TestCachedScanSkipsUnreadableUntrackedFile(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
 	start := time.Now().UnixNano() + int64(time.Second)
-	entries, cache, _, skipped, err := CachedScan(eng, dir, nil, nil, nil, start)
+	entries, cache, _, skipped, err := CachedScan(eng, dir, nil, nil, nil, nil, start)
 	if err != nil {
 		t.Fatalf("CachedScan: unexpected error for unreadable untracked file: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestCachedScanErrorsOnUnreadableTrackedFile(t *testing.T) {
 
 	tracked := map[string]struct{}{"locked.txt": {}}
 	start := time.Now().UnixNano() + int64(time.Second)
-	_, _, _, _, err := CachedScan(eng, dir, tracked, nil, nil, start)
+	_, _, _, _, err := CachedScan(eng, dir, tracked, nil, nil, nil, start)
 	if err == nil {
 		t.Fatalf("expected CachedScan to error on an unreadable TRACKED file, got nil")
 	}
