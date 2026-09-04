@@ -8,6 +8,12 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
+// ErrNothingToStash is returned by StashPush when the working change has no
+// un-sealed edits to shelve. The CLI treats it as a no-op (exit 0, like git's
+// "No local changes to save"), so it must be a sentinel the CLI can errors.Is —
+// not a message it has to string-match (#166).
+var ErrNothingToStash = errors.New("change: nothing to stash")
+
 // opStash / opStashPop are the op-log types for shelving and restoring a working
 // change's delta. Neither coalesces.
 const (
@@ -71,7 +77,7 @@ func (e *Engine) StashPush(changeID, message string) (int64, error) {
 		return 0, err
 	}
 	if ch.HeadCommit == "" {
-		return 0, errors.New("nothing to stash")
+		return 0, ErrNothingToStash
 	}
 	parent, err := e.firstParent(ch.HeadCommit)
 	if err != nil {
@@ -86,7 +92,7 @@ func (e *Engine) StashPush(changeID, message string) (int64, error) {
 		return 0, fmt.Errorf("change.StashPush: %w", err)
 	}
 	if headTree == parentTree {
-		return 0, errors.New("nothing to stash")
+		return 0, ErrNothingToStash
 	}
 	line, err := e.lineByID(ch.LineID)
 	if err != nil {

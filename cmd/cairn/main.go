@@ -2413,7 +2413,7 @@ func cmdStashPush(args []string) error {
 	if err := r.Stash(branch, *msg); err != nil {
 		// Nothing to stash is a no-op, not a failure (matches git's "No local
 		// changes to save" → exit 0), so `stash` is script-safe.
-		if strings.Contains(err.Error(), "nothing to stash") {
+		if errors.Is(err, change.ErrNothingToStash) {
 			fmt.Fprintf(os.Stderr, "cairn: no working changes to stash on %s\n", branch)
 			return nil
 		}
