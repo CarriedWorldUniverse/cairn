@@ -19,6 +19,22 @@ jobs:
       - run: go build ./...
       - run: go test ./...
       - run: go vet ./...
+      # Formatting is enforced, not assumed: five files had drifted before this
+      # check existed (#167).
+      - name: gofmt
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then echo "not gofmt-clean:"; echo "$out"; exit 1; fi
+      # Race detector on one leg (#168). The code has a bounded worker pool
+      # (materialize), a parallel scan (parallelFor), cross-process locks and
+      # goroutine-per-connection servers; go-git 5.13.2 crashed under exactly
+      # this concurrency and nothing here would have noticed. Ubuntu only: it
+      # roughly triples the suite's runtime, and one leg is enough to catch a
+      # data race. NOTE: staticcheck is not added yet — honnef.co/go/tools is
+      # not admitted by the module gate (410 on its deprecation lookup).
+      - name: race
+        if: matrix.os == 'ubuntu-latest'
+        run: go test -race ./...
   # Windows coverage (#113): the full suite no longer runs on windows-latest —
   # POSIX-sh test fixtures kept turning main red, and every red main blocked
   # every open PR. Compile coverage is kept via cross-compilation (build + vet

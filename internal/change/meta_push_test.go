@@ -180,4 +180,3 @@ func TestFetchPullsCairnRefs(t *testing.T) {
 		t.Fatalf("meta.json not in dst meta commit tree: %v", err)
 	}
 }
-

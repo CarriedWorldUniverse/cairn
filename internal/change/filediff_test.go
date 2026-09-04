@@ -7,8 +7,8 @@ import (
 
 func TestDiffTrees(t *testing.T) {
 	old := map[string][]byte{
-		"a":   []byte("1\n"),
-		"b":   []byte("x\n"),
+		"a":    []byte("1\n"),
+		"b":    []byte("x\n"),
 		"gone": []byte("bye\n"),
 	}
 	new := map[string][]byte{

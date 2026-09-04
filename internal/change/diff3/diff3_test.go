@@ -53,7 +53,7 @@ func TestMerge3IdenticalEditsNoConflict(t *testing.T) {
 
 func TestMerge3DeleteVsModifyConflicts(t *testing.T) {
 	base := lines("a\nb\nc\n")
-	ours := lines("a\nc\n")   // deleted b
+	ours := lines("a\nc\n")      // deleted b
 	theirs := lines("a\nB\nc\n") // modified b
 	got := Merge3(base, ours, theirs)
 	if !got.Conflict {
