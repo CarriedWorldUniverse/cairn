@@ -46,13 +46,14 @@ func (e *Engine) viewMap() (map[string]string, error) {
 // timestamp prefix (see stamp) plus a short random suffix to disambiguate ops
 // minted within the same nanosecond.
 //
-// ORDERING IS BY rowid, NOT BY id (#157). The log is append-only, so SQLite's
-// insertion order is exactly the order the operations happened — a fact no
-// timestamp format can be wrong about. The ids used to be RFC3339Nano, which
+// ORDERING IS BY seq, NOT BY id (#157, #173). seq is assigned at insert as
+// MAX(seq)+1 inside the same statement, so it is the order the operations
+// happened — a fact no timestamp format can be wrong about — and, unlike the
+// rowid it replaced, it is an explicit column SQLite will never renumber. The ids used to be RFC3339Nano, which
 // trims trailing zeros and therefore sorted ".9Z" ABOVE ".925Z"; ordering by
 // id reversed the log and made Undo revert the wrong operation. Ordering by
-// rowid also fixes repos that already contain trimmed ids, which a format
-// change alone could not.
+// seq (backfilled from rowid by migrate) also fixes repos that already
+// contain trimmed ids, which a format change alone could not.
 func (e *Engine) recordOp(opType, actor string, before, after map[string]string) error {
 	beforeJSON, err := json.Marshal(before)
 	if err != nil {
@@ -66,12 +67,12 @@ func (e *Engine) recordOp(opType, actor string, before, after map[string]string)
 	id := stamp(now) + "-" + newID()[:8]
 	// parent_op is the most recently inserted op id, selected inline so the parent
 	// pick and the insert are atomic under SQLite's serialized writes (no
-	// SELECT-then-INSERT race). It reads the last row by rowid rather than MAX(id):
+	// SELECT-then-INSERT race). It reads the last row by seq rather than MAX(id):
 	// the log is append-only, so the newest row is the newest operation regardless
 	// of how its timestamp happens to render (#157).
 	if _, err := e.db.Exec(
-		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
-		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY rowid DESC LIMIT 1),''), ?,?,'{}',?)`,
+		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at, seq)
+		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY seq DESC LIMIT 1),''), ?,?,'{}',?, COALESCE((SELECT MAX(seq) FROM operation),0)+1)`,
 		id, opType, actor, string(beforeJSON), string(afterJSON),
 		stamp(now)); err != nil {
 		return fmt.Errorf("change.recordOp: %w", err)
@@ -82,7 +83,7 @@ func (e *Engine) recordOp(opType, actor string, before, after map[string]string)
 // recordOpTx appends a single non-coalesced operation inside tx, so it commits
 // atomically with the catalogue writes that produced it (e.g. a seal). It mirrors
 // recordOp's insert exactly: a stamp-prefixed id, parent_op selected inline as
-// the last row by rowid (#157), empty detail.
+// the last row by seq (#157, #173), empty detail.
 func recordOpTx(tx *sql.Tx, now time.Time, opType, actor string, before, after map[string]string, ts string) error {
 	beforeJSON, err := json.Marshal(before)
 	if err != nil {
@@ -94,8 +95,8 @@ func recordOpTx(tx *sql.Tx, now time.Time, opType, actor string, before, after m
 	}
 	id := stamp(now) + "-" + newID()[:8]
 	if _, err := tx.Exec(
-		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at)
-		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY rowid DESC LIMIT 1),''), ?,?,'{}',?)`,
+		`INSERT INTO operation(id, op_type, actor, parent_op, view_before, view_after, detail, at, seq)
+		 VALUES(?,?,?, COALESCE((SELECT id FROM operation ORDER BY seq DESC LIMIT 1),''), ?,?,'{}',?, COALESCE((SELECT MAX(seq) FROM operation),0)+1)`,
 		id, opType, actor, string(beforeJSON), string(afterJSON), ts); err != nil {
 		return fmt.Errorf("change.recordOpTx: %w", err)
 	}
@@ -106,7 +107,7 @@ func recordOpTx(tx *sql.Tx, now time.Time, opType, actor string, before, after m
 func (e *Engine) OperationLog() ([]Operation, error) {
 	rows, err := e.db.Query(
 		`SELECT id, op_type, actor, parent_op, view_before, view_after, detail
-		 FROM operation ORDER BY rowid`)
+		 FROM operation ORDER BY seq`)
 	if err != nil {
 		return nil, fmt.Errorf("change.OperationLog: %w", err)
 	}

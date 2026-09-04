@@ -19,6 +19,14 @@ func TestMigrateAddsMissingColumnsAndIsIdempotent(t *testing.T) {
 	for _, ddl := range []string{
 		`CREATE TABLE change (id TEXT PRIMARY KEY, line_id TEXT NOT NULL)`,
 		`CREATE TABLE line (id TEXT PRIMARY KEY, name TEXT NOT NULL)`,
+		// operation as it stood before seq (#173): rows whose only order is rowid.
+		`CREATE TABLE operation (id TEXT PRIMARY KEY, op_type TEXT NOT NULL, actor TEXT NOT NULL,
+		   parent_op TEXT NOT NULL DEFAULT '', view_before TEXT NOT NULL, view_after TEXT NOT NULL,
+		   detail TEXT NOT NULL DEFAULT '{}', at TEXT NOT NULL)`,
+		`INSERT INTO operation(id, op_type, actor, view_before, view_after, at) VALUES
+		   ('2026-09-02T03:46:38.9Z-x',    'commit', 'first',  '{}', '{}', ''),
+		   ('2026-09-02T03:46:38.925Z-x',  'commit', 'second', '{}', '{}', ''),
+		   ('2026-09-02T03:46:38.9251Z-x', 'commit', 'third',  '{}', '{}', '')`,
 	} {
 		if _, err := db.Exec(ddl); err != nil {
 			t.Fatal(err)
@@ -28,7 +36,7 @@ func TestMigrateAddsMissingColumnsAndIsIdempotent(t *testing.T) {
 		if err := migrate(db); err != nil {
 			t.Fatalf("migrate pass %d: %v", pass, err)
 		}
-		for _, c := range [][2]string{{"change", "sealed"}, {"line", "tracks_remote"}} {
+		for _, c := range [][2]string{{"change", "sealed"}, {"line", "tracks_remote"}, {"operation", "seq"}} {
 			has, err := hasColumn(db, c[0], c[1])
 			if err != nil {
 				t.Fatal(err)
@@ -36,6 +44,28 @@ func TestMigrateAddsMissingColumnsAndIsIdempotent(t *testing.T) {
 			if !has {
 				t.Fatalf("pass %d: %s.%s missing after migrate", pass, c[0], c[1])
 			}
+		}
+		// The seq backfill must reproduce insertion order for pre-#173 rows —
+		// whose ids, being trimmed RFC3339Nano, sort in exactly the WRONG order.
+		rows, err := db.Query(`SELECT actor FROM operation ORDER BY seq`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []string
+		for rows.Next() {
+			var a string
+			if err := rows.Scan(&a); err != nil {
+				t.Fatal(err)
+			}
+			got = append(got, a)
+		}
+		_ = rows.Close()
+		if want := []string{"first", "second", "third"}; len(got) != 3 || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
+			t.Fatalf("pass %d: ORDER BY seq = %v, want %v — the backfill did not preserve insertion order", pass, got, want)
+		}
+		var idx int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_operation_seq'`).Scan(&idx); err != nil || idx != 1 {
+			t.Fatalf("pass %d: unique seq index missing (count=%d, err=%v)", pass, idx, err)
 		}
 	}
 }
