@@ -2553,8 +2553,6 @@ func trackedSetMeta(files map[string]change.TreeEntry) map[string]struct{} {
 	}
 	return tracked
 }
-<<<<<<< ours
-
 // parentNameForHint names the abandoned line's parent for the Express refusal,
 // or the structural root when that cannot be resolved — the hint must never
 // itself fail the command.
@@ -2569,8 +2567,6 @@ func parentNameForHint(r *Repo, l change.Line) string {
 	}
 	return "main"
 }
-||||||| base
-=======
 
 // execModes returns the executable entries of a tip's meta, keyed by path —
 // what CachedScan needs to keep a tracked path's mode on a filesystem that
@@ -2587,4 +2583,3 @@ func execModes(meta map[string]change.TreeEntry) map[string]change.EntryMode {
 	}
 	return out
 }
->>>>>>> theirs
