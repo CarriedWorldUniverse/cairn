@@ -2553,6 +2553,7 @@ func trackedSetMeta(files map[string]change.TreeEntry) map[string]struct{} {
 	}
 	return tracked
 }
+
 // parentNameForHint names the abandoned line's parent for the Express refusal,
 // or the structural root when that cannot be resolved — the hint must never
 // itself fail the command.
