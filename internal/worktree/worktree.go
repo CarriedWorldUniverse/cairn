@@ -41,6 +41,13 @@ var ErrPushConflict = errors.New("remote diverged and merging produced conflicts
 // fix it. Operations targeting that branch surface it instead.
 var ErrFolderMissing = errors.New("expressed folder is missing")
 
+// ErrLineAbandoned is returned by Express for a line that `cairn abandon` has
+// already discarded (#172). Abandoned lines are filtered from `tree`, are not
+// projected to refs/heads (so `push` refuses them, #159) and keep their old
+// change rows only as history — silently re-materializing one produced a
+// working folder for a line every other command treats as dead.
+var ErrLineAbandoned = errors.New("line is abandoned")
+
 // Repo is the working-copy orchestrator that bridges expressed branch folders on
 // disk and the cairn change engine. Each expressed branch is a folder under root
 // holding the materialized files of an open change on the corresponding line.
@@ -387,6 +394,13 @@ func (r *Repo) Express(branch, parent string) error {
 	var line change.Line
 	l, err := r.eng.LineByName(branch)
 	switch {
+	case err == nil && l.Status == "abandoned":
+		// Refuse rather than revive: the abandoned line's change carries the
+		// content as it stood when it was discarded, and quietly bringing that
+		// back under the same name is how the #159 push confusion was reached.
+		// Reviving is a separate, explicit operation if it is ever wanted.
+		return fmt.Errorf("worktree.Express: %w: %q was discarded by 'cairn abandon'; express your work under a new name (cairn express NEW --from %s)",
+			ErrLineAbandoned, branch, parentNameForHint(r, l))
 	case err == nil:
 		line = l
 	case errors.Is(err, change.ErrNotFound):
@@ -2538,4 +2552,19 @@ func trackedSetMeta(files map[string]change.TreeEntry) map[string]struct{} {
 		tracked[k] = struct{}{}
 	}
 	return tracked
+}
+
+// parentNameForHint names the abandoned line's parent for the Express refusal,
+// or the structural root when that cannot be resolved — the hint must never
+// itself fail the command.
+func parentNameForHint(r *Repo, l change.Line) string {
+	if l.ParentLine != "" {
+		if p, err := r.eng.LineByID(l.ParentLine); err == nil && p.Name != "" {
+			return p.Name
+		}
+	}
+	if root, err := r.eng.RootLine(); err == nil {
+		return root.Name
+	}
+	return "main"
 }
