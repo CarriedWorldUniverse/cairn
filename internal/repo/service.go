@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -115,13 +116,38 @@ type Service struct {
 	hookInstaller HookInstaller
 }
 
+// sqliteDSN attaches the per-connection pragmas EVERY pooled connection must
+// carry (#174). database/sql hands out connections from a pool, and a PRAGMA
+// executed as a statement applies only to the connection that ran it — so the
+// `PRAGMA foreign_keys = ON` in schema.sql reached exactly one connection, and
+// whether a dangling repo_id was rejected depended on which pooled connection
+// served the request. journal_mode=WAL is different: it is stored in the file
+// and applies to all, which is why it never showed the same inconsistency.
+//
+// busy_timeout is the other half. This process has several genuine writers
+// (gRPC API, Smart-HTTP, SSH receive-pack, the replica runner); without a
+// timeout a write that lands while another connection holds the write lock
+// fails IMMEDIATELY with SQLITE_BUSY ("database is locked") instead of
+// waiting its turn. The working-copy engine sets both of these in its DSN for
+// the same reasons (internal/change/engine.go); the server needs them more.
+//
+// The `_pragma=name(value)` query form is what modernc.org/sqlite documents;
+// it is applied on every new connection the pool opens.
+func sqliteDSN(path string) string {
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	return path + sep + "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+}
+
 // Open opens (creating if needed) the SQLite catalogue at dbPath and ensures
 // repoRoot exists. The on-disk layout is repoRoot/<repo-id>.git.
 func Open(dbPath, repoRoot string) (*Service, error) {
 	if err := os.MkdirAll(repoRoot, 0o755); err != nil {
 		return nil, fmt.Errorf("repo.Open: mkdir repoRoot: %w", err)
 	}
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := sql.Open("sqlite", sqliteDSN(dbPath))
 	if err != nil {
 		return nil, fmt.Errorf("repo.Open: sqlite: %w", err)
 	}
@@ -313,6 +339,7 @@ func (s *Service) FindOpenPull(ctx context.Context, repoID, source, target strin
 //   - target already contains source     → ErrAlreadyUpToDate (no change)
 //   - target is a strict ancestor of src  → advance target, return src sha
 //   - diverged                             → ErrNotFastForward
+//
 // A missing branch returns a wrapped ErrNotFound.
 func (s *Service) FastForward(ctx context.Context, repoID, source, target string) (string, error) {
 	g, err := s.openGit(ctx, repoID)
@@ -530,11 +557,17 @@ func (s *Service) ListRepos(ctx context.Context, orgID string) ([]Repo, error) {
 	return out, rows.Err()
 }
 
-// DeleteRepo removes all dependent rows (pull_request, push_event) and the
-// catalogue row in a single transaction, then removes on-disk storage.
-// Dependent rows are deleted explicitly rather than relying on ON DELETE CASCADE
-// because the SQLite connection pool does not inherit the PRAGMA foreign_keys=ON
-// that the schema DDL sets; cascade is unreliable across pool connections.
+// DeleteRepo removes all dependent rows (pull_check, pull_request, push_event)
+// and the catalogue row in a single transaction, then removes on-disk storage.
+//
+// Dependent rows are deleted explicitly AND the schema declares ON DELETE
+// CASCADE. Both are kept on purpose: the explicit deletes date from when
+// foreign_keys was set only on the one pooled connection that ran the schema
+// DDL, so cascade fired or not depending on which connection served the
+// request. Since #174 every connection carries foreign_keys via the DSN, so
+// the cascade is reliable — it is what removes embargo_recipient rows, which
+// the explicit list never covered — and the explicit deletes remain as
+// belt-and-braces plus an ordered, readable statement of the dependency graph.
 func (s *Service) DeleteRepo(ctx context.Context, id string) error {
 	r, err := s.GetRepoByID(ctx, id)
 	if err != nil {
