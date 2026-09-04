@@ -1458,9 +1458,15 @@ func (r *Repo) PushBranchReconcile(remote, branch string) error {
 // fetchNetwork/remoteHeadsSafe takes only the per-remote remote.lock (issue
 // #98 Phase B; see the lock-order invariant on lockState()).
 func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
-	// See Pull: never rewrite a folder that has not been snapshotted (#182).
-	if err := r.SyncWorking(); err != nil {
-		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
+	// See Pull: never rewrite a folder that has not been snapshotted (#182) —
+	// but ONLY this line's folder. pullBranch is the scoped reconcile behind
+	// `push --reconcile`, and it must not touch any other line's working
+	// change (TestPushBranchReconcileCleanMergeScopedToOneLine pins that).
+	// A folder deleted out from under cairn (#133) is not an error here.
+	if entry, expressed := r.st.Expressed[branch]; expressed {
+		if _, err := r.syncOne(branch, entry); err != nil && !errors.Is(err, ErrFolderMissing) {
+			return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
+		}
 	}
 	if err := r.fetchNetwork(remote, false); err != nil {
 		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
