@@ -230,11 +230,37 @@ func cmdFold(args []string) error {
 func cmdReparent(args []string) error {
 	fs := flag.NewFlagSet("reparent", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	infer := fs.Bool("infer", false, "re-derive every line's parent from topology (as a fresh clone would)")
+	dryRun := fs.Bool("dry-run", false, "with --infer: print what would change, change nothing")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
+	if *infer {
+		r, err := openRepo(*repo, *author)
+		if err != nil {
+			return mapErr(err)
+		}
+		defer r.Close()
+		changes, err := r.ReparentInfer(*dryRun)
+		if err != nil {
+			return mapErr(err)
+		}
+		verb := "reparented"
+		if *dryRun {
+			verb = "would reparent"
+		}
+		for _, c := range changes {
+			fmt.Printf("%s %s: %s → %s\n", verb, c.Line, c.OldParent, c.NewParent)
+		}
+		if len(changes) == 0 {
+			fmt.Fprintln(os.Stderr, "cairn: every line is already under its inferred parent")
+		} else {
+			fmt.Fprintf(os.Stderr, "cairn: %s %d line(s)\n", verb, len(changes))
+		}
+		return nil
+	}
 	if fs.NArg() < 2 {
-		return errors.New("usage: cairn reparent <branch> <new-parent>")
+		return errors.New("usage: cairn reparent <branch> <new-parent>  |  cairn reparent --infer [--dry-run]")
 	}
 	r, err := openRepo(*repo, *author)
 	if err != nil {

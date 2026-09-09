@@ -109,6 +109,14 @@ func (e *Engine) Reparent(lineID, newParentID string) error {
 			base = mb
 		}
 	}
+	return e.reparentAt(line, np, base)
+}
+
+// reparentAt moves line under np with base as its fork commit, validated by
+// Reparent (which computes the base pairwise) or supplied by inference, which
+// already knows the fork commit and must not pay a merge-base per line.
+func (e *Engine) reparentAt(line, np Line, base string) error {
+	lineID, newParentID := line.ID, np.ID
 	before, err := e.viewMap()
 	if err != nil {
 		return fmt.Errorf("change.Reparent: %w", err)
