@@ -116,7 +116,20 @@ func cmdExpress(args []string) error {
 	}
 	defer r.Close()
 	defer reportElapsed("express", started)
-	fmt.Fprintf(os.Stderr, "cairn: expressing %s …\n", branch)
+	// No --from: fork from the line whose folder you are standing in, the way
+	// `git checkout -b` forks from the current branch — the reflex the
+	// translation table promises. At the repo root (or outside it) the
+	// structural root remains the default, as before.
+	if *from == "" {
+		if here, ok := branchFromDir(r, ".", r.Root()); ok && here != branch {
+			*from = here
+		}
+	}
+	if *from != "" {
+		fmt.Fprintf(os.Stderr, "cairn: expressing %s from %s …\n", branch, *from)
+	} else {
+		fmt.Fprintf(os.Stderr, "cairn: expressing %s …\n", branch)
+	}
 	if err := r.Express(branch, *from); err != nil {
 		return mapErr(err)
 	}

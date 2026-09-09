@@ -107,19 +107,36 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		// back to the pairwise mergeBase below, which is slow but correct.
 		trunk, trunkErr := e.ancestorSet(defTip)
 
+		// Each branch's place in the tree: its nearest ancestor BRANCH and the
+		// commit it forked at, inferred from topology (inferParents). A branch
+		// nobody else forked from hangs off the trunk at its merge-base, as
+		// every branch used to. picks is nil only when the trunk itself was
+		// unreadable, and then everything falls back to the pairwise
+		// mergeBase below.
+		var picks map[string]parentPick
+		if trunkErr == nil {
+			picks, err = e.inferParents(def, heads, trunk)
+			if err != nil {
+				return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+			}
+		}
+
 		mapped, toMap := 0, len(heads)-1
 		phase = time.Now()
+		// parentOf remembers the chosen parent NAME per branch; parent ids are
+		// resolved in a second pass once every line row exists.
+		parentOf := map[string]string{}
 		for name, sha := range heads {
 			if name == def {
 				continue
 			}
-			// One mergeBase per branch against the default tip — the cost
-			// grows with the branch count, and on a repo with hundreds it is
-			// minutes. Count it out loud.
 			mapped++
 			e.Progressf("\rcairn: mapping branches onto the line tree … %d/%d", mapped, toMap)
 			base := sha
-			if trunkErr == nil {
+			if pick, ok := picks[name]; ok && pick.Base != "" {
+				base = pick.Base
+				parentOf[name] = pick.Parent
+			} else if trunkErr == nil {
 				if mb, mberr := e.mergeBaseIn(sha, trunk); mberr == nil && mb != "" {
 					base = mb
 				}
@@ -144,6 +161,20 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 					sha, base, ts, existingID); err != nil {
 					return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 				}
+			}
+		}
+		// Second pass: hang each branch under its inferred parent. Only a line
+		// still under the root is moved — a parent the operator set by hand
+		// (cairn reparent) is never overridden by inference.
+		for name, parent := range parentOf {
+			if parent == "" {
+				continue
+			}
+			if _, err := tx.Exec(
+				`UPDATE line SET parent_line = (SELECT id FROM line WHERE name=?), updated_at=?
+				 WHERE name=? AND parent_line=?`,
+				parent, ts, name, rootID); err != nil {
+				return "", fmt.Errorf("change.ImportFromRemote: parent of %s: %w", name, err)
 			}
 		}
 		if toMap > 0 {
