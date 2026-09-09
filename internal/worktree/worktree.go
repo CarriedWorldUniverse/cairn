@@ -1258,6 +1258,29 @@ func (r *Repo) Reparent(branch, newParent string) error {
 	return r.eng.Reparent(line.ID, np.ID)
 }
 
+// ReparentInfer re-derives every line's parent from topology and, unless
+// dryRun, applies the changes — the same inference a clone runs, for a clone
+// made before parents were inferred (or one whose stacking was set by hand
+// and should be re-derived). Returns the changes either way.
+func (r *Repo) ReparentInfer(dryRun bool) ([]change.ParentChange, error) {
+	unlock, err := r.lockState()
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+	changes, err := r.eng.InferredParentChanges()
+	if err != nil {
+		return nil, fmt.Errorf("worktree.ReparentInfer: %w", err)
+	}
+	if dryRun {
+		return changes, nil
+	}
+	if err := r.eng.ApplyParentChanges(changes); err != nil {
+		return nil, fmt.Errorf("worktree.ReparentInfer: %w", err)
+	}
+	return changes, nil
+}
+
 // BranchForFolder returns the branch whose expressed working folder is folder
 // (the flat on-disk name, e.g. "base-5-0" for branch "base/5-0"), if any.
 func (r *Repo) BranchForFolder(folder string) (string, bool) {

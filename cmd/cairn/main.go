@@ -71,6 +71,7 @@ subcommands:
   commit <branch> [-m msg]  seal the working change (stamps msg, starts a fresh change)
   fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
   reparent <branch> <parent>  set a branch's parent line (fix stacked topology after a git import)
+  reparent --infer [--dry-run]  re-derive every line's parent from topology, as a fresh clone would
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
   diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
