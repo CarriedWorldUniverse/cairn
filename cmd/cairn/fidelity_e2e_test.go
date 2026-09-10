@@ -81,7 +81,7 @@ func TestCloneCairnRemoteFidelity(t *testing.T) {
 	// ── Assert: line tree is the real tree (b under a under main) ───────────
 	// `cairn tree` output format: "<name> (parent <line-id>) ahead=<n>"
 	// Parent is the line ID (UUID), not the name. Parse into a name→parentID map.
-	treeOut := mustRunOut(t, "tree", "--repo", repoB)
+	treeOut := mustRunOut(t, "tree", "--flat", "--repo", repoB)
 	nameParent := parseTreeParents(treeOut)
 
 	// main is the root — parent field is empty.
@@ -185,7 +185,7 @@ func TestCloneGitRemoteFlat(t *testing.T) {
 	// ── Assert: flat projection (a and b both children of root) ──────────────
 	// `cairn tree` output format: "<name> (parent <line-id>) ahead=<n>"
 	// In the flat projection all non-root lines share the same parent (root's ID).
-	treeOut := mustRunOut(t, "tree", "--repo", repoB)
+	treeOut := mustRunOut(t, "tree", "--flat", "--repo", repoB)
 	nameParent := parseTreeParents(treeOut)
 	t.Logf("tree on B (git remote, flat):\n%s", treeOut)
 
@@ -269,7 +269,7 @@ func parseChangeIDs(lsOut string) map[string]string {
 	return m
 }
 
-// parseTreeParents parses the output of `cairn tree` (format per line:
+// parseTreeParents parses the output of `cairn tree --flat` (format per line:
 // "<name> (parent <line-id>) ahead=<n>") and returns a map of name→parentID.
 // The root line has an empty parentID ("").
 func parseTreeParents(treeOut string) map[string]string {

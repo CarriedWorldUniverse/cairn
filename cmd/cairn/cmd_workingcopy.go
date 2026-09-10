@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -375,6 +376,7 @@ func printSkippedUnreadable(paths []string) {
 func cmdTree(args []string) error {
 	fs := flag.NewFlagSet("tree", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+	flat := fs.Bool("flat", false, "one line per line with the parent's id, for scripts")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
@@ -387,10 +389,69 @@ func cmdTree(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
-	for _, n := range nodes {
-		fmt.Printf("%s (parent %s) ahead=%d\n", n.Line.Name, n.Parent, n.Ahead)
+	if *flat {
+		for _, n := range nodes {
+			fmt.Printf("%s (parent %s) ahead=%d\n", n.Line.Name, n.Parent, n.Ahead)
+		}
+		return nil
 	}
+	fmt.Print(renderTree(nodes))
 	return nil
+}
+
+// renderTree draws the line tree with names and connectors, children sorted
+// by name under their parent:
+//
+//	main  ahead=0
+//	├─ develop  ahead=2
+//	│  └─ feature  ahead=1
+//	└─ hotfix  ahead=1
+//
+// LineNode.Parent is the parent's id (a line's parent may share its name
+// with nothing, but ids are what the catalogue links), so the tree is built
+// by id and printed by name. A node whose parent is not in the list (it
+// should not happen; abandoned lines are already filtered) is shown at the
+// top level rather than dropped.
+func renderTree(nodes []change.LineNode) string {
+	byID := map[string]change.LineNode{}
+	for _, n := range nodes {
+		byID[n.Line.ID] = n
+	}
+	children := map[string][]change.LineNode{}
+	var roots []change.LineNode
+	for _, n := range nodes {
+		if _, ok := byID[n.Parent]; n.Parent == "" || !ok {
+			roots = append(roots, n)
+			continue
+		}
+		children[n.Parent] = append(children[n.Parent], n)
+	}
+	byName := func(a []change.LineNode) {
+		sort.Slice(a, func(i, j int) bool { return a[i].Line.Name < a[j].Line.Name })
+	}
+	byName(roots)
+	for _, kids := range children {
+		byName(kids)
+	}
+	var b strings.Builder
+	var walk func(n change.LineNode, prefix string)
+	walk = func(n change.LineNode, prefix string) {
+		kids := children[n.Line.ID]
+		for i, k := range kids {
+			last := i == len(kids)-1
+			branch, next := "├─ ", "│  "
+			if last {
+				branch, next = "└─ ", "   "
+			}
+			fmt.Fprintf(&b, "%s%s%s  ahead=%d\n", prefix, branch, k.Line.Name, k.Ahead)
+			walk(k, prefix+next)
+		}
+	}
+	for _, r := range roots {
+		fmt.Fprintf(&b, "%s  ahead=%d\n", r.Line.Name, r.Ahead)
+		walk(r, "")
+	}
+	return b.String()
 }
 
 func cmdLs(args []string) error {
