@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -322,6 +321,9 @@ func cmdStatus(args []string) error {
 	fmt.Printf("branch:    %s\n", st.Branch)
 	fmt.Printf("lineage:   %s\n", strings.Join(st.Lineage, " → "))
 	fmt.Printf("ahead:     %d\n", st.Ahead)
+	if st.Remote != "" {
+		fmt.Printf("remote:    %s\n", st.Remote)
+	}
 	fmt.Printf("conflicts: %s\n", strings.Join(st.Conflicts, ", "))
 	fmt.Printf("expressed: %s\n", strings.Join(st.Expressed, ", "))
 	if len(st.Modified)+len(st.Added)+len(st.Deleted) > 0 {
@@ -377,6 +379,8 @@ func cmdTree(args []string) error {
 	fs := flag.NewFlagSet("tree", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	flat := fs.Bool("flat", false, "one line per line with the parent's id, for scripts")
+	fetch := fs.Bool("fetch", false, "refresh the remote-tracking refs first (fetch + prune), so the remote state is current")
+	gone := fs.Bool("gone", false, "only lines whose branch no longer exists on the remote")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
@@ -385,17 +389,57 @@ func cmdTree(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
+	if *fetch {
+		remote, err := r.TreeRemote()
+		if err != nil {
+			return mapErr(err)
+		}
+		if remote == "" {
+			return errors.New("--fetch: this repo has no remote")
+		}
+		if err := r.FetchPruned(remote); err != nil {
+			return mapRemoteErr(err)
+		}
+	}
 	nodes, err := r.Tree()
 	if err != nil {
 		return mapErr(err)
 	}
+	if *gone {
+		var kept []worktree.TreeNode
+		for _, n := range nodes {
+			if n.Remote != nil && n.Remote.Kind == "gone" {
+				kept = append(kept, n)
+			}
+		}
+		if *flat {
+			for _, n := range kept {
+				fmt.Printf("%s (parent %s) ahead=%d remote=gone\n", n.Line.Name, n.Parent, n.Ahead)
+			}
+			return nil
+		}
+		for _, n := range kept {
+			fmt.Printf("%s  ahead=%d  [gone]\n", n.Line.Name, n.Ahead)
+		}
+		if len(kept) == 0 {
+			fmt.Fprintln(os.Stderr, "cairn: no line's branch is gone from the remote")
+		}
+		return nil
+	}
 	if *flat {
 		for _, n := range nodes {
-			fmt.Printf("%s (parent %s) ahead=%d\n", n.Line.Name, n.Parent, n.Ahead)
+			if n.Remote != nil {
+				fmt.Printf("%s (parent %s) ahead=%d remote=%s\n", n.Line.Name, n.Parent, n.Ahead, n.Remote.Kind)
+			} else {
+				fmt.Printf("%s (parent %s) ahead=%d\n", n.Line.Name, n.Parent, n.Ahead)
+			}
 		}
 		return nil
 	}
 	fmt.Print(renderTree(nodes))
+	if len(nodes) > 0 && nodes[0].RemoteName != "" && !*fetch {
+		fmt.Fprintf(os.Stderr, "cairn: [state] is against %s as of the last fetch or push; cairn tree --fetch refreshes it\n", nodes[0].RemoteName)
+	}
 	return nil
 }
 
@@ -412,13 +456,13 @@ func cmdTree(args []string) error {
 // by id and printed by name. A node whose parent is not in the list (it
 // should not happen; abandoned lines are already filtered) is shown at the
 // top level rather than dropped.
-func renderTree(nodes []change.LineNode) string {
-	byID := map[string]change.LineNode{}
+func renderTree(nodes []worktree.TreeNode) string {
+	byID := map[string]worktree.TreeNode{}
 	for _, n := range nodes {
 		byID[n.Line.ID] = n
 	}
-	children := map[string][]change.LineNode{}
-	var roots []change.LineNode
+	children := map[string][]worktree.TreeNode{}
+	var roots []worktree.TreeNode
 	for _, n := range nodes {
 		if _, ok := byID[n.Parent]; n.Parent == "" || !ok {
 			roots = append(roots, n)
@@ -426,7 +470,7 @@ func renderTree(nodes []change.LineNode) string {
 		}
 		children[n.Parent] = append(children[n.Parent], n)
 	}
-	byName := func(a []change.LineNode) {
+	byName := func(a []worktree.TreeNode) {
 		sort.Slice(a, func(i, j int) bool { return a[i].Line.Name < a[j].Line.Name })
 	}
 	byName(roots)
@@ -434,8 +478,14 @@ func renderTree(nodes []change.LineNode) string {
 		byName(kids)
 	}
 	var b strings.Builder
-	var walk func(n change.LineNode, prefix string)
-	walk = func(n change.LineNode, prefix string) {
+	label := func(n worktree.TreeNode) string {
+		if n.Remote == nil {
+			return fmt.Sprintf("%s  ahead=%d", n.Line.Name, n.Ahead)
+		}
+		return fmt.Sprintf("%s  ahead=%d  [%s]", n.Line.Name, n.Ahead, n.Remote)
+	}
+	var walk func(n worktree.TreeNode, prefix string)
+	walk = func(n worktree.TreeNode, prefix string) {
 		kids := children[n.Line.ID]
 		for i, k := range kids {
 			last := i == len(kids)-1
@@ -443,12 +493,12 @@ func renderTree(nodes []change.LineNode) string {
 			if last {
 				branch, next = "└─ ", "   "
 			}
-			fmt.Fprintf(&b, "%s%s%s  ahead=%d\n", prefix, branch, k.Line.Name, k.Ahead)
+			fmt.Fprintf(&b, "%s%s%s\n", prefix, branch, label(k))
 			walk(k, prefix+next)
 		}
 	}
 	for _, r := range roots {
-		fmt.Fprintf(&b, "%s  ahead=%d\n", r.Line.Name, r.Ahead)
+		fmt.Fprintf(&b, "%s\n", label(r))
 		walk(r, "")
 	}
 	return b.String()

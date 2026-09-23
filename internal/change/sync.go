@@ -28,6 +28,12 @@ type LineResult struct {
 // PullSummary is the outcome of PullFromRemote across every reconciled line.
 type PullSummary struct {
 	Lines []LineResult
+	// Pruned lists lines abandoned by this pull because the remote no longer
+	// has their branch (typically deleted after the PR merged); `cairn undo`
+	// restores them. KeptGone lists such lines that were NOT pruned because
+	// they are expressed on disk — the operator decides those.
+	Pruned   []string
+	KeptGone []string
 }
 
 // testFetchDelay, when non-nil, is invoked by fetchTracking just before the

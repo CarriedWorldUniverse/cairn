@@ -52,11 +52,14 @@ var ErrLineAbandoned = errors.New("line is abandoned")
 // disk and the cairn change engine. Each expressed branch is a folder under root
 // holding the materialized files of an open change on the corresponding line.
 type Repo struct {
-	root   string
-	author string
-	eng    *change.Engine
-	st     *State
-	stPath string
+	// keepGone, set by SetKeepGone, stops Pull from abandoning lines whose
+	// branch the remote no longer has.
+	keepGone bool
+	root     string
+	author   string
+	eng      *change.Engine
+	st       *State
+	stPath   string
 
 	// lastSyncNote records the outcome of the best-effort commit-time auto-sync
 	// from the most recent Commit, so the CLI can surface it. Empty means autosync
@@ -82,9 +85,12 @@ type Repo struct {
 // set of currently expressed branch names, and any unreadable-untracked paths
 // the snapshot scan had to skip (#130).
 type StatusInfo struct {
-	Branch    string
-	Lineage   []string
-	Ahead     int
+	Branch  string
+	Lineage []string
+	Ahead   int
+	// Remote is "<remote>: <state>" — pushed, ahead N, behind N, diverged,
+	// unpushed or gone — as of the last fetch or push; "" with no remote.
+	Remote    string
 	Conflicts []string
 	Expressed []string
 	Added     []string
@@ -1057,21 +1063,21 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	for _, l := range lineage {
 		names = append(names, l.Name)
 	}
-	// Ahead = SEALED commits since this line's branch point. The open working
-	// change's commit sits at the line tip (an unsealed amend); it must not
-	// inflate the count, so when present we measure height from its parent (the
-	// sealed tip) instead of the raw line tip.
-	sealedLine := line
-	if ch, cerr := r.eng.GetChange(entry.ChangeID); cerr == nil && !ch.Sealed && ch.HeadCommit != "" {
-		parent, perr := r.eng.FirstParent(ch.HeadCommit)
-		if perr != nil {
-			return StatusInfo{}, fmt.Errorf("worktree.Status: %w", perr)
-		}
-		sealedLine.TipCommit = parent
-	}
-	ahead, err := r.eng.LineHeight(sealedLine)
+	// Ahead = sealed commits the parent does not have (rev-list parent..line),
+	// the same number `tree` prints. The old first-parent walk from the tip to
+	// the base ran to the root behind a merge (see GetLineTree); the root has
+	// no parent, so its ahead is 0 and the remote line carries its real state.
+	ahead, err := r.eng.AheadOfParent(line)
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
+	}
+	remoteName, states, rerr := r.remoteStates()
+	if rerr != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
+	}
+	var remote string
+	if st, ok := states[line.Name]; ok {
+		remote = remoteName + ": " + st.String()
 	}
 	// Reuse the scan syncOne just did above, under this same lock — see
 	// workingDiffSynced. Calling the public WorkingDiff here re-scanned and
@@ -1111,6 +1117,7 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 		Branch:            branch,
 		Lineage:           names,
 		Ahead:             ahead,
+		Remote:            remote,
 		Conflicts:         paths,
 		Expressed:         expressed,
 		Added:             added,
@@ -1298,12 +1305,71 @@ func (r *Repo) BranchForFolder(folder string) (string, bool) {
 }
 
 // Tree returns the line tree from the engine.
-func (r *Repo) Tree() ([]change.LineNode, error) {
+// TreeNode is a line in the tree plus its relationship to the remote.
+type TreeNode struct {
+	change.LineNode
+	RemoteName string              // "" when the repo has no remote
+	Remote     *change.RemoteState // nil when the repo has no remote
+}
+
+// Tree returns every open line with its parent, its ahead-of-parent count and
+// its state on the remote (origin, else the first configured remote) — as of
+// the last fetch or push. A tree that lists lines whose branch was deleted
+// after the PR merged, or that were never pushed, without saying so is
+// misleading; the remote state is what tells them apart.
+func (r *Repo) Tree() ([]TreeNode, error) {
 	nodes, err := r.eng.GetLineTree()
 	if err != nil {
 		return nil, fmt.Errorf("worktree.Tree: %w", err)
 	}
-	return nodes, nil
+	remoteName, states, err := r.remoteStates()
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Tree: %w", err)
+	}
+	out := make([]TreeNode, 0, len(nodes))
+	for _, n := range nodes {
+		tn := TreeNode{LineNode: n, RemoteName: remoteName}
+		if st, ok := states[n.Line.Name]; ok {
+			s := st
+			tn.Remote = &s
+		}
+		out = append(out, tn)
+	}
+	return out, nil
+}
+
+// TreeRemote names the remote Tree and Status report against: origin if it
+// exists, else the first configured remote, else "".
+func (r *Repo) TreeRemote() (string, error) {
+	rems, err := r.eng.ListRemotes()
+	if err != nil {
+		return "", err
+	}
+	if len(rems) == 0 {
+		return "", nil
+	}
+	name := rems[0].Name
+	for _, rem := range rems {
+		if rem.Name == "origin" {
+			name = "origin"
+		} else if name != "origin" && rem.Name < name {
+			name = rem.Name
+		}
+	}
+	return name, nil
+}
+
+// remoteStates is RemoteStates against TreeRemote; empty with no remote.
+func (r *Repo) remoteStates() (string, map[string]change.RemoteState, error) {
+	name, err := r.TreeRemote()
+	if err != nil || name == "" {
+		return "", nil, err
+	}
+	states, err := r.eng.RemoteStates(name)
+	if err != nil {
+		return "", nil, err
+	}
+	return name, states, nil
 }
 
 // Push projects the change-graph onto git refs and publishes branches + tags to
@@ -1496,7 +1562,7 @@ func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
 			return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
 		}
 	}
-	if err := r.fetchNetwork(remote, false); err != nil {
+	if err := r.fetchNetwork(remote, true); err != nil {
 		return change.PullSummary{}, fmt.Errorf("worktree.pullBranch: %w", err)
 	}
 	rheads, err := r.remoteHeadsSafe(remote)
@@ -1560,8 +1626,12 @@ func (r *Repo) remoteHeadsSafe(remote string) (map[string]string, error) {
 // Takes only the per-remote remote.lock, not wc.lock (issue #98 Phase B) — it
 // writes no wc.json/catalogue state, so it never blocks (or is blocked by) an
 // unrelated command on this clone.
+// Fetch refreshes the remote-tracking refs, PRUNING the ones whose branch no
+// longer exists on the remote. Tracking refs exist to tell you what the
+// remote holds; a stale one that says "pushed" about a branch deleted after
+// its PR merged is worse than none, and it is what `tree` reads.
 func (r *Repo) Fetch(remote string) error {
-	if err := r.fetchNetwork(remote, false); err != nil {
+	if err := r.fetchNetwork(remote, true); err != nil {
 		return fmt.Errorf("worktree.Fetch: %w", err)
 	}
 	return nil
@@ -1591,7 +1661,7 @@ func (r *Repo) FetchPruned(remote string) error {
 // the catalogue and expressed folders) then runs under wc.lock as before,
 // briefly re-taking remote.lock for its tracking-ref read (remoteHeadsSafe).
 func (r *Repo) Pull(remote string) (change.PullSummary, error) {
-	if err := r.fetchNetwork(remote, false); err != nil {
+	if err := r.fetchNetwork(remote, true); err != nil {
 		return change.PullSummary{}, fmt.Errorf("worktree.Pull: %w", err)
 	}
 	unlock, err := r.lockState()
@@ -1615,6 +1685,40 @@ func (r *Repo) Pull(remote string) (change.PullSummary, error) {
 	sum, err := r.eng.ReconcileLines(rheads)
 	if err != nil {
 		return sum, fmt.Errorf("worktree.Pull: %w", err)
+	}
+	// Lines whose branch is gone from the remote: the fetch above pruned
+	// their tracking refs, so RemoteStates now says "gone" for every line a
+	// remote has held (remote_seen) that it no longer holds. Abandon the ones
+	// that are not expressed — a line without a folder that the remote has
+	// deleted, usually after its PR merged, is clutter every tree/status
+	// walk pays for — and leave expressed ones to the operator. Abandon is an
+	// op-log entry, so `cairn undo` brings a line back. --keep-gone skips it.
+	if !r.keepGone {
+		states, err := r.eng.RemoteStates(remote)
+		if err != nil {
+			return sum, fmt.Errorf("worktree.Pull: %w", err)
+		}
+		var gone []string
+		for name, st := range states {
+			if st.Kind == "gone" {
+				gone = append(gone, name)
+			}
+		}
+		sort.Strings(gone)
+		for _, name := range gone {
+			if _, expressed := r.st.Expressed[name]; expressed {
+				sum.KeptGone = append(sum.KeptGone, name)
+				continue
+			}
+			line, err := r.eng.LineByName(name)
+			if err != nil {
+				return sum, fmt.Errorf("worktree.Pull: %w", err)
+			}
+			if err := r.eng.AbandonLine(line.ID); err != nil {
+				return sum, fmt.Errorf("worktree.Pull: prune %s: %w", name, err)
+			}
+			sum.Pruned = append(sum.Pruned, name)
+		}
 	}
 	for branch, entry := range r.st.Expressed {
 		line, lerr := r.eng.LineByName(branch)
@@ -2631,3 +2735,7 @@ func execModes(meta map[string]change.TreeEntry) map[string]change.EntryMode {
 	}
 	return out
 }
+
+// SetKeepGone makes Pull leave lines whose branch is gone from the remote in
+// place instead of abandoning the un-expressed ones (`cairn pull --keep-gone`).
+func (r *Repo) SetKeepGone(keep bool) { r.keepGone = keep }

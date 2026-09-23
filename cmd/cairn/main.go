@@ -76,7 +76,7 @@ subcommands:
   status [branch]           report a branch's state — the working change vs its parent (default: root)
   diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
   diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
-  tree [--flat]                 print the line tree by name (--flat: one line each with the parent's id)
+  tree [--fetch] [--gone]       print the line tree with each line's remote state (--fetch refreshes it; --gone lists lines whose branch is gone; --flat for scripts)
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
   remote                        list configured remotes

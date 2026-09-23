@@ -241,19 +241,43 @@ func (e *Engine) GetLineTree() ([]LineNode, error) {
 	}
 	_ = rows.Close()
 
+	byID := make(map[string]Line, len(lines))
+	for _, l := range lines {
+		byID[l.ID] = l
+	}
+	sealed := map[string]string{}
+	tipOf := func(l Line) (string, error) {
+		if st, ok := sealed[l.ID]; ok {
+			return st, nil
+		}
+		st, err := e.sealedTip(l)
+		if err != nil {
+			return "", err
+		}
+		sealed[l.ID] = st
+		return st, nil
+	}
 	var nodes []LineNode
 	for _, l := range lines {
-		// Ahead = SEALED commits between this line's base and its tip. Strip a
-		// "(working)" head first (an unsealed auto-snapshot is local working state,
-		// never "ahead" — exactly as Status does), then count first-parent commits
-		// down to (excluding) the base, or to the root when the base is empty.
-		st, err := e.sealedTip(l)
+		// Ahead = SEALED commits on this line that its PARENT does not have —
+		// `rev-list parent..line` by the two-colour walk (divergence). The
+		// working snapshot never counts (sealedTip strips it). The old count
+		// followed first parents from the tip until it met the line's base,
+		// and ran to the ROOT whenever the base sat behind a merge's second
+		// parent — reporting the whole history (19,756) for a two-commit
+		// line. The root has no parent to be ahead of; its remote state
+		// (RemoteStates) is the number that matters there.
+		st, err := tipOf(l)
 		if err != nil {
 			return nil, fmt.Errorf("change.GetLineTree: %w", err)
 		}
 		ahead := 0
-		for cur := st; cur != "" && cur != l.BaseCommit && ahead < describeWalkCap; ahead++ {
-			if cur, err = e.firstParent(cur); err != nil {
+		if p, ok := byID[l.ParentLine]; ok {
+			pt, err := tipOf(p)
+			if err != nil {
+				return nil, fmt.Errorf("change.GetLineTree: %w", err)
+			}
+			if ahead, _, err = e.divergence(st, pt); err != nil {
 				return nil, fmt.Errorf("change.GetLineTree: %w", err)
 			}
 		}
