@@ -93,3 +93,11 @@ CREATE TABLE IF NOT EXISTS embargo (
 );
 CREATE INDEX IF NOT EXISTS idx_change_line ON change(line_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_change ON conflict(change_id);
+-- Generation number per commit: 1 for a root, else 1 + the highest parent's.
+-- A commit's generation never changes (commits are content-addressed), so
+-- this is a pure cache; graph walks order by it to get exact answers
+-- regardless of commit timestamps (graph.go).
+CREATE TABLE IF NOT EXISTS commit_gen (
+  sha TEXT PRIMARY KEY,
+  gen INTEGER NOT NULL
+) WITHOUT ROWID;

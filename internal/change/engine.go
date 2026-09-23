@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/winretry"
@@ -53,6 +54,10 @@ type Engine struct {
 	idName   string
 	idEmail  string
 	progress io.Writer
+	// gens caches commit generation numbers in memory, backed by the
+	// commit_gen table (see generation.go).
+	genMu sync.Mutex
+	gens  map[plumbing.Hash]uint32
 }
 
 // SetIdentity configures the author identity used for all commits this engine
@@ -312,22 +317,14 @@ func (e *Engine) MergeBase(a, b string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("change.MergeBase: %w", err)
 	}
-	ca, err := e.git.CommitObject(plumbing.NewHash(ha))
-	if err != nil {
-		return "", fmt.Errorf("change.MergeBase: load %s: %w", a, err)
-	}
-	cb, err := e.git.CommitObject(plumbing.NewHash(hb))
-	if err != nil {
-		return "", fmt.Errorf("change.MergeBase: load %s: %w", b, err)
-	}
-	bases, err := ca.MergeBase(cb)
+	base, err := e.mergeBase(ha, hb)
 	if err != nil {
 		return "", fmt.Errorf("change.MergeBase: %s...%s: %w", a, b, err)
 	}
-	if len(bases) == 0 {
+	if base == "" {
 		return "", fmt.Errorf("change.MergeBase: %s and %s: %w", a, b, ErrNoCommonAncestor)
 	}
-	return bases[0].Hash.String(), nil
+	return base, nil
 }
 
 // DiffMergeBase returns the per-path diff introduced by source since it
