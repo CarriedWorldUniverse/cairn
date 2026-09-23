@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	cairnv1 "github.com/CarriedWorldUniverse/cwb-proto/gen/go/cwb/cairn/v1"
 )
@@ -181,6 +182,8 @@ func cmdFetch(args []string) error {
 func cmdPull(args []string) error {
 	fs := flag.NewFlagSet("pull", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
+
+	keepGone := fs.Bool("keep-gone", false, "do not abandon un-expressed lines whose branch is gone from the remote")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
@@ -200,6 +203,7 @@ func cmdPull(args []string) error {
 	}
 	defer r.Close()
 	defer reportElapsed("pull", pullStarted)
+	r.SetKeepGone(*keepGone)
 	sum, err := r.Pull(remote)
 	if err != nil {
 		return mapRemoteErr(err)
@@ -215,6 +219,12 @@ func cmdPull(args []string) error {
 	}
 	if anyConflicts {
 		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
+	}
+	if len(sum.Pruned) > 0 {
+		fmt.Fprintf(os.Stderr, "cairn: pruned %d line(s) whose branch is gone from %s: %s (cairn undo restores)\n", len(sum.Pruned), remote, strings.Join(sum.Pruned, ", "))
+	}
+	if len(sum.KeptGone) > 0 {
+		fmt.Fprintf(os.Stderr, "cairn: kept %d expressed line(s) whose branch is gone from %s: %s — unexpress and abandon them, or push them back\n", len(sum.KeptGone), remote, strings.Join(sum.KeptGone, ", "))
 		return errConflicts
 	}
 	return nil

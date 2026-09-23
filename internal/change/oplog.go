@@ -167,6 +167,23 @@ func (e *Engine) Undo() error {
 			sha, ts, name); err != nil {
 			return fmt.Errorf("change.Undo: %w", err)
 		}
+		// A line present before the op and absent after it was ABANDONED by
+		// it (AbandonLine is the only thing that removes a line from the
+		// view — directly, or via pull pruning a branch the remote deleted).
+		// Restoring its tip alone would leave it invisible; revive it and its
+		// changes, so undo of an abandon is a real undo.
+		if _, after := last.ViewAfter[name]; !after {
+			if _, err := tx.Exec(
+				`UPDATE line SET status='open', updated_at=? WHERE name=? AND status='abandoned'`,
+				ts, name); err != nil {
+				return fmt.Errorf("change.Undo: %w", err)
+			}
+			if _, err := tx.Exec(
+				`UPDATE change SET status='open', updated_at=? WHERE status='abandoned' AND line_id=(SELECT id FROM line WHERE name=?)`,
+				ts, name); err != nil {
+				return fmt.Errorf("change.Undo: %w", err)
+			}
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.Undo: commit tx: %w", err)

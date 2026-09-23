@@ -578,6 +578,21 @@ func (e *Engine) verifyPush(pp *PreparedPush, rem *git.Remote) error {
 			byName[r.Name()] = r.Hash()
 		}
 	}
+	// A verified landing is also the moment the remote-tracking ref is known
+	// exactly: record it, so `tree` shows a branch as pushed the instant it
+	// is, without waiting for the next fetch. git does the same on push.
+	track := func(target plumbing.ReferenceName, h plumbing.Hash) {
+		name := target.String()
+		if !strings.HasPrefix(name, "refs/heads/") {
+			return
+		}
+		branch := strings.TrimPrefix(name, "refs/heads/")
+		tracking := plumbing.ReferenceName("refs/remotes/" + pp.remoteName + "/" + branch)
+		_ = e.git.Storer.SetReference(plumbing.NewHashReference(tracking, h)) // best-effort: a stale tracking ref only ages the annotation
+		// The remote has now held this line: if its branch later disappears
+		// there, that is "gone", not "unpushed" (see RemoteStates).
+		_, _ = e.db.Exec(`UPDATE line SET remote_seen=1 WHERE name=? AND remote_seen=0`, branch)
+	}
 	for _, p := range pp.pins {
 		got, ok := byName[p.target]
 		if !ok {
@@ -586,10 +601,12 @@ func (e *Engine) verifyPush(pp *PreparedPush, rem *git.Remote) error {
 				pp.label, p.target, p.expected)
 		}
 		if got == p.expected {
+			track(p.target, got)
 			continue
 		}
 		if e.commitExistsLocally(got) {
 			if e.remoteAdvancedPastOurPush(p.expected, got) {
+				track(p.target, got)
 				continue // legitimate concurrent push landed on top of ours
 			}
 			return fmt.Errorf(

@@ -111,6 +111,39 @@ func (tp *topo) orphan(t *testing.T, name, label string) {
 	tp.sha[label] = commitHash.String()
 }
 
+// mergeFrom records a merge commit on the current branch with `other`'s tip
+// as the second parent (tree = current tree; the content is irrelevant here).
+func (tp *topo) mergeFrom(t *testing.T, other, label string) {
+	t.Helper()
+	head, err := tp.repo.Head()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref, err := tp.repo.Reference(plumbing.NewBranchReferenceName(other), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cur, err := tp.repo.CommitObject(head.Hash())
+	if err != nil {
+		t.Fatal(err)
+	}
+	topoClock = topoClock.Add(time.Minute)
+	sig := object.Signature{Name: "t", Email: "t@t", When: topoClock}
+	c := &object.Commit{Author: sig, Committer: sig, Message: label, TreeHash: cur.TreeHash, ParentHashes: []plumbing.Hash{head.Hash(), ref.Hash()}}
+	obj := tp.repo.Storer.NewEncodedObject()
+	if err := c.Encode(obj); err != nil {
+		t.Fatal(err)
+	}
+	h, err := tp.repo.Storer.SetEncodedObject(obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tp.repo.Storer.SetReference(plumbing.NewHashReference(head.Name(), h)); err != nil {
+		t.Fatal(err)
+	}
+	tp.sha[label] = h.String()
+}
+
 func (tp *topo) checkout(t *testing.T, name string) {
 	t.Helper()
 	if err := tp.wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName(name)}); err != nil {

@@ -26,8 +26,10 @@ func TestTreeRendersNamesAsAnIndentedTree(t *testing.T) {
 	mustRun(t, "express", "--repo", root, "hotfix")
 
 	got := mustRunOut(t, "tree", "--repo", root)
+	// ahead is rev-list parent..line on sealed tips: develop has one commit
+	// main lacks; feature and hotfix have none; the root has no parent.
 	want := strings.Join([]string{
-		"main  ahead=1",
+		"main  ahead=0",
 		"├─ develop  ahead=1",
 		"│  └─ feature  ahead=0",
 		"└─ hotfix  ahead=0",

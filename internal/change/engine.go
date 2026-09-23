@@ -175,6 +175,13 @@ func migrate(db *sql.DB) error {
 		// the truth, so a migrated log reads identically to before.
 		{"operation", "seq", `ALTER TABLE operation ADD COLUMN seq INTEGER NOT NULL DEFAULT 0`,
 			[]string{`UPDATE operation SET seq = rowid WHERE seq = 0`}},
+		// remote_seen marks a line whose branch a remote has held at some
+		// point: set on clone/import (like tracks_remote) AND on every verified
+		// push. It is what lets `tree` tell "gone" (the remote had it and
+		// deleted it, e.g. after the PR merged) from "unpushed" (never sent)
+		// once the tracking ref has been pruned. Backfilled from tracks_remote.
+		{"line", "remote_seen", `ALTER TABLE line ADD COLUMN remote_seen INTEGER NOT NULL DEFAULT 0`,
+			[]string{`UPDATE line SET remote_seen = tracks_remote WHERE remote_seen = 0`}},
 	}
 	for _, m := range migrations {
 		has, err := hasColumn(db, m.table, m.column)
@@ -363,3 +370,6 @@ func (e *Engine) LineByName(name string) (Line, error) {
 	l.ParentLine = parent.String
 	return l, nil
 }
+
+// DB exposes the catalogue for tests that need to shape legacy state.
+func (e *Engine) DB() *sql.DB { return e.db }
