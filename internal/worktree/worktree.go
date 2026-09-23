@@ -967,10 +967,15 @@ func (r *Repo) Resolve(branch, path string, force bool) error {
 	data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
 	switch {
 	case err == nil:
-		if !force && diff3.HasMarkers(data) {
-			return fmt.Errorf(
-				"worktree.Resolve: %q still contains conflict markers (<<<<<<< / ======= / >>>>>>>) — edit them out and re-run, or pass --force if the content is intentional",
-				path)
+		// Every marker line is checked, not just a complete block: a file
+		// with the opener deleted and the rest left behind is NOT resolved,
+		// and used to be accepted and sealed as if it were.
+		if !force {
+			if merr := diff3.CheckMarkers(data); merr != nil {
+				return fmt.Errorf(
+					"worktree.Resolve: %q still contains conflict markers — %w; edit out every <<<<<<< / ||||||| / ======= / >>>>>>> line and re-run, or pass --force if the content is intentional",
+					path, merr)
+			}
 		}
 		if err := r.eng.ResolveConflict(entry.ChangeID, path, data); err != nil {
 			return fmt.Errorf("worktree.Resolve: %w", err)

@@ -1,22 +1,41 @@
 package diff3
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
-// HasMarkers reports whether data still contains an (unresolved) diff3
-// conflict block as emitted by Merge: a line-anchored "<<<<<<< " opener,
-// followed in order by a "=======" separator line and a ">>>>>>> " closer.
-// The three parts must appear in sequence for a hit, so ordinary text that
-// merely mentions one marker (docs, test fixtures) does not trip it. It walks
-// the buffer line-by-line in place (no per-line allocation), so it is safe on
-// arbitrarily large / line-dense input.
-func HasMarkers(data []byte) bool {
-	const (
-		wantOpen = iota
-		wantSep
-		wantClose
-	)
-	state := wantOpen
+// MarkerError names the first conflict-marker line left in a file.
+type MarkerError struct {
+	Line   int    // 1-based
+	Marker string // the marker as written, e.g. ">>>>>>> theirs"
+}
+
+func (e *MarkerError) Error() string {
+	return fmt.Sprintf("conflict marker %q at line %d", e.Marker, e.Line)
+}
+
+// CheckMarkers reports the first conflict-marker line in data, or nil when
+// there is none. A resolved file must contain NO marker line at all: the
+// line-anchored forms are "<<<<<<< " (ours), "||||||| " (base), "=======" (the
+// separator, exactly) and ">>>>>>> " (theirs), as Merge writes them.
+//
+// This deliberately does not look for a well-formed block. The earlier check
+// did — opener, then separator, then closer, in order — so that prose merely
+// mentioning a marker would not trip it; but that accepted every PARTIALLY
+// resolved file: delete just the "<<<<<<< ours" line and the remaining
+// "||||||| base", "=======" and ">>>>>>> theirs" sailed through and were
+// sealed as the resolution. A stray marker is an unresolved fragment by
+// definition, so every one is reported. Legitimate content that happens to
+// start a line with a marker (a Markdown setext underline of exactly seven
+// '=', a fixture) is what Resolve's --force is for. Markers not at the start
+// of a line are ordinary text.
+//
+// Walks the buffer line by line in place, so it is safe on large input.
+func CheckMarkers(data []byte) error {
+	lineNo := 0
 	for len(data) > 0 {
+		lineNo++
 		line := data
 		if i := bytes.IndexByte(data, '\n'); i >= 0 {
 			line, data = data[:i], data[i+1:]
@@ -24,20 +43,16 @@ func HasMarkers(data []byte) bool {
 			data = nil
 		}
 		line = bytes.TrimSuffix(line, []byte("\r"))
-		switch state {
-		case wantOpen:
-			if bytes.HasPrefix(line, []byte("<<<<<<< ")) {
-				state = wantSep
-			}
-		case wantSep:
-			if bytes.Equal(line, []byte("=======")) {
-				state = wantClose
-			}
-		case wantClose:
-			if bytes.HasPrefix(line, []byte(">>>>>>> ")) {
-				return true
-			}
+		switch {
+		case bytes.HasPrefix(line, []byte("<<<<<<< ")),
+			bytes.HasPrefix(line, []byte("||||||| ")),
+			bytes.Equal(line, []byte("=======")),
+			bytes.HasPrefix(line, []byte(">>>>>>> ")):
+			return &MarkerError{Line: lineNo, Marker: string(line)}
 		}
 	}
-	return false
+	return nil
 }
+
+// HasMarkers reports whether data contains any conflict-marker line.
+func HasMarkers(data []byte) bool { return CheckMarkers(data) != nil }
