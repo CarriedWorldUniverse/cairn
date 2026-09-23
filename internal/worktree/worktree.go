@@ -1174,7 +1174,7 @@ func (r *Repo) workingDiffSynced(entry Entry) ([]change.FileDiff, error) {
 		// No working snapshot yet: nothing differs from the parent.
 		return nil, nil
 	}
-	parent, err := r.eng.FirstParent(ch.HeadCommit)
+	parent, err := workingBase(r.eng, ch.HeadCommit)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
@@ -1183,6 +1183,22 @@ func (r *Repo) workingDiffSynced(entry Entry) ([]change.FileDiff, error) {
 		return nil, fmt.Errorf("worktree.WorkingDiff: %w", err)
 	}
 	return diffs, nil
+}
+
+// workingBase is the commit a working change's edits are shown against. For
+// an ordinary working commit that is its parent. For the merge a conflicted
+// pull leaves ([local, upstream]) it is the UPSTREAM parent — the side being
+// adopted — so status lists the conflicts and the operator's own work, not
+// every file the pull brought in as if it were a local edit (#195).
+func workingBase(eng *change.Engine, head string) (string, error) {
+	parents, err := eng.Parents(head)
+	if err != nil {
+		return "", err
+	}
+	if len(parents) == 0 {
+		return "", nil
+	}
+	return parents[len(parents)-1], nil
 }
 
 // DiffCommits returns the per-path diff between two commits, passing through to

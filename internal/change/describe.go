@@ -110,6 +110,22 @@ func preferTag(a, b string) string {
 // for callers that need a working commit's parent (e.g. working-vs-parent diffs).
 func (e *Engine) FirstParent(commit string) (string, error) { return e.firstParent(commit) }
 
+// Parents returns the hex shas of every parent of commit, in order — none for
+// a root. The working commit a conflicted pull leaves is a merge [local,
+// upstream]; anything that rewrites that commit must carry BOTH, or the
+// upstream side silently falls out of the line's history.
+func (e *Engine) Parents(commit string) ([]string, error) {
+	c, err := e.git.CommitObject(plumbing.NewHash(commit))
+	if err != nil {
+		return nil, fmt.Errorf("commit %s: %w", commit, err)
+	}
+	out := make([]string, 0, len(c.ParentHashes))
+	for _, h := range c.ParentHashes {
+		out = append(out, h.String())
+	}
+	return out, nil
+}
+
 // firstParent returns the hex sha of the first parent of commit, or "" if the
 // commit is a root (has no parents).
 func (e *Engine) firstParent(commit string) (string, error) {
