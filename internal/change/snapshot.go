@@ -43,16 +43,21 @@ func (e *Engine) SnapshotWorking(changeID string, entries map[string]TreeEntry) 
 		return false, "", err
 	}
 
-	// Parent: preserve the existing working commit's parent (amend), or root the
-	// first snapshot on the line's current tip.
-	var parent string
+	// Parents: preserve the existing working commit's parents (amend), or root
+	// the first snapshot on the line's current tip. ALL of them: a conflicted
+	// pull leaves a merge [local, upstream] as the working commit, and
+	// amending it onto its first parent alone dropped the upstream side — the
+	// next seal then re-merged against a stale base and re-marked the conflict
+	// the operator had just resolved, and the push could no longer
+	// fast-forward (#195).
+	var parents []string
 	if ch.HeadCommit != "" {
-		parent, err = e.firstParent(ch.HeadCommit)
+		parents, err = e.Parents(ch.HeadCommit)
 		if err != nil {
 			return false, "", fmt.Errorf("change.SnapshotWorking: %w", err)
 		}
-	} else {
-		parent = line.TipCommit
+	} else if line.TipCommit != "" {
+		parents = []string{line.TipCommit}
 	}
 
 	// No-op check: the head already snapshots this exact tree.
@@ -68,10 +73,6 @@ func (e *Engine) SnapshotWorking(changeID string, entries map[string]TreeEntry) 
 		desc = stripChangeID(cur.Message)
 	}
 
-	var parents []string
-	if parent != "" {
-		parents = []string{parent}
-	}
 	newHead, err := e.writeCommit(tree.String(), ch.ID, desc, parents)
 	if err != nil {
 		return false, "", err

@@ -45,14 +45,16 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 	// Determine the tree to seal and the parent commit. The working commit's tree
 	// and parent are carried over verbatim — only the message changes — so the
 	// sealed commit is the working snapshot with a real description.
-	var treeSha, parent string
+	var treeSha string
+	var sealParents []string
 	if ch.HeadCommit != "" {
 		wc, cerr := e.git.CommitObject(plumbing.NewHash(ch.HeadCommit))
 		if cerr != nil {
 			return "", nil, fmt.Errorf("change.Seal: read working commit: %w", cerr)
 		}
 		treeSha = wc.TreeHash.String()
-		if parent, err = e.firstParent(ch.HeadCommit); err != nil {
+		// Every parent, not just the first: see SnapshotWorking.
+		if sealParents, err = e.Parents(ch.HeadCommit); err != nil {
 			return "", nil, fmt.Errorf("change.Seal: %w", err)
 		}
 	} else {
@@ -62,12 +64,9 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 			return "", nil, fmt.Errorf("change.Seal: empty tree: %w", terr)
 		}
 		treeSha = tree.String()
-		parent = line.TipCommit
-	}
-
-	var sealParents []string
-	if parent != "" {
-		sealParents = []string{parent}
+		if line.TipCommit != "" {
+			sealParents = []string{line.TipCommit}
+		}
 	}
 
 	// Stamp the message onto the working tree.
