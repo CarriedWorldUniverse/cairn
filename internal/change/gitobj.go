@@ -469,7 +469,6 @@ func (e *Engine) commitTree(commitSha string) (string, error) {
 	return c.TreeHash.String(), nil
 }
 
-
 // readTree reads a tree (recursively) into a flat path->bytes map keyed by the
 // full "/"-separated path of each file.
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
