@@ -22,6 +22,8 @@ type topo struct {
 	repo *git.Repository
 	wt   *git.Worktree
 	sha  map[string]string // label -> commit sha
+	// frozen stamps every commit with the same instant.
+	frozen bool
 }
 
 func newTopo(t *testing.T) *topo {
@@ -49,7 +51,9 @@ func (tp *topo) commit(t *testing.T, label string) {
 	if _, err := tp.wt.Add(label + ".txt"); err != nil {
 		t.Fatal(err)
 	}
-	topoClock = topoClock.Add(time.Minute)
+	if !tp.frozen {
+		topoClock = topoClock.Add(time.Minute)
+	}
 	h, err := tp.wt.Commit(label, &git.CommitOptions{Author: &object.Signature{Name: "t", Email: "t@t", When: topoClock}})
 	if err != nil {
 		t.Fatalf("commit %s: %v", label, err)
@@ -94,7 +98,9 @@ func (tp *topo) orphan(t *testing.T, name, label string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	topoClock = topoClock.Add(time.Minute)
+	if !tp.frozen {
+		topoClock = topoClock.Add(time.Minute)
+	}
 	sig := object.Signature{Name: "t", Email: "t@t", When: topoClock}
 	c := &object.Commit{Author: sig, Committer: sig, Message: label, TreeHash: treeHash}
 	commitObj := st.NewEncodedObject()
@@ -127,7 +133,9 @@ func (tp *topo) mergeFrom(t *testing.T, other, label string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	topoClock = topoClock.Add(time.Minute)
+	if !tp.frozen {
+		topoClock = topoClock.Add(time.Minute)
+	}
 	sig := object.Signature{Name: "t", Email: "t@t", When: topoClock}
 	c := &object.Commit{Author: sig, Committer: sig, Message: label, TreeHash: cur.TreeHash, ParentHashes: []plumbing.Hash{head.Hash(), ref.Hash()}}
 	obj := tp.repo.Storer.NewEncodedObject()

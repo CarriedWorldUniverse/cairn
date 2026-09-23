@@ -41,45 +41,59 @@ func (e *Engine) divergence(a, b string) (ahead, behind int, err error) {
 		both = colA | colB
 	)
 	colour := map[plumbing.Hash]int{}
+	// done is the colour a commit's parents were last painted with. A commit
+	// can gain a colour AFTER it was popped — two commits with the same
+	// timestamp pop in either order, and a skewed clock can put an ancestor
+	// ahead of its descendant — so a commit whose colour grows is queued
+	// again and its parents repainted. Without that, a commit both sides
+	// share was counted as exclusive, and so was all of its history the walk
+	// went on to visit (#193).
+	done := map[plumbing.Hash]int{}
+	queued := map[plumbing.Hash]bool{}
+	commits := map[plumbing.Hash]*object.Commit{}
 	pq := &commitHeap{}
-	push := func(h plumbing.Hash, c int) error {
-		prev, seen := colour[h]
-		colour[h] = prev | c
-		if seen {
+	paint := func(h plumbing.Hash, c int) error {
+		colour[h] |= c
+		if queued[h] || done[h] == colour[h] {
 			return nil
 		}
-		commit, err := e.git.CommitObject(h)
-		if err != nil {
-			return fmt.Errorf("change.divergence: commit %s: %w", h, err)
+		commit, ok := commits[h]
+		if !ok {
+			var err error
+			if commit, err = e.git.CommitObject(h); err != nil {
+				return fmt.Errorf("change.divergence: commit %s: %w", h, err)
+			}
+			commits[h] = commit
 		}
+		queued[h] = true
 		heap.Push(pq, commit)
 		return nil
 	}
-	if err := push(plumbing.NewHash(a), colA); err != nil {
+	if err := paint(plumbing.NewHash(a), colA); err != nil {
 		return 0, 0, err
 	}
-	if err := push(plumbing.NewHash(b), colB); err != nil {
+	if err := paint(plumbing.NewHash(b), colB); err != nil {
 		return 0, 0, err
 	}
+	// Once every queued commit is common, nothing exclusive remains — unless
+	// a clock is skewed, so the walk runs a few commits past that point, as
+	// git's own walk does, to catch a common ancestor dated out of order.
+	const slop = 5
+	extra := slop
 	visited := 0
 	for pq.Len() > 0 {
 		if visited++; visited > describeWalkCap {
 			return 0, 0, fmt.Errorf("change.divergence: walk exceeded %d commits between %s and %s", describeWalkCap, a[:8], b[:8])
 		}
 		c := heap.Pop(pq).(*object.Commit)
+		queued[c.Hash] = false
 		col := colour[c.Hash]
-		switch col {
-		case colA:
-			ahead++
-		case colB:
-			behind++
-		}
+		done[c.Hash] = col
 		for _, p := range c.ParentHashes {
-			if err := push(p, col); err != nil {
+			if err := paint(p, col); err != nil {
 				return 0, 0, err
 			}
 		}
-		// Once every queued commit is common, nothing exclusive remains.
 		allCommon := true
 		for _, q := range *pq {
 			if colour[q.Hash] != both {
@@ -87,8 +101,18 @@ func (e *Engine) divergence(a, b string) (ahead, behind int, err error) {
 				break
 			}
 		}
-		if allCommon {
+		if !allCommon {
+			extra = slop
+		} else if extra--; extra <= 0 {
 			break
+		}
+	}
+	for _, col := range colour {
+		switch col {
+		case colA:
+			ahead++
+		case colB:
+			behind++
 		}
 	}
 	return ahead, behind, nil
