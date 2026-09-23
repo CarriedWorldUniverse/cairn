@@ -370,3 +370,6 @@ func (e *Engine) LineByName(name string) (Line, error) {
 	l.ParentLine = parent.String
 	return l, nil
 }
+
+// DB exposes the catalogue for tests that need to shape legacy state.
+func (e *Engine) DB() *sql.DB { return e.db }

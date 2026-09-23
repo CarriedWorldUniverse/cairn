@@ -1,6 +1,7 @@
 package worktree
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -109,5 +110,46 @@ func TestPullKeepGoneLeavesLinesAlone(t *testing.T) {
 	}
 	if len(sum.Pruned) != 0 || lineStatus(t, r, "feature") != "open" {
 		t.Fatalf("keep-gone: Pruned=%v status=%s", sum.Pruned, lineStatus(t, r, "feature"))
+	}
+}
+
+// A line pushed by a cairn from before remote_seen existed has the flag
+// unset but still holds a tracking ref (older releases never pruned). The
+// pruning fetch must record the ref's presence BEFORE pruning it, or the line
+// would read as never-pushed and survive the prune.
+func TestPullPrunesLinesPushedBeforeRemoteSeenExisted(t *testing.T) {
+	skipOnWindows(t)
+	originDir, def := makeOriginRepoWT(t)
+	r, err := Clone(originDir, filepath.Join(t.TempDir(), "wc"), "tester", nil)
+	if err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := r.Express("mine", def); err != nil {
+		t.Fatalf("Express: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(r.Root(), r.st.Expressed["mine"].Path, "m.txt"), []byte("m\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("mine", "m"); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	if err := r.PushBranch("origin", "mine", false); err != nil {
+		t.Fatalf("PushBranch: %v", err)
+	}
+	if err := r.Unexpress("mine", true); err != nil {
+		t.Fatalf("Unexpress: %v", err)
+	}
+	// Simulate the pre-remote_seen state: flag off, tracking ref present.
+	if _, err := r.eng.DB().Exec(`UPDATE line SET remote_seen=0 WHERE name='mine'`); err != nil {
+		t.Fatal(err)
+	}
+	deleteOnOrigin(t, originDir, "mine")
+	sum, err := r.Pull("origin")
+	if err != nil {
+		t.Fatalf("Pull: %v", err)
+	}
+	if len(sum.Pruned) != 1 || sum.Pruned[0] != "mine" {
+		t.Fatalf("Pruned = %v, want [mine] — the tracking ref's presence was not recorded before pruning", sum.Pruned)
 	}
 }
