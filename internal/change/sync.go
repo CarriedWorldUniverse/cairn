@@ -52,6 +52,17 @@ var testFetchDelay func()
 // see fetchTrackingPruned, used by `pr diff` only; plain PullFromRemote/Fetch
 // keep prune off so their well-established non-pruning behavior is unchanged.
 func (e *Engine) fetchTracking(remoteName string, prune bool) error {
+	// Before a fetch can prune a tracking ref, record what its presence
+	// proves: the remote has held this line. That is what lets a pruned
+	// branch read as "gone" rather than "unpushed" for lines pushed before
+	// remote_seen existed (see RemoteStates); a fresh push records it too.
+	if prune {
+		if heads, herr := e.remoteHeads(remoteName); herr == nil {
+			for name := range heads {
+				_, _ = e.db.Exec(`UPDATE line SET remote_seen=1 WHERE name=? AND remote_seen=0`, name)
+			}
+		}
+	}
 	rem, err := e.git.Remote(remoteName)
 	if errors.Is(err, git.ErrRemoteNotFound) {
 		return fmt.Errorf("change.fetchTracking: no remote %q", remoteName)
