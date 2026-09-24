@@ -220,6 +220,9 @@ func cmdPull(args []string) error {
 	if anyConflicts {
 		fmt.Fprintln(os.Stderr, "cairn: resolve the conflicts above, then push")
 	}
+	for _, rb := range sum.Rebased {
+		printRebase(rb)
+	}
 	if len(sum.Pruned) > 0 {
 		fmt.Fprintf(os.Stderr, "cairn: pruned %d line(s) whose branch is gone from %s: %s (cairn undo restores)\n", len(sum.Pruned), remote, strings.Join(sum.Pruned, ", "))
 	}

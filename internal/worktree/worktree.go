@@ -90,7 +90,10 @@ type StatusInfo struct {
 	Ahead   int
 	// Remote is "<remote>: <state>" — pushed, ahead N, behind N, diverged,
 	// unpushed or gone — as of the last fetch or push; "" with no remote.
-	Remote    string
+	Remote string
+	// Rebase describes a stopped rebase onto the parent ("" when none):
+	// the commit being resolved and how many wait after it.
+	Rebase    string
 	Conflicts []string
 	Expressed []string
 	Added     []string
@@ -690,6 +693,19 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 			"worktree.Commit: %d unresolved conflict(s) in: %s — edit out the <<<<<<< markers, run 'cairn resolve %s <path>' for each, then commit",
 			len(open), strings.Join(paths, ", "), branch)
 	}
+	// Sealing the commit a stopped rebase is resolving: it keeps its original
+	// message unless the operator gives a new one.
+	rbLine, err := r.eng.LineByName(branch)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	stopMsg, _, rebasing, err := r.eng.RebaseInProgress(rbLine.ID)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	if rebasing && message == "" {
+		message = stopMsg
+	}
 	prevChangeID := entry.ChangeID
 	newChangeID, conflicts, err := r.eng.Seal(entry.ChangeID, message)
 	if err != nil {
@@ -700,6 +716,21 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	r.st.Expressed[branch] = entry
 	if err := SaveState(r.stPath, r.st); err != nil {
 		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	// Then replay what the stopped rebase still holds on top of the commit
+	// just sealed; it may stop again, on the fresh working change.
+	var rebase *change.ParentRebase
+	sealedLine, err := r.eng.LineByName(branch)
+	if err != nil {
+		return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+	}
+	sealedHead := sealedLine.TipCommit
+	if rebasing && len(conflicts) == 0 {
+		rb, err := r.eng.ContinueRebase(rbLine.ID)
+		if err != nil {
+			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", err)
+		}
+		rebase = &rb
 	}
 	// The branch's working-cache referenced the old change's snapshot fingerprints
 	// and stays valid (same folder paths); the fresh change's first SyncWorking
@@ -744,7 +775,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 	// is captured as a note for the CLI, not propagated.
 	r.lastSyncNote = r.autoSync()
 
-	return change.CommitResult{HeadCommit: line.TipCommit, Conflicts: conflicts, SkippedUnreadable: skipped}, nil
+	return change.CommitResult{HeadCommit: sealedHead, Conflicts: conflicts, SkippedUnreadable: skipped, Rebase: rebase}, nil
 }
 
 // autoSync runs the opt-in commit-time sync and returns a note describing the
@@ -1113,11 +1144,18 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 		expressed = append(expressed, name)
 	}
 	sort.Strings(expressed)
+	var rebase string
+	if msg, rest, ok, rerr := r.eng.RebaseInProgress(line.ID); rerr != nil {
+		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
+	} else if ok {
+		rebase = fmt.Sprintf("onto %s, stopped at %q (%d more to replay) — resolve, then 'cairn commit'", lineage[len(lineage)-2].Name, firstLine(msg), rest)
+	}
 	return StatusInfo{
 		Branch:            branch,
 		Lineage:           names,
 		Ahead:             ahead,
 		Remote:            remote,
+		Rebase:            rebase,
 		Conflicts:         paths,
 		Expressed:         expressed,
 		Added:             added,
@@ -1735,6 +1773,14 @@ func (r *Repo) Pull(remote string) (change.PullSummary, error) {
 			}
 			sum.Pruned = append(sum.Pruned, name)
 		}
+	}
+	// Keep every line written against its parent's latest: replay each
+	// line's unpublished commits onto its parent's (possibly just-pulled)
+	// tip, stopping at a commit that conflicts (change.RebaseOntoParents).
+	rebased, err := r.eng.RebaseOntoParents(rheads)
+	sum.Rebased = rebased
+	if err != nil {
+		return sum, fmt.Errorf("worktree.Pull: %w", err)
 	}
 	for branch, entry := range r.st.Expressed {
 		line, lerr := r.eng.LineByName(branch)
@@ -2755,3 +2801,11 @@ func execModes(meta map[string]change.TreeEntry) map[string]change.EntryMode {
 // SetKeepGone makes Pull leave lines whose branch is gone from the remote in
 // place instead of abandoning the un-expressed ones (`cairn pull --keep-gone`).
 func (r *Repo) SetKeepGone(keep bool) { r.keepGone = keep }
+
+// firstLine is a commit message's subject.
+func firstLine(msg string) string {
+	if i := strings.IndexByte(msg, '\n'); i >= 0 {
+		return msg[:i]
+	}
+	return msg
+}

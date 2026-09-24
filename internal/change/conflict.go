@@ -245,7 +245,23 @@ func (e *Engine) resolveConflict(changeID, path string, resolved []byte, mode re
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}
-	newHead, err := e.writeCommit(newTree.String(), changeID, "resolve conflicts", []string{ch.HeadCommit})
+	// On the open working change a resolution AMENDS the working commit —
+	// same parents, same description, new tree — like any other edit to the
+	// folder. Stacking a "resolve conflicts" commit on top instead kept the
+	// conflict-marked working commit in the line's history, and the next
+	// commit published it. A sealed change keeps the stacked commit.
+	parents, desc := []string{ch.HeadCommit}, "resolve conflicts"
+	if !ch.Sealed {
+		if parents, err = e.Parents(ch.HeadCommit); err != nil {
+			return fmt.Errorf("change.ResolveConflict: %w", err)
+		}
+		msg, merr := e.commitMessage(ch.HeadCommit)
+		if merr != nil {
+			return fmt.Errorf("change.ResolveConflict: %w", merr)
+		}
+		desc = stripChangeID(msg)
+	}
+	newHead, err := e.writeCommit(newTree.String(), changeID, desc, parents)
 	if err != nil {
 		return fmt.Errorf("change.ResolveConflict: %w", err)
 	}

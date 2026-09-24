@@ -185,6 +185,10 @@ func (e *Engine) Undo() error {
 			}
 		}
 	}
+	// A rebase the op stopped, advanced or finished goes back to where it was.
+	if err := restoreRebaseStates(tx, last.ID); err != nil {
+		return err
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.Undo: commit tx: %w", err)
 	}

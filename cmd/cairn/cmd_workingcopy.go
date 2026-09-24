@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -196,6 +197,13 @@ func cmdCommit(args []string) error {
 	// like git, cairn tolerates unreadable untracked content rather than
 	// failing the commit over it.
 	printSkippedUnreadable(res.SkippedUnreadable)
+	if res.Rebase != nil && res.Rebase.Status != "" {
+		printRebase(*res.Rebase)
+		if res.Rebase.Status == "stopped" {
+			fmt.Println(res.HeadCommit)
+			return errConflicts
+		}
+	}
 	if len(res.Conflicts) > 0 {
 		paths := make([]string, 0, len(res.Conflicts))
 		for _, c := range res.Conflicts {
@@ -323,6 +331,9 @@ func cmdStatus(args []string) error {
 	fmt.Printf("ahead:     %d\n", st.Ahead)
 	if st.Remote != "" {
 		fmt.Printf("remote:    %s\n", st.Remote)
+	}
+	if st.Rebase != "" {
+		fmt.Printf("rebase:    %s\n", st.Rebase)
 	}
 	fmt.Printf("conflicts: %s\n", strings.Join(st.Conflicts, ", "))
 	fmt.Printf("expressed: %s\n", strings.Join(st.Expressed, ", "))
@@ -545,4 +556,28 @@ func cmdResolve(args []string) error {
 	}
 	defer r.Close()
 	return mapErr(r.Resolve(branch, path, *force))
+}
+
+// printRebase reports one line's rebase onto its parent on stderr: a stop
+// says what to do next; a clean rebase is one line; skips give the reason.
+func printRebase(rb change.ParentRebase) {
+	switch {
+	case rb.Status == "rebased":
+		fmt.Fprintf(os.Stderr, "cairn: %s: rebased onto its parent\n", rb.Line)
+	case rb.Status == "stopped":
+		fmt.Fprintf(os.Stderr, "cairn: %s: rebase onto its parent stopped at %q — %d conflict(s); edit them out, 'cairn resolve %s <path>', then 'cairn commit' (keeps the message) to replay the %d commit(s) after it\n",
+			rb.Line, firstLine(rb.StoppedAt), rb.Conflicts, rb.Line, rb.Remaining)
+	case strings.HasPrefix(rb.Status, "skipped: pushed"):
+		// Published lines are expected to be skipped; not worth a line each.
+	default:
+		fmt.Fprintf(os.Stderr, "cairn: %s: not rebased onto its parent — %s\n", rb.Line, strings.TrimPrefix(rb.Status, "skipped: "))
+	}
+}
+
+// firstLine is a commit message's subject.
+func firstLine(msg string) string {
+	if i := strings.IndexByte(msg, '\n'); i >= 0 {
+		return msg[:i]
+	}
+	return msg
 }
