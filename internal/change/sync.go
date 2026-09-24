@@ -34,6 +34,9 @@ type PullSummary struct {
 	// they are expressed on disk — the operator decides those.
 	Pruned   []string
 	KeptGone []string
+	// Rebased reports each line pull replayed onto its moved parent (or
+	// stopped at a conflicting commit, or skipped, with the reason).
+	Rebased []ParentRebase
 }
 
 // testFetchDelay, when non-nil, is invoked by fetchTracking just before the

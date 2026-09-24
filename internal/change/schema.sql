@@ -101,3 +101,18 @@ CREATE TABLE IF NOT EXISTS commit_gen (
   sha TEXT PRIMARY KEY,
   gen INTEGER NOT NULL
 ) WITHOUT ROWID;
+-- A rebase onto the parent line that stopped at a conflicting commit (pull):
+-- the commits still to replay, and the operator's un-sealed work, as JSON.
+-- `cairn commit` seals the stopped commit and replays the rest.
+CREATE TABLE IF NOT EXISTS rebase_state (
+  line_id TEXT PRIMARY KEY REFERENCES line(id) ON DELETE CASCADE,
+  state   TEXT NOT NULL
+);
+-- What rebase_state was for a line BEFORE an operation changed it, so undo of
+-- that operation puts it back ('' = no rebase in progress).
+CREATE TABLE IF NOT EXISTS rebase_history (
+  op_id   TEXT NOT NULL,
+  line_id TEXT NOT NULL,
+  before  TEXT NOT NULL,
+  PRIMARY KEY (op_id, line_id)
+);

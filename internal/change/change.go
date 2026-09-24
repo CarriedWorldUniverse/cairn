@@ -28,6 +28,9 @@ type Change struct {
 type CommitResult struct {
 	HeadCommit string
 	Conflicts  []Conflict
+	// Rebase is set when this commit sealed the commit a stopped rebase was
+	// resolving, and reports how replaying the rest went.
+	Rebase *ParentRebase
 	// SkippedUnreadable lists slash-separated worktree paths (directories with
 	// a trailing "/") that were unreadable and untracked when the commit's
 	// snapshot scanned the folder, so they were warned about and left out of
