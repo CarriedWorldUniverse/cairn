@@ -746,7 +746,7 @@ func (r *Repo) Commit(branch, message string) (change.CommitResult, error) {
 		// a hint so re-materializing the (mostly unchanged) folder to the new tip
 		// costs one Lstat per already-correct path instead of a git-store blob
 		// fetch+hash.
-		fps, merr := MaterializeSeeded(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), syncedCache)
+		fps, merr := MaterializeSeededFrom(r.eng, r.cacheDir(), line.TipCommit, filepath.Join(r.root, entry.Path), syncedCache, syncedCache)
 		if merr != nil {
 			return change.CommitResult{}, fmt.Errorf("worktree.Commit: %w", merr)
 		}
@@ -883,7 +883,7 @@ func (r *Repo) Fold(branch string, force bool) error {
 		}
 		dir := filepath.Join(r.root, entry.Path)
 		if pl.TipCommit != "" {
-			if err := Materialize(r.eng, r.cacheDir(), pl.TipCommit, dir); err != nil {
+			if err := MaterializeFrom(r.eng, r.cacheDir(), pl.TipCommit, dir, r.prevTracked(name)); err != nil {
 				return fmt.Errorf("worktree.Fold: %w", err)
 			}
 		}
@@ -1631,7 +1631,7 @@ func (r *Repo) pullBranch(remote, branch string) (change.PullSummary, error) {
 		line, lerr := r.eng.LineByName(branch)
 		if lerr == nil && line.TipCommit != "" {
 			dir := filepath.Join(r.root, entry.Path)
-			if merr := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); merr != nil {
+			if merr := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); merr != nil {
 				return sum, fmt.Errorf("worktree.pullBranch: %w", merr)
 			}
 		}
@@ -1788,7 +1788,7 @@ func (r *Repo) Pull(remote string) (change.PullSummary, error) {
 			continue
 		}
 		dir := filepath.Join(r.root, entry.Path)
-		if merr := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); merr != nil {
+		if merr := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); merr != nil {
 			return sum, fmt.Errorf("worktree.Pull: %w", merr)
 		}
 	}
@@ -2220,7 +2220,7 @@ func (r *Repo) Undo() error {
 		}
 		dir := filepath.Join(r.root, entry.Path)
 		if line.TipCommit != "" {
-			if err := Materialize(r.eng, r.cacheDir(), line.TipCommit, dir); err != nil {
+			if err := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); err != nil {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
 		} else {
@@ -2357,7 +2357,7 @@ func (r *Repo) BisectReset() error {
 		return fmt.Errorf("worktree.BisectReset: %w", err)
 	}
 	if entry, ok := r.st.Expressed[branch]; ok && tip != "" {
-		if err := Materialize(r.eng, r.cacheDir(), tip, filepath.Join(r.root, entry.Path)); err != nil {
+		if err := MaterializeFrom(r.eng, r.cacheDir(), tip, filepath.Join(r.root, entry.Path), r.prevTracked(branch)); err != nil {
 			return fmt.Errorf("worktree.BisectReset: %w", err)
 		}
 	}
@@ -2379,7 +2379,7 @@ func (r *Repo) materializeBisect(branch string, step change.BisectStep) error {
 	if !ok {
 		return nil
 	}
-	if err := Materialize(r.eng, r.cacheDir(), target, filepath.Join(r.root, entry.Path)); err != nil {
+	if err := MaterializeFrom(r.eng, r.cacheDir(), target, filepath.Join(r.root, entry.Path), r.prevTracked(branch)); err != nil {
 		return fmt.Errorf("worktree.materializeBisect: %w", err)
 	}
 	return nil
@@ -2808,4 +2808,14 @@ func firstLine(msg string) string {
 		return msg[:i]
 	}
 	return msg
+}
+
+// prevTracked is what the branch's folder tracked as of its last scan — the
+// wc-cache fingerprints — for MaterializeFrom. nil when there is no cache.
+func (r *Repo) prevTracked(branch string) map[string]wcCacheEntry {
+	fps, _, err := loadWCCache(r.wcCachePath(branch))
+	if err != nil {
+		return nil
+	}
+	return fps
 }

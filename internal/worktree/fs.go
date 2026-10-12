@@ -161,7 +161,19 @@ func unreadableErr(tracked map[string]struct{}, slashRel string, err error, skip
 // cache (content-addressed, reflinked copy-on-write) into a temp sibling and
 // renamed over, so a reader never sees a half-written file.
 func Materialize(eng *change.Engine, cacheDir, commitSha, dir string) error {
-	_, err := materialize(eng, cacheDir, commitSha, dir, nil)
+	_, err := materialize(eng, cacheDir, commitSha, dir, nil, nil)
+	return err
+}
+
+// MaterializeFrom is Materialize for a folder moving from one tree to another
+// (pull, fold, undo, bisect): prev is what the folder TRACKED before — the
+// branch's wc-cache fingerprints. A path prev tracked that the target drops
+// is deleted even when the target's ignore rules now hide it from the
+// deletion walk — the "remove tools/ and add tools/ to .gitignore" commit,
+// which otherwise left every old tool file behind, invisible to status. Only
+// a file still matching its fingerprint goes; one edited since is kept.
+func MaterializeFrom(eng *change.Engine, cacheDir, commitSha, dir string, prev map[string]wcCacheEntry) error {
+	_, err := materialize(eng, cacheDir, commitSha, dir, nil, prev)
 	return err
 }
 
@@ -199,7 +211,7 @@ func gitlinkSet(meta map[string]change.TreeEntry) map[string]struct{} {
 // comparison (see regularUpToDateBySHA). A nil/empty hint behaves exactly like
 // Materialize.
 func MaterializeSynced(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) error {
-	_, err := materialize(eng, cacheDir, commitSha, dir, hint)
+	_, err := materialize(eng, cacheDir, commitSha, dir, hint, nil)
 	return err
 }
 
@@ -219,7 +231,12 @@ func MaterializeSynced(eng *change.Engine, cacheDir, commitSha, dir string, hint
 // returned map is only safe to persist when err is nil — a partial materialize
 // describes a half-written folder (see Repo.seedWCCache).
 func MaterializeSeeded(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
-	return materialize(eng, cacheDir, commitSha, dir, hint)
+	return materialize(eng, cacheDir, commitSha, dir, hint, nil)
+}
+
+// MaterializeSeededFrom is MaterializeSeeded with MaterializeFrom's prev.
+func MaterializeSeededFrom(eng *change.Engine, cacheDir, commitSha, dir string, hint, prev map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
+	return materialize(eng, cacheDir, commitSha, dir, hint, prev)
 }
 
 // containedJoin joins a "/"-separated tree path onto dir and verifies the result
@@ -296,7 +313,7 @@ func removeSymlinkComponents(dir, full string) error {
 // (the common case on a steady-state Commit/Pull/Express) costs at most one
 // Lstat (hint hit) or one local file read+hash (fallback), never a git-store
 // blob fetch+decompress.
-func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
+func materialize(eng *change.Engine, cacheDir, commitSha, dir string, hint, prev map[string]wcCacheEntry) (map[string]wcCacheEntry, error) {
 	meta, err := eng.FilesMeta(commitSha)
 	if err != nil {
 		return nil, fmt.Errorf("worktree.Materialize: %w", err)
@@ -458,6 +475,32 @@ feed:
 		return nil, fmt.Errorf("worktree.Materialize: %w", werr)
 	}
 	delSkip.finish()
+	// 2b. Paths the folder tracked before that the target drops — including
+	//     ones the target's ignore rules now hide from the walk above.
+	var dropped []string
+	if len(prev) > 0 {
+		queued := make(map[string]struct{}, len(stale))
+		for _, p := range stale {
+			queued[p] = struct{}{}
+		}
+		for p, fp := range prev {
+			if _, ok := target[p]; ok || fp.Mode == change.ModeGitlink {
+				continue
+			}
+			full, err := containedJoin(dir, p)
+			if err != nil {
+				continue
+			}
+			if _, ok := queued[full]; ok {
+				continue
+			}
+			if !unchangedSince(full, fp) {
+				continue // edited since cairn last saw it: the operator's now
+			}
+			stale = append(stale, full)
+			dropped = append(dropped, full)
+		}
+	}
 	for _, path := range stale {
 		if err := winretry.Do(func() error { return os.Remove(path) }); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("worktree.Materialize: %w", err)
@@ -466,7 +509,37 @@ feed:
 	// 3. Prune directories the deletion emptied (best-effort; a still-held or
 	//    non-empty dir is simply left).
 	pruneEmptyDirs(dir, gitlinkSet(meta))
+	// pruneEmptyDirs does not descend into what the walk skips; the parents of
+	// a dropped path are emptied explicitly, deepest first.
+	for _, p := range dropped {
+		for d := filepath.Dir(p); d != dir && strings.HasPrefix(d, dir); d = filepath.Dir(d) {
+			if os.Remove(d) != nil {
+				break // not empty (or held): its ancestors are not either
+			}
+		}
+	}
 	return fingerprints, nil
+}
+
+// unchangedSince reports whether the file at full still holds what fp
+// recorded: same size and mtime, or — when the stat moved — the same blob.
+func unchangedSince(full string, fp wcCacheEntry) bool {
+	fi, err := os.Lstat(full)
+	if err != nil {
+		return false
+	}
+	switch {
+	case fi.Mode()&os.ModeSymlink != 0:
+		target, err := os.Readlink(full)
+		return err == nil && plumbing.ComputeHash(plumbing.BlobObject, []byte(target)).String() == fp.BlobSHA
+	case fi.Mode().IsRegular():
+		if fi.Size() == fp.Size && fi.ModTime().UnixNano() == fp.MtimeNs {
+			return true
+		}
+		cur, err := os.ReadFile(full)
+		return err == nil && plumbing.ComputeHash(plumbing.BlobObject, cur).String() == fp.BlobSHA
+	}
+	return false
 }
 
 // materializeWorkers bounds the materialize pool. Capped well below a big
