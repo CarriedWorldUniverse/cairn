@@ -38,6 +38,9 @@ func gitIn(t *testing.T, dir string, args ...string) {
 
 func writeIn(t *testing.T, dir, name, body string) {
 	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
