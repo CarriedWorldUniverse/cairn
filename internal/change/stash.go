@@ -275,8 +275,8 @@ func (e *Engine) StashApply(changeID string, stashID int64, drop bool) error {
 	return nil
 }
 
-// StashDrop deletes a stash entry. Drops are final — they record no operation,
-// so they are not reversible by 'cairn undo' (matching git stash drop).
+// StashDrop deletes a stash entry and records it as an operation, so 'cairn
+// undo' brings the entry back.
 // stashID 0 drops the top of the stack. Errors "no stash entries" when there
 // is nothing to drop.
 func (e *Engine) StashDrop(stashID int64) error {
@@ -301,5 +301,15 @@ func (e *Engine) StashDrop(stashID int64) error {
 	if n == 0 {
 		return fmt.Errorf("stash %d not found", stashID)
 	}
-	return nil
+	return e.recordStashShape("stash-drop")
+}
+
+// recordStashShape appends an operation whose only effect is on the stash
+// stack (the journal claims the rows): the ref-map is unchanged.
+func (e *Engine) recordStashShape(opType string) error {
+	view, err := e.viewMap()
+	if err != nil {
+		return err
+	}
+	return e.recordOp(opType, "system", view, view)
 }

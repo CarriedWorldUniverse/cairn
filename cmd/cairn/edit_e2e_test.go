@@ -5,6 +5,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -151,30 +152,73 @@ func TestEditCapturesLiveEditsBeforeRewrite(t *testing.T) {
 	}
 }
 
-// TestEditRefusedOnRoot verifies that reword/squash/drop all refuse to operate
-// on the root line with a clear error.
-func TestEditRefusedOnRoot(t *testing.T) {
+// TestEditOnRootStopsAtTheRemote: reword/squash/drop work on the root line's
+// own commits until they are on a remote; from then on each is refused with a
+// clear error that names the root line and points at `cairn revert` (the
+// default branch is never force-pushed). Before the precise rule this test
+// pinned a blanket refusal of every root-line edit.
+func TestEditOnRootStopsAtTheRemote(t *testing.T) {
+	skipOnWindows(t)
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
 	root := t.TempDir()
 	mustRun(t, "init", root)
-
-	// Make a commit on main (root line).
-	if err := os.WriteFile(filepath.Join(root, "main", "root.txt"), []byte("root\n"), 0o644); err != nil {
-		t.Fatal(err)
+	seal := func(file, msg string) string {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(root, "main", file), []byte(msg+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return strings.TrimSpace(captureRun(t, "commit", "--repo", root, "--author", "tester", "-m", msg, "main"))
 	}
-	sha := strings.TrimSpace(captureRun(t, "commit", "--repo", root, "--author", "tester", "-m", "root commit", "main"))
+	seal("one.txt", "one")
+	sha2 := seal("two.txt", "two")
+	sha3 := seal("three.txt", "three")
 
+	// Un-pushed: all three verbs work on the root line.
+	mustRun(t, "reword", "--repo", root, sha3, "three, reworded")
+	logOut := captureRun(t, "log", "--repo", root, "main")
+	if !strings.Contains(logOut, "three, reworded") {
+		t.Fatalf("reword on an un-pushed root commit did not take:\n%s", logOut)
+	}
+	if !strings.Contains(logOut, sha2[:8]) {
+		t.Fatalf("reword of the top commit rewrote the commit below it:\n%s", logOut)
+	}
+	mustRun(t, "drop", "--repo", root, sha2)
+	if _, err := os.Stat(filepath.Join(root, "main", "two.txt")); err == nil {
+		t.Fatal("drop on an un-pushed root commit left its file")
+	}
+	mustRun(t, "undo", "--repo", root)
+
+	// Push, and the same commits are published history.
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	if out, err := exec.Command("git", "init", "-q", "--bare", bare).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare: %v %s", err, out)
+	}
+	mustRun(t, "remote", "add", "origin", bare, "--repo", root)
+	mustRun(t, "push", "--repo", root, "origin", "main")
+	top := strings.Fields(captureRun(t, "log", "--repo", root, "-n", "2", "main"))
+	pushed := top[0]
+	if strings.Contains(captureRun(t, "log", "--repo", root, "-n", "1", "main"), "(working)") {
+		pushed = strings.Fields(strings.Split(captureRun(t, "log", "--repo", root, "-n", "2", "main"), "\n")[1])[0]
+	}
 	for _, args := range [][]string{
-		{"reword", "--repo", root, sha, "new-msg"},
-		{"squash", "--repo", root, sha},
-		{"drop", "--repo", root, sha},
+		{"reword", "--repo", root, pushed, "new-msg"},
+		{"squash", "--repo", root, pushed},
+		{"drop", "--repo", root, pushed},
 	} {
 		err := run(args)
 		if err == nil {
-			t.Errorf("expected error for %v on root line, got nil", args)
+			t.Errorf("expected error for %v on a pushed root commit, got nil", args)
 			continue
 		}
-		if !strings.Contains(err.Error(), "root") {
-			t.Errorf("expected 'root' in error for %v, got: %v", args, err)
+		for _, want := range []string{"root", "already on origin", "cairn revert"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("expected %q in error for %v, got: %v", want, args, err)
+			}
 		}
 	}
+	// A commit sealed after the push is editable again.
+	sha4 := seal("four.txt", "four")
+	mustRun(t, "reword", "--repo", root, sha4, "four, reworded")
 }

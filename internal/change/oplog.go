@@ -77,7 +77,7 @@ func (e *Engine) recordOp(opType, actor string, before, after map[string]string)
 		stamp(now)); err != nil {
 		return fmt.Errorf("change.recordOp: %w", err)
 	}
-	return nil
+	return claimAux(e.db, id)
 }
 
 // recordOpTx appends a single non-coalesced operation inside tx, so it commits
@@ -100,7 +100,7 @@ func recordOpTx(tx *sql.Tx, now time.Time, opType, actor string, before, after m
 		id, opType, actor, string(beforeJSON), string(afterJSON), ts); err != nil {
 		return fmt.Errorf("change.recordOpTx: %w", err)
 	}
-	return nil
+	return claimAux(tx, id)
 }
 
 // OperationLog returns the full operation log in chronological order.
@@ -161,6 +161,14 @@ func (e *Engine) Undo() error {
 		return fmt.Errorf("change.Undo: begin tx: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	// Stash rows and conflict rows the op touched go back too; anything
+	// unclaimed from before is not part of this undo.
+	if err := dropUnclaimedAux(tx); err != nil {
+		return err
+	}
+	if err := restoreAux(tx, last.ID); err != nil {
+		return err
+	}
 	for name, sha := range last.ViewBefore {
 		if _, err := tx.Exec(
 			`UPDATE line SET tip_commit=?, updated_at=? WHERE name=?`,
@@ -185,6 +193,25 @@ func (e *Engine) Undo() error {
 			}
 		}
 	}
+	// A fold marked its line (and the line's changes) folded; undoing it
+	// re-opens exactly that line, so it can be expressed and folded again.
+	if last.OpType == opFold {
+		var d struct {
+			Folded string `json:"folded"`
+		}
+		if json.Unmarshal([]byte(last.Detail), &d) == nil && d.Folded != "" {
+			if _, err := tx.Exec(
+				`UPDATE change SET status='open', updated_at=? WHERE status='folded' AND line_id=(SELECT id FROM line WHERE name=? AND status='folded')`,
+				ts, d.Folded); err != nil {
+				return fmt.Errorf("change.Undo: %w", err)
+			}
+			if _, err := tx.Exec(
+				`UPDATE line SET status='open', updated_at=? WHERE name=? AND status='folded'`,
+				ts, d.Folded); err != nil {
+				return fmt.Errorf("change.Undo: %w", err)
+			}
+		}
+	}
 	// A rebase the op stopped, advanced or finished goes back to where it was.
 	if err := restoreRebaseStates(tx, last.ID); err != nil {
 		return err
@@ -192,7 +219,15 @@ func (e *Engine) Undo() error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.Undo: commit tx: %w", err)
 	}
-	if err := e.recordOp("undo", "system", cur, last.ViewBefore); err != nil {
+	// Tag / rename / remote edits carry inverse steps the tip restore above
+	// cannot express (refs.go).
+	inv, err := e.applyUndoSteps(last.ID)
+	if err != nil {
+		return err
+	}
+	// The undo op carries the inverse of what it just did, so undoing the
+	// undo redoes tag / rename / remote edits too.
+	if err := e.recordRefOp("undo", "{}", cur, last.ViewBefore, inv); err != nil {
 		return err
 	}
 	return nil

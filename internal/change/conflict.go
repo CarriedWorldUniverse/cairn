@@ -124,6 +124,11 @@ func (e *Engine) ReassignConflicts(fromChangeID, toChangeID string) error {
 			return fmt.Errorf("change.ReassignConflicts: set target flag: %w", err)
 		}
 	}
+	// The move completes the seal that produced the conflicts: undoing that
+	// operation moves them back.
+	if err := attachUnclaimedAux(tx); err != nil {
+		return err
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("change.ReassignConflicts: commit tx: %w", err)
 	}

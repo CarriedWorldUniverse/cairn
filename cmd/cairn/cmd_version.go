@@ -15,42 +15,6 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
 )
 
-// cmdTag names the tip of a branch with a tag. Usage:
-//
-//	cairn tag [--repo dir] <name> [branch]
-//
-// branch defaults to the structural root.
-func cmdTag(args []string) error {
-	fs := flag.NewFlagSet("tag", flag.ContinueOnError)
-	repo, author := repoFlags(fs)
-	if err := parseArgs(fs, args); err != nil {
-		return err
-	}
-	if fs.NArg() < 1 {
-		return errors.New("usage: cairn tag <name> [branch]")
-	}
-	name := fs.Arg(0)
-	r, err := openRepo(*repo, *author)
-	if err != nil {
-		return mapErr(err)
-	}
-	defer r.Close()
-	branch := ""
-	if fs.NArg() >= 2 {
-		branch = fs.Arg(1)
-	} else {
-		branch, err = r.DefaultBranch()
-		if err != nil {
-			return mapErr(err)
-		}
-	}
-	if err := r.Tag(name, branch); err != nil {
-		return mapErr(err)
-	}
-	fmt.Fprintf(os.Stderr, "cairn: tagged %s -> %s\n", branch, name)
-	return nil
-}
-
 // cmdVersion prints the derived version for the default branch, rendered for
 // the requested ecosystem (default: plain semver). Stdout carries the version
 // string ONLY so callers can do $(cairn version).

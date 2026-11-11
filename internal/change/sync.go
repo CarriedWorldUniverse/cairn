@@ -55,6 +55,12 @@ var testFetchDelay func()
 // see fetchTrackingPruned, used by `pr diff` only; plain PullFromRemote/Fetch
 // keep prune off so their well-established non-pruning behavior is unchanged.
 func (e *Engine) fetchTracking(remoteName string, prune bool) error {
+	return e.fetchTrackingSpecs(remoteName, prune, nil)
+}
+
+// fetchTrackingSpecs is fetchTracking optionally narrowed to the named
+// branches (fetch <remote> <branch>); a narrowed fetch never prunes.
+func (e *Engine) fetchTrackingSpecs(remoteName string, prune bool, branches []string) error {
 	// Before a fetch can prune a tracking ref, record what its presence
 	// proves: the remote has held this line. That is what lets a pruned
 	// branch read as "gone" rather than "unpushed" for lines pushed before
@@ -95,14 +101,22 @@ func (e *Engine) fetchTracking(remoteName string, prune bool) error {
 	if testFetchDelay != nil {
 		testFetchDelay()
 	}
+	specs := []config.RefSpec{
+		config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
+		"+refs/cairn/*:refs/cairn/*",
+	}
+	if len(branches) > 0 {
+		specs = specs[:0]
+		for _, b := range branches {
+			specs = append(specs, config.RefSpec("+refs/heads/"+b+":refs/remotes/"+remoteName+"/"+b))
+		}
+		prune = false
+	}
 	err = rem.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{
-			config.RefSpec("+refs/heads/*:refs/remotes/" + remoteName + "/*"),
-			"+refs/cairn/*:refs/cairn/*",
-		},
-		Tags:  git.AllTags,
-		Auth:  auth,
-		Prune: prune,
+		RefSpecs: specs,
+		Tags:     git.AllTags,
+		Auth:     auth,
+		Prune:    prune,
 	})
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("change.fetchTracking: %w", err)
@@ -208,6 +222,12 @@ func remoteAdvertisedRefNames(rem *git.Remote, auth transport.AuthMethod) (map[p
 		}
 	}
 	return out, nil
+}
+
+// FetchTrackingBranches is FetchTracking narrowed to the named branches
+// (`fetch <remote> <branch>`); it never prunes.
+func (e *Engine) FetchTrackingBranches(remoteName string, branches []string) error {
+	return e.fetchTrackingSpecs(remoteName, false, branches)
 }
 
 // FetchTracking fetches remoteName's heads into tracking refs without touching
@@ -533,7 +553,7 @@ func (e *Engine) reconcileLine(lineID, lineName, lineTip, r string) (LineResult,
 			if cerr != nil {
 				return LineResult{}, cerr
 			}
-			rconf, cerr := e.rewriteChainOnto(lineID, r, chain, chain)
+			rconf, cerr := e.rewriteChainOnto(lineID, r, chain, chain, false)
 			if cerr != nil {
 				return LineResult{}, cerr
 			}
@@ -583,6 +603,10 @@ func (e *Engine) applyHead(changeID, lineID, head string, hasConflict int) error
 	if _, err := tx.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, lineID); err != nil {
 		return fmt.Errorf("reconcile: advance line tip: %w", err)
 	}
+	// Reconciliation is not an operation: its conflict rows are not undoable.
+	if err := dropUnclaimedAux(tx); err != nil {
+		return err
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("reconcile: commit tx: %w", err)
 	}
@@ -611,6 +635,10 @@ func (e *Engine) applyMerge(changeID, lineID, head string, hasConflict int, conf
 	}
 	if _, err := tx.Exec(`UPDATE line SET tip_commit=?, updated_at=? WHERE id=?`, head, ts, lineID); err != nil {
 		return fmt.Errorf("reconcile: advance line tip: %w", err)
+	}
+	// Reconciliation is not an operation: its conflict rows are not undoable.
+	if err := dropUnclaimedAux(tx); err != nil {
+		return err
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("reconcile: commit tx: %w", err)

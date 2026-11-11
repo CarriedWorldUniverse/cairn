@@ -1,6 +1,7 @@
 package change
 
 import (
+	"github.com/go-git/go-git/v5/plumbing"
 	"strings"
 	"testing"
 )
@@ -140,32 +141,61 @@ func TestSealedChainOrder(t *testing.T) {
 	}
 }
 
-// TestGuardEditableRefusals: a root-line commit is refused; a child-line commit
-// whose line HAS a grandchild line is refused; a clean child-line commit is ok.
+// TestGuardEditableRefusals: a root-line commit is editable until it is on a
+// remote, and refused from then on; a child-line commit is refused when a
+// grandchild line is based on a commit the edit would rewrite, and only then.
 func TestGuardEditableRefusals(t *testing.T) {
 	e := newTestEngine(t)
 
-	// Root-line SEALED commit → refused (cannot edit the root line). Seal it so
-	// the root-line check is what rejects it (not the working-change guard, which
-	// fires first for an unsealed working head).
+	// Two SEALED commits on the root line (sealed, so it is the line rule that
+	// decides, not the working-change guard, which fires first for an unsealed
+	// working head).
 	main, _ := e.LineByName("main")
-	rootCur := openChange(t, e, main.ID)
-	if _, _, err := e.SnapshotWorking(rootCur, map[string]TreeEntry{
-		"r.txt": blobEntry(t, e, "r\n"),
-	}); err != nil {
-		t.Fatalf("SnapshotWorking(root): %v", err)
+	sealRoot := func(file, msg string) string {
+		t.Helper()
+		cur, err := e.openWorkingChange(main.ID)
+		if err != nil {
+			cur.ID = openChange(t, e, main.ID)
+		}
+		if _, _, err := e.SnapshotWorking(cur.ID, map[string]TreeEntry{file: blobEntry(t, e, msg+"\n")}); err != nil {
+			t.Fatalf("SnapshotWorking(root): %v", err)
+		}
+		if _, _, err := e.Seal(cur.ID, msg); err != nil {
+			t.Fatalf("Seal(root): %v", err)
+		}
+		sealed, err := e.GetChange(cur.ID)
+		if err != nil {
+			t.Fatalf("GetChange(root sealed): %v", err)
+		}
+		return sealed.HeadCommit
 	}
-	if _, _, err := e.Seal(rootCur, "root seal"); err != nil {
-		t.Fatalf("Seal(root): %v", err)
+	rootOld := sealRoot("r.txt", "root seal")
+	rootNew := sealRoot("r2.txt", "root seal two")
+
+	// Never pushed → the root line's own commits are editable.
+	if _, _, _, err := e.guardEditable(rootOld); err != nil {
+		t.Fatalf("guardEditable(un-pushed root commit): unexpected error %v", err)
 	}
-	rootSealed, err := e.GetChange(rootCur)
-	if err != nil {
-		t.Fatalf("GetChange(root sealed): %v", err)
+	// Pushed up to rootOld: that commit is now published history — refused,
+	// pointing at revert — while the newer, un-pushed one stays editable.
+	if err := e.AddRemote("origin", t.TempDir(), "git"); err != nil {
+		t.Fatalf("AddRemote: %v", err)
 	}
-	if _, _, _, err := e.guardEditable(rootSealed.HeadCommit); err == nil {
-		t.Fatal("guardEditable(root commit): want error, got nil")
-	} else if !strings.Contains(err.Error(), "root line") {
-		t.Fatalf("guardEditable(root commit) error = %v, want root-line refusal", err)
+	if err := e.git.Storer.SetReference(plumbing.NewHashReference(
+		"refs/remotes/origin/main", plumbing.NewHash(rootOld))); err != nil {
+		t.Fatalf("set tracking ref: %v", err)
+	}
+	if _, _, _, err := e.guardEditable(rootOld); err == nil {
+		t.Fatal("guardEditable(pushed root commit): want error, got nil")
+	} else if !strings.Contains(err.Error(), "root line") || !strings.Contains(err.Error(), "already on origin") || !strings.Contains(err.Error(), "cairn revert") {
+		t.Fatalf("guardEditable(pushed root commit) error = %v, want the pushed-root refusal naming revert", err)
+	}
+	if _, _, _, err := e.guardEditable(rootNew); err != nil {
+		t.Fatalf("guardEditable(un-pushed root commit above the pushed one): unexpected error %v", err)
+	}
+	// Squash folds rootNew INTO the pushed rootOld, which would rewrite it.
+	if _, err := e.Squash(rootNew); err == nil || !strings.Contains(err.Error(), "already on origin") {
+		t.Fatalf("Squash(into a pushed root commit) = %v, want the pushed-root refusal", err)
 	}
 
 	// Child line with 3 sealed commits; clean (no grandchild) → ok.
@@ -174,16 +204,55 @@ func TestGuardEditableRefusals(t *testing.T) {
 		t.Fatalf("guardEditable(clean child commit): unexpected error %v", err)
 	}
 
-	// Give the child a grandchild line, then editing the child's history is
-	// refused.
+	// Give the child a grandchild line (forked at the child's tip, S3). Editing
+	// S2 would rewrite S3 — the grandchild's base — so it is refused, and the
+	// grandchild is named.
 	if _, err := e.CreateLine("grandchild", childID); err != nil {
 		t.Fatalf("CreateLine(grandchild): %v", err)
 	}
 	if _, _, _, err := e.guardEditable(commits[1]); err == nil {
 		t.Fatal("guardEditable(child with grandchild): want error, got nil")
-	} else if !strings.Contains(err.Error(), "child line") {
-		t.Fatalf("guardEditable(child with grandchild) error = %v, want child-line refusal", err)
+	} else if !strings.Contains(err.Error(), "child line") || !strings.Contains(err.Error(), `"grandchild"`) {
+		t.Fatalf("guardEditable(child with grandchild) error = %v, want child-line refusal naming it", err)
 	}
+	// A grandchild forked from an OLDER commit does not block edits above it:
+	// seal S4 on the child — the grandchild's base (S3) is now below the tip.
+	cur := openWorkingChangeID(t, e, childID)
+	if _, _, err := e.SnapshotWorking(cur, map[string]TreeEntry{"s4.txt": blobEntry(t, e, "4\n")}); err != nil {
+		t.Fatalf("SnapshotWorking(S4): %v", err)
+	}
+	if _, _, err := e.Seal(cur, "S4"); err != nil {
+		t.Fatalf("Seal(S4): %v", err)
+	}
+	s4, err := e.GetChange(cur)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := e.guardEditable(s4.HeadCommit); err != nil {
+		t.Fatalf("guardEditable(commit above the grandchild's base): unexpected error %v", err)
+	}
+	if _, err := e.Reword(s4.HeadCommit, "S4 reworded"); err != nil {
+		t.Fatalf("Reword above the grandchild's base: %v", err)
+	}
+	// ...and the commits at and below the grandchild's base kept their hashes.
+	if got, _ := e.LineByName("grandchild"); got.BaseCommit != commits[2] {
+		t.Fatalf("grandchild base moved: %s, want %s", got.BaseCommit, commits[2])
+	}
+	if anc, _ := e.isAncestor(commits[2], mustTip(t, e, childID)); !anc {
+		t.Fatal("the reword rewrote commits below the edit point (the grandchild's base left the line)")
+	}
+	if _, _, _, err := e.guardEditable(commits[2]); err == nil || !strings.Contains(err.Error(), `"grandchild"`) {
+		t.Fatalf("guardEditable(the grandchild's base itself) = %v, want the child-line refusal", err)
+	}
+}
+
+func mustTip(t *testing.T, e *Engine, lineID string) string {
+	t.Helper()
+	l, err := e.lineByID(lineID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return l.TipCommit
 }
 
 // TestRewordPreservesIdAndRebases: Reword on S2 returns no conflicts; the chain

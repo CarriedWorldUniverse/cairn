@@ -70,6 +70,38 @@ func Set(key, value string) error {
 	return nil
 }
 
+// Unset removes key from the global config; it reports whether it was set.
+func Unset(key string) (bool, error) {
+	m, err := load()
+	if err != nil {
+		return false, err
+	}
+	if _, ok := m[key]; !ok {
+		return false, nil
+	}
+	delete(m, key)
+	path, err := Path()
+	if err != nil {
+		return false, err
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var b strings.Builder
+	for _, k := range keys {
+		fmt.Fprintf(&b, "%s = %s\n", k, m[k])
+	}
+	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
+		return false, fmt.Errorf("userconfig.Unset: %w", err)
+	}
+	return true, nil
+}
+
+// All returns every key in the global config.
+func All() (map[string]string, error) { return load() }
+
 func load() (map[string]string, error) {
 	path, err := Path()
 	if err != nil {

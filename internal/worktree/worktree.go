@@ -919,6 +919,9 @@ func (r *Repo) Abandon(branch string, force bool) error {
 	if err := r.eng.AbandonLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
 	}
+	if _, expressed := r.st.Expressed[branch]; !expressed {
+		return nil // never had a folder: nothing to remove
+	}
 	return r.Unexpress(branch, true)
 }
 
@@ -2174,8 +2177,15 @@ func (r *Repo) Undo() error {
 		return err
 	}
 	defer unlock()
+	renames, _ := r.eng.PendingUndoRenames()
 	if err := r.eng.Undo(); err != nil {
 		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	// Undoing a line rename puts the folder back under its old name.
+	for _, rn := range renames {
+		if err := r.moveExpressed(rn[0], rn[1]); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
 	}
 	// eng.Undo restored line tips but NOT change heads. The open change's stale
 	// head can still point at the undone commit, which would resurface it on the
@@ -2186,52 +2196,75 @@ func (r *Repo) Undo() error {
 	//   - tip is a different/   → clear head, so the next SnapshotWorking parents a
 	//     sealed commit          fresh working commit ON TOP of the restored tip,
 	//                            never on the undone commit.
+	// A message a stopped revert/cherry-pick left for the next commit described
+	// a state that may just have been rewound.
+	_ = os.RemoveAll(r.pendingDir())
 	for branch, entry := range r.st.Expressed {
-		line, err := r.eng.LineByName(branch)
-		if err != nil {
-			if errors.Is(err, change.ErrNotFound) {
-				continue // line gone — nothing to reconcile/re-materialize
-			}
+		if err := r.reconcileRewound(branch, entry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// reconcileRewound brings one expressed branch back in step after its line tip
+// was restored to an earlier value (Undo, AbortPick): it reconciles the open
+// change's head against the restored tip and re-materializes the folder.
+func (r *Repo) reconcileRewound(branch string, entry Entry) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		if errors.Is(err, change.ErrNotFound) {
+			return nil // line gone — nothing to reconcile/re-materialize
+		}
+		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	tip := line.TipCommit
+	switch {
+	case tip == "":
+		if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
 			return fmt.Errorf("worktree.Undo: %w", err)
 		}
-		tip := line.TipCommit
-		switch {
-		case tip == "":
+	default:
+		cid, err := r.eng.ChangeIDOf(tip)
+		if err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		if cid == entry.ChangeID {
+			// The restored tip IS this change's working commit → amend continues.
+			if err := r.eng.SetWorkingHead(entry.ChangeID, tip); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		} else if head, adopted, aerr := r.eng.AdoptWorkingTip(entry.ChangeID, tip); aerr != nil {
+			return fmt.Errorf("worktree.Undo: %w", aerr)
+		} else if adopted {
+			// The restored tip was the "(working)" commit of a change that has
+			// since been sealed (the op being undone was that seal, or a verb
+			// after it). It is now this change's working commit — same tree,
+			// same parent — so the un-sealed edits it holds come back as
+			// un-sealed edits, instead of the placeholder being buried in the
+			// line's history under a fresh working commit.
+			line.TipCommit = head
+		} else {
+			// Restored tip is a different/sealed commit (or carries no trailer):
+			// start a fresh working commit on top of it (parent = tip).
 			if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
-		default:
-			cid, err := r.eng.ChangeIDOf(tip)
-			if err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-			if cid == entry.ChangeID {
-				// The restored tip IS this change's working commit → amend continues.
-				if err := r.eng.SetWorkingHead(entry.ChangeID, tip); err != nil {
-					return fmt.Errorf("worktree.Undo: %w", err)
-				}
-			} else {
-				// Restored tip is a different/sealed commit (or carries no trailer):
-				// start a fresh working commit on top of it (parent = tip).
-				if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
-					return fmt.Errorf("worktree.Undo: %w", err)
-				}
-			}
 		}
-		dir := filepath.Join(r.root, entry.Path)
-		if line.TipCommit != "" {
-			if err := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-		} else {
-			// Restored to the pre-first-commit baseline: the committed tree is
-			// empty, so the expressed folder must be emptied to match.
-			if err := os.RemoveAll(dir); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
+	}
+	dir := filepath.Join(r.root, entry.Path)
+	if line.TipCommit != "" {
+		if err := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+	} else {
+		// Restored to the pre-first-commit baseline: the committed tree is
+		// empty, so the expressed folder must be emptied to match.
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
 		}
 	}
 	return nil

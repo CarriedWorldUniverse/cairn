@@ -425,39 +425,9 @@ func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) 
 // returns its hex sha. Author and committer share a single timestamp (e.now())
 // so identical inputs hash identically.
 func (e *Engine) writeCommit(treeSha, changeID, message string, parents []string) (string, error) {
-	when := e.now()
-	name, email := e.idName, e.idEmail
-	if name == "" {
-		name = "cairn"
-	}
-	if email == "" {
-		email = name + "@users.noreply.cairn"
-	}
-	sig := object.Signature{Name: name, Email: email, When: when}
-	if message == "" {
-		message = "snapshot"
-	}
-	fullMsg := message + "\n\nChange-Id: " + changeID + "\n"
-	parentHashes := make([]plumbing.Hash, 0, len(parents))
-	for _, p := range parents {
-		parentHashes = append(parentHashes, plumbing.NewHash(p))
-	}
-	c := &object.Commit{
-		Author:       sig,
-		Committer:    sig,
-		Message:      fullMsg,
-		TreeHash:     plumbing.NewHash(treeSha),
-		ParentHashes: parentHashes,
-	}
-	obj := e.git.Storer.NewEncodedObject()
-	if err := c.Encode(obj); err != nil {
-		return "", fmt.Errorf("change.writeCommit: encode: %w", err)
-	}
-	h, err := e.git.Storer.SetEncodedObject(obj)
-	if err != nil {
-		return "", fmt.Errorf("change.writeCommit: store: %w", err)
-	}
-	return h.String(), nil
+	// The body lives in writeCommitAs (wcops.go); authorOverride is nil except
+	// around a `commit --author/--date` seal.
+	return e.writeCommitAs(treeSha, changeID, message, parents, e.authorOverride)
 }
 
 // commitTree returns the hex tree hash of the given commit.
