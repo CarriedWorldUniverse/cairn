@@ -47,7 +47,12 @@ var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 var errConflicts = errors.New("completed with conflicts")
 
 func main() {
-	args, pmode := pagerGlobals(os.Args[1:])
+	args, gerr := peelGlobals(os.Args[1:]) // git's -C / -c / --git-dir before the subcommand
+	if gerr != nil {
+		fmt.Fprintln(os.Stderr, "cairn:", gerr)
+		os.Exit(128)
+	}
+	args, pmode := pagerGlobals(args)
 	stopProfile := startProfile()
 	stopPager := startPager(args, pmode, stdoutIsTTY())
 	err := run(args)
@@ -73,24 +78,27 @@ func main() {
 			os.Exit(code)
 		}
 		fmt.Fprintln(os.Stderr, "cairn:", err)
+		if isFatal(err) {
+			os.Exit(128)
+		}
 		os.Exit(1)
 	}
 }
 
 const usage = `cairn — cairn working-copy CLI
 
-usage: cairn [--no-pager|-P] [--paginate|-p] <subcommand> [flags] [args]
+usage: cairn [-C <dir>] [-c <key>=<value>] [--no-pager|-P] [--paginate|-p] <subcommand> [flags] [args]
        (on a terminal, log/show/diff/grep/blame/shortlog/listings go through $CAIRN_PAGER, $GIT_PAGER, core.pager, $PAGER or less)
 
 subcommands:
-  init [-b <name>] [-q] [dir]   bootstrap a repo (expresses the root line: main, or -b / init.defaultBranch; --bare is refused)
+  init [-b <name>] [-q] [dir]   bootstrap a repo in an EMPTY dir (expresses the root line: main, or -b / init.defaultBranch; --bare is refused)
   clone [-b <line>] [-o <name>] [-q] <url> [dir]  import a remote repo and express its default branch (-b also expresses <line>; --depth/--single-branch are refused)
   express <branch>          materialize a branch folder (--from <parent>)
   unexpress <branch>        remove a branch folder (--force to discard un-sealed work)
-  commit [branch] [-m msg]  seal the working change (stamps msg, starts a fresh change; -F file, --author "N <e>", --date)
+  commit [branch] [-m msg]  seal the working change (stamps msg, starts a fresh change; -F file, --author "N <e>", --date; nothing to commit = error unless --allow-empty; --fixup/--squash=<c>)
   commit [branch] -m msg -- <path>...  seal ONLY those paths; the rest stays in the working change (cairn's staging area)
   commit [branch] --amend [-m msg]     fold the working change into the previous sealed commit (history edit)
-  fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
+  fold <branch>             fold a branch into its parent (--force to discard un-sealed work; --no-ff, --ff-only, -m <msg>)
   reparent <branch> <parent>  set a branch's parent line (fix stacked topology after a git import)
   reparent --infer [--dry-run]  re-derive every line's parent from topology, as a fresh clone would
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
@@ -187,7 +195,7 @@ subcommands:
   bisect run [--repo d] -- <cmd>   automate: 0=good, 125=skip, else=bad
 
 git spellings (aliases for the cairn verb above):
-  merge <branch>                = fold <branch>
+  merge <branch>                = fold <branch> (a line folds into ITS PARENT; --no-ff/--ff-only/-m; --squash/--abort/--continue are translated)
   branch <name> [<start>]       = express <name> [--from <start>]
   checkout -b <name>            = express <name>
   switch -c <name>              = express <name>
@@ -206,6 +214,17 @@ func run(args []string) error {
 	if len(args) == 0 {
 		fmt.Println(usage)
 		return errors.New("no subcommand")
+	}
+	if isGlobalOpt(args[0]) { // git's -C/-c/--git-dir ahead of the subcommand (main peels them first)
+		peeled, gerr := peelGlobals(args)
+		if gerr != nil {
+			return gerr
+		}
+		args, _ = pagerGlobals(peeled)
+		if len(args) == 0 {
+			fmt.Println(usage)
+			return errors.New("no subcommand")
+		}
 	}
 	sub, rest := args[0], args[1:]
 	if sub == "--version" || sub == "-v" {
@@ -379,8 +398,7 @@ func run(args []string) error {
 		if handled, err := runAlias(sub, rest); handled {
 			return err
 		}
-		fmt.Println(usage)
-		return fmt.Errorf("unknown subcommand %q", sub)
+		return fmt.Errorf("'%s' is not a cairn command. See 'cairn help'.", sub)
 	}
 }
 

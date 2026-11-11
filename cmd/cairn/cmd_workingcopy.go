@@ -42,6 +42,13 @@ func cmdInit(args []string) error {
 		}
 		return nil
 	}
+	// A cairn repo's files live in <dir>/<line>/, never loose in <dir>: anything
+	// already sitting in <dir> would stay outside every line, never captured.
+	// Refuse rather than leave that trap (git init is happy in a populated dir,
+	// but there the files ARE the working tree).
+	if ents, rerr := os.ReadDir(dir); rerr == nil && len(ents) > 0 {
+		return fmt.Errorf("%s is not empty (%d entries): a cairn repo keeps files in its line folders, so existing files would sit outside every line and never be captured. Run 'cairn init <newdir>' and move the files into <newdir>/main/ (or init in an empty directory)", dir, len(ents))
+	}
 	if *initial == "" {
 		*initial = userconfig.Get("init.defaultbranch")
 	}
@@ -102,12 +109,12 @@ func cmdClone(args []string) error {
 	if fs.NArg() < 1 {
 		return errors.New("usage: cairn clone [-b <line>] [-o <name>] [-q] <url> [dir]")
 	}
-	url := fs.Arg(0)
+	url := absLocalURL(fs.Arg(0))
 	dir := ""
 	if fs.NArg() > 1 {
 		dir = fs.Arg(1)
 	} else {
-		dir = dirFromURL(url)
+		dir = dirFromURL(fs.Arg(0))
 	}
 	if dir == "" {
 		return errors.New("cannot derive destination dir from url; pass it explicitly")
@@ -247,8 +254,30 @@ func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "discard un-sealed work")
+	noFF := fs.Bool("no-ff", false, "always record a fold merge commit, even for a fast-forward")
+	ffOnly := fs.Bool("ff-only", false, "refuse unless the fold is a fast-forward")
+	squash := fs.Bool("squash", false, "refused: see the translation")
+	abort := fs.Bool("abort", false, "refused: see the translation")
+	cont := fs.Bool("continue", false, "refused: see the translation")
+	var msgs stringList
+	fs.Var(&msgs, "m", "message of the fold merge commit")
+	fs.Var(&msgs, "message", "message of the fold merge commit")
+	// Accepted for git compatibility (no-ops here).
+	for _, name := range []string{"ff", "no-edit", "edit", "q", "quiet", "v", "verbose", "no-verify", "no-stat", "stat", "no-commit", "no-progress", "progress", "autostash", "no-autostash"} {
+		fs.Bool(name, false, "accepted for git compatibility (no-op)")
+	}
 	if err := parseArgs(fs, args); err != nil {
 		return err
+	}
+	switch {
+	case *abort:
+		return errors.New(`there is no merge in progress to abort — a fold is atomic; "cairn undo" reverts the last one (and a conflicted adoption leaves nothing half-done)`)
+	case *cont:
+		return errors.New(`there is no merge in progress to continue — resolve conflicts with "cairn resolve <branch> <path>", seal with "cairn commit", then fold again`)
+	case *squash:
+		return errors.New(`fold has no --squash form: it fast-forwards the parent to the line's commits. To land the line as ONE commit, "cairn squash <commit>" its commits together first (history edit), then fold`)
+	case *noFF && *ffOnly:
+		return errors.New("--no-ff and --ff-only cannot be combined")
 	}
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
@@ -259,7 +288,22 @@ func cmdFold(args []string) error {
 	}
 	defer r.Close()
 	defer reportElapsed("fold", started)
-	return mapErr(r.Fold(fs.Arg(0), *force))
+	branch := fs.Arg(0)
+	// A fold lands a line in ITS PARENT. Standing in a different line and
+	// asking to merge a non-child would silently fold it into the wrong place
+	// (a sibling went into main and vanished, leaving the current line as it
+	// was), so refuse unless the line is a child of the one you stand in.
+	if cur, ok := r.CWDBranch(); ok && cur != branch {
+		if l, lerr := r.Engine().LineByName(branch); lerr == nil && l.ParentLine != "" {
+			if p, perr := r.Engine().LineByID(l.ParentLine); perr == nil && p.Name != cur {
+				return fmt.Errorf("%s is not a child of %s (it forks from %s), so folding it would land in %s, not %s; cairn folds a line into its parent — to bring %s's work into %s, cherry-pick its commits (\"cairn cherry-pick <commit>...\") or fold it into %s first",
+					branch, cur, p.Name, p.Name, cur, branch, cur, p.Name)
+			}
+		}
+	}
+	return mapErr(r.FoldWith(branch, *force, change.FoldOpts{
+		NoFF: *noFF, FFOnly: *ffOnly, Message: strings.Join(msgs, "\n\n"),
+	}))
 }
 
 func cmdReparent(args []string) error {

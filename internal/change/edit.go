@@ -127,7 +127,10 @@ func (e *Engine) sealedChainTo(lineID, stop, target string) ([]sealStep, error) 
 		if err != nil {
 			return nil, fmt.Errorf("change.sealedChain: %w", err)
 		}
-		msg, err := e.commitMessage(topCommit)
+		// The step's message is the stamped commit's (the bottom of the run): the
+		// merge-forward commit above it carries an "adopt <parent> into <line>"
+		// message of its own.
+		msg, err := e.commitMessage(bottom)
 		if err != nil {
 			return nil, fmt.Errorf("change.sealedChain: %w", err)
 		}

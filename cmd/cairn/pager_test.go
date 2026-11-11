@@ -102,3 +102,51 @@ func unsetenv(t *testing.T, keys ...string) {
 		os.Unsetenv(k)
 	}
 }
+
+func TestStdoutIsTTYNotFooledByDevNull(t *testing.T) {
+	skipOnWindows(t)
+	null, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer null.Close()
+	real := os.Stdout
+	os.Stdout = null
+	defer func() { os.Stdout = real }()
+	if stdoutIsTTY() {
+		t.Fatal("/dev/null reported as a terminal (would start the pager)")
+	}
+}
+
+// A pager that cannot run or dies at once must not swallow the output.
+func TestStartPagerFailingPagerFallsBackToDirectOutput(t *testing.T) {
+	skipOnWindows(t)
+	for name, pager := range map[string]string{
+		"missing binary": "/nonexistent/less-xyz",
+		"exits non-zero": "exit 3",
+		"not executable": filepath.Join(t.TempDir(), "noexec"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("CAIRN_PAGER", pager)
+			sink, err := os.Create(filepath.Join(t.TempDir(), "out"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer sink.Close()
+			real := os.Stdout
+			os.Stdout = sink
+			defer func() { os.Stdout = real }()
+			stop := startPager([]string{"log"}, pagerForce, true)
+			big := strings.Repeat("line of output\n", 20000)
+			if _, err := os.Stdout.WriteString(big); err != nil {
+				t.Fatalf("write failed: %v", err)
+			}
+			stop()
+			os.Stdout = real
+			b, _ := os.ReadFile(sink.Name())
+			if string(b) != big {
+				t.Fatalf("output lost: got %d bytes, want %d", len(b), len(big))
+			}
+		})
+	}
+}

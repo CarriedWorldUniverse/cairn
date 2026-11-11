@@ -155,6 +155,10 @@ Synopsis conventions: `<required>`, `[optional]`. Unless noted, every command ta
 #### `cairn init [dir]` — `-b <name>` `-q`
 Bootstrap a new repo in `dir` (default `.`) and express the root line `main` (or `-b <name>` /
 the global `init.defaultBranch`). `--bare` is refused: a cairn repo is always a set of line folders.
+`dir` must be empty (or absent): files already sitting in it would stay outside every line and
+never be captured, so `init` refuses — init into a new directory and move the files into
+`<newdir>/main/`. Line names follow `git check-ref-format --branch` (no `.cairn`, `..`, empty,
+leading `.`/`-`, …) everywhere one is accepted.
 ```sh
 cairn init                 # initialise the current directory
 cairn init myproject       # create + initialise ./myproject
@@ -276,6 +280,12 @@ how the remote integrates the change (a PR / its own merge), and a protected rem
 reject the push. Push your line and open a PR instead — or `--force` to fold anyway. (Lines
 you created locally with `express` are never guarded; `cairn undo` reverts a fold.)
 
+`merge` is the same verb. A line folds into **its parent**: standing in line `a`, `cairn merge b`
+where `b` forks from `main` is refused (it would land in `main`, not `a`). `--no-ff` always
+records a merge commit, `--ff-only` refuses unless the line already contains the parent's tip,
+`-m <msg>` names the merge commit; `--squash`, `--abort` and `--continue` are refused with the
+cairn equivalent (`cairn squash`, `cairn undo`, `resolve` + `commit`).
+
 #### `cairn abandon <branch>` — `--force`
 Discard a line entirely (it is not folded anywhere). `--force` to drop un-sealed work.
 
@@ -299,8 +309,9 @@ cairn commit -F message.txt                         # or -F - for stdin
 The message comes from `-m` (repeat for paragraphs) or `-F`; else from a stopped
 `revert`/`cherry-pick`; else, on a terminal, from your editor (`$CAIRN_EDITOR`, `$GIT_EDITOR`,
 `$VISUAL`, `$EDITOR`, then `vi` — `#` lines are stripped, an empty message aborts); a script
-with no message still gets the historical `snapshot`. `-a`/`--all` and `--allow-empty` are
-accepted and change nothing (every commit already takes all edits, and may be empty).
+with no message still gets the historical `snapshot`. `-a`/`--all` is accepted and changes
+nothing (every commit already takes all edits). As in git, a commit with nothing to record
+fails (`nothing to commit, working tree clean`, exit 1); `--allow-empty` seals it anyway.
 
 **Partial commit — cairn's staging area.** Name paths and only those are sealed; every other
 edit stays, untouched, in the working change:

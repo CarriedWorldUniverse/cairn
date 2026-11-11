@@ -25,6 +25,27 @@ var ErrHasConflict = errors.New("change: line has open conflicts; resolve before
 // open conflict, and refused if the line is the root (it has no parent). Both
 // catalogue mutations (parent tip, line status) commit or roll back together.
 func (e *Engine) FoldLine(lineID string) error {
+	return e.FoldLineOpts(lineID, FoldOpts{})
+}
+
+// FoldOpts tunes a fold: git merge's --no-ff / --ff-only / -m.
+type FoldOpts struct {
+	// NoFF always records a merge commit on the parent, even when the fold
+	// would fast-forward.
+	NoFF bool
+	// FFOnly refuses unless the fold is a pure fast-forward (the line already
+	// contains the parent's sealed tip).
+	FFOnly bool
+	// Message is the merge commit's message ("" = the default).
+	Message string
+}
+
+// ErrNotFastForward is returned by FoldLineOpts under FFOnly when the parent
+// has moved since the line last adopted it.
+var ErrNotFastForward = errors.New("change: not a fast-forward")
+
+// FoldLineOpts is FoldLine with git merge's fold options.
+func (e *Engine) FoldLineOpts(lineID string, opts FoldOpts) error {
 	line, err := e.lineByID(lineID)
 	if err != nil {
 		return err
@@ -84,6 +105,9 @@ func (e *Engine) FoldLine(lineID string) error {
 			return fmt.Errorf("change.FoldLine: merge base: %w", berr)
 		}
 		if base != parentSealed {
+			if opts.FFOnly {
+				return fmt.Errorf("change.FoldLine: %w: %q has moved since %q last adopted it", ErrNotFastForward, parent.Name, line.Name)
+			}
 			// The line's conflict-attribution id: its open change (one is
 			// opened at CreateLine/Seal, so this exists in any normal flow).
 			var adoptChangeID string
@@ -104,9 +128,34 @@ func (e *Engine) FoldLine(lineID string) error {
 			if adoptedParent != "" {
 				parents = append(parents, adoptedParent)
 			}
-			foldTip, merr = e.writeCommit(merged, adoptChangeID, "fold: adopt "+parent.Name, parents)
+			adoptMsg := "fold: adopt " + parent.Name
+			if opts.Message != "" {
+				adoptMsg = opts.Message
+			}
+			foldTip, merr = e.writeCommit(merged, adoptChangeID, adoptMsg, parents)
 			if merr != nil {
 				return fmt.Errorf("change.FoldLine: adopt commit: %w", merr)
+			}
+		} else if opts.NoFF {
+			// A true fast-forward (the line contains the parent's tip): --no-ff
+			// still records a merge commit [parent, line] with the line's tree.
+			var cid string
+			if qerr := e.db.QueryRow(
+				`SELECT id FROM change WHERE line_id=? AND status='open' AND sealed=0 ORDER BY updated_at DESC LIMIT 1`,
+				lineID).Scan(&cid); qerr != nil {
+				return fmt.Errorf("change.FoldLine: open change lookup: %w", qerr)
+			}
+			tree, terr := e.treeHashOf(childTop)
+			if terr != nil {
+				return fmt.Errorf("change.FoldLine: %w", terr)
+			}
+			msg := opts.Message
+			if msg == "" {
+				msg = "Merge " + line.Name + " into " + parent.Name
+			}
+			foldTip, err = e.writeCommit(tree, cid, msg, []string{parentSealed, childTop})
+			if err != nil {
+				return fmt.Errorf("change.FoldLine: merge commit: %w", err)
 			}
 		}
 	}

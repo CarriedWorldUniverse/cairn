@@ -244,7 +244,7 @@ func (s sequencerFlags) run(r *worktree.Repo, branch, verb string) (handled bool
 			return true, fmt.Errorf("%s --continue: no %s is waiting on %s — seal your changes with 'cairn commit -m <msg>'", verb, verb, branch)
 		}
 		ensureIdentity(r)
-		res, cerr := r.CommitWith(branch, msg, worktree.CommitOpts{})
+		res, cerr := r.CommitWith(branch, msg, worktree.CommitOpts{AllowEmpty: true})
 		if cerr != nil {
 			return true, mapErr(cerr)
 		}

@@ -551,7 +551,15 @@ func (e *Engine) AmendTop(lineID string, message *string, author *Signature, res
 	if err != nil {
 		return "", fmt.Errorf("change.AmendTop: %w", err)
 	}
-	step := sealStep{ChangeID: cid, Commit: ws.top, Message: stripChangeID(old.Message)}
+	ownMsg := old.Message
+	if b, berr := e.runBottom(ws.top); berr == nil && b != ws.top {
+		// ws.top is an adopt-merge sitting on the stamped commit: the message
+		// being amended is the stamped commit's.
+		if bc, cerr := e.git.CommitObject(plumbing.NewHash(b)); cerr == nil {
+			ownMsg = bc.Message
+		}
+	}
+	step := sealStep{ChangeID: cid, Commit: ws.top, Message: stripChangeID(ownMsg)}
 	msg := step.Message
 	if message != nil {
 		msg = *message
@@ -927,4 +935,68 @@ func (e *Engine) RewindLine(lineName, tip, changeID string) error {
 		return fmt.Errorf("change.RewindLine: commit tx: %w", err)
 	}
 	return nil
+}
+
+// runBottom descends first-parent from commit through every consecutive commit
+// sharing its change-id (a seal and the adopt-merge on top of it) and returns
+// the bottom one — the stamped commit that carries the operator's message.
+func (e *Engine) runBottom(commit string) (string, error) {
+	cid := e.changeIDOf(commit)
+	cur := commit
+	for cid != "" {
+		p, err := e.firstParent(cur)
+		if err != nil {
+			return "", err
+		}
+		if p == "" || e.changeIDOf(p) != cid {
+			break
+		}
+		cur = p
+	}
+	return cur, nil
+}
+
+// WorkingChangeEmpty reports whether the line's open working change holds no
+// edits: its tree equals the sealed tip's, it is not a merge in progress and
+// no rebase is stopped on it.
+func (e *Engine) WorkingChangeEmpty(lineID string) (bool, error) {
+	ws, err := e.workState(lineID)
+	if err != nil {
+		return false, err
+	}
+	if len(ws.wParents) > 1 {
+		return false, nil
+	}
+	if _, _, ok, rerr := e.RebaseInProgress(lineID); rerr != nil {
+		return false, rerr
+	} else if ok {
+		return false, nil
+	}
+	if ws.wTree != ws.topTree {
+		return false, nil
+	}
+	// Nothing of its own — but a seal still has work to do when the parent
+	// line moved since this line last adopted it: that is the one way a
+	// working-change-less line reconciles with its parent (and records the
+	// conflicts, if any).
+	if ws.line.ParentLine != "" {
+		parent, perr := e.lineByID(ws.line.ParentLine)
+		if perr != nil {
+			return false, perr
+		}
+		pt, perr := e.sealedTip(parent)
+		if perr != nil {
+			return false, perr
+		}
+		if pt != "" && ws.top != "" {
+			anc, aerr := e.isAncestor(pt, ws.top)
+			if aerr != nil {
+				return false, aerr
+			}
+			if !anc {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
 }
