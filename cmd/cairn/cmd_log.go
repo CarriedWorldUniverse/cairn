@@ -16,13 +16,14 @@ import (
 
 // log, show and shortlog in git's shape.
 //
-// The classic cairn invocations are kept exactly as they were — `cairn log
-// [line] [-n N]` prints cairn's compact one-line view (first-parent, open
-// working change included, 20 entries) and `cairn show <commit>` its plain
-// header + diff — because scripts and tests read that output. Any git option,
-// or a revision that is not simply a line name, switches the command to
-// git's semantics and git's output: the walk starts at HEAD (the SEALED tip),
-// follows every parent, is unbounded, and prints git's formats.
+// The output is git's: the walk starts at HEAD (the SEALED tip), follows
+// every parent, is unbounded, and prints git's formats; show prints git's
+// medium header and a git-format patch. cairn's original compact views stay
+// reachable with --classic (`log --classic [line] [-n N]`: first-parent, the
+// open working change included, 20 entries; `show --classic <commit>`).
+//
+// The open working change is not a commit git knows about, so log leaves it
+// out; `log --working` lists it first when it holds anything.
 
 // diffSpec are the diff-output options log, show and diff share.
 const diffSpec = "p|patch|u s|no-patch stat? shortstat numstat name-only name-status U|unified= " +
@@ -199,7 +200,7 @@ func (d diffOut) colorPatch(s string) string {
 const logSpec = "n|max-count= # skip= oneline format|pretty? abbrev-commit abbrev= date= decorate? graph " +
 	"all first-parent merges no-merges reverse follow author= committer= grep= i|regexp-ignore-case " +
 	"E|extended-regexp F|fixed-strings all-match invert-grep since|after= until|before= S= G= " +
-	"topo-order date-order m no-walk " + diffSpec
+	"topo-order date-order m no-walk classic working " + diffSpec
 
 // walkFilters fills the filter half of a WalkOptions from the options that
 // log, rev-list and shortlog share.
@@ -269,23 +270,25 @@ func cmdLog(args []string) error {
 	defer r.Close()
 	eng := r.Engine()
 
-	// The classic view: `cairn log [line] [-n N]`.
-	if g.onlyGiven("repo", "n") && len(g.pos) <= 1 {
-		classic := len(g.pos) == 0
-		if !classic {
-			_, lerr := eng.LineByName(g.pos[0])
-			classic = lerr == nil
+	// cairn's original compact view: `cairn log --classic [line] [-n N]`.
+	if g.on("classic") {
+		if !g.onlyGiven("repo", "n", "classic") || len(g.pos) > 1 {
+			return errors.New("usage: cairn log --classic [line] [-n N]")
 		}
-		if classic {
-			return logClassic(r, g)
-		}
+		return logClassic(r, g)
 	}
 
 	lc, err := currentLine(r, g.repoDir())
 	if err != nil {
 		return err
 	}
+	// --working on a line with nothing sealed yet still has the open change
+	// to show; without it that line has no history, as in a fresh git repo.
+	unborn := false
 	revs, paths, err := splitRevsPaths(eng, lc, g)
+	if errors.Is(err, change.ErrNoCommits) && g.on("working") && len(g.pos) <= 1 {
+		unborn, revs, paths, err = true, g.pos, g.paths, nil
+	}
 	if err != nil {
 		return mapErr(err)
 	}
@@ -304,7 +307,10 @@ func cmdLog(args []string) error {
 		o.Follow = true
 	}
 	if err := walkRange(eng, g, revs, &o); err != nil {
-		return err
+		if !(errors.Is(err, change.ErrNoCommits) && g.on("working")) {
+			return err
+		}
+		unborn = true
 	}
 	limit := -1
 	if g.numSet {
@@ -388,6 +394,56 @@ func cmdLog(args []string) error {
 		return text, d.render(patches), nil
 	}
 
+	// --working: the open working change first, when it holds anything. It
+	// has no git counterpart (it is the working tree), so it is opt-in and
+	// HEAD stays the sealed tip either way.
+	if g.on("working") {
+		wb := lc.branch
+		if len(revs) == 1 && r.IsExpressed(revs[0]) {
+			wb = revs[0]
+		} else if len(revs) > 0 {
+			return errors.New("log: --working shows a line's open change; give no revision, or one expressed line")
+		}
+		if graph || o.Reverse {
+			return errors.New("log: --working cannot be combined with --graph or --reverse")
+		}
+		if err := r.SyncWorking(); err != nil {
+			return fmt.Errorf("snapshotting working copy: %w", err)
+		}
+		base, head, err := workingPair(r, wb)
+		if err != nil {
+			return err
+		}
+		if base != head {
+			changes, err := eng.TreeChanges(base, head, basePS)
+			if err != nil {
+				return mapErr(err)
+			}
+			if len(changes) > 0 {
+				c, err := eng.CommitMeta(head)
+				if err != nil {
+					return mapErr(err)
+				}
+				if pp.decor == nil {
+					pp.decor = map[string][]decoration{}
+				}
+				pp.decor[head] = []decoration{{"working change", cBold + cMagenta}}
+				was := pp.decorate
+				pp.decorate = true
+				text := pp.entry(c)
+				pp.decorate = was
+				patches, err := d.compute(eng, base, head, basePS)
+				if err != nil {
+					return mapErr(err)
+				}
+				lw.write(text, d.render(patches), nil)
+			}
+		}
+	}
+
+	if unborn {
+		return nil
+	}
 	if !graph {
 		err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
 			text, diff, err := render(c)
@@ -647,7 +703,7 @@ func logClassic(r *worktree.Repo, g *gitOpts) error {
 	return nil
 }
 
-const showSpec = "oneline format|pretty? abbrev-commit abbrev= date= decorate? q|quiet m first-parent " + diffSpec
+const showSpec = "oneline format|pretty? abbrev-commit abbrev= date= decorate? q|quiet m first-parent classic " + diffSpec
 
 // cmdShow prints objects: a commit's message and diff, a blob's content
 // (<rev>:<path>), a tree's listing, or a tag.
@@ -664,11 +720,12 @@ func cmdShow(args []string) error {
 	defer r.Close()
 	eng := r.Engine()
 
-	// The classic view: `cairn show <commit>`.
-	if g.onlyGiven("repo") && len(g.pos) == 1 && !strings.Contains(g.pos[0], ":") {
-		if _, typ, rerr := eng.ResolveObject(g.pos[0]); rerr != nil || typ == "commit" {
-			return showClassic(r, g.pos[0])
+	// cairn's original view: `cairn show --classic <commit>`.
+	if g.on("classic") {
+		if len(g.pos) != 1 {
+			return errors.New("usage: cairn show --classic <commit>")
 		}
+		return showClassic(r, g.pos[0])
 	}
 
 	lc, err := currentLine(r, g.repoDir())

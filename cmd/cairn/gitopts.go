@@ -399,6 +399,20 @@ func (lc lineContext) treePath(p string) (string, error) {
 		return filepath.ToSlash(rel), nil
 	}
 	joined := filepath.ToSlash(filepath.Join(lc.prefix, p))
+	// --repo may name the repo root while the shell really stands deeper in
+	// the line's folder: a path that only exists relative to the real cwd is
+	// taken from there.
+	if lc.dir != "" {
+		if _, err := os.Lstat(filepath.Join(lc.dir, filepath.FromSlash(joined))); err != nil {
+			if abs, aerr := filepath.Abs(filepath.FromSlash(p)); aerr == nil {
+				if _, serr := os.Lstat(abs); serr == nil {
+					if rel, rerr := filepath.Rel(lc.dir, abs); rerr == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+						return filepath.ToSlash(rel), nil
+					}
+				}
+			}
+		}
+	}
 	if joined == "." {
 		return "", nil
 	}
@@ -446,7 +460,7 @@ func splitRevsPaths(eng *change.Engine, lc lineContext, g *gitOpts) (revs, paths
 		if _, rerr := eng.ParseRevisions([]string{a}); rerr == nil {
 			revs = append(revs, a)
 			continue
-		} else if errors.Is(rerr, change.ErrAmbiguousRev) {
+		} else if errors.Is(rerr, change.ErrAmbiguousRev) || errors.Is(rerr, change.ErrNoCommits) {
 			return nil, nil, rerr
 		}
 		for _, p := range g.pos[i:] {
@@ -471,6 +485,25 @@ func (lc lineContext) pathExists(eng *change.Engine, p string) bool {
 	tp, err := lc.treePath(p)
 	if err != nil {
 		return false
+	}
+	if lc.dir != "" {
+		if _, err := os.Lstat(filepath.Join(lc.dir, filepath.FromSlash(tp))); err == nil {
+			return true
+		}
+	}
+	if head, err := eng.ResolveCommit("HEAD"); err == nil {
+		if _, _, ok, _ := eng.PathAt(head, tp); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// treePathExists reports whether a tree-root-relative path exists in the
+// line's folder or in HEAD's tree.
+func (lc lineContext) treePathExists(eng *change.Engine, tp string) bool {
+	if strings.ContainsAny(tp, "*?[") || tp == "" {
+		return true
 	}
 	if lc.dir != "" {
 		if _, err := os.Lstat(filepath.Join(lc.dir, filepath.FromSlash(tp))); err == nil {

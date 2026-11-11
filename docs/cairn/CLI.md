@@ -278,18 +278,30 @@ Report a line's state: the working change versus its parent commit, file-by-file
 
 #### `cairn diff [branch]` / `cairn diff <a> <b>`
 With zero/one argument: show the working change versus its parent for that line. With two
-commit arguments: show the diff between two commits.
+commit arguments: show the diff between two commits. The output is a git-format patch
+(`diff --git a/… b/…`), so it can be fed to `git apply` / `patch -p1`.
 ```sh
 cairn diff feature          # working change vs parent
 cairn diff <shaA> <shaB>    # commit-to-commit
+cairn diff HEAD~1           # the working tree vs a commit
+cairn diff --stat main...feature
 ```
+`--classic` prints cairn's original format instead (`--- <sha>/path` headers, `added: path`,
+`Binary files differ: path`).
 
-#### `cairn log [branch]` — `-n <N>`
-Show commit history for a line (default: root). `-n` caps the number of commits (default 20).
-The in-progress working change is shown labelled `(working)`.
+#### `cairn log [<range>]` — `-n <N>`
+Show commit history in git's format (`commit`/`Author:`/`Date:`), from `HEAD` — the sealed tip
+of the line you stand in — or from the named line/revision/range, following every parent. It is
+unbounded (there is no pager): use `-n`, or pipe it.
 
-#### `cairn show <commit>`
-Show one commit's metadata and its diff.
+The in-progress working change is not a commit, so it is not listed; `cairn log --working` puts
+it first (marked `(working change)`) when it holds anything. `cairn log --classic [line] [-n N]`
+is cairn's original compact view: one line per commit, first-parent, the working change on top
+labelled `(working)`, 20 entries by default.
+
+#### `cairn show [<rev>]`
+Show one commit's message and its patch, as git does (default `HEAD`). `--classic` prints the
+original cairn format.
 
 #### `cairn blame <path> [branch]`
 Per-line provenance for a file: author, date, and the change that last touched each line.
@@ -297,9 +309,8 @@ Lines still in an un-sealed working change show as `(working)`.
 
 #### Git-shaped inspection
 
-The inspection commands also take git's spelling, options and output, so git habits and
-scripts carry over. The plain forms above keep cairn's compact output; **any git option, or a
-revision that is not simply a line name, switches to git's semantics and output.**
+The inspection commands take git's spelling, options and output, so git habits and scripts
+carry over. `log`, `show` and `diff` accept `--classic` for cairn's original output.
 
 | Command | Options |
 |---|---|

@@ -40,6 +40,10 @@ import (
 // than one object.
 var ErrAmbiguousRev = errors.New("ambiguous revision")
 
+// ErrNoCommits is returned when a line (or HEAD) is named but has no sealed
+// commit yet — git's "your current branch does not have any commits yet".
+var ErrNoCommits = fmt.Errorf("%w: no commits yet", ErrNotFound)
+
 // SetHeadLine names the line HEAD/@ resolve against. Empty means the root line.
 func (e *Engine) SetHeadLine(name string) { e.headLine = name }
 
@@ -305,7 +309,7 @@ func (e *Engine) headCommit() (plumbing.Hash, error) {
 		return plumbing.ZeroHash, err
 	}
 	if tip == "" {
-		return plumbing.ZeroHash, fmt.Errorf("HEAD: line %q has no sealed commit yet: %w", line.Name, ErrNotFound)
+		return plumbing.ZeroHash, fmt.Errorf("line %q has no sealed commit yet (cairn commit seals the working change): %w", line.Name, ErrNoCommits)
 	}
 	return plumbing.NewHash(tip), nil
 }
@@ -383,7 +387,7 @@ func (e *Engine) resolveRefName(name string) (plumbing.Hash, bool, error) {
 				return plumbing.ZeroHash, false, terr
 			}
 			if tip == "" {
-				return plumbing.ZeroHash, false, fmt.Errorf("line %q has no sealed commit yet: %w", short, ErrNotFound)
+				return plumbing.ZeroHash, false, fmt.Errorf("line %q has no sealed commit yet (cairn commit seals the working change): %w", short, ErrNoCommits)
 			}
 			return plumbing.NewHash(tip), true, nil
 		} else if !errors.Is(err, ErrNotFound) && !errors.Is(err, sql.ErrNoRows) {

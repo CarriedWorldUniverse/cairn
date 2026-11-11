@@ -97,6 +97,16 @@ func cairnRun(t *testing.T, dir string, args ...string) (string, int) {
 func TestE2E_InspectionMatchesGit(t *testing.T) {
 	gitDir, lineDir := parityRepos(t)
 	cases := []string{
+		// the plain forms: git's default output
+		"log",
+		"log -n 2",
+		"log main -n 3",
+		"log feature",
+		"show HEAD",
+		"show v1.0.0",
+		"show HEAD~4",
+		"diff HEAD~1 HEAD",
+		"diff v1.0.0 HEAD~3",
 		// log: formats
 		"log --oneline",
 		"log --no-decorate",
@@ -322,15 +332,15 @@ func TestE2E_PathspecsRelativeToCwdInsideLine(t *testing.T) {
 		want string // substring; "" = must print nothing
 	}
 	for _, c := range []tc{
-		// classic diff, from the root, the line's top, and a subdirectory
+		// plain diff, from the root, the line's top, and a subdirectory
 		{root, []string{"diff", "--", "src/lib/lib.go"}, "+func G() {}"},
 		{lineDir, []string{"diff", "--", "src/lib/lib.go"}, "+func G() {}"},
 		{lineDir, []string{"diff", "main", "--", "src/lib/lib.go"}, "+func G() {}"},
 		{lineDir, []string{"diff", "src/lib/lib.go"}, "+func G() {}"},
 		{sub, []string{"diff", "--", "lib/lib.go"}, "+func G() {}"},
 		{sub, []string{"diff", "lib/lib.go"}, "+func G() {}"},
-		{sub, []string{"diff", "--", "../nonl.txt"}, "deleted: nonl.txt"},
-		{lineDir, []string{"diff", "--", "nonl.txt"}, "deleted: nonl.txt"},
+		{sub, []string{"diff", "--", "../nonl.txt"}, "deleted file mode 100644\n"},
+		{lineDir, []string{"diff", "--", "nonl.txt"}, "deleted file mode 100644\n"},
 		{lineDir, []string{"diff", "--", "docs"}, ""},
 		// git-shaped diff
 		{lineDir, []string{"diff", "--name-only", "--", "src/lib/lib.go"}, "src/lib/lib.go\n"},
@@ -440,14 +450,30 @@ func TestE2E_InspectionOnCairnHistory(t *testing.T) {
 	mustRun(t, "tag", "--repo", root, "v0.1.0", "main")
 	write("f.txt", "one\ntwo\nthree\n") // un-sealed work
 
-	// HEAD and the line name are the SEALED tip; the classic log still shows
-	// the open working change on top.
+	// HEAD and the line name are the SEALED tip; the open working change is
+	// listed only by --working and by the classic view.
 	if got, _ := cairnRun(t, root, "rev-parse", "HEAD", "main", "HEAD~1", "v0.1.0", "@"); got != c2+"\n"+c2+"\n"+c1+"\n"+c2+"\n"+c2+"\n" {
 		t.Errorf("rev-parse = %q", got)
 	}
 	mustRun(t, "status", "--repo", root) // snapshots the un-sealed edit
-	if got, _ := cairnRun(t, root, "log"); !strings.Contains(got, "(working)") || !strings.Contains(got, "second") {
+	if got, _ := cairnRun(t, root, "log", "--classic"); !strings.Contains(got, "(working)") || !strings.Contains(got, c2[:8]+"  ") {
 		t.Errorf("classic log = %q", got)
+	}
+	if got, _ := cairnRun(t, root, "log", "--working", "--oneline", "--stat"); !strings.Contains(got, " (working change) (working)\n f.txt | 1 +\n") ||
+		!strings.Contains(got, c2[:7]+" second\n") {
+		t.Errorf("log --working = %q", got)
+	}
+	if got, _ := cairnRun(t, root, "log"); !strings.HasPrefix(got, "commit "+c2+"\nAuthor: tester <") || strings.Contains(got, "(working)") {
+		t.Errorf("plain log = %q", got)
+	}
+	if got, _ := cairnRun(t, root, "show", c2[:8]); !strings.HasPrefix(got, "commit "+c2+"\nAuthor: ") || !strings.Contains(got, "\n    second\n\ndiff --git a/f.txt b/f.txt\n") {
+		t.Errorf("plain show = %q", got)
+	}
+	if got, _ := cairnRun(t, root, "show", "--classic", c2[:8]); !strings.Contains(got, "/f.txt\n@@") || strings.Contains(got, "diff --git") {
+		t.Errorf("classic show = %q", got)
+	}
+	if got, _ := cairnRun(t, root, "diff"); !strings.HasPrefix(got, "diff --git a/f.txt b/f.txt\nindex ") || !strings.HasSuffix(got, "@@ -1,2 +1,3 @@\n one\n two\n+three\n") {
+		t.Errorf("plain diff = %q", got)
 	}
 	got, _ := cairnRun(t, root, "log", "--format=%H %s")
 	if got != c2+" second\n"+c1+" first\n" {

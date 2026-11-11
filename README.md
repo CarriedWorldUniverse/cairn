@@ -105,9 +105,9 @@ A revision is a full/short hash, a tag, a line name, `origin/<branch>`, or
 `HEAD`/`@` — the **sealed** tip of the line whose folder you stand in — with
 `~N`, `^`, `^N` suffixes. The open working change is cairn's working tree: what
 you diff *against* a revision, never a revision itself. Paths are relative to
-where you stand inside the line's folder. Plain `cairn log`, `cairn show
-<commit>` and `cairn diff` keep cairn's original compact output; any git flag
-(e.g. `cairn diff -p`) selects git's.
+where you stand inside the line's folder. `cairn diff` prints a git-format
+patch (`git apply`-able); `log`, `show` and `diff` take `--classic` for cairn's
+original compact output, and `cairn log --working` lists the open change first.
 
 ## Design docs
 

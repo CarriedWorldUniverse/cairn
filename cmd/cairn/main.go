@@ -79,9 +79,9 @@ subcommands:
   reparent --infer [--dry-run]  re-derive every line's parent from topology, as a fresh clone would
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
-  diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
-  diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
-  diff [git options] [<rev> | <a>..<b> | <a>...<b>]  git-format patch / --stat --numstat --name-only --name-status -U<n> -R -w --exit-code --quiet
+  diff [branch] [-- <path>...]  show the working change vs its parent as a git patch (optionally one file/dir)
+  diff <a> <b> | <a>..<b> | <a>...<b> | <rev>  commit-vs-commit, since-fork, or a commit vs the working tree
+                                options as git: --stat --numstat --name-only --name-status -U<n> -R -w --exit-code --quiet (--classic: cairn's old format)
   tree [--fetch] [--gone]       print the line tree with each line's remote state (--fetch refreshes it; --gone lists lines whose branch is gone; --flat for scripts)
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
@@ -96,10 +96,9 @@ subcommands:
   pr diff <id>                  print the pull request's unified diff (--remote)
   pr merge <id>                 fast-forward-merge an open pull request
   blame <path> [branch]         show per-line author/date/commit (-L a,b; or: blame <rev> -- <path>)
-  log [branch] [-n N]           show commit history
-  log [<range>] [git options] [-- <path>...]  git-shaped log: --oneline --stat -p --graph --format= --author= --grep= --since= …
-  show <commit>                 show a commit's metadata + diff
-  show [git options] <rev>[:<path>]...  git-shaped show: a commit (--stat, --name-only, -s, --format=), a file's content, a tree
+  log [<range>] [-n N] [-- <path>...]  show commit history, as git: --oneline --stat -p --graph --format= --author= --grep= --since= …
+                                (--working: list the open working change first; --classic [line] [-n N]: cairn's compact view)
+  show [<rev>[:<path>]...]      show a commit (message + patch; --stat, --name-only, -s, --format=), a file's content, a tree (--classic: old format)
   grep <pattern> [<rev>] [-- <path>...]  search file contents (-n -i -l -L -c -w -v -E -F -e; exit 1 when nothing matches)
   ls-files | ls-tree | cat-file | rev-parse | rev-list | shortlog | describe | format-patch
                                 read-only git plumbing, same spelling and output as git

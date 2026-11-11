@@ -52,7 +52,7 @@ func TestEditRewordE2E(t *testing.T) {
 
 	// Log must contain the new message and must NOT contain the old one.
 	logOut := captureRun(t, "log", "--repo", root, "feat")
-	if !strings.Contains(logOut, "rewrote-first") {
+	if !strings.Contains(logOut, "    rewrote-first\n") {
 		t.Errorf("reword: log does not contain new message 'rewrote-first':\n%s", logOut)
 	}
 	if strings.Contains(logOut, "first on feat") {
@@ -73,8 +73,9 @@ func TestEditSquashE2E(t *testing.T) {
 	mustRun(t, "squash", "--repo", root, sha2)
 
 	// Log must contain the surviving subject ("first on feat"); "second on feat"
-	// is now in the body of the squashed commit, not the subject.
-	logOut := captureRun(t, "log", "--repo", root, "feat")
+	// is now in the body of the squashed commit, not the subject. (--oneline:
+	// one line per sealed commit, so the entries can be counted.)
+	logOut := captureRun(t, "log", "--oneline", "--repo", root, "feat")
 	if !strings.Contains(logOut, "first on feat") {
 		t.Errorf("squash: log does not contain surviving subject 'first on feat':\n%s", logOut)
 	}

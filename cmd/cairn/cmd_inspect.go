@@ -19,7 +19,7 @@ import (
 
 // diff (git-shaped), grep, blame and format-patch.
 
-const diffCmdSpec = diffSpec + " author= exit-code q|quiet cached|staged abbrev? no-index"
+const diffCmdSpec = diffSpec + " author= exit-code q|quiet cached|staged abbrev? no-index classic"
 
 // cmdDiff shows changes.
 //
@@ -29,51 +29,27 @@ const diffCmdSpec = diffSpec + " author= exit-code q|quiet cached|staged abbrev?
 //	cairn diff [options] <a> <b> | <a>..<b>        commit vs commit
 //	cairn diff [options] <a>...<b>                 what b did since it forked from a
 //
-// With no option the output is cairn's original format (cmdDiffClassic). Any
-// git option — -p, --stat, --name-only, -U<n>, --color, -R, --exit-code … —
-// or a rev/range selects git's: a real git-format patch (`git apply`-able),
-// git's stat block, git's exit codes.
+// The output is git's: a real git-format patch (`git apply`-able), git's stat
+// block, git's exit codes. --classic prints cairn's original format instead
+// (cmdDiffClassic).
 func cmdDiff(args []string) error {
 	g := newGitOpts("diff", diffCmdSpec)
 	if err := g.parse(args); err != nil {
 		return err
 	}
-	classic := true
-	for name, vs := range g.vals {
-		if len(vs) > 0 && name != "repo" && name != "author" {
-			classic = false
-		}
-	}
-	for _, p := range g.pos {
-		if strings.Contains(p, "..") && !strings.HasPrefix(p, "..") && !strings.Contains(p, "/") {
-			classic = false
-		}
-	}
-	if len(g.pos) > 2 {
-		classic = false
+	if g.on("classic") {
+		return cmdDiffClassic(withoutToken(withoutToken(args, "--classic"), "-classic"))
 	}
 	r, err := openRepo(g.repoDir(), firstNonEmptyStr(g.str("author"), defaultAuthor()))
 	if err != nil {
 		return mapErr(err)
 	}
+	defer r.Close()
 	eng := r.Engine()
 	lc, err := currentLine(r, g.repoDir())
 	if err != nil {
-		_ = r.Close()
 		return err
 	}
-	if classic && len(g.pos) == 1 && !g.hasDD && !r.IsExpressed(g.pos[0]) && !lc.pathExists(eng, g.pos[0]) {
-		// One argument that is neither a line nor a path: if it is a
-		// revision, this is git's `diff <rev>`.
-		if _, rerr := eng.ResolveCommit(g.pos[0]); rerr == nil {
-			classic = false
-		}
-	}
-	if classic {
-		_ = r.Close()
-		return cmdDiffClassic(args)
-	}
-	defer r.Close()
 
 	// Operands: a lone expressed line keeps its cairn meaning (that line's
 	// working change); otherwise revisions, then paths.
@@ -165,6 +141,19 @@ func cmdDiff(args []string) error {
 		}
 		if patches, err = probe.compute(eng, a, b, change.NewPathspec(paths)); err != nil {
 			return mapErr(err)
+		}
+	}
+	// A pathspec that matched nothing and names nothing on disk or in HEAD is
+	// a typo, not "no changes": say so rather than print an empty diff.
+	if len(patches) == 0 && len(revs) == 0 {
+		for i, p := range paths {
+			if !lc.treePathExists(eng, p) {
+				typed := p
+				if i < len(g.paths) {
+					typed = g.paths[i]
+				}
+				return fmt.Errorf("diff: pathspec %q did not match any files in the working copy", typed)
+			}
 		}
 	}
 	if !quiet && d.any() {
