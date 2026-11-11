@@ -382,9 +382,9 @@ type grepPrinter struct {
 // file searches data and returns what to print for it, and whether the file
 // counts as a hit (for the exit status).
 func (gp *grepPrinter) file(name string, data []byte, showName bool) (string, bool) {
-	nameSep := ":"
+	nameSep, nameEnd := ":", "\n"
 	if gp.null {
-		nameSep = "\x00"
+		nameSep, nameEnd = "\x00", "\x00" // -z ends -l/-L names with NUL too
 	}
 	label := func(sep string) string {
 		if !showName {
@@ -404,13 +404,13 @@ func (gp *grepPrinter) file(name string, data []byte, showName bool) (string, bo
 		switch {
 		case gp.without:
 			if !hit {
-				return name + "\n", true
+				return name + nameEnd, true
 			}
 			return "", false
 		case !hit:
 			return "", false
 		case gp.names:
-			return name + "\n", true
+			return name + nameEnd, true
 		case gp.count:
 			return fmt.Sprintf("%s%d\n", label(":"), 1), true
 		}
@@ -427,7 +427,11 @@ func (gp *grepPrinter) file(name string, data []byte, showName bool) (string, bo
 	writeLine := func(idx int, line []byte, sep string) {
 		sb.WriteString(label(sep))
 		if gp.lineNo {
-			sb.WriteString(paint(gp.color, cGreen, strconv.Itoa(idx+1)) + paint(gp.color, cCyan, sep))
+			lsep := sep
+			if gp.null && showName {
+				lsep = "\x00" // git: file NUL number NUL line
+			}
+			sb.WriteString(paint(gp.color, cGreen, strconv.Itoa(idx+1)) + paint(gp.color, cCyan, lsep))
 		}
 		if gp.color && sep == ":" && !gp.invert {
 			last := 0
@@ -504,12 +508,12 @@ func (gp *grepPrinter) file(name string, data []byte, showName bool) (string, bo
 	switch {
 	case gp.without:
 		if matched == 0 {
-			return name + "\n", true
+			return name + nameEnd, true
 		}
 		return "", false
 	case gp.names:
 		if matched > 0 {
-			return paint(gp.color, cMagenta, name) + "\n", true
+			return paint(gp.color, cMagenta, name) + nameEnd, true
 		}
 		return "", false
 	case gp.count:

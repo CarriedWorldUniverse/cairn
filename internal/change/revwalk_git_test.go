@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -399,5 +400,129 @@ func TestDescribeAgreesWithGit(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// --follow disables git's parent pruning: a TREESAME merge is hidden but
+// every parent is still walked, whichever side the merge took.
+func TestFollowThroughMergesAgreesWithGit(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git CLI not available")
+	}
+	for _, take := range []string{"main", "side"} {
+		t.Run("takes-"+take, func(t *testing.T) {
+			dir := t.TempDir()
+			env := []string{"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"}
+			clock := 1700000000
+			g := func(args ...string) {
+				t.Helper()
+				clock += 100
+				ts := strconv.Itoa(clock) + " +0000"
+				gitOut(t, dir, append(env, "GIT_AUTHOR_DATE="+ts, "GIT_COMMITTER_DATE="+ts), args...)
+			}
+			write := func(name, body string) {
+				if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			g("init", "-q", "-b", "main")
+			write("a.txt", "base\n")
+			g("add", ".")
+			g("commit", "-q", "-m", "base")
+			g("checkout", "-q", "-b", "side")
+			write("a.txt", "side\n")
+			g("commit", "-q", "-am", "side-a")
+			g("checkout", "-q", "main")
+			write("a.txt", "main\n")
+			g("commit", "-q", "-am", "main-a")
+			if take == "main" {
+				g("merge", "-q", "-s", "ours", "--no-edit", "side")
+			} else {
+				g("merge", "-q", "-X", "theirs", "--no-edit", "side")
+			}
+			repo, err := git.PlainOpen(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			e := &Engine{git: repo}
+			tip := gitOut(t, dir, nil, "rev-parse", "HEAD")
+			want := gitOut(t, dir, nil, "log", "--format=%H", "--follow", tip, "--", "a.txt")
+			if got := walkSHAs(t, e, WalkOptions{Include: []string{tip}, Paths: []string{"a.txt"}, Follow: true}); got != want {
+				t.Fatalf("follow:\n got %s\nwant %s", got, want)
+			}
+		})
+	}
+}
+
+// A name with a space gets git's trailing tab on its ---/+++ lines.
+func TestPatchSpaceNamesAgreeWithGit(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git CLI not available")
+	}
+	dir := t.TempDir()
+	env := []string{"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"}
+	gitOut(t, dir, env, "init", "-q", "-b", "main")
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("my file.txt", "one\ntwo\n")
+	write("gone away.txt", "bye\n")
+	write("plain.txt", "p\n")
+	gitOut(t, dir, env, "add", ".")
+	gitOut(t, dir, env, "commit", "-q", "-m", "one")
+	write("my file.txt", "one\nTWO\n")
+	write("new one.txt", "hi\n")
+	write("plain.txt", "q\n")
+	if err := os.Remove(filepath.Join(dir, "gone away.txt")); err != nil {
+		t.Fatal(err)
+	}
+	gitOut(t, dir, env, "add", "-A")
+	gitOut(t, dir, env, "commit", "-q", "-m", "two")
+	repo, err := git.PlainOpen(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := &Engine{git: repo}
+	patches, err := e.CommitPatches(gitOut(t, dir, nil, "rev-parse", "HEAD~1"), gitOut(t, dir, nil, "rev-parse", "HEAD"), nil, PatchOptions{Context: 3, FullIndex: true}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got strings.Builder
+	for _, p := range patches {
+		got.WriteString(p.Text())
+	}
+	if want := gitRaw(t, dir, "diff", "--no-renames", "--full-index", "HEAD~1", "HEAD"); got.String() != want {
+		t.Fatalf("patch:\n got\n%s\nwant\n%s", got.String(), want)
+	}
+}
+
+// QuotePath escapes control characters exactly as git does.
+func TestQuotePathAgreesWithGit(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git CLI not available")
+	}
+	dir := t.TempDir()
+	gitOut(t, dir, nil, "init", "-q")
+	names := []string{"a\ab", "v\vv", "f\ff", "b\bb", "t\tt", "q\"q", "é"}
+	var want []string
+	for _, n := range names {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	gitOut(t, dir, nil, "add", ".")
+	for _, l := range strings.Split(gitOut(t, dir, nil, "ls-files"), "\n") {
+		want = append(want, l)
+	}
+	var got []string
+	for _, n := range names {
+		got = append(got, QuotePath(n))
+	}
+	sort.Strings(got)
+	sort.Strings(want)
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %q\nwant %q", got, want)
 	}
 }

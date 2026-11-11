@@ -782,7 +782,18 @@ func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch
 		fp.Header = hdr.String()
 		return fp
 	}
-	fmt.Fprintf(&hdr, "--- %s\n+++ %s\n", from, to)
+	// git appends a tab to a name containing a space so the name stays
+	// unambiguous (never to /dev/null).
+	tabA, tabB := "", ""
+	if strings.Contains(ch.Path, " ") {
+		if hasOld {
+			tabA = "\t"
+		}
+		if hasNew {
+			tabB = "\t"
+		}
+	}
+	fmt.Fprintf(&hdr, "--- %s%s\n+++ %s%s\n", from, tabA, to, tabB)
 	fp.Header = hdr.String()
 	if !o.StatOnly {
 		fp.Body = renderHunks(a, b, ops, o.Context)
@@ -943,6 +954,14 @@ func QuotePath(p string) string {
 			sb.WriteString(`\t`)
 		case c == '\r':
 			sb.WriteString(`\r`)
+		case c == '\a':
+			sb.WriteString(`\a`)
+		case c == '\b':
+			sb.WriteString(`\b`)
+		case c == '\f':
+			sb.WriteString(`\f`)
+		case c == '\v':
+			sb.WriteString(`\v`)
 		case c < 0x20 || c >= 0x7f:
 			fmt.Fprintf(&sb, `\%03o`, c)
 		default:

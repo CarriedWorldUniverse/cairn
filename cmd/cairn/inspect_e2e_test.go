@@ -226,6 +226,11 @@ func TestE2E_InspectionMatchesGit(t *testing.T) {
 		"describe --tags --always HEAD~4",
 		// grep
 		"grep -n e",
+		"grep -z -l e",
+		"grep -z -L func",
+		"grep -z -n e",
+		"grep -z -n -A1 two",
+		"grep -z -c t",
 		"grep -c t",
 		"grep -l -i TWO",
 		"grep -L func",
@@ -583,4 +588,36 @@ func mustTime(t *testing.T, s string) time.Time {
 		t.Fatal(err)
 	}
 	return v
+}
+
+// An imported annotated tag stays a tag object for cat-file/rev-parse/show and
+// peels for commit-ish uses, as in git.
+func TestE2E_ImportedAnnotatedTagIsTagObject(t *testing.T) {
+	skipOnWindows(t)
+	bare := makeBareWithAnnotatedTag(t)
+	dir := t.TempDir()
+	mustRun(t, "clone", bare, dir)
+	for _, c := range []string{
+		"cat-file -t v1.0",
+		"cat-file -p v1.0",
+		"rev-parse v1.0",
+		"rev-parse v1.0^{commit}",
+		"rev-parse v1.0^{}",
+		"cat-file -t v1.0^{commit}",
+		"show -s --format=%H v1.0^{commit}",
+	} {
+		args := strings.Fields(c)
+		want, err := exec.Command("git", append([]string{"-C", bare}, args...)...).Output()
+		if err != nil {
+			t.Fatalf("git %s: %v", c, err)
+		}
+		got, code := cairnRun(t, dir, args...)
+		if code != 0 || got != string(want) {
+			t.Errorf("%s (exit %d):\n got %q\nwant %q", c, code, got, want)
+		}
+	}
+	// show carries the tag header.
+	if out, _ := cairnRun(t, dir, "show", "-s", "v1.0"); !strings.HasPrefix(out, "tag v1.0\nTagger: ") {
+		t.Errorf("show v1.0 lacks the tag header:\n%s", out)
+	}
 }

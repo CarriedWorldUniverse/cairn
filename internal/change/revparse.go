@@ -160,7 +160,16 @@ func (e *Engine) resolveObject(rev string) (plumbing.Hash, plumbing.ObjectType, 
 	}
 	// An annotated tag named with no suffix stays a tag object (cat-file -t).
 	if suffix == "" && !wantTree {
-		if _, isCatTag := e.catalogueTag(base); !isCatTag {
+		// TODO(merge): the refs stream adds tag.obj for annotated tags cairn
+		// creates; prefer a non-empty obj here (one-line change). Imported
+		// tags store the TAG OBJECT hash in commit_sha, handled below.
+		if sha, isCatTag := e.catalogueTag(base); isCatTag {
+			if h := plumbing.NewHash(sha); isHex(sha) && len(sha) == 40 {
+				if _, terr := e.git.TagObject(h); terr == nil {
+					return h, plumbing.TagObject, nil
+				}
+			}
+		} else {
 			if ref, err := e.git.Reference(plumbing.NewTagReferenceName(base), true); err == nil {
 				if _, terr := e.git.TagObject(ref.Hash()); terr == nil {
 					return ref.Hash(), plumbing.TagObject, nil

@@ -295,6 +295,9 @@ const (
 
 // stdoutIsTTY reports whether stdout is a terminal.
 func stdoutIsTTY() bool {
+	if pagerActive {
+		return true // stdout is the pager's pipe; the pager shows a terminal
+	}
 	fi, err := os.Stdout.Stat()
 	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }
@@ -302,7 +305,7 @@ func stdoutIsTTY() bool {
 // useColor decides whether to colour output, shared by diff, log, show and
 // grep. The --color[=when] / --no-color flag wins; then the color.ui config
 // key (repo, else global); then auto. "auto" colours only a terminal, and
-// never when NO_COLOR is set or TERM is dumb. There is no pager.
+// never when NO_COLOR is set or TERM is dumb. Under a pager it counts as a terminal.
 func useColor(g *gitOpts, r *worktree.Repo) bool {
 	when := "auto"
 	if r != nil {

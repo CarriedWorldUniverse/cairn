@@ -47,7 +47,11 @@ var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 var errConflicts = errors.New("completed with conflicts")
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	args, pmode := pagerGlobals(os.Args[1:])
+	stopPager := startPager(args, pmode, stdoutIsTTY())
+	err := run(args)
+	stopPager()
+	if err != nil {
 		if errors.Is(err, errConflicts) {
 			os.Exit(2)
 		}
@@ -66,7 +70,8 @@ func main() {
 
 const usage = `cairn — cairn working-copy CLI
 
-usage: cairn <subcommand> [flags] [args]
+usage: cairn [--no-pager|-P] [--paginate|-p] <subcommand> [flags] [args]
+       (on a terminal, log/show/diff/grep/blame/shortlog/listings go through $CAIRN_PAGER, $GIT_PAGER, core.pager, $PAGER or less)
 
 subcommands:
   init [dir]                bootstrap a repo (expresses main)

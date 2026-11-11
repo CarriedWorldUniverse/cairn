@@ -401,6 +401,11 @@ func (w *dateWalk) simplify(c *object.Commit, parents []plumbing.Hash) (show boo
 			return false, nil, err
 		}
 		if !differ {
+			if w.followPath != "" {
+				// git disables parent pruning under --follow: the commit is
+				// hidden but every parent is still walked.
+				return false, parents, nil
+			}
 			return false, parents[i : i+1], nil
 		}
 	}
