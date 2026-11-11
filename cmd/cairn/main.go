@@ -207,7 +207,9 @@ revisions: a commit can be named by full/short hash, tag, line (its sealed tip),
 HEAD or @ (the sealed tip of the line you stand in), with ~N ^ ^N suffixes; <rev>:<path> names a file.
 
 config keys: user.name, user.email, autosync, pr.org, pr.repo-slug, color.ui (and any section.key: alias.*, core.editor, core.pager, pager.<cmd>, init.defaultBranch, pull.rebase, push.default ...)
-common flags (repo subcommands): --repo <dir> (default .), --author <name>`
+common flags (repo subcommands): --repo <dir> (default .), --author <name>
+
+` + agentHelpDiscovery
 
 // run dispatches a subcommand. args is os.Args[1:].
 func run(args []string) error {

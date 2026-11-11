@@ -132,6 +132,9 @@ func startPager(args []string, mode pagerMode, tty bool) (stop func()) {
 	if !tty || len(args) == 0 || runtime.GOOS == "windows" {
 		return noop
 	}
+	if wantsAgentHelp(args) { // agents capture stdout: never page the agent guide
+		return noop
+	}
 	pagerConfig = repoThenUserConfig(args)
 	cmdline := pagerCommand(args[0], mode)
 	if cmdline == "" {

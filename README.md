@@ -88,6 +88,8 @@ and `cairn update --check` just reports whether one is available.
 Full command reference (all subcommands, flags, examples, and a git→cairn cheat-sheet):
 **[`docs/cairn/CLI.md`](docs/cairn/CLI.md)**. Or run `cairn help`.
 
+LLM/agent users: run `cairn help agent` for a compact, git-delta-oriented guide (model, hazards, exit codes, script contracts).
+
 Releases are cut by pushing a `v*` tag — [`.github/workflows/release.yml`](.github/workflows/release.yml)
 runs [GoReleaser](https://goreleaser.com) ([`.goreleaser.yaml`](.goreleaser.yaml)) to
 build the matrix and publish the archives.
