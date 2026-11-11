@@ -54,6 +54,11 @@ func main() {
 		if errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
 		}
+		// A status-only answer (diff --quiet, grep with no match, cat-file -e):
+		// the exit code IS the result, so nothing is printed.
+		if code, ok := exitCodeOf(err); ok {
+			os.Exit(code)
+		}
 		fmt.Fprintln(os.Stderr, "cairn:", err)
 		os.Exit(1)
 	}
@@ -76,6 +81,7 @@ subcommands:
   status [branch]           report a branch's state — the working change vs its parent (default: root)
   diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
   diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
+  diff [git options] [<rev> | <a>..<b> | <a>...<b>]  git-format patch / --stat --numstat --name-only --name-status -U<n> -R -w --exit-code --quiet
   tree [--fetch] [--gone]       print the line tree with each line's remote state (--fetch refreshes it; --gone lists lines whose branch is gone; --flat for scripts)
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
@@ -89,9 +95,14 @@ subcommands:
   pr view <id>                  show one pull request
   pr diff <id>                  print the pull request's unified diff (--remote)
   pr merge <id>                 fast-forward-merge an open pull request
-  blame <path> [branch]         show per-line author/date/commit
+  blame <path> [branch]         show per-line author/date/commit (-L a,b; or: blame <rev> -- <path>)
   log [branch] [-n N]           show commit history
+  log [<range>] [git options] [-- <path>...]  git-shaped log: --oneline --stat -p --graph --format= --author= --grep= --since= …
   show <commit>                 show a commit's metadata + diff
+  show [git options] <rev>[:<path>]...  git-shaped show: a commit (--stat, --name-only, -s, --format=), a file's content, a tree
+  grep <pattern> [<rev>] [-- <path>...]  search file contents (-n -i -l -L -c -w -v -E -F -e; exit 1 when nothing matches)
+  ls-files | ls-tree | cat-file | rev-parse | rev-list | shortlog | describe | format-patch
+                                read-only git plumbing, same spelling and output as git
   undo                          revert the last operation
   oplog                         show the operation history
   setup                         set your commit identity (name/email), stored globally
@@ -133,7 +144,10 @@ git spellings (aliases for the cairn verb above):
 (other git verbs — add, checkout <branch>, rebase, reset, rm, mv — have no cairn
 equivalent; running one prints the translation.)
 
-config keys: user.name, user.email, autosync, pr.org, pr.repo-slug
+revisions: a commit can be named by full/short hash, tag, line (its sealed tip), origin/<branch>,
+HEAD or @ (the sealed tip of the line you stand in), with ~N ^ ^N suffixes; <rev>:<path> names a file.
+
+config keys: user.name, user.email, autosync, pr.org, pr.repo-slug, color.ui
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
 // run dispatches a subcommand. args is os.Args[1:].
@@ -177,6 +191,24 @@ func run(args []string) error {
 		return cmdLog(rest)
 	case "show":
 		return cmdShow(rest)
+	case "grep":
+		return cmdGrep(rest)
+	case "ls-files":
+		return cmdLsFiles(rest)
+	case "ls-tree":
+		return cmdLsTree(rest)
+	case "cat-file":
+		return cmdCatFile(rest)
+	case "rev-parse":
+		return cmdRevParse(rest)
+	case "rev-list":
+		return cmdRevList(rest)
+	case "shortlog":
+		return cmdShortlog(rest)
+	case "describe":
+		return cmdDescribe(rest)
+	case "format-patch":
+		return cmdFormatPatch(rest)
 	case "undo":
 		return cmdUndo(rest)
 	case "oplog":

@@ -1,0 +1,939 @@
+package main
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
+)
+
+// log, show and shortlog in git's shape.
+//
+// The classic cairn invocations are kept exactly as they were — `cairn log
+// [line] [-n N]` prints cairn's compact one-line view (first-parent, open
+// working change included, 20 entries) and `cairn show <commit>` its plain
+// header + diff — because scripts and tests read that output. Any git option,
+// or a revision that is not simply a line name, switches the command to
+// git's semantics and git's output: the walk starts at HEAD (the SEALED tip),
+// follows every parent, is unbounded, and prints git's formats.
+
+// diffSpec are the diff-output options log, show and diff share.
+const diffSpec = "p|patch|u s|no-patch stat? shortstat numstat name-only name-status U|unified= " +
+	"w|ignore-all-space color? full-index binary R no-renames M|find-renames? no-ext-diff no-textconv"
+
+// diffOut is a parsed choice of diff outputs.
+type diffOut struct {
+	patch, stat, shortstat, numstat, nameOnly, nameStatus bool
+	po                                                    change.PatchOptions
+	reverse                                               bool
+	color                                                 bool
+	width                                                 int
+}
+
+// parseDiffOut reads the shared diff options. defaultPatch is what the
+// command shows when no output option is given.
+func parseDiffOut(g *gitOpts, defaultPatch bool) (diffOut, error) {
+	d := diffOut{
+		stat: g.on("stat"), shortstat: g.on("shortstat"), numstat: g.on("numstat"),
+		nameOnly: g.on("name-only"), nameStatus: g.on("name-status"),
+		reverse: g.on("R"), width: 80,
+	}
+	ctx, err := g.integer("U", 3)
+	if err != nil {
+		return d, err
+	}
+	d.po = change.PatchOptions{Context: ctx, IgnoreAllSpace: g.on("w"), FullIndex: g.on("full-index"), Binary: g.on("binary")}
+	d.patch = g.on("p") || g.has("U") || g.on("binary")
+	if !d.any() && defaultPatch {
+		d.patch = true
+	}
+	return d, nil
+}
+
+func (d diffOut) any() bool {
+	return d.patch || d.stat || d.shortstat || d.numstat || d.nameOnly || d.nameStatus
+}
+
+// none turns every output off (-s / --no-patch).
+func (d diffOut) none() diffOut {
+	d.patch, d.stat, d.shortstat, d.numstat, d.nameOnly, d.nameStatus = false, false, false, false, false, false
+	return d
+}
+
+// compute returns the per-file changes between two commits (a == "" is the
+// empty tree), doing only as much work as the chosen outputs need: name
+// listings never read a blob, stat-only output never renders a hunk.
+func (d diffOut) compute(eng *change.Engine, a, b string, ps *change.Pathspec) ([]change.FilePatch, error) {
+	if !d.any() {
+		return nil, nil
+	}
+	if !d.patch && !d.stat && !d.shortstat && !d.numstat && !d.po.IgnoreAllSpace {
+		changes, err := eng.TreeChanges(a, b, ps)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]change.FilePatch, len(changes))
+		for i, ch := range changes {
+			if d.reverse {
+				ch = ch.Reversed()
+			}
+			out[i] = change.FilePatch{Path: ch.Path, Status: ch.Status()}
+		}
+		return out, nil
+	}
+	po := d.po
+	po.StatOnly = !d.patch
+	return eng.CommitPatches(a, b, ps, po, d.reverse)
+}
+
+// render writes the chosen outputs in git's order: name listings, then
+// stats, then a blank line and the patch.
+func (d diffOut) render(patches []change.FilePatch) string {
+	if len(patches) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	switch {
+	case d.nameOnly:
+		for _, p := range patches {
+			sb.WriteString(change.QuotePath(p.Path) + "\n")
+		}
+	case d.nameStatus:
+		for _, p := range patches {
+			fmt.Fprintf(&sb, "%c\t%s\n", p.Status, change.QuotePath(p.Path))
+		}
+	}
+	if d.numstat {
+		for _, p := range patches {
+			if p.Binary {
+				fmt.Fprintf(&sb, "-\t-\t%s\n", change.QuotePath(p.Path))
+			} else {
+				fmt.Fprintf(&sb, "%d\t%d\t%s\n", p.Added, p.Deleted, change.QuotePath(p.Path))
+			}
+		}
+	}
+	if d.stat {
+		sb.WriteString(d.colorStat(change.FormatStat(patches, d.width)))
+	} else if d.shortstat {
+		sb.WriteString(change.FormatShortStat(patches))
+	}
+	if d.patch {
+		if sb.Len() > 0 {
+			sb.WriteString("\n")
+		}
+		for _, p := range patches {
+			sb.WriteString(d.colorPatch(p.Text()))
+		}
+	}
+	return sb.String()
+}
+
+func (d diffOut) colorStat(s string) string {
+	if !d.color {
+		return s
+	}
+	lines := strings.SplitAfter(s, "\n")
+	for i, ln := range lines {
+		bar := strings.LastIndex(ln, " | ")
+		if bar < 0 {
+			continue
+		}
+		head, tail := ln[:bar+3], ln[bar+3:]
+		plus := strings.IndexByte(tail, '+')
+		minus := strings.IndexByte(tail, '-')
+		if strings.Contains(tail, "Bin") || (plus < 0 && minus < 0) {
+			continue
+		}
+		cut := len(strings.TrimRight(tail, "+-\n"))
+		graph := strings.TrimRight(tail[cut:], "\n")
+		p := strings.Count(graph, "+")
+		lines[i] = head + tail[:cut] + paint(true, cGreen, graph[:p]) + paint(true, cRed, graph[p:]) + "\n"
+	}
+	return strings.Join(lines, "")
+}
+
+// colorPatch colours a git-format patch as git does.
+func (d diffOut) colorPatch(s string) string {
+	if !d.color {
+		return s
+	}
+	var sb strings.Builder
+	inHunk := false
+	for _, ln := range strings.SplitAfter(s, "\n") {
+		if ln == "" {
+			continue
+		}
+		body := strings.TrimSuffix(ln, "\n")
+		switch {
+		case strings.HasPrefix(body, "diff --git "):
+			inHunk = false
+			sb.WriteString(paint(true, cBold, body))
+		case strings.HasPrefix(body, "@@"):
+			inHunk = true
+			if end := strings.Index(body[2:], "@@"); end >= 0 {
+				sb.WriteString(paint(true, cCyan, body[:end+4]) + body[end+4:])
+			} else {
+				sb.WriteString(paint(true, cCyan, body))
+			}
+		case !inHunk:
+			sb.WriteString(paint(true, cBold, body))
+		case strings.HasPrefix(body, "+"):
+			sb.WriteString(paint(true, cGreen, body))
+		case strings.HasPrefix(body, "-"):
+			sb.WriteString(paint(true, cRed, body))
+		default:
+			sb.WriteString(body)
+		}
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+const logSpec = "n|max-count= # skip= oneline format|pretty? abbrev-commit abbrev= date= decorate? graph " +
+	"all first-parent merges no-merges reverse follow author= committer= grep= i|regexp-ignore-case " +
+	"E|extended-regexp F|fixed-strings all-match invert-grep since|after= until|before= S= G= " +
+	"topo-order date-order m no-walk " + diffSpec
+
+// walkFilters fills the filter half of a WalkOptions from the options that
+// log, rev-list and shortlog share.
+func walkFilters(g *gitOpts, o *change.WalkOptions) error {
+	fixed := g.defs["F"] != nil && g.on("F")
+	ext := g.defs["E"] != nil && g.on("E")
+	o.Authors = goPatterns(g.strs("author"), fixed, ext)
+	if g.defs["committer"] != nil && g.defs["committer"].kind == optValue {
+		o.Committers = goPatterns(g.strs("committer"), fixed, ext)
+	}
+	o.Greps = goPatterns(g.strs("grep"), fixed, ext)
+	o.IgnoreCase = g.defs["i"] != nil && g.on("i")
+	o.AllMatch = g.defs["all-match"] != nil && g.on("all-match")
+	o.InvertGrep = g.defs["invert-grep"] != nil && g.on("invert-grep")
+	o.Merges, o.NoMerges = g.on("merges"), g.on("no-merges")
+	o.FirstParent = g.on("first-parent")
+	now := time.Now()
+	var err error
+	if g.has("since") {
+		if o.Since, err = parseDateArg(g.str("since"), now); err != nil {
+			return fmt.Errorf("%s: --since: %w", g.cmd, err)
+		}
+	}
+	if g.has("until") {
+		if o.Until, err = parseDateArg(g.str("until"), now); err != nil {
+			return fmt.Errorf("%s: --until: %w", g.cmd, err)
+		}
+	}
+	return nil
+}
+
+// walkRange resolves a command's revisions (default HEAD, or everything with
+// --all) into the walk's include/exclude sets.
+func walkRange(eng *change.Engine, g *gitOpts, revs []string, o *change.WalkOptions) error {
+	rr, err := eng.ParseRevisions(revs)
+	if err != nil {
+		return mapErr(err)
+	}
+	if g.defs["all"] != nil && g.on("all") {
+		tips, err := eng.AllTips()
+		if err != nil {
+			return mapErr(err)
+		}
+		rr.Include = append(rr.Include, tips...)
+	} else if len(rr.Include) == 0 && len(rr.Exclude) == 0 {
+		head, err := eng.ResolveCommit("HEAD")
+		if err != nil {
+			return mapErr(err)
+		}
+		rr.Include = []string{head}
+	}
+	o.Include, o.Exclude = rr.Include, rr.Exclude
+	return nil
+}
+
+// cmdLog prints commit history.
+// Usage: cairn log [<revision range>] [options] [-- <path>...]
+func cmdLog(args []string) error {
+	g := newGitOpts("log", logSpec)
+	if err := g.parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(g.repoDir(), defaultAuthor())
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	eng := r.Engine()
+
+	// The classic view: `cairn log [line] [-n N]`.
+	if g.onlyGiven("repo", "n") && len(g.pos) <= 1 {
+		classic := len(g.pos) == 0
+		if !classic {
+			_, lerr := eng.LineByName(g.pos[0])
+			classic = lerr == nil
+		}
+		if classic {
+			return logClassic(r, g)
+		}
+	}
+
+	lc, err := currentLine(r, g.repoDir())
+	if err != nil {
+		return err
+	}
+	revs, paths, err := splitRevsPaths(eng, lc, g)
+	if err != nil {
+		return mapErr(err)
+	}
+	if paths, err = lc.treePaths(paths); err != nil {
+		return err
+	}
+	o := change.WalkOptions{Paths: paths, Reverse: g.on("reverse"), Topo: g.on("graph") || g.on("topo-order"),
+		PickaxeS: g.str("S"), PickaxeG: g.str("G")}
+	if err := walkFilters(g, &o); err != nil {
+		return err
+	}
+	if g.on("follow") {
+		if len(paths) != 1 {
+			return errors.New("log: --follow requires exactly one path")
+		}
+		o.Follow = true
+	}
+	if err := walkRange(eng, g, revs, &o); err != nil {
+		return err
+	}
+	limit := -1
+	if g.numSet {
+		limit = g.num
+	}
+	if g.has("n") {
+		if limit, err = g.integer("n", -1); err != nil {
+			return err
+		}
+	}
+	skip, err := g.integer("skip", 0)
+	if err != nil {
+		return err
+	}
+	if limit == 0 {
+		return nil
+	}
+	graph := g.on("graph")
+	if graph && o.Reverse {
+		return errors.New("log: --graph and --reverse cannot be combined")
+	}
+	if !graph {
+		// The graph needs the whole selection to place its columns, so it
+		// applies skip/limit itself; otherwise the walk stops early.
+		o.Skip = skip
+		if limit > 0 {
+			o.Limit = limit
+		}
+	}
+
+	f, err := parseLogFormat(g)
+	if err != nil {
+		return err
+	}
+	d, err := parseDiffOut(g, false)
+	if err != nil {
+		return err
+	}
+	if g.has("s") {
+		d = d.none()
+	}
+	color := useColor(g, r)
+	d.color = color
+	if !validDateMode(g.str("date")) {
+		return fmt.Errorf("log: unknown date format %q", g.str("date"))
+	}
+	pp := &prettyPrinter{f: f, color: color, dateMode: g.str("date"), now: time.Now()}
+	if pp.abbrev, err = g.integer("abbrev", 7); err != nil {
+		return err
+	}
+	pp.decorate = g.on("decorate") || (!g.has("decorate") && stdoutIsTTY())
+	if pp.decorate || strings.Contains(f.tmpl, "%d") || strings.Contains(f.tmpl, "%D") {
+		if pp.decor, err = loadDecorations(eng); err != nil {
+			return mapErr(err)
+		}
+	}
+	basePS := change.NewPathspec(paths)
+	mergeDiffs := g.on("m") || o.FirstParent
+
+	out := bufio.NewWriterSize(os.Stdout, 1<<16)
+	defer out.Flush()
+	lw := &logWriter{out: out, f: f, d: d}
+
+	render := func(c *change.CommitMeta) (text, diff string, err error) {
+		text = pp.entry(c)
+		if !d.any() || (len(c.Parents) > 1 && !mergeDiffs) {
+			return text, "", nil
+		}
+		ps := basePS
+		if o.Follow && c.Path != "" {
+			ps = change.NewPathspec([]string{c.Path})
+		}
+		parent := ""
+		if len(c.Parents) > 0 {
+			parent = c.Parents[0]
+		}
+		patches, err := d.compute(eng, parent, c.SHA, ps)
+		if err != nil {
+			return "", "", err
+		}
+		return text, d.render(patches), nil
+	}
+
+	if !graph {
+		err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
+			text, diff, err := render(c)
+			if err != nil {
+				return err
+			}
+			lw.write(text, diff, nil)
+			return nil
+		})
+		return mapErr(err)
+	}
+
+	var list []*change.CommitMeta
+	if err := eng.WalkCommits(o, func(c *change.CommitMeta) error { list = append(list, c); return nil }); err != nil {
+		return mapErr(err)
+	}
+	// Draw edges only to commits that will be listed (filters may hide some).
+	listed := make(map[string]bool, len(list))
+	for _, c := range list {
+		listed[c.SHA] = true
+	}
+	gs := &graphState{}
+	for i, c := range list {
+		if limit > 0 && i >= skip+limit {
+			break
+		}
+		var parents []string
+		for _, p := range c.GraphParents {
+			if listed[p] {
+				parents = append(parents, p)
+			}
+		}
+		prefixes, cont, width := gs.step(c.SHA, parents)
+		if i < skip {
+			continue
+		}
+		text, diff, err := render(c)
+		if err != nil {
+			return mapErr(err)
+		}
+		lw.write(text, diff, &graphPrefix{first: prefixes, cont: cont, width: width, color: color})
+	}
+	return nil
+}
+
+// logWriter lays entries out the way git does: terminator formats (oneline,
+// tformat) end every entry with a newline; the others separate entries with a
+// blank line; a diff follows the message after a blank line (none for
+// oneline).
+type logWriter struct {
+	out   *bufio.Writer
+	f     logFormat
+	d     diffOut
+	shown bool
+	// prevBars is the graph's columns after the previous entry, drawn on the
+	// blank line that separates entries.
+	prevBars string
+}
+
+type graphPrefix struct {
+	first []string // the commit's own line, then the edge lines after it
+	cont  string   // the columns after the commit, for every further line
+	width int      // every prefix is padded to this
+	color bool
+}
+
+func (lw *logWriter) write(text, diff string, gp *graphPrefix) {
+	var sb strings.Builder
+	separated := !lw.f.terminator
+	bare := lw.f.kind == "format" && separated // format: — no newline after the last entry
+	sb.WriteString(text)
+	if !bare || diff != "" {
+		sb.WriteString("\n")
+	}
+	if diff != "" {
+		if lw.f.kind != "oneline" {
+			if lw.d.stat && lw.d.patch {
+				sb.WriteString("---\n")
+			} else {
+				sb.WriteString("\n")
+			}
+		}
+		sb.WriteString(diff)
+	}
+	entry := sb.String()
+	if gp == nil {
+		if lw.shown && separated {
+			_, _ = lw.out.WriteString("\n")
+		}
+		_, _ = lw.out.WriteString(entry)
+		lw.shown = true
+		return
+	}
+	// Under --graph every line carries the columns, padded to the graph's
+	// width: the commit's own line, then the edge lines to its parents
+	// (which double as the prefix of the entry's next lines, as in git), then
+	// plain bars. The blank line between entries shows the columns as the
+	// previous entry left them, at this entry's width.
+	pad := func(s string) string {
+		if len(s) < gp.width {
+			s += strings.Repeat(" ", gp.width-len(s))
+		}
+		return s
+	}
+	if lw.shown && separated {
+		_, _ = lw.out.WriteString(pad(lw.prevBars) + "\n")
+	}
+	// Edge lines ride along the commit's own text only; a diff starts below
+	// them.
+	head := strings.TrimSuffix(entry, diff)
+	lines := strings.Split(strings.TrimSuffix(head, "\n"), "\n")
+	for i := 0; i < max(len(lines), len(gp.first)); i++ {
+		prefix := gp.cont
+		if i < len(gp.first) {
+			prefix = gp.first[i]
+		}
+		line := ""
+		if i < len(lines) {
+			line = lines[i]
+		}
+		_, _ = lw.out.WriteString(pad(prefix) + line + "\n")
+	}
+	if diff != "" {
+		for _, line := range strings.Split(strings.TrimSuffix(diff, "\n"), "\n") {
+			_, _ = lw.out.WriteString(pad(gp.cont) + line + "\n")
+		}
+	}
+	lw.prevBars = gp.cont
+	lw.shown = true
+}
+
+// graphState draws the --graph columns: one per line of development awaiting
+// its next commit.
+type graphState struct {
+	cols []string
+}
+
+func bars(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strings.TrimRight(strings.Repeat("| ", n), " ")
+}
+
+// step places commit sha and returns the prefix of its own line followed by
+// the edge lines that lead to its parents, and the prefix for further lines.
+func (gs *graphState) step(sha string, parents []string) (lines []string, cont string, width int) {
+	idx := indexOf(gs.cols, sha)
+	if idx < 0 {
+		gs.cols = append(gs.cols, sha)
+		idx = len(gs.cols) - 1
+	}
+	n := len(gs.cols)
+	var first strings.Builder
+	for i := 0; i < n; i++ {
+		if i > 0 {
+			first.WriteByte(' ')
+		}
+		if i == idx {
+			first.WriteByte('*')
+		} else {
+			first.WriteByte('|')
+		}
+	}
+	var edges []string
+	after := append([]string(nil), gs.cols...)
+	at := idx // where this commit's line continues
+	if len(parents) == 0 {
+		after = append(after[:idx], after[idx+1:]...)
+		if idx < n-1 {
+			edges = append(edges, strings.Repeat("| ", idx)+strings.TrimLeft(strings.Repeat(" /", n-1-idx), ""))
+		}
+		at = -1
+	} else if j := indexOf(after, parents[0]); j >= 0 && j != idx {
+		// The first parent already has a column: this one joins it.
+		keep, drop := min(idx, j), max(idx, j)
+		after[keep] = parents[0]
+		after = append(after[:drop], after[drop+1:]...)
+		edges = append(edges, bars(drop)+"/"+strings.Repeat(" /", n-1-drop))
+		at = keep
+	} else {
+		after[idx] = parents[0]
+	}
+	for k := 1; k < len(parents) && at >= 0; k++ {
+		p := parents[k]
+		if j := indexOf(after, p); j >= 0 {
+			// Merging a line that is already drawn.
+			b := []byte(bars(len(after)))
+			switch {
+			case j > at && 2*at+1 < len(b):
+				b[2*at+1] = '\\'
+			case j < at && 2*at-1 >= 0:
+				b[2*at-1] = '/'
+			}
+			edges = append(edges, string(b))
+			continue
+		}
+		pos := at + k
+		if pos > len(after) {
+			pos = len(after)
+		}
+		right := len(after) - pos
+		after = append(after[:pos], append([]string{p}, after[pos:]...)...)
+		edges = append(edges, bars(pos)+`\`+strings.Repeat(` \`, right))
+	}
+	gs.cols = after
+	// git pads every line of an entry to the graph's width: two cells per
+	// column, at the wider of the layouts before and after the commit.
+	width = 2 * max(n, len(after))
+	return append([]string{first.String()}, edges...), bars(len(after)), width
+}
+
+func indexOf(xs []string, x string) int {
+	for i, y := range xs {
+		if y == x {
+			return i
+		}
+	}
+	return -1
+}
+
+// logClassic is cairn's original log: the line's first-parent history,
+// newest first, with the open working change marked.
+func logClassic(r *worktree.Repo, g *gitOpts) error {
+	n, err := g.integer("n", 20)
+	if err != nil {
+		return err
+	}
+	branch := ""
+	if len(g.pos) > 0 {
+		branch = g.pos[0]
+	} else if branch, err = r.DefaultBranch(); err != nil {
+		return mapErr(err)
+	}
+	commits, err := r.Log(branch, n)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, c := range commits {
+		short := c.SHA
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		subject := c.Subject
+		if c.Working {
+			// The head of an open (unsealed) change is the live working commit. Its
+			// description is the "(working)" placeholder until the change is named;
+			// surface the marker once (avoid a doubled "(working) (working)").
+			if subject == "" || subject == "(working)" {
+				subject = "(working)"
+			} else {
+				subject = "(working) " + subject
+			}
+		}
+		fmt.Printf("%s  %s  %s  %s\n", short, c.When.Format("2006-01-02"), c.AuthorName, subject)
+	}
+	return nil
+}
+
+const showSpec = "oneline format|pretty? abbrev-commit abbrev= date= decorate? q|quiet m first-parent " + diffSpec
+
+// cmdShow prints objects: a commit's message and diff, a blob's content
+// (<rev>:<path>), a tree's listing, or a tag.
+// Usage: cairn show [options] [<object>...] [-- <path>...]
+func cmdShow(args []string) error {
+	g := newGitOpts("show", showSpec)
+	if err := g.parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(g.repoDir(), defaultAuthor())
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	eng := r.Engine()
+
+	// The classic view: `cairn show <commit>`.
+	if g.onlyGiven("repo") && len(g.pos) == 1 && !strings.Contains(g.pos[0], ":") {
+		if _, typ, rerr := eng.ResolveObject(g.pos[0]); rerr != nil || typ == "commit" {
+			return showClassic(r, g.pos[0])
+		}
+	}
+
+	lc, err := currentLine(r, g.repoDir())
+	if err != nil {
+		return err
+	}
+	paths, err := lc.treePaths(g.paths)
+	if err != nil {
+		return err
+	}
+	objs := g.pos
+	if len(objs) == 0 {
+		objs = []string{"HEAD"}
+	}
+	f, err := parseLogFormat(g)
+	if err != nil {
+		return err
+	}
+	d, err := parseDiffOut(g, true)
+	if err != nil {
+		return err
+	}
+	if g.has("s") {
+		d = d.none()
+	}
+	color := useColor(g, r)
+	d.color = color
+	if !validDateMode(g.str("date")) {
+		return fmt.Errorf("show: unknown date format %q", g.str("date"))
+	}
+	pp := &prettyPrinter{f: f, color: color, dateMode: g.str("date"), now: time.Now()}
+	if pp.abbrev, err = g.integer("abbrev", 7); err != nil {
+		return err
+	}
+	pp.decorate = g.on("decorate") || (!g.has("decorate") && stdoutIsTTY())
+	if pp.decorate || strings.Contains(f.tmpl, "%d") || strings.Contains(f.tmpl, "%D") {
+		if pp.decor, err = loadDecorations(eng); err != nil {
+			return mapErr(err)
+		}
+	}
+	ps := change.NewPathspec(paths)
+	out := bufio.NewWriterSize(os.Stdout, 1<<16)
+	defer out.Flush()
+	lw := &logWriter{out: out, f: f, d: d}
+	for i, name := range objs {
+		// <rev>:<path> is relative to where the operator stands, as in git.
+		if rev, p, ok := strings.Cut(name, ":"); ok && !strings.HasPrefix(name, ":/") {
+			if strings.HasPrefix(p, "./") || strings.HasPrefix(p, "../") {
+				if p, err = lc.treePath(p); err != nil {
+					return err
+				}
+			}
+			name = rev + ":" + p
+		}
+		sha, typ, err := eng.ResolveObject(name)
+		if err != nil {
+			return mapErr(err)
+		}
+		if typ != "commit" && i > 0 {
+			_, _ = out.WriteString("\n")
+		}
+		switch typ {
+		case "blob":
+			data, err := eng.ReadBlob(sha)
+			if err != nil {
+				return mapErr(err)
+			}
+			_, _ = out.Write(data)
+		case "tree":
+			if err := showTree(eng, out, name, sha); err != nil {
+				return err
+			}
+		case "tag":
+			raw, err := eng.ObjectBytes(sha)
+			if err != nil {
+				return mapErr(err)
+			}
+			showTag(out, raw)
+			target, err := eng.ResolveCommit(name)
+			if err != nil {
+				return mapErr(err)
+			}
+			_, _ = out.WriteString("\n")
+			if err := showCommit(eng, lw, pp, d, ps, target); err != nil {
+				return err
+			}
+		default:
+			if err := showCommit(eng, lw, pp, d, ps, sha); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func showCommit(eng *change.Engine, lw *logWriter, pp *prettyPrinter, d diffOut, ps *change.Pathspec, sha string) error {
+	c, err := eng.CommitMeta(sha)
+	if err != nil {
+		return mapErr(err)
+	}
+	// A merge is shown against its first parent (git shows a combined diff).
+	parent := ""
+	if len(c.Parents) > 0 {
+		parent = c.Parents[0]
+	}
+	patches, err := d.compute(eng, parent, sha, ps)
+	if err != nil {
+		return mapErr(err)
+	}
+	lw.write(pp.entry(c), d.render(patches), nil)
+	return nil
+}
+
+func showTree(eng *change.Engine, out io.Writer, name, sha string) error {
+	ents, err := eng.ListTree(sha, nil, false, false)
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Fprintf(out, "tree %s\n\n", name)
+	for _, e := range ents {
+		if e.Type == "tree" {
+			fmt.Fprintln(out, e.Path+"/")
+		} else {
+			fmt.Fprintln(out, e.Path)
+		}
+	}
+	return nil
+}
+
+// showTag prints an annotated tag object's header and message.
+func showTag(out io.Writer, raw []byte) {
+	head, msg, _ := strings.Cut(string(raw), "\n\n")
+	for _, ln := range strings.Split(head, "\n") {
+		k, v, _ := strings.Cut(ln, " ")
+		switch k {
+		case "tag":
+			fmt.Fprintf(out, "tag %s\n", v)
+		case "tagger":
+			// "Name <email> 1700000000 +0000"
+			if i := strings.LastIndex(v, "> "); i >= 0 {
+				fmt.Fprintf(out, "Tagger: %s\n", v[:i+1])
+				var ts int64
+				var tz string
+				if _, err := fmt.Sscanf(v[i+2:], "%d %s", &ts, &tz); err == nil {
+					when := time.Unix(ts, 0).UTC()
+					if z, err := time.Parse("-0700", tz); err == nil {
+						when = when.In(z.Location())
+					}
+					fmt.Fprintf(out, "Date:   %s\n", formatDate(when, "", time.Now()))
+				}
+			}
+		}
+	}
+	fmt.Fprintf(out, "\n%s", msg)
+	if !strings.HasSuffix(msg, "\n") {
+		fmt.Fprintln(out)
+	}
+}
+
+// showClassic is cairn's original show: a plain header and the commit's diff
+// against its first parent.
+func showClassic(r *worktree.Repo, rev string) error {
+	ci, diffs, err := r.Show(rev)
+	if err != nil {
+		return mapErr(err)
+	}
+	fmt.Printf("commit %s\nAuthor: %s <%s>\nDate:   %s\n\n", ci.SHA, ci.AuthorName, ci.AuthorEmail, ci.When.Format(time.RFC3339))
+	for _, line := range strings.Split(ci.Message, "\n") {
+		fmt.Printf("    %s\n", line)
+	}
+	fmt.Println()
+	for _, d := range diffs {
+		if d.Binary {
+			fmt.Printf("Binary files differ: %s\n", d.Path)
+			continue
+		}
+		if d.Unified != "" {
+			fmt.Print(d.Unified)
+		} else {
+			fmt.Printf("%s: %s\n", d.Status, d.Path)
+		}
+	}
+	return nil
+}
+
+const shortlogSpec = "s|summary n|numbered e|email c|committer all first-parent merges no-merges " +
+	"author= grep= i|regexp-ignore-case E|extended-regexp F|fixed-strings since|after= until|before="
+
+// cmdShortlog summarises history by author.
+// Usage: cairn shortlog [-s] [-n] [-e] [<revision range>] [-- <path>...]
+func cmdShortlog(args []string) error {
+	g := newGitOpts("shortlog", shortlogSpec)
+	if err := g.parse(args); err != nil {
+		return err
+	}
+	r, err := openRepo(g.repoDir(), defaultAuthor())
+	if err != nil {
+		return mapErr(err)
+	}
+	defer r.Close()
+	eng := r.Engine()
+	lc, err := currentLine(r, g.repoDir())
+	if err != nil {
+		return err
+	}
+	revs, paths, err := splitRevsPaths(eng, lc, g)
+	if err != nil {
+		return mapErr(err)
+	}
+	if paths, err = lc.treePaths(paths); err != nil {
+		return err
+	}
+	o := change.WalkOptions{Paths: paths}
+	if err := walkFilters(g, &o); err != nil {
+		return err
+	}
+	if err := walkRange(eng, g, revs, &o); err != nil {
+		return err
+	}
+	type group struct {
+		name     string
+		subjects []string
+	}
+	groups := map[string]*group{}
+	err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
+		who := c.Author
+		if g.on("c") {
+			who = c.Committer
+		}
+		key := who.Name
+		if g.on("e") {
+			key = fmt.Sprintf("%s <%s>", who.Name, who.Email)
+		}
+		gr := groups[key]
+		if gr == nil {
+			gr = &group{name: key}
+			groups[key] = gr
+		}
+		gr.subjects = append(gr.subjects, c.Subject())
+		return nil
+	})
+	if err != nil {
+		return mapErr(err)
+	}
+	list := make([]*group, 0, len(groups))
+	for _, gr := range groups {
+		list = append(list, gr)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].name < list[j].name })
+	if g.on("n") {
+		sort.SliceStable(list, func(i, j int) bool { return len(list[i].subjects) > len(list[j].subjects) })
+	}
+	out := bufio.NewWriter(os.Stdout)
+	defer out.Flush()
+	for _, gr := range list {
+		if g.on("s") {
+			fmt.Fprintf(out, "%6d\t%s\n", len(gr.subjects), gr.name)
+			continue
+		}
+		fmt.Fprintf(out, "%s (%d):\n", gr.name, len(gr.subjects))
+		// Oldest first, as git lists them.
+		for i := len(gr.subjects) - 1; i >= 0; i-- {
+			fmt.Fprintf(out, "      %s\n", gr.subjects[i])
+		}
+		fmt.Fprintln(out)
+	}
+	return nil
+}

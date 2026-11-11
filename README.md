@@ -92,6 +92,23 @@ Releases are cut by pushing a `v*` tag — [`.github/workflows/release.yml`](.gi
 runs [GoReleaser](https://goreleaser.com) ([`.goreleaser.yaml`](.goreleaser.yaml)) to
 build the matrix and publish the archives.
 
+## Inspecting history (git spellings)
+
+The read-only commands take git's spelling, flags and output, so existing
+habits and scripts carry over: `log` (`--oneline --stat -p --graph --format=
+--author= --grep= --since= -- <path>`…), `show` (`<rev>:<path>`, `--stat`,
+`-s`), `diff` (`--stat --numstat --name-status -U<n> -R -w --exit-code`,
+`a..b`, `a...b`), `grep`, `blame -L`, `ls-files`, `ls-tree`, `cat-file`,
+`rev-parse`, `rev-list`, `shortlog`, `describe`, `format-patch`.
+
+A revision is a full/short hash, a tag, a line name, `origin/<branch>`, or
+`HEAD`/`@` — the **sealed** tip of the line whose folder you stand in — with
+`~N`, `^`, `^N` suffixes. The open working change is cairn's working tree: what
+you diff *against* a revision, never a revision itself. Paths are relative to
+where you stand inside the line's folder. Plain `cairn log`, `cairn show
+<commit>` and `cairn diff` keep cairn's original compact output; any git flag
+(e.g. `cairn diff -p`) selects git's.
+
 ## Design docs
 
 The cairn-specific design lives under [`docs/cairn/`](docs/cairn):

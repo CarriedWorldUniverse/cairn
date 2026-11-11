@@ -1290,7 +1290,16 @@ func (r *Repo) DefaultBranch() (string, error) {
 
 // SetBranchHint records the branch whose expressed folder the user is standing in
 // (computed by the CLI from the working directory). See DefaultBranch / CWDBranch.
-func (r *Repo) SetBranchHint(branch string) { r.branchHint = branch }
+func (r *Repo) SetBranchHint(branch string) {
+	r.branchHint = branch
+	// HEAD/@ in a revision resolve against the line the operator stands in.
+	r.eng.SetHeadLine(branch)
+}
+
+// Engine exposes the change engine to the CLI's read-only inspection commands
+// (log, rev-parse, ls-tree, …), which are queries over history rather than
+// working-copy operations and so have no Repo-level orchestration to add.
+func (r *Repo) Engine() *change.Engine { return r.eng }
 
 // CWDBranch returns the branch whose expressed folder the user is in, if any. Used
 // by commands (e.g. commit) that require a branch but can infer it from location.

@@ -295,6 +295,49 @@ Show one commit's metadata and its diff.
 Per-line provenance for a file: author, date, and the change that last touched each line.
 Lines still in an un-sealed working change show as `(working)`.
 
+#### Git-shaped inspection
+
+The inspection commands also take git's spelling, options and output, so git habits and
+scripts carry over. The plain forms above keep cairn's compact output; **any git option, or a
+revision that is not simply a line name, switches to git's semantics and output.**
+
+| Command | Options |
+|---|---|
+| `cairn log [<range>] [-- <path>...]` | `--oneline --stat --shortstat --numstat -p --name-only --name-status --graph --format=/--pretty= --date= --decorate --author= --committer= --grep= -i -E -F --all-match --invert-grep --since/--after --until/--before -n/--max-count/-<N> --skip --reverse --first-parent --merges --no-merges --all --follow -S -G -U<n> -w -m` |
+| `cairn show [<rev>[:<path>]...]` | `--stat --name-only --name-status -s --format= --oneline`; a blob prints its content, a tree its listing |
+| `cairn diff [<rev> \| <a> <b> \| <a>..<b> \| <a>...<b>] [-- <path>...]` | `-p --stat --numstat --shortstat --name-only --name-status -U<n> -R -w --full-index --binary --color[=when] --exit-code --quiet` |
+| `cairn grep <pattern> [<rev>...] [-- <path>...]` | `-n -i -l -L -c -w -v -E -F -e -h -o -q -I -A/-B/-C` (exit 1 when nothing matches) |
+| `cairn blame` | `-L <a>,<b>`; `cairn blame <rev> -- <path>` |
+| `cairn ls-files` | `-c -m -d -o --exclude-standard -s -z --full-name --error-unmatch` |
+| `cairn ls-tree <tree-ish> [<path>...]` | `-r -d -t -l --name-only -z --full-name --full-tree` |
+| `cairn cat-file` | `-t -s -p -e <object>`, `<type> <object>`, `--batch-check`, `--batch` |
+| `cairn rev-parse` | `<rev>... --verify -q --short[=n] --abbrev-ref --symbolic-full-name --show-toplevel --git-dir --show-prefix --is-inside-work-tree` |
+| `cairn rev-list <range>...` | `--count -n --skip --reverse --all --first-parent --merges --no-merges --parents --topo-order --left-right --count a...b` |
+| `cairn shortlog [<range>]` | `-s -n -e -c` |
+| `cairn describe [<rev>]` | `--tags --always --abbrev=<n> --dirty[=mark] --long --exact-match --match <glob>` |
+| `cairn format-patch [-<N>] [<since> \| <range>]` | `-o <dir> --stdout --root -N -n --start-number --subject-prefix` — mbox patches `git am` applies |
+
+**Revisions.** A commit can be named by full or abbreviated hash (an ambiguous abbreviation is
+an error), a tag, a line name, `origin/<branch>`, or `HEAD`/`@`, with `~N`, `^`, `^N` suffixes
+chained (`main~3^2`); `<rev>:<path>` names a file or directory, `<line>@{u}` its upstream.
+`HEAD` — and a line name — is the line's **sealed** tip (the line whose folder you stand in,
+else the root line). The open working change is the working tree: what `cairn diff <rev>`
+compares *against* a revision, never a revision itself.
+
+**Paths** are read relative to where you stand inside the line's folder, as git reads them
+relative to the cwd; output paths follow the same rule.
+
+**No index.** Everything on disk that is not ignored already belongs to the working change, so
+`ls-files` lists the working change's tree, `-m`/`-d` its modifications/deletions against the
+sealed tip, and `-o --exclude-standard` is always empty.
+
+**Colour.** `--color[=always|never|auto]` / `--no-color`, else the `color.ui` config key, else
+auto: a terminal only, never with `NO_COLOR` set. There is no pager.
+
+**Not git's.** No rename detection (a rename shows as a delete plus an add; `log --follow`
+does continue across one). `show` of a merge diffs against its first parent. Diffs are
+minimal, so `--stat` counts can be slightly smaller than git's on heavily rewritten files.
+
 ### Conflicts
 
 cairn never blocks on a conflict. A command that produces overlapping work records the
@@ -648,7 +691,7 @@ cairn update               # download, verify, swap; no-op if already current
 |------|---------|
 | `0` | Success |
 | `2` | Completed, but recorded one or more conflicts (e.g. `commit`/`pull`) — so `cairn commit && cairn push` won't push a conflicted state |
-| `1` | Hard error (bad arguments, not a cairn repo, auth failure, …) |
+| `1` | Hard error (bad arguments, not a cairn repo, auth failure, …) | Also the status-only "no": `diff --exit-code`/`--quiet` found differences, `grep` matched nothing, `cat-file -e` / `rev-parse --verify -q` found no such object (nothing is printed) |
 
 ## Coming from git
 

@@ -8,6 +8,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.9.1
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	golang.org/x/crypto v0.57.0
 	golang.org/x/sys v0.48.0
 	google.golang.org/grpc v1.83.2
@@ -36,7 +37,6 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/net v0.60.0 // indirect

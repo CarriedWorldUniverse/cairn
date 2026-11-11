@@ -22,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	gitcache "github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	_ "modernc.org/sqlite"
 )
@@ -58,6 +59,13 @@ type Engine struct {
 	// commit_gen table (see generation.go).
 	genMu sync.Mutex
 	gens  map[plumbing.Hash]uint32
+	// headLine names the line HEAD/@ resolve against (revparse.go) — the line
+	// whose folder the operator stands in. Empty means the root line.
+	headLine string
+	// treeMu/trees memoize decoded tree objects for the read-only inspection
+	// walks (treediff.go, revwalk.go), which revisit the same subtrees.
+	treeMu sync.Mutex
+	trees  map[plumbing.Hash]*object.Tree
 }
 
 // SetIdentity configures the author identity used for all commits this engine
@@ -284,19 +292,6 @@ func (e *Engine) LineOfCommit(commit string) (string, error) {
 		return "", fmt.Errorf("change.LineOfCommit: %w", err)
 	}
 	return line.Name, nil
-}
-
-// ResolveCommit resolves a user-supplied commit revision — a full OR abbreviated
-// SHA, or any git revision (e.g. a tag) — to its full 40-char hash. cairn's `log`
-// prints short SHAs, so every command that takes a commit argument must accept
-// them; callers normalize the user's argument through this before handing a SHA
-// to the catalogue/object lookups, which expect full hashes.
-func (e *Engine) ResolveCommit(rev string) (string, error) {
-	h, err := e.git.ResolveRevision(plumbing.Revision(rev))
-	if err != nil {
-		return "", fmt.Errorf("change.ResolveCommit: %q: %w", rev, err)
-	}
-	return h.String(), nil
 }
 
 // ErrNoCommonAncestor is returned by MergeBase when a and b share no common

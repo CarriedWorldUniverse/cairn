@@ -12,9 +12,11 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
-// cmdDiff prints the unified diff for working-vs-tip (default or named branch) or
-// commit-vs-commit. Binary files print a "Binary files differ" line.
-func cmdDiff(args []string) error {
+// cmdDiffClassic prints the unified diff for working-vs-tip (default or named
+// branch) or commit-vs-commit, in cairn's original format. Binary files print a
+// "Binary files differ" line. cmdDiff (cmd_inspect.go) routes the plain
+// invocations here and handles the git-shaped ones itself.
+func cmdDiffClassic(args []string) error {
 	// Split off pathspecs after a literal "--" (git-style): everything after it
 	// filters the diff to those files/dirs. `cairn diff -- <file>` diffs one file
 	// of the current line against its sealed parent (#89).
@@ -111,16 +113,31 @@ func cmdDiff(args []string) error {
 // tree-relative. Specs pointing AT a branch folder itself are dropped (no
 // filter is narrower than the whole tree).
 func canonicalPathspecs(paths []string, repo string) []string {
+	// repo is where the operator STANDS (default "."), which inside a line
+	// folder is not the repo root. Measuring against it stripped the first
+	// path component as if it were the branch folder, so `cairn diff --
+	// cmd/x.go` run inside a line matched nothing. Measure against the real
+	// root, and read a spec relative to the cwd within the line, as git does.
 	repoAbs, err := filepath.Abs(repo)
 	if err != nil {
 		repoAbs = repo
+	}
+	standAbs := repoAbs
+	cwdInLine := ""
+	if root, derr := discoverRepoRoot(repo); derr == nil {
+		if rel, rerr := filepath.Rel(root, repoAbs); rerr == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+			cwdInLine = filepath.ToSlash(rel) // "<branch-folder>[/sub/dir]"
+		}
+		repoAbs = root
 	}
 	out := make([]string, 0, len(paths))
 	for _, p := range paths {
 		p = path.Clean(strings.ReplaceAll(p, `\`, "/"))
 		abs := p
 		if !filepath.IsAbs(abs) {
-			if a, err := filepath.Abs(p); err == nil {
+			if cwdInLine != "" {
+				abs = filepath.Join(standAbs, filepath.FromSlash(p))
+			} else if a, err := filepath.Abs(p); err == nil {
 				abs = a
 			}
 		}
@@ -132,6 +149,15 @@ func canonicalPathspecs(paths []string, repo string) []string {
 					continue
 				}
 				// The spec IS a branch folder → equivalent to no filter.
+				continue
+			}
+		}
+		// Not on disk (e.g. a deleted file). Typed inside a line folder it is
+		// still relative to the cwd there; at the root it is tree-relative.
+		if cwdInLine != "" && !filepath.IsAbs(p) {
+			joined := path.Join(cwdInLine, p)
+			if i := strings.IndexByte(joined, '/'); i >= 0 && !strings.HasPrefix(joined, "../") {
+				out = append(out, joined[i+1:])
 				continue
 			}
 		}
