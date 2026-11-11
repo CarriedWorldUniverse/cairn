@@ -140,7 +140,7 @@ func (w *wc) porcelain(branch string) string {
 func (w *wc) subjects(branch string) []string {
 	w.t.Helper()
 	var out []string
-	for _, line := range strings.Split(w.ok(branch, "log", "-n", "50"), "\n") {
+	for _, line := range strings.Split(w.ok(branch, "log", "--classic", "-n", "50"), "\n") {
 		f := strings.SplitN(line, "  ", 4)
 		if len(f) == 4 && f[3] != "(working)" {
 			out = append(out, f[3])
@@ -152,7 +152,7 @@ func (w *wc) subjects(branch string) []string {
 // head is the sha of branch's newest sealed commit.
 func (w *wc) head(branch string) string {
 	w.t.Helper()
-	for _, line := range strings.Split(w.ok(branch, "log", "-n", "50"), "\n") {
+	for _, line := range strings.Split(w.ok(branch, "log", "--classic", "-n", "50"), "\n") {
 		f := strings.SplitN(line, "  ", 4)
 		if len(f) == 4 && f[3] != "(working)" {
 			return f[0]

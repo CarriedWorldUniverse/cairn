@@ -25,29 +25,8 @@ import (
 // suffixes, a tag, a remote-tracking name (origin/x), or any sha / revision
 // the object store understands.
 func (r *Repo) ResolveRefsRev(rev string) (string, error) {
-	base, suffix := rev, ""
-	if i := strings.IndexAny(rev, "~^"); i >= 0 {
-		base, suffix = rev[:i], rev[i:]
-	}
-	if base == "" || base == "HEAD" || base == "@" {
-		b, err := r.DefaultBranch()
-		if err != nil {
-			return "", err
-		}
-		base = b
-	}
-	if l, err := r.eng.LineByName(base); err == nil && l.Status != "abandoned" {
-		tip, err := r.eng.SealedTipOf(l)
-		if err != nil {
-			return "", err
-		}
-		if tip == "" {
-			return "", fmt.Errorf("line %q has no sealed commit yet", base)
-		}
-		if suffix == "" {
-			return tip, nil
-		}
-		return r.eng.ResolveCommit(tip + suffix)
+	if rev == "" {
+		rev = "HEAD"
 	}
 	return r.eng.ResolveCommit(rev)
 }

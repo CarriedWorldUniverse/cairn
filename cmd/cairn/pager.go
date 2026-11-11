@@ -4,9 +4,11 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 )
 
@@ -19,15 +21,15 @@ import (
 // and --paginate/-p come before the subcommand. stdout that is not a terminal
 // is never paged, --paginate or not.
 //
-// TODO(merge): the refs stream adds arbitrary-key config. Until it lands only
-// the user-level (global) config is consulted, through userconfig; then core.pager
-// and pager.<cmd> should also be read from the repo config (repo before global).
+// core.pager and pager.<cmd> are read from the repo config first, then the
+// user-level config, as git does.
 
 // pagerCommands are the subcommands whose output is paged.
 var pagerCommands = map[string]bool{
 	"log": true, "show": true, "diff": true, "grep": true, "blame": true,
 	"shortlog": true, "ls-files": true, "ls-tree": true, "rev-list": true,
 	"oplog": true, "tree": true, "ls": true,
+	"branch": true, "tag": true, "reflog": true, "help": true,
 }
 
 // pagerActive is true while stdout is a pipe to a pager. Colour "auto" and
@@ -71,7 +73,7 @@ func pagerCommand(sub string, mode pagerMode) string {
 			return ""
 		}
 	}
-	if v := userconfig.Get("pager." + sub); v != "" {
+	if v := pagerConfig("pager." + sub); v != "" {
 		switch strings.ToLower(v) {
 		case "false", "no", "off", "0":
 			if mode != pagerForce {
@@ -88,7 +90,7 @@ func pagerCommand(sub string, mode pagerMode) string {
 		cmd = v
 	} else if v, ok := os.LookupEnv("GIT_PAGER"); ok {
 		cmd = v
-	} else if v := userconfig.Get("core.pager"); v != "" {
+	} else if v := pagerConfig("core.pager"); v != "" {
 		cmd = v
 	} else if v, ok := os.LookupEnv("PAGER"); ok {
 		cmd = v
@@ -101,6 +103,27 @@ func pagerCommand(sub string, mode pagerMode) string {
 	return cmd
 }
 
+// pagerConfig reads a config key for the pager; startPager points it at the
+// repo the command runs in. Tests and non-repo use fall back to user config.
+var pagerConfig = userconfig.Get
+
+// repoThenUserConfig looks key up in the repo --repo names (or the one the
+// cwd is in), then in the user-level config.
+func repoThenUserConfig(args []string) func(string) string {
+	return func(key string) string {
+		if root, err := discoverRepoRoot(aliasStart(args)); err == nil {
+			if eng, err := change.Open(filepath.Join(root, ".cairn")); err == nil {
+				v, ok, _ := eng.GetConfig(key)
+				_ = eng.Close()
+				if ok && v != "" {
+					return v
+				}
+			}
+		}
+		return userconfig.Get(key)
+	}
+}
+
 // startPager redirects os.Stdout into the pager when args name a paged command
 // and tty says stdout is a terminal. The returned stop flushes, waits for the
 // pager to exit and restores stdout; it is always safe to call.
@@ -109,6 +132,7 @@ func startPager(args []string, mode pagerMode, tty bool) (stop func()) {
 	if !tty || len(args) == 0 || runtime.GOOS == "windows" {
 		return noop
 	}
+	pagerConfig = repoThenUserConfig(args)
 	cmdline := pagerCommand(args[0], mode)
 	if cmdline == "" {
 		return noop

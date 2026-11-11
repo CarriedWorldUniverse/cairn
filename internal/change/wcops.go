@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -55,12 +54,8 @@ var ErrNothingToCommit = errors.New("change: nothing to commit")
 // instead (MergeIntoWorking), where the conflict can be resolved.
 var ErrWouldConflict = errors.New("change: the change does not apply cleanly")
 
-// Signature is an explicit commit identity. Empty fields (and a zero When) fall
-// back to the engine's configured identity and clock.
-type Signature struct {
-	Name, Email string
-	When        time.Time
-}
+// Signature (revwalk.go) doubles as an explicit commit identity here: empty
+// fields (and a zero When) fall back to the engine's configured identity and clock.
 
 // SetAuthorOverride makes every commit this engine writes from now on carry the
 // given AUTHOR (git's `commit --author` / `--date`); the committer stays the
@@ -137,8 +132,8 @@ func (e *Engine) WriteTree(entries map[string]TreeEntry) (string, error) {
 	return h.String(), nil
 }
 
-// CommitMeta returns a commit's displayable metadata.
-func (e *Engine) CommitMeta(sha string) (CommitInfo, error) { return e.commitInfo(sha) }
+// CommitInfoOf returns a commit's displayable metadata (log/show shape).
+func (e *Engine) CommitInfoOf(sha string) (CommitInfo, error) { return e.commitInfo(sha) }
 
 // IsAncestor reports whether a is an ancestor of (or equal to) b, by cairn's
 // own generation-ordered graph walk.

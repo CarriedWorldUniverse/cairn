@@ -442,7 +442,7 @@ func TestUndoNeverBuriesAWorkingCommit(t *testing.T) {
 	if got, want := w.subjects("main"), []string{"second, again", "base"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("history = %v, want %v", got, want)
 	}
-	if log := w.ok("main", "log", "-n", "50"); strings.Contains(strings.Join(strings.Split(log, "\n")[1:], "\n"), "(working)") {
+	if log := w.ok("main", "log", "--classic", "-n", "50"); strings.Contains(strings.Join(strings.Split(log, "\n")[1:], "\n"), "(working)") {
 		t.Errorf("a working placeholder was sealed into history:\n%s", log)
 	}
 	// The same after a stash, which is how this was first reachable.
@@ -453,7 +453,7 @@ func TestUndoNeverBuriesAWorkingCommit(t *testing.T) {
 	mustRun(t, "undo", "--repo", w.root)
 	w.write("main", "e.txt", "e\n")
 	w.ok("main", "commit", "-m", "third, again")
-	if log := w.ok("main", "log", "-n", "50"); strings.Contains(strings.Join(strings.Split(log, "\n")[1:], "\n"), "(working)") {
+	if log := w.ok("main", "log", "--classic", "-n", "50"); strings.Contains(strings.Join(strings.Split(log, "\n")[1:], "\n"), "(working)") {
 		t.Errorf("a working placeholder was sealed into history after stash+commit+undo:\n%s", log)
 	}
 }

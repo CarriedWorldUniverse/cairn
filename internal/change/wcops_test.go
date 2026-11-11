@@ -99,7 +99,7 @@ func TestAppendSealedKeepsTheWorkingChange(t *testing.T) {
 	if got := treeFiles(t, e, res.Commit); got["wip.txt"] != "" {
 		t.Errorf("the sealed commit swallowed un-sealed work: %v", got)
 	}
-	info, _ := e.CommitMeta(res.Commit)
+	info, _ := e.CommitInfoOf(res.Commit)
 	if info.AuthorName != "Pat" || info.AuthorEmail != "pat@example.org" || info.Subject != "add new" {
 		t.Errorf("sealed commit meta = %+v", info)
 	}
@@ -346,7 +346,7 @@ func TestAmendTopKeepsChangeIDAndAuthor(t *testing.T) {
 	if got := e.changeIDOf(sealed); got != cid {
 		t.Errorf("amended change-id = %s, want %s", got, cid)
 	}
-	info, _ := e.CommitMeta(sealed)
+	info, _ := e.CommitInfoOf(sealed)
 	if info.AuthorName != "First Author" || info.Subject != "first" {
 		t.Errorf("amended commit = %+v, want the original author and message", info)
 	}
@@ -365,7 +365,7 @@ func TestAmendTopKeepsChangeIDAndAuthor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info, _ := e.CommitMeta(sealed2); info.AuthorName != "Second Person" {
+	if info, _ := e.CommitInfoOf(sealed2); info.AuthorName != "Second Person" {
 		t.Errorf("--reset-author: author = %q", info.AuthorName)
 	}
 }
@@ -465,7 +465,7 @@ func TestCherryPickWithTransformsTheMessage(t *testing.T) {
 		t.Fatalf("CherryPickWith: %v %v", cf, err)
 	}
 	ch, _ := e.GetChange(newID)
-	info, _ := e.CommitMeta(ch.HeadCommit)
+	info, _ := e.CommitInfoOf(ch.HeadCommit)
 	if info.Message != "add f\n\n(cherry picked from commit "+picked+")" {
 		t.Errorf("picked message = %q", info.Message)
 	}

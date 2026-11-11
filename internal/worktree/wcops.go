@@ -211,47 +211,10 @@ func cloneEntries(m map[string]change.TreeEntry) map[string]change.TreeEntry {
 
 // ── revisions ────────────────────────────────────────────────────────────────
 
-// ResolveRev resolves a commit argument for the working-copy verbs. It is a
-// thin seam over Engine.ResolveCommit: until the shared revision resolver
-// lands it additionally understands HEAD / @ (the branch's sealed tip) and a
-// line name, each with an optional ~N / ^N suffix — the spellings `reset
-// HEAD~1` and `restore --source=HEAD` cannot do without.
+// ResolveRev resolves a commit argument for the working-copy verbs through the
+// shared revision resolver, with HEAD/@ meaning branch's sealed tip.
 func (r *Repo) ResolveRev(branch, rev string) (string, error) {
-	base, suffix := rev, ""
-	if i := strings.IndexAny(rev, "~^"); i >= 0 {
-		base, suffix = rev[:i], rev[i:]
-	}
-	name := ""
-	switch {
-	case base == "HEAD" || base == "@":
-		name = branch
-	default:
-		if l, err := r.eng.LineByName(base); err == nil && l.Status != "abandoned" {
-			name = base
-		}
-	}
-	if name == "" {
-		sha, err := r.eng.ResolveCommit(rev)
-		if err != nil {
-			return "", fmt.Errorf("unknown revision %q: %w", rev, err)
-		}
-		return sha, nil
-	}
-	line, err := r.eng.LineByName(name)
-	if err != nil {
-		return "", fmt.Errorf("unknown revision %q: %w", rev, err)
-	}
-	tip, err := r.eng.SealedTip(line.ID)
-	if err != nil {
-		return "", fmt.Errorf("unknown revision %q: %w", rev, err)
-	}
-	if tip == "" {
-		return "", fmt.Errorf("unknown revision %q: line %q has no commits yet", rev, name)
-	}
-	if suffix == "" {
-		return tip, nil
-	}
-	sha, err := r.eng.ResolveCommit(tip + suffix)
+	sha, err := r.eng.ResolveCommitAt(branch, rev)
 	if err != nil {
 		return "", fmt.Errorf("unknown revision %q: %w", rev, err)
 	}
@@ -538,7 +501,7 @@ func (r *Repo) Revert(branch, commit string, mainline int, noCommit bool) (PickR
 	if working, werr := r.eng.IsWorkingHead(sha); werr == nil && working {
 		return PickResult{}, fmt.Errorf("revert: %s is the open working change, not a sealed commit — 'cairn reset --hard' discards it", shortID(sha))
 	}
-	info, err := r.eng.CommitMeta(sha)
+	info, err := r.eng.CommitInfoOf(sha)
 	if err != nil {
 		return PickResult{}, fmt.Errorf("worktree.Revert: %w", err)
 	}
@@ -637,7 +600,7 @@ func (r *Repo) CherryPickOpts(branch, commit string, opts PickOpts) (PickResult,
 		if !expressed {
 			return PickResult{}, fmt.Errorf("worktree.CherryPick: branch %q is not expressed", branch)
 		}
-		info, ierr := r.eng.CommitMeta(commit)
+		info, ierr := r.eng.CommitInfoOf(commit)
 		if ierr != nil {
 			return PickResult{}, fmt.Errorf("worktree.CherryPick: %w", ierr)
 		}
@@ -845,7 +808,7 @@ func (r *Repo) TopMessage(branch string) (string, error) {
 	if err != nil || top == "" {
 		return "", err
 	}
-	info, err := r.eng.CommitMeta(top)
+	info, err := r.eng.CommitInfoOf(top)
 	if err != nil {
 		return "", err
 	}

@@ -17,7 +17,7 @@ import (
 // subdirectory): each is compared byte for byte with real git.
 
 // gitIn runs a shell script in dir with a fixed identity and dates.
-func gitIn(t *testing.T, dir, script string) {
+func gitScript(t *testing.T, dir, script string) {
 	t.Helper()
 	cmd := exec.Command("bash", "-c", "set -e\n"+script)
 	cmd.Dir = dir
@@ -66,7 +66,7 @@ func TestE2E_AmbiguousAbbreviationMatchesGit(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(gitDir, "amb.txt"), content, 0o644); err != nil {
 			t.Fatal(err)
 		}
-		gitIn(t, gitDir, "git add amb.txt; git commit -q -m amb")
+		gitScript(t, gitDir, "git add amb.txt; git commit -q -m amb")
 	})
 	for _, c := range []string{
 		"rev-parse " + prefix,
@@ -198,7 +198,7 @@ for s in "héllo wörld: a rather long subject line that contains ünïcode char
   "exactly sixty-one characters of é plus some ascii to test edges" ; do
   n=$((n+1)); echo $n > f$n; git add f$n; git commit -q -m "$s"
 done`
-	gitIn(t, gitDir, script)
+	gitScript(t, gitDir, script)
 	lineDir := cloneOf(t, gitDir)
 	for _, c := range []string{"--root", `--root --subject-prefix=PATCH_v2_longer_prefix_here_for_testing_ü`} {
 		args := append([]string{"format-patch", "--stdout"}, strings.Fields(c)...)
@@ -219,7 +219,7 @@ done`
 func TestE2E_FollowRenameSimilarityMatchesGit(t *testing.T) {
 	requireGit(t)
 	gitDir := t.TempDir()
-	gitIn(t, gitDir, `git init -q -b main .; git config user.name a; git config user.email a@x`)
+	gitScript(t, gitDir, `git init -q -b main .; git config user.name a; git config user.email a@x`)
 	ks := []int{0, 3, 6, 7, 8, 9, 10, 11, 12, 13, 15}
 	lines := func(k int, changed int) string {
 		var sb strings.Builder
@@ -237,14 +237,14 @@ func TestE2E_FollowRenameSimilarityMatchesGit(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	gitIn(t, gitDir, `git add -A; git commit -q -m base`)
+	gitScript(t, gitDir, `git add -A; git commit -q -m base`)
 	for _, k := range ks {
 		_ = os.Remove(filepath.Join(gitDir, fmt.Sprintf("o%d.txt", k)))
 		if err := os.WriteFile(filepath.Join(gitDir, fmt.Sprintf("n%d.txt", k)), []byte(lines(k, k)), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	gitIn(t, gitDir, `git add -A; git commit -q -m rename`)
+	gitScript(t, gitDir, `git add -A; git commit -q -m rename`)
 	lineDir := cloneOf(t, gitDir)
 	for _, k := range ks {
 		args := []string{"log", "--oneline", "--follow", "--", fmt.Sprintf("n%d.txt", k)}

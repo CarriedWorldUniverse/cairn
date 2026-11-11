@@ -58,7 +58,6 @@ func main() {
 		if errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
 		}
-<<<<<<< ours
 		if errors.Is(err, errSilent) {
 			os.Exit(1)
 		}
@@ -66,14 +65,11 @@ func main() {
 		if errors.As(err, &ec) {
 			os.Exit(ec.code)
 		}
-||||||| base
-=======
 		// A status-only answer (diff --quiet, grep with no match, cat-file -e):
 		// the exit code IS the result, so nothing is printed.
 		if code, ok := exitCodeOf(err); ok {
 			os.Exit(code)
 		}
->>>>>>> theirs
 		fmt.Fprintln(os.Stderr, "cairn:", err)
 		os.Exit(1)
 	}
@@ -97,18 +93,10 @@ subcommands:
   reparent --infer [--dry-run]  re-derive every line's parent from topology, as a fresh clone would
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
-<<<<<<< ours
   status -s|--porcelain [-b] [-z]  git's short/porcelain-v1 format (changes in the X column; no index)
-  diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
-  diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
-||||||| base
-  diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
-  diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
-=======
   diff [branch] [-- <path>...]  show the working change vs its parent as a git patch (optionally one file/dir)
   diff <a> <b> | <a>..<b> | <a>...<b> | <rev>  commit-vs-commit, since-fork, or a commit vs the working tree
                                 options as git: --stat --numstat --name-only --name-status -U<n> -R -w --exit-code --quiet (--classic: cairn's old format)
->>>>>>> theirs
   tree [--fetch] [--gone]       print the line tree with each line's remote state (--fetch refreshes it; --gone lists lines whose branch is gone; --flat for scripts)
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
@@ -203,16 +191,10 @@ git spellings (aliases for the cairn verb above):
 (other git verbs — checkout <branch>, rebase, worktree — have no cairn
 equivalent; running one prints the translation.)
 
-<<<<<<< ours
-config keys: user.name, user.email, autosync, pr.org, pr.repo-slug (and any section.key: alias.*, core.editor, init.defaultBranch, pull.rebase, push.default ...)
-||||||| base
-config keys: user.name, user.email, autosync, pr.org, pr.repo-slug
-=======
 revisions: a commit can be named by full/short hash, tag, line (its sealed tip), origin/<branch>,
 HEAD or @ (the sealed tip of the line you stand in), with ~N ^ ^N suffixes; <rev>:<path> names a file.
 
-config keys: user.name, user.email, autosync, pr.org, pr.repo-slug, color.ui
->>>>>>> theirs
+config keys: user.name, user.email, autosync, pr.org, pr.repo-slug, color.ui (and any section.key: alias.*, core.editor, core.pager, pager.<cmd>, init.defaultBranch, pull.rebase, push.default ...)
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
 // run dispatches a subcommand. args is os.Args[1:].

@@ -59,12 +59,9 @@ type Engine struct {
 	// commit_gen table (see generation.go).
 	genMu sync.Mutex
 	gens  map[plumbing.Hash]uint32
-<<<<<<< ours
 	// authorOverride, when set, is the AUTHOR of every commit written (see
 	// SetAuthorOverride in wcops.go); the committer stays the identity above.
 	authorOverride *Signature
-||||||| base
-=======
 	// headLine names the line HEAD/@ resolve against (revparse.go) — the line
 	// whose folder the operator stands in. Empty means the root line.
 	headLine string
@@ -72,7 +69,6 @@ type Engine struct {
 	// walks (treediff.go, revwalk.go), which revisit the same subtrees.
 	treeMu sync.Mutex
 	trees  map[plumbing.Hash]*object.Tree
->>>>>>> theirs
 }
 
 // SetIdentity configures the author identity used for all commits this engine

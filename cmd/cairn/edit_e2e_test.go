@@ -198,11 +198,8 @@ func TestEditOnRootStopsAtTheRemote(t *testing.T) {
 	}
 	mustRun(t, "remote", "add", "origin", bare, "--repo", root)
 	mustRun(t, "push", "--repo", root, "origin", "main")
-	top := strings.Fields(captureRun(t, "log", "--repo", root, "-n", "2", "main"))
-	pushed := top[0]
-	if strings.Contains(captureRun(t, "log", "--repo", root, "-n", "1", "main"), "(working)") {
-		pushed = strings.Fields(strings.Split(captureRun(t, "log", "--repo", root, "-n", "2", "main"), "\n")[1])[0]
-	}
+	// git-shaped log lists sealed commits only, so the newest one is HEAD.
+	pushed := strings.TrimSpace(captureRun(t, "log", "--repo", root, "-n", "1", "--format=%H", "main"))
 	for _, args := range [][]string{
 		{"reword", "--repo", root, pushed, "new-msg"},
 		{"squash", "--repo", root, pushed},

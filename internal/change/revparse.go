@@ -58,9 +58,17 @@ func (e *Engine) HeadLine() (Line, error) {
 	return e.RootLine()
 }
 
-// SealedTip returns line's most recent sealed commit ("" when it has none) —
-// what HEAD means while standing in that line.
-func (e *Engine) SealedTip(line Line) (string, error) { return e.sealedTip(line) }
+// ResolveCommitAt is ResolveCommit with HEAD/@ meaning line head's sealed tip
+// for this one call (an explicit branch argument, rather than the folder the
+// operator stands in). An empty head keeps the current HEAD line.
+func (e *Engine) ResolveCommitAt(head, rev string) (string, error) {
+	if head != "" {
+		prev := e.headLine
+		e.headLine = head
+		defer func() { e.headLine = prev }()
+	}
+	return e.ResolveCommit(rev)
+}
 
 // ResolveCommit resolves a user-supplied revision (see the syntax above) to
 // the full hash of a COMMIT. Annotated tags are peeled.
@@ -166,9 +174,9 @@ func (e *Engine) resolveObject(rev string) (plumbing.Hash, plumbing.ObjectType, 
 	}
 	// An annotated tag named with no suffix stays a tag object (cat-file -t).
 	if suffix == "" && !wantTree {
-		// TODO(merge): the refs stream adds tag.obj for annotated tags cairn
-		// creates; prefer a non-empty obj here (one-line change). Imported
-		// tags store the TAG OBJECT hash in commit_sha, handled below.
+		// catalogueTag prefers tag.obj (annotated tags cairn creates); imported
+		// tags store the TAG OBJECT hash in commit_sha. Either way a tag object
+		// is detected below.
 		if sha, isCatTag := e.catalogueTag(base); isCatTag {
 			if h := plumbing.NewHash(sha); isHex(sha) && len(sha) == 40 {
 				if _, terr := e.git.TagObject(h); terr == nil {
@@ -369,7 +377,7 @@ func (e *Engine) catalogueTag(name string) (string, bool) {
 		return "", false
 	}
 	var sha string
-	if err := e.db.QueryRow(`SELECT commit_sha FROM tag WHERE name=?`, name).Scan(&sha); err != nil {
+	if err := e.db.QueryRow(`SELECT CASE WHEN obj != '' THEN obj ELSE commit_sha END FROM tag WHERE name=?`, name).Scan(&sha); err != nil {
 		return "", false
 	}
 	return sha, sha != ""
