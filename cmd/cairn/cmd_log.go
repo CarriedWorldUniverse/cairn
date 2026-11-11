@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,44 +28,110 @@ import (
 
 // diffSpec are the diff-output options log, show and diff share.
 const diffSpec = "p|patch|u s|no-patch stat? shortstat numstat name-only name-status U|unified= " +
-	"w|ignore-all-space color? full-index binary R no-renames M|find-renames? no-ext-diff no-textconv"
+	"w|ignore-all-space color? full-index binary R summary stat-width= stat-name-width= stat-graph-width= stat-count= no-renames M|find-renames? no-ext-diff no-textconv"
 
 // diffOut is a parsed choice of diff outputs.
 type diffOut struct {
 	patch, stat, shortstat, numstat, nameOnly, nameStatus bool
+	summary                                               bool
 	po                                                    change.PatchOptions
 	reverse                                               bool
 	color                                                 bool
 	width                                                 int
+	statOpts                                              change.StatOptions
 }
 
 // parseDiffOut reads the shared diff options. defaultPatch is what the
 // command shows when no output option is given.
 func parseDiffOut(g *gitOpts, defaultPatch bool) (diffOut, error) {
 	d := diffOut{
-		stat: g.on("stat"), shortstat: g.on("shortstat"), numstat: g.on("numstat"),
+		stat: g.on("stat") || g.on("stat-width") || g.on("stat-name-width") || g.on("stat-graph-width") || g.on("stat-count"), shortstat: g.on("shortstat"), numstat: g.on("numstat"),
 		nameOnly: g.on("name-only"), nameStatus: g.on("name-status"),
-		reverse: g.on("R"), width: 80,
+		reverse: g.on("R"), width: 80, summary: g.on("summary"),
 	}
 	ctx, err := g.integer("U", 3)
 	if err != nil {
 		return d, err
 	}
 	d.po = change.PatchOptions{Context: ctx, IgnoreAllSpace: g.on("w"), FullIndex: g.on("full-index"), Binary: g.on("binary")}
+	if err := d.parseStat(g); err != nil {
+		return d, err
+	}
 	d.patch = g.on("p") || g.has("U") || g.on("binary")
+	if d.nameOnly && d.nameStatus {
+		return d, errors.New("options '--name-only', '--name-status', '--check', and '-s' cannot be used together")
+	}
+	if d.nameOnly || d.nameStatus {
+		// As git: a name listing replaces the patch and every stat form.
+		d.patch, d.stat, d.shortstat, d.numstat, d.summary = false, false, false, false, false
+	}
 	if !d.any() && defaultPatch {
 		d.patch = true
 	}
 	return d, nil
 }
 
+// parseStat reads --stat=<width>[,<name-width>[,<count>]] and the separate
+// --stat-width/--stat-name-width/--stat-graph-width/--stat-count options.
+func (d *diffOut) parseStat(g *gitOpts) error {
+	num := func(name string, dst *int) error {
+		if !g.on(name) {
+			return nil
+		}
+		n, err := strconv.Atoi(g.str(name))
+		if err != nil || n < 0 {
+			return fmt.Errorf("%s: invalid --%s value: %s", g.cmd, name, g.str(name))
+		}
+		*dst = n
+		return nil
+	}
+	for _, v := range g.strs("stat") {
+		if v == "" {
+			continue
+		}
+		parts := strings.Split(v, ",")
+		bad := len(parts) > 3
+		var ns [3]int
+		for i := 0; i < len(parts) && !bad; i++ {
+			if parts[i] == "" && i > 0 {
+				continue // "60,,1": the middle one keeps its default
+			}
+			n, err := strconv.Atoi(parts[i])
+			if err != nil || n < 0 {
+				bad = true
+			}
+			ns[i] = n
+		}
+		if bad {
+			return fmt.Errorf("%s: invalid --stat value: %s", g.cmd, v)
+		}
+		d.statOpts.Width = ns[0]
+		if len(parts) > 1 && parts[1] != "" {
+			d.statOpts.NameWidth = ns[1]
+		}
+		if len(parts) > 2 && parts[2] != "" {
+			d.statOpts.Count = ns[2]
+		}
+	}
+	for _, e := range []struct {
+		name string
+		dst  *int
+	}{{"stat-width", &d.statOpts.Width}, {"stat-name-width", &d.statOpts.NameWidth},
+		{"stat-graph-width", &d.statOpts.GraphWidth}, {"stat-count", &d.statOpts.Count}} {
+		if err := num(e.name, e.dst); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (d diffOut) any() bool {
-	return d.patch || d.stat || d.shortstat || d.numstat || d.nameOnly || d.nameStatus
+	return d.patch || d.stat || d.shortstat || d.numstat || d.nameOnly || d.nameStatus || d.summary
 }
 
 // none turns every output off (-s / --no-patch).
 func (d diffOut) none() diffOut {
-	d.patch, d.stat, d.shortstat, d.numstat, d.nameOnly, d.nameStatus = false, false, false, false, false, false
+	d.patch, d.stat, d.shortstat, d.numstat, d.nameOnly, d.nameStatus, d.summary = false, false, false, false, false, false, false
 	return d
 }
 
@@ -75,7 +142,7 @@ func (d diffOut) compute(eng *change.Engine, a, b string, ps *change.Pathspec) (
 	if !d.any() {
 		return nil, nil
 	}
-	if !d.patch && !d.stat && !d.shortstat && !d.numstat && !d.po.IgnoreAllSpace {
+	if !d.patch && !d.stat && !d.shortstat && !d.numstat && !d.summary && !d.po.IgnoreAllSpace {
 		changes, err := eng.TreeChanges(a, b, ps)
 		if err != nil {
 			return nil, err
@@ -121,9 +188,14 @@ func (d diffOut) render(patches []change.FilePatch) string {
 		}
 	}
 	if d.stat {
-		sb.WriteString(d.colorStat(change.FormatStat(patches, d.width)))
+		sb.WriteString(d.colorStat(change.FormatStatOpts(patches, d.statOpts)))
 	} else if d.shortstat {
 		sb.WriteString(change.FormatShortStat(patches))
+	}
+	if d.summary {
+		for _, p := range patches {
+			sb.WriteString(p.Summary)
+		}
 	}
 	if d.patch {
 		if sb.Len() > 0 {
@@ -244,7 +316,11 @@ func walkRange(eng *change.Engine, g *gitOpts, revs []string, o *change.WalkOpti
 		if err != nil {
 			return mapErr(err)
 		}
-		rr.Include = append(rr.Include, tips...)
+		if g.allNot {
+			rr.Exclude = append(rr.Exclude, tips...)
+		} else {
+			rr.Include = append(rr.Include, tips...)
+		}
 	} else if len(rr.Include) == 0 && len(rr.Exclude) == 0 {
 		head, err := eng.ResolveCommit("HEAD")
 		if err != nil {
@@ -515,19 +591,22 @@ func (lw *logWriter) write(text, diff string, gp *graphPrefix) {
 	separated := !lw.f.terminator
 	bare := lw.f.kind == "format" && separated // format: — no newline after the last entry
 	sb.WriteString(text)
-	if !bare || diff != "" {
+	if diff != "" && lw.f.kind != "oneline" {
+		// As git (log_tree_diff_flush): the message's own newline (a format:
+		// message has none), then "---" when stat and patch are both shown,
+		// then ONE newline — so format: gets no blank line before the diff
+		// and "X---" on the stat/patch separator.
+		if !bare {
+			sb.WriteString("\n")
+		}
+		if lw.d.stat && lw.d.patch {
+			sb.WriteString("---")
+		}
+		sb.WriteString("\n")
+	} else if !bare || diff != "" {
 		sb.WriteString("\n")
 	}
-	if diff != "" {
-		if lw.f.kind != "oneline" {
-			if lw.d.stat && lw.d.patch {
-				sb.WriteString("---\n")
-			} else {
-				sb.WriteString("\n")
-			}
-		}
-		sb.WriteString(diff)
-	}
+	sb.WriteString(diff)
 	entry := sb.String()
 	if gp == nil {
 		if lw.shown && separated {
@@ -831,6 +910,16 @@ func showCommit(eng *change.Engine, lw *logWriter, pp *prettyPrinter, d diffOut,
 	if len(c.Parents) > 0 {
 		parent = c.Parents[0]
 	}
+	if !ps.All() {
+		// As git: a commit that does not touch the pathspec is not shown.
+		changes, err := eng.TreeChanges(parent, sha, ps)
+		if err != nil {
+			return mapErr(err)
+		}
+		if len(changes) == 0 {
+			return nil
+		}
+	}
 	patches, err := d.compute(eng, parent, sha, ps)
 	if err != nil {
 		return mapErr(err)
@@ -942,31 +1031,43 @@ func cmdShortlog(args []string) error {
 	if err := walkFilters(g, &o); err != nil {
 		return err
 	}
-	if err := walkRange(eng, g, revs, &o); err != nil {
-		return err
+	// As git: with no revision given and stdin not a terminal, shortlog
+	// summarises a `git log` / `cairn log` read from stdin, not HEAD.
+	fromStdin := len(revs) == 0 && !g.on("all") && !isInteractive()
+	if !fromStdin {
+		if err := walkRange(eng, g, revs, &o); err != nil {
+			return err
+		}
 	}
 	type group struct {
 		name     string
 		subjects []string
 	}
 	groups := map[string]*group{}
-	err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
-		who := c.Author
-		if g.on("c") {
-			who = c.Committer
-		}
-		key := who.Name
+	add := func(name, email, subject string) {
+		key := name
 		if g.on("e") {
-			key = fmt.Sprintf("%s <%s>", who.Name, who.Email)
+			key = fmt.Sprintf("%s <%s>", name, email)
 		}
 		gr := groups[key]
 		if gr == nil {
 			gr = &group{name: key}
 			groups[key] = gr
 		}
-		gr.subjects = append(gr.subjects, c.Subject())
-		return nil
-	})
+		gr.subjects = append(gr.subjects, subject)
+	}
+	if fromStdin {
+		err = shortlogStdin(os.Stdin, g.on("c"), add)
+	} else {
+		err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
+			who := c.Author
+			if g.on("c") {
+				who = c.Committer
+			}
+			add(who.Name, who.Email, c.Subject())
+			return nil
+		})
+	}
 	if err != nil {
 		return mapErr(err)
 	}
@@ -993,4 +1094,45 @@ func cmdShortlog(args []string) error {
 		fmt.Fprintln(out)
 	}
 	return nil
+}
+
+// shortlogStdin reads log output (medium or fuller): each "Author: " line
+// (or "Commit: " with -c) names a commit, whose subject is the first
+// non-blank line after the header block — as git shortlog does. A leading
+// "[PATCH ...] " tag is dropped.
+func shortlogStdin(in io.Reader, committer bool, add func(name, email, subject string)) error {
+	prefix := "Author: "
+	if committer {
+		prefix = "Commit: "
+	}
+	sc := bufio.NewScanner(in)
+	sc.Buffer(make([]byte, 0, 64*1024), 1<<24)
+	for sc.Scan() {
+		ident, ok := strings.CutPrefix(sc.Text(), prefix)
+		if !ok {
+			continue
+		}
+		// git keeps the padding of `--format=fuller`'s "Author:     Name".
+		name, email := strings.TrimRight(ident, " "), ""
+		if i := strings.Index(ident, " <"); i >= 0 {
+			name = ident[:i]
+			email = strings.TrimSuffix(strings.TrimSpace(ident[i+2:]), ">")
+		}
+		for sc.Scan() && sc.Text() != "" { // the rest of the header block
+		}
+		subject := ""
+		for sc.Scan() {
+			if t := strings.TrimSpace(sc.Text()); t != "" {
+				subject = t
+				break
+			}
+		}
+		if strings.HasPrefix(subject, "[PATCH") {
+			if _, rest, ok := strings.Cut(subject, "] "); ok {
+				subject = rest
+			}
+		}
+		add(name, email, subject)
+	}
+	return sc.Err()
 }

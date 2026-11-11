@@ -144,6 +144,12 @@ func (e *Engine) resolveObject(rev string) (plumbing.Hash, plumbing.ObjectType, 
 	if isHex(base) && len(base) >= 4 && base != "HEAD" {
 		if _, isRef, _ := e.resolveRefName(base); !isRef {
 			h, t, err := e.resolveHexAny(base)
+			if errors.Is(err, ErrAmbiguousRev) && suffix == "" && !wantTree {
+				// As git: a bare ambiguous name is an error here (rev-parse,
+				// cat-file, show); commit-ish contexts (resolveCommit, log)
+				// and a ^{commit}-style suffix still let a lone commit win.
+				return plumbing.ZeroHash, 0, err
+			}
 			switch {
 			case err == nil && (t == plumbing.TreeObject || t == plumbing.BlobObject):
 				if suffix != "" && suffix != "^{}" && suffix != "^{"+t.String()+"}" {

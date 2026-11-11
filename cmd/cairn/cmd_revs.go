@@ -146,8 +146,9 @@ func cmdRevParse(args []string) error {
 				return fail(a, err)
 			}
 			_, _ = l, rgt
-			for _, s := range rr.Include {
-				fmt.Fprintln(out, name(s))
+			// git prints the right side first: `B A ^base`.
+			for i := len(rr.Include) - 1; i >= 0; i-- {
+				fmt.Fprintln(out, name(rr.Include[i]))
 			}
 			for _, s := range rr.Exclude {
 				fmt.Fprintln(out, "^"+name(s))
@@ -538,16 +539,17 @@ func cmdLsTree(args []string) error {
 		if err != nil {
 			return err
 		}
-		// "dir/" lists the directory's contents; "dir" lists the entry.
-		if strings.HasSuffix(p, "/") && tp != "" {
-			tp += "/*"
+		// "dir/" (and ".") lists the directory's contents; "dir" lists the
+		// entry. Pathspecs here are literal: no glob expansion, as in git.
+		if (strings.HasSuffix(p, "/") || p == "." || strings.HasSuffix(p, "/.")) && tp != "" {
+			tp += "/"
 		}
 		specs = append(specs, tp)
 	}
 	if len(specs) == 0 && lc.prefix != "" {
-		specs = []string{lc.prefix + "/*"}
+		specs = []string{lc.prefix + "/"}
 	}
-	ents, err := eng.ListTree(sha, change.NewPathspec(specs), g.on("r"), g.on("t") || g.on("d"))
+	ents, err := eng.ListTree(sha, change.NewLiteralPathspec(specs), g.on("r"), g.on("t") || g.on("d"))
 	if err != nil {
 		return mapErr(err)
 	}

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"mime"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -667,7 +666,7 @@ func blameRanges(specs []string, total int) (map[int]bool, error) {
 // printed.
 func cmdFormatPatch(args []string) error {
 	g := newGitOpts("format-patch", "o|output-directory= stdout N|no-numbered n|numbered k|keep-subject "+
-		"start-number= # root no-stat subject-prefix= q|quiet first-parent full-index no-binary")
+		"start-number= # root no-stat subject-prefix= q|quiet first-parent full-index no-binary no-renames")
 	if err := g.parse(args); err != nil {
 		return err
 	}
@@ -755,6 +754,9 @@ func cmdFormatPatch(args []string) error {
 		}
 		mail := mboxPatch(c, tag, patches, !g.on("no-stat"))
 		if g.on("stdout") {
+			if i > 0 {
+				_, _ = out.WriteString("\n") // git separates messages by a blank line
+			}
 			_, _ = out.WriteString(mail)
 			continue
 		}
@@ -780,7 +782,7 @@ func mboxPatch(c *change.CommitMeta, subjectTag string, patches []change.FilePat
 	fmt.Fprintf(&sb, "From %s Mon Sep 17 00:00:00 2001\n", c.SHA)
 	fmt.Fprintf(&sb, "From: %s <%s>\n", mailName(c.Author.Name), c.Author.Email)
 	fmt.Fprintf(&sb, "Date: %s\n", formatDate(c.Author.When, "rfc", c.Author.When))
-	fmt.Fprintf(&sb, "Subject: %s%s\n", subjectTag, mailWord(c.Subject()))
+	fmt.Fprintf(&sb, "Subject: %s%s\n", subjectTag, mailSubject("Subject: "+subjectTag, c.Subject()))
 	body := c.Body()
 	if !isASCII(body) || !isASCII(c.Subject()) {
 		sb.WriteString("MIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n")
@@ -789,9 +791,14 @@ func mboxPatch(c *change.CommitMeta, subjectTag string, patches []change.FilePat
 	if body != "" {
 		sb.WriteString(body + "\n")
 	}
-	sb.WriteString("---\n")
+	// As git: --no-stat drops the "---" line, the stat block and the
+	// summary; the patch follows the message after one blank line.
 	if stat {
+		sb.WriteString("---\n")
 		sb.WriteString(change.FormatStat(patches, 72))
+		for _, p := range patches {
+			sb.WriteString(p.Summary)
+		}
 	}
 	sb.WriteString("\n")
 	for _, p := range patches {
@@ -810,19 +817,73 @@ func isASCII(s string) bool {
 	return true
 }
 
-// mailWord RFC 2047-encodes a header value that is not plain ASCII.
-func mailWord(s string) string {
-	if isASCII(s) {
-		return s
+// mailSubject renders a Subject: header value that follows prefix ("Subject:
+// [PATCH] "), as git does: non-ASCII text becomes RFC 2047 encoded words
+// folded so no header line passes 76 columns; plain ASCII is folded at spaces
+// so no line passes 78.
+func mailSubject(prefix, s string) string {
+	if !isASCII(s) {
+		return rfc2047(len(prefix), s, false)
 	}
-	return mime.QEncoding.Encode("UTF-8", s)
+	var sb strings.Builder
+	col := len(prefix)
+	for i, w := range strings.Split(s, " ") {
+		switch {
+		case i == 0:
+		case col+1+len(w) > 78:
+			sb.WriteString("\n ")
+			col = 1
+		default:
+			sb.WriteByte(' ')
+			col++
+		}
+		sb.WriteString(w)
+		col += len(w)
+	}
+	return sb.String()
+}
+
+// rfc2047 is git's add_rfc2047: a run of "=?UTF-8?q?…?=" encoded words, a new
+// one (after a folded line) whenever the next character would pass column 76.
+// startCol is where the value starts on its header line. phrase selects the
+// stricter character set of an address's display name.
+func rfc2047(startCol int, s string, phrase bool) string {
+	const enc = "UTF-8"
+	var sb strings.Builder
+	sb.WriteString("=?" + enc + "?q?")
+	col := startCol + len(enc) + 5
+	for _, r := range s {
+		chr := string(r)
+		special := r >= 0x80 || r <= ' ' || r == '=' || r == '?' || r == '_'
+		if phrase && !special {
+			special = !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || strings.ContainsRune("!*+-/", r))
+		}
+		n := len(chr)
+		if special {
+			n *= 3
+		}
+		if col+n+2 > 76 {
+			sb.WriteString("?=\n =?" + enc + "?q?")
+			col = len(enc) + 5 + 1
+		}
+		if special {
+			for i := 0; i < len(chr); i++ {
+				fmt.Fprintf(&sb, "=%02X", chr[i])
+			}
+		} else {
+			sb.WriteString(chr)
+		}
+		col += n
+	}
+	sb.WriteString("?=")
+	return sb.String()
 }
 
 // mailName renders a display name for a From: header: encoded when not
 // ASCII, quoted when it holds characters RFC 822 reserves.
 func mailName(s string) string {
 	if !isASCII(s) {
-		return mime.QEncoding.Encode("UTF-8", s)
+		return rfc2047(len("From: "), s, true)
 	}
 	if strings.ContainsAny(s, `()<>[]:;@\,."`) {
 		return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s) + `"`

@@ -46,6 +46,10 @@ type gitOpts struct {
 	num      int // a bare -<N>
 	numSet   bool
 	allowNum bool
+	// notNow tracks --not toggles as they are parsed, allNot records whether
+	// --all came after an odd number of them (`--not HEAD~2 --all` makes every
+	// ref uninteresting, as in git).
+	notNow, allNot bool
 }
 
 // newGitOpts declares a command's options. spec is space-separated; each item
@@ -88,6 +92,7 @@ func (g *gitOpts) parse(args []string) error {
 		case a == "--not" && g.defs["not"] == nil:
 			// A revision-list toggle, not an option: it stays in sequence.
 			g.pos = append(g.pos, a)
+			g.notNow = !g.notNow
 		case a == "-h" && g.defs["h"] == nil, a == "--help":
 			return flag.ErrHelp
 		case strings.HasPrefix(a, "--"):
@@ -101,6 +106,9 @@ func (g *gitOpts) parse(args []string) error {
 			}
 			if d == nil {
 				return g.unknown(a)
+			}
+			if d.name == "all" {
+				g.allNot = g.notNow
 			}
 			switch d.kind {
 			case optBool:

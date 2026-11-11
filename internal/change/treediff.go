@@ -36,6 +36,9 @@ type pathSpecItem struct {
 	pat    string
 	glob   bool
 	nowild string // the literal prefix of a glob
+	// contents marks a literal "dir/" spec (NewLiteralPathspec): it selects
+	// what is inside dir, not dir itself.
+	contents bool
 }
 
 // NewPathspec builds a Pathspec from tree-root-relative paths.
@@ -48,6 +51,18 @@ func NewPathspec(paths []string) *Pathspec {
 			it.glob, it.nowild = true, p[:i]
 		}
 		ps.specs = append(ps.specs, it)
+	}
+	return ps
+}
+
+// NewLiteralPathspec builds a Pathspec whose items are literal paths — no
+// glob expansion, as in git ls-tree. A trailing "/" selects the directory's
+// contents rather than the directory entry.
+func NewLiteralPathspec(paths []string) *Pathspec {
+	ps := &Pathspec{}
+	for _, p := range paths {
+		contents := strings.HasSuffix(p, "/")
+		ps.specs = append(ps.specs, pathSpecItem{pat: cleanTreePath(strings.TrimSuffix(p, "/")), contents: contents})
 	}
 	return ps
 }
@@ -72,6 +87,12 @@ func (ps *Pathspec) Match(p string) bool {
 	}
 	for _, s := range ps.specs {
 		if !s.glob {
+			if s.contents {
+				if strings.HasPrefix(p, s.pat+"/") {
+					return true
+				}
+				continue
+			}
 			if p == s.pat || strings.HasPrefix(p, s.pat+"/") {
 				return true
 			}
@@ -492,8 +513,10 @@ func (e *Engine) ObjectBytes(sha string) ([]byte, error) {
 }
 
 // renameSource looks for the path that `to` (present in tree b, absent from
-// tree a) was renamed from: a file deleted between a and b with the same
-// content, else the most similar one (at least half its lines shared).
+// tree a) was renamed from, as git's --follow does: a file deleted between a
+// and b with the same content (the same base name preferred), else the one
+// with the best similarity score, at least 50% (git's metric: bytes in shared
+// 64-byte/line spans over the larger size).
 func (e *Engine) renameSource(a, b plumbing.Hash, to string) (string, error) {
 	target, ok, err := e.treePath(b, to)
 	if err != nil || !ok {
@@ -504,34 +527,36 @@ func (e *Engine) renameSource(a, b plumbing.Hash, to string) (string, error) {
 		return "", err
 	}
 	var deleted []TreeChange
+	exact := ""
 	for _, ch := range changes {
 		if ch.New.SHA != "" || ch.Old.Mode == ModeGitlink {
 			continue
 		}
 		if ch.Old.SHA == target.Hash.String() {
-			return ch.Path, nil
+			if exact == "" || path.Base(ch.Path) == path.Base(to) && path.Base(exact) != path.Base(to) {
+				exact = ch.Path
+			}
+			continue
 		}
 		deleted = append(deleted, ch)
+	}
+	if exact != "" {
+		return exact, nil
 	}
 	if len(deleted) == 0 || len(deleted) > 400 {
 		return "", nil
 	}
 	want, err := e.readBlob(target.Hash.String())
-	if err != nil || isBinary(want) || len(want) > 1<<20 {
+	if err != nil || len(want) > 1<<20 {
 		return "", nil
 	}
-	wl := splitKeepNL(want)
-	best, bestScore := "", 0.5
+	best, bestScore := "", renameScore-1
 	for _, ch := range deleted {
 		have, err := e.readBlob(ch.Old.SHA)
-		if err != nil || isBinary(have) || len(have) > 1<<20 {
+		if err != nil || len(have) > 1<<20 {
 			continue
 		}
-		score := difflib.NewMatcher(splitKeepNL(have), wl).Ratio()
-		if path.Base(ch.Path) == path.Base(to) {
-			score += 0.01
-		}
-		if score > bestScore {
+		if score := similarity(have, want); score > bestScore {
 			best, bestScore = ch.Path, score
 		}
 	}
@@ -690,6 +715,9 @@ type FilePatch struct {
 	Deleted int // … and removed
 	OldSize int // blob sizes, for a binary file's stat line
 	NewSize int
+	// Summary is git's --summary line for the file (" create mode 100644 f\n",
+	// " delete mode …", " mode change a => b f\n"); "" when there is none.
+	Summary string
 	// Empty reports a change with nothing to show: under -w, a file whose
 	// only differences are whitespace.
 	Empty bool
@@ -722,16 +750,22 @@ func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch
 	switch {
 	case !hasOld:
 		fmt.Fprintf(&hdr, "new file mode %s\n", newMode)
+		fp.Summary = fmt.Sprintf(" create mode %s %s\n", newMode, QuotePath(ch.Path))
 	case !hasNew:
 		fmt.Fprintf(&hdr, "deleted file mode %s\n", oldMode)
+		fp.Summary = fmt.Sprintf(" delete mode %s %s\n", oldMode, QuotePath(ch.Path))
 	case oldMode != newMode:
 		fmt.Fprintf(&hdr, "old mode %s\nnew mode %s\n", oldMode, newMode)
+		fp.Summary = fmt.Sprintf(" mode change %s => %s %s\n", oldMode, newMode, QuotePath(ch.Path))
 	}
+	isBin := isBinary(oldB) || isBinary(newB)
 	abbrev := func(sha string) string {
 		if sha == "" {
 			sha = plumbing.ZeroHash.String()
 		}
-		if o.FullIndex || o.Binary {
+		// --binary prints a binary file's index line in full (git), but
+		// leaves a text file's abbreviated.
+		if o.FullIndex || (o.Binary && isBin) {
 			return sha
 		}
 		return sha[:7]
@@ -751,7 +785,7 @@ func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch
 	if !hasNew {
 		to = "/dev/null"
 	}
-	if isBinary(oldB) || isBinary(newB) {
+	if isBin {
 		fp.Binary = true
 		fp.Header = hdr.String()
 		if !o.StatOnly && contentDiffers {
@@ -1044,11 +1078,28 @@ func (e *Engine) CommitPatches(a, b string, ps *Pathspec, o PatchOptions, revers
 // line per file, scaled to width columns, then the summary line. Empty when
 // there are no patches.
 func FormatStat(patches []FilePatch, width int) string {
-	if len(patches) == 0 {
+	return FormatStatOpts(patches, StatOptions{Width: width})
+}
+
+// StatOptions are the knobs of --stat=<width>[,<name-width>[,<count>]],
+// --stat-width, --stat-name-width, --stat-graph-width and --stat-count; zero
+// means "unset" for each.
+type StatOptions struct {
+	Width, NameWidth, GraphWidth, Count int
+}
+
+// FormatStatOpts is FormatStat with git's width and count options.
+func FormatStatOpts(all []FilePatch, o StatOptions) string {
+	if len(all) == 0 {
 		return ""
 	}
+	width := o.Width
 	if width <= 0 {
 		width = 80
+	}
+	patches := all
+	if o.Count > 0 && o.Count < len(all) {
+		patches = all[:o.Count]
 	}
 	names := make([]string, len(patches))
 	maxLen, maxChange, numberWidth, binWidth := 0, 0, 0, 0
@@ -1064,17 +1115,30 @@ func FormatStat(patches []FilePatch, width int) string {
 		maxChange = max(maxChange, p.Added+p.Deleted)
 	}
 	numberWidth = max(numberWidth, decimalWidth(maxChange))
+	// Guarantee 3/8*16==6 for the graph part and 5/8*16==10 for the name.
+	if width < 16+6+numberWidth {
+		width = 16 + 6 + numberWidth
+	}
 	graphWidth := maxChange
 	if maxChange+4 <= binWidth {
 		graphWidth = binWidth - 4
 	}
+	if o.GraphWidth > 0 && o.GraphWidth < graphWidth {
+		graphWidth = o.GraphWidth
+	}
 	nameWidth := maxLen
+	if o.NameWidth > 0 && o.NameWidth < maxLen {
+		nameWidth = o.NameWidth
+	}
 	if nameWidth+numberWidth+6+graphWidth > width {
 		if graphWidth > width*3/8-numberWidth-6 {
 			graphWidth = width*3/8 - numberWidth - 6
 			if graphWidth < 6 {
 				graphWidth = 6
 			}
+		}
+		if o.GraphWidth > 0 && graphWidth > o.GraphWidth {
+			graphWidth = o.GraphWidth
 		}
 		if nameWidth > width-numberWidth-6-graphWidth {
 			nameWidth = width - numberWidth - 6 - graphWidth
@@ -1139,7 +1203,10 @@ func FormatStat(patches []FilePatch, width int) string {
 		}
 		sb.WriteByte('\n')
 	}
-	sb.WriteString(FormatShortStat(patches))
+	if len(patches) < len(all) {
+		sb.WriteString(" ...\n")
+	}
+	sb.WriteString(FormatShortStat(all))
 	return sb.String()
 }
 

@@ -41,6 +41,13 @@ printf 'no newline at end' > nonl.txt; git rm -q extra.txt; git add -A; c "2026-
 // work tree and the cairn line folder.
 func parityRepos(t *testing.T) (gitDir, lineDir string) {
 	t.Helper()
+	return parityReposWith(t, nil)
+}
+
+// parityReposWith is parityRepos with a hook that adds to the git history
+// before it is cloned.
+func parityReposWith(t *testing.T, extra func(gitDir string)) (gitDir, lineDir string) {
+	t.Helper()
 	skipOnWindows(t)
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git CLI not available")
@@ -54,6 +61,9 @@ func parityRepos(t *testing.T) (gitDir, lineDir string) {
 	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("building git repo: %v\n%s", err, out)
+	}
+	if extra != nil {
+		extra(gitDir)
 	}
 	root := filepath.Join(t.TempDir(), "c")
 	mustRun(t, "clone", gitDir, root)
@@ -247,6 +257,77 @@ func TestE2E_InspectionMatchesGit(t *testing.T) {
 		"grep -n F( HEAD -- src/lib",
 		"grep -I -l bin",
 		"grep bin",
+		// --stat widths and counts (--no-renames: cairn does not detect renames by default)
+		"log --stat-width=30 -1",
+		"log --stat=60,20,1 -1 --no-renames",
+		"log --stat=20,8,2 --oneline --no-renames",
+		"diff --stat=40 HEAD~3 HEAD --no-renames",
+		"diff --stat=60,,1 HEAD~3 HEAD --no-renames",
+		"diff --stat-count=2 HEAD~3 HEAD --no-renames",
+		"diff --stat-graph-width=2 HEAD~4 HEAD --no-renames",
+		"diff --stat=3 HEAD~4 HEAD --no-renames",
+		"diff --stat=40,5 HEAD~4 HEAD --no-renames",
+		"diff --stat=40,1,0 HEAD~4 HEAD --no-renames",
+		"diff --stat-name-width=8 --stat-width=40 HEAD~4 HEAD --no-renames",
+		"diff --stat=abc HEAD~4 HEAD",
+		// name listings replace the stat and the patch
+		"log --name-only --stat --oneline -2 --no-renames",
+		"log --name-status -p --oneline -2 --no-renames",
+		"show --name-only --stat HEAD",
+		"diff --name-only --numstat HEAD~3 HEAD --no-renames",
+		"diff --name-only --shortstat HEAD~3 HEAD --no-renames",
+		"diff --name-only -p HEAD~3 HEAD --no-renames",
+		"diff --name-status --name-only HEAD~3 HEAD --no-renames",
+		// show -- <path> prints nothing for a commit that does not touch it
+		"show HEAD -- src/a.txt",
+		"show HEAD~2 -- src/a.txt",
+		"show -s HEAD -- src/a.txt",
+		"show HEAD -- nonl.txt",
+		"show --stat HEAD~4 -- src/a.txt docs",
+		// format: with diff output
+		"log --pretty=format:X -p -2 --no-renames",
+		"log --pretty=format:X --stat -2",
+		"log --pretty=format:X --stat -p -1",
+		"log --pretty=tformat:X --stat -p -2",
+		"log --pretty=tformat:X -p -2 --no-renames",
+		"log --pretty=format:X --name-only -2",
+		"log --pretty=format:X --shortstat -2",
+		"log --pretty=oneline --stat -p -1",
+		"log --pretty=short --stat -p -2 --no-renames",
+		"log --stat -p -2 --no-renames",
+		"log --summary --oneline --no-renames",
+		"diff --summary HEAD~5 HEAD --no-renames",
+		"diff --stat --summary HEAD~5 HEAD --no-renames",
+		"show --summary -p HEAD~3",
+		"show --stat --summary HEAD~3 --no-renames",
+		// rev-parse A...B prints B A ^base
+		"rev-parse feature...main",
+		"rev-parse main...feature",
+		"rev-parse main...",
+		"rev-parse ...feature",
+		"rev-parse v1.0.0...feature",
+		// --not flips --all too
+		"rev-list --not HEAD~2 --all",
+		"rev-list --all --not HEAD~2",
+		"rev-list --not --all",
+		"rev-list HEAD --not --all",
+		"rev-list --not --not --all",
+		"rev-list --all ^feature",
+		"log --oneline --not feature --all",
+		"rev-list --not v1.0.0 HEAD --all",
+		// ls-tree pathspecs are literal
+		"ls-tree HEAD src/*",
+		"ls-tree -r HEAD s*",
+		"ls-tree HEAD src/lib/",
+		"ls-tree HEAD src/lib",
+		"ls-tree -r HEAD src/lib",
+		"ls-tree HEAD src//lib",
+		"ls-tree HEAD src/",
+		"ls-tree -r HEAD src/",
+		// date formats
+		"log --date=format:%Z --format=%ad",
+		"log --date=format-local:%Z|%z --format=%ad",
+		"log --date=format:%a|%k|%l|%u|%w|%R|%r|%P|%c|%x|%X|%C|%e|%j --format=%ad",
 	}
 	for _, c := range cases {
 		args := strings.Fields(c)

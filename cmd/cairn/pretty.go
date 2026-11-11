@@ -397,6 +397,9 @@ func sanitizeSubject(s string) string {
 // formatDate renders t in one of git's --date styles. The commit's own
 // timezone is kept unless the style ends in "-local".
 func formatDate(t time.Time, mode string, now time.Time) string {
+	if f, ok := strings.CutPrefix(mode, "format-local:"); ok {
+		return strftime(t.Local(), f, true)
+	}
 	if strings.HasSuffix(mode, "-local") {
 		t = t.Local()
 		mode = strings.TrimSuffix(mode, "-local")
@@ -420,7 +423,7 @@ func formatDate(t time.Time, mode string, now time.Time) string {
 		return t.Local().Format("Mon Jan 2 15:04:05 2006")
 	}
 	if f, ok := strings.CutPrefix(mode, "format:"); ok {
-		return strftime(t, f)
+		return strftime(t, f, false)
 	}
 	return t.Format("Mon Jan 2 15:04:05 2006 -0700")
 }
@@ -430,11 +433,13 @@ func validDateMode(mode string) bool {
 	case "", "default", "iso", "iso8601", "iso-strict", "iso8601-strict", "short", "unix", "raw", "rfc", "rfc2822", "relative", "local", "human":
 		return true
 	}
-	return strings.HasPrefix(mode, "format:")
+	return strings.HasPrefix(mode, "format:") || strings.HasPrefix(mode, "format-local:")
 }
 
 // strftime covers the conversions people actually put in --date=format:.
-func strftime(t time.Time, f string) string {
+// local is --date=format-local: only there does %Z name the zone; git's
+// format: has no zone name for a commit's numeric offset and prints nothing.
+func strftime(t time.Time, f string, local bool) string {
 	var sb strings.Builder
 	for i := 0; i < len(f); i++ {
 		if f[i] != '%' || i+1 >= len(f) {
@@ -466,7 +471,39 @@ func strftime(t time.Time, f string) string {
 		case 'z':
 			sb.WriteString(t.Format("-0700"))
 		case 'Z':
-			sb.WriteString(t.Format("MST"))
+			if local {
+				sb.WriteString(t.Format("MST"))
+			}
+		case 'k':
+			fmt.Fprintf(&sb, "%2d", t.Hour())
+		case 'l':
+			h := t.Hour() % 12
+			if h == 0 {
+				h = 12
+			}
+			fmt.Fprintf(&sb, "%2d", h)
+		case 'u':
+			wd := int(t.Weekday())
+			if wd == 0 {
+				wd = 7
+			}
+			fmt.Fprintf(&sb, "%d", wd)
+		case 'w':
+			fmt.Fprintf(&sb, "%d", int(t.Weekday()))
+		case 'R':
+			sb.WriteString(t.Format("15:04"))
+		case 'r':
+			sb.WriteString(t.Format("03:04:05 PM"))
+		case 'P':
+			sb.WriteString(strings.ToLower(t.Format("PM")))
+		case 'c':
+			sb.WriteString(t.Format("Mon Jan _2 15:04:05 2006"))
+		case 'x':
+			sb.WriteString(t.Format("01/02/06"))
+		case 'X':
+			sb.WriteString(t.Format("15:04:05"))
+		case 'C':
+			fmt.Fprintf(&sb, "%02d", t.Year()/100)
 		case 'a':
 			sb.WriteString(t.Format("Mon"))
 		case 'A':
