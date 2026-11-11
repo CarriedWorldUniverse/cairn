@@ -19,7 +19,7 @@ under [`docs/cairn/`](.); for installation see the [README](../../README.md#inst
 - [Command reference](#command-reference)
   - [Setup](#setup) · [Lines (branches)](#lines-branches) · [Saving work](#saving-work)
   - [Inspecting](#inspecting) · [Conflicts](#conflicts) · [Undo & history](#undo--history)
-  - [History editing](#history-editing) · [Stash](#stash) · [Bisect](#bisect)
+  - [History editing](#history-editing) · [Stash](#stash) · [Working-copy verbs](#working-copy-verbs) · [Bisect](#bisect)
   - [Remotes & collaboration](#remotes--collaboration) · [Pull requests](#pull-requests) · [Privacy](#privacy-withholding-from-pushes) · [Versioning & release](#versioning--release)
 - [Exit codes](#exit-codes)
 - [Coming from git](#coming-from-git)
@@ -49,9 +49,11 @@ A few concepts make the whole CLI consistent:
 - **Everything is undoable.** Every mutating command appends to an **operation log**
   (`cairn oplog`). `cairn undo` reverts the last operation — including a bad commit, merge,
   or history edit.
-- **History editing is bounded on purpose.** `reword`/`squash`/`drop` only work on **your
-  own un-folded leaf line** (a line with no children, above its base, not the trunk). This
-  preserves the multi-agent guarantee that nobody's foundation can be rewritten under them.
+- **History editing is bounded on purpose.** `reword`/`squash`/`drop`, `commit --amend` and
+  `reset <rev>` rewrite only commits nobody else stands on: never a commit a child line is
+  based on, never folded-in history, and — on the root line — never a commit that is already
+  on the remote. This preserves the multi-agent guarantee that nobody's foundation can be
+  rewritten under them, while `commit --amend` on `main` right after a commit just works.
   The one deliberate exception is `reauthor`, a whole-repo identity rewrite (every line, root
   included) — its job is to fix attribution everywhere at once.
 
@@ -150,14 +152,23 @@ Synopsis conventions: `<required>`, `[optional]`. Unless noted, every command ta
 
 ### Setup
 
-#### `cairn init [dir]`
-Bootstrap a new repo in `dir` (default `.`) and express the root line `main`.
+#### `cairn init [dir]` — `-b <name>` `-q`
+Bootstrap a new repo in `dir` (default `.`) and express the root line `main` (or `-b <name>` /
+the global `init.defaultBranch`). `--bare` is refused: a cairn repo is always a set of line folders.
+`dir` must be empty (or absent): files already sitting in it would stay outside every line and
+never be captured, so `init` refuses — init into a new directory and move the files into
+`<newdir>/main/`. Line names follow `git check-ref-format --branch` (no `.cairn`, `..`, empty,
+leading `.`/`-`, …) everywhere one is accepted.
 ```sh
 cairn init                 # initialise the current directory
 cairn init myproject       # create + initialise ./myproject
 ```
 
-#### `cairn clone <url> [dir]`
+#### `cairn clone <url> [dir]` — `-b <line>` `-o <name>` `-q`
+`-b` also expresses that remote line; `-o` names the remote (default `origin`); `-q` silences
+progress. `--depth`, `--single-branch` and `--bare` are refused: a clone imports the full
+history and every line so the line tree, change-ids and conflicts reconstruct exactly.
+
 Import a remote repo and express its default branch. Works with any git remote; if the
 remote is a cairn remote (carries `refs/cairn/meta`) the full cairn change-graph — line
 tree, change-ids, open conflicts — is reconstructed, not just the flat git projection.
@@ -191,16 +202,37 @@ cairn setup
 # Your email [ada@example.com]:
 ```
 
-#### `cairn config [--global] <key> [value]`
-Get (one argument) or set (two arguments) a config value. Without `--global` it reads/writes
-**this repo's** config; with `--global` it reads/writes your **user-level** config (shared by
-all repos — repo settings override it). Keys: `user.name`, `user.email`, `autosync` (repo only).
+#### `cairn config [--global|--local] <key> [value]`
+Get (one argument) or set (two arguments) a config value. Without a scope flag it reads this
+repo's config falling through to your user-level config, and writes the repo's; `--global`
+reads/writes your **user-level** config (shared by all repos — repo settings override it).
+Any `section.key` is stored (`alias.*`, `core.editor`, `pull.rebase`, `init.defaultBranch`,
+`user.*` …); `autosync`, `push.default`, `pull.rebase`, `color.ui` and `init.defaultBranch`
+are validated. Keys are case-insensitive in the section and name, like git.
 ```sh
 cairn config --global user.name "Ada Lovelace"  # set your global identity
 cairn config user.email "ada@work.example"       # override email in this repo only
 cairn config user.email                          # get (repo, falling through to global)
 cairn config autosync true                       # enable commit-time auto-pull
+cairn config -l [--show-origin]                  # list the merged config
+cairn config --get core.editor                   # print; exit 1 if unset
+cairn config --unset core.editor                 # remove (add --global for the user config)
 ```
+
+**Aliases.** `alias.<name>` defines a command: `cairn config --global alias.st status` then
+`cairn st`. An expansion starting with `!` runs through the shell, extra arguments appended,
+from the repo root. An alias never shadows a built-in verb; a self-referencing one is refused.
+
+**Exec-capable config is trusted only from you.** `core.pager`, `pager.<cmd>` and `!` aliases run
+shell commands, so a repo's own config is honoured for them only when its catalogue
+(`.cairn/cairn.db`) is a regular file owned by the current user (git's `safe.directory` idea;
+not checked on Windows); otherwise the repo value is ignored (a `!` alias prints a note) and
+your user-level config applies. `core.editor` is never read — the editor comes from
+`$CAIRN_EDITOR`/`$GIT_EDITOR`/`$VISUAL`/`$EDITOR`. Separately, `.cairn` and `.git` (any case, plus
+NTFS/HFS+ aliases such as `.cairn.`, `CAIRN~1`, `.g\u200cit`) are refused as path components in
+cloned/pulled trees and applied patches ("invalid path component"), and repo discovery only
+accepts a `.cairn` that is a real directory with a catalogue and is not nested inside an outer
+repo's line folder.
 
 ### Lines (branches)
 
@@ -242,14 +274,28 @@ Remove a line's working folder (the line itself is kept). Refuses if the folder 
 un-sealed work unless `--force` (the work remains recoverable via `undo`).
 
 #### `cairn fold <branch>` — `--force`
-Fold a finished line into its parent (merge-forward), then retire it. `--force` discards
-un-sealed work in the folder.
+Fold a finished line into its parent (merge-forward), then retire it. The line's **sealed**
+commits become part of the parent's history; if the parent moved on since the line last
+adopted it, the fold adopts it first (a `fold: adopt <parent>` merge), refusing — with nothing
+changed — if that conflicts (seal the line to record the conflict, resolve, fold again).
+Un-sealed edits in the **parent's** folder ride across untouched and stay un-sealed; if they
+overlap what the line changes, the fold is refused until you commit or stash them.
+
+A line with un-sealed work is refused without `--force`; with it, that work is carried into
+the parent as a commit of its own (`fold <line>: un-sealed work`). `cairn undo` reverts a
+fold and re-opens the line (`cairn express <line>` brings its folder back).
 
 Folding into a **remote-tracked** line (one that arrived from a remote — e.g. the `main`
 you cloned) is **refused by default**: advancing an upstream branch locally diverges from
 how the remote integrates the change (a PR / its own merge), and a protected remote will
 reject the push. Push your line and open a PR instead — or `--force` to fold anyway. (Lines
 you created locally with `express` are never guarded; `cairn undo` reverts a fold.)
+
+`merge` is the same verb. A line folds into **its parent**: standing in line `a`, `cairn merge b`
+where `b` forks from `main` is refused (it would land in `main`, not `a`). `--no-ff` always
+records a merge commit, `--ff-only` refuses unless the line already contains the parent's tip,
+`-m <msg>` names the merge commit; `--squash`, `--abort` and `--continue` are refused with the
+cairn equivalent (`cairn squash`, `cairn undo`, `resolve` + `commit`).
 
 #### `cairn abandon <branch>` — `--force`
 Discard a line entirely (it is not folded anywhere). `--force` to drop un-sealed work.
@@ -262,38 +308,145 @@ List the currently expressed lines (which folders exist on disk).
 
 ### Saving work
 
-#### `cairn commit <branch>` — `-m <msg>`
+#### `cairn commit [branch]` — `-m <msg>` `-F <file>` `--amend` `--author` `--date`
 **Seal** the working change of `<branch>`: stamp the message, merge the work forward, and
 open a fresh working change. This is the "make a commit I mean to keep" verb.
 Exits `2` if sealing recorded a conflict (the commit still happens — see [conflicts](#conflicts)).
 ```sh
 cairn commit main -m "fix the parser"
+cairn commit -m "subject" -m "a body paragraph"     # from inside the line's folder
+cairn commit -F message.txt                         # or -F - for stdin
 ```
+The message comes from `-m` (repeat for paragraphs) or `-F`; else from a stopped
+`revert`/`cherry-pick`; else, on a terminal, from your editor (`$CAIRN_EDITOR`, `$GIT_EDITOR`,
+`$VISUAL`, `$EDITOR`, then `vi` — `#` lines are stripped, an empty message aborts); a script
+with no message still gets the historical `snapshot`. `-a`/`--all` is accepted and changes
+nothing (every commit already takes all edits). As in git, a commit with nothing to record
+fails (`nothing to commit, working tree clean`, exit 1); `--allow-empty` seals it anyway.
+
+**Partial commit — cairn's staging area.** Name paths and only those are sealed; every other
+edit stays, untouched, in the working change:
+```sh
+cairn commit -m "just the parser" -- src/parser.go docs/     # files, new/deleted files, directories
+```
+The first positional is the branch when it names an expressed line; anything else is a path
+(`--` settles a clash). A partial commit appends one commit without adopting the parent line;
+the next full commit reconciles as usual.
+
+**`--amend`** folds the working change into the previous sealed commit (keeping its message
+unless `-m`/`-F` replaces it, and its author unless `--reset-author`). It is a history edit,
+under [the one rule](#history-editing) they all share: fine on `main` until the commit is on
+the remote (then use `cairn revert`), and never on a commit a child line is based on. On a
+non-root line an already-pushed commit can be amended; cairn says the next push needs `--force`.
+
+**`--author` has two shapes.** `--author="Name <email>"` is git's: the *author* of this one
+commit (`--date` sets its date); the committer stays you. A bare `--author name` is the
+identity flag every repo command shares (who this invocation acts as).
 
 ### Inspecting
 
-#### `cairn status [branch]`
+#### `cairn status [branch]` — `-s` `--porcelain` `-b` `-z`
 Report a line's state: the working change versus its parent commit, file-by-file
 (`M`/`A`/`D`), plus how far ahead the line is. Defaults to the root line.
 
+`-s`/`--short` and `--porcelain[=v1]` print git's stable `XY path` lines instead (`-z` for
+NUL-terminated, `-b` for the `## line...origin/line [ahead N, behind M]` header, `-- <path>`
+to filter). cairn has no index, so there is one comparison — working change vs sealed tip —
+and it is reported in the **X** column, exactly as git reports staged changes, because that
+is what the next `cairn commit` seals: `M ` modified, `A ` new, `D ` deleted, `UU` an
+unresolved conflict, `!!` ignored (with `--ignored`). `??` never appears — a new, un-ignored
+file is already in the working change. Renames show as a `D` and an `A`.
+
 #### `cairn diff [branch]` / `cairn diff <a> <b>`
 With zero/one argument: show the working change versus its parent for that line. With two
-commit arguments: show the diff between two commits.
+commit arguments: show the diff between two commits. The output is a git-format patch
+(`diff --git a/… b/…`), so it can be fed to `git apply` / `patch -p1`.
 ```sh
 cairn diff feature          # working change vs parent
 cairn diff <shaA> <shaB>    # commit-to-commit
+cairn diff HEAD~1           # the working tree vs a commit
+cairn diff --stat main...feature
 ```
+`--classic` prints cairn's original format instead (`--- <sha>/path` headers, `added: path`,
+`Binary files differ: path`).
 
-#### `cairn log [branch]` — `-n <N>`
-Show commit history for a line (default: root). `-n` caps the number of commits (default 20).
-The in-progress working change is shown labelled `(working)`.
+#### `cairn log [<range>]` — `-n <N>`
+Show commit history in git's format (`commit`/`Author:`/`Date:`), from `HEAD` — the sealed tip
+of the line you stand in — or from the named line/revision/range, following every parent. It is
+unbounded (there is no pager): use `-n`, or pipe it.
 
-#### `cairn show <commit>`
-Show one commit's metadata and its diff.
+The in-progress working change is not a commit, so it is not listed; `cairn log --working` puts
+it first (marked `(working change)`) when it holds anything. `cairn log --classic [line] [-n N]`
+is cairn's original compact view: one line per commit, first-parent, the working change on top
+labelled `(working)`, 20 entries by default.
+
+#### `cairn show [<rev>]`
+Show one commit's message and its patch, as git does (default `HEAD`). `--classic` prints the
+original cairn format.
 
 #### `cairn blame <path> [branch]`
-Per-line provenance for a file: author, date, and the change that last touched each line.
-Lines still in an un-sealed working change show as `(working)`.
+Per-line provenance for a file, in git's format (`<sha> (<author> <date> <n>) <line>`):
+`-L <a>,<b>`, `-s -e -l -n -f -t --abbrev=<n> -w --porcelain --line-porcelain`; `-C`/`-M` are
+accepted (renames are always followed). Lines still in an un-sealed working change show as
+`Not Committed Yet`. `--classic` prints cairn's original author/date columns (`(working)`).
+
+#### Git-shaped inspection
+
+The inspection commands take git's spelling, options and output, so git habits and scripts
+carry over. `log`, `show` and `diff` accept `--classic` for cairn's original output.
+
+| Command | Options |
+|---|---|
+| `cairn log [<range>] [-- <path>...]` | `-L <a>,<b>:<file>` / `-L :<func>:<file>` (the history of a line range), `-m` (a diff per merge parent), `--no-abbrev --pretty=reference --decorate=full`, `--oneline --stat --shortstat --numstat -p --name-only --name-status --graph --format=/--pretty= --date= --decorate --author= --committer= --grep= -i -E -F --all-match --invert-grep --since/--after --until/--before -n/--max-count/-<N> --skip --reverse --first-parent --merges --no-merges --all --follow -S -G -U<n> -w -m` |
+| `cairn show [<rev>[:<path>]...]` | `--stat --name-only --name-status -s --format= --oneline -m -c --cc`; a blob prints its content, a tree its listing |
+| `cairn diff [<rev> \| <a> <b> \| <a>..<b> \| <a>...<b>] [-- <path>...]` | `-p --stat --numstat --shortstat --dirstat --name-only --name-status -U<n> -R -w --full-index --binary --color[=when] --word-diff[=plain\|color] --color-words --color-moved --exit-code --quiet -M[<n>] --no-renames` — renames are detected as git does by default (`R087 old new`, `{a => b}/f` in stats) |
+| `cairn grep <pattern> [<rev>...] [-- <path>...]` | `-n -i -l -L -c -w -v -E -F -e -h -o -q -I -A/-B/-C` (exit 1 when nothing matches) |
+| `cairn blame` | `-L <a>,<b>`; `cairn blame <rev> -- <path>` |
+| `cairn ls-files` | `-c -m -d -o --exclude-standard -s -z --full-name --error-unmatch` |
+| `cairn ls-tree <tree-ish> [<path>...]` | `-r -d -t -l --name-only -z --full-name --full-tree` |
+| `cairn cat-file` | `-t -s -p -e <object>`, `<type> <object>`, `--batch-check`, `--batch` |
+| `cairn rev-parse` | `<rev>... --verify -q --short[=n] --abbrev-ref --symbolic-full-name --show-toplevel --git-dir --show-prefix --is-inside-work-tree` |
+| `cairn rev-list <range>...` | `--oneline --pretty[=<fmt>] --count -n --skip --reverse --all --first-parent --merges --no-merges --parents --topo-order --left-right --count a...b` |
+| `cairn shortlog [<range>]` | `-s -n -e -c` |
+| `cairn describe [<rev>]` | `--tags --always --abbrev=<n> --dirty[=mark] --long --exact-match --match <glob> --contains` — without `--tags` only annotated tags name a commit, as in git |
+| `cairn merge-base` | `[--all] <a> <b>`, `--is-ancestor <a> <b>` (`--fork-point` is refused: cairn has an oplog, not git's reflog) |
+| `cairn for-each-ref [<pattern>...]` | `--format=%(refname[:short]) %(objectname[:short]) %(objecttype) %(subject) %(authorname/email/date) %(committer…) %(tagger…) %(*objectname) %(HEAD) %(upstream)… --sort=[-]<key> --count=<n>` |
+| `cairn symbolic-ref [--short] HEAD` | prints `refs/heads/<the line you stand in>`; setting it is refused (HEAD is a folder) |
+| `cairn hash-object` | `[-w] [-t <type>] [--stdin\|--stdin-paths] [--literally] <file>...` |
+| `cairn name-rev <rev>...` | `--tags --refs=<pat> --name-only --no-undefined --always` (`show-branch` is not provided: use `log --graph --oneline`) |
+| `cairn status` | `--porcelain=v2` (with `-b` the `# branch.*` headers); a deleted and an added file that are the same file are listed as `R  old -> new` (`--no-renames` to turn off) |
+| `cairn format-patch [-<N>] [<since> \| <range>]` | `-o <dir> --stdout --root -N -n --start-number --subject-prefix` — mbox patches `git am` applies |
+
+**Revisions.** A commit can be named by full or abbreviated hash (an ambiguous abbreviation is
+an error), a tag, a line name, `origin/<branch>`, or `HEAD`/`@`, with `~N`, `^`, `^N` suffixes
+chained (`main~3^2`); `<rev>:<path>` names a file or directory, `<line>@{u}` its upstream.
+`HEAD` — and a line name — is the line's **sealed** tip (the line whose folder you stand in,
+else the root line). The open working change is the working tree: what `cairn diff <rev>`
+compares *against* a revision, never a revision itself.
+
+**Paths** are read relative to where you stand inside the line's folder, as git reads them
+relative to the cwd; output paths follow the same rule.
+
+**No index.** Everything on disk that is not ignored already belongs to the working change, so
+`ls-files` lists the working change's tree, `-m`/`-d` its modifications/deletions against the
+sealed tip, and `-o --exclude-standard` is always empty.
+
+**Colour.** `--color[=always|never|auto]` / `--no-color`, else the `color.ui` config key, else
+auto: a terminal only, never with `NO_COLOR` set. There is no pager.
+
+**Not git's.** No rename detection (a rename shows as a delete plus an add; `log --follow`
+does continue across one). `show` of a merge diffs against its first parent. Diffs are
+minimal, so `--stat` counts can be slightly smaller than git's on heavily rewritten files.
+
+Blame agrees with `git blame` on almost every line, but not byte-for-byte: cairn diffs
+each parent/child pair with a Myers **minimal** edit script, while git's default xdiff
+is a heuristic that may return a longer, differently placed one. Where several equally
+short scripts exist (typically repeated lines such as `}` or blank lines) the two tools
+can attribute a line to different commits; on real histories that is roughly 0.2-2% of
+lines, occasionally including a unique line inside a heavy rewrite. Neither answer is
+wrong. Passing `--minimal` (or `--diff-algorithm=myers --minimal`) to `git blame` does
+not make it match, because the residue is tie-breaking, not script length (measured on
+the test fixtures in `blame_git_test.go`). cairn does not emulate xdiff's tie-breaking.
 
 ### Conflicts
 
@@ -340,10 +493,25 @@ coalesces into a single undoable step.
 
 ### History editing
 
-Safe, discrete history rewrites — no interactive rebase. **Allowed only on your own
-un-folded leaf line** (non-root, no child lines, above its base). Descendants in the
-same line are auto-rebased; `reword`/`squash` stay conflict-free, `drop` records any
-conflict as data.
+Safe, discrete history rewrites — no interactive rebase. Commits after the edit point on the
+same line are auto-rebased (commits before it are untouched — same hashes); `reword`/`squash`
+stay conflict-free, `drop` records any conflict as data.
+
+**One rule for every history edit** — `reword`, `squash`, `drop`, `commit --amend`,
+`reset <rev>`. With "the rewritten commits" meaning the edit point and everything after it on
+the line (for `reset`, everything the line would lose), the edit is refused when:
+
+- the line is folded or abandoned;
+- a rewritten commit came in with a **fold** — folded history is immutable;
+- an open **child line is based on** a rewritten commit — its foundation would move. The error
+  names the child. A child forked from an *older* commit is unaffected and does not block;
+- on the **root line**, a rewritten commit is **already on the remote** (reachable from the
+  line's remote-tracking ref as of the last fetch/push). The root line is never force-pushed,
+  so its published history is only added to — use `cairn revert`. Un-pushed root commits are
+  freely editable.
+
+On a non-root line a pushed commit may be rewritten; cairn warns that the next push needs
+`--force`.
 
 #### `cairn reword <commit> <message>`
 Change the message of a sealed commit.
@@ -354,10 +522,31 @@ Fold a sealed commit into its parent (combine two commits into one).
 #### `cairn drop <commit>`
 Remove a sealed commit from its line.
 
-#### `cairn cherry-pick <commit> [branch]`
-Apply a commit from another line onto `<branch>` (default: the current/root line) as a new
-sealed commit with a fresh identity. Your in-progress working change is kept separate and
-rebased on top. Conflicts are recorded as data (no `--abort`/`--continue` dance).
+#### `cairn cherry-pick <commit|A..B>... [branch]` — `-n` `-x`
+Apply commits from another line onto `<branch>` (default: the current/root line), each as a
+new sealed commit with a fresh identity. Your in-progress working change is kept separate and
+rebased on top. Several commits and `A..B` ranges are applied in order; `-x` appends git's
+`(cherry picked from commit …)`; `-n` leaves the pick un-sealed in the working change.
+Conflicts are recorded as data: the run stops (exit `2`), you `resolve` and `commit`.
+`--continue` is that commit (it needs no message), `--abort` rewinds the pick; there is no
+sequencer, so after a stop re-run with the commits still to apply.
+
+#### `cairn revert <commit>...` — `-n` `-m <parent>`
+Add a new sealed commit that takes `<commit>` back out, with git's message (`Revert
+"<subject>"` / `This reverts commit <sha>.`). Works on any line, the root included. A revert
+that does not apply cleanly is left in the working change with the conflict recorded (exit
+`2`): `resolve`, then `cairn commit` — the revert message is kept — or `cairn revert --abort`.
+
+#### `cairn reset --hard` / `cairn reset [--soft|--hard] <rev>`
+`reset --hard` discards the line's whole working change (any line; undoable). With `<rev>` it
+moves the line's sealed tip back: `--soft`/`--mixed` (the same thing — no index) keep the
+files, so the dropped commits' changes become the working change; `--hard` rewrites the
+folder. `<rev>` must be an ancestor of the tip at or above the line's base, and — as a history
+edit — it follows [the one rule](#history-editing): on the root line it cannot drop commits
+that are already on the remote, and nowhere can it drop a commit a child line is based on. On
+a non-root line cairn warns when the remote still has the dropped commits (the next push
+needs `--force`). `reset <path>` is a
+no-op: there is nothing to unstage.
 
 #### `cairn reauthor --old-email <glob> [--old-name <glob>] --name <new> --email <new> [--dry-run]`
 Bulk-rewrite the author **and** committer identity of every matching commit across the
@@ -390,15 +579,42 @@ SHAs changed, so it is not a fast-forward).
 
 ### Stash
 
-A minimal shelve stack for the rare case the always-saved working copy and multiple
-expressed folders don't already cover. `pop` refuses onto a dirty folder.
+A shelve stack for the rare case the always-saved working copy and multiple expressed
+folders don't already cover. A stash is restored with a three-way merge, so it applies over
+un-sealed edits and onto a line that has moved; a conflict is recorded (exit `2`) and the
+stash kept. An `id` is the number `stash list` prints, or git's `stash@{N}`.
 
 | Command | Action |
 |---------|--------|
-| `cairn stash [-m <msg>] [branch]` | Shelve the working change; reset the folder to the sealed state |
-| `cairn stash pop [branch] [id]` | Restore a stash onto `branch` — `id` from `stash list` (default: most recent) |
-| `cairn stash list` | List the stash stack |
-| `cairn stash drop [id]` | Discard a stash (default: most recent) |
+| `cairn stash [push] [-m <msg>] [branch] [-- <path>...]` | Shelve the working change (or only the edits under `<path>`); `stash save <msg>` also works |
+| `cairn stash pop [branch] [id]` | Restore a stash onto `branch` and drop it (default: most recent) |
+| `cairn stash apply [branch] [id]` | Restore a stash, keeping it on the stack |
+| `cairn stash list` / `show [-p] [id]` | List the stack / show what an entry holds |
+| `cairn stash drop [id]` / `clear` | Discard one stash (default: most recent) / all of them |
+| `cairn stash branch <name> [id]` | Express a new line off the stash's line and pop the stash onto it |
+
+### Working-copy verbs
+
+These act on the line whose folder you are in (or `--branch <line>`), take paths relative to
+where you stand, and are each one `cairn undo` step.
+
+| Command | Action |
+|---------|--------|
+| `cairn restore [--source=<rev>] <path>...` | Discard working-change edits to paths: a deleted file comes back, a file the source lacks is removed. Also `cairn checkout [<rev>] -- <path>...` |
+| `cairn rm [-r] [-f] [-n] <path>...` | Remove files from the line and the folder (`-f` if they hold un-sealed changes) |
+| `cairn mv [-f] [-n] <src>... <dst>` | Rename files/directories in the line |
+| `cairn apply [--check] [-R] [--stat] [-p<n>] <patch>\|-` | Apply a unified (git) diff to the working change, all or nothing |
+| `cairn am [<mbox>...\|-]` | Apply `git format-patch` output as sealed commits (author, date, message preserved) |
+| `cairn clean -fdx [-n] [<path>...]` | Remove **ignored** files (build output, caches) |
+| `cairn add <anything>` | Succeeds and does nothing — there is no staging area — so `add -A && commit` scripts work |
+
+**`clean` is not git's clean.** git removes *untracked* files; cairn has none — a new file
+that is not ignored is already part of the working change (your new source, not junk), and
+discarding it is `restore`/`reset --hard`, which are undoable. So `clean` only ever removes
+files matched by `.gitignore`/`.cairnignore`: `-x` (or `-X`, the same here) selects them, `-d`
+includes wholly-ignored directories (never one holding a nested repository), `-f` is required
+(or `-n` to preview). Without `-x` there is nothing to remove and it says so. Ignored files
+were never in cairn's store, so a clean — alone among these — cannot be undone.
 
 ### Bisect
 
@@ -422,8 +638,15 @@ cairn bisect run -- go test ./...
 
 ### Remotes & collaboration
 
-#### `cairn remote` / `cairn remote add <name> <url>` — `--cairn`
-List remotes, or register one. `--cairn` marks it a cairn remote, so `push` writes the
+#### `cairn remote [-v]` / `cairn remote add <name> <url>` — `--cairn` `-f`
+`remote` lists names (`-v`: fetch/push URLs, like git). Also: `remote remove|rm <name>`,
+`remote rename <old> <new>` (tracking refs move), `remote get-url <name>`,
+`remote set-url <name> <url>`, `remote show [-n] <name>` (URL, HEAD, branches, how each line
+stands), `remote prune [-n] <name>`. Remove/rename/set-url are oplog entries, so `cairn undo`
+reverts them (tracking refs of a removed remote come back with the next fetch). A cairn remote
+has exactly one URL: `set-url --push/--add/--delete` are refused.
+
+`remote add` registers one. `--cairn` marks it a cairn remote, so `push` writes the
 full-fidelity `refs/cairn/meta` (line tree + change-ids + open conflicts). Without it, a
 remote is treated as plain git and receives the flat projection.
 ```sh
@@ -431,7 +654,15 @@ cairn remote add origin https://github.com/me/proj.git
 cairn remote add team git@host:team/proj.git --cairn
 ```
 
-#### `cairn push [remote] [branch]` — `--force` `--all` `--reconcile`
+#### `cairn push [remote] [refspec...]` — `--force` `--all` `--reconcile`
+git's other spellings: `push origin feat:release` (a line under another remote branch name),
+`--tags` (only tags), `--delete origin <branch|tag>` / `push origin :<ref>` (delete on the
+remote; a name that is both a branch and a tag must be written `refs/heads/x`/`refs/tags/x`),
+`--force-with-lease` (refuses unless the remote still equals your last fetch), `-n/--dry-run`
+(reports from the last-fetched state, sends nothing), `-q`; `-u/--set-upstream` is accepted
+(a line always tracks the same-named remote branch). Annotated tags are published as tag
+objects.
+
 Publish to `origin` (default). By default push publishes **only the line you're standing in**
 (like git pushes the current branch) — so a push from inside a feature folder never touches
 `main`. Pass an explicit `branch`, or `--all` to publish every line:
@@ -457,11 +688,17 @@ The error names the branch; resolve with `cairn resolve <branch> <path>` then pu
 gate does not apply to a `--cairn` remote: conflicts-as-data travels with the push there by
 design, the same as any other change-graph state.
 
-#### `cairn fetch [remote]`
-Fetch a remote into tracking refs (default `origin`) without reconciling.
+#### `cairn fetch [remote] [branch...]`
+Fetch a remote into tracking refs (default `origin`) without reconciling. `--all` fetches
+every remote; `<remote> <branch>` only those branches; `-q`. Fetch always prunes and takes
+tags, so `--prune`/`--tags` are accepted.
 
-#### `cairn pull [remote]`
-Fetch and reconcile each line (default `origin`).
+#### `cairn pull [remote] [branch]`
+Fetch and reconcile each line (default `origin`), or just `<branch>`. `--rebase`,
+`--no-rebase`, `--ff`, `--no-ff` are accepted and change nothing: cairn already replays each
+line's unpushed commits onto its moved parent and merges a diverged remote line with the
+conflicts kept as data. `--ff-only` refuses (before touching anything) if any line has
+diverged from its remote branch. `-q` prints only conflicts.
 
 ### Pull requests
 
@@ -602,8 +839,13 @@ the remote — withhold *before* the first push.)
 
 cairn derives versions from the change-graph rather than hand-typed numbers.
 
-#### `cairn tag <name> [branch]`
-Tag the tip of a line (default: root).
+#### `cairn tag`
+`tag [-l [pattern]] [-n[N]] [--contains <rev>] [--points-at <rev>] [--sort=<key>] [--format=…]`
+lists tags (refname order like git; sort keys `refname`, `creatordate`, `version:refname`,
+each reversible with `-`). `tag [-a] [-m <msg>|-F <file>] [-f] <name> [<rev>]` tags any commit
+— `<rev>` is a line name (its tip; default: the line you stand in), a sha, another tag or
+`origin/x`, with `~N`/`^` suffixes; a message makes it an annotated tag object. `tag -d <name>…`
+deletes. Create/move/delete are oplog entries (`cairn undo`). Signed tags (`-s/-u`) are refused.
 
 #### `cairn version` — `--target <eco>` `--release`
 Print the derived version (stdout only, safe to capture in CI). `--target` renders for an
@@ -636,6 +878,29 @@ cairn update --check       # "0.1.20 is available (running 0.1.19)"
 cairn update               # download, verify, swap; no-op if already current
 ```
 
+### Refs & maintenance
+
+- `cairn branch` — git's `branch` over lines. Bare/`--list [pattern]` lists (`*` = the line you
+  stand in, `+` = other expressed lines); `-v`/`-vv` add the tip + subject and the upstream
+  state (`[origin/x: ahead 1]`); `-a`/`-r` include remote-tracking branches; `--merged`,
+  `--no-merged`, `--contains <rev>` use cairn's own graph walk; `--format`, `--show-current`.
+  `branch <name> [<start>]` creates (= `express [--from]`); `-d` (refuses unfolded, unpushed
+  work) / `-D` delete (= `abandon`); `-m`/`-M [<old>] <new>` rename a line and its folder
+  (children follow; one oplog entry); `-c` copy; `-u/--set-upstream-to` is accepted as a no-op.
+- `cairn reflog [show] [<line>] [-n N]` — the oplog through one line: `<sha> <line>@{N}: <op>` (`HEAD@{N}` for the line you stand in). `HEAD@{N}` and `<line>@{N}` also
+  work as revisions (`rev-parse HEAD@{1}`): where the line's tip was N operations ago.
+- `cairn gc [--prune=now] [-q]` — repack objects into one pack, drop loose copies, vacuum +
+  analyze the catalogue, prune stale caches. Everything the catalogue refers to (undo targets,
+  working snapshots, stashes) counts as reachable; unreferenced loose objects and superseded
+  packs/caches go only after a 14-day grace (`--prune=now` drops it). `--aggressive` accepted.
+- `cairn fsck [-v]` — verify every commit/tree/blob reachable from line tips, open changes and
+  tags exists, and the catalogue is consistent; exit 1 on problems.
+- `cairn count-objects [-v] [-H]` — loose/packed object counts.
+- `cairn archive [--format=tar|tar.gz|zip] [-o <file>] [--prefix=<p>/] <rev> [<path>...]`.
+- `cairn check-ignore [-v] [-n] <path>...` — which paths the line's `.gitignore`/`.cairnignore`
+  ignore (the rules the scan applies); exit 1 when none.
+- `cairn help [<verb>]` / `cairn <verb> -h` — usage section (and flags) for one verb.
+
 ### Misc
 
 - `cairn --version` / `cairn -v` — print the **build** version of the binary (the release
@@ -648,7 +913,7 @@ cairn update               # download, verify, swap; no-op if already current
 |------|---------|
 | `0` | Success |
 | `2` | Completed, but recorded one or more conflicts (e.g. `commit`/`pull`) — so `cairn commit && cairn push` won't push a conflicted state |
-| `1` | Hard error (bad arguments, not a cairn repo, auth failure, …) |
+| `1` | Hard error (bad arguments, not a cairn repo, auth failure, …) | Also the status-only "no": `diff --exit-code`/`--quiet` found differences, `grep` matched nothing, `cat-file -e` / `rev-parse --verify -q` found no such object (nothing is printed) |
 
 ## Coming from git
 
@@ -657,16 +922,24 @@ cairn update               # download, verify, swap; no-op if already current
 | `git init` | `cairn init` |
 | `git clone` | `cairn clone` |
 | `git checkout -b feat` | `cairn express feat --from main` |
-| `git add` + `git commit -m` | just edit, then `cairn commit <line> -m` (no staging) |
+| `git add` + `git commit -m` | just edit, then `cairn commit <line> -m` (no staging; `cairn add` is an accepted no-op) |
+| `git add -p` / staging some files | `cairn commit -m <msg> -- <path>...` (seals only those paths) |
+| `git restore` / `git checkout -- <path>` | `cairn restore <path>` |
+| `git rm` / `git mv` / `git apply` / `git am` | `cairn rm` / `mv` / `apply` / `am` |
+| `git clean -fdx` | `cairn clean -fdx` (ignored files only — see above) |
+| `git revert` | `cairn revert` |
 | `git status` / `git diff` | `cairn status` / `cairn diff` |
 | `git log` / `git show` / `git blame` | `cairn log` / `cairn show` / `cairn blame` |
 | `git stash` | `cairn stash` (often unneeded — work is always saved + you can express many folders) |
-| `git commit --amend` / interactive rebase | `cairn reword` / `squash` / `drop` (on your own leaf line) |
+| `git commit --amend` / interactive rebase | `cairn commit --amend` / `reword` / `squash` / `drop` (any commit nobody else stands on — see [History editing](#history-editing)) |
 | `git cherry-pick` | `cairn cherry-pick` |
 | `git bisect` | `cairn bisect` |
 | `git merge` (into parent) | `cairn fold` |
-| `git reset --hard` / `git reflog` + reset | `cairn undo` (walks the op-log) |
+| `git reset --hard` | `cairn reset --hard` (discard the working change) |
+| `git reset [--soft\|--hard] <rev>` / `git reflog` + reset | `cairn reset <rev>` (un-pushed commits on `main`; any on your own line); `cairn undo` walks the op-log |
 | `git push` / `git fetch` / `git pull` | `cairn push` / `fetch` / `pull` |
+| `git branch [-d/-m/-v]` / `git tag` / `git remote` | `cairn branch` / `tag` / `remote` (same flags) |
+| `git reflog` / `git gc` / `git fsck` / `git archive` | `cairn reflog` / `gc` / `fsck` / `archive` |
 | resolving a merge conflict (blocks you) | keep working; `cairn resolve <line> <path>` when ready |
 
 ### Git spellings cairn answers to
@@ -677,14 +950,15 @@ spelling as a plain alias — same command, same flags, no behaviour of its own:
 | Git spelling | Runs |
 |---|---|
 | `cairn merge <branch>` | `cairn fold <branch>` |
-| `cairn branch <name>` | `cairn express <name>` |
+| `cairn branch <name> [<start>]` | `cairn express <name> [--from <start>]` |
 | `cairn checkout -b <name>` | `cairn express <name>` |
 | `cairn switch -c <name>` | `cairn express <name>` |
+| `cairn checkout [<rev>] -- <path>...` | `cairn restore [--source=<rev>] <path>...` |
 
 Where a git verb has **no** cairn equivalent, cairn refuses to fake it and
-prints the translation instead of a usage dump — `add`, `rm`, `mv`, `rebase`,
-`reset`, `revert`, `worktree`, and `checkout`/`switch` onto an existing branch
-each explain what to run in its place. (`git checkout -b <name> <start-point>`
+prints the translation instead of a usage dump — `rebase`, `worktree`, and
+`checkout`/`switch` onto an existing branch each explain what to run in its
+place, as do the index-only forms of the verbs above (`add -p`, `rm --cached`). (`git checkout -b <name> <start-point>`
 is one of these: it names a parent, so cairn points you at
 `cairn express <name> --from <start-point>` rather than silently forking off the
 wrong line.)

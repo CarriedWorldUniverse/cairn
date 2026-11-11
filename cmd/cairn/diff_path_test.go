@@ -192,3 +192,31 @@ func TestE2E_DiffPathspecForms(t *testing.T) {
 		t.Errorf("bogus -- pathspec should error, not print an empty diff")
 	}
 }
+
+// A path under a SIBLING line folder is outside the line you stand in: it
+// must error, not silently diff the same relative path in this line.
+func TestE2E_DiffPathspecOutsideLineErrors(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mustRun(t, "init", root)
+	if err := os.WriteFile(filepath.Join(root, "main", "z.txt"), []byte("one\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mustRun(t, "commit", "--repo", root, "main")
+	mustRun(t, "express", "--repo", root, "feature")
+	if err := os.WriteFile(filepath.Join(root, "main", "z.txt"), []byte("main-change\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "feature", "z.txt"), []byte("feature-change\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(filepath.Join(root, "main"))
+	err := run([]string{"diff", "--classic", "--", "../feature/z.txt"})
+	if err == nil || !strings.Contains(err.Error(), "outside the line's folder") {
+		t.Fatalf("diff -- ../feature/z.txt: want outside-the-line error, got %v", err)
+	}
+	// Its own folder still works.
+	if out := mustRunOut(t, "diff", "--classic", "--", "z.txt"); !strings.Contains(out, "main-change") {
+		t.Errorf("own-line spec lost its diff:\n%s", out)
+	}
+}

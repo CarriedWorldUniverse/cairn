@@ -298,7 +298,7 @@ func (e *Engine) ownChain(lineID, top, onto string) ([]chainStep, string, error)
 				return nil, "", err
 			}
 		}
-		msg, err := e.commitMessage(stepTop)
+		msg, err := e.commitMessage(bottom) // the stamped commit, not the adopt-merge above it
 		if err != nil {
 			return nil, "", err
 		}

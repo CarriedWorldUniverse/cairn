@@ -413,6 +413,12 @@ func (r *Repo) Express(branch, parent string) error {
 	case err == nil:
 		line = l
 	case errors.Is(err, change.ErrNotFound):
+		// A NEW line name becomes a folder under the repo root: hold it to git's
+		// check-ref-format rules so it can never be "", ".", "..", ".cairn" or
+		// anything else that resolves outside <repo>/<folder>.
+		if verr := change.ValidRefName(branch); verr != nil {
+			return fmt.Errorf("worktree.Express: %q is not a valid branch name: %w", branch, verr)
+		}
 		if parent == "" {
 			// Default to the actual structural root (parent_line IS NULL),
 			// whatever its name — after an import it may be "master"/"trunk".
@@ -440,9 +446,16 @@ func (r *Repo) Express(branch, parent string) error {
 	// by a different branch (e.g. "feat/x" → "feat-x" colliding with a literal
 	// "feat-x") rather than clobbering it.
 	folder := FolderName(branch)
+	if folder == "" || folder == "." || folder == ".." || strings.HasPrefix(folder, ".") || strings.ContainsAny(folder, `/\`+"\x00") {
+		return fmt.Errorf("worktree.Express: %q would materialize outside its own line folder (%q); not a valid line name", branch, folder)
+	}
+	// Two lines must never map to one on-disk folder: compare the way a
+	// case-insensitive filesystem (Windows, macOS) would — case-folded, with
+	// trailing dots/spaces dropped — on every OS, so a repo expressed here
+	// stays expressible there.
 	for b, e := range r.st.Expressed {
-		if b != branch && e.Path == folder {
-			return fmt.Errorf("worktree.Express: folder %q is already used by branch %q; rename one before expressing %q", folder, b, branch)
+		if b != branch && folderKey(e.Path) == folderKey(folder) {
+			return fmt.Errorf("worktree.Express: folder %q is already used by branch %s (as %q); rename one before expressing %s", folder, change.SafeName(b), e.Path, change.SafeName(branch))
 		}
 	}
 
@@ -594,12 +607,15 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
 	}
 	cachePath := r.wcCachePath(branch)
-	cache, cachedHead, err := loadWCCache(cachePath)
+	cache, cachedHead, writtenNs, legacyCache, err := loadWCCacheStamped(cachePath)
 	if err != nil {
 		// SELF-HEAL: corrupt cache → full rescan, and no recorded head, so the
 		// snapshot below runs unconditionally.
-		cache, cachedHead = map[string]wcCacheEntry{}, ""
+		cache, cachedHead, writtenNs, legacyCache = map[string]wcCacheEntry{}, "", 0, false
 	}
+	// Racily-clean entries (fingerprinted at or after the cache's own write
+	// time) cannot be trusted by stat; drop them so the scan rehashes them.
+	dropRacy(cache, writtenNs)
 	scanStartNs := time.Now().UnixNano()
 	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, execModes(committed), gitlinks, cache, scanStartNs)
 	if err != nil {
@@ -644,8 +660,10 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 	}
 	// Persist when the fingerprints changed OR when the recorded head is stale
 	// — the latter is what upgrades a pre-#155 cache, and what stops a skip
-	// from being decided against an out-of-date head next time.
-	if cacheChanged || head != cachedHead {
+	// from being decided against an out-of-date head next time — OR when the
+	// file is still in the JSON encoding, which costs every later command a
+	// slow parse until it is rewritten.
+	if cacheChanged || head != cachedHead || legacyCache {
 		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
@@ -824,6 +842,11 @@ func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 // reflects the adopted work. force allows discarding uncommitted changes; without
 // it, Fold refuses if the branch has uncommitted edits.
 func (r *Repo) Fold(branch string, force bool) error {
+	return r.FoldWith(branch, force, change.FoldOpts{})
+}
+
+// FoldWith is Fold with git merge's --no-ff / --ff-only / -m options.
+func (r *Repo) FoldWith(branch string, force bool, opts change.FoldOpts) error {
 	unlock, err := r.lockState()
 	if err != nil {
 		return err
@@ -860,7 +883,7 @@ func (r *Repo) Fold(branch string, force bool) error {
 			return fmt.Errorf("worktree.Fold: %q tracks the remote — folding %q into it locally diverges from upstream (a protected remote will reject the push). Push %q and open a PR instead; 'cairn undo' reverts a fold. Pass --force to fold anyway", parent.Name, branch, branch)
 		}
 	}
-	if err := r.eng.FoldLine(line.ID); err != nil {
+	if err := r.eng.FoldLineOpts(line.ID, opts); err != nil {
 		return fmt.Errorf("worktree.Fold: %w", err)
 	}
 	if err := r.Unexpress(branch, true); err != nil {
@@ -918,6 +941,9 @@ func (r *Repo) Abandon(branch string, force bool) error {
 	}
 	if err := r.eng.AbandonLine(line.ID); err != nil {
 		return fmt.Errorf("worktree.Abandon: %w", err)
+	}
+	if _, expressed := r.st.Expressed[branch]; !expressed {
+		return nil // never had a folder: nothing to remove
 	}
 	return r.Unexpress(branch, true)
 }
@@ -1102,13 +1128,21 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
-	remoteName, states, rerr := r.remoteStates()
+	// Only this line's remote state is reported, so only this line's is
+	// computed (RemoteStateOf) — not every line's, as `tree` needs.
+	remoteName, rerr := r.TreeRemote()
 	if rerr != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
 	}
 	var remote string
-	if st, ok := states[line.Name]; ok {
-		remote = remoteName + ": " + st.String()
+	if remoteName != "" {
+		st, ok, rerr := r.eng.RemoteStateOf(remoteName, line.Name)
+		if rerr != nil {
+			return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
+		}
+		if ok {
+			remote = remoteName + ": " + st.String()
+		}
 	}
 	// Reuse the scan syncOne just did above, under this same lock — see
 	// workingDiffSynced. Calling the public WorkingDiff here re-scanned and
@@ -1290,7 +1324,16 @@ func (r *Repo) DefaultBranch() (string, error) {
 
 // SetBranchHint records the branch whose expressed folder the user is standing in
 // (computed by the CLI from the working directory). See DefaultBranch / CWDBranch.
-func (r *Repo) SetBranchHint(branch string) { r.branchHint = branch }
+func (r *Repo) SetBranchHint(branch string) {
+	r.branchHint = branch
+	// HEAD/@ in a revision resolve against the line the operator stands in.
+	r.eng.SetHeadLine(branch)
+}
+
+// Engine exposes the change engine to the CLI's read-only inspection commands
+// (log, rev-parse, ls-tree, …), which are queries over history rather than
+// working-copy operations and so have no Repo-level orchestration to add.
+func (r *Repo) Engine() *change.Engine { return r.eng }
 
 // CWDBranch returns the branch whose expressed folder the user is in, if any. Used
 // by commands (e.g. commit) that require a branch but can infer it from location.
@@ -1870,6 +1913,18 @@ func (r *Repo) Blame(branch, path string) ([]change.BlameLine, error) {
 	return r.eng.Blame(line.TipCommit, path)
 }
 
+// BlameWith is Blame with options.
+func (r *Repo) BlameWith(branch, path string, opt change.BlameOptions) ([]change.BlameLine, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Blame: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, fmt.Errorf("worktree.Blame: branch %q has no commits", branch)
+	}
+	return r.eng.BlameWith(line.TipCommit, path, opt)
+}
+
 // IsWorkingCommit reports whether sha is the head of an open (un-sealed) change.
 func (r *Repo) IsWorkingCommit(sha string) (bool, error) { return r.eng.IsWorkingHead(sha) }
 
@@ -2174,8 +2229,15 @@ func (r *Repo) Undo() error {
 		return err
 	}
 	defer unlock()
+	renames, _ := r.eng.PendingUndoRenames()
 	if err := r.eng.Undo(); err != nil {
 		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	// Undoing a line rename puts the folder back under its old name.
+	for _, rn := range renames {
+		if err := r.moveExpressed(rn[0], rn[1]); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
 	}
 	// eng.Undo restored line tips but NOT change heads. The open change's stale
 	// head can still point at the undone commit, which would resurface it on the
@@ -2186,52 +2248,75 @@ func (r *Repo) Undo() error {
 	//   - tip is a different/   → clear head, so the next SnapshotWorking parents a
 	//     sealed commit          fresh working commit ON TOP of the restored tip,
 	//                            never on the undone commit.
+	// A message a stopped revert/cherry-pick left for the next commit described
+	// a state that may just have been rewound.
+	_ = os.RemoveAll(r.pendingDir())
 	for branch, entry := range r.st.Expressed {
-		line, err := r.eng.LineByName(branch)
-		if err != nil {
-			if errors.Is(err, change.ErrNotFound) {
-				continue // line gone — nothing to reconcile/re-materialize
-			}
+		if err := r.reconcileRewound(branch, entry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// reconcileRewound brings one expressed branch back in step after its line tip
+// was restored to an earlier value (Undo, AbortPick): it reconciles the open
+// change's head against the restored tip and re-materializes the folder.
+func (r *Repo) reconcileRewound(branch string, entry Entry) error {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		if errors.Is(err, change.ErrNotFound) {
+			return nil // line gone — nothing to reconcile/re-materialize
+		}
+		return fmt.Errorf("worktree.Undo: %w", err)
+	}
+	tip := line.TipCommit
+	switch {
+	case tip == "":
+		if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
 			return fmt.Errorf("worktree.Undo: %w", err)
 		}
-		tip := line.TipCommit
-		switch {
-		case tip == "":
+	default:
+		cid, err := r.eng.ChangeIDOf(tip)
+		if err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		if cid == entry.ChangeID {
+			// The restored tip IS this change's working commit → amend continues.
+			if err := r.eng.SetWorkingHead(entry.ChangeID, tip); err != nil {
+				return fmt.Errorf("worktree.Undo: %w", err)
+			}
+		} else if head, adopted, aerr := r.eng.AdoptWorkingTip(entry.ChangeID, tip); aerr != nil {
+			return fmt.Errorf("worktree.Undo: %w", aerr)
+		} else if adopted {
+			// The restored tip was the "(working)" commit of a change that has
+			// since been sealed (the op being undone was that seal, or a verb
+			// after it). It is now this change's working commit — same tree,
+			// same parent — so the un-sealed edits it holds come back as
+			// un-sealed edits, instead of the placeholder being buried in the
+			// line's history under a fresh working commit.
+			line.TipCommit = head
+		} else {
+			// Restored tip is a different/sealed commit (or carries no trailer):
+			// start a fresh working commit on top of it (parent = tip).
 			if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
 				return fmt.Errorf("worktree.Undo: %w", err)
 			}
-		default:
-			cid, err := r.eng.ChangeIDOf(tip)
-			if err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-			if cid == entry.ChangeID {
-				// The restored tip IS this change's working commit → amend continues.
-				if err := r.eng.SetWorkingHead(entry.ChangeID, tip); err != nil {
-					return fmt.Errorf("worktree.Undo: %w", err)
-				}
-			} else {
-				// Restored tip is a different/sealed commit (or carries no trailer):
-				// start a fresh working commit on top of it (parent = tip).
-				if err := r.eng.SetWorkingHead(entry.ChangeID, ""); err != nil {
-					return fmt.Errorf("worktree.Undo: %w", err)
-				}
-			}
 		}
-		dir := filepath.Join(r.root, entry.Path)
-		if line.TipCommit != "" {
-			if err := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-		} else {
-			// Restored to the pre-first-commit baseline: the committed tree is
-			// empty, so the expressed folder must be emptied to match.
-			if err := os.RemoveAll(dir); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return fmt.Errorf("worktree.Undo: %w", err)
-			}
+	}
+	dir := filepath.Join(r.root, entry.Path)
+	if line.TipCommit != "" {
+		if err := MaterializeFrom(r.eng, r.cacheDir(), line.TipCommit, dir, r.prevTracked(branch)); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+	} else {
+		// Restored to the pre-first-commit baseline: the committed tree is
+		// empty, so the expressed folder must be emptied to match.
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
+		}
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("worktree.Undo: %w", err)
 		}
 	}
 	return nil
@@ -2818,4 +2903,10 @@ func (r *Repo) prevTracked(branch string) map[string]wcCacheEntry {
 		return nil
 	}
 	return fps
+}
+
+// folderKey normalizes a folder name the way case-insensitive filesystems
+// compare it, so lines whose folders could coincide are detected on any OS.
+func folderKey(folder string) string {
+	return strings.ToLower(strings.TrimRight(folder, ". "))
 }

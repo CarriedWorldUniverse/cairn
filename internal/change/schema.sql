@@ -116,3 +116,47 @@ CREATE TABLE IF NOT EXISTS rebase_history (
   before  TEXT NOT NULL,
   PRIMARY KEY (op_id, line_id)
 );
+-- Inverse steps for operations whose effect is not captured by line tips
+-- (tag create/delete, line rename, remote edits): Undo applies them, newest
+-- step first, after it restores the tips.
+CREATE TABLE IF NOT EXISTS op_undo (
+  op_id TEXT PRIMARY KEY,
+  steps TEXT NOT NULL
+);
+-- Reversible side state. The stash stack and the open-conflict rows are not
+-- part of the ref-map view an operation records, so these triggers journal
+-- every row they lose or change (old row as JSON, '' op_id = not yet claimed).
+-- recordOp/recordOpTx claim the unclaimed rows for the operation they append,
+-- and Undo replays an operation's rows backwards (auxjournal.go).
+CREATE TABLE IF NOT EXISTS aux_journal (
+  seq    INTEGER PRIMARY KEY AUTOINCREMENT,
+  op_id  TEXT NOT NULL DEFAULT '',
+  tbl    TEXT NOT NULL,
+  kind   TEXT NOT NULL,
+  row_id TEXT NOT NULL,
+  old    TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_aux_journal_op ON aux_journal(op_id);
+CREATE TRIGGER IF NOT EXISTS stash_aux_ins AFTER INSERT ON stash BEGIN
+  INSERT INTO aux_journal(tbl, kind, row_id) VALUES('stash', 'I', NEW.id);
+END;
+CREATE TRIGGER IF NOT EXISTS stash_aux_del AFTER DELETE ON stash BEGIN
+  INSERT INTO aux_journal(tbl, kind, row_id, old) VALUES('stash', 'D', OLD.id, json_object(
+    'id', OLD.id, 'line_id', OLD.line_id, 'branch', OLD.branch, 'commit_sha', OLD.commit_sha,
+    'base_sha', OLD.base_sha, 'message', OLD.message, 'created_at', OLD.created_at));
+END;
+CREATE TRIGGER IF NOT EXISTS conflict_aux_ins AFTER INSERT ON conflict BEGIN
+  INSERT INTO aux_journal(tbl, kind, row_id) VALUES('conflict', 'I', NEW.id);
+END;
+CREATE TRIGGER IF NOT EXISTS conflict_aux_del AFTER DELETE ON conflict BEGIN
+  INSERT INTO aux_journal(tbl, kind, row_id, old) VALUES('conflict', 'D', OLD.id, json_object(
+    'id', OLD.id, 'change_id', OLD.change_id, 'path', OLD.path, 'base_blob', OLD.base_blob,
+    'parent_blob', OLD.parent_blob, 'change_blob', OLD.change_blob, 'marked_blob', OLD.marked_blob,
+    'status', OLD.status, 'created_at', OLD.created_at, 'resolved_at', OLD.resolved_at));
+END;
+CREATE TRIGGER IF NOT EXISTS conflict_aux_upd AFTER UPDATE ON conflict BEGIN
+  INSERT INTO aux_journal(tbl, kind, row_id, old) VALUES('conflict', 'U', OLD.id, json_object(
+    'id', OLD.id, 'change_id', OLD.change_id, 'path', OLD.path, 'base_blob', OLD.base_blob,
+    'parent_blob', OLD.parent_blob, 'change_blob', OLD.change_blob, 'marked_blob', OLD.marked_blob,
+    'status', OLD.status, 'created_at', OLD.created_at, 'resolved_at', OLD.resolved_at));
+END;

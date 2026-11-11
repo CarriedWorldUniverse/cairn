@@ -36,7 +36,7 @@ func TestCommitStatusSurfaceSkippedUnreadable(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(locked, 0o644) })
 
-	out := captureRun(t, "commit", "--repo", root, "-m", "second", "main")
+	out := captureRun(t, "commit", "--repo", root, "--allow-empty", "-m", "second", "main")
 	if !strings.Contains(out, "skipped 1 unreadable untracked path(s)") {
 		t.Fatalf("commit stdout missing skipped-unreadable block, got: %q", out)
 	}

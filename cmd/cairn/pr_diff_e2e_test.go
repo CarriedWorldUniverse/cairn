@@ -430,8 +430,11 @@ func TestE2E_PRDiff_MatchesDirectDiff(t *testing.T) {
 	if len(diffs) != 1 || !strings.Contains(diffs[0].Unified, "CHANGED") {
 		t.Fatalf("direct diff = %+v, want one file diff containing CHANGED", diffs)
 	}
-	if strings.TrimSpace(out) != strings.TrimSpace(diffs[0].Unified) {
-		t.Fatalf("pr diff output != direct diff.\npr diff:\n%s\ndirect:\n%s", out, diffs[0].Unified)
+	// pr diff prints a git-format patch — the same one `cairn diff` prints for
+	// the two tracking refs.
+	direct := mustRunOut(t, "diff", "--repo", dir, "refs/remotes/origin/main", "refs/remotes/origin/feature")
+	if out != direct || !strings.HasPrefix(out, "diff --git a/") {
+		t.Fatalf("pr diff output != direct diff.\npr diff:\n%s\ndirect:\n%s", out, direct)
 	}
 }
 

@@ -93,7 +93,8 @@ func TestE2E_DiffTwoCommits(t *testing.T) {
 	}
 }
 
-// TestE2E_DiffBinary asserts a NUL-containing file diffs as "Binary files differ".
+// TestE2E_DiffBinary asserts a NUL-containing file diffs as git's "Binary files
+// a/<path> and b/<path> differ" notice (and as cairn's own under --classic).
 func TestE2E_DiffBinary(t *testing.T) {
 	skipOnWindows(t)
 	root := t.TempDir()
@@ -108,7 +109,12 @@ func TestE2E_DiffBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 	diff := mustRunOut(t, "diff", "--repo", root, def)
-	if !strings.Contains(diff, "Binary files differ: b.bin") {
-		t.Fatalf("expected binary notice, got:\n%s", diff)
+	if !strings.Contains(diff, "diff --git a/b.bin b/b.bin\n") || !strings.Contains(diff, "Binary files a/b.bin and b/b.bin differ\n") {
+		t.Fatalf("expected git's binary notice, got:\n%s", diff)
+	}
+	// The original cairn format stays reachable.
+	classic := mustRunOut(t, "diff", "--classic", "--repo", root, def)
+	if !strings.Contains(classic, "Binary files differ: b.bin") {
+		t.Fatalf("expected classic binary notice, got:\n%s", classic)
 	}
 }

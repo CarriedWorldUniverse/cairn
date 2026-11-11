@@ -233,3 +233,18 @@ func TestFetchRemoteLandsHeadsAndDefault(t *testing.T) {
 		t.Fatalf("second fetchRemote: %v", err)
 	}
 }
+
+// TestDropInvalidRefNames (security review #4): remote-chosen names that fail
+// ValidRefName are skipped, never imported.
+func TestDropInvalidRefNames(t *testing.T) {
+	refs := map[string]string{"main": "1", "ok/feat": "2", "evil\x1b[2Jname": "3", "a..b": "4", "dot.": "5"}
+	if err := dropInvalidRefNames("branch", refs, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if len(refs) != 2 || refs["main"] == "" || refs["ok/feat"] == "" {
+		t.Fatalf("refs after filter = %v", refs)
+	}
+	if err := dropInvalidRefNames("branch", map[string]string{"bad..": "1"}, "bad.."); err == nil {
+		t.Fatal("an invalid default branch must be an error")
+	}
+}

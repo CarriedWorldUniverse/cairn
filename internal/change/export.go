@@ -232,7 +232,7 @@ func (e *Engine) exportChanges() error {
 
 // exportTags projects every tag onto refs/tags/<name>.
 func (e *Engine) exportTags() error {
-	rows, err := e.db.Query(`SELECT name, commit_sha FROM tag`)
+	rows, err := e.db.Query(`SELECT name, CASE WHEN obj != '' THEN obj ELSE commit_sha END FROM tag`)
 	if err != nil {
 		return fmt.Errorf("change.Export: %w", err)
 	}

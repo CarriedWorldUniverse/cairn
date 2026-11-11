@@ -38,8 +38,7 @@ func gitConfigValue(key string) string {
 // script, agent, or CI run it is not, and cairn errors with setup guidance
 // instead of blocking on a prompt.
 func isInteractive() bool {
-	fi, err := os.Stdin.Stat()
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	return fdIsTerminal(os.Stdin)
 }
 
 // promptLine prints "label [def]: " to stderr and reads a line from stdin;
@@ -123,7 +122,7 @@ func cmdLogin(args []string) error {
 	}
 	host := fs.Arg(0)
 	var token string
-	if fi, _ := os.Stdin.Stat(); fi != nil && (fi.Mode()&os.ModeCharDevice) == 0 {
+	if !fdIsTerminal(os.Stdin) {
 		b, err := io.ReadAll(os.Stdin) // piped
 		if err != nil {
 			return fmt.Errorf("login: read token: %w", err)
@@ -182,58 +181,5 @@ func cmdAuth(args []string) error {
 			fmt.Printf("env %s is set (takes precedence over the store)\n", k)
 		}
 	}
-	return nil
-}
-
-// cmdConfig gets or sets a config value. With one arg it prints the value (an
-// empty line when unset); with two args it stores the value.
-func cmdConfig(args []string) error {
-	fs := flag.NewFlagSet("config", flag.ContinueOnError)
-	repo, author := repoFlags(fs)
-	global := fs.Bool("global", false, "read/write the user-level (global) config instead of this repo's")
-	if err := parseArgs(fs, args); err != nil {
-		return err
-	}
-	if fs.NArg() < 1 {
-		return errors.New("usage: cairn config [--global] <key> [value]")
-	}
-	key := fs.Arg(0)
-	if *global {
-		// The global config is user-level and needs no repo.
-		if fs.NArg() == 1 {
-			fmt.Println(userconfig.Get(key))
-			return nil
-		}
-		value := fs.Arg(1)
-		if err := userconfig.Set(key, value); err != nil {
-			return mapErr(err)
-		}
-		fmt.Fprintf(os.Stderr, "cairn: set --global %s=%s\n", key, value)
-		return nil
-	}
-	r, err := openRepo(*repo, *author)
-	if err != nil {
-		return mapErr(err)
-	}
-	defer r.Close()
-	if fs.NArg() == 1 {
-		value, set, err := r.GetConfig(key)
-		if err != nil {
-			return mapErr(err)
-		}
-		// Mirror identity resolution: an unset repo key falls through to the
-		// global config, so `cairn config user.email` shows what a commit will
-		// actually use (repo override, else your global identity).
-		if !set || value == "" {
-			value = userconfig.Get(key)
-		}
-		fmt.Println(value)
-		return nil
-	}
-	value := fs.Arg(1)
-	if err := r.SetConfig(key, value); err != nil {
-		return mapErr(err)
-	}
-	fmt.Fprintf(os.Stderr, "cairn: set %s=%s\n", key, value)
 	return nil
 }

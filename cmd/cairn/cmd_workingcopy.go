@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path"
@@ -12,14 +13,23 @@ import (
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
+	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	author := fs.String("author", defaultAuthor(), "commit author")
+	initial := fs.String("initial-branch", "", "name the root line (default: init.defaultBranch, else main)")
+	fs.StringVar(initial, "b", "", "name the root line (default: init.defaultBranch, else main)")
+	bare := fs.Bool("bare", false, "refused: a cairn repo is always a set of line folders")
+	quiet := fs.Bool("quiet", false, "no output")
+	fs.BoolVar(quiet, "q", false, "no output")
 	if err := parseArgs(fs, args); err != nil {
 		return err
+	}
+	if *bare {
+		return errors.New("a cairn repo has no bare form — its lines are folders; to host a shared repo, run cairn-server (or use a bare git repo as a remote)")
 	}
 	dir := "."
 	if fs.NArg() > 0 {
@@ -27,8 +37,25 @@ func cmdInit(args []string) error {
 	}
 	// Re-init guard: if .cairn already exists, silently succeed (no-op, exit 0).
 	if fi, err := os.Stat(filepath.Join(dir, ".cairn")); err == nil && fi.IsDir() {
-		fmt.Fprintf(os.Stderr, "cairn: already a cairn repo at %s\n", dir)
+		if !*quiet {
+			fmt.Fprintf(os.Stderr, "cairn: already a cairn repo at %s\n", dir)
+		}
 		return nil
+	}
+	// A cairn repo's files live in <dir>/<line>/, never loose in <dir>: anything
+	// already sitting in <dir> would stay outside every line, never captured.
+	// Refuse rather than leave that trap (git init is happy in a populated dir,
+	// but there the files ARE the working tree).
+	if ents, rerr := os.ReadDir(dir); rerr == nil && len(ents) > 0 {
+		return fmt.Errorf("%s is not empty (%d entries): a cairn repo keeps files in its line folders, so existing files would sit outside every line and never be captured. Run 'cairn init <newdir>' and move the files into <newdir>/main/ (or init in an empty directory)", dir, len(ents))
+	}
+	if *initial == "" {
+		*initial = userconfig.Get("init.defaultbranch")
+	}
+	if *initial != "" {
+		if err := change.ValidRefName(*initial); err != nil {
+			return fmt.Errorf("invalid initial branch name %q: %w", *initial, err)
+		}
 	}
 	r, err := worktree.Open(dir, *author)
 	if err != nil {
@@ -39,25 +66,55 @@ func cmdInit(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
-	fmt.Fprintf(os.Stderr, "cairn: initialized; edit files in %s/\n", filepath.Join(dir, branch))
+	if *initial != "" && *initial != branch {
+		if err := r.RenameLine(branch, *initial, false); err != nil {
+			return mapErr(err)
+		}
+		branch = *initial
+	}
+	if !*quiet {
+		fmt.Fprintf(os.Stderr, "cairn: initialized; edit files in %s/\n", filepath.Join(dir, worktree.FolderName(branch)))
+	}
 	return nil
 }
 
 func cmdClone(args []string) error {
 	fs := flag.NewFlagSet("clone", flag.ContinueOnError)
 	author := fs.String("author", defaultAuthor(), "commit author")
+	branchOpt := fs.String("branch", "", "also express this remote line")
+	fs.StringVar(branchOpt, "b", "", "also express this remote line")
+	originName := fs.String("origin", "origin", "name the remote")
+	fs.StringVar(originName, "o", "origin", "name the remote")
+	quiet := fs.Bool("quiet", false, "no progress output")
+	fs.BoolVar(quiet, "q", false, "no progress output")
+	depth := fs.String("depth", "", "refused: cairn imports full history")
+	fs.Bool("single-branch", false, "refused: cairn imports every line")
+	fs.Bool("bare", false, "refused: a cairn repo is always a set of line folders")
+	fs.Bool("mirror", false, "refused")
+	fs.Bool("no-checkout", false, "refused")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	if fs.NArg() < 1 {
-		return errors.New("usage: cairn clone <url> [dir]")
+	for _, n := range []string{"single-branch", "bare", "mirror", "no-checkout"} {
+		if fs.Lookup(n).Value.String() == "true" {
+			return fmt.Errorf("--%s is not supported: cairn clone imports the full history and every line so the line tree, change-ids and conflicts reconstruct exactly", n)
+		}
 	}
-	url := fs.Arg(0)
+	if *depth != "" {
+		return errors.New("--depth is not supported: cairn clone imports the full history so the line tree, change-ids and conflicts reconstruct exactly")
+	}
+	if *originName == "" {
+		return errors.New("--origin needs a name")
+	}
+	if fs.NArg() < 1 {
+		return errors.New("usage: cairn clone [-b <line>] [-o <name>] [-q] <url> [dir]")
+	}
+	url := absLocalURL(fs.Arg(0))
 	dir := ""
 	if fs.NArg() > 1 {
 		dir = fs.Arg(1)
 	} else {
-		dir = dirFromURL(url)
+		dir = dirFromURL(fs.Arg(0))
 	}
 	if dir == "" {
 		return errors.New("cannot derive destination dir from url; pass it explicitly")
@@ -66,13 +123,49 @@ func cmdClone(args []string) error {
 	if ents, err := os.ReadDir(dir); err == nil && len(ents) > 0 {
 		return fmt.Errorf("destination %s already exists and is not empty", dir)
 	}
-	fmt.Fprintf(os.Stderr, "cairn: cloning %s into %s …\n", redactURL(url), dir)
-	r, err := worktree.Clone(url, dir, *author, os.Stderr)
+	// A destination we create ourselves is removed again if the clone fails
+	// or -b names a line the remote does not have.
+	_, statErr := os.Stat(dir)
+	created := statErr != nil
+	var progress io.Writer = os.Stderr
+	if *quiet {
+		progress = io.Discard
+	} else {
+		fmt.Fprintf(os.Stderr, "cairn: cloning %s into %s …\n", redactURL(url), dir)
+	}
+	r, err := worktree.Clone(url, dir, *author, progress)
 	if err != nil {
+		if created {
+			_ = os.RemoveAll(dir)
+		}
 		return mapRemoteErr(err)
 	}
 	defer r.Close()
-	fmt.Fprintf(os.Stderr, "cairn: cloned %s -> %s\n", redactURL(url), dir)
+	if *originName != "origin" {
+		if err := r.RenameRemote("origin", *originName); err != nil {
+			return mapErr(err)
+		}
+	}
+	if *branchOpt != "" {
+		def, _ := r.DefaultBranch()
+		if *branchOpt != def {
+			if !lineExists(r, *branchOpt) {
+				if created {
+					_ = os.RemoveAll(dir)
+				}
+				return fmt.Errorf("remote branch %s not found in upstream %s", *branchOpt, *originName)
+			}
+			if err := r.Express(*branchOpt, ""); err != nil {
+				return mapErr(err)
+			}
+			if !*quiet {
+				fmt.Fprintf(os.Stderr, "cairn: expressed %s at %s\n", *branchOpt, filepath.Join(dir, worktree.FolderName(*branchOpt)))
+			}
+		}
+	}
+	if !*quiet {
+		fmt.Fprintf(os.Stderr, "cairn: cloned %s -> %s\n", redactURL(url), dir)
+	}
 	return nil
 }
 
@@ -157,71 +250,34 @@ func cmdUnexpress(args []string) error {
 	return mapErr(r.Unexpress(fs.Arg(0), *force))
 }
 
-func cmdCommit(args []string) error {
-	fs := flag.NewFlagSet("commit", flag.ContinueOnError)
-	repo, author := repoFlags(fs)
-	msg := fs.String("m", "", "commit message")
-	if err := parseArgs(fs, args); err != nil {
-		return err
-	}
-	r, err := openRepo(*repo, *author)
-	if err != nil {
-		return mapErr(err)
-	}
-	defer r.Close()
-	var branch string
-	if fs.NArg() > 0 {
-		branch = fs.Arg(0)
-	} else if b, ok := r.CWDBranch(); ok {
-		branch = b // run from inside a branch folder → commit that branch
-	} else {
-		return errors.New("branch required (or run from inside a branch folder)")
-	}
-	ensureIdentity(r)
-	res, err := r.Commit(branch, *msg)
-	if err != nil {
-		return mapErr(err)
-	}
-	// The commit succeeded; surface the best-effort auto-sync outcome on BOTH
-	// the conflict and the clean path (before the branching below) so a notice
-	// is never dropped when there are conflicts.
-	switch note := r.LastSyncNote(); {
-	case note == "synced":
-		fmt.Fprintln(os.Stderr, "cairn: auto-synced with origin")
-	case strings.HasPrefix(note, "skipped:"):
-		fmt.Fprintf(os.Stderr, "cairn: auto-sync skipped: %s\n", strings.TrimPrefix(note, "skipped:"))
-	}
-	// Surface unreadable-untracked skips structurally on STDOUT (#130) — not
-	// just the scan's own capped stderr warnf lines, which are lost under
-	// redirection or a GUI wrapper. Exit code stays 0 either way (below);
-	// like git, cairn tolerates unreadable untracked content rather than
-	// failing the commit over it.
-	printSkippedUnreadable(res.SkippedUnreadable)
-	if res.Rebase != nil && res.Rebase.Status != "" {
-		printRebase(*res.Rebase)
-		if res.Rebase.Status == "stopped" {
-			fmt.Println(res.HeadCommit)
-			return errConflicts
-		}
-	}
-	if len(res.Conflicts) > 0 {
-		paths := make([]string, 0, len(res.Conflicts))
-		for _, c := range res.Conflicts {
-			paths = append(paths, c.Path)
-		}
-		fmt.Fprintf(os.Stderr, "%d conflict(s) in: %s\n", len(res.Conflicts), strings.Join(paths, ", "))
-		return errConflicts
-	}
-	fmt.Println(res.HeadCommit)
-	return nil
-}
-
 func cmdFold(args []string) error {
 	fs := flag.NewFlagSet("fold", flag.ContinueOnError)
 	repo, author := repoFlags(fs)
 	force := fs.Bool("force", false, "discard un-sealed work")
+	noFF := fs.Bool("no-ff", false, "always record a fold merge commit, even for a fast-forward")
+	ffOnly := fs.Bool("ff-only", false, "refuse unless the fold is a fast-forward")
+	squash := fs.Bool("squash", false, "refused: see the translation")
+	abort := fs.Bool("abort", false, "refused: see the translation")
+	cont := fs.Bool("continue", false, "refused: see the translation")
+	var msgs stringList
+	fs.Var(&msgs, "m", "message of the fold merge commit")
+	fs.Var(&msgs, "message", "message of the fold merge commit")
+	// Accepted for git compatibility (no-ops here).
+	for _, name := range []string{"ff", "no-edit", "edit", "q", "quiet", "v", "verbose", "no-verify", "no-stat", "stat", "no-commit", "no-progress", "progress", "autostash", "no-autostash"} {
+		fs.Bool(name, false, "accepted for git compatibility (no-op)")
+	}
 	if err := parseArgs(fs, args); err != nil {
 		return err
+	}
+	switch {
+	case *abort:
+		return errors.New(`there is no merge in progress to abort — a fold is atomic; "cairn undo" reverts the last one (and a conflicted adoption leaves nothing half-done)`)
+	case *cont:
+		return errors.New(`there is no merge in progress to continue — resolve conflicts with "cairn resolve <branch> <path>", seal with "cairn commit", then fold again`)
+	case *squash:
+		return errors.New(`fold has no --squash form: it fast-forwards the parent to the line's commits. To land the line as ONE commit, "cairn squash <commit>" its commits together first (history edit), then fold`)
+	case *noFF && *ffOnly:
+		return errors.New("--no-ff and --ff-only cannot be combined")
 	}
 	if fs.NArg() < 1 {
 		return errors.New("branch required")
@@ -232,7 +288,22 @@ func cmdFold(args []string) error {
 	}
 	defer r.Close()
 	defer reportElapsed("fold", started)
-	return mapErr(r.Fold(fs.Arg(0), *force))
+	branch := fs.Arg(0)
+	// A fold lands a line in ITS PARENT. Standing in a different line and
+	// asking to merge a non-child would silently fold it into the wrong place
+	// (a sibling went into main and vanished, leaving the current line as it
+	// was), so refuse unless the line is a child of the one you stand in.
+	if cur, ok := r.CWDBranch(); ok && cur != branch {
+		if l, lerr := r.Engine().LineByName(branch); lerr == nil && l.ParentLine != "" {
+			if p, perr := r.Engine().LineByID(l.ParentLine); perr == nil && p.Name != cur {
+				return fmt.Errorf("%s is not a child of %s (it forks from %s), so folding it would land in %s, not %s; cairn folds a line into its parent — to bring %s's work into %s, cherry-pick its commits (\"cairn cherry-pick <commit>...\") or fold it into %s first",
+					branch, cur, p.Name, p.Name, cur, branch, cur, p.Name)
+			}
+		}
+	}
+	return mapErr(r.FoldWith(branch, *force, change.FoldOpts{
+		NoFF: *noFF, FFOnly: *ffOnly, Message: strings.Join(msgs, "\n\n"),
+	}))
 }
 
 func cmdReparent(args []string) error {
@@ -300,61 +371,6 @@ func cmdAbandon(args []string) error {
 	return mapErr(r.Abandon(fs.Arg(0), *force))
 }
 
-func cmdStatus(args []string) error {
-	fs := flag.NewFlagSet("status", flag.ContinueOnError)
-	repo, author := repoFlags(fs)
-	if err := parseArgs(fs, args); err != nil {
-		return err
-	}
-	r, err := openRepo(*repo, *author)
-	if err != nil {
-		return mapErr(err)
-	}
-	defer r.Close()
-	branch := ""
-	if fs.NArg() > 0 {
-		branch = fs.Arg(0)
-	} else {
-		// No branch given: default to the structural root's name, not the literal
-		// "main" — after a clone of a master-default repo the root is "master".
-		branch, err = r.DefaultBranch()
-		if err != nil {
-			return mapErr(err)
-		}
-	}
-	st, err := r.Status(branch)
-	if err != nil {
-		return mapErr(err)
-	}
-	fmt.Printf("branch:    %s\n", st.Branch)
-	fmt.Printf("lineage:   %s\n", strings.Join(st.Lineage, " → "))
-	fmt.Printf("ahead:     %d\n", st.Ahead)
-	if st.Remote != "" {
-		fmt.Printf("remote:    %s\n", st.Remote)
-	}
-	if st.Rebase != "" {
-		fmt.Printf("rebase:    %s\n", st.Rebase)
-	}
-	fmt.Printf("conflicts: %s\n", strings.Join(st.Conflicts, ", "))
-	fmt.Printf("expressed: %s\n", strings.Join(st.Expressed, ", "))
-	if len(st.Modified)+len(st.Added)+len(st.Deleted) > 0 {
-		fmt.Println("changes:")
-		for _, p := range st.Modified {
-			fmt.Printf("  M %s\n", p)
-		}
-		for _, p := range st.Added {
-			fmt.Printf("  A %s\n", p)
-		}
-		for _, p := range st.Deleted {
-			fmt.Printf("  D %s\n", p)
-		}
-	}
-	// Surface unreadable-untracked skips structurally on STDOUT (#130); see
-	// the identical block in cmdCommit.
-	printSkippedUnreadable(st.SkippedUnreadable)
-	return nil
-}
-
 // printSkippedUnreadable prints the #130 structural notice for
 // unreadable-untracked paths a worktree scan had to skip, so the fact is
 // visible on STDOUT — not just via the scan's own capped stderr warnf lines
@@ -395,7 +411,9 @@ func cmdTree(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	// No working-copy sync: the tree is drawn from sealed tips and tracking
+	// refs, which a snapshot of the folders cannot change.
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -491,9 +509,9 @@ func renderTree(nodes []worktree.TreeNode) string {
 	var b strings.Builder
 	label := func(n worktree.TreeNode) string {
 		if n.Remote == nil {
-			return fmt.Sprintf("%s  ahead=%d", n.Line.Name, n.Ahead)
+			return fmt.Sprintf("%s  ahead=%d", change.SafeName(n.Line.Name), n.Ahead)
 		}
-		return fmt.Sprintf("%s  ahead=%d  [%s]", n.Line.Name, n.Ahead, n.Remote)
+		return fmt.Sprintf("%s  ahead=%d  [%s]", change.SafeName(n.Line.Name), n.Ahead, n.Remote)
 	}
 	var walk func(n worktree.TreeNode, prefix string)
 	walk = func(n worktree.TreeNode, prefix string) {
@@ -521,7 +539,9 @@ func cmdLs(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	// No working-copy sync: which branches are expressed, and where, is not
+	// something a snapshot of their folders can change.
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -550,7 +570,11 @@ func cmdResolve(args []string) error {
 	}
 	branch := fs.Arg(0)
 	path := fs.Arg(1)
-	r, err := openRepo(*repo, *author)
+	// Snapshot first, like every other mutating verb: Resolve re-materializes
+	// the folder from the store, so edits to the line's OTHER conflicted files
+	// that no command had snapshotted yet would be overwritten with their
+	// marked versions.
+	r, err := openRepoSynced(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

@@ -106,7 +106,10 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 		if adoptedParent != "" {
 			parents = append(parents, adoptedParent)
 		}
-		sealed, err = e.writeCommit(merged, ch.ID, message, parents)
+		// A distinct message: the adoption is not the operator's commit, and
+		// repeating their subject made every post-advance seal read as two
+		// identical entries in the log.
+		sealed, err = e.writeCommit(merged, ch.ID, e.adoptMessage(ch.LineID), parents)
 		if err != nil {
 			return "", nil, err
 		}
@@ -200,4 +203,18 @@ func (e *Engine) Seal(changeID, message string) (newID string, conflicts []Confl
 		return "", nil, fmt.Errorf("change.Seal: commit tx: %w", err)
 	}
 	return newID, conflicts, nil
+}
+
+// adoptMessage is the message of the merge-forward commit a seal writes when
+// the line adopts its parent: "adopt <parent> into <line>".
+func (e *Engine) adoptMessage(lineID string) string {
+	line, err := e.lineByID(lineID)
+	if err != nil || line.ParentLine == "" {
+		return "adopt parent line"
+	}
+	parent, err := e.lineByID(line.ParentLine)
+	if err != nil {
+		return "adopt parent line"
+	}
+	return "adopt " + parent.Name + " into " + line.Name
 }

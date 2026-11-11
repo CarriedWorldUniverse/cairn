@@ -213,6 +213,16 @@ func TestSeedMatchesColdScanWithoutExecBit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CachedScan: %v", err)
 	}
+	// The chmod above moved ctime after the seed was taken; every other field
+	// must still agree.
+	for p, e := range seeded {
+		e.CtimeNs = 0
+		seeded[p] = e
+	}
+	for p, e := range scanned {
+		e.CtimeNs = 0
+		scanned[p] = e
+	}
 	if !reflect.DeepEqual(seeded, scanned) {
 		t.Fatalf("seed and cold scan disagree without the exec bit\n seeded: %#v\nscanned: %#v", seeded, scanned)
 	}

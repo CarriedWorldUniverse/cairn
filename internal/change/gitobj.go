@@ -3,6 +3,7 @@ package change
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -37,7 +38,15 @@ func validTreeEntryName(name string) error {
 	case ".", "..":
 		return fmt.Errorf("tree entry name %q is a path-traversal component", name)
 	}
-	if strings.ContainsAny(name, "/\\\x00") {
+	// '\' is an ordinary filename byte everywhere except Windows, where it is a
+	// path separator: git happily commits "back\slash.txt" on Linux/macOS, so
+	// cairn must too (a name that fails here would wedge every snapshotting
+	// command in a repo that merely contains the file).
+	seps := "/\x00"
+	if runtime.GOOS == "windows" {
+		seps = "/\\\x00"
+	}
+	if strings.ContainsAny(name, seps) {
 		return fmt.Errorf("tree entry name %q contains a separator or NUL", name)
 	}
 	// Windows strips TRAILING '.' and ' ' characters from each path component
@@ -62,6 +71,12 @@ func validTreeEntryName(name string) error {
 	// use for. Reject it outright.
 	if strings.Contains(name, ":") {
 		return fmt.Errorf("tree entry name %q contains ':' (NTFS alternate data stream)", name)
+	}
+	// Repository metadata names (".cairn", ".git" and their NTFS/HFS+
+	// equivalents) are reserved: a tree must never plant a catalogue or git
+	// dir inside a line folder (see reservedMetaName).
+	if meta, bad := reservedMetaName(name); bad {
+		return fmt.Errorf("invalid path component %q: it names repository metadata (%s) on some filesystems and is refused", name, meta)
 	}
 	// Windows reserved device name (see windowsReservedDeviceNames): match
 	// the base up to the FIRST '.', case-insensitively, matching Windows' own
@@ -90,6 +105,18 @@ func validTreePath(path string) error {
 	for _, seg := range strings.Split(path, "/") {
 		if err := validTreeEntryName(seg); err != nil {
 			return fmt.Errorf("path %q: %w", path, err)
+		}
+	}
+	return nil
+}
+
+// ReservedPathComponent reports an error when any component of the
+// "/"-separated path names repository metadata (.cairn/.git or an NTFS/HFS+
+// alias). It is the narrow sink-side guard for worktree writes.
+func ReservedPathComponent(path string) error {
+	for _, seg := range strings.Split(path, "/") {
+		if meta, bad := reservedMetaName(seg); bad {
+			return fmt.Errorf("invalid path %q: component %q names repository metadata (%s)", path, seg, meta)
 		}
 	}
 	return nil
@@ -231,65 +258,12 @@ func (e *Engine) readTreeRefs(treeHash string) (map[string]TreeEntry, error) {
 	if treeHash == "" {
 		return out, nil
 	}
-	if err := e.collectTreeRefs(treeHash, "", out); err != nil {
+	root := plumbing.NewHash(treeHash)
+	e.prefetchTrees(root)
+	if err := e.collectTreeRefs(root, "", out); err != nil {
 		return nil, err
 	}
 	return out, nil
-}
-
-func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEntry) error {
-	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
-	if err != nil {
-		return fmt.Errorf("change.readTreeRefs: tree %s: %w", treeHash, err)
-	}
-	// A name cannot legitimately appear twice at one tree level — as two
-	// entries with the same name (regardless of kind), or as both a leaf and
-	// a subtree. go-git's decoder does not enforce this on READ (only the
-	// write side, buildTree/writeTreeRefs, rejects it when cairn itself
-	// builds a tree), so a hostile remote can hand us an on-the-wire tree
-	// object with e.g. two "evil" entries — one a symlink, one a directory —
-	// and collectTreeRefs would silently yield both "evil" (as a symlink) and
-	// "evil/pwned" (walking into the directory), a collision fix A's
-	// materialize-side guard treats as defense in depth but that should never
-	// reach a consumer in the first place (#126). Reject outright at the read
-	// boundary, mirroring the write-side "file and directory at the same
-	// level" guard.
-	seen := make(map[string]struct{}, len(tree.Entries))
-	for _, ent := range tree.Entries {
-		if err := validTreeEntryName(ent.Name); err != nil {
-			return fmt.Errorf("change.readTreeRefs: %w", err)
-		}
-		if _, dup := seen[ent.Name]; dup {
-			return fmt.Errorf("change.readTreeRefs: tree %s has a duplicate entry name %q (invalid tree)", treeHash, ent.Name)
-		}
-		seen[ent.Name] = struct{}{}
-		path := ent.Name
-		if prefix != "" {
-			path = prefix + "/" + ent.Name
-		}
-		if ent.Mode == filemode.Dir {
-			if err := e.collectTreeRefs(ent.Hash.String(), path, out); err != nil {
-				return err
-			}
-			continue
-		}
-		mode := ModeRegular
-		switch ent.Mode {
-		case filemode.Executable:
-			mode = ModeExecutable
-		case filemode.Symlink:
-			mode = ModeSymlink
-		case filemode.Submodule:
-			// Gitlink: keep the entry, but mark it so no content path ever
-			// treats its commit SHA as a blob in this store (#140). Before
-			// this case existed it fell through to ModeRegular and the first
-			// materialize died on readBlob, taking every later command with
-			// it because materialize runs on all of them.
-			mode = ModeGitlink
-		}
-		out[path] = TreeEntry{SHA: ent.Hash.String(), Mode: mode}
-	}
-	return nil
 }
 
 // ReadBlob reads the contents of a git blob by hex sha. It is the exported
@@ -304,7 +278,7 @@ func (e *Engine) ReadBlob(sha string) ([]byte, error) {
 func (e *Engine) readBlob(sha string) ([]byte, error) {
 	b, err := e.git.BlobObject(plumbing.NewHash(sha))
 	if err != nil {
-		return nil, fmt.Errorf("change.readBlob: %w", err)
+		return nil, fmt.Errorf("change.readBlob: %w", e.notFound(err, plumbing.NewHash(sha)))
 	}
 	r, err := b.Reader()
 	if err != nil {
@@ -425,46 +399,16 @@ func (e *Engine) buildTree(files map[string][]byte, modes map[string]EntryMode) 
 // returns its hex sha. Author and committer share a single timestamp (e.now())
 // so identical inputs hash identically.
 func (e *Engine) writeCommit(treeSha, changeID, message string, parents []string) (string, error) {
-	when := e.now()
-	name, email := e.idName, e.idEmail
-	if name == "" {
-		name = "cairn"
-	}
-	if email == "" {
-		email = name + "@users.noreply.cairn"
-	}
-	sig := object.Signature{Name: name, Email: email, When: when}
-	if message == "" {
-		message = "snapshot"
-	}
-	fullMsg := message + "\n\nChange-Id: " + changeID + "\n"
-	parentHashes := make([]plumbing.Hash, 0, len(parents))
-	for _, p := range parents {
-		parentHashes = append(parentHashes, plumbing.NewHash(p))
-	}
-	c := &object.Commit{
-		Author:       sig,
-		Committer:    sig,
-		Message:      fullMsg,
-		TreeHash:     plumbing.NewHash(treeSha),
-		ParentHashes: parentHashes,
-	}
-	obj := e.git.Storer.NewEncodedObject()
-	if err := c.Encode(obj); err != nil {
-		return "", fmt.Errorf("change.writeCommit: encode: %w", err)
-	}
-	h, err := e.git.Storer.SetEncodedObject(obj)
-	if err != nil {
-		return "", fmt.Errorf("change.writeCommit: store: %w", err)
-	}
-	return h.String(), nil
+	// The body lives in writeCommitAs (wcops.go); authorOverride is nil except
+	// around a `commit --author/--date` seal.
+	return e.writeCommitAs(treeSha, changeID, message, parents, e.authorOverride)
 }
 
 // commitTree returns the hex tree hash of the given commit.
 func (e *Engine) commitTree(commitSha string) (string, error) {
 	c, err := e.git.CommitObject(plumbing.NewHash(commitSha))
 	if err != nil {
-		return "", fmt.Errorf("change.commitTree: %w", err)
+		return "", fmt.Errorf("change.commitTree: %w", e.notFound(err, plumbing.NewHash(commitSha)))
 	}
 	return c.TreeHash.String(), nil
 }
@@ -474,7 +418,7 @@ func (e *Engine) commitTree(commitSha string) (string, error) {
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
 	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
 	if err != nil {
-		return nil, fmt.Errorf("change.readTree: %w", err)
+		return nil, fmt.Errorf("change.readTree: %w", e.notFound(err, plumbing.NewHash(treeHash)))
 	}
 	// go-git's tree.Files() below is a flattening walk of its own that does
 	// NOT share collectTreeRefs's per-level duplicate-name guard (#126, item

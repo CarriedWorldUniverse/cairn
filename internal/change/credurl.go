@@ -1,7 +1,9 @@
 package change
 
 import (
+	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/credstore"
@@ -40,13 +42,34 @@ func hostOf(raw string) string {
 	return u.Hostname()
 }
 
-// storeAndStrip moves any credential embedded in an HTTP(S) URL into the
-// user-level credstore (keyed by host) and returns the URL WITHOUT the
-// credential, so a token is NEVER persisted in a repo's remote config. It only
-// touches http(s) URLs — for ssh the "user" (e.g. git@host) is not a secret and
-// auth is handled by the ssh agent/keys. Stripping is the invariant (creds never
-// in the repo); saving to the credstore is the convenience (a clone-with-token
-// still authenticates on later push/pull) and is best-effort.
+// looksLikeToken reports whether a bare URL username is plausibly an access
+// token rather than a login name: long, a single word of token characters.
+func looksLikeToken(s string) bool {
+	if len(s) < 20 {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9', c == '_', c == '-', c == '.':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// storeAndStrip removes any credential embedded in an HTTP(S) URL and returns
+// the URL WITHOUT it, so a token is NEVER persisted in a repo's remote config.
+// It only touches http(s) URLs — for ssh the "user" (e.g. git@host) is not a
+// secret and auth is handled by the ssh agent/keys.
+//
+// Stripping is the invariant. Saving to the user-level credstore (so a
+// clone-with-token still authenticates on later push/pull) is a best-effort
+// convenience and is deliberately conservative, because a URL comes from a
+// README or a remote and must not be able to tamper with what the user stored:
+// it never overwrites an existing credential for the host, and a bare
+// username (no password) is only kept when it looks like a token. Anything
+// ignored is reported on stderr; `cairn login` is the explicit way to set one.
 func storeAndStrip(raw string) string {
 	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
 		return raw
@@ -54,6 +77,20 @@ func storeAndStrip(raw string) string {
 	bare, host, tok := splitCredURL(raw)
 	if tok == "" || host == "" {
 		return raw
+	}
+	if u, err := url.Parse(raw); err == nil && u.User != nil {
+		if p, ok := u.User.Password(); !ok || p == "" {
+			if !looksLikeToken(tok) {
+				fmt.Fprintf(os.Stderr, "cairn: ignoring the user name in the remote URL for %s (not saved as a credential; use 'cairn login %s')\n", host, host)
+				return bare
+			}
+		}
+	}
+	if existing := credstore.Get(host); existing != "" {
+		if existing != tok {
+			fmt.Fprintf(os.Stderr, "cairn: keeping the stored credential for %s; the credential in the URL was not saved (use 'cairn login %s' to replace it)\n", host, host)
+		}
+		return bare
 	}
 	_ = credstore.Set(host, tok)
 	return bare

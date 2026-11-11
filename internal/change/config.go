@@ -5,11 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 )
 
 // GetConfig returns the stored value for key. The bool is false (with no error)
 // when the key is unset.
 func (e *Engine) GetConfig(key string) (string, bool, error) {
+	if v, ok := userconfig.Override(key); ok { // git's -c key=value wins
+		return v, true, nil
+	}
 	var value string
 	err := e.db.QueryRow(`SELECT value FROM config WHERE key=?`, key).Scan(&value)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -41,4 +46,32 @@ func ConfigTruthy(value string) bool {
 	default:
 		return false
 	}
+}
+
+// UnsetConfig removes key; it reports whether the key existed.
+func (e *Engine) UnsetConfig(key string) (bool, error) {
+	res, err := e.db.Exec(`DELETE FROM config WHERE key=?`, key)
+	if err != nil {
+		return false, fmt.Errorf("change.UnsetConfig: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+}
+
+// AllConfig returns every stored key/value.
+func (e *Engine) AllConfig() (map[string]string, error) {
+	rows, err := e.db.Query(`SELECT key, value FROM config`)
+	if err != nil {
+		return nil, fmt.Errorf("change.AllConfig: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := map[string]string{}
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, fmt.Errorf("change.AllConfig: %w", err)
+		}
+		out[k] = v
+	}
+	return out, rows.Err()
 }

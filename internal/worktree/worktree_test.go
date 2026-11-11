@@ -430,3 +430,32 @@ func TestResolveRefusesLingeringMarkers(t *testing.T) {
 		t.Fatalf("status conflicts after forced resolve = %v, want none", st.Conflicts)
 	}
 }
+
+// TestExpressFolderCollisionCaseAndDotInsensitive: lines whose folders would
+// coincide on a case-insensitive filesystem (or after NTFS drops a trailing
+// dot) are refused on every OS (security review #4).
+func TestExpressFolderCollisionCaseAndDotInsensitive(t *testing.T) {
+	root := t.TempDir()
+	r, err := Open(root, "t")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+	if err := os.WriteFile(filepath.Join(root, "main", "f.txt"), []byte("b\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Commit("main", "base"); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := r.Express("Feat", "main"); err != nil {
+		t.Fatalf("Express Feat: %v", err)
+	}
+	for _, n := range []string{"feat", "FEAT"} {
+		if err := r.Express(n, "main"); err == nil {
+			t.Errorf("Express(%q) beside Feat succeeded; folders collide case-insensitively", n)
+		}
+	}
+	if folderKey("a.") != folderKey("A") || folderKey("a ") != folderKey("a") {
+		t.Error("folderKey must drop trailing dots/spaces and fold case")
+	}
+}

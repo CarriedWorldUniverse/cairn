@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -75,6 +76,9 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 		}
 		heads, err := e.listHeads()
 		if err != nil {
+			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
+		}
+		if err := dropInvalidRefNames("branch", heads, def); err != nil {
 			return "", fmt.Errorf("change.ImportFromRemote: %w", err)
 		}
 
@@ -190,6 +194,7 @@ func (e *Engine) ImportFromRemote(url string) (string, error) {
 	// Record each tag (name is PRIMARY KEY; upsert the commit on re-import).
 	// Tags are not carried in the meta document, so they are recorded from
 	// refs/tags/* on BOTH paths.
+	_ = dropInvalidRefNames("tag", tags, "")
 	for name, sha := range tags {
 		if _, err := tx.Exec(
 			`INSERT INTO tag(name, commit_sha, tagger, at) VALUES(?,?,?,?)
@@ -249,22 +254,31 @@ func (e *Engine) fetchRemote(url string) error {
 	if serr != nil {
 		return fmt.Errorf("change.fetchRemote: %w", serr)
 	}
-	err = rem.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{
-			"+refs/heads/*:refs/heads/*",
-			// Also record remote-tracking refs (like `git clone` does) so the
-			// repo knows what is already on origin — e.g. `cairn private` warns
-			// when a path being withheld is already pushed.
-			"+refs/heads/*:refs/remotes/" + originRemote + "/*",
-			"+refs/tags/*:refs/tags/*",
-			"+refs/cairn/*:refs/cairn/*",
-		},
-		Tags:     git.AllTags,
-		Auth:     auth,
-		Progress: e.progress,
-	})
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("change.fetchRemote: %w", err)
+	specs := []config.RefSpec{
+		"+refs/heads/*:refs/heads/*",
+		// Also record remote-tracking refs (like `git clone` does) so the
+		// repo knows what is already on origin — e.g. `cairn private` warns
+		// when a path being withheld is already pushed.
+		"+refs/heads/*:refs/remotes/" + originRemote + "/*",
+		"+refs/tags/*:refs/tags/*",
+		"+refs/cairn/*:refs/cairn/*",
+	}
+	// A repository on this filesystem, into an empty store, is linked rather
+	// than fetched (see fetchLocal); everything else goes through the protocol.
+	local, lerr := e.fetchLocal(url, specs)
+	if lerr != nil {
+		return fmt.Errorf("change.fetchRemote: %w", lerr)
+	}
+	if !local {
+		err = rem.Fetch(&git.FetchOptions{
+			RefSpecs: specs,
+			Tags:     git.AllTags,
+			Auth:     auth,
+			Progress: e.progress,
+		})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return fmt.Errorf("change.fetchRemote: %w", err)
+		}
 	}
 	if perr := e.pruneImportedPushPins(before, rem, auth); perr != nil {
 		return fmt.Errorf("change.fetchRemote: %w", perr)
@@ -385,4 +399,24 @@ func (e *Engine) listRefs(prefix string) (map[string]string, error) {
 		return nil, fmt.Errorf("change.listRefs: %w", err)
 	}
 	return out, nil
+}
+
+// dropInvalidRefNames removes from refs (short name → sha) every name that
+// fails ValidRefName, warning on stderr. A remote chooses its names, so one
+// that would not be accepted for a new line (control bytes, "..", a trailing
+// '.', ...) is skipped rather than imported. An invalid name equal to keep
+// (the default branch) cannot be skipped and is an error.
+func dropInvalidRefNames(kind string, refs map[string]string, keep string) error {
+	for name := range refs {
+		verr := ValidRefName(name)
+		if verr == nil {
+			continue
+		}
+		if keep != "" && name == keep {
+			return fmt.Errorf("the remote's default %s %s is not a valid name: %w", kind, SafeName(name), verr)
+		}
+		fmt.Fprintf(os.Stderr, "cairn: skipping remote %s %s: %v\n", kind, SafeName(name), verr)
+		delete(refs, name)
+	}
+	return nil
 }

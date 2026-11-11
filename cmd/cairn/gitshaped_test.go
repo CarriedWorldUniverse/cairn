@@ -100,16 +100,17 @@ func TestGitOnlyVerbsTeachTheTranslation(t *testing.T) {
 		args []string
 		want []string // substrings the correction must carry
 	}{
-		{[]string{"add", "."}, []string{"no staging area", "cairn commit"}},
-		{[]string{"rm", "base.txt"}, []string{"delete the file on disk", "cairn commit"}},
-		{[]string{"mv", "a", "b"}, []string{"move the file on disk", "cairn commit"}},
+		// add, rm, mv, reset and revert were corrections here until the
+		// git-parity push made them real verbs (parity_wc_e2e_test.go); what
+		// each now does is pinned there, including the forms still refused
+		// (add -p, rm --cached) and the translation each of those teaches.
+		{[]string{"add", "-p"}, []string{"no staging area", "cairn commit"}},
+		{[]string{"rm", "--cached", "base.txt"}, []string{"no index", ".cairnignore"}},
 		{[]string{"rebase", "main"}, []string{"never needs a rebase", "cairn commit"}},
-		{[]string{"reset", "--hard"}, []string{"cairn oplog", "cairn undo"}},
-		{[]string{"revert", "HEAD"}, []string{"cairn undo", "cairn drop"}},
 		{[]string{"worktree", "add", "x"}, []string{"cairn express", "cairn ls"}},
 		{[]string{"checkout", "release"}, []string{"cd <repo>/release/", "cairn express release"}},
 		{[]string{"switch", "release"}, []string{"cd <repo>/release/", "cairn express release"}},
-		{[]string{"branch"}, []string{"cairn tree", "cairn ls"}},
+		// bare `branch` is a real verb now (cmd_branch.go) and lists lines.
 	}
 	for _, tc := range cases {
 		args := append([]string{tc.args[0], "--repo", root}, tc.args[1:]...)
@@ -127,10 +128,11 @@ func TestGitOnlyVerbsTeachTheTranslation(t *testing.T) {
 }
 
 // TestNonGitUnknownSubcommandIsUnchanged: the corpus-aware corrections must not
-// swallow the generic unknown-subcommand path (which still prints usage).
+// swallow the generic unknown-subcommand path (now a one-line error on stderr,
+// not the usage wall — see TestSafety_UnknownSubcommandOneLine).
 func TestNonGitUnknownSubcommandIsUnchanged(t *testing.T) {
 	err := run([]string{"frobnicate"})
-	if err == nil || !strings.Contains(err.Error(), `unknown subcommand "frobnicate"`) {
+	if err == nil || !strings.Contains(err.Error(), `'frobnicate' is not a cairn command`) {
 		t.Fatalf("got %v, want the generic unknown-subcommand error", err)
 	}
 }
