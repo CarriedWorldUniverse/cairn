@@ -377,6 +377,9 @@ func TestE2E_WorkingTreeInspectionMatchesGit(t *testing.T) {
 		"grep -n tail",
 		"grep -c fresh",
 		"describe --tags --dirty",
+		"status --porcelain=v2",
+		"status --porcelain=v2 -- src",
+		"status --porcelain=v2 -z",
 	} {
 		args := strings.Fields(c)
 		want, wantCode := gitRun(t, gitDir, args...)
@@ -577,7 +580,11 @@ func TestE2E_InspectionOnCairnHistory(t *testing.T) {
 	if got, _ := cairnRun(t, root, "rev-parse", "--abbrev-ref", "HEAD"); got != "main\n" {
 		t.Errorf("abbrev-ref = %q", got)
 	}
-	if got, _ := cairnRun(t, root, "describe", "--dirty"); got != "v0.1.0-dirty\n" {
+	// v0.1.0 is a lightweight tag: git's describe needs --tags for it.
+	if _, code := cairnRun(t, root, "describe", "--dirty"); code == 0 {
+		t.Errorf("describe without --tags used a lightweight tag")
+	}
+	if got, _ := cairnRun(t, root, "describe", "--tags", "--dirty"); got != "v0.1.0-dirty\n" {
 		t.Errorf("describe --dirty = %q", got)
 	}
 	// `diff <rev>` is the working tree against that commit, as a git patch.

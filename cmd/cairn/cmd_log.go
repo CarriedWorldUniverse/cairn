@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,7 +29,8 @@ import (
 
 // diffSpec are the diff-output options log, show and diff share.
 const diffSpec = "p|patch|u s|no-patch stat? shortstat numstat name-only name-status U|unified= " +
-	"w|ignore-all-space color? full-index binary R summary stat-width= stat-name-width= stat-graph-width= stat-count= no-renames M|find-renames? no-ext-diff no-textconv"
+	"w|ignore-all-space color? full-index binary R summary stat-width= stat-name-width= stat-graph-width= stat-count= no-renames M|find-renames? find-copies? no-ext-diff no-textconv " +
+	"word-diff? word-diff-regex= color-words? color-moved? color-moved-ws= dirstat?"
 
 // diffOut is a parsed choice of diff outputs.
 type diffOut struct {
@@ -39,6 +41,9 @@ type diffOut struct {
 	color                                                 bool
 	width                                                 int
 	statOpts                                              change.StatOptions
+	word                                                  *wordDiff
+	dirstat                                               *dirstatOpts
+	renames                                               int // minimum similarity for a rename (0: off)
 }
 
 // parseDiffOut reads the shared diff options. defaultPatch is what the
@@ -58,17 +63,93 @@ func parseDiffOut(g *gitOpts, defaultPatch bool) (diffOut, error) {
 		return d, err
 	}
 	d.patch = g.on("p") || g.has("U") || g.on("binary")
+	if err := d.parseWord(g); err != nil {
+		return d, err
+	}
+	d.renames = change.DefaultRenameScore
+	if g.on("no-renames") {
+		d.renames = 0
+	} else if g.on("find-renames") {
+		if d.renames, err = parseRenameScore(g.str("find-renames")); err != nil {
+			return d, fmt.Errorf("%s: %w", g.cmd, err)
+		}
+	}
+	if g.on("dirstat") {
+		if d.dirstat, err = parseDirstat(g.str("dirstat")); err != nil {
+			return d, fmt.Errorf("%s: %w", g.cmd, err)
+		}
+	}
 	if d.nameOnly && d.nameStatus {
 		return d, errors.New("options '--name-only', '--name-status', '--check', and '-s' cannot be used together")
 	}
 	if d.nameOnly || d.nameStatus {
 		// As git: a name listing replaces the patch and every stat form.
-		d.patch, d.stat, d.shortstat, d.numstat, d.summary = false, false, false, false, false
+		d.patch, d.stat, d.shortstat, d.numstat, d.summary, d.dirstat = false, false, false, false, false, nil
 	}
 	if !d.any() && defaultPatch {
 		d.patch = true
 	}
 	return d, nil
+}
+
+// parseRenameScore reads -M<n>: "50%" is a percentage, a bare number is the
+// digits after a decimal point ("-M9" is 90%, "-M75" 75%).
+func parseRenameScore(v string) (int, error) {
+	if v == "" {
+		return change.DefaultRenameScore, nil
+	}
+	var f float64
+	if pct, ok := strings.CutSuffix(v, "%"); ok {
+		n, err := strconv.ParseFloat(pct, 64)
+		if err != nil || n < 0 {
+			return 0, fmt.Errorf("invalid rename score %q", v)
+		}
+		f = n / 100
+	} else {
+		n, err := strconv.ParseFloat("0."+strings.TrimPrefix(v, "."), 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid rename score %q", v)
+		}
+		f = n
+	}
+	return min(int(f*change.MaxRenameScore), change.MaxRenameScore), nil
+}
+
+// parseWord reads --word-diff[=<mode>], --word-diff-regex and --color-words.
+func (d *diffOut) parseWord(g *gitOpts) error {
+	w := &wordDiff{}
+	switch {
+	case g.on("color-words"):
+		w.mode = "color"
+		if re := g.str("color-words"); re != "" {
+			g.set(g.defs["word-diff-regex"], re)
+		}
+	case g.on("word-diff"):
+		switch v := g.str("word-diff"); v {
+		case "", "plain":
+			w.mode = "plain"
+		case "color":
+			w.mode = "color"
+		case "none":
+			return nil
+		case "porcelain":
+			return fmt.Errorf("%s: --word-diff=porcelain is not supported (plain and color are)", g.cmd)
+		default:
+			return fmt.Errorf("%s: bad --word-diff argument: %s", g.cmd, v)
+		}
+	default:
+		return nil
+	}
+	if re := g.str("word-diff-regex"); re != "" {
+		rx, err := regexp.Compile(re)
+		if err != nil {
+			return fmt.Errorf("%s: invalid --word-diff-regex: %v", g.cmd, err)
+		}
+		w.regex = rx
+	}
+	d.word = w
+	d.patch = true
+	return nil
 }
 
 // parseStat reads --stat=<width>[,<name-width>[,<count>]] and the separate
@@ -126,12 +207,13 @@ func (d *diffOut) parseStat(g *gitOpts) error {
 }
 
 func (d diffOut) any() bool {
-	return d.patch || d.stat || d.shortstat || d.numstat || d.nameOnly || d.nameStatus || d.summary
+	return d.patch || d.stat || d.shortstat || d.numstat || d.nameOnly || d.nameStatus || d.summary || d.dirstat != nil
 }
 
 // none turns every output off (-s / --no-patch).
 func (d diffOut) none() diffOut {
 	d.patch, d.stat, d.shortstat, d.numstat, d.nameOnly, d.nameStatus, d.summary = false, false, false, false, false, false, false
+	d.dirstat = nil
 	return d
 }
 
@@ -142,22 +224,29 @@ func (d diffOut) compute(eng *change.Engine, a, b string, ps *change.Pathspec) (
 	if !d.any() {
 		return nil, nil
 	}
-	if !d.patch && !d.stat && !d.shortstat && !d.numstat && !d.summary && !d.po.IgnoreAllSpace {
+	if !d.patch && !d.stat && !d.shortstat && !d.numstat && !d.summary && d.dirstat == nil && !d.po.IgnoreAllSpace {
 		changes, err := eng.TreeChanges(a, b, ps)
 		if err != nil {
 			return nil, err
+		}
+		if d.renames > 0 {
+			if changes, err = eng.DetectRenames(changes, d.renames); err != nil {
+				return nil, err
+			}
 		}
 		out := make([]change.FilePatch, len(changes))
 		for i, ch := range changes {
 			if d.reverse {
 				ch = ch.Reversed()
 			}
-			out[i] = change.FilePatch{Path: ch.Path, Status: ch.Status()}
+			out[i] = change.FilePatch{Path: ch.Path, Status: ch.Status(), OldPath: ch.OldPath, Score: ch.Score}
 		}
 		return out, nil
 	}
 	po := d.po
 	po.StatOnly = !d.patch
+	po.Damage = d.dirstat != nil
+	po.Renames = d.renames
 	return eng.CommitPatches(a, b, ps, po, d.reverse)
 }
 
@@ -175,15 +264,19 @@ func (d diffOut) render(patches []change.FilePatch) string {
 		}
 	case d.nameStatus:
 		for _, p := range patches {
+			if p.Status == 'R' {
+				fmt.Fprintf(&sb, "R%03d\t%s\t%s\n", p.Score*100/change.MaxRenameScore, change.QuotePath(p.OldPath), change.QuotePath(p.Path))
+				continue
+			}
 			fmt.Fprintf(&sb, "%c\t%s\n", p.Status, change.QuotePath(p.Path))
 		}
 	}
 	if d.numstat {
 		for _, p := range patches {
 			if p.Binary {
-				fmt.Fprintf(&sb, "-\t-\t%s\n", change.QuotePath(p.Path))
+				fmt.Fprintf(&sb, "-\t-\t%s\n", p.DisplayName())
 			} else {
-				fmt.Fprintf(&sb, "%d\t%d\t%s\n", p.Added, p.Deleted, change.QuotePath(p.Path))
+				fmt.Fprintf(&sb, "%d\t%d\t%s\n", p.Added, p.Deleted, p.DisplayName())
 			}
 		}
 	}
@@ -191,6 +284,9 @@ func (d diffOut) render(patches []change.FilePatch) string {
 		sb.WriteString(d.colorStat(change.FormatStatOpts(patches, d.statOpts)))
 	} else if d.shortstat {
 		sb.WriteString(change.FormatShortStat(patches))
+	}
+	if d.dirstat != nil {
+		sb.WriteString(d.dirstat.render(patches))
 	}
 	if d.summary {
 		for _, p := range patches {
@@ -202,6 +298,14 @@ func (d diffOut) render(patches []change.FilePatch) string {
 			sb.WriteString("\n")
 		}
 		for _, p := range patches {
+			if d.word != nil && !p.Binary {
+				w := *d.word
+				w.color = d.color || w.mode == "color"
+				hd := d
+				hd.color = w.color
+				sb.WriteString(hd.colorPatch(p.Header) + w.body(p.Body))
+				continue
+			}
 			sb.WriteString(d.colorPatch(p.Text()))
 		}
 	}
@@ -272,7 +376,7 @@ func (d diffOut) colorPatch(s string) string {
 const logSpec = "n|max-count= # skip= oneline format|pretty? abbrev-commit abbrev= date= decorate? graph " +
 	"all first-parent merges no-merges reverse follow author= committer= grep= i|regexp-ignore-case " +
 	"E|extended-regexp F|fixed-strings all-match invert-grep since|after= until|before= S= G= " +
-	"topo-order date-order m no-walk classic working " + diffSpec
+	"topo-order date-order m no-walk classic working no-abbrev L= " + diffSpec
 
 // walkFilters fills the filter half of a WalkOptions from the options that
 // log, rev-list and shortlog share.
@@ -434,12 +538,13 @@ func cmdLog(args []string) error {
 		return fmt.Errorf("log: unknown date format %q", g.str("date"))
 	}
 	pp := &prettyPrinter{f: f, color: color, dateMode: g.str("date"), now: time.Now()}
-	if pp.abbrev, err = g.integer("abbrev", 7); err != nil {
+	if pp.abbrev, err = abbrevLen(g); err != nil {
 		return err
 	}
-	pp.decorate = g.on("decorate") || (!g.has("decorate") && stdoutIsTTY())
+	var decorFull bool
+	pp.decorate, decorFull = decorateMode(g)
 	if pp.decorate || strings.Contains(f.tmpl, "%d") || strings.Contains(f.tmpl, "%D") {
-		if pp.decor, err = loadDecorations(eng); err != nil {
+		if pp.decor, err = loadDecorations(eng, decorFull); err != nil {
 			return mapErr(err)
 		}
 	}
@@ -450,24 +555,42 @@ func cmdLog(args []string) error {
 	defer out.Flush()
 	lw := &logWriter{out: out, f: f, d: d}
 
-	render := func(c *change.CommitMeta) (text, diff string, err error) {
-		text = pp.entry(c)
+	type rendered struct{ text, diff string }
+	// render gives one entry per commit — or, under -m, one per parent of a
+	// merge, each headed "(from <parent>)" and diffed against that parent.
+	render := func(c *change.CommitMeta) ([]rendered, error) {
 		if !d.any() || (len(c.Parents) > 1 && !mergeDiffs) {
-			return text, "", nil
+			return []rendered{{pp.entry(c), ""}}, nil
 		}
 		ps := basePS
 		if o.Follow && c.Path != "" {
 			ps = change.NewPathspec([]string{c.Path})
 		}
-		parent := ""
+		parents := []string{""}
 		if len(c.Parents) > 0 {
-			parent = c.Parents[0]
+			parents = c.Parents[:1]
+			if len(c.Parents) > 1 && g.on("m") && !o.FirstParent {
+				parents = c.Parents
+			}
 		}
-		patches, err := d.compute(eng, parent, c.SHA, ps)
-		if err != nil {
-			return "", "", err
+		var out []rendered
+		for _, parent := range parents {
+			pp.from = ""
+			if len(parents) > 1 {
+				pp.from = parent
+			}
+			patches, err := d.compute(eng, parent, c.SHA, ps)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, rendered{pp.entry(c), d.render(patches)})
 		}
-		return text, d.render(patches), nil
+		pp.from = ""
+		return out, nil
+	}
+
+	if g.has("L") {
+		return logLineRange(eng, lc, g, o, pp, lw, limit, skip)
 	}
 
 	// --working: the open working change first, when it holds anything. It
@@ -522,11 +645,13 @@ func cmdLog(args []string) error {
 	}
 	if !graph {
 		err = eng.WalkCommits(o, func(c *change.CommitMeta) error {
-			text, diff, err := render(c)
+			rs, err := render(c)
 			if err != nil {
 				return err
 			}
-			lw.write(text, diff, nil)
+			for _, r := range rs {
+				lw.write(r.text, r.diff, nil)
+			}
 			return nil
 		})
 		return mapErr(err)
@@ -556,11 +681,11 @@ func cmdLog(args []string) error {
 		if i < skip {
 			continue
 		}
-		text, diff, err := render(c)
+		rs, err := render(c)
 		if err != nil {
 			return mapErr(err)
 		}
-		lw.write(text, diff, &graphPrefix{first: prefixes, cont: cont, width: width, color: color})
+		lw.write(rs[0].text, rs[0].diff, &graphPrefix{first: prefixes, cont: cont, width: width, color: color})
 	}
 	return nil
 }
@@ -782,7 +907,7 @@ func logClassic(r *worktree.Repo, g *gitOpts) error {
 	return nil
 }
 
-const showSpec = "oneline format|pretty? abbrev-commit abbrev= date= decorate? q|quiet m first-parent classic " + diffSpec
+const showSpec = "oneline format|pretty? abbrev-commit abbrev= date= decorate? q|quiet m first-parent classic c cc no-abbrev " + diffSpec
 
 // cmdShow prints objects: a commit's message and diff, a blob's content
 // (<rev>:<path>), a tree's listing, or a tag.
@@ -836,12 +961,13 @@ func cmdShow(args []string) error {
 		return fmt.Errorf("show: unknown date format %q", g.str("date"))
 	}
 	pp := &prettyPrinter{f: f, color: color, dateMode: g.str("date"), now: time.Now()}
-	if pp.abbrev, err = g.integer("abbrev", 7); err != nil {
+	if pp.abbrev, err = abbrevLen(g); err != nil {
 		return err
 	}
-	pp.decorate = g.on("decorate") || (!g.has("decorate") && stdoutIsTTY())
+	var decorFull bool
+	pp.decorate, decorFull = decorateMode(g)
 	if pp.decorate || strings.Contains(f.tmpl, "%d") || strings.Contains(f.tmpl, "%D") {
-		if pp.decor, err = loadDecorations(eng); err != nil {
+		if pp.decor, err = loadDecorations(eng, decorFull); err != nil {
 			return mapErr(err)
 		}
 	}
@@ -888,11 +1014,11 @@ func cmdShow(args []string) error {
 				return mapErr(err)
 			}
 			_, _ = out.WriteString("\n")
-			if err := showCommit(eng, lw, pp, d, ps, target); err != nil {
+			if err := showCommit(eng, lw, pp, d, ps, target, g.on("m")); err != nil {
 				return err
 			}
 		default:
-			if err := showCommit(eng, lw, pp, d, ps, sha); err != nil {
+			if err := showCommit(eng, lw, pp, d, ps, sha, g.on("m")); err != nil {
 				return err
 			}
 		}
@@ -900,32 +1026,102 @@ func cmdShow(args []string) error {
 	return nil
 }
 
-func showCommit(eng *change.Engine, lw *logWriter, pp *prettyPrinter, d diffOut, ps *change.Pathspec, sha string) error {
+func showCommit(eng *change.Engine, lw *logWriter, pp *prettyPrinter, d diffOut, ps *change.Pathspec, sha string, perParent bool) error {
 	c, err := eng.CommitMeta(sha)
 	if err != nil {
 		return mapErr(err)
 	}
-	// A merge is shown against its first parent (git shows a combined diff).
-	parent := ""
+	// A merge is shown against its first parent (git shows a combined diff);
+	// with -m, once per parent.
+	parents := []string{""}
 	if len(c.Parents) > 0 {
-		parent = c.Parents[0]
+		parents = c.Parents[:1]
+		if perParent && len(c.Parents) > 1 {
+			parents = c.Parents
+		}
 	}
-	if !ps.All() {
-		// As git: a commit that does not touch the pathspec is not shown.
-		changes, err := eng.TreeChanges(parent, sha, ps)
+	defer func() { pp.from = "" }()
+	for _, parent := range parents {
+		pp.from = ""
+		if len(parents) > 1 {
+			pp.from = parent
+		}
+		if !ps.All() {
+			// As git: a commit that does not touch the pathspec is not shown.
+			changes, err := eng.TreeChanges(parent, sha, ps)
+			if err != nil {
+				return mapErr(err)
+			}
+			if len(changes) == 0 {
+				continue
+			}
+		}
+		dps := ps
+		if len(c.Parents) > 1 && !perParent {
+			// No -m: git shows a combined diff, which holds only what the
+			// merge changed against EVERY parent — nothing for a clean merge.
+			// Approximated at file granularity: the first-parent diff of the
+			// files that differ from all parents.
+			only, err := changedFromAllParents(eng, c, ps)
+			if err != nil {
+				return mapErr(err)
+			}
+			if len(only) == 0 {
+				// The stat forms still describe the first-parent diff.
+				ds := d
+				ds.patch, ds.nameOnly, ds.nameStatus, ds.summary = false, false, false, false
+				var out string
+				if ds.any() {
+					patches, err := ds.compute(eng, parent, sha, ps)
+					if err != nil {
+						return mapErr(err)
+					}
+					out = ds.render(patches)
+				}
+				was := lw.d
+				lw.d = ds
+				lw.write(pp.entry(c), out, nil)
+				lw.d = was
+				if out == "" && (d.patch || d.nameOnly || d.nameStatus) && pp.f.kind != "oneline" {
+					// git still ends the (empty) combined diff with a blank line.
+					_, _ = lw.out.WriteString("\n")
+				}
+				continue
+			}
+			dps = change.NewPathspec(only)
+		}
+		patches, err := d.compute(eng, parent, sha, dps)
 		if err != nil {
 			return mapErr(err)
 		}
-		if len(changes) == 0 {
-			return nil
-		}
+		lw.write(pp.entry(c), d.render(patches), nil)
 	}
-	patches, err := d.compute(eng, parent, sha, ps)
-	if err != nil {
-		return mapErr(err)
-	}
-	lw.write(pp.entry(c), d.render(patches), nil)
 	return nil
+}
+
+// changedFromAllParents lists the files (within ps) of merge c that differ
+// from every one of its parents.
+func changedFromAllParents(eng *change.Engine, c *change.CommitMeta, ps *change.Pathspec) ([]string, error) {
+	var common map[string]bool
+	for i, parent := range c.Parents {
+		changes, err := eng.TreeChanges(parent, c.SHA, ps)
+		if err != nil {
+			return nil, err
+		}
+		here := map[string]bool{}
+		for _, ch := range changes {
+			if i == 0 || common[ch.Path] {
+				here[ch.Path] = true
+			}
+		}
+		common = here
+	}
+	var out []string
+	for p := range common {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out, nil
 }
 
 func showTree(eng *change.Engine, out io.Writer, name, sha string) error {

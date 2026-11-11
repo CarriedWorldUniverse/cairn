@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
@@ -262,7 +263,7 @@ func symbolicName(eng *change.Engine, rev string, full bool) (string, error) {
 
 const revListSpec = "n|max-count= # skip= count reverse all first-parent merges no-merges author= committer= " +
 	"grep= i|regexp-ignore-case E|extended-regexp F|fixed-strings all-match invert-grep " +
-	"since|after= until|before= topo-order date-order parents abbrev-commit abbrev= left-right S= G="
+	"since|after= until|before= topo-order date-order parents abbrev-commit abbrev= left-right S= G= oneline format|pretty? date= no-abbrev"
 
 // cmdRevList lists commit hashes in a range.
 // Usage: cairn rev-list [--count] [-n N] [--reverse] [--all] [--first-parent] <range>... [-- <path>...]
@@ -368,6 +369,37 @@ func cmdRevList(args []string) error {
 			return s[:abbrev]
 		}
 		return s
+	}
+	if g.on("oneline") || g.has("format") {
+		// --oneline / --pretty[=<fmt>]: the log's formats, but a multi-line
+		// or format: entry is introduced by a bare "commit <sha>" line.
+		f, err := parseLogFormat(g)
+		if err != nil {
+			return err
+		}
+		if !validDateMode(g.str("date")) {
+			return fmt.Errorf("rev-list: unknown date format %q", g.str("date"))
+		}
+		pp := &prettyPrinter{f: f, dateMode: g.str("date"), now: time.Now()}
+		if pp.abbrev, err = abbrevLen(g); err != nil {
+			return err
+		}
+		return mapErr(eng.WalkCommits(o, func(c *change.CommitMeta) error {
+			text := pp.entry(c)
+			switch f.kind {
+			case "oneline":
+				_, _ = out.WriteString(text + "\n")
+			case "format":
+				name := c.SHA
+				if f.abbrevCommit {
+					name = pp.short(c.SHA)
+				}
+				_, _ = out.WriteString("commit " + name + "\n" + text + "\n")
+			default:
+				_, _ = out.WriteString(text + "\n\n")
+			}
+			return nil
+		}))
 	}
 	return mapErr(eng.WalkCommits(o, func(c *change.CommitMeta) error {
 		_, _ = out.WriteString(cut(c.SHA))
@@ -749,7 +781,7 @@ func cmdLsFiles(args []string) error {
 //
 // cairn's tags are all lightweight, so --tags is implied.
 func cmdDescribe(args []string) error {
-	g := newGitOpts("describe", "tags always abbrev= dirty? long exact-match all match= first-parent candidates=")
+	g := newGitOpts("describe", "tags always abbrev= dirty? long exact-match all match= first-parent candidates= contains")
 	if err := g.parse(args); err != nil {
 		return err
 	}
@@ -777,6 +809,28 @@ func cmdDescribe(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
+	if g.on("contains") {
+		// `describe --contains` is `name-rev --tags --name-only`:
+		// the nearest tag at or AFTER the commit.
+		opt := nameRevOptions{tagsOnly: !g.on("all"), nameOnly: true}
+		if pat := g.str("match"); pat != "" {
+			opt.refs = []string{"refs/tags/" + pat}
+		}
+		names, err := nameRevNames(eng, []string{sha}, opt)
+		if err != nil {
+			return mapErr(err)
+		}
+		name := names[sha]
+		if name == "" {
+			if g.on("always") {
+				name = sha[:7]
+			} else {
+				return fmt.Errorf("describe: cannot describe '%s'", sha)
+			}
+		}
+		fmt.Println(name)
+		return nil
+	}
 	abbrev, err := g.integer("abbrev", 7)
 	if err != nil {
 		return err
@@ -785,7 +839,7 @@ func cmdDescribe(args []string) error {
 	if pat := g.str("match"); pat != "" {
 		match = func(tag string) bool { ok, _ := path.Match(pat, tag); return ok }
 	}
-	tag, depth, err := eng.Describe(sha, match)
+	tag, depth, err := eng.DescribeWith(sha, match, !g.on("tags") && !g.on("all"))
 	if err != nil {
 		return mapErr(err)
 	}
@@ -796,6 +850,8 @@ func cmdDescribe(args []string) error {
 		if abbrev == 0 {
 			name = sha[:7]
 		}
+	case tag == "" && !g.on("tags"):
+		return errors.New("describe: no annotated tags can describe this commit (try --tags, or --always to fall back to the abbreviated hash)")
 	case tag == "":
 		return errors.New("describe: no tags can describe this commit (use --always to fall back to the abbreviated hash)")
 	case depth > 0 && g.on("exact-match"):

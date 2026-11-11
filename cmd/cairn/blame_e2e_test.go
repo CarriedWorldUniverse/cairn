@@ -58,7 +58,12 @@ func TestE2E_BlameWorking(t *testing.T) {
 	}
 
 	// Run blame — openRepoSynced will snapshot the edit into the working commit.
-	out := captureRun(t, "blame", "--repo", root, "f.txt", "main")
+	// git's own format calls such a line "Not Committed Yet".
+	if gitOut := captureRun(t, "blame", "--repo", root, "f.txt", "main"); !strings.Contains(gitOut, "Not Committed Yet") {
+		t.Errorf("blame output missing 'Not Committed Yet':\n%s", gitOut)
+	}
+	// --classic keeps cairn's original format.
+	out := captureRun(t, "blame", "--classic", "--repo", root, "f.txt", "main")
 
 	// The edited line2 must show "(working)".
 	if !strings.Contains(out, "(working)") {

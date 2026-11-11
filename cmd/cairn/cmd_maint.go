@@ -38,6 +38,19 @@ func humanBytes(n int64) string {
 	return fmt.Sprintf("%s%d bytes", neg, n)
 }
 
+// gitHumanBytes is git's strbuf_humanise_bytes: two decimals, 1024-based.
+func gitHumanBytes(n int64) string {
+	switch {
+	case n > 1<<30:
+		return fmt.Sprintf("%d.%02d GiB", n>>30, (n&(1<<30-1))/10737419)
+	case n > 1<<20:
+		return fmt.Sprintf("%d.%02d MiB", n>>20, (n&(1<<20-1))/10485)
+	case n > 1<<10:
+		return fmt.Sprintf("%d.%02d KiB", n>>10, (n&(1<<10-1))*100/1024)
+	}
+	return fmt.Sprintf("%d bytes", n)
+}
+
 // cmdReflog shows the operation log through one line, git-style:
 // `<sha> <line>@{N}: <op>: <detail>`, newest first. Only operations that moved
 // the line's tip appear; `cairn oplog` is the unfiltered log.
@@ -64,9 +77,13 @@ func cmdReflog(args []string) error {
 	if fs.NArg() > 0 {
 		line = fs.Arg(0)
 	}
+	label := line
 	if line == "" || line == "HEAD" {
-		line, err = r.DefaultBranch()
-		if err != nil {
+		// git's reflog of HEAD: the line you stand in, spelled HEAD@{N}.
+		label = "HEAD"
+		if b, ok := r.CWDBranch(); ok {
+			line = b
+		} else if line, err = r.DefaultBranch(); err != nil {
 			return mapErr(err)
 		}
 	}
@@ -82,7 +99,7 @@ func cmdReflog(args []string) error {
 		if e.Detail != "" {
 			msg += ": " + e.Detail
 		}
-		fmt.Printf("%s %s@{%d}: %s\n", short7(e.Sha), line, i, msg)
+		fmt.Printf("%s %s@{%d}: %s\n", short7(e.Sha), label, i, msg)
 	}
 	return nil
 }
@@ -180,12 +197,16 @@ func cmdCountObjects(args []string) error {
 	}
 	size := func(k int64) string {
 		if *human {
-			return humanBytes(k * 1024)
+			return gitHumanBytes(k * 1024)
 		}
 		return fmt.Sprint(k)
 	}
 	if !*verbose {
-		fmt.Printf("%d objects, %s kilobytes\n", c.Loose, size(c.LooseKiB))
+		unit := " kilobytes"
+		if *human {
+			unit = ""
+		}
+		fmt.Printf("%d objects, %s%s\n", c.Loose, size(c.LooseKiB), unit)
 		return nil
 	}
 	fmt.Printf("count: %d\nsize: %s\nin-pack: %d\npacks: %d\nsize-pack: %s\nprune-packable: 0\ngarbage: %d\nsize-garbage: %s\n",

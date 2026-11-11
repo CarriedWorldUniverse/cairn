@@ -291,6 +291,9 @@ func (e *Engine) resolveName(name string) (plumbing.Hash, error) {
 	if up, ok := cutUpstream(name); ok {
 		return e.resolveUpstream(up)
 	}
+	if line, n, ok := cutReflogRev(name); ok {
+		return e.resolveReflogRev(line, n)
+	}
 	if name == "HEAD" || name == "@" {
 		return e.headCommit()
 	}

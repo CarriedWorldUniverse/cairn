@@ -736,8 +736,12 @@ func TestRefsReflog(t *testing.T) {
 	mustRun(t, "tag", "--repo", root, "v1")
 	out := refsOut(t, "reflog", "--repo", root)
 	lines := strings.Split(strings.TrimSpace(out), "\n")
-	if len(lines) < 2 || !strings.Contains(lines[0], "main@{0}: commit") || !strings.Contains(lines[1], "main@{1}: commit") {
+	if len(lines) < 2 || !strings.Contains(lines[0], "HEAD@{0}: commit") || !strings.Contains(lines[1], "HEAD@{1}: commit") {
 		t.Fatalf("reflog:\n%s", out)
+	}
+	// a named line keeps its own name, as in git
+	if named := refsOut(t, "reflog", "--repo", root, "main"); !strings.Contains(named, "main@{0}: commit") {
+		t.Fatalf("reflog main:\n%s", named)
 	}
 	for _, l := range lines {
 		if len(strings.Fields(l)[0]) != 7 {

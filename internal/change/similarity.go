@@ -60,7 +60,11 @@ func similarity(src, dst []byte) int {
 		return 0
 	}
 	text := !isBinary(src) && !isBinary(dst)
-	sh, dh := spanHashes(src, text), spanHashes(dst, text)
+	return similarityHashed(spanHashes(src, text), spanHashes(dst, text), maxSize)
+}
+
+// similarityHashed is the score of two files already cut into spans.
+func similarityHashed(sh, dh map[uint32]int, maxSize int) int {
 	keys := make([]uint32, 0, len(sh))
 	for k := range sh {
 		keys = append(keys, k)
@@ -73,4 +77,28 @@ func similarity(src, dst []byte) int {
 		}
 	}
 	return copied * maxScore / maxSize
+}
+
+// fileDamage is git's --dirstat "changes" measure for one file: the bytes of
+// the old file that did not survive plus the bytes new in the file
+// (diffcore_count_changes). Added and removed files count their size.
+func fileDamage(src, dst []byte, hasSrc, hasDst bool) int {
+	switch {
+	case !hasSrc:
+		return len(dst)
+	case !hasDst:
+		return len(src)
+	}
+	text := !isBinary(src) && !isBinary(dst)
+	sh, dh := spanHashes(src, text), spanHashes(dst, text)
+	copied, added, srcTotal := 0, 0, 0
+	for _, n := range sh {
+		srcTotal += n
+	}
+	for k, dc := range dh {
+		sc := sh[k]
+		copied += min(sc, dc)
+		added += max(dc-sc, 0)
+	}
+	return (srcTotal - copied) + added
 }

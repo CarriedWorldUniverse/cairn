@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -47,14 +48,17 @@ func cmdStatus(args []string) error {
 	fs.BoolVar(&showBranch, "branch", false, "show the branch header in the short format")
 	fs.BoolVar(&nul, "z", false, "terminate entries with NUL instead of newline (implies --porcelain)")
 	fs.Bool("long", false, "long format (the default)")
-	for _, name := range []string{"ahead-behind", "no-ahead-behind", "renames", "no-renames", "column", "no-column"} {
+	for _, name := range []string{"ahead-behind", "no-ahead-behind", "column", "no-column"} {
 		fs.Bool(name, false, "accepted for git compatibility (no-op)")
 	}
+	noRenames := fs.Bool("no-renames", false, "list a rename as a delete and an add")
+	fs.Bool("renames", false, "pair deleted and added files as renames (the default)")
 	if err := parseGitArgs(fs, before); err != nil {
 		return err
 	}
-	if porcelain && porcelainVer != "" && porcelainVer != "v1" && porcelainVer != "1" {
-		return fmt.Errorf("status --porcelain=%s is not supported; cairn emits porcelain v1", porcelainVer)
+	v2 := porcelain && (porcelainVer == "v2" || porcelainVer == "2")
+	if porcelain && !v2 && porcelainVer != "" && porcelainVer != "v1" && porcelainVer != "1" {
+		return fmt.Errorf("status --porcelain=%s is not supported; cairn emits porcelain v1 and v2", porcelainVer)
 	}
 	if ignored && ignoredMode == "no" {
 		ignored = false
@@ -87,8 +91,11 @@ func cmdStatus(args []string) error {
 	if err != nil {
 		return mapErr(err)
 	}
+	if v2 {
+		return printPorcelainV2(r, st, specs, showBranch, nul, ignored, *noRenames)
+	}
 	if machine {
-		return printShortStatus(r, st, specs, showBranch, nul, ignored)
+		return printShortStatus(r, st, specs, showBranch, nul, ignored, *noRenames)
 	}
 	fmt.Printf("branch:    %s\n", st.Branch)
 	fmt.Printf("lineage:   %s\n", strings.Join(st.Lineage, " → "))
@@ -120,7 +127,7 @@ func cmdStatus(args []string) error {
 }
 
 // printShortStatus writes git's short / porcelain-v1 status for st.
-func printShortStatus(r *worktree.Repo, st worktree.StatusInfo, specs []string, showBranch, nul, ignored bool) error {
+func printShortStatus(r *worktree.Repo, st worktree.StatusInfo, specs []string, showBranch, nul, ignored, noRenames bool) error {
 	var err error
 	if len(specs) > 0 {
 		if specs, err = treePathspecs(r, st.Branch, specs); err != nil {
@@ -151,6 +158,19 @@ func printShortStatus(r *worktree.Repo, st worktree.StatusInfo, specs []string, 
 	for _, p := range st.Conflicts {
 		codes[p] = "UU"
 	}
+	// A deleted file and an added one that are the same file are a rename.
+	renames := map[string]change.TreeChange{}
+	if !noRenames {
+		rs, rerr := statusRenames(r, st)
+		if rerr != nil {
+			return rerr
+		}
+		for _, ch := range rs {
+			delete(codes, ch.OldPath)
+			codes[ch.Path] = "R "
+			renames[ch.Path] = ch
+		}
+	}
 	paths := make([]string, 0, len(codes))
 	for p := range codes {
 		if want(p) {
@@ -173,6 +193,14 @@ func printShortStatus(r *worktree.Repo, st worktree.StatusInfo, specs []string, 
 		fmt.Fprint(out, statusBranchHeader(r, st.Branch), end)
 	}
 	for _, p := range paths {
+		if ch, ok := renames[p]; ok {
+			if nul {
+				fmt.Fprint(out, codes[p], " ", p, "\x00", ch.OldPath, end)
+			} else {
+				fmt.Fprint(out, codes[p], " ", name(ch.OldPath), " -> ", name(p), end)
+			}
+			continue
+		}
 		fmt.Fprint(out, codes[p], " ", name(p), end)
 	}
 	if ignored {
@@ -248,4 +276,32 @@ func quoteStatusPath(p string) string {
 	}
 	b.WriteByte('"')
 	return b.String()
+}
+
+// statusRenames pairs the line's deleted and added files, as git's status
+// does for what it reports as staged.
+func statusRenames(r *worktree.Repo, st worktree.StatusInfo) ([]change.TreeChange, error) {
+	if len(st.Added) == 0 || len(st.Deleted) == 0 {
+		return nil, nil
+	}
+	base, head, err := workingPair(r, st.Branch)
+	if err != nil || base == head {
+		return nil, err
+	}
+	eng := r.Engine()
+	changes, err := eng.TreeChanges(base, head, nil)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	changes, err = eng.DetectRenames(changes, change.DefaultRenameScore)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	var out []change.TreeChange
+	for _, ch := range changes {
+		if ch.OldPath != "" {
+			out = append(out, ch)
+		}
+	}
+	return out, nil
 }

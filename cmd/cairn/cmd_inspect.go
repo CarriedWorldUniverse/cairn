@@ -531,7 +531,7 @@ func (gp *grepPrinter) file(name string, data []byte, showName bool) (string, bo
 //	cairn blame [-L <a>,<b>]... [<rev>] -- <path>  as of a revision
 //	cairn blame [-L <a>,<b>]... <rev> <path>
 func cmdBlame(args []string) error {
-	g := newGitOpts("blame", "author= L= s l e|show-email w C M")
+	g := newGitOpts("blame", "author= L= s l e|show-email w C? M? classic porcelain line-porcelain abbrev= n|show-number t f|show-name root incremental")
 	if err := g.parse(args); err != nil {
 		return err
 	}
@@ -566,6 +566,8 @@ func cmdBlame(args []string) error {
 		return errors.New(usageMsg)
 	}
 	var lines []change.BlameLine
+	var blamed string
+	bopt := change.BlameOptions{IgnoreSpace: g.on("w")}
 	if rev != "" {
 		sha, err := eng.ResolveCommit(rev)
 		if err != nil {
@@ -575,7 +577,8 @@ func cmdBlame(args []string) error {
 		if err != nil {
 			return err
 		}
-		if lines, err = eng.Blame(sha, tp); err != nil {
+		blamed = tp
+		if lines, err = eng.BlameWith(sha, tp, bopt); err != nil {
 			return mapErr(err)
 		}
 	} else {
@@ -585,7 +588,8 @@ func cmdBlame(args []string) error {
 				return err
 			}
 		}
-		if lines, err = r.Blame(branch, path); err != nil {
+		blamed = path
+		if lines, err = r.BlameWith(branch, path, bopt); err != nil {
 			return mapErr(err)
 		}
 	}
@@ -596,25 +600,41 @@ func cmdBlame(args []string) error {
 	out := bufio.NewWriterSize(os.Stdout, 1<<16)
 	defer out.Flush()
 	working := map[string]bool{}
-	for i, ln := range lines {
-		if keep != nil && !keep[i] {
-			continue
-		}
-		id := ln.Commit
-		if len(id) > 8 {
-			id = id[:8]
-		}
-		w, seen := working[ln.Commit]
+	isWorking := func(sha string) bool {
+		w, seen := working[sha]
 		if !seen {
-			w, _ = r.IsWorkingCommit(ln.Commit)
-			working[ln.Commit] = w
+			w, _ = r.IsWorkingCommit(sha)
+			working[sha] = w
 		}
-		if w {
-			id = "(working)"
-		}
-		fmt.Fprintf(out, "%-10s %-14s %s  %s\n", id, ln.Author, ln.When.Format("2006-01-02"), strings.TrimRight(ln.Text, "\n"))
+		return w
 	}
-	return nil
+	if g.on("classic") {
+		for i, ln := range lines {
+			if keep != nil && !keep[i] {
+				continue
+			}
+			id := ln.Commit
+			if len(id) > 8 {
+				id = id[:8]
+			}
+			if isWorking(ln.Commit) {
+				id = "(working)"
+			}
+			fmt.Fprintf(out, "%-10s %-14s %s  %s\n", id, ln.Author, ln.When.Format("2006-01-02"), strings.TrimRight(ln.Text, "\n"))
+		}
+		return nil
+	}
+	abbrev := 7
+	if g.has("abbrev") {
+		if abbrev, err = g.integer("abbrev", 7); err != nil || abbrev < 0 {
+			return errors.New("blame: bad --abbrev")
+		}
+	}
+	return renderBlame(out, lines, keep, isWorking, blameFmt{
+		porcelain: g.on("porcelain") || g.on("line-porcelain"), repeat: g.on("line-porcelain"),
+		noAuthor: g.on("s"), email: g.on("e"), long: g.on("l"), number: g.on("n"),
+		rawTime: g.on("t"), showName: g.on("f"), abbrev: abbrev, path: blamed,
+	})
 }
 
 // blameRanges turns -L <a>,<b> arguments (1-based, inclusive; b may be +N or

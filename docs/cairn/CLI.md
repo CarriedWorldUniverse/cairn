@@ -363,8 +363,10 @@ Show one commit's message and its patch, as git does (default `HEAD`). `--classi
 original cairn format.
 
 #### `cairn blame <path> [branch]`
-Per-line provenance for a file: author, date, and the change that last touched each line.
-Lines still in an un-sealed working change show as `(working)`.
+Per-line provenance for a file, in git's format (`<sha> (<author> <date> <n>) <line>`):
+`-L <a>,<b>`, `-s -e -l -n -f -t --abbrev=<n> -w --porcelain --line-porcelain`; `-C`/`-M` are
+accepted (renames are always followed). Lines still in an un-sealed working change show as
+`Not Committed Yet`. `--classic` prints cairn's original author/date columns (`(working)`).
 
 #### Git-shaped inspection
 
@@ -373,18 +375,24 @@ carry over. `log`, `show` and `diff` accept `--classic` for cairn's original out
 
 | Command | Options |
 |---|---|
-| `cairn log [<range>] [-- <path>...]` | `--oneline --stat --shortstat --numstat -p --name-only --name-status --graph --format=/--pretty= --date= --decorate --author= --committer= --grep= -i -E -F --all-match --invert-grep --since/--after --until/--before -n/--max-count/-<N> --skip --reverse --first-parent --merges --no-merges --all --follow -S -G -U<n> -w -m` |
-| `cairn show [<rev>[:<path>]...]` | `--stat --name-only --name-status -s --format= --oneline`; a blob prints its content, a tree its listing |
-| `cairn diff [<rev> \| <a> <b> \| <a>..<b> \| <a>...<b>] [-- <path>...]` | `-p --stat --numstat --shortstat --name-only --name-status -U<n> -R -w --full-index --binary --color[=when] --exit-code --quiet` |
+| `cairn log [<range>] [-- <path>...]` | `-L <a>,<b>:<file>` / `-L :<func>:<file>` (the history of a line range), `-m` (a diff per merge parent), `--no-abbrev --pretty=reference --decorate=full`, `--oneline --stat --shortstat --numstat -p --name-only --name-status --graph --format=/--pretty= --date= --decorate --author= --committer= --grep= -i -E -F --all-match --invert-grep --since/--after --until/--before -n/--max-count/-<N> --skip --reverse --first-parent --merges --no-merges --all --follow -S -G -U<n> -w -m` |
+| `cairn show [<rev>[:<path>]...]` | `--stat --name-only --name-status -s --format= --oneline -m -c --cc`; a blob prints its content, a tree its listing |
+| `cairn diff [<rev> \| <a> <b> \| <a>..<b> \| <a>...<b>] [-- <path>...]` | `-p --stat --numstat --shortstat --dirstat --name-only --name-status -U<n> -R -w --full-index --binary --color[=when] --word-diff[=plain\|color] --color-words --color-moved --exit-code --quiet -M[<n>] --no-renames` — renames are detected as git does by default (`R087 old new`, `{a => b}/f` in stats) |
 | `cairn grep <pattern> [<rev>...] [-- <path>...]` | `-n -i -l -L -c -w -v -E -F -e -h -o -q -I -A/-B/-C` (exit 1 when nothing matches) |
 | `cairn blame` | `-L <a>,<b>`; `cairn blame <rev> -- <path>` |
 | `cairn ls-files` | `-c -m -d -o --exclude-standard -s -z --full-name --error-unmatch` |
 | `cairn ls-tree <tree-ish> [<path>...]` | `-r -d -t -l --name-only -z --full-name --full-tree` |
 | `cairn cat-file` | `-t -s -p -e <object>`, `<type> <object>`, `--batch-check`, `--batch` |
 | `cairn rev-parse` | `<rev>... --verify -q --short[=n] --abbrev-ref --symbolic-full-name --show-toplevel --git-dir --show-prefix --is-inside-work-tree` |
-| `cairn rev-list <range>...` | `--count -n --skip --reverse --all --first-parent --merges --no-merges --parents --topo-order --left-right --count a...b` |
+| `cairn rev-list <range>...` | `--oneline --pretty[=<fmt>] --count -n --skip --reverse --all --first-parent --merges --no-merges --parents --topo-order --left-right --count a...b` |
 | `cairn shortlog [<range>]` | `-s -n -e -c` |
-| `cairn describe [<rev>]` | `--tags --always --abbrev=<n> --dirty[=mark] --long --exact-match --match <glob>` |
+| `cairn describe [<rev>]` | `--tags --always --abbrev=<n> --dirty[=mark] --long --exact-match --match <glob> --contains` — without `--tags` only annotated tags name a commit, as in git |
+| `cairn merge-base` | `[--all] <a> <b>`, `--is-ancestor <a> <b>` (`--fork-point` is refused: cairn has an oplog, not git's reflog) |
+| `cairn for-each-ref [<pattern>...]` | `--format=%(refname[:short]) %(objectname[:short]) %(objecttype) %(subject) %(authorname/email/date) %(committer…) %(tagger…) %(*objectname) %(HEAD) %(upstream)… --sort=[-]<key> --count=<n>` |
+| `cairn symbolic-ref [--short] HEAD` | prints `refs/heads/<the line you stand in>`; setting it is refused (HEAD is a folder) |
+| `cairn hash-object` | `[-w] [-t <type>] [--stdin\|--stdin-paths] [--literally] <file>...` |
+| `cairn name-rev <rev>...` | `--tags --refs=<pat> --name-only --no-undefined --always` (`show-branch` is not provided: use `log --graph --oneline`) |
+| `cairn status` | `--porcelain=v2` (with `-b` the `# branch.*` headers); a deleted and an added file that are the same file are listed as `R  old -> new` (`--no-renames` to turn off) |
 | `cairn format-patch [-<N>] [<since> \| <range>]` | `-o <dir> --stdout --root -N -n --start-number --subject-prefix` — mbox patches `git am` applies |
 
 **Revisions.** A commit can be named by full or abbreviated hash (an ambiguous abbreviation is
@@ -857,7 +865,8 @@ cairn update               # download, verify, swap; no-op if already current
   `branch <name> [<start>]` creates (= `express [--from]`); `-d` (refuses unfolded, unpushed
   work) / `-D` delete (= `abandon`); `-m`/`-M [<old>] <new>` rename a line and its folder
   (children follow; one oplog entry); `-c` copy; `-u/--set-upstream-to` is accepted as a no-op.
-- `cairn reflog [show] [<line>] [-n N]` — the oplog through one line: `<sha> <line>@{N}: <op>`.
+- `cairn reflog [show] [<line>] [-n N]` — the oplog through one line: `<sha> <line>@{N}: <op>` (`HEAD@{N}` for the line you stand in). `HEAD@{N}` and `<line>@{N}` also
+  work as revisions (`rev-parse HEAD@{1}`): where the line's tip was N operations ago.
 - `cairn gc [--prune=now] [-q]` — repack objects into one pack, drop loose copies, vacuum +
   analyze the catalogue, prune stale caches. Everything the catalogue refers to (undo targets,
   working snapshots, stashes) counts as reachable; unreferenced loose objects and superseded

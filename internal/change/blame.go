@@ -20,6 +20,23 @@ type BlameLine struct {
 	Author   string
 	When     time.Time
 	Text     string
+
+	// What git's blame formats also show.
+	AuthorEmail    string
+	Committer      string
+	CommitterEmail string
+	CommitterWhen  time.Time
+	Summary        string // first line of the message
+	Path           string // the file's name in Commit (differs from the asked path across a rename)
+	OrigLine       int    // 1-based line number in Commit's version of the file
+	Boundary       bool   // Commit has no parent
+	PrevCommit     string // first parent holding the file ("" for none)
+	PrevPath       string
+}
+
+// BlameOptions tunes Blame.
+type BlameOptions struct {
+	IgnoreSpace bool // -w: lines equal when they differ only in whitespace
 }
 
 // Blame returns per-line provenance for path at commit.
@@ -45,13 +62,18 @@ type BlameLine struct {
 // the path, a file that parent has and the commit removed — identical, or
 // failing that at least half the same — is taken to be where it came from.
 func (e *Engine) Blame(commit, path string) ([]BlameLine, error) {
+	return e.BlameWith(commit, path, BlameOptions{})
+}
+
+// BlameWith is Blame with options.
+func (e *Engine) BlameWith(commit, path string, opt BlameOptions) ([]BlameLine, error) {
 	g := e.lockGraph()
 	defer e.cgMu.Unlock()
 	start, err := g.id(plumbing.NewHash(commit))
 	if err != nil {
 		return nil, fmt.Errorf("change.Blame: commit %s: %w", commit, err)
 	}
-	b := &blamer{e: e, g: g, lineIDs: map[string]int32{}, suspects: map[suspectKey]*suspect{}}
+	b := &blamer{e: e, g: g, lineIDs: map[string]int32{}, suspects: map[suspectKey]*suspect{}, ws: opt.IgnoreSpace, prev: map[suspectKey]suspectKey{}}
 	parts := strings.Split(path, "/")
 	chain, found, err := b.resolve(g.nodes[start].tree, parts, nil)
 	if err != nil {
@@ -66,10 +88,12 @@ func (e *Engine) Blame(commit, path string) ([]BlameLine, error) {
 	}
 	texts := splitLinesKeepNL(data)
 	owner := make([]int32, len(texts))
+	srcLine := make([]int32, len(texts))
+	ownerPath := make([]string, len(texts))
 	if len(texts) > 0 {
 		first := b.suspect(start, path, parts, chain)
 		first.entries = []blameEntry{{final: 0, src: 0, n: len(texts)}}
-		if err := b.run(owner); err != nil {
+		if err := b.run(owner, srcLine, ownerPath); err != nil {
 			return nil, fmt.Errorf("change.Blame: %q: %w", path, err)
 		}
 	}
@@ -77,6 +101,10 @@ func (e *Engine) Blame(commit, path string) ([]BlameLine, error) {
 	type meta struct {
 		sha, changeID, author string
 		when                  time.Time
+		email, committer, cem string
+		cwhen                 time.Time
+		summary               string
+		boundary              bool
 	}
 	metas := map[int32]meta{}
 	out := make([]BlameLine, len(texts))
@@ -89,6 +117,9 @@ func (e *Engine) Blame(commit, path string) ([]BlameLine, error) {
 				return nil, fmt.Errorf("change.Blame: commit %s: %w", m.sha, err)
 			}
 			m.changeID, m.author, m.when = parseChangeID(c.Message), c.Author.Name, c.Author.When
+			m.email, m.committer, m.cem, m.cwhen = c.Author.Email, c.Committer.Name, c.Committer.Email, c.Committer.When
+			m.summary, _, _ = strings.Cut(strings.TrimLeft(c.Message, "\n"), "\n")
+			m.boundary = len(c.ParentHashes) == 0
 			metas[owner[i]] = m
 		}
 		out[i] = BlameLine{
@@ -97,6 +128,12 @@ func (e *Engine) Blame(commit, path string) ([]BlameLine, error) {
 			Author:   m.author,
 			When:     m.when,
 			Text:     strings.TrimSuffix(string(text), "\n"),
+
+			AuthorEmail: m.email, Committer: m.committer, CommitterEmail: m.cem, CommitterWhen: m.cwhen,
+			Summary: m.summary, Path: ownerPath[i], OrigLine: int(srcLine[i]) + 1, Boundary: m.boundary,
+		}
+		if pk, ok := b.prev[suspectKey{owner[i], ownerPath[i]}]; ok {
+			out[i].PrevCommit, out[i].PrevPath = g.nodes[pk.commit].hash.String(), pk.path
 		}
 	}
 	return out, nil
@@ -145,6 +182,9 @@ func (s *suspect) blob() plumbing.Hash { return s.chain[len(s.chain)-1] }
 type blamer struct {
 	e *Engine
 	g *commitGraph
+
+	ws   bool                      // -w
+	prev map[suspectKey]suspectKey // (commit, path) → the first parent origin holding the file
 
 	suspects map[suspectKey]*suspect
 	queue    []*suspect // heap, highest generation first
@@ -220,7 +260,7 @@ func (b *blamer) pop() *suspect {
 
 // run drains the queue, recording in owner the commit each line ends up
 // blamed on.
-func (b *blamer) run(owner []int32) error {
+func (b *blamer) run(owner, srcLine []int32, ownerPath []string) error {
 	for len(b.queue) > 0 {
 		s := b.pop()
 		delete(b.suspects, suspectKey{s.commit, s.path})
@@ -233,6 +273,8 @@ func (b *blamer) run(owner []int32) error {
 		for _, ent := range s.entries {
 			for i := 0; i < ent.n; i++ {
 				owner[ent.final+i] = s.commit
+				srcLine[ent.final+i] = int32(ent.src + i)
+				ownerPath[ent.final+i] = s.path
 			}
 		}
 	}
@@ -278,6 +320,9 @@ func (b *blamer) passToParents(s *suspect) error {
 				continue
 			}
 			origins[i] = o
+			if _, ok := b.prev[suspectKey{s.commit, s.path}]; !ok {
+				b.prev[suspectKey{s.commit, s.path}] = suspectKey{p, o.path}
+			}
 			if o.chain[len(o.chain)-1] == s.blob() {
 				ps := b.suspect(p, o.path, o.parts, o.chain)
 				ps.entries = mergeEntries(ps.entries, s.entries)
@@ -494,10 +539,14 @@ func (b *blamer) lines(blob plumbing.Hash) ([]int32, error) {
 	raw := splitLinesKeepNL(data)
 	ids := make([]int32, len(raw))
 	for i, l := range raw {
-		id, ok := b.lineIDs[string(l)]
+		key := l
+		if b.ws {
+			key = stripSpace(l)
+		}
+		id, ok := b.lineIDs[string(key)]
 		if !ok {
 			id = int32(len(b.lineIDs))
-			b.lineIDs[string(l)] = id
+			b.lineIDs[string(key)] = id
 			b.indents = append(b.indents, measureIndent(l))
 		}
 		ids[i] = id
@@ -1035,4 +1084,17 @@ func myersDiff(a, b []int32, changedA, changedB []bool) bool {
 		x, y = px, py
 	}
 	return true
+}
+
+// stripSpace drops every whitespace byte (git blame -w compares lines so).
+func stripSpace(l []byte) []byte {
+	out := make([]byte, 0, len(l))
+	for _, c := range l {
+		switch c {
+		case ' ', '\t', '\r', '\n', '\f', '\v':
+		default:
+			out = append(out, c)
+		}
+	}
+	return out
 }

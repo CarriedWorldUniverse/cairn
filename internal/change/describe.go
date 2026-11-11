@@ -181,6 +181,12 @@ func (e *Engine) SetWorkingHead(changeID, head string) error {
 // along the first-parent chain, this answers the general question for any
 // commit and any tag.
 func (e *Engine) Describe(commit string, match func(tag string) bool) (tag string, depth int, err error) {
+	return e.DescribeWith(commit, match, false)
+}
+
+// DescribeWith is Describe; annotatedOnly restricts the candidates to
+// annotated tags, as `git describe` does without --tags.
+func (e *Engine) DescribeWith(commit string, match func(tag string) bool, annotatedOnly bool) (tag string, depth int, err error) {
 	tags, err := e.ListTags()
 	if err != nil {
 		return "", 0, fmt.Errorf("change.Describe: %w", err)
@@ -189,6 +195,11 @@ func (e *Engine) Describe(commit string, match func(tag string) bool) (tag strin
 	for _, t := range tags {
 		if match != nil && !match(t.Name) {
 			continue
+		}
+		if annotatedOnly {
+			if typ, _, err := e.ObjectInfo(t.Commit); err != nil || typ != "tag" {
+				continue
+			}
 		}
 		sha, ok := e.peelToCommit(t.Commit)
 		if !ok {

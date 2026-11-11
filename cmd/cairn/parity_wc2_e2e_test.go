@@ -216,7 +216,8 @@ func TestApplyMatchesGit(t *testing.T) {
 		t.Errorf("after apply:\ncairn %q\ngit   %q", got, want)
 	}
 	// It landed in the working change, un-sealed.
-	if got, wantSt := w.porcelain("main"), gitIn(t, g, "-c", "diff.renames=false", "status", "--porcelain", "--no-renames"); got != wantSt {
+	noRen, _, _ := w.run("main", "status", "--porcelain", "--no-renames")
+	if got, wantSt := noRen, gitIn(t, g, "-c", "diff.renames=false", "status", "--porcelain", "--no-renames"); got != wantSt {
 		t.Errorf("status after apply:\ncairn:\n%s\ngit:\n%s", got, wantSt)
 	}
 

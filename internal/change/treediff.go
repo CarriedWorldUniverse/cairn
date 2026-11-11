@@ -197,12 +197,18 @@ type TreeChange struct {
 	Path string
 	Old  TreeEntry
 	New  TreeEntry
+	// OldPath is set for a rename (see DetectRenames): the file was
+	// OldPath, and is Path now. Score is its similarity, 0..MaxRenameScore.
+	OldPath string
+	Score   int
 }
 
 // Status is git's one-letter status: A(dded), D(eleted), M(odified), or
 // T(ype changed, e.g. file to symlink).
 func (c TreeChange) Status() byte {
 	switch {
+	case c.OldPath != "":
+		return 'R'
 	case c.Old.SHA == "":
 		return 'A'
 	case c.New.SHA == "":
@@ -214,7 +220,13 @@ func (c TreeChange) Status() byte {
 }
 
 // Reversed swaps the two sides (diff -R).
-func (c TreeChange) Reversed() TreeChange { return TreeChange{Path: c.Path, Old: c.New, New: c.Old} }
+func (c TreeChange) Reversed() TreeChange {
+	r := TreeChange{Path: c.Path, Old: c.New, New: c.Old, OldPath: c.OldPath, Score: c.Score}
+	if c.OldPath != "" {
+		r.Path, r.OldPath = c.OldPath, c.Path
+	}
+	return r
+}
 
 func modeKind(m EntryMode) int {
 	switch m {
@@ -701,6 +713,8 @@ type PatchOptions struct {
 	FullIndex      bool // 40-char object names on the index line
 	Binary         bool // emit a "GIT binary patch" instead of "Binary files differ"
 	StatOnly       bool // count lines, skip the patch text
+	Damage         bool // also compute FilePatch.Damage (for --dirstat)
+	Renames        int  // when > 0, pair deleted and added files at least this similar
 	reversed       bool // the change was swapped for -R
 }
 
@@ -721,6 +735,20 @@ type FilePatch struct {
 	// Empty reports a change with nothing to show: under -w, a file whose
 	// only differences are whitespace.
 	Empty bool
+	// OldPath and Score are set for a rename: Path is the new name.
+	OldPath string
+	Score   int
+	// Damage is the --dirstat "changes" measure (set when PatchOptions.Damage).
+	Damage int
+}
+
+// DisplayName is the file as --stat and --numstat name it: the path, or
+// "old => new" for a rename.
+func (p FilePatch) DisplayName() string {
+	if p.OldPath != "" {
+		return RenameName(p.OldPath, p.Path)
+	}
+	return QuotePath(p.Path)
 }
 
 // Text is the whole patch for the file.
@@ -737,17 +765,34 @@ func (e *Engine) FilePatch(ch TreeChange, o PatchOptions) (FilePatch, error) {
 }
 
 func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch {
-	fp := FilePatch{Path: ch.Path, Status: ch.Status(), OldSize: len(oldB), NewSize: len(newB)}
-	qa, qb := QuotePath("a/"+ch.Path), QuotePath("b/"+ch.Path)
+	fp := FilePatch{Path: ch.Path, Status: ch.Status(), OldSize: len(oldB), NewSize: len(newB), OldPath: ch.OldPath, Score: ch.Score}
+	oldName := ch.Path
+	if ch.OldPath != "" {
+		oldName = ch.OldPath
+	}
+	qa, qb := QuotePath("a/"+oldName), QuotePath("b/"+ch.Path)
 	if o.reversed {
 		// git -R keeps each side's a/ b/ label with its content.
-		qa, qb = QuotePath("b/"+ch.Path), QuotePath("a/"+ch.Path)
+		qa, qb = QuotePath("b/"+oldName), QuotePath("a/"+ch.Path)
 	}
 	var hdr strings.Builder
 	fmt.Fprintf(&hdr, "diff --git %s %s\n", qa, qb)
 	hasOld, hasNew := ch.Old.SHA != "", ch.New.SHA != ""
+	if o.Damage {
+		fp.Damage = fileDamage(oldB, newB, hasOld, hasNew)
+	}
 	oldMode, newMode := GitMode(ch.Old.Mode), GitMode(ch.New.Mode)
 	switch {
+	case ch.OldPath != "":
+		if oldMode != newMode {
+			fmt.Fprintf(&hdr, "old mode %s\nnew mode %s\n", oldMode, newMode)
+		}
+		pct := ch.Score * 100 / MaxRenameScore
+		fmt.Fprintf(&hdr, "similarity index %d%%\nrename from %s\nrename to %s\n", pct, QuotePath(ch.OldPath), QuotePath(ch.Path))
+		fp.Summary = fmt.Sprintf(" rename %s (%d%%)\n", RenameName(ch.OldPath, ch.Path), pct)
+		if oldMode != newMode {
+			fp.Summary += fmt.Sprintf(" mode change %s => %s\n", oldMode, newMode)
+		}
 	case !hasOld:
 		fmt.Fprintf(&hdr, "new file mode %s\n", newMode)
 		fp.Summary = fmt.Sprintf(" create mode %s %s\n", newMode, QuotePath(ch.Path))
@@ -787,6 +832,10 @@ func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch
 	}
 	if isBin {
 		fp.Binary = true
+		if !contentDiffers {
+			// a binary file moved or chmod'ed: the stat shows no sizes
+			fp.OldSize, fp.NewSize = 0, 0
+		}
 		fp.Header = hdr.String()
 		if !o.StatOnly && contentDiffers {
 			if o.Binary {
@@ -819,13 +868,11 @@ func renderFilePatch(ch TreeChange, oldB, newB []byte, o PatchOptions) FilePatch
 	// git appends a tab to a name containing a space so the name stays
 	// unambiguous (never to /dev/null).
 	tabA, tabB := "", ""
-	if strings.Contains(ch.Path, " ") {
-		if hasOld {
-			tabA = "\t"
-		}
-		if hasNew {
-			tabB = "\t"
-		}
+	if strings.Contains(oldName, " ") && hasOld {
+		tabA = "\t"
+	}
+	if strings.Contains(ch.Path, " ") && hasNew {
+		tabB = "\t"
 	}
 	fmt.Fprintf(&hdr, "--- %s%s\n+++ %s%s\n", from, tabA, to, tabB)
 	fp.Header = hdr.String()
@@ -1056,6 +1103,11 @@ func (e *Engine) CommitPatches(a, b string, ps *Pathspec, o PatchOptions, revers
 	if err != nil {
 		return nil, err
 	}
+	if o.Renames > 0 {
+		if changes, err = e.DetectRenames(changes, o.Renames); err != nil {
+			return nil, err
+		}
+	}
 	out := make([]FilePatch, 0, len(changes))
 	for _, ch := range changes {
 		if reverse {
@@ -1104,7 +1156,7 @@ func FormatStatOpts(all []FilePatch, o StatOptions) string {
 	names := make([]string, len(patches))
 	maxLen, maxChange, numberWidth, binWidth := 0, 0, 0, 0
 	for i, p := range patches {
-		names[i] = QuotePath(p.Path)
+		names[i] = p.DisplayName()
 		maxLen = max(maxLen, len([]rune(names[i])))
 		if p.Binary {
 			w := 14 + decimalWidth(p.OldSize) + decimalWidth(p.NewSize)

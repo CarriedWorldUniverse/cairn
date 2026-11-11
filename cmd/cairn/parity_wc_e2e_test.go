@@ -865,7 +865,7 @@ func TestStatusPorcelainMatchesGit(t *testing.T) {
 	if want := gitIn(t, g, "status", "-s", "--", "dir"); got != want {
 		t.Errorf("status -s -- dir: cairn %q, git %q", got, want)
 	}
-	mustContain(t, w.fails("main", "status", "--porcelain=v2"), "porcelain v1")
+	mustContain(t, w.fails("main", "status", "--porcelain=v3"), "porcelain v1")
 
 	// The default long report is unchanged.
 	long, _, _ := w.run("main", "status")
@@ -990,7 +990,11 @@ func TestMv(t *testing.T) {
 	w.ok("main", "mv", "a.txt", "renamed.txt")
 	w.ok("main", "mv", "src", "lib")
 	w.ok("main", "mv", "b.txt", "tool.sh", "lib")
-	if got := w.porcelain("main"); got != "D  a.txt\nD  b.txt\nA  lib/b.txt\nA  lib/deep/y.go\nA  lib/tool.sh\nA  lib/x.go\nA  renamed.txt\nD  src/deep/y.go\nD  src/x.go\nD  tool.sh\n" {
+	// Moved files are renames, as git's status pairs them (--no-renames: a delete and an add).
+	if got := w.porcelain("main"); got != "R  b.txt -> lib/b.txt\nR  src/deep/y.go -> lib/deep/y.go\nR  tool.sh -> lib/tool.sh\nR  src/x.go -> lib/x.go\nR  a.txt -> renamed.txt\n" {
+		t.Errorf("status after mv = %q", got)
+	}
+	if got, _, _ := w.run("main", "status", "--porcelain", "--no-renames"); got != "D  a.txt\nD  b.txt\nA  lib/b.txt\nA  lib/deep/y.go\nA  lib/tool.sh\nA  lib/x.go\nA  renamed.txt\nD  src/deep/y.go\nD  src/x.go\nD  tool.sh\n" {
 		t.Errorf("status after mv = %q", got)
 	}
 	if w.exists("main", "src") || w.read("main", "lib/deep/y.go") != "y\n" || w.read("main", "renamed.txt") != "a\n" {

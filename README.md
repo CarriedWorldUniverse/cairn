@@ -98,8 +98,9 @@ The read-only commands take git's spelling, flags and output, so existing
 habits and scripts carry over: `log` (`--oneline --stat -p --graph --format=
 --author= --grep= --since= -- <path>`…), `show` (`<rev>:<path>`, `--stat`,
 `-s`), `diff` (`--stat --numstat --name-status -U<n> -R -w --exit-code`,
-`a..b`, `a...b`), `grep`, `blame -L`, `ls-files`, `ls-tree`, `cat-file`,
-`rev-parse`, `rev-list`, `shortlog`, `describe`, `format-patch`.
+`a..b`, `a...b`; renames detected as git does), `grep`, `blame` (git's format), `ls-files`,
+`ls-tree`, `cat-file`, `rev-parse` (`HEAD@{N}`), `rev-list`, `shortlog`, `describe`,
+`format-patch`, `merge-base`, `for-each-ref`, `name-rev`, `hash-object`, `symbolic-ref`.
 
 A revision is a full/short hash, a tag, a line name, `origin/<branch>`, or
 `HEAD`/`@` — the **sealed** tip of the line whose folder you stand in — with

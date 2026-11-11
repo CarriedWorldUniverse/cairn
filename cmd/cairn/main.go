@@ -126,6 +126,8 @@ subcommands:
   grep <pattern> [<rev>] [-- <path>...]  search file contents (-n -i -l -L -c -w -v -E -F -e; exit 1 when nothing matches)
   ls-files | ls-tree | cat-file | rev-parse | rev-list | shortlog | describe | format-patch
                                 read-only git plumbing, same spelling and output as git
+  merge-base | symbolic-ref | hash-object | for-each-ref | name-rev
+                                more git plumbing (merge-base [--all|--is-ancestor], for-each-ref --format --sort, name-rev [--tags])
   undo                          revert the last operation
   oplog                         show the operation history
   setup                         set your commit identity (name/email), stored globally
@@ -211,7 +213,7 @@ func run(args []string) error {
 		return nil
 	}
 	// `<verb> -h` / `<verb> --help` print that verb's usage section.
-	if wantsHelp(rest) && sub != "help" && printVerbHelp(sub) {
+	if wantsHelp(rest) && sub != "help" && !(sub == "grep" && rest[0] == "-h") && printVerbHelp(sub) {
 		return flag.ErrHelp // main maps this to exit 0
 	}
 	switch sub {
@@ -258,6 +260,18 @@ func run(args []string) error {
 		return cmdRevParse(rest)
 	case "rev-list":
 		return cmdRevList(rest)
+	case "merge-base":
+		return cmdMergeBase(rest)
+	case "symbolic-ref":
+		return cmdSymbolicRef(rest)
+	case "hash-object":
+		return cmdHashObject(rest)
+	case "for-each-ref":
+		return cmdForEachRef(rest)
+	case "name-rev":
+		return cmdNameRev(rest)
+	case "show-branch":
+		return cmdShowBranch(rest)
 	case "shortlog":
 		return cmdShortlog(rest)
 	case "describe":

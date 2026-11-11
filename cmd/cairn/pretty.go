@@ -24,6 +24,14 @@ type logFormat struct {
 
 var namedFormats = map[string]bool{"oneline": true, "short": true, "medium": true, "full": true, "fuller": true, "raw": true}
 
+// abbrevLen is the --abbrev length: 7, n, or the full 40 under --no-abbrev.
+func abbrevLen(g *gitOpts) (int, error) {
+	if g.defs["no-abbrev"] != nil && g.on("no-abbrev") {
+		return 40, nil
+	}
+	return g.integer("abbrev", 7)
+}
+
 // parseLogFormat reads --oneline, --format/--pretty and --abbrev-commit.
 func parseLogFormat(g *gitOpts) (logFormat, error) {
 	f := logFormat{kind: "medium"}
@@ -33,6 +41,12 @@ func parseLogFormat(g *gitOpts) (logFormat, error) {
 		case v == "":
 		case namedFormats[v]:
 			f.kind = v
+		case v == "reference":
+			// <abbrev> (<subject>, <short date>)
+			f.kind, f.tmpl, f.terminator = "format", "%h (%s, %ad)", true
+			if g.defs["date"] != nil && !g.has("date") {
+				g.set(g.defs["date"], "short")
+			}
 		case strings.HasPrefix(v, "format:"):
 			f.kind, f.tmpl = "format", strings.TrimPrefix(v, "format:")
 		case strings.HasPrefix(v, "tformat:"):
@@ -64,6 +78,7 @@ type prettyPrinter struct {
 	abbrev   int
 	now      time.Time
 	decor    map[string][]decoration
+	from     string // -m: the merge parent this entry's diff is against
 }
 
 type decoration struct {
@@ -73,7 +88,7 @@ type decoration struct {
 
 // loadDecorations names every commit a line, tag or remote branch points at,
 // in git's order: HEAD -> line, tags, remote branches, lines.
-func loadDecorations(eng *change.Engine) (map[string][]decoration, error) {
+func loadDecorations(eng *change.Engine, full bool) (map[string][]decoration, error) {
 	refs, err := eng.RefNames()
 	if err != nil {
 		return nil, err
@@ -86,21 +101,50 @@ func loadDecorations(eng *change.Engine) (map[string][]decoration, error) {
 		}
 	}
 	if headSHA != "" {
+		if full {
+			headName = "refs/heads/" + headName
+		}
 		out[headSHA] = append(out[headSHA], decoration{"HEAD -> " + headName, cBold + cCyan})
 	}
 	for i := len(refs) - 1; i >= 0; i-- {
 		r := refs[i]
+		pre := func(p string) string {
+			if full {
+				return p + r.Name
+			}
+			return r.Name
+		}
 		switch {
 		case r.Head:
 		case r.Kind == "tag":
-			out[r.SHA] = append(out[r.SHA], decoration{"tag: " + r.Name, cBold + cYellow})
+			out[r.SHA] = append(out[r.SHA], decoration{"tag: " + pre("refs/tags/"), cBold + cYellow})
 		case r.Kind == "remote":
-			out[r.SHA] = append(out[r.SHA], decoration{r.Name, cBold + cRed})
+			out[r.SHA] = append(out[r.SHA], decoration{pre("refs/remotes/"), cBold + cRed})
 		default:
-			out[r.SHA] = append(out[r.SHA], decoration{r.Name, cBold + cGreen})
+			out[r.SHA] = append(out[r.SHA], decoration{pre("refs/heads/"), cBold + cGreen})
 		}
 	}
 	return out, nil
+}
+
+// decorateMode reads --decorate[=short|full|no|auto] / --no-decorate: whether
+// to decorate, and with full ref names.
+func decorateMode(g *gitOpts) (on, full bool) {
+	if !g.has("decorate") {
+		return stdoutIsTTY(), false
+	}
+	if !g.on("decorate") {
+		return false, false
+	}
+	switch g.str("decorate") {
+	case "no", "false", "0":
+		return false, false
+	case "full":
+		return true, true
+	case "auto":
+		return stdoutIsTTY(), false
+	}
+	return true, false
 }
 
 // decorText renders a commit's decorations joined by ", " ("" when none).
@@ -125,6 +169,17 @@ func (p *prettyPrinter) decorText(sha string, color bool) string {
 		sep = paint(true, cYellow, ", ")
 	}
 	return strings.Join(parts, sep)
+}
+
+// fromSuffix is " (from <parent>)" on a merge shown once per parent.
+func (p *prettyPrinter) fromSuffix() string {
+	if p.from == "" {
+		return ""
+	}
+	if p.f.abbrevCommit || p.f.kind == "oneline" {
+		return " (from " + p.short(p.from) + ")"
+	}
+	return " (from " + p.from + ")"
 }
 
 // decorSuffix is " (a, b)" for the named formats, "" when off or none.
@@ -168,10 +223,10 @@ func (p *prettyPrinter) entry(c *change.CommitMeta) string {
 	case "format":
 		return p.expand(p.f.tmpl, c)
 	case "oneline":
-		return paint(p.color, cYellow, name) + p.decorSuffix(c.SHA) + " " + c.Subject()
+		return paint(p.color, cYellow, name) + p.fromSuffix() + p.decorSuffix(c.SHA) + " " + c.Subject()
 	}
 	var sb strings.Builder
-	sb.WriteString(paint(p.color, cYellow, "commit "+name) + p.decorSuffix(c.SHA) + "\n")
+	sb.WriteString(paint(p.color, cYellow, "commit "+name+p.fromSuffix()) + p.decorSuffix(c.SHA) + "\n")
 	if p.f.kind == "raw" {
 		fmt.Fprintf(&sb, "tree %s\n", c.Tree)
 		for _, par := range c.Parents {

@@ -1895,6 +1895,18 @@ func (r *Repo) Blame(branch, path string) ([]change.BlameLine, error) {
 	return r.eng.Blame(line.TipCommit, path)
 }
 
+// BlameWith is Blame with options.
+func (r *Repo) BlameWith(branch, path string, opt change.BlameOptions) ([]change.BlameLine, error) {
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return nil, fmt.Errorf("worktree.Blame: %w", err)
+	}
+	if line.TipCommit == "" {
+		return nil, fmt.Errorf("worktree.Blame: branch %q has no commits", branch)
+	}
+	return r.eng.BlameWith(line.TipCommit, path, opt)
+}
+
 // IsWorkingCommit reports whether sha is the head of an open (un-sealed) change.
 func (r *Repo) IsWorkingCommit(sha string) (bool, error) { return r.eng.IsWorkingHead(sha) }
 
