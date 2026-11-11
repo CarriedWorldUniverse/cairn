@@ -245,6 +245,12 @@ func MaterializeSeededFrom(eng *change.Engine, cacheDir, commitSha, dir string, 
 // boundary, so this is defense in depth: it turns any future gap that yields an
 // escaping path into a refusal here rather than an out-of-folder write.
 func containedJoin(dir, slashRel string) (string, error) {
+	// Defence in depth: never write repository metadata (.cairn/.git and their
+	// NTFS/HFS+ aliases), whatever the caller's tree guard let through. A planted ".cairn" in a line folder can hijack repo
+	// discovery.
+	if err := change.ReservedPathComponent(slashRel); err != nil {
+		return "", fmt.Errorf("refusing to write: %w", err)
+	}
 	full := filepath.Join(dir, filepath.FromSlash(slashRel))
 	rel, err := filepath.Rel(dir, full)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {

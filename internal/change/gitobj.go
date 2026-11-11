@@ -72,6 +72,12 @@ func validTreeEntryName(name string) error {
 	if strings.Contains(name, ":") {
 		return fmt.Errorf("tree entry name %q contains ':' (NTFS alternate data stream)", name)
 	}
+	// Repository metadata names (".cairn", ".git" and their NTFS/HFS+
+	// equivalents) are reserved: a tree must never plant a catalogue or git
+	// dir inside a line folder (see reservedMetaName).
+	if meta, bad := reservedMetaName(name); bad {
+		return fmt.Errorf("invalid path component %q: it names repository metadata (%s) on some filesystems and is refused", name, meta)
+	}
 	// Windows reserved device name (see windowsReservedDeviceNames): match
 	// the base up to the FIRST '.', case-insensitively, matching Windows' own
 	// device-name resolution rule.
@@ -99,6 +105,18 @@ func validTreePath(path string) error {
 	for _, seg := range strings.Split(path, "/") {
 		if err := validTreeEntryName(seg); err != nil {
 			return fmt.Errorf("path %q: %w", path, err)
+		}
+	}
+	return nil
+}
+
+// ReservedPathComponent reports an error when any component of the
+// "/"-separated path names repository metadata (.cairn/.git or an NTFS/HFS+
+// alias). It is the narrow sink-side guard for worktree writes.
+func ReservedPathComponent(path string) error {
+	for _, seg := range strings.Split(path, "/") {
+		if meta, bad := reservedMetaName(seg); bad {
+			return fmt.Errorf("invalid path %q: component %q names repository metadata (%s)", path, seg, meta)
 		}
 	}
 	return nil

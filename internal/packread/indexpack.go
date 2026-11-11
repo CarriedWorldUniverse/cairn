@@ -86,7 +86,9 @@ func buildIndex(data []byte) (idx []byte, checksum plumbing.Hash, err error) {
 		return nil, plumbing.ZeroHash, ErrUnsupportedPack
 	}
 	count := int(binary.BigEndian.Uint32(data[8:12]))
-	if count == 0 {
+	// Every entry needs at least a 1-byte header and an 8-byte zlib stream, so
+	// a count the pack cannot hold is a lie — refuse it before allocating.
+	if count == 0 || int64(count) > int64(len(data)-12-20)/9 {
 		return nil, plumbing.ZeroHash, ErrUnsupportedPack
 	}
 	body := data[:len(data)-20]
@@ -349,8 +351,12 @@ func newInflater() *inflater { return &inflater{scratch: make([]byte, 32<<10)} }
 // through to its checksum. With keep it returns the bytes (a fresh slice);
 // without, it only verifies the stream and returns nil.
 func (z *inflater) inflate(r io.Reader, size int64, keep bool) ([]byte, error) {
-	if size < 0 || int64(int(size)) != size {
-		return nil, errCorrupt
+	avail := int64(-1)
+	if l, ok := r.(interface{ Len() int }); ok {
+		avail = int64(l.Len())
+	}
+	if err := checkInflateSize(size, avail); err != nil {
+		return nil, err
 	}
 	if z.zr == nil {
 		zr, err := zlib.NewReader(r)
@@ -363,8 +369,8 @@ func (z *inflater) inflate(r io.Reader, size int64, keep bool) ([]byte, error) {
 	}
 	var out []byte
 	if keep {
-		out = make([]byte, size)
-		if _, err := io.ReadFull(z.zr, out); err != nil {
+		var err error
+		if out, err = readInflated(z.zr, size, avail); err != nil {
 			return nil, err
 		}
 	} else {

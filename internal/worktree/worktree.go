@@ -449,9 +449,13 @@ func (r *Repo) Express(branch, parent string) error {
 	if folder == "" || folder == "." || folder == ".." || strings.HasPrefix(folder, ".") || strings.ContainsAny(folder, `/\`+"\x00") {
 		return fmt.Errorf("worktree.Express: %q would materialize outside its own line folder (%q); not a valid line name", branch, folder)
 	}
+	// Two lines must never map to one on-disk folder: compare the way a
+	// case-insensitive filesystem (Windows, macOS) would — case-folded, with
+	// trailing dots/spaces dropped — on every OS, so a repo expressed here
+	// stays expressible there.
 	for b, e := range r.st.Expressed {
-		if b != branch && e.Path == folder {
-			return fmt.Errorf("worktree.Express: folder %q is already used by branch %q; rename one before expressing %q", folder, b, branch)
+		if b != branch && folderKey(e.Path) == folderKey(folder) {
+			return fmt.Errorf("worktree.Express: folder %q is already used by branch %s (as %q); rename one before expressing %s", folder, change.SafeName(b), e.Path, change.SafeName(branch))
 		}
 	}
 
@@ -2899,4 +2903,10 @@ func (r *Repo) prevTracked(branch string) map[string]wcCacheEntry {
 		return nil
 	}
 	return fps
+}
+
+// folderKey normalizes a folder name the way case-insensitive filesystems
+// compare it, so lines whose folders could coincide are detected on any OS.
+func folderKey(folder string) string {
+	return strings.ToLower(strings.TrimRight(folder, ". "))
 }

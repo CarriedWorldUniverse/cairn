@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
 )
 
@@ -387,6 +388,10 @@ func branchList(r *worktree.Repo, o branchListOpts) error {
 			fmt.Println(line)
 		}
 		return nil
+	}
+	// Names can come from a remote: never put raw control bytes on a terminal.
+	for i := range rows {
+		rows[i].display = change.SafeName(rows[i].display)
 	}
 	width := 0
 	for _, row := range rows {

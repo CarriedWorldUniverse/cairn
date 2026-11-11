@@ -193,7 +193,13 @@ func linkablePacks(gitDir string) ([]string, bool) {
 			return nil, false
 		case strings.HasPrefix(n, "pack-") && strings.HasSuffix(n, ".pack"):
 			base := filepath.Join(gitDir, "objects", "pack", strings.TrimSuffix(n, ".pack"))
-			if st, err := os.Stat(base + ".idx"); err != nil || st.IsDir() {
+			// Only real files: a symlinked pack/idx in an untrusted source
+			// could point anywhere on this machine, so decline the shortcut
+			// (the regular transport then runs) rather than link or copy it.
+			if !ent.Type().IsRegular() {
+				return nil, false
+			}
+			if st, err := os.Lstat(base + ".idx"); err != nil || !st.Mode().IsRegular() {
 				return nil, false
 			}
 			packs = append(packs, base)

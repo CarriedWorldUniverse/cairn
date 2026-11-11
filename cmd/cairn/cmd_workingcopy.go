@@ -509,9 +509,9 @@ func renderTree(nodes []worktree.TreeNode) string {
 	var b strings.Builder
 	label := func(n worktree.TreeNode) string {
 		if n.Remote == nil {
-			return fmt.Sprintf("%s  ahead=%d", n.Line.Name, n.Ahead)
+			return fmt.Sprintf("%s  ahead=%d", change.SafeName(n.Line.Name), n.Ahead)
 		}
-		return fmt.Sprintf("%s  ahead=%d  [%s]", n.Line.Name, n.Ahead, n.Remote)
+		return fmt.Sprintf("%s  ahead=%d  [%s]", change.SafeName(n.Line.Name), n.Ahead, n.Remote)
 	}
 	var walk func(n worktree.TreeNode, prefix string)
 	walk = func(n worktree.TreeNode, prefix string) {

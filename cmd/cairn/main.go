@@ -429,16 +429,67 @@ func discoverRepoRoot(start string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("not a cairn repo: %w", err)
 	}
+	cand := ""
 	for {
-		if fi, serr := os.Stat(filepath.Join(dir, ".cairn")); serr == nil && fi.IsDir() {
-			return dir, nil
+		if cand == "" {
+			if isRepoDir(dir) {
+				cand = dir
+			}
+		} else if isRepoDir(dir) && insideExpressedFolder(dir, cand) {
+			// cand is not a repo: it is content inside one of this outer
+			// repo's line folders (e.g. a ".cairn" a clone or patch planted).
+			cand = dir
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir { // reached the filesystem root
+			if cand != "" {
+				return cand, nil
+			}
 			return "", fmt.Errorf("not a cairn repo (no .cairn in %q or any parent directory; run 'cairn init')", start)
 		}
 		dir = parent
 	}
+}
+
+// isRepoDir reports whether dir is a cairn repo root: its .cairn must be a
+// real directory (not a symlink) holding a regular-file catalogue.
+func isRepoDir(dir string) bool {
+	meta := filepath.Join(dir, ".cairn")
+	if fi, err := os.Lstat(meta); err != nil || !fi.IsDir() {
+		return false
+	}
+	fi, err := os.Lstat(filepath.Join(meta, "cairn.db"))
+	return err == nil && fi.Mode().IsRegular()
+}
+
+// insideExpressedFolder reports whether inner lies within one of outer's
+// expressed line folders (per outer's wc.json). An inner ".cairn" found there
+// is repo CONTENT, not a repo.
+func insideExpressedFolder(outer, inner string) bool {
+	rel, err := filepath.Rel(outer, inner)
+	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return false
+	}
+	first := strings.Split(filepath.ToSlash(rel), "/")[0]
+	st, err := worktree.LoadState(filepath.Join(outer, ".cairn", "wc.json"))
+	if err != nil {
+		return false
+	}
+	for _, e := range st.Expressed {
+		if strings.EqualFold(strings.TrimRight(e.Path, ". "), strings.TrimRight(first, ". ")) {
+			return true
+		}
+	}
+	return false
+}
+
+// repoConfigTrusted reports whether exec-capable settings (core.pager,
+// pager.*, '!' aliases) may be read from the repo at root: its catalogue must
+// be a real file owned by the current user, like git's safe.directory rule.
+// User-level config is always trusted.
+func repoConfigTrusted(root string) bool {
+	fi, err := os.Lstat(filepath.Join(root, ".cairn", "cairn.db"))
+	return err == nil && fi.Mode().IsRegular() && ownedByCurrentUser(fi)
 }
 
 func openRepo(repo, author string) (*worktree.Repo, error) {

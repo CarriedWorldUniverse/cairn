@@ -223,6 +223,17 @@ cairn config --unset core.editor                 # remove (add --global for the 
 `cairn st`. An expansion starting with `!` runs through the shell, extra arguments appended,
 from the repo root. An alias never shadows a built-in verb; a self-referencing one is refused.
 
+**Exec-capable config is trusted only from you.** `core.pager`, `pager.<cmd>` and `!` aliases run
+shell commands, so a repo's own config is honoured for them only when its catalogue
+(`.cairn/cairn.db`) is a regular file owned by the current user (git's `safe.directory` idea;
+not checked on Windows); otherwise the repo value is ignored (a `!` alias prints a note) and
+your user-level config applies. `core.editor` is never read — the editor comes from
+`$CAIRN_EDITOR`/`$GIT_EDITOR`/`$VISUAL`/`$EDITOR`. Separately, `.cairn` and `.git` (any case, plus
+NTFS/HFS+ aliases such as `.cairn.`, `CAIRN~1`, `.g\u200cit`) are refused as path components in
+cloned/pulled trees and applied patches ("invalid path component"), and repo discovery only
+accepts a `.cairn` that is a real directory with a catalogue and is not nested inside an outer
+repo's line folder.
+
 ### Lines (branches)
 
 #### `cairn express <branch>` — `--from <parent>`

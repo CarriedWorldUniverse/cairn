@@ -111,7 +111,7 @@ var pagerConfig = userconfig.Get
 // cwd is in), then in the user-level config.
 func repoThenUserConfig(args []string) func(string) string {
 	return func(key string) string {
-		if root, err := discoverRepoRoot(aliasStart(args)); err == nil {
+		if root, err := discoverRepoRoot(aliasStart(args)); err == nil && repoConfigTrusted(root) {
 			if eng, err := change.Open(filepath.Join(root, ".cairn")); err == nil {
 				v, ok, _ := eng.GetConfig(key)
 				_ = eng.Close()

@@ -403,11 +403,71 @@ func readOFS(r io.ByteReader) (int64, error) {
 
 var zlibPool sync.Pool
 
-// inflate reads a zlib stream of exactly size inflated bytes from r,
-// including its trailing checksum.
-func inflate(r io.Reader, size int64) ([]byte, error) {
+// maxInflatedSize is the largest single object a pack may declare unless the
+// pack itself is at least that large. It, and the ratio bound below, exist so a
+// hostile header cannot make cairn allocate far beyond the data it is given: a
+// failed allocation is a fatal runtime error, not a recoverable one.
+const maxInflatedSize = int64(4) << 30
+
+// maxDeflateRatio is deflate's best possible expansion (1032:1), so a stream
+// of n compressed bytes cannot inflate to more than n*1032 bytes.
+const maxDeflateRatio = 1032
+
+// checkInflateSize validates a declared inflated size against the number of
+// compressed bytes available to produce it (avail < 0 when unknown).
+func checkInflateSize(size, avail int64) error {
 	if size < 0 || int64(int(size)) != size {
-		return nil, errCorrupt
+		return errCorrupt
+	}
+	limit := maxInflatedSize
+	if avail > limit {
+		limit = avail
+	}
+	if size > limit {
+		return errCorrupt
+	}
+	if avail >= 0 && size > avail*maxDeflateRatio+1024 {
+		return errCorrupt
+	}
+	return nil
+}
+
+// readInflated reads exactly size bytes from zr. The buffer is allocated up
+// front only when size is plausible for the input (no larger than the bytes
+// available, or 1 MiB when that is unknown); anything bigger grows with the
+// data actually produced, so a lying header cannot force a huge allocation.
+func readInflated(zr io.Reader, size, avail int64) ([]byte, error) {
+	safe := avail
+	if safe < 0 || safe > size {
+		safe = size
+		if avail < 0 && safe > 1<<20 {
+			safe = 1 << 20
+		}
+	}
+	if size <= safe {
+		out := make([]byte, size)
+		if _, err := io.ReadFull(zr, out); err != nil {
+			return nil, err
+		}
+		return out, nil
+	}
+	buf := bytes.NewBuffer(make([]byte, 0, safe))
+	n, err := io.CopyN(buf, zr, size)
+	if err != nil {
+		if err == io.EOF && n < size {
+			err = io.ErrUnexpectedEOF
+		}
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// inflate reads a zlib stream of exactly size inflated bytes from r,
+// including its trailing checksum. avail is how many bytes of the pack remain
+// from r's position (-1 if unknown); it bounds the allocation.
+func inflate(r io.Reader, size, avail int64) ([]byte, error) {
+	if err := checkInflateSize(size, avail); err != nil {
+		return nil, err
 	}
 	var zr io.ReadCloser
 	if v := zlibPool.Get(); v != nil {
@@ -421,8 +481,8 @@ func inflate(r io.Reader, size int64) ([]byte, error) {
 			return nil, err
 		}
 	}
-	out := make([]byte, size)
-	if _, err := io.ReadFull(zr, out); err != nil {
+	out, err := readInflated(zr, size, avail)
+	if err != nil {
 		return nil, err
 	}
 	// One more read reaches the end of the stream, which is where zlib
@@ -583,7 +643,7 @@ func (s *Store) readPacked(p *pack, off int64, depth int) (plumbing.ObjectType, 
 		}
 		switch t {
 		case int(plumbing.CommitObject), int(plumbing.TreeObject), int(plumbing.BlobObject), int(plumbing.TagObject):
-			data, err = inflate(r, size)
+			data, err = inflate(r, size, p.packLen-cur)
 			release()
 			if err != nil {
 				return 0, nil, err
@@ -596,7 +656,7 @@ func (s *Store) readPacked(p *pack, off int64, depth int) (plumbing.ObjectType, 
 				release()
 				return 0, nil, errCorrupt
 			}
-			delta, err := inflate(r, size)
+			delta, err := inflate(r, size, p.packLen-cur)
 			release()
 			if err != nil {
 				return 0, nil, err
@@ -610,7 +670,7 @@ func (s *Store) readPacked(p *pack, off int64, depth int) (plumbing.ObjectType, 
 				release()
 				return 0, nil, err
 			}
-			delta, err := inflate(r, size)
+			delta, err := inflate(r, size, p.packLen-cur)
 			release()
 			if err != nil {
 				return 0, nil, err
@@ -676,11 +736,11 @@ func (s *Store) readLoose(h plumbing.Hash) (plumbing.ObjectType, []byte, error) 
 		return 0, nil, err
 	}
 	size, err := strconv.ParseInt(sizeStr, 10, 64)
-	if err != nil || size < 0 || int64(int(size)) != size {
+	if err != nil || checkInflateSize(size, int64(len(raw))) != nil {
 		return 0, nil, errCorrupt
 	}
-	data := make([]byte, size)
-	if _, err := io.ReadFull(br, data); err != nil {
+	data, err := readInflated(br, size, int64(len(raw)))
+	if err != nil {
 		return 0, nil, err
 	}
 	if _, err := br.ReadByte(); err != io.EOF {
@@ -756,7 +816,22 @@ func applyDelta(base, delta []byte) ([]byte, error) {
 	if !ok {
 		return nil, errCorrupt
 	}
-	out := make([]byte, 0, size)
+	// Every instruction is at most 8 bytes and yields at most max(len(base),
+	// 127) bytes, so a stated size beyond that (or beyond the hard cap) is a
+	// lie; and the buffer starts no larger than the real inputs justify and
+	// grows only with bytes actually produced.
+	step := len(base)
+	if step < 127 {
+		step = 127
+	}
+	if int64(size) > maxInflatedSize || int64(size) > int64(len(d))*int64(step) {
+		return nil, errCorrupt
+	}
+	prealloc := size
+	if lim := 2*(len(base)+len(d)) + 1<<20; prealloc > lim {
+		prealloc = lim
+	}
+	out := make([]byte, 0, prealloc)
 	for len(d) > 0 {
 		cmd := d[0]
 		d = d[1:]

@@ -82,3 +82,28 @@ func TestLocalCloneDeclinesLooseObjects(t *testing.T) {
 		t.Fatalf("shortcut taken for a repository with loose objects:\n%s", progress)
 	}
 }
+
+// A symlinked pack or idx in the source's objects/pack is never linked or
+// copied: the shortcut declines (security review #5).
+func TestLocalCloneDeclinesSymlinkedPack(t *testing.T) {
+	for _, ext := range []string{".pack", ".idx"} {
+		t.Run(ext, func(t *testing.T) {
+			src := localFetchSource(t, true)
+			dir := filepath.Join(src, ".git", "objects", "pack")
+			matches, _ := filepath.Glob(filepath.Join(dir, "pack-*"+ext))
+			if len(matches) == 0 {
+				t.Fatal("no pack in fixture")
+			}
+			moved := matches[0] + ".real"
+			if err := os.Rename(matches[0], moved); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(moved, matches[0]); err != nil {
+				t.Skip("symlinks unavailable")
+			}
+			if _, ok := linkablePacks(filepath.Join(src, ".git")); ok {
+				t.Fatalf("linkablePacks accepted a symlinked %s", ext)
+			}
+		})
+	}
+}

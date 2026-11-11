@@ -112,7 +112,7 @@ func (r *Repo) moveExpressed(from, to string) error {
 	}
 	newFolder := FolderName(to)
 	for b, e := range r.st.Expressed {
-		if b != from && e.Path == newFolder {
+		if b != from && folderKey(e.Path) == folderKey(newFolder) {
 			return fmt.Errorf("folder %q is already used by line %q", newFolder, b)
 		}
 	}
@@ -151,7 +151,7 @@ func (r *Repo) RenameLine(oldName, newName string, force bool) error {
 	}
 	newFolder := FolderName(newName)
 	for b, e := range r.st.Expressed {
-		if b != oldName && e.Path == newFolder {
+		if b != oldName && folderKey(e.Path) == folderKey(newFolder) {
 			return fmt.Errorf("worktree.RenameLine: folder %q is already used by line %q", newFolder, b)
 		}
 	}

@@ -267,3 +267,22 @@ func TestImportFromRemoteUsesMetaFidelity(t *testing.T) {
 		t.Fatalf("no conflicts reconstructed on clone")
 	}
 }
+
+// TestImportMetaRejectsInvalidLineName (security review #4): line names in a
+// remote meta document are held to ValidRefName.
+func TestImportMetaRejectsInvalidLineName(t *testing.T) {
+	e := newTestEngine(t)
+	sha := writeMetaJSON(t, e, []byte(`{"version":1,"lines":[{"ID":"r","Name":"main","ParentLine":""},{"ID":"x","Name":"evil\u001b[2J","ParentLine":"r"}]}`))
+	tx, err := e.db.Begin()
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	_, err = e.importMeta(sha, tx, e.now().UTC().Format(time.RFC3339Nano))
+	if err == nil || !strings.Contains(err.Error(), "not valid") {
+		t.Fatalf("importMeta = %v, want invalid-name error", err)
+	}
+	if strings.Contains(err.Error(), "\x1b") {
+		t.Fatalf("error leaks a raw control byte: %q", err)
+	}
+}

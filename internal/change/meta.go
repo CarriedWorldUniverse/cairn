@@ -193,6 +193,10 @@ func (e *Engine) importMeta(metaCommit string, tx *sql.Tx, ts string) (defaultBr
 	// Identify the root first so an absent root is reported as "no root line"
 	// rather than masked by a FK failure when a child is inserted before its parent.
 	for _, l := range doc.Lines {
+		// Names arrive from a remote: hold them to the same rules as a new line.
+		if verr := ValidRefName(l.Name); verr != nil {
+			return "", fmt.Errorf("change.importMeta: line name %s is not valid: %w", SafeName(l.Name), verr)
+		}
 		if l.ParentLine == "" {
 			defaultBranch = l.Name
 		}

@@ -288,7 +288,11 @@ func aliasLookup(name string, args []string) (string, string, bool) {
 			v, ok, _ := eng.GetConfig(key)
 			_ = eng.Close()
 			if ok && v != "" {
-				return v, root, true
+				if strings.HasPrefix(v, "!") && !repoConfigTrusted(root) {
+					fmt.Fprintf(os.Stderr, "cairn: ignoring shell alias %q from a repo catalogue not owned by you\n", name)
+				} else {
+					return v, root, true
+				}
 			}
 		}
 	} else {
