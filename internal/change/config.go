@@ -42,3 +42,31 @@ func ConfigTruthy(value string) bool {
 		return false
 	}
 }
+
+// UnsetConfig removes key; it reports whether the key existed.
+func (e *Engine) UnsetConfig(key string) (bool, error) {
+	res, err := e.db.Exec(`DELETE FROM config WHERE key=?`, key)
+	if err != nil {
+		return false, fmt.Errorf("change.UnsetConfig: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+}
+
+// AllConfig returns every stored key/value.
+func (e *Engine) AllConfig() (map[string]string, error) {
+	rows, err := e.db.Query(`SELECT key, value FROM config`)
+	if err != nil {
+		return nil, fmt.Errorf("change.AllConfig: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := map[string]string{}
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, fmt.Errorf("change.AllConfig: %w", err)
+		}
+		out[k] = v
+	}
+	return out, rows.Err()
+}

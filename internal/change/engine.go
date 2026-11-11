@@ -59,6 +59,12 @@ type Engine struct {
 	// commit_gen table (see generation.go).
 	genMu sync.Mutex
 	gens  map[plumbing.Hash]uint32
+<<<<<<< ours
+	// authorOverride, when set, is the AUTHOR of every commit written (see
+	// SetAuthorOverride in wcops.go); the committer stays the identity above.
+	authorOverride *Signature
+||||||| base
+=======
 	// headLine names the line HEAD/@ resolve against (revparse.go) — the line
 	// whose folder the operator stands in. Empty means the root line.
 	headLine string
@@ -66,6 +72,7 @@ type Engine struct {
 	// walks (treediff.go, revwalk.go), which revisit the same subtrees.
 	treeMu sync.Mutex
 	trees  map[plumbing.Hash]*object.Tree
+>>>>>>> theirs
 }
 
 // SetIdentity configures the author identity used for all commits this engine
@@ -195,6 +202,10 @@ func migrate(db *sql.DB) error {
 		// once the tracking ref has been pruned. Backfilled from tracks_remote.
 		{"line", "remote_seen", `ALTER TABLE line ADD COLUMN remote_seen INTEGER NOT NULL DEFAULT 0`,
 			[]string{`UPDATE line SET remote_seen = tracks_remote WHERE remote_seen = 0`}},
+		// Annotated tags: the message and the tag object's hash (empty for a
+		// lightweight tag).
+		{"tag", "message", `ALTER TABLE tag ADD COLUMN message TEXT NOT NULL DEFAULT ''`, nil},
+		{"tag", "obj", `ALTER TABLE tag ADD COLUMN obj TEXT NOT NULL DEFAULT ''`, nil},
 	}
 	for _, m := range migrations {
 		has, err := hasColumn(db, m.table, m.column)
@@ -203,6 +214,13 @@ func migrate(db *sql.DB) error {
 		}
 		if has {
 			continue
+		}
+		if m.table == "tag" {
+			// A catalogue shaped by an old test may lack the table entirely.
+			var n int
+			if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tag'`).Scan(&n); err != nil || n == 0 {
+				continue
+			}
 		}
 		if _, err := db.Exec(m.ddl); err != nil {
 			return fmt.Errorf("change.migrate: %w", err)

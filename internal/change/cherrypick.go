@@ -25,6 +25,12 @@ const opCherryPick = "cherry-pick"
 // back together in ONE transaction. The go-git tree/commit writes stay outside
 // the tx (content-addressed and idempotent).
 func (e *Engine) CherryPick(pickedCommit, targetLineID string) (newSealedChangeID string, conflicts []Conflict, err error) {
+	return e.cherryPick(pickedCommit, targetLineID, nil)
+}
+
+// cherryPick is CherryPick's body; transform, when non-nil, rewrites the picked
+// message before it is stamped (see CherryPickWith).
+func (e *Engine) cherryPick(pickedCommit, targetLineID string, transform func(string) string) (newSealedChangeID string, conflicts []Conflict, err error) {
 	cid, err := e.ChangeIDOf(pickedCommit)
 	if err != nil || cid == "" {
 		return "", nil, fmt.Errorf("change.CherryPick: %q is not a cairn commit", pickedCommit)
@@ -60,6 +66,9 @@ func (e *Engine) CherryPick(pickedCommit, targetLineID string) (newSealedChangeI
 		return "", nil, fmt.Errorf("change.CherryPick: %w", err)
 	}
 	pickedMsg := stripChangeID(pmsg)
+	if transform != nil {
+		pickedMsg = transform(pickedMsg)
+	}
 
 	line, err := e.lineByID(targetLineID)
 	if err != nil {
