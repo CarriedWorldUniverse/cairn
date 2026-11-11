@@ -47,20 +47,13 @@ var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 var errConflicts = errors.New("completed with conflicts")
 
 func main() {
-<<<<<<< ours
 	args, pmode := pagerGlobals(os.Args[1:])
+	stopProfile := startProfile()
 	stopPager := startPager(args, pmode, stdoutIsTTY())
 	err := run(args)
 	stopPager()
-	if err != nil {
-||||||| base
-	if err := run(os.Args[1:]); err != nil {
-=======
-	stopProfile := startProfile()
-	err := run(os.Args[1:])
 	stopProfile()
 	if err != nil {
->>>>>>> theirs
 		if errors.Is(err, errConflicts) {
 			os.Exit(2)
 		}

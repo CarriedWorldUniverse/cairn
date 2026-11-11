@@ -1,6 +1,7 @@
 package change
 
 import (
+	"bytes"
 	"container/heap"
 	"fmt"
 
@@ -213,62 +214,71 @@ func (e *Engine) Describe(commit string, match func(tag string) bool) (tag strin
 	// popped. Once every queued commit is below some candidate no better one
 	// can appear, and the walk runs on until the lowest count is final.
 	const maxCandidates = 10
-	w := newGraphWalk(e)
-	if err := w.paint(plumbing.NewHash(commit), 0); err != nil {
+	g := e.lockGraph()
+	defer e.cgMu.Unlock()
+	start, err := g.id(plumbing.NewHash(commit))
+	if err != nil {
 		return "", 0, fmt.Errorf("change.Describe: %w", err)
 	}
+	if err := g.flushGenerations(); err != nil {
+		return "", 0, fmt.Errorf("change.Describe: %w", err)
+	}
+	// Up to maxCandidates bits per commit: more than graphWalk's uint8 flags
+	// hold, so this walk keeps its own flags over the same graph ids and the
+	// same queue order (generation, then time, then hash).
+	flags := make([]uint16, len(g.nodes))
+	reached := make([]bool, len(g.nodes))
+	q := &cgQueue{g: g}
+	paint := func(id int32, f uint16) {
+		flags[id] |= f
+		if !reached[id] {
+			reached[id] = true
+			heap.Push(q, id)
+		}
+	}
+	paint(start, 0)
 	type candidate struct {
 		name  string
-		bit   int
+		bit   uint16
 		depth int
 	}
 	var cands []candidate
-	pop := func() (*genItem, error) {
-		it := heap.Pop(&w.pq).(genItem)
-		w.queued[it.c.Hash] = false
-		delete(w.commits, it.c.Hash)
-		return &it, nil
-	}
-	spread := func(it *genItem) error {
-		f := w.flags[it.c.Hash]
-		for _, p := range it.c.ParentHashes {
-			if err := w.paint(p, f); err != nil {
-				return err
-			}
+	spread := func(id int32) {
+		for _, p := range g.parentsOf(id) {
+			paint(p, flags[id])
 		}
-		return nil
 	}
-	anyUncovered := func(mask int) bool {
-		for _, q := range w.pq {
-			if mask == 0 && w.flags[q.c.Hash] == 0 {
+	anyUncovered := func(mask uint16) bool {
+		for _, id := range q.ids {
+			if mask == 0 && flags[id] == 0 {
 				return true
 			}
-			if mask != 0 && w.flags[q.c.Hash]&mask == 0 {
+			if mask != 0 && flags[id]&mask == 0 {
 				return true
 			}
 		}
 		return false
 	}
 	seen := 0
-	for w.pq.Len() > 0 && anyUncovered(0) {
-		it, _ := pop()
-		h := it.c.Hash
-		if name, ok := byCommit[h.String()]; ok && len(cands) < maxCandidates && w.flags[h] == 0 {
+	for q.Len() > 0 && anyUncovered(0) {
+		if seen > describeWalkCap {
+			return "", 0, fmt.Errorf("change.Describe: walk exceeded %d commits", describeWalkCap)
+		}
+		id := heap.Pop(q).(int32)
+		if name, ok := byCommit[g.nodes[id].hash.String()]; ok && len(cands) < maxCandidates && flags[id] == 0 {
 			// Everything popped so far has a generation at least this
 			// commit's, so none of it is reachable from here: it all counts.
-			bit := 1 << len(cands)
+			bit := uint16(1) << len(cands)
 			cands = append(cands, candidate{name: name, bit: bit, depth: seen})
-			w.flags[h] |= bit
+			flags[id] |= bit
 		}
 		seen++
 		for i := range cands {
-			if w.flags[h]&cands[i].bit == 0 {
+			if flags[id]&cands[i].bit == 0 {
 				cands[i].depth++
 			}
 		}
-		if err := spread(it); err != nil {
-			return "", 0, fmt.Errorf("change.Describe: %w", err)
-		}
+		spread(id)
 	}
 	if len(cands) == 0 {
 		return "", 0, nil
@@ -283,17 +293,42 @@ func (e *Engine) Describe(commit string, match func(tag string) bool) (tag strin
 				best = i
 			}
 		}
-		if w.pq.Len() == 0 || !anyUncovered(cands[best].bit) {
+		if q.Len() == 0 || !anyUncovered(cands[best].bit) {
 			return cands[best].name, cands[best].depth, nil
 		}
-		it, _ := pop()
+		id := heap.Pop(q).(int32)
 		for i := range cands {
-			if w.flags[it.c.Hash]&cands[i].bit == 0 {
+			if flags[id]&cands[i].bit == 0 {
 				cands[i].depth++
 			}
 		}
-		if err := spread(it); err != nil {
-			return "", 0, fmt.Errorf("change.Describe: %w", err)
-		}
+		spread(id)
 	}
+}
+
+// cgQueue is a container/heap of commit-graph ids in graphWalk's order: the
+// highest generation first, then the newest commit, then the lowest hash.
+type cgQueue struct {
+	g   *commitGraph
+	ids []int32
+}
+
+func (q *cgQueue) Len() int { return len(q.ids) }
+func (q *cgQueue) Less(i, j int) bool {
+	a, b := &q.g.nodes[q.ids[i]], &q.g.nodes[q.ids[j]]
+	if a.gen != b.gen {
+		return a.gen > b.gen
+	}
+	if a.time != b.time {
+		return a.time > b.time
+	}
+	return bytes.Compare(a.hash[:], b.hash[:]) < 0
+}
+func (q *cgQueue) Swap(i, j int) { q.ids[i], q.ids[j] = q.ids[j], q.ids[i] }
+func (q *cgQueue) Push(x any)    { q.ids = append(q.ids, x.(int32)) }
+func (q *cgQueue) Pop() any {
+	n := len(q.ids) - 1
+	x := q.ids[n]
+	q.ids = q.ids[:n]
+	return x
 }

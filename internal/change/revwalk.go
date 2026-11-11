@@ -511,65 +511,59 @@ func topoSort(list []*CommitMeta) []*CommitMeta {
 // range, not of the history.
 func (e *Engine) interestingSet(include, exclude []string, firstParent bool) (map[plumbing.Hash]struct{}, error) {
 	const in, out = flagA, flagB
-	w := newGraphWalk(e)
-	open := 0 // queued commits not (yet) known to be excluded
-	paint := func(h plumbing.Hash, f int) error {
-		prev, seen := w.flags[h]
-		if seen && prev|f == prev {
-			return nil
-		}
-		wasQueued := w.queued[h]
-		if err := w.paint(h, f); err != nil {
-			return err
-		}
-		now := w.flags[h]
-		switch {
-		case !seen:
-			if now&out == 0 {
-				open++
+	g := e.lockGraph()
+	defer e.cgMu.Unlock()
+	ids := func(xs []string) ([]int32, error) {
+		out := make([]int32, 0, len(xs))
+		for _, x := range xs {
+			id, err := g.id(plumbing.NewHash(x))
+			if err != nil {
+				return nil, fmt.Errorf("change.interestingSet: %w", err)
 			}
-		case wasQueued && prev&out == 0 && now&out != 0:
-			open--
+			out = append(out, id)
 		}
-		return nil
+		return out, nil
 	}
-	for _, x := range exclude {
-		if err := paint(plumbing.NewHash(x), out); err != nil {
-			return nil, err
-		}
+	exc, err := ids(exclude)
+	if err != nil {
+		return nil, err
 	}
-	for _, x := range include {
-		if err := paint(plumbing.NewHash(x), in); err != nil {
-			return nil, err
-		}
+	inc, err := ids(include)
+	if err != nil {
+		return nil, err
 	}
-	for w.pq.Len() > 0 && open > 0 {
-		it := heap.Pop(&w.pq).(genItem)
-		h := it.c.Hash
-		w.queued[h] = false
-		f := w.flags[h]
+	if err := g.flushGenerations(); err != nil {
+		return nil, fmt.Errorf("change.interestingSet: %w", err)
+	}
+	// An excluded commit is settled: nothing below it can be in the range.
+	w := newGraphWalk(g, func(f int) bool { return f&out != 0 })
+	for _, id := range exc {
+		w.paint(id, out)
+	}
+	for _, id := range inc {
+		w.paint(id, in)
+	}
+	for len(w.pq) > 0 && w.unsettled > 0 {
+		id := w.pop()
+		w.flags[id] &^= walkQueued
+		f := w.flagsOf(id)
 		if f&out == 0 {
-			open--
+			w.unsettled--
 		}
-		for i, p := range it.c.ParentHashes {
+		for i, p := range g.parentsOf(id) {
 			pf := f & out
 			if f&in != 0 && (i == 0 || !firstParent) {
 				pf |= in
 			}
-			if pf == 0 {
-				continue
-			}
-			if err := paint(p, pf); err != nil {
-				return nil, err
+			if pf != 0 {
+				w.paint(p, pf)
 			}
 		}
-		// The commit cache is only needed while a commit is queued.
-		delete(w.commits, h)
 	}
 	set := map[plumbing.Hash]struct{}{}
-	for h, f := range w.flags {
-		if f&in != 0 && f&out == 0 && !w.queued[h] {
-			set[h] = struct{}{}
+	for _, id := range w.touched {
+		if f := w.flagsOf(id); f&in != 0 && f&out == 0 {
+			set[g.nodes[id].hash] = struct{}{}
 		}
 	}
 	return set, nil

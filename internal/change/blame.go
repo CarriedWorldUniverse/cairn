@@ -430,7 +430,7 @@ func (b *blamer) findRename(p int32, s *suspect) (origin, error) {
 			if err != nil {
 				return origin{}, err
 			}
-			score := similarity(theirs, mine)
+			score := blameSimilarity(theirs, mine)
 			if score < 5000 { // git's default: 50%
 				continue
 			}
@@ -453,11 +453,11 @@ func (b *blamer) findRename(p int32, s *suspect) (origin, error) {
 	return origin{found: true, path: best, parts: parts, chain: chain}, nil
 }
 
-// similarity scores how much of the larger of two files the other shares, in
+// blameSimilarity scores how much of the larger of two files the other shares, in
 // units of 1/10000: the bytes of the lines they have in common (as multisets)
 // over the size of the larger. Files whose sizes alone rule out 50% score 0
 // without being compared.
-func similarity(a, b []byte) int {
+func blameSimilarity(a, b []byte) int {
 	big, small := len(a), len(b)
 	if big < small {
 		big, small = small, big
