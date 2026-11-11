@@ -28,6 +28,22 @@ import (
 var gitOnlyVerbs = map[string]string{
 	"rebase": `cairn never needs a rebase — every "cairn commit" reconciles the line against ` +
 		`the latest parent, so a line cannot drift behind it`,
+	"notes": `cairn has no notes refs — put the information in the commit message ("cairn reword <commit> <message>") ` +
+		`or in an annotated tag ("cairn tag -a -m <msg> <name> <commit>")`,
+	"bundle": `cairn has no bundle files — a local path is a remote: "cairn remote add <name> <path>" then ` +
+		`"cairn push"/"cairn fetch" exchange history; "cairn archive <rev>" writes one commit's tree`,
+	"submodule": `cairn does not manage submodules — a gitlink entry is carried through unchanged, but each nested ` +
+		`repo is cloned and updated on its own ("cairn clone <url> <dir>")`,
+	"sparse-checkout": `cairn materializes whole lines — there is no sparse checkout; work in the sub-directory you need ` +
+		`inside the line's folder, and use "cairn ls-tree"/"cairn show <rev>:<path>" to read the rest`,
+	"maintenance": `use "cairn gc" (repack, vacuum, prune) — scheduling it (cron/systemd timer) is up to you`,
+	"range-diff":  `compare two ranges with "cairn log <a>..<b>" and "cairn diff <a>...<b>" — cairn has no range-diff`,
+	"verify-commit": `cairn does not sign or verify commits (no GPG), so there is no signature to check; ` +
+		`"cairn show <commit>" prints what the commit holds`,
+	"verify-tag": `cairn does not sign or verify tags (no GPG), so there is no signature to check; ` +
+		`"cairn tag -l -n <name>" shows an annotated tag's message`,
+	"update-ref": `refs are moved by the verbs that mean it — "cairn tag [-f] <name> <rev>", "cairn reset <rev>" ` +
+		`(move the line's tip), "cairn branch <name> <start>" / "cairn branch -d <name>"`,
 	"worktree": `every expressed line IS a folder — "cairn express <branch>" materializes one and ` +
 		`"cairn ls" lists them; there is no separate worktree command`,
 }
@@ -76,6 +92,17 @@ func gitCheckout(sub string, rest []string) error {
 	create := "b"
 	if sub == "switch" {
 		create = "c"
+	}
+	for _, a := range rest {
+		if a == "--detach" || (sub == "switch" && a == "-d") {
+			return errors.New(`lines are folders — there is no detached HEAD. "cairn show <rev>" / "cairn show <rev>:<path>" read an old commit, ` +
+				`"cairn archive <rev>" exports it, and "cairn express <name> --from <line>" starts a line to work from`)
+		}
+	}
+	for _, a := range rest {
+		if a == "-" {
+			return errors.New(`cairn does not remember a "previous" line — lines are folders, so "cd -" (or cd back to <repo>/<line>/) returns to it; "cairn ls" lists the expressed lines`)
+		}
 	}
 	args, flags, err := gitPositionals(sub, rest, create)
 	if err != nil {

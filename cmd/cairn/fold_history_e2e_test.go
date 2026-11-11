@@ -298,7 +298,9 @@ func TestUndoOfFold(t *testing.T) {
 	if got := w.read("feat", "f.txt"); got != "f\n" {
 		t.Errorf("feat/f.txt after re-expressing the un-folded line = %q", got)
 	}
-	if got := w.subjects("feat")[0]; got != "feat work" {
+	// foldRepo advanced main first, so the seal adopted it: the adoption merge
+	// (own "adopt <parent> into <line>" message) sits on the stamped commit.
+	if got := w.subjects("feat")[:2]; !reflect.DeepEqual(got, []string{"adopt main into feat", "feat work"}) {
 		t.Errorf("top of the un-folded line = %q", got)
 	}
 	mustRun(t, "fold", "--repo", w.root, "feat")

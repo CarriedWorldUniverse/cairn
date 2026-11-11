@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
@@ -69,7 +70,7 @@ func cmdRemoteAdd(args []string) error {
 		return errors.New("usage: cairn remote add <name> <url> [--cairn] [-f]")
 	}
 	name := fs.Arg(0)
-	url := fs.Arg(1)
+	url := absLocalURL(fs.Arg(1))
 	kind := "git"
 	if *cairn {
 		kind = "cairn"
@@ -207,8 +208,16 @@ func cmdPush(args []string) error {
 		return errors.New("--delete needs a branch or tag name")
 	}
 
-	// A plain invocation (no git-only option) takes the original path.
+	// git's `push <remote> tag <name>` spelling.
+	if len(pushes) == 2 && pushes[0] == "tag" {
+		pushes = pushes[1:]
+	}
+	// A plain invocation (no git-only option) takes the original path — unless
+	// a name is a tag (and no line), which only the tag path publishes.
 	exotic := *tagsOnly || lease.set || *dry
+	if len(pushes) == 1 && !strings.ContainsAny(pushes[0], ":+") && pushIsTag(r, pushes[0]) {
+		exotic = true
+	}
 	for _, sp := range pushes {
 		if strings.Contains(sp, ":") || strings.HasPrefix(sp, "+") {
 			exotic = true
@@ -276,21 +285,15 @@ func cmdPush(args []string) error {
 	}
 	for _, t := range targets {
 		src := t.src
-		// A name that is a tag and not a line is a tag push.
-		if infos, terr := r.TagInfos(); terr == nil && t.dst == "" {
-			if _, lerr := r.ResolveRefsRev(src); lerr == nil {
-				for _, ti := range infos {
-					if ti.Name == src && !r.IsExpressed(src) && !lineExists(r, src) {
-						if err := r.PushWith(worktree.PushOptions{Remote: remote, TagsOnly: true, Force: t.force}); err != nil {
-							return mapRemoteErr(err)
-						}
-						if !*quiet {
-							fmt.Printf("pushed tag %s -> %s\n", src, remote)
-						}
-						src = ""
-					}
-				}
+		// A name that is a tag and not a line is a tag push: just that tag.
+		if t.dst == "" && pushIsTag(r, src) {
+			if err := r.PushWith(worktree.PushOptions{Remote: remote, Tag: src, Force: t.force}); err != nil {
+				return mapRemoteErr(err)
 			}
+			if !*quiet {
+				fmt.Printf("pushed tag %s -> %s\n", src, remote)
+			}
+			src = ""
 		}
 		if src == "" {
 			continue
@@ -573,4 +576,44 @@ func cmdPull(args []string) error {
 // printPull prints a pull in the one-line list/view format.
 func printPull(p *cairnv1.Pull) {
 	fmt.Printf("%s\t%s\t%s -> %s\t%s\t%s\n", p.GetId(), p.GetState(), p.GetSource(), p.GetTarget(), p.GetTitle(), p.GetLedgerIssueKey())
+}
+
+// absLocalURL canonicalizes a remote given as a LOCAL path (relative or not) to
+// an absolute one. A relative path stored as typed resolves against whatever
+// directory a later fetch/push runs from — inside copy/ it points nowhere.
+// URLs (scheme://, scp-style host:path) and paths that do not exist are left
+// untouched.
+func absLocalURL(u string) string {
+	if u == "" || strings.Contains(u, "://") {
+		return u
+	}
+	if i := strings.IndexByte(u, ':'); i > 0 && !strings.ContainsRune(u[:i], '/') {
+		return u // scp-style host:path
+	}
+	if _, err := os.Stat(u); err != nil {
+		return u
+	}
+	abs, err := filepath.Abs(u)
+	if err != nil {
+		return u
+	}
+	return abs
+}
+
+// pushIsTag reports whether name is a tag and not a line (a line of the same
+// name wins, as a branch does in git's ambiguity rules for a bare push).
+func pushIsTag(r *worktree.Repo, name string) bool {
+	if r.IsExpressed(name) || lineExists(r, name) {
+		return false
+	}
+	infos, err := r.TagInfos()
+	if err != nil {
+		return false
+	}
+	for _, ti := range infos {
+		if ti.Name == name {
+			return true
+		}
+	}
+	return false
 }

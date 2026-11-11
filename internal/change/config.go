@@ -5,11 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 )
 
 // GetConfig returns the stored value for key. The bool is false (with no error)
 // when the key is unset.
 func (e *Engine) GetConfig(key string) (string, bool, error) {
+	if v, ok := userconfig.Override(key); ok { // git's -c key=value wins
+		return v, true, nil
+	}
 	var value string
 	err := e.db.QueryRow(`SELECT value FROM config WHERE key=?`, key).Scan(&value)
 	if errors.Is(err, sql.ErrNoRows) {

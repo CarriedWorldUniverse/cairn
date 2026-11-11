@@ -113,7 +113,7 @@ func cmdRemoteSetURL(args []string) error {
 		return mapErr(err)
 	}
 	defer r.Close()
-	return mapErr(r.SetRemoteURL(fs.Arg(0), fs.Arg(1)))
+	return mapErr(r.SetRemoteURL(fs.Arg(0), absLocalURL(fs.Arg(1))))
 }
 
 // cmdRemoteShow prints a remote's URL, its HEAD and branches (a live listing

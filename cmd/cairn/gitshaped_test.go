@@ -128,10 +128,11 @@ func TestGitOnlyVerbsTeachTheTranslation(t *testing.T) {
 }
 
 // TestNonGitUnknownSubcommandIsUnchanged: the corpus-aware corrections must not
-// swallow the generic unknown-subcommand path (which still prints usage).
+// swallow the generic unknown-subcommand path (now a one-line error on stderr,
+// not the usage wall — see TestSafety_UnknownSubcommandOneLine).
 func TestNonGitUnknownSubcommandIsUnchanged(t *testing.T) {
 	err := run([]string{"frobnicate"})
-	if err == nil || !strings.Contains(err.Error(), `unknown subcommand "frobnicate"`) {
+	if err == nil || !strings.Contains(err.Error(), `'frobnicate' is not a cairn command`) {
 		t.Fatalf("got %v, want the generic unknown-subcommand error", err)
 	}
 }

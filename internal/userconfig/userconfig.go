@@ -28,8 +28,27 @@ func Path() (string, error) {
 	return filepath.Join(dir, "cairn", "config"), nil
 }
 
+// overrides are transient values (git's `-c key=value`) that win over the file
+// for the lifetime of the process. Keys are case-insensitive like git's.
+var overrides = map[string]string{}
+
+// SetOverride sets a transient config value for this process.
+func SetOverride(key, value string) { overrides[strings.ToLower(key)] = value }
+
+// ClearOverrides drops every transient override (tests).
+func ClearOverrides() { overrides = map[string]string{} }
+
+// Override returns the transient value for key, if one was set.
+func Override(key string) (string, bool) {
+	v, ok := overrides[strings.ToLower(key)]
+	return v, ok
+}
+
 // Get returns the value for key, or "" if the key (or the file) is absent.
 func Get(key string) string {
+	if v, ok := Override(key); ok {
+		return v
+	}
 	m, err := load()
 	if err != nil {
 		return ""
@@ -100,7 +119,16 @@ func Unset(key string) (bool, error) {
 }
 
 // All returns every key in the global config.
-func All() (map[string]string, error) { return load() }
+func All() (map[string]string, error) {
+	m, err := load()
+	if err != nil {
+		return m, err
+	}
+	for k, v := range overrides {
+		m[k] = v
+	}
+	return m, nil
+}
 
 func load() (map[string]string, error) {
 	path, err := Path()

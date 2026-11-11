@@ -38,8 +38,7 @@ func gitConfigValue(key string) string {
 // script, agent, or CI run it is not, and cairn errors with setup guidance
 // instead of blocking on a prompt.
 func isInteractive() bool {
-	fi, err := os.Stdin.Stat()
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	return fdIsTerminal(os.Stdin)
 }
 
 // promptLine prints "label [def]: " to stderr and reads a line from stdin;
@@ -123,7 +122,7 @@ func cmdLogin(args []string) error {
 	}
 	host := fs.Arg(0)
 	var token string
-	if fi, _ := os.Stdin.Stat(); fi != nil && (fi.Mode()&os.ModeCharDevice) == 0 {
+	if !fdIsTerminal(os.Stdin) {
 		b, err := io.ReadAll(os.Stdin) // piped
 		if err != nil {
 			return fmt.Errorf("login: read token: %w", err)

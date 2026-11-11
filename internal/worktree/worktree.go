@@ -413,6 +413,12 @@ func (r *Repo) Express(branch, parent string) error {
 	case err == nil:
 		line = l
 	case errors.Is(err, change.ErrNotFound):
+		// A NEW line name becomes a folder under the repo root: hold it to git's
+		// check-ref-format rules so it can never be "", ".", "..", ".cairn" or
+		// anything else that resolves outside <repo>/<folder>.
+		if verr := change.ValidRefName(branch); verr != nil {
+			return fmt.Errorf("worktree.Express: %q is not a valid branch name: %w", branch, verr)
+		}
 		if parent == "" {
 			// Default to the actual structural root (parent_line IS NULL),
 			// whatever its name — after an import it may be "master"/"trunk".
@@ -440,6 +446,9 @@ func (r *Repo) Express(branch, parent string) error {
 	// by a different branch (e.g. "feat/x" → "feat-x" colliding with a literal
 	// "feat-x") rather than clobbering it.
 	folder := FolderName(branch)
+	if folder == "" || folder == "." || folder == ".." || strings.HasPrefix(folder, ".") || strings.ContainsAny(folder, `/\`+"\x00") {
+		return fmt.Errorf("worktree.Express: %q would materialize outside its own line folder (%q); not a valid line name", branch, folder)
+	}
 	for b, e := range r.st.Expressed {
 		if b != branch && e.Path == folder {
 			return fmt.Errorf("worktree.Express: folder %q is already used by branch %q; rename one before expressing %q", folder, b, branch)
@@ -829,6 +838,11 @@ func (r *Repo) LastSyncNote() string { return r.lastSyncNote }
 // reflects the adopted work. force allows discarding uncommitted changes; without
 // it, Fold refuses if the branch has uncommitted edits.
 func (r *Repo) Fold(branch string, force bool) error {
+	return r.FoldWith(branch, force, change.FoldOpts{})
+}
+
+// FoldWith is Fold with git merge's --no-ff / --ff-only / -m options.
+func (r *Repo) FoldWith(branch string, force bool, opts change.FoldOpts) error {
 	unlock, err := r.lockState()
 	if err != nil {
 		return err
@@ -865,7 +879,7 @@ func (r *Repo) Fold(branch string, force bool) error {
 			return fmt.Errorf("worktree.Fold: %q tracks the remote — folding %q into it locally diverges from upstream (a protected remote will reject the push). Push %q and open a PR instead; 'cairn undo' reverts a fold. Pass --force to fold anyway", parent.Name, branch, branch)
 		}
 	}
-	if err := r.eng.FoldLine(line.ID); err != nil {
+	if err := r.eng.FoldLineOpts(line.ID, opts); err != nil {
 		return fmt.Errorf("worktree.Fold: %w", err)
 	}
 	if err := r.Unexpress(branch, true); err != nil {

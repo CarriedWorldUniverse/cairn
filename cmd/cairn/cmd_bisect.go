@@ -68,7 +68,9 @@ func cmdBisectRun(args []string) error {
 	}
 
 	// The expressed folder for the bisect branch: <repo>/<branch>.
-	folder := filepath.Join(*repo, info.Branch)
+	// Resolved from the discovered repo root, not --repo as typed: run from
+	// inside a line folder ("cd c/main && cairn bisect run ...") --repo is ".".
+	folder := filepath.Join(r.Root(), worktree.FolderName(info.Branch))
 
 	for {
 		st, err := r.BisectStatus()

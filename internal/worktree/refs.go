@@ -338,6 +338,7 @@ type PushOptions struct {
 	Force    bool
 	Lease    bool // --force-with-lease: force only if the remote still matches the tracking ref
 	TagsOnly bool
+	Tag      string // publish just this one tag (push <remote> <tag>)
 }
 
 // PushWith is Push/PushBranch with the extra git options: tags only, a
@@ -423,6 +424,9 @@ func (r *Repo) PushWith(o PushOptions) error {
 		hp = "+"
 	}
 	switch {
+	case o.Tag != "":
+		spec := cfgSpec(hp + "refs/tags/" + o.Tag + ":refs/tags/" + o.Tag)
+		return prepare("", []cfgSpec{spec})
 	case o.TagsOnly:
 		if o.Lease && !force {
 			if len(tagSpecs) == 0 {

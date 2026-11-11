@@ -12,6 +12,7 @@ import (
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 	"github.com/CarriedWorldUniverse/cairn/internal/userconfig"
 	"github.com/CarriedWorldUniverse/cairn/internal/worktree"
+	"github.com/mattn/go-isatty"
 )
 
 // Git-shaped option parsing for the inspection commands (log, show, diff,
@@ -306,8 +307,13 @@ func stdoutIsTTY() bool {
 	if pagerActive {
 		return true // stdout is the pager's pipe; the pager shows a terminal
 	}
-	fi, err := os.Stdout.Stat()
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	return fdIsTerminal(os.Stdout)
+}
+
+// fdIsTerminal is a real isatty test. A ModeCharDevice check is NOT one: it is
+// true for /dev/null, which made redirected output start the pager.
+func fdIsTerminal(f *os.File) bool {
+	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
 }
 
 // useColor decides whether to colour output, shared by diff, log, show and

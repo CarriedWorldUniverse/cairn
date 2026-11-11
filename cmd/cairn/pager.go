@@ -137,13 +137,26 @@ func startPager(args []string, mode pagerMode, tty bool) (stop func()) {
 	if cmdline == "" {
 		return noop
 	}
-	r, w, err := os.Pipe()
+	// A simple "prog args" pager that cannot be executed (missing, or not
+	// executable) is skipped up front, as git falls back to plain output.
+	if !strings.ContainsAny(cmdline, "|&;<>()$`\\\"'*?[#~=%\n") {
+		if f := strings.Fields(cmdline); len(f) > 0 {
+			if _, lerr := exec.LookPath(f[0]); lerr != nil {
+				return noop
+			}
+		}
+	}
+	// cairn writes into pr/pw; a forwarder goroutine relays it to the pager.
+	// Routing through the forwarder means a pager that dies (cannot exec, exits
+	// non-zero at once) can never break cairn's own stdout writes: if the pager
+	// fails, the output is delivered directly instead of being lost.
+	pr, pw, err := os.Pipe()
 	if err != nil {
 		return noop
 	}
+	real := os.Stdout
 	c := exec.Command("sh", "-c", cmdline)
-	c.Stdin = r
-	c.Stdout = os.Stdout
+	c.Stdout = real
 	c.Stderr = os.Stderr
 	c.Env = os.Environ()
 	if _, ok := os.LookupEnv("LESS"); !ok {
@@ -152,20 +165,59 @@ func startPager(args []string, mode pagerMode, tty bool) (stop func()) {
 	if _, ok := os.LookupEnv("LV"); !ok {
 		c.Env = append(c.Env, "LV=-c")
 	}
-	if err := c.Start(); err != nil {
-		r.Close()
-		w.Close()
+	in, err := c.StdinPipe()
+	if err != nil {
+		pr.Close()
+		pw.Close()
 		return noop
 	}
-	r.Close()
-	real := os.Stdout
-	os.Stdout = w
+	if err := c.Start(); err != nil {
+		pr.Close()
+		pw.Close()
+		return noop
+	}
+	waited := make(chan int, 1)
+	go func() {
+		_ = c.Wait()
+		waited <- c.ProcessState.ExitCode()
+	}()
+	fwdDone := make(chan struct{})
+	go func() {
+		defer close(fwdDone)
+		defer in.Close()
+		pagerGone, direct := false, false
+		buf := make([]byte, 32<<10)
+		for {
+			n, rerr := pr.Read(buf)
+			if n > 0 && !pagerGone {
+				if _, werr := in.Write(buf[:n]); werr != nil {
+					pagerGone = true
+					// The pager is gone. Quitting it early (exit 0, e.g. less's q)
+					// silently drops the rest, as git does; a pager that FAILED
+					// must not swallow the output.
+					direct = <-waited != 0
+					waited <- 1 // keep the value for stop (never read as success)
+					if direct {
+						_, _ = real.Write(buf[:n])
+					}
+				}
+			} else if n > 0 && direct {
+				_, _ = real.Write(buf[:n])
+			}
+			if rerr != nil {
+				return
+			}
+		}
+	}()
+	os.Stdout = pw
 	pagerActive = true
 	// The pager owns ^C (less handles it itself); we must not die under it.
 	signal.Ignore(os.Interrupt)
 	return func() {
-		w.Close()
-		_ = c.Wait()
+		pw.Close()
+		<-fwdDone
+		pr.Close()
+		<-waited
 		os.Stdout = real
 		pagerActive = false
 		signal.Reset(os.Interrupt)

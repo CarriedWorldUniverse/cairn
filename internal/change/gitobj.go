@@ -3,6 +3,7 @@ package change
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -37,7 +38,15 @@ func validTreeEntryName(name string) error {
 	case ".", "..":
 		return fmt.Errorf("tree entry name %q is a path-traversal component", name)
 	}
-	if strings.ContainsAny(name, "/\\\x00") {
+	// '\' is an ordinary filename byte everywhere except Windows, where it is a
+	// path separator: git happily commits "back\slash.txt" on Linux/macOS, so
+	// cairn must too (a name that fails here would wedge every snapshotting
+	// command in a repo that merely contains the file).
+	seps := "/\x00"
+	if runtime.GOOS == "windows" {
+		seps = "/\\\x00"
+	}
+	if strings.ContainsAny(name, seps) {
 		return fmt.Errorf("tree entry name %q contains a separator or NUL", name)
 	}
 	// Windows strips TRAILING '.' and ' ' characters from each path component

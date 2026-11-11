@@ -56,9 +56,11 @@ func cmdCommit(args []string) error {
 	resetAuthor := fs.Bool("reset-author", false, "with --amend: take authorship of the amended commit")
 	allowEmptyMsg := fs.Bool("allow-empty-message", false, "accept an empty message from the editor")
 	// Accepted for git compatibility; no-ops in cairn's model. There is no
-	// staging area, so every commit already takes all edits (-a), and a seal
-	// with no edits is already allowed (--allow-empty).
-	for _, name := range []string{"a", "all", "allow-empty", "q", "quiet", "no-verify", "n", "e", "edit", "s", "signoff", "no-gpg-sign"} {
+	// staging area, so every commit already takes all edits (-a).
+	fixup := fs.String("fixup", "", "seal as `fixup! <subject of commit>` (fold it later with `cairn squash <commit>`)")
+	squashFor := fs.String("squash", "", "seal as `squash! <subject of commit>` (fold it later with `cairn squash <commit>`)")
+	allowEmpty := fs.Bool("allow-empty", false, "seal even when the working change holds no edits")
+	for _, name := range []string{"a", "all", "q", "quiet", "no-verify", "n", "e", "edit", "s", "signoff", "no-gpg-sign"} {
 		fs.Bool(name, false, "accepted for git compatibility (no-op)")
 	}
 	if err := parseGitArgs(fs, before); err != nil {
@@ -119,6 +121,33 @@ func cmdCommit(args []string) error {
 		return errors.New("commit --amend folds the whole working change into the previous commit; it cannot be combined with paths (commit the paths first, or amend everything)")
 	}
 
+	if *fixup != "" || *squashFor != "" {
+		if *fixup != "" && *squashFor != "" {
+			return errors.New("options --fixup and --squash cannot be used together")
+		}
+		if *amend {
+			return errors.New("--fixup/--squash cannot be combined with --amend")
+		}
+		target, prefix := *fixup, "fixup! "
+		if *squashFor != "" {
+			target, prefix = *squashFor, "squash! "
+		}
+		sha, rerr := r.ResolveRev(branch, target)
+		if rerr != nil {
+			return fmt.Errorf("--%s %s: unknown revision: %w", strings.TrimSuffix(prefix, "! "), target, rerr)
+		}
+		subj, serr := r.Engine().CommitSubject(sha)
+		if serr != nil {
+			return serr
+		}
+		for _, p := range []string{"fixup! ", "squash! "} { // git strips a nested prefix
+			subj = strings.TrimPrefix(subj, p)
+		}
+		if len(msgs) > 0 || file != "" {
+			return errors.New("--fixup/--squash take the message from the target commit; -m/-F cannot be combined with them")
+		}
+		msgs = append(msgs, prefix+subj)
+	}
 	// The message: -m / -F, else what a stopped revert or cherry-pick left,
 	// else the editor on a terminal, else (scripts) the historical default.
 	message, haveMsg := "", false
@@ -177,7 +206,7 @@ func cmdCommit(args []string) error {
 		return nil
 	}
 
-	res, err := r.CommitWith(branch, message, worktree.CommitOpts{Author: sig})
+	res, err := r.CommitWith(branch, message, worktree.CommitOpts{Author: sig, AllowEmpty: *allowEmpty})
 	if err != nil {
 		return mapErr(err)
 	}
@@ -249,17 +278,26 @@ func parseGitDate(s string) (time.Time, error) {
 			return t, nil
 		}
 	}
+	// Layouts that carry their own zone (±HH:MM, ±HHMM, Z) …
 	for _, layout := range []string{
-		time.RFC3339, "2006-01-02T15:04:05", time.RFC1123Z, time.RFC1123,
-		"Mon, 2 Jan 2006 15:04:05 -0700", "Mon Jan 2 15:04:05 2006 -0700",
-		"2006-01-02 15:04:05 -0700", "2006-01-02 15:04:05", "2006-01-02 15:04", "2006-01-02",
+		time.RFC3339, time.RFC3339Nano, "2006-01-02T15:04:05Z0700", "2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04Z07:00", "2006-01-02T15:04Z0700",
+		"2006-01-02 15:04:05Z07:00", "2006-01-02 15:04:05Z0700", "2006-01-02 15:04:05 Z07:00", "2006-01-02 15:04:05 Z0700",
+		"2006-01-02 15:04:05.999999999 Z0700", "2006-01-02 15:04Z0700", "2006-01-02 15:04 Z0700",
+		time.RFC1123Z, time.RFC1123, time.RFC822Z, time.RFC822,
+		"Mon, 2 Jan 2006 15:04:05 -0700", "Mon, 2 Jan 2006 15:04 -0700", "2 Jan 2006 15:04:05 -0700",
+		"Mon Jan 2 15:04:05 2006 -0700", "Mon Jan 2 15:04:05 2006 Z07:00", "Jan 2 15:04:05 2006 -0700",
 	} {
-		if strings.Contains(layout, "-0700") || strings.Contains(layout, "Z07:00") || layout == time.RFC1123 {
-			if t, err := time.Parse(layout, s); err == nil {
-				return t, nil
-			}
-			continue
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
 		}
+	}
+	// … and zone-less ones, read in local time.
+	for _, layout := range []string{
+		"2006-01-02T15:04:05", "2006-01-02T15:04:05.999999999", "2006-01-02T15:04",
+		"2006-01-02 15:04:05", "2006-01-02 15:04:05.999999999", "2006-01-02 15:04", "2006-01-02",
+		"2006/01/02 15:04:05", "2006/01/02", "Mon Jan 2 15:04:05 2006", "Mon, 2 Jan 2006 15:04:05", "2 Jan 2006",
+	} {
 		if t, err := time.ParseInLocation(layout, s, time.Local); err == nil {
 			return t, nil
 		}

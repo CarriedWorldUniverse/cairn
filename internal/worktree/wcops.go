@@ -509,6 +509,15 @@ func (r *Repo) Revert(branch, commit string, mainline int, noCommit bool) (PickR
 	if err != nil {
 		return PickResult{}, fmt.Errorf("worktree.Revert: %w", err)
 	}
+	// A merge is decided by the commit's own parent count. OwnCommit maps a
+	// cairn adoption merge to the stamped commit beneath it (so a plain revert
+	// takes back the operator's change), but an explicit -m names a parent of
+	// THE merge commit itself, as in git.
+	if mainline != 0 && !isMerge {
+		if ps, perr := r.eng.Parents(sha); perr == nil && len(ps) > 1 {
+			own, isMerge = sha, true
+		}
+	}
 	// git writes the subject between plain quotes, never escaped.
 	msg := fmt.Sprintf("Revert \"%s\"\n\nThis reverts commit %s.", info.Subject, sha)
 	var parent string
@@ -699,10 +708,20 @@ type CommitOpts struct {
 	// Author overrides the commit's author (git --author / --date); nil keeps
 	// the configured identity. The committer is always the configured identity.
 	Author *change.Signature
+	// AllowEmpty seals even when the working change holds no edits (git
+	// commit --allow-empty). Without it an empty working change is refused
+	// with ErrNothingToCommit, as git does.
+	AllowEmpty bool
 }
 
-// CommitWith is Commit with an explicit author/date.
+// CommitWith is Commit with an explicit author/date, refusing a seal that
+// would record nothing unless opts.AllowEmpty.
 func (r *Repo) CommitWith(branch, message string, opts CommitOpts) (change.CommitResult, error) {
+	if !opts.AllowEmpty {
+		if err := r.refuseNothingToCommit(branch); err != nil {
+			return change.CommitResult{}, err
+		}
+	}
 	if opts.Author != nil {
 		r.eng.SetAuthorOverride(opts.Author)
 		defer r.eng.SetAuthorOverride(nil)
@@ -1442,3 +1461,40 @@ func shortID(sha string) string {
 	}
 	return sha
 }
+
+// refuseNothingToCommit snapshots branch and returns ErrNothingToCommit when
+// its working change is identical to the line's sealed tip. A merge in
+// progress (a conflicted pull) or a stopped rebase still has a seal to make,
+// so those are never "empty".
+func (r *Repo) refuseNothingToCommit(branch string) error {
+	unlock, err := r.lockState()
+	if err != nil {
+		return err
+	}
+	entry, ok := r.st.Expressed[branch]
+	if !ok {
+		unlock()
+		return nil // Commit reports the unexpressed branch
+	}
+	_, _, serr := r.syncBranch(branch, entry)
+	unlock()
+	if serr != nil {
+		return serr
+	}
+	line, err := r.eng.LineByName(branch)
+	if err != nil {
+		return fmt.Errorf("worktree.Commit: %w", err)
+	}
+	empty, err := r.eng.WorkingChangeEmpty(line.ID)
+	if err != nil {
+		return fmt.Errorf("worktree.Commit: %w", err)
+	}
+	if empty {
+		return ErrNothingToCommit
+	}
+	return nil
+}
+
+// ErrNothingToCommit is returned by CommitWith when the working change is
+// clean (git: "nothing to commit, working tree clean").
+var ErrNothingToCommit = errors.New("nothing to commit, working tree clean")

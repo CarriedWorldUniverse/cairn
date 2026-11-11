@@ -1,6 +1,7 @@
 package change
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -32,7 +33,7 @@ func TestValidTreeEntryName(t *testing.T) {
 	// reduces to "" there — a traversal component, even though it isn't a
 	// literal ".." here.
 	bad := []string{
-		"", ".", "..", "a/b", "a\\b", "a\x00b",
+		"", ".", "..", "a/b", "a\x00b",
 		"...",         // strips (Windows) to ""
 		".. ",         // strips (Windows) to ""
 		"con",         // reserved device name
@@ -41,12 +42,20 @@ func TestValidTreeEntryName(t *testing.T) {
 		"PRN.txt",     // reserved device name, with extension
 		"con.foo.txt", // reserved device name: base matched up to the FIRST '.'
 	}
+	// '\\' is a separator only on Windows; on Unix git commits "a\\b" happily.
+	if runtime.GOOS == "windows" {
+		bad = append(bad, "a\\b")
+	}
 	for _, n := range bad {
 		if err := validTreeEntryName(n); err == nil {
 			t.Errorf("validTreeEntryName(%q) = nil, want error", n)
 		}
 	}
-	for _, n := range []string{"a", "file.txt", "..a", "a..", ".hidden"} {
+	good := []string{"a", "file.txt", "..a", "a..", ".hidden"}
+	if runtime.GOOS != "windows" {
+		good = append(good, "a\\b")
+	}
+	for _, n := range good {
 		if err := validTreeEntryName(n); err != nil {
 			t.Errorf("validTreeEntryName(%q) = %v, want nil", n, err)
 		}
