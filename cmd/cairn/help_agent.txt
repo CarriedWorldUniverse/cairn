@@ -1,0 +1,95 @@
+cairn {{VERSION}} - compact guide for LLM/agent users (static page; per-verb flags: cairn help <verb>)
+
+THE MODEL
+- No staging area, no index. Your edits on disk ARE the working change. `cairn add` is a no-op.
+- A line (= branch) is a folder directly under the repo root: <repo>/main/, <repo>/feat/.
+  `cairn express <name>` makes the folder, `cairn unexpress <name>` removes it (the line stays).
+- Every cairn command first snapshots ALL expressed folders into their working changes.
+- `commit` seals the working change (local only) and opens a fresh one. `push` publishes sealed
+  commits only; unsealed edits are never pushed. A working change is always open.
+- Lines form a tree (`cairn tree`). A finished line is folded into its PARENT (`fold`).
+
+GIT -> CAIRN (deltas only)
+  git checkout -b X / switch -c X   cairn express X  (forks from the line you stand in; from the
+                                    repo root, the root line; --from <line> overrides)
+  git checkout X / switch X         cd <repo>/X/  (`cairn express X` first if it has no folder);
+                                    the git verb itself only prints this hint and exits 1
+  git checkout [<rev>] -- <path>    cairn restore [--source=<rev>] <path>  (alias works)
+  git add ... / commit -a           add is a no-op; -a accepted and ignored (all edits always included)
+  git add -p / partial commit       cairn commit -m msg -- <path>...  (seals only those paths)
+  git merge X                       cairn fold X  (X into its parent; X not a child of the line you
+                                    stand in -> refused; fold retires X and removes its folder;
+                                    into a remote-tracked line like a cloned main -> refused without
+                                    --force: push X and open a PR instead)
+  git rebase                        does not exist (exit 1): commit and pull already reconcile each
+                                    line onto its latest parent
+  git branch <n> / -d / -D / -m     branch <n> = express; -d refuses unfolded unpushed work, -D
+                                    forces (= abandon); -m renames line and folder
+  git stash                         cairn stash [pop|apply|list] - rarely needed: express another line
+  git worktree, detached HEAD       none: every expressed line is a folder (`cairn ls`)
+  git commit --amend / rebase -i    commit --amend | reword | squash | drop <commit>
+  git pull --rebase, push -u        accepted, no effect (pull reconciles every line anyway)
+Same as git (spelling and common flags): log show diff blame grep status -s rev-parse rev-list
+  ls-files ls-tree cat-file shortlog describe format-patch merge-base for-each-ref tag remote
+  fetch pull push clone config reflog gc fsck archive restore rm mv apply am revert cherry-pick
+  bisect reset (--soft/--hard/<rev>).
+
+DAILY LOOP (copy-paste)
+  cd <repo>/feat                    # or from inside main/: cairn express feat && cd ../feat
+  # ...edit files in this folder...
+  cairn status                      # or: cairn diff
+  cairn commit -m "message"         # prints the sealed sha; exit 2 = conflicts recorded
+  cairn push                        # inside a line folder: ONLY that line; at repo root: all lines + tags
+  cairn pull                        # fetch + reconcile every line (exit 2 = conflicts)
+  cairn fold feat                   # integrate into the parent, local-only parents
+  cairn pr open feat main -m "title" --project KEY   # cairn-server only, not GitHub; see `cairn help pr`
+First time: `cairn init <emptydir>` or `cairn clone <url> [dir]`; identity:
+  cairn config --global user.name "N"; cairn config --global user.email "e@x"
+
+HAZARDS
+- Un-sealed work discarded: unexpress, fold, abandon refuse unless --force. `reset --hard`,
+  `restore <path>` discard without asking (undoable). `clean -fdx` removes only IGNORED files and
+  cannot be undone.
+- History rewrites: commit --amend, reword, squash, drop, reset <rev>, reauthor (whole repo),
+  push --force / --force-with-lease. reword/squash/drop take a commit hash, NOT HEAD or @
+  (`cairn rev-parse HEAD` gives one). History edits refuse commits a child line stands on or that came in via a fold. Amending
+  an already-pushed commit means the next push needs --force.
+- The branch argument defaults to the folder you stand in (any depth inside <repo>/<line>/).
+  At the repo ROOT there is no such folder: status, diff, log, stash and `reset --hard` act on the
+  ROOT line (main), `commit` fails "branch required", `push` publishes everything. Prefer: cd into
+  the line, or name it (`cairn commit feat -m ...`). `reset`'s argument is a revision, not a line.
+- `cairn undo` reverts the last operation: commits, folds, abandon, resets, tag/rename/remote edits,
+  stash, conflicts. Repeat for more; `undo` of an undo redoes it. `cairn oplog` lists them. It does
+  not recall a push and does not delete lines the undone operation created.
+- Messages: always `-m "..."`; shell-special characters need your shell's quoting. Repeat -m for
+  paragraphs, or `-F file` / `-F -` for stdin. Without -m and without a TTY the message silently
+  becomes "snapshot", so always pass -m.
+- Conflicts are data: commit/pull/reword/squash/drop/cherry-pick record them, write diff3 markers
+  into the file and exit 2 (not 1). Edit the file, then `cairn resolve <line> <path>` (takes the
+  on-disk content; refuses leftover <<<<<<< markers) and `cairn commit`. push refuses a line with
+  open conflicts (exit 1) unless --force.
+- `commit` with nothing to seal exits 1 ("nothing to commit"); pass --allow-empty to seal anyway.
+
+CONTRACTS FOR SCRIPTS
+- Exit codes: 0 ok; 1 error or a status-only "no" (diff --exit-code/--quiet found changes, grep
+  matched nothing, config --get key unset); 2 conflicts recorded; 128 fatal: not a cairn repo,
+  unknown/bad revision, pathspec matched nothing, bad -C/-c. `cairn commit && cairn push` is safe.
+- Machine output: `status --porcelain` / `-s` (v1; changes in column X) and `--porcelain=v2`,
+  with -z; `log --format=%H`; `rev-parse HEAD` (HEAD/@ = sealed tip of the line you stand in);
+  `diff --name-status`; `tree --flat`; `blame --porcelain`. commit/reword/squash/drop print a sha.
+  Plain `cairn status` and `cairn ls` are for humans.
+- Pager: only when stdout is a TTY, for log/show/diff/grep/blame/listings/help. `cairn help agent`
+  is never paged. Force off with -P / --no-pager (before the verb); $CAIRN_PAGER, $GIT_PAGER, $PAGER.
+- The editor opens only when stdin is a TTY and there is no -m/-F (--no-edit forbids it).
+  $CAIRN_EDITOR, $GIT_EDITOR, $VISUAL, $EDITOR choose it.
+- Credentials never prompt: $CAIRN_TOKEN / $GITHUB_TOKEN / $GITLAB_TOKEN for https remotes, or
+  ssh-agent; `echo $TOK | cairn login <host>` stores one. Identity: $CAIRN_AUTHOR, $CAIRN_EMAIL,
+  or config user.name/user.email (non-interactively falls back to git config). NO_COLOR is honoured.
+- Global flags go BEFORE the verb: -C <dir>, -c key=val, -P. Every verb also takes --repo <dir>.
+
+CHANGED SINCE 0.1.48
+- log, diff, show print git's format by default; `--classic` restores the old compact output.
+- commit with nothing to seal is an error unless --allow-empty.
+- init refuses a non-empty directory (init in a new or empty dir).
+- merge/fold of a line that is not a child of the current line is refused.
+- clean removes only ignored files (cairn has no untracked files).

@@ -614,6 +614,10 @@ func cmdHelp(args []string) error {
 		fmt.Println(usage)
 		return nil
 	}
+	if len(args) == 1 && isAgentHelpTopic(args[0]) {
+		printAgentHelp()
+		return nil
+	}
 	verbs := args
 	sort.Strings(verbs)
 	for _, v := range verbs {

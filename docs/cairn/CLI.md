@@ -6,6 +6,10 @@ borrows the good ideas from Jujutsu (jj) — the working copy is always a commit
 conflicts are data instead of blockers, every operation is undoable — while staying
 a plain CLI you can drive by hand or from a script/agent.
 
+> **For LLM agents:** run `cairn help agent` first. It is a compact page (about 100 lines, compiled into
+> the binary) covering the model, git-to-cairn deltas, hazards, exit codes and script contracts of
+> the binary you are running; this document is the long-form reference.
+
 This document is the full command reference. For the design rationale see the specs
 under [`docs/cairn/`](.); for installation see the [README](../../README.md#install-the-cli).
 
