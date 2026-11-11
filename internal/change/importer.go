@@ -249,22 +249,31 @@ func (e *Engine) fetchRemote(url string) error {
 	if serr != nil {
 		return fmt.Errorf("change.fetchRemote: %w", serr)
 	}
-	err = rem.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{
-			"+refs/heads/*:refs/heads/*",
-			// Also record remote-tracking refs (like `git clone` does) so the
-			// repo knows what is already on origin — e.g. `cairn private` warns
-			// when a path being withheld is already pushed.
-			"+refs/heads/*:refs/remotes/" + originRemote + "/*",
-			"+refs/tags/*:refs/tags/*",
-			"+refs/cairn/*:refs/cairn/*",
-		},
-		Tags:     git.AllTags,
-		Auth:     auth,
-		Progress: e.progress,
-	})
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("change.fetchRemote: %w", err)
+	specs := []config.RefSpec{
+		"+refs/heads/*:refs/heads/*",
+		// Also record remote-tracking refs (like `git clone` does) so the
+		// repo knows what is already on origin — e.g. `cairn private` warns
+		// when a path being withheld is already pushed.
+		"+refs/heads/*:refs/remotes/" + originRemote + "/*",
+		"+refs/tags/*:refs/tags/*",
+		"+refs/cairn/*:refs/cairn/*",
+	}
+	// A repository on this filesystem, into an empty store, is linked rather
+	// than fetched (see fetchLocal); everything else goes through the protocol.
+	local, lerr := e.fetchLocal(url, specs)
+	if lerr != nil {
+		return fmt.Errorf("change.fetchRemote: %w", lerr)
+	}
+	if !local {
+		err = rem.Fetch(&git.FetchOptions{
+			RefSpecs: specs,
+			Tags:     git.AllTags,
+			Auth:     auth,
+			Progress: e.progress,
+		})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return fmt.Errorf("change.fetchRemote: %w", err)
+		}
 	}
 	if perr := e.pruneImportedPushPins(before, rem, auth); perr != nil {
 		return fmt.Errorf("change.fetchRemote: %w", perr)

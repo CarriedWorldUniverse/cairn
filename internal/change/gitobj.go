@@ -251,7 +251,7 @@ func (e *Engine) ReadBlob(sha string) ([]byte, error) {
 func (e *Engine) readBlob(sha string) ([]byte, error) {
 	b, err := e.git.BlobObject(plumbing.NewHash(sha))
 	if err != nil {
-		return nil, fmt.Errorf("change.readBlob: %w", err)
+		return nil, fmt.Errorf("change.readBlob: %w", e.notFound(err, plumbing.NewHash(sha)))
 	}
 	r, err := b.Reader()
 	if err != nil {
@@ -411,7 +411,7 @@ func (e *Engine) writeCommit(treeSha, changeID, message string, parents []string
 func (e *Engine) commitTree(commitSha string) (string, error) {
 	c, err := e.git.CommitObject(plumbing.NewHash(commitSha))
 	if err != nil {
-		return "", fmt.Errorf("change.commitTree: %w", err)
+		return "", fmt.Errorf("change.commitTree: %w", e.notFound(err, plumbing.NewHash(commitSha)))
 	}
 	return c.TreeHash.String(), nil
 }
@@ -421,7 +421,7 @@ func (e *Engine) commitTree(commitSha string) (string, error) {
 func (e *Engine) readTree(treeHash string) (map[string][]byte, error) {
 	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
 	if err != nil {
-		return nil, fmt.Errorf("change.readTree: %w", err)
+		return nil, fmt.Errorf("change.readTree: %w", e.notFound(err, plumbing.NewHash(treeHash)))
 	}
 	// go-git's tree.Files() below is a flattening walk of its own that does
 	// NOT share collectTreeRefs's per-level duplicate-name guard (#126, item

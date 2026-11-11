@@ -34,6 +34,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -41,6 +42,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -67,6 +69,12 @@ type Store struct {
 	packs   []*pack
 	scanned bool
 	closed  bool
+
+	// What the last scan saw of objects/pack, so a lookup miss can tell
+	// cheaply whether another process has added packs since (see refresh).
+	dirMtime time.Time
+	scanTime time.Time
+	gen      uint64 // bumped whenever a scan adds a pack
 
 	cacheMu    sync.Mutex
 	cache      map[cacheKey]cacheVal
@@ -164,7 +172,16 @@ func (s *Store) rlock() bool {
 // are go-git's to serve.
 func (s *Store) scan() {
 	s.scanned = true
-	entries, err := os.ReadDir(filepath.Join(s.dir, "pack"))
+	packDir := filepath.Join(s.dir, "pack")
+	// Stat BEFORE listing: a pack added in between is then seen by the next
+	// refresh (its mtime is newer than the one recorded) rather than lost.
+	if st, err := os.Stat(packDir); err == nil {
+		s.dirMtime = st.ModTime()
+	} else {
+		s.dirMtime = time.Time{}
+	}
+	s.scanTime = time.Now()
+	entries, err := os.ReadDir(packDir)
 	if err != nil {
 		return
 	}
@@ -184,6 +201,9 @@ func (s *Store) scan() {
 		if p := openPack(base); p != nil {
 			s.packs = append(s.packs, p)
 		}
+	}
+	if len(s.packs) != len(known) {
+		s.gen++
 	}
 	// Largest first: the pack a clone delivered holds nearly everything, and
 	// the small packs later fetches add are searched after it.
@@ -416,18 +436,73 @@ func inflate(r io.Reader, size int64) ([]byte, error) {
 	return out, nil
 }
 
-// Get returns the type and content of object h. ok is false when h is not
-// here or could not be read; the content must not be modified.
-func (s *Store) Get(h plumbing.Hash) (typ plumbing.ObjectType, data []byte, ok bool) {
-	if !s.rlock() {
-		return 0, nil, false
+// racyWindow is how long after objects/pack last changed a lookup miss keeps
+// re-listing it: directory mtimes are coarse, so a second pack landing within
+// the same tick as the one a scan saw would not move the mtime.
+const racyWindow = 2 * time.Second
+
+// refresh re-lists objects/pack if it may have changed since the last scan —
+// another process (a fetch, a push, git gc) can add a pack at any time, and a
+// Store otherwise lists the directory once. It is what a lookup miss calls
+// before giving up, so it must be cheap when nothing changed: one stat, and a
+// listing only if the mtime moved or the last scan was too close to the last
+// change to trust the mtime. It reports whether the pack set grew.
+func (s *Store) refresh() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return false
 	}
-	defer s.mu.RUnlock()
-	typ, data, err := s.get(h, 0)
+	st, err := os.Stat(filepath.Join(s.dir, "pack"))
 	if err != nil {
-		return 0, nil, false
+		return false
 	}
-	return typ, data, true
+	if s.scanned && st.ModTime().Equal(s.dirMtime) && s.scanTime.Sub(s.dirMtime) > racyWindow {
+		return false
+	}
+	before := s.gen
+	s.scan()
+	return s.gen != before
+}
+
+// Generation counts the scans that added a pack. A caller holding its own
+// view of the pack directory (go-git's pack index) compares it with the value
+// it last saw to learn that its view is stale.
+func (s *Store) Generation() uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.gen
+}
+
+// Get returns the type and content of object h. ok is false when h is not
+// here or could not be read; the content must not be modified. A miss
+// re-lists the pack directory once (refresh) before giving up.
+func (s *Store) Get(h plumbing.Hash) (typ plumbing.ObjectType, data []byte, ok bool) {
+	typ, data, _, ok = s.GetWhy(h)
+	return typ, data, ok
+}
+
+// GetWhy is Get that also says, on a miss, why: how many packs were searched,
+// whether a re-listing found new ones, and what the loose lookup returned.
+func (s *Store) GetWhy(h plumbing.Hash) (typ plumbing.ObjectType, data []byte, why string, ok bool) {
+	if !s.rlock() {
+		return 0, nil, "store closed", false
+	}
+	npacks := len(s.packs)
+	typ, data, err := s.get(h, 0)
+	s.mu.RUnlock()
+	if err == nil {
+		return typ, data, "", true
+	}
+	grew := s.refresh()
+	if grew && s.rlock() {
+		typ, data, err = s.get(h, 0)
+		s.mu.RUnlock()
+		if err == nil {
+			return typ, data, "", true
+		}
+	}
+	return 0, nil, fmt.Sprintf("searched %d pack(s), pack dir re-listed (new packs found: %v), loose: %v", npacks, grew, err), false
 }
 
 // Has reports whether h is in a pack or loose. false means "not that this
@@ -436,7 +511,19 @@ func (s *Store) Has(h plumbing.Hash) bool {
 	if !s.rlock() {
 		return false
 	}
+	found := s.has(h)
+	s.mu.RUnlock()
+	if found {
+		return true
+	}
+	if !s.refresh() || !s.rlock() {
+		return false
+	}
 	defer s.mu.RUnlock()
+	return s.has(h)
+}
+
+func (s *Store) has(h plumbing.Hash) bool {
 	for _, p := range s.packs {
 		if p.find(h) >= 0 {
 			return true

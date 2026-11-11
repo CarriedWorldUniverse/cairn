@@ -25,7 +25,7 @@ func (e *Engine) rawObject(t plumbing.ObjectType, h plumbing.Hash) ([]byte, erro
 	}
 	obj, err := e.git.Storer.EncodedObject(t, h)
 	if err != nil {
-		return nil, err
+		return nil, e.notFound(err, h)
 	}
 	if f, ok := obj.(*fastObject); ok {
 		return f.data, nil

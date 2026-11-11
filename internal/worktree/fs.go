@@ -533,7 +533,9 @@ func unchangedSince(full string, fp wcCacheEntry) bool {
 		target, err := os.Readlink(full)
 		return err == nil && plumbing.ComputeHash(plumbing.BlobObject, []byte(target)).String() == fp.BlobSHA
 	case fi.Mode().IsRegular():
-		if fi.Size() == fp.Size && fi.ModTime().UnixNano() == fp.MtimeNs {
+		ctimeNs, ino := statIdentity(fi)
+		if fi.Size() == fp.Size && fi.ModTime().UnixNano() == fp.MtimeNs &&
+			ctimeNs == fp.CtimeNs && ino == fp.Ino {
 			return true
 		}
 		cur, err := os.ReadFile(full)
@@ -723,8 +725,11 @@ func fingerprintOf(full, sha string, mode change.EntryMode) (wcCacheEntry, bool,
 	if err != nil {
 		return wcCacheEntry{}, false, nil
 	}
+	ctimeNs, ino := statIdentity(st)
 	return wcCacheEntry{
 		MtimeNs: st.ModTime().UnixNano(),
+		CtimeNs: ctimeNs,
+		Ino:     ino,
 		Size:    st.Size(),
 		BlobSHA: sha,
 		Mode:    mode,
@@ -757,8 +762,11 @@ func regularUpToDateBySHA(full string, entry change.TreeEntry, hint wcCacheEntry
 	if execOK && (fi.Mode()&0o111 != 0) != wantExec {
 		return false
 	}
+	ctimeNs, ino := statIdentity(fi)
+	hintCtime := hint.CtimeNs
 	if hint.BlobSHA != "" && hint.Mode == entry.Mode && hint.BlobSHA == entry.SHA &&
-		hint.MtimeNs == fi.ModTime().UnixNano() && hint.Size == fi.Size() {
+		hint.MtimeNs == fi.ModTime().UnixNano() && hint.Size == fi.Size() &&
+		hintCtime == ctimeNs && hint.Ino == ino {
 		return true
 	}
 	cur, err := os.ReadFile(full)

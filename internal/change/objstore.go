@@ -3,6 +3,7 @@ package change
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -50,6 +51,44 @@ type objStore struct {
 	mu     sync.Mutex
 	fast   *packread.Store
 	gitDir string
+	// gitGen is the fast store's pack generation as of go-git's last
+	// (re)index: when fast has since seen new packs, go-git's own pack index
+	// is stale too and is rebuilt on a miss (see gitStale).
+	gitGen uint64
+}
+
+// debugObjects (CAIRN_DEBUG_OBJECTS=1) traces every object lookup to stderr:
+// which layer served it, or why each declined.
+var debugObjects = os.Getenv("CAIRN_DEBUG_OBJECTS") == "1"
+
+func tracef(format string, args ...any) {
+	if debugObjects {
+		fmt.Fprintf(os.Stderr, "cairn: objects: "+format+"\n", args...)
+	}
+}
+
+// gitStale reports (and records) that fast has seen packs go-git has not been
+// told about, after Reindex-ing go-git's pack index so its next lookup lists
+// objects/pack afresh. Caller holds s.mu.
+func (s *objStore) gitStale() bool {
+	g := s.fast.Generation()
+	if g == s.gitGen {
+		return false
+	}
+	s.gitGen = g
+	s.Storage.ObjectStorage.Reindex()
+	return true
+}
+
+// explainMiss says which layers were consulted for h and why each missed. It
+// re-runs the lookups, so call it only on an error path.
+func (s *objStore) explainMiss(h plumbing.Hash) string {
+	_, _, why, _ := s.fast.GetWhy(h)
+	s.mu.Lock()
+	s.gitStale()
+	gerr := s.Storage.HasEncodedObject(h)
+	s.mu.Unlock()
+	return fmt.Sprintf("object %s not found; consulted: fast pack reader and loose objects (%s); go-git store (%v)", h, why, gerr)
 }
 
 // newObjStore opens the object store rooted at fs, whose on-disk location is
@@ -84,15 +123,32 @@ func (o *fastObject) Writer() (io.WriteCloser, error) {
 }
 
 func (s *objStore) EncodedObject(t plumbing.ObjectType, h plumbing.Hash) (plumbing.EncodedObject, error) {
-	if typ, data, ok := s.fast.Get(h); ok {
+	if typ, data, why, ok := s.fast.GetWhy(h); ok {
 		if t != plumbing.AnyObject && typ != t {
+			tracef("%s: fast hit but type %s != wanted %s", h, typ, t)
 			return nil, plumbing.ErrObjectNotFound
 		}
+		if debugObjects {
+			tracef("%s: served by fast pack reader (%s)", h, typ)
+		}
 		return &fastObject{hash: h, typ: typ, data: data}, nil
+	} else if debugObjects {
+		tracef("%s: fast pack reader missed (%s); asking go-git", h, why)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.Storage.EncodedObject(t, h)
+	o, err := s.Storage.EncodedObject(t, h)
+	if errors.Is(err, plumbing.ErrObjectNotFound) && s.gitStale() {
+		o, err = s.Storage.EncodedObject(t, h)
+	}
+	if debugObjects {
+		if err != nil {
+			tracef("%s: go-git missed: %v", h, err)
+		} else {
+			tracef("%s: served by go-git", h)
+		}
+	}
+	return o, err
 }
 
 func (s *objStore) DeltaObject(t plumbing.ObjectType, h plumbing.Hash) (plumbing.EncodedObject, error) {
@@ -113,7 +169,11 @@ func (s *objStore) HasEncodedObject(h plumbing.Hash) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.Storage.HasEncodedObject(h)
+	err := s.Storage.HasEncodedObject(h)
+	if errors.Is(err, plumbing.ErrObjectNotFound) && s.gitStale() {
+		err = s.Storage.HasEncodedObject(h)
+	}
+	return err
 }
 
 // SetEncodedObject stores o — unless it is already stored. An object's name
@@ -208,12 +268,16 @@ func (w *packWriter) Close() error {
 			return nil
 		}
 	}
-	// The index first: a pack is only looked for by its .pack file, so it
-	// becomes visible complete.
-	if err := winretry.Do(func() error { return os.Rename(tmpIdx, base+".idx") }); err != nil {
+	// The pack first, then its index. packread (the reader that serves nearly
+	// everything) finds a pack by its .idx, so it never sees a pack whose
+	// index is not yet in place; the pack it will read is always complete.
+	// (go-git lists packs by their .pack file, so for the instant between
+	// the renames its listing can see a pack without an index: a miss there
+	// is retried once after a Reindex — see gitStale.)
+	if err := winretry.Do(func() error { return os.Rename(tmp, base+".pack") }); err != nil {
 		return err
 	}
-	return winretry.Do(func() error { return os.Rename(tmp, base+".pack") })
+	return winretry.Do(func() error { return os.Rename(tmpIdx, base+".idx") })
 }
 
 // viaGoGit stores the spooled pack through go-git's indexing writer.
@@ -278,4 +342,15 @@ func (s *objStore) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.Storage.Close()
+}
+
+// notFound decorates an object-not-found error from the engine's object reads
+// with which layers were consulted and why each missed. The original error
+// stays in the chain, so errors.Is(err, plumbing.ErrObjectNotFound) still
+// holds; any other error passes through untouched.
+func (e *Engine) notFound(err error, h plumbing.Hash) error {
+	if err == nil || e.store == nil || !errors.Is(err, plumbing.ErrObjectNotFound) {
+		return err
+	}
+	return fmt.Errorf("%w: %s", err, e.store.explainMiss(h))
 }

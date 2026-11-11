@@ -201,8 +201,10 @@ func TestInvalidateSeesNewPack(t *testing.T) {
 	git(t, dir, "commit", "-qm", "new")
 	git(t, dir, "repack", "-dq")
 	head := plumbing.NewHash(strings.TrimSpace(git(t, dir, "rev-parse", "HEAD")))
-	if _, _, ok := s.Get(head); ok {
-		t.Fatal("a pack written after the scan was seen without Invalidate")
+	// A pack another process wrote after this Store's scan is found by the
+	// miss itself (it re-lists objects/pack once before giving up).
+	if typ, _, why, ok := s.GetWhy(head); !ok || typ != plumbing.CommitObject {
+		t.Fatalf("a pack written after the scan was not found on a miss: %s", why)
 	}
 	s.Invalidate()
 	if typ, _, ok := s.Get(head); !ok || typ != plumbing.CommitObject {
@@ -525,5 +527,23 @@ func TestIndexPackFixture(t *testing.T) {
 	must(t, err)
 	if !bytes.Equal(got, want) {
 		t.Fatalf("index differs from the existing one (%d bytes vs %d)", len(got), len(want))
+	}
+}
+
+// A miss on an object that exists nowhere must say what was consulted, and
+// repeated misses must not keep re-listing a directory that has not changed.
+func TestMissExplainsItself(t *testing.T) {
+	dir := buildRepo(t)
+	git(t, dir, "repack", "-adq")
+	s := Open(filepath.Join(dir, ".git", "objects"))
+	defer s.Close()
+	_, _, why, ok := s.GetWhy(plumbing.NewHash("1111111111111111111111111111111111111111"))
+	if ok {
+		t.Fatal("found an object that does not exist")
+	}
+	for _, want := range []string{"pack(s)", "re-listed", "loose"} {
+		if !strings.Contains(why, want) {
+			t.Fatalf("miss explanation %q lacks %q", why, want)
+		}
 	}
 }

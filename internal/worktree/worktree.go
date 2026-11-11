@@ -594,12 +594,15 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
 	}
 	cachePath := r.wcCachePath(branch)
-	cache, cachedHead, legacyCache, err := loadWCCacheEncoded(cachePath)
+	cache, cachedHead, writtenNs, legacyCache, err := loadWCCacheStamped(cachePath)
 	if err != nil {
 		// SELF-HEAL: corrupt cache → full rescan, and no recorded head, so the
 		// snapshot below runs unconditionally.
-		cache, cachedHead, legacyCache = map[string]wcCacheEntry{}, "", false
+		cache, cachedHead, writtenNs, legacyCache = map[string]wcCacheEntry{}, "", 0, false
 	}
+	// Racily-clean entries (fingerprinted at or after the cache's own write
+	// time) cannot be trusted by stat; drop them so the scan rehashes them.
+	dropRacy(cache, writtenNs)
 	scanStartNs := time.Now().UnixNano()
 	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, execModes(committed), gitlinks, cache, scanStartNs)
 	if err != nil {

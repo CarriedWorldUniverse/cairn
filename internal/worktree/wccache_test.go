@@ -89,20 +89,22 @@ func TestCachedScanReusesUnchanged(t *testing.T) {
 		t.Fatalf("scan1 with empty cache should report cacheChanged=true")
 	}
 
-	// Make the file UNREADABLE but keep mtime/size identical. A cache HIT must
-	// not read it; a miss would fail trying to ReadFile a chmod-000 file.
-	if err := os.Chmod(path, 0o000); err != nil {
-		t.Fatalf("chmod 000: %v", err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
+	// A cache HIT must not read the file. chmod 000 used to prove that, but a
+	// chmod now (rightly) moves ctime and so is a miss; instead plant a
+	// sentinel SHA in the cached entry: a hit returns it verbatim, a re-read
+	// would return the real blob SHA.
+	const sentinel = "1111111111111111111111111111111111111111"
+	e := cache1["a.txt"]
+	e.BlobSHA = sentinel
+	cache1["a.txt"] = e
 
 	start2 := time.Now().UnixNano() + int64(time.Second)
 	entries2, _, changed2, _, err := CachedScan(eng, dir, nil, nil, nil, cache1, start2)
 	if err != nil {
 		t.Fatalf("scan2 (should be a cache hit, no read): %v", err)
 	}
-	if entries2["a.txt"].SHA != sha {
-		t.Fatalf("cache hit should reuse SHA: got %s want %s", entries2["a.txt"].SHA, sha)
+	if entries2["a.txt"].SHA != sentinel {
+		t.Fatalf("cache hit should reuse the cached SHA without reading: got %s want %s", entries2["a.txt"].SHA, sentinel)
 	}
 	if changed2 {
 		t.Fatalf("scan2 with warm cache and no changes should report cacheChanged=false")

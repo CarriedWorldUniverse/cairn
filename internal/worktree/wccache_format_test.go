@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -17,6 +18,8 @@ func sampleCache(n int) map[string]wcCacheEntry {
 	for i := 0; i < n; i++ {
 		c[fmt.Sprintf("src/pkg%d/sub/file%d.go", i%97, i)] = wcCacheEntry{
 			MtimeNs: 1700000000000000000 + int64(i)*1000003,
+			CtimeNs: 1700000000000000000 + int64(i)*1000019,
+			Ino:     uint64(i)*7919 + 3,
 			Size:    int64(i * 37),
 			BlobSHA: fmt.Sprintf("%040x", i*2654435761),
 			Mode:    change.EntryMode(i % 3),
@@ -156,5 +159,53 @@ func BenchmarkLoadWCCache(b *testing.B) {
 				}
 			}
 		})
+	}
+}
+
+// A cache written before ctime/inode/write-time existed (v1 magic) must not be
+// trusted: it reads as an error, which syncBranch turns into a full rescan.
+func TestWCCacheV1IsRejected(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "old")
+	v1 := "\x00cairn-wc-cache\x00v1\n"
+	if err := os.WriteFile(path, append([]byte(v1), 0, 0, 0, 0, 0, 0, 0, 0), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := loadWCCache(path); err == nil {
+		t.Fatal("v1 cache loaded; want a rescan")
+	}
+}
+
+// The cache records when it was written, and racy entries (stamped at or after
+// that moment) are the ones dropRacy removes.
+func TestWCCacheWriteTimeAndDropRacy(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "c")
+	before := time.Now().UnixNano()
+	c := map[string]wcCacheEntry{
+		"old":     {MtimeNs: before - int64(time.Hour), CtimeNs: before - int64(time.Hour), BlobSHA: "a"},
+		"racy":    {MtimeNs: before + int64(time.Hour), CtimeNs: before - int64(time.Hour), BlobSHA: "b"},
+		"racyctm": {MtimeNs: before - int64(time.Hour), CtimeNs: before + int64(time.Hour), BlobSHA: "c"},
+	}
+	if err := saveWCCache(path, c, "h"); err != nil {
+		t.Fatal(err)
+	}
+	after := time.Now().UnixNano()
+	got, _, written, _, err := loadWCCacheStamped(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if written < before || written > after {
+		t.Fatalf("write time %d outside [%d,%d]", written, before, after)
+	}
+	if !dropRacy(got, written) {
+		t.Fatal("dropRacy dropped nothing")
+	}
+	if _, ok := got["old"]; !ok || len(got) != 1 {
+		t.Fatalf("after dropRacy = %v; want only \"old\"", got)
+	}
+	// An unknown write time (JSON caches) distrusts everything.
+	all := sampleCache(10)
+	dropRacy(all, 0)
+	if len(all) != 0 {
+		t.Fatalf("writtenNs=0 kept %d entries", len(all))
 	}
 }

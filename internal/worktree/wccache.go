@@ -12,16 +12,26 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
 
-// wcCacheEntry records, per worktree path, the stat fingerprint (mtimeNs, size)
-// of the file the last time it was scanned plus the git blob SHA and mode that
-// were stored for it. A subsequent scan whose stat matches (and is not racy —
-// see CachedScan) can reuse BlobSHA without re-reading or re-encoding the file.
+// wcCacheEntry records, per worktree path, the stat fingerprint (mtimeNs,
+// ctimeNs, inode, size) of the file the last time it was scanned plus the git
+// blob SHA and mode that were stored for it. A subsequent scan whose stat
+// matches (and is not racy — see CachedScan) can reuse BlobSHA without
+// re-reading or re-encoding the file.
+//
+// mtime and size alone are forgeable: `cp -p`, `touch -r`, rsync -a and
+// os.Chtimes restore both after an edit, which made the edit invisible. ctime
+// cannot be set from user space (any write moves it) and the inode changes when
+// a file is replaced by rename, so both join the test. Where the platform gives
+// neither (Windows) they are 0 and the test degrades to mtime+size.
 type wcCacheEntry struct {
 	MtimeNs int64            `json:"m"`
+	CtimeNs int64            `json:"c,omitempty"`
+	Ino     uint64           `json:"i,omitempty"`
 	Size    int64            `json:"s"`
 	BlobSHA string           `json:"b"`
 	Mode    change.EntryMode `json:"k"`
@@ -42,7 +52,11 @@ type wcCacheFile struct {
 
 // wcCacheMagic opens a cache file in the binary encoding. The first byte can
 // never begin a JSON document, so the two encodings cannot be confused.
-const wcCacheMagic = "\x00cairn-wc-cache\x00v1\n"
+//
+// v2 added ctime and inode per entry and the cache's own write time to the
+// header. A v1 file no longer matches the magic, fails to parse as JSON, and so
+// reads as "no cache": one full rescan, then v2 is written.
+const wcCacheMagic = "\x00cairn-wc-cache\x00v2\n"
 
 // loadWCCache reads the snapshot cache at path, returning the per-path
 // fingerprints and the working commit they were snapshotted into. A missing
@@ -75,56 +89,89 @@ func loadWCCache(path string) (map[string]wcCacheEntry, string, error) {
 // rewrite it even when nothing in it changed, rather than leave a branch
 // that is never edited parsing JSON for ever.
 func loadWCCacheEncoded(path string) (entries map[string]wcCacheEntry, head string, legacy bool, err error) {
+	entries, head, _, legacy, err = loadWCCacheStamped(path)
+	return entries, head, legacy, err
+}
+
+// loadWCCacheStamped is loadWCCacheEncoded that also returns the time (ns) the
+// cache file was written, as recorded inside it. A JSON cache never recorded
+// one, so it reports 0 — which dropRacy reads as "every entry is racy".
+func loadWCCacheStamped(path string) (entries map[string]wcCacheEntry, head string, writtenNs int64, legacy bool, err error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return map[string]wcCacheEntry{}, "", false, nil
+		return map[string]wcCacheEntry{}, "", 0, false, nil
 	}
 	if err != nil {
-		return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", 0, false, fmt.Errorf("worktree.loadWCCache: %w", err)
 	}
 	if bytes.HasPrefix(data, []byte(wcCacheMagic)) {
-		entries, head, err := decodeWCCache(data[len(wcCacheMagic):])
+		entries, head, writtenNs, err := decodeWCCache(data[len(wcCacheMagic):])
 		if err != nil {
-			return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
+			return nil, "", 0, false, fmt.Errorf("worktree.loadWCCache: %w", err)
 		}
-		return entries, head, false, nil
+		return entries, head, writtenNs, false, nil
 	}
 	var f wcCacheFile
 	if err := json.Unmarshal(data, &f); err == nil && f.Entries != nil {
-		return f.Entries, f.Head, true, nil
+		return f.Entries, f.Head, 0, true, nil
 	}
 	// Pre-#155 format: a bare path→fingerprint map, no head.
 	out := map[string]wcCacheEntry{}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", 0, false, fmt.Errorf("worktree.loadWCCache: %w", err)
 	}
-	return out, "", true, nil
+	return out, "", 0, true, nil
+}
+
+// dropRacy removes every entry that was fingerprinted no earlier than the
+// moment the cache was written — git's "racily clean" rule. Such a file may
+// have been modified again within the same timestamp tick AFTER the scan read
+// it, leaving a stat identical to the recorded one with different content; the
+// stat cannot vouch for it, so it is rehashed (and, being rehashed now, will be
+// trusted by the next cache, which is written later than its mtime). It reports
+// whether anything was dropped. writtenNs 0 (unknown) drops everything.
+func dropRacy(entries map[string]wcCacheEntry, writtenNs int64) bool {
+	dropped := false
+	for p, e := range entries {
+		if e.MtimeNs >= writtenNs || e.CtimeNs >= writtenNs {
+			delete(entries, p)
+			dropped = true
+		}
+	}
+	return dropped
 }
 
 // saveWCCache writes the snapshot cache to path atomically (temp + rename).
+//
+// The write time recorded in the header is taken here, just before the bytes go
+// out, so it is never earlier than the mtime of any file the entries describe
+// that was already on disk when they were scanned (see dropRacy).
 func saveWCCache(path string, c map[string]wcCacheEntry, head string) error {
-	if err := writeFileAtomic(path, encodeWCCache(c, head)); err != nil {
+	if err := writeFileAtomic(path, encodeWCCache(c, head, time.Now().UnixNano())); err != nil {
 		return fmt.Errorf("worktree.saveWCCache: %w", err)
 	}
 	return nil
 }
 
-// encodeWCCache renders the cache in the binary encoding: the magic, the
-// head, the entry count, then per entry the path, mtime, size, blob SHA and
-// mode. Strings are a uvarint length and the bytes; integers are varints.
+// encodeWCCache renders the cache in the binary encoding: the magic, the write
+// time, the head, the entry count, then per entry the path, mtime, ctime,
+// inode, size, blob SHA and mode. Strings are a uvarint length and the bytes; integers are varints.
 // A trailing CRC-32 covers everything after the magic.
-func encodeWCCache(c map[string]wcCacheEntry, head string) []byte {
+func encodeWCCache(c map[string]wcCacheEntry, head string, writtenNs int64) []byte {
 	buf := make([]byte, 0, len(wcCacheMagic)+len(head)+16+len(c)*96)
 	buf = append(buf, wcCacheMagic...)
 	str := func(s string) {
 		buf = binary.AppendUvarint(buf, uint64(len(s)))
 		buf = append(buf, s...)
 	}
+	buf = binary.AppendVarint(buf, writtenNs)
 	str(head)
 	buf = binary.AppendUvarint(buf, uint64(len(c)))
 	for p, e := range c {
 		str(p)
 		buf = binary.AppendVarint(buf, e.MtimeNs)
+		buf = binary.AppendVarint(buf, e.CtimeNs)
+		buf = binary.AppendUvarint(buf, e.Ino)
 		buf = binary.AppendVarint(buf, e.Size)
 		str(e.BlobSHA)
 		buf = binary.AppendVarint(buf, int64(e.Mode))
@@ -137,13 +184,13 @@ var errWCCacheCorrupt = errors.New("corrupt cache")
 // decodeWCCache parses the binary encoding (after the magic). Any damage —
 // a bad checksum, a length running off the end, trailing bytes — is an
 // error, which the caller turns into a full rescan.
-func decodeWCCache(data []byte) (map[string]wcCacheEntry, string, error) {
+func decodeWCCache(data []byte) (map[string]wcCacheEntry, string, int64, error) {
 	if len(data) < 4 {
-		return nil, "", errWCCacheCorrupt
+		return nil, "", 0, errWCCacheCorrupt
 	}
 	body, sum := data[:len(data)-4], binary.LittleEndian.Uint32(data[len(data)-4:])
 	if crc32.ChecksumIEEE(body) != sum {
-		return nil, "", errWCCacheCorrupt
+		return nil, "", 0, errWCCacheCorrupt
 	}
 	// One conversion for the whole file: every path and SHA below is a
 	// substring of it rather than an allocation of its own.
@@ -178,35 +225,38 @@ func decodeWCCache(data []byte) (map[string]wcCacheEntry, string, error) {
 		pos += int(n)
 		return s
 	}
+	writtenNs := varint()
 	head := str()
 	count := uvarint()
 	// Every entry is at least five bytes, which bounds a count worth
 	// believing before a map is sized by it.
 	if bad || count > uint64(len(body)-pos)/5+1 {
-		return nil, "", errWCCacheCorrupt
+		return nil, "", 0, errWCCacheCorrupt
 	}
 	entries := make(map[string]wcCacheEntry, count)
 	for i := uint64(0); i < count; i++ {
 		p := str()
 		var e wcCacheEntry
 		e.MtimeNs = varint()
+		e.CtimeNs = varint()
+		e.Ino = uvarint()
 		e.Size = varint()
 		e.BlobSHA = str()
 		e.Mode = change.EntryMode(varint())
 		if bad {
-			return nil, "", errWCCacheCorrupt
+			return nil, "", 0, errWCCacheCorrupt
 		}
 		entries[p] = e
 	}
 	if pos != len(body) {
-		return nil, "", errWCCacheCorrupt
+		return nil, "", 0, errWCCacheCorrupt
 	}
-	return entries, head, nil
+	return entries, head, writtenNs, nil
 }
 
 // CachedScan walks dir (gitignore + tracked-set + symlink/exec, same as Scan)
 // and returns a change.TreeEntry per surviving path. On a cache hit — the cached
-// entry's (mtimeNs,size) match the on-disk file AND mtimeNs < scanStartNs (so a
+// entry's (mtimeNs,ctimeNs,inode,size) match the on-disk file AND mtimeNs < scanStartNs (so a
 // file written during the scan window is not trusted) AND the cached mode still
 // matches the on-disk kind/exec-bit — it reuses the stored blob SHA WITHOUT
 // reading the file. On a miss it reads (or Readlinks) the file, stores the blob
@@ -244,6 +294,8 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 		path     string
 		d        fs.DirEntry
 		mtimeNs  int64
+		ctimeNs  int64
+		ino      uint64
 		size     int64
 		symlink  bool
 		mode     change.EntryMode
@@ -277,6 +329,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 			return
 		}
 		items[i].mtimeNs, items[i].size = info.ModTime().UnixNano(), info.Size()
+		items[i].ctimeNs, items[i].ino = statIdentity(info)
 		switch {
 		case execOK:
 			if info.Mode()&0o111 != 0 {
@@ -295,6 +348,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 		// last modified strictly before the scan began (mtime >= scanStartNs is
 		// "racy" — it may have changed in the instant the scan saw it).
 		if hadPrev && prev.MtimeNs == it.mtimeNs && prev.Size == it.size &&
+			prev.CtimeNs == it.ctimeNs && prev.Ino == it.ino &&
 			it.mtimeNs < scanStartNs && prev.Mode == mode {
 			results[i] = scanResult{sha: prev.BlobSHA}
 			return
@@ -352,7 +406,7 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 			return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
 		}
 		entries[it.slashRel] = change.TreeEntry{SHA: sha, Mode: mode}
-		newCache[it.slashRel] = wcCacheEntry{MtimeNs: it.mtimeNs, Size: it.size, BlobSHA: sha, Mode: mode}
+		newCache[it.slashRel] = wcCacheEntry{MtimeNs: it.mtimeNs, CtimeNs: it.ctimeNs, Ino: it.ino, Size: it.size, BlobSHA: sha, Mode: mode}
 		changed = true
 	}
 	// A vanished path reduces len(newCache) below len(cache); detect that too.

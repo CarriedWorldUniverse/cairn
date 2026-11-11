@@ -295,6 +295,16 @@ Show one commit's metadata and its diff.
 Per-line provenance for a file: author, date, and the change that last touched each line.
 Lines still in an un-sealed working change show as `(working)`.
 
+Blame agrees with `git blame` on almost every line, but not byte-for-byte: cairn diffs
+each parent/child pair with a Myers **minimal** edit script, while git's default xdiff
+is a heuristic that may return a longer, differently placed one. Where several equally
+short scripts exist (typically repeated lines such as `}` or blank lines) the two tools
+can attribute a line to different commits; on real histories that is roughly 0.2-2% of
+lines, occasionally including a unique line inside a heavy rewrite. Neither answer is
+wrong. Passing `--minimal` (or `--diff-algorithm=myers --minimal`) to `git blame` does
+not make it match, because the residue is tie-breaking, not script length (measured on
+the test fixtures in `blame_git_test.go`). cairn does not emulate xdiff's tie-breaking.
+
 ### Conflicts
 
 cairn never blocks on a conflict. A command that produces overlapping work records the
