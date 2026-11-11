@@ -188,25 +188,27 @@ func cmdPRDiff(args []string) error {
 	// diffs ONLY what source introduced since it forked from target, so target
 	// advancing with commits source never saw never shows up as a spurious
 	// revert — a literal tip-to-tip diff (DiffCommits) would get that wrong.
-	diffs, err := r.DiffMergeBase(targetRef, sourceRef)
+	eng := r.Engine()
+	base, err := eng.MergeBase(targetRef, sourceRef)
 	if errors.Is(err, change.ErrNoCommonAncestor) {
 		return fmt.Errorf("pr diff: %s and %s (remote %q) share no common history — nothing to diff",
 			pull.GetTarget(), pull.GetSource(), *remote)
+	}
+	var patches []change.FilePatch
+	if err == nil {
+		var tip string
+		if tip, err = eng.ResolveCommit(sourceRef); err == nil {
+			patches, err = eng.CommitPatches(base, tip, nil, change.PatchOptions{Context: 3}, false)
+		}
 	}
 	if err != nil {
 		return mapErr(fmt.Errorf("pr diff: resolving %s...%s on remote %q (branches %s -> %s): %w",
 			pull.GetTarget(), pull.GetSource(), *remote, pull.GetSource(), pull.GetTarget(), err))
 	}
-	for _, d := range diffs {
-		if d.Binary {
-			fmt.Printf("Binary files differ: %s\n", d.Path)
-			continue
-		}
-		if d.Unified != "" {
-			fmt.Print(d.Unified)
-		} else {
-			fmt.Printf("%s: %s\n", d.Status, d.Path)
-		}
+	// A git-format patch, like `gh pr diff`: what `git apply` and review
+	// tools read.
+	for _, fp := range patches {
+		fmt.Print(fp.Text())
 	}
 	return nil
 }

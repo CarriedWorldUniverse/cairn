@@ -187,6 +187,9 @@ func (e *Engine) importMeta(metaCommit string, tx *sql.Tx, ts string) (defaultBr
 			return "", fmt.Errorf("change.importMeta: clear: %w", err)
 		}
 	}
+	if err := dropUnclaimedAux(tx); err != nil {
+		return "", err
+	}
 	// Identify the root first so an absent root is reported as "no root line"
 	// rather than masked by a FK failure when a child is inserted before its parent.
 	for _, l := range doc.Lines {

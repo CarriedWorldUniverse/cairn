@@ -1,6 +1,7 @@
 package change
 
 import (
+	"container/heap"
 	"fmt"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/version"
@@ -169,4 +170,130 @@ func (e *Engine) SetWorkingHead(changeID, head string) error {
 		return fmt.Errorf("change.SetWorkingHead: %w", err)
 	}
 	return nil
+}
+
+// Describe finds the tag nearest to commit — `git describe --tags`: the
+// tagged ancestor with the fewest commits between it and commit, over ALL
+// parents. It returns the tag and that count (0 when commit itself is
+// tagged), or "" when no tag is reachable. match, when non-nil, limits which
+// tags are considered. Where DescribeVersion anchors a release on semver tags
+// along the first-parent chain, this answers the general question for any
+// commit and any tag.
+func (e *Engine) Describe(commit string, match func(tag string) bool) (tag string, depth int, err error) {
+	tags, err := e.ListTags()
+	if err != nil {
+		return "", 0, fmt.Errorf("change.Describe: %w", err)
+	}
+	byCommit := map[string]string{}
+	for _, t := range tags {
+		if match != nil && !match(t.Name) {
+			continue
+		}
+		sha, ok := e.peelToCommit(t.Commit)
+		if !ok {
+			continue
+		}
+		if cur, dup := byCommit[sha]; dup {
+			byCommit[sha] = preferTag(cur, t.Name)
+		} else {
+			byCommit[sha] = t.Name
+		}
+	}
+	if len(byCommit) == 0 {
+		return "", 0, nil
+	}
+	if name, ok := byCommit[commit]; ok {
+		return name, 0, nil
+	}
+	// One generation-ordered walk (graph.go), git's describe algorithm made
+	// exact: each candidate tag gets a bit, a commit carries the bits of the
+	// candidates it is reachable from, and a commit popped WITHOUT a
+	// candidate's bit lies between that tag and the commit — one more for its
+	// depth. Popping by generation means a commit's bits are final when it is
+	// popped. Once every queued commit is below some candidate no better one
+	// can appear, and the walk runs on until the lowest count is final.
+	const maxCandidates = 10
+	w := newGraphWalk(e)
+	if err := w.paint(plumbing.NewHash(commit), 0); err != nil {
+		return "", 0, fmt.Errorf("change.Describe: %w", err)
+	}
+	type candidate struct {
+		name  string
+		bit   int
+		depth int
+	}
+	var cands []candidate
+	pop := func() (*genItem, error) {
+		it := heap.Pop(&w.pq).(genItem)
+		w.queued[it.c.Hash] = false
+		delete(w.commits, it.c.Hash)
+		return &it, nil
+	}
+	spread := func(it *genItem) error {
+		f := w.flags[it.c.Hash]
+		for _, p := range it.c.ParentHashes {
+			if err := w.paint(p, f); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	anyUncovered := func(mask int) bool {
+		for _, q := range w.pq {
+			if mask == 0 && w.flags[q.c.Hash] == 0 {
+				return true
+			}
+			if mask != 0 && w.flags[q.c.Hash]&mask == 0 {
+				return true
+			}
+		}
+		return false
+	}
+	seen := 0
+	for w.pq.Len() > 0 && anyUncovered(0) {
+		it, _ := pop()
+		h := it.c.Hash
+		if name, ok := byCommit[h.String()]; ok && len(cands) < maxCandidates && w.flags[h] == 0 {
+			// Everything popped so far has a generation at least this
+			// commit's, so none of it is reachable from here: it all counts.
+			bit := 1 << len(cands)
+			cands = append(cands, candidate{name: name, bit: bit, depth: seen})
+			w.flags[h] |= bit
+		}
+		seen++
+		for i := range cands {
+			if w.flags[h]&cands[i].bit == 0 {
+				cands[i].depth++
+			}
+		}
+		if err := spread(it); err != nil {
+			return "", 0, fmt.Errorf("change.Describe: %w", err)
+		}
+	}
+	if len(cands) == 0 {
+		return "", 0, nil
+	}
+	// Depths only grow as the walk goes on, so the candidate with the lowest
+	// count is the answer once ITS count is finished — nothing queued is
+	// outside its ancestry. Until then keep walking, counting for all.
+	for {
+		best := 0
+		for i := range cands {
+			if cands[i].depth < cands[best].depth {
+				best = i
+			}
+		}
+		if w.pq.Len() == 0 || !anyUncovered(cands[best].bit) {
+			return cands[best].name, cands[best].depth, nil
+		}
+		it, _ := pop()
+		for i := range cands {
+			if w.flags[it.c.Hash]&cands[i].bit == 0 {
+				cands[i].depth++
+			}
+		}
+		if err := spread(it); err != nil {
+			return "", 0, fmt.Errorf("change.Describe: %w", err)
+		}
+	}
 }

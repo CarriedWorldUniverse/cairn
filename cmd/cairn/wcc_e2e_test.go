@@ -65,13 +65,25 @@ func TestWCCEditsAutoCaptured(t *testing.T) {
 	if !strings.Contains(st, "A a.txt") {
 		t.Fatalf("status missing 'A a.txt':\n%s", st)
 	}
-	// diff shows the addition (Added files print a status line, no unified hunk).
+	// diff shows the addition as a git patch: a new file, with its content.
 	diff := mustRunOut(t, "diff", "--repo", root, def)
-	if !strings.Contains(diff, "added: a.txt") {
+	if !strings.Contains(diff, "new file mode 100644\n") || !strings.Contains(diff, "+++ b/a.txt\n@@ -0,0 +1 @@\n+hi\n") {
 		t.Fatalf("diff missing the addition:\n%s", diff)
 	}
-	// log labels the top (working) entry.
-	lg := mustRunOut(t, "log", "--repo", root, def)
+	if classic := mustRunOut(t, "diff", "--classic", "--repo", root, def); !strings.Contains(classic, "added: a.txt") {
+		t.Fatalf("classic diff missing the addition:\n%s", classic)
+	}
+	// The open change is not a commit: plain log leaves it out, --working (and
+	// the classic view) list it on top.
+	// (Nothing is sealed yet, so plain log has no history at all — an error,
+	// as in a freshly initialised git repo.)
+	if err := run([]string{"log", "--repo", root, def}); err == nil || !strings.Contains(err.Error(), "no sealed commit yet") {
+		t.Fatalf("plain log of a line with nothing sealed: err = %v", err)
+	}
+	if classic := mustRunOut(t, "log", "--classic", "--repo", root, def); !strings.Contains(classic, "(working)") {
+		t.Fatalf("classic log missing the working entry:\n%s", classic)
+	}
+	lg := mustRunOut(t, "log", "--working", "--repo", root, def)
 	if !strings.Contains(lg, "(working)") {
 		t.Fatalf("log missing (working) label:\n%s", lg)
 	}

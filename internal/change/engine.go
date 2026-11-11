@@ -21,6 +21,15 @@ import (
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+<<<<<<< ours
+	gitcache "github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+||||||| base
+	gitcache "github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+=======
+>>>>>>> theirs
 	_ "modernc.org/sqlite"
 )
 
@@ -60,6 +69,16 @@ type Engine struct {
 	// use. cgMu guards it and is held for the length of a graph query.
 	cgMu sync.Mutex
 	cg   *commitGraph
+	// authorOverride, when set, is the AUTHOR of every commit written (see
+	// SetAuthorOverride in wcops.go); the committer stays the identity above.
+	authorOverride *Signature
+	// headLine names the line HEAD/@ resolve against (revparse.go) — the line
+	// whose folder the operator stands in. Empty means the root line.
+	headLine string
+	// treeMu/trees memoize decoded tree objects for the read-only inspection
+	// walks (treediff.go, revwalk.go), which revisit the same subtrees.
+	treeMu sync.Mutex
+	trees  map[plumbing.Hash]*object.Tree
 }
 
 // SetIdentity configures the author identity used for all commits this engine
@@ -211,6 +230,10 @@ func migrate(db *sql.DB) error {
 		// once the tracking ref has been pruned. Backfilled from tracks_remote.
 		{"line", "remote_seen", `ALTER TABLE line ADD COLUMN remote_seen INTEGER NOT NULL DEFAULT 0`,
 			[]string{`UPDATE line SET remote_seen = tracks_remote WHERE remote_seen = 0`}},
+		// Annotated tags: the message and the tag object's hash (empty for a
+		// lightweight tag).
+		{"tag", "message", `ALTER TABLE tag ADD COLUMN message TEXT NOT NULL DEFAULT ''`, nil},
+		{"tag", "obj", `ALTER TABLE tag ADD COLUMN obj TEXT NOT NULL DEFAULT ''`, nil},
 	}
 	for _, m := range migrations {
 		has, err := hasColumn(db, m.table, m.column)
@@ -219,6 +242,13 @@ func migrate(db *sql.DB) error {
 		}
 		if has {
 			continue
+		}
+		if m.table == "tag" {
+			// A catalogue shaped by an old test may lack the table entirely.
+			var n int
+			if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tag'`).Scan(&n); err != nil || n == 0 {
+				continue
+			}
 		}
 		if _, err := db.Exec(m.ddl); err != nil {
 			return fmt.Errorf("change.migrate: %w", err)
@@ -308,19 +338,6 @@ func (e *Engine) LineOfCommit(commit string) (string, error) {
 		return "", fmt.Errorf("change.LineOfCommit: %w", err)
 	}
 	return line.Name, nil
-}
-
-// ResolveCommit resolves a user-supplied commit revision — a full OR abbreviated
-// SHA, or any git revision (e.g. a tag) — to its full 40-char hash. cairn's `log`
-// prints short SHAs, so every command that takes a commit argument must accept
-// them; callers normalize the user's argument through this before handing a SHA
-// to the catalogue/object lookups, which expect full hashes.
-func (e *Engine) ResolveCommit(rev string) (string, error) {
-	h, err := e.git.ResolveRevision(plumbing.Revision(rev))
-	if err != nil {
-		return "", fmt.Errorf("change.ResolveCommit: %q: %w", rev, err)
-	}
-	return h.String(), nil
 }
 
 // ErrNoCommonAncestor is returned by MergeBase when a and b share no common

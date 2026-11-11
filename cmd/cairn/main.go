@@ -47,15 +47,37 @@ var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 var errConflicts = errors.New("completed with conflicts")
 
 func main() {
+<<<<<<< ours
+	args, pmode := pagerGlobals(os.Args[1:])
+	stopPager := startPager(args, pmode, stdoutIsTTY())
+	err := run(args)
+	stopPager()
+	if err != nil {
+||||||| base
+	if err := run(os.Args[1:]); err != nil {
+=======
 	stopProfile := startProfile()
 	err := run(os.Args[1:])
 	stopProfile()
 	if err != nil {
+>>>>>>> theirs
 		if errors.Is(err, errConflicts) {
 			os.Exit(2)
 		}
 		if errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
+		}
+		if errors.Is(err, errSilent) {
+			os.Exit(1)
+		}
+		var ec exitCodeError
+		if errors.As(err, &ec) {
+			os.Exit(ec.code)
+		}
+		// A status-only answer (diff --quiet, grep with no match, cat-file -e):
+		// the exit code IS the result, so nothing is printed.
+		if code, ok := exitCodeOf(err); ok {
+			os.Exit(code)
 		}
 		fmt.Fprintln(os.Stderr, "cairn:", err)
 		os.Exit(1)
@@ -64,45 +86,76 @@ func main() {
 
 const usage = `cairn — cairn working-copy CLI
 
-usage: cairn <subcommand> [flags] [args]
+usage: cairn [--no-pager|-P] [--paginate|-p] <subcommand> [flags] [args]
+       (on a terminal, log/show/diff/grep/blame/shortlog/listings go through $CAIRN_PAGER, $GIT_PAGER, core.pager, $PAGER or less)
 
 subcommands:
-  init [dir]                bootstrap a repo (expresses main)
-  clone <url> [dir]         import a remote repo and express its default branch
+  init [-b <name>] [-q] [dir]   bootstrap a repo (expresses the root line: main, or -b / init.defaultBranch; --bare is refused)
+  clone [-b <line>] [-o <name>] [-q] <url> [dir]  import a remote repo and express its default branch (-b also expresses <line>; --depth/--single-branch are refused)
   express <branch>          materialize a branch folder (--from <parent>)
   unexpress <branch>        remove a branch folder (--force to discard un-sealed work)
-  commit <branch> [-m msg]  seal the working change (stamps msg, starts a fresh change)
+  commit [branch] [-m msg]  seal the working change (stamps msg, starts a fresh change; -F file, --author "N <e>", --date)
+  commit [branch] -m msg -- <path>...  seal ONLY those paths; the rest stays in the working change (cairn's staging area)
+  commit [branch] --amend [-m msg]     fold the working change into the previous sealed commit (history edit)
   fold <branch>             fold a branch into its parent (--force to discard un-sealed work)
   reparent <branch> <parent>  set a branch's parent line (fix stacked topology after a git import)
   reparent --infer [--dry-run]  re-derive every line's parent from topology, as a fresh clone would
   abandon <branch>          discard a branch's line (--force to discard un-sealed work)
   status [branch]           report a branch's state — the working change vs its parent (default: root)
-  diff [branch] [-- <path>...]  show the working change vs its parent (optionally one file/dir)
-  diff <a> <b> [-- <path>...]   show commit-vs-commit (optionally filtered to paths)
+  status -s|--porcelain [-b] [-z]  git's short/porcelain-v1 format (changes in the X column; no index)
+  diff [branch] [-- <path>...]  show the working change vs its parent as a git patch (optionally one file/dir)
+  diff <a> <b> | <a>..<b> | <a>...<b> | <rev>  commit-vs-commit, since-fork, or a commit vs the working tree
+                                options as git: --stat --numstat --name-only --name-status -U<n> -R -w --exit-code --quiet (--classic: cairn's old format)
   tree [--fetch] [--gone]       print the line tree with each line's remote state (--fetch refreshes it; --gone lists lines whose branch is gone; --flat for scripts)
   ls                            list expressed branches
   resolve <branch> <path>       resolve a conflict on a branch — takes the file's on-disk content, or its ABSENCE to resolve as a deletion; refuses lingering <<<<<<< markers (--force to accept)
-  remote                        list configured remotes
-  remote add <name> <url>       register a remote (--cairn for a cairn remote)
-  push [remote] [branch]        publish all lines + tags, or just <branch> (default origin, --force)
-  fetch [remote]                fetch a remote into tracking refs (default origin)
-  pull [remote]                 fetch + reconcile each line (default origin)
+  remote [-v]                   list configured remotes (-v: fetch/push URLs)
+  remote add <name> <url>       register a remote (--cairn for a cairn remote, -f to fetch)
+  remote remove|rm <name>       delete a remote and its tracking refs
+  remote rename <old> <new>     rename a remote (tracking refs move with it)
+  remote get-url <name>         print a remote's URL
+  remote set-url <name> <url>   re-point a remote
+  remote show [-n] <name>       URL, HEAD and branches of a remote (-n: no network)
+  remote prune [-n] <name>      drop tracking refs for branches the remote deleted
+  push [remote] [refspec...]    publish all lines + tags, or <branch> / <src>:<dst> (default origin); --force, --force-with-lease, --tags, -n/--dry-run, -q, --all; -u accepted
+  push --delete <remote> <name> / push <remote> :<ref>   delete a remote branch or tag
+  fetch [remote] [branch...]    fetch a remote into tracking refs (default origin); --all, -q; --tags/--prune accepted
+  pull [remote] [branch]        fetch + reconcile each line (default origin); --ff-only refuses diverged lines; --rebase/--no-rebase/--ff accepted, -q
   pr open <source> <target> -m <title>  open a pull request against cairn-server (idempotent)
   pr list                       list a repo's pull requests (--state open|merged|all)
   pr view <id>                  show one pull request
   pr diff <id>                  print the pull request's unified diff (--remote)
   pr merge <id>                 fast-forward-merge an open pull request
-  blame <path> [branch]         show per-line author/date/commit
-  log [branch] [-n N]           show commit history
-  show <commit>                 show a commit's metadata + diff
+  blame <path> [branch]         show per-line author/date/commit (-L a,b; or: blame <rev> -- <path>)
+  log [<range>] [-n N] [-- <path>...]  show commit history, as git: --oneline --stat -p --graph --format= --author= --grep= --since= …
+                                (--working: list the open working change first; --classic [line] [-n N]: cairn's compact view)
+  show [<rev>[:<path>]...]      show a commit (message + patch; --stat, --name-only, -s, --format=), a file's content, a tree (--classic: old format)
+  grep <pattern> [<rev>] [-- <path>...]  search file contents (-n -i -l -L -c -w -v -E -F -e; exit 1 when nothing matches)
+  ls-files | ls-tree | cat-file | rev-parse | rev-list | shortlog | describe | format-patch
+                                read-only git plumbing, same spelling and output as git
   undo                          revert the last operation
   oplog                         show the operation history
   setup                         set your commit identity (name/email), stored globally
   login <host>                  store an access token for a host (stdin: echo $TOK | cairn login github.com)
   logout <host>                 remove a host's stored credential
   auth                          list hosts with stored credentials (never the tokens)
-  config [--global] <key> [value]  get/set a config value (--global = user-level, all repos)
-  tag <name> [branch]           tag the tip of a branch (default: root branch)
+  config [--global|--local] <key> [value]  get/set a config value (any section.key; alias.<name> defines a command alias, '!cmd' runs the shell)
+  config -l | --get <key> | --unset <key>  list the merged config / print (exit 1 if unset) / remove a key (--show-origin)
+  tag [-l [pattern]] [-n[N]] [--contains <rev>] [--points-at <rev>] [--sort=<key>]  list tags (sorted by refname; keys: refname, -creatordate, version:refname)
+  tag [-a] [-m <msg>|-F <file>] [-f] <name> [<rev>]  tag a commit (a line name = its tip; default: current line); -a/-m/-F write an annotated tag
+  tag -d <name>...              delete tags
+  branch [-v|-vv] [-a|-r] [--list <pattern>] [--merged|--no-merged|--contains <rev>]  list lines (* = the one you stand in, + = other expressed lines)
+  branch <name> [<start>]       create a line (= express <name> [--from <start>])
+  branch -d|-D <name>...        delete a line (-d refuses unfolded, unpushed work; -D forces) (= abandon)
+  branch -m|-M [<old>] <new>    rename a line and its folder (child lines follow; undoable); -c copies
+  branch --show-current         print the current line
+  reflog [show] [<line>] [-n N] operation history of a line, git-style: <sha> <line>@{N}: <op>
+  gc [--prune=now] [-q]         repack objects, vacuum the catalogue, prune stale caches (--aggressive accepted)
+  fsck [-v]                     verify object connectivity from every line tip/tag and catalogue consistency
+  count-objects [-v] [-H]       count loose and packed objects
+  archive [--format=tar|tar.gz|zip] [-o <file>] [--prefix=<p>/] <rev> [<path>...]  write a commit's tree as an archive
+  check-ignore [-v] [-n] <path>...  report which paths the line's .gitignore/.cairnignore rules ignore (exit 1 if none)
+  help [<verb>...]              this table, or one verb's usage and flags (also: <verb> -h)
   private <path> [--shape-only] withhold a file/folder from every push (omit by default)
   private ls                    list withheld paths
   embargo <commit>              hold a commit (+ all after it) out of the public projection
@@ -112,15 +165,25 @@ subcommands:
   version bump <level>          record explicit bump intent (major|minor|patch)
   release --target eco          cut a clean release: tag + stamp + publish (--dry-run)
   update                        replace this binary with the latest release (--check to only report, --force to reinstall)
-  stash [-m msg] [branch]   shelve the working change; reset the folder to the sealed state
-  stash pop [branch] [id]   restore a stash onto branch (default: most recent)
-  stash list                list the stash stack
-  stash drop [id]           discard a stash (default: most recent)
+  stash [push] [-m msg] [branch] [-- <path>...]  shelve the working change (or only some paths)
+  stash pop|apply [branch] [id]  restore a stash onto branch (default: most recent; apply keeps it)
+  stash list | show [-p] [id] | drop [id] | clear   inspect / discard stashes (id or stash@{N})
+  stash branch <name> [id]  express a new line and pop a stash onto it
+  restore [--source=<rev>] <path>...  discard working-change edits to paths (git restore / checkout -- <path>)
+  reset --hard              discard the line's whole working change
+  reset [--soft|--hard] <rev>  move the line's sealed tip back to <rev> (history edit: not over pushed root commits or a child line's base)
+  revert <commit>... [-n] [-m N]  add a commit that takes <commit> back out (--continue/--abort)
+  rm [-r] [-f] [-n] <path>...   remove files from the line (and the folder)
+  mv [-f] [-n] <src>... <dst>   rename files/directories in the line
+  clean -fdx [-n] [<path>...]   remove IGNORED files (build junk); new source is never touched
+  apply [--check] [-R] [--stat] [-p<n>] <patch>|-  apply a unified diff to the working change
+  am [<mbox>...|-]              apply git format-patch output as sealed commits
+  add <anything>                no-op (there is no staging area), so 'add -A && commit' scripts work
   reword <commit> <message> change the message of a sealed commit (history edit)
   squash <commit>           fold a sealed commit into its parent (history edit)
   drop <commit>             remove a sealed commit from its line (history edit)
   reauthor --old-email <glob> --name <n> --email <e> [--dry-run]  bulk-retag commit identity (whole repo)
-  cherry-pick <commit> [branch]  apply a commit from another line onto your branch
+  cherry-pick <commit|A..B>... [branch]  apply commits from another line onto your branch (-n, -x, --continue/--abort)
   bisect start --good <c> --bad <c> [branch]  begin a bisect (materializes the midpoint)
   bisect good | bad             mark the current commit; materializes the next midpoint
   bisect skip                   step over an untestable midpoint
@@ -130,13 +193,17 @@ subcommands:
 
 git spellings (aliases for the cairn verb above):
   merge <branch>                = fold <branch>
-  branch <name>                 = express <name>
+  branch <name> [<start>]       = express <name> [--from <start>]
   checkout -b <name>            = express <name>
   switch -c <name>              = express <name>
-(other git verbs — add, checkout <branch>, rebase, reset, rm, mv — have no cairn
+  checkout [<rev>] -- <path>... = restore [--source=<rev>] <path>...
+(other git verbs — checkout <branch>, rebase, worktree — have no cairn
 equivalent; running one prints the translation.)
 
-config keys: user.name, user.email, autosync, pr.org, pr.repo-slug
+revisions: a commit can be named by full/short hash, tag, line (its sealed tip), origin/<branch>,
+HEAD or @ (the sealed tip of the line you stand in), with ~N ^ ^N suffixes; <rev>:<path> names a file.
+
+config keys: user.name, user.email, autosync, pr.org, pr.repo-slug, color.ui (and any section.key: alias.*, core.editor, core.pager, pager.<cmd>, init.defaultBranch, pull.rebase, push.default ...)
 common flags (repo subcommands): --repo <dir> (default .), --author <name>`
 
 // run dispatches a subcommand. args is os.Args[1:].
@@ -150,8 +217,14 @@ func run(args []string) error {
 		fmt.Println("cairn", buildVersion)
 		return nil
 	}
+	// `<verb> -h` / `<verb> --help` print that verb's usage section.
+	if wantsHelp(rest) && sub != "help" && printVerbHelp(sub) {
+		return flag.ErrHelp // main maps this to exit 0
+	}
 	switch sub {
-	case "help", "-h", "--help":
+	case "help":
+		return cmdHelp(rest)
+	case "-h", "--help":
 		fmt.Println(usage)
 		return nil
 	case "init":
@@ -180,6 +253,24 @@ func run(args []string) error {
 		return cmdLog(rest)
 	case "show":
 		return cmdShow(rest)
+	case "grep":
+		return cmdGrep(rest)
+	case "ls-files":
+		return cmdLsFiles(rest)
+	case "ls-tree":
+		return cmdLsTree(rest)
+	case "cat-file":
+		return cmdCatFile(rest)
+	case "rev-parse":
+		return cmdRevParse(rest)
+	case "rev-list":
+		return cmdRevList(rest)
+	case "shortlog":
+		return cmdShortlog(rest)
+	case "describe":
+		return cmdDescribe(rest)
+	case "format-patch":
+		return cmdFormatPatch(rest)
 	case "undo":
 		return cmdUndo(rest)
 	case "oplog":
@@ -238,11 +329,47 @@ func run(args []string) error {
 		return cmdReauthor(rest)
 	case "bisect":
 		return cmdBisect(rest)
+	case "reflog":
+		return cmdReflog(rest)
+	case "gc":
+		return cmdGC(rest)
+	case "fsck":
+		return cmdFsck(rest)
+	case "count-objects":
+		return cmdCountObjects(rest)
+	case "archive":
+		return cmdArchive(rest)
+	case "check-ignore":
+		return cmdCheckIgnore(rest)
+	// working-copy / mutation verbs (git parity) — cmd_restore.go, cmd_files.go,
+	// cmd_apply.go.
+	case "restore":
+		return cmdRestore(rest)
+	case "reset":
+		return cmdReset(rest)
+	case "revert":
+		return cmdRevert(rest)
+	case "add", "stage":
+		return cmdAdd(rest)
+	case "rm":
+		return cmdRm(rest)
+	case "mv":
+		return cmdMv(rest)
+	case "clean":
+		return cmdClean(rest)
+	case "apply":
+		return cmdApply(rest)
+	case "am":
+		return cmdAm(rest)
 	default:
 		// A git spelling gets either its cairn alias or a one-line correction
 		// (#139) — printed INSTEAD of the usage wall, so the correction is what
 		// the reader actually sees at the moment the reflex misfires.
 		if handled, err := runGitShaped(sub, rest); handled {
+			return err
+		}
+		// alias.<name> from config: reached only for a non-built-in word.
+		if handled, err := runAlias(sub, rest); handled {
 			return err
 		}
 		fmt.Println(usage)
