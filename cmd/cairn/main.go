@@ -47,7 +47,10 @@ var newProbe = func() release.RegistryProbe { return release.ExecProbe{} }
 var errConflicts = errors.New("completed with conflicts")
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	stopProfile := startProfile()
+	err := run(os.Args[1:])
+	stopProfile()
+	if err != nil {
 		if errors.Is(err, errConflicts) {
 			os.Exit(2)
 		}

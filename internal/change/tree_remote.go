@@ -1,6 +1,12 @@
 package change
 
-import "fmt"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+
+	"github.com/go-git/go-git/v5/plumbing"
+)
 
 // RemoteState is a line's relationship to its branch on one remote, read
 // from the remote-tracking ref (refreshed by fetch/pull and set by a verified
@@ -62,38 +68,86 @@ func (e *Engine) RemoteStates(remoteName string) (map[string]RemoteState, error)
 	out := make(map[string]RemoteState, len(lines))
 	for _, r := range lines {
 		remote, ok := heads[r.line.Name]
-		if !ok {
-			if r.tracks {
-				out[r.line.Name] = RemoteState{Kind: "gone"}
-			} else {
-				out[r.line.Name] = RemoteState{Kind: "unpushed"}
-			}
-			continue
-		}
-		local, err := e.sealedTip(r.line)
+		st, err := e.remoteState(r.line, r.tracks, remote, ok)
 		if err != nil {
 			return nil, fmt.Errorf("change.RemoteStates: %s: %w", r.line.Name, err)
 		}
-		if local == "" || local == remote {
-			out[r.line.Name] = RemoteState{Kind: "pushed"}
-			continue
-		}
-		ahead, behind, err := e.divergence(local, remote)
-		if err != nil {
-			return nil, fmt.Errorf("change.RemoteStates: %s: %w", r.line.Name, err)
-		}
-		switch {
-		case ahead > 0 && behind > 0:
-			out[r.line.Name] = RemoteState{Kind: "diverged", Ahead: ahead, Behind: behind}
-		case ahead > 0:
-			out[r.line.Name] = RemoteState{Kind: "ahead", Ahead: ahead}
-		case behind > 0:
-			out[r.line.Name] = RemoteState{Kind: "behind", Behind: behind}
-		default:
-			out[r.line.Name] = RemoteState{Kind: "pushed"}
-		}
+		out[r.line.Name] = st
 	}
 	return out, nil
+}
+
+// remoteState classifies one line against its tracking ref (remote, present
+// only if has): see RemoteStates.
+func (e *Engine) remoteState(line Line, seen bool, remote string, has bool) (RemoteState, error) {
+	if !has {
+		if seen {
+			return RemoteState{Kind: "gone"}, nil
+		}
+		return RemoteState{Kind: "unpushed"}, nil
+	}
+	local, err := e.sealedTip(line)
+	if err != nil {
+		return RemoteState{}, err
+	}
+	if local == "" || local == remote {
+		return RemoteState{Kind: "pushed"}, nil
+	}
+	ahead, behind, err := e.divergence(local, remote)
+	if err != nil {
+		return RemoteState{}, err
+	}
+	switch {
+	case ahead > 0 && behind > 0:
+		return RemoteState{Kind: "diverged", Ahead: ahead, Behind: behind}, nil
+	case ahead > 0:
+		return RemoteState{Kind: "ahead", Ahead: ahead}, nil
+	case behind > 0:
+		return RemoteState{Kind: "behind", Behind: behind}, nil
+	}
+	return RemoteState{Kind: "pushed"}, nil
+}
+
+// RemoteStateOf is RemoteStates for ONE line: the same classification, read
+// from that line's tracking ref alone. `status` reports a single line, and on
+// a repository with hundreds of remote branches and tags, listing every ref
+// (a file each) and walking every line's divergence to print one of them was
+// a fifth of the command. ok is false for an abandoned or unknown line, which
+// RemoteStates leaves out of its map.
+func (e *Engine) RemoteStateOf(remoteName, lineName string) (st RemoteState, ok bool, err error) {
+	var l Line
+	var parent sql.NullString
+	var seen int64
+	err = e.db.QueryRow(
+		`SELECT id, name, parent_line, tip_commit, base_commit, status, remote_seen FROM line WHERE name=? AND status != 'abandoned'`,
+		lineName).Scan(&l.ID, &l.Name, &parent, &l.TipCommit, &l.BaseCommit, &l.Status, &seen)
+	if errors.Is(err, sql.ErrNoRows) {
+		return RemoteState{}, false, nil
+	}
+	if err != nil {
+		return RemoteState{}, false, fmt.Errorf("change.RemoteStateOf: %w", err)
+	}
+	l.ParentLine = parent.String
+	// The tracking ref, under the rules remoteHeads applies to every ref: a
+	// hash reference, and never the remote's HEAD pointer.
+	var remote string
+	has := false
+	if lineName != "HEAD" {
+		ref, rerr := e.git.Storer.Reference(plumbing.ReferenceName("refs/remotes/" + remoteName + "/" + lineName))
+		switch {
+		case rerr == nil:
+			if ref.Type() == plumbing.HashReference {
+				remote, has = ref.Hash().String(), true
+			}
+		case !errors.Is(rerr, plumbing.ErrReferenceNotFound):
+			return RemoteState{}, false, fmt.Errorf("change.RemoteStateOf: %w", rerr)
+		}
+	}
+	st, err = e.remoteState(l, seen != 0, remote, has)
+	if err != nil {
+		return RemoteState{}, false, fmt.Errorf("change.RemoteStateOf: %s: %w", lineName, err)
+	}
+	return st, true, nil
 }
 
 // AheadOfParent is `rev-list parent..line` on sealed tips: the commits this

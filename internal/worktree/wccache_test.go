@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -322,5 +323,38 @@ func TestCachedScanCacheChangedFlag(t *testing.T) {
 	}
 	if !changed3 {
 		t.Fatalf("scan after edit should report cacheChanged=true")
+	}
+}
+
+// trackedDirSet replaced a linear scan asked once per directory; it must
+// answer exactly what that scan answered.
+func TestTrackedDirSetMatchesPrefixScan(t *testing.T) {
+	hasTrackedPrefix := func(tracked map[string]struct{}, dirRel string) bool {
+		prefix := dirRel + "/"
+		for k := range tracked {
+			if strings.HasPrefix(k, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+	tracked := map[string]struct{}{}
+	for _, p := range []string{
+		"top.txt", "a/x", "a/b/c/d/deep.go", "a/b/sibling", "ab/not-a", "a.b/c", "z/y/x/w", "dir/file", "dir/file2",
+	} {
+		tracked[p] = struct{}{}
+	}
+	dirs := trackedDirSet(tracked)
+	for _, probe := range []string{
+		"a", "a/b", "a/b/c", "a/b/c/d", "a/b/c/d/deep.go", "ab", "a.b", "z", "z/y", "z/y/x", "z/y/x/w",
+		"dir", "dir/file", "top.txt", "nope", "a/nope", "a/b/c/nope", "", "b", "a/b/sibling", "z/y/x/w/v",
+	} {
+		_, got := dirs[probe]
+		if want := hasTrackedPrefix(tracked, probe); got != want {
+			t.Errorf("trackedDirSet[%q] = %v, prefix scan says %v", probe, got, want)
+		}
+	}
+	if n := len(trackedDirSet(nil)); n != 0 {
+		t.Errorf("trackedDirSet(nil) has %d entries", n)
 	}
 }

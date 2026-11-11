@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/pmezard/go-difflib/difflib"
 )
 
 // FileStatus is how a path changed between two trees.
@@ -73,16 +71,7 @@ func DiffTrees(old, new map[string][]byte, oldLabel, newLabel string) []FileDiff
 			if isBinary(ov) || isBinary(nv) {
 				d.Binary = true
 			} else {
-				u, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-					A:        splitKeepNL(ov),
-					B:        splitKeepNL(nv),
-					FromFile: oldLabel + "/" + p,
-					ToFile:   newLabel + "/" + p,
-					Context:  3,
-				})
-				if err == nil {
-					d.Unified = u
-				}
+				d.Unified = unifiedDiff(splitKeepNL(ov), splitKeepNL(nv), oldLabel+"/"+p, newLabel+"/"+p, 3)
 			}
 			out = append(out, d)
 		}
@@ -115,25 +104,30 @@ func splitKeepNL(b []byte) []string {
 // never loading content for the (usually vast majority of) unchanged paths.
 // Blob content is fetched ONLY for paths that actually differ, to build the
 // binary flag and the unified-diff text callers render.
+//
+// And it is diff-first: the two trees are walked TOGETHER and a subtree whose
+// hash is the same on both sides is not read at all (diffTreeRefs), so the
+// metadata walk costs what differs between the commits, not the size of the
+// tree. The classification is unchanged — paths under an identical subtree
+// are identical paths, which the comparison below would only have skipped.
 func (e *Engine) DiffCommits(a, b string) ([]FileDiff, error) {
-	ma, err := e.filesMetaOrEmpty(a)
-	if err != nil {
-		return nil, err
+	var ta, tb string
+	var err error
+	if a != "" {
+		if ta, err = e.commitTree(a); err != nil {
+			return nil, fmt.Errorf("change.FilesMeta: %w", err)
+		}
 	}
-	mb, err := e.filesMetaOrEmpty(b)
+	if b != "" {
+		if tb, err = e.commitTree(b); err != nil {
+			return nil, fmt.Errorf("change.FilesMeta: %w", err)
+		}
+	}
+	ma, mb, err := e.diffTreeRefs(ta, tb)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("change.FilesMeta: %w", err)
 	}
 	return e.diffTreesMeta(ma, mb, shortSha(a), shortSha(b))
-}
-
-// filesMetaOrEmpty returns the tree metadata (path->TreeEntry, no content) of
-// sha, or an empty map when sha is "".
-func (e *Engine) filesMetaOrEmpty(sha string) (map[string]TreeEntry, error) {
-	if sha == "" {
-		return map[string]TreeEntry{}, nil
-	}
-	return e.FilesMeta(sha)
 }
 
 // diffTreesMeta is the content-lazy counterpart to DiffTrees: it compares two
@@ -204,16 +198,7 @@ func (e *Engine) diffTreesMeta(old, new map[string]TreeEntry, oldLabel, newLabel
 			if isBinary(ov) || isBinary(nv) {
 				d.Binary = true
 			} else {
-				u, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-					A:        splitKeepNL(ov),
-					B:        splitKeepNL(nv),
-					FromFile: oldLabel + "/" + p,
-					ToFile:   newLabel + "/" + p,
-					Context:  3,
-				})
-				if err == nil {
-					d.Unified = u
-				}
+				d.Unified = unifiedDiff(splitKeepNL(ov), splitKeepNL(nv), oldLabel+"/"+p, newLabel+"/"+p, 3)
 			}
 			out = append(out, d)
 		}

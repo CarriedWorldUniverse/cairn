@@ -935,19 +935,25 @@ func loadDirPatterns(absDir string, domain []string) ([]gitignore.Pattern, error
 	return ps, nil
 }
 
-// hasTrackedPrefix reports whether any tracked path lies under the directory
-// dirRel (slash-separated, relative to the scan root) — i.e. some key has the
-// prefix dirRel+"/". Used so an ignored directory is only skipped wholesale
-// when nothing tracked lives inside it; otherwise we must descend to preserve
-// the tracked files (git only ignores untracked paths).
-func hasTrackedPrefix(tracked map[string]struct{}, dirRel string) bool {
-	prefix := dirRel + "/"
-	for k := range tracked {
-		if strings.HasPrefix(k, prefix) {
-			return true
+// trackedDirSet returns every directory that contains a tracked path, at any
+// depth (slash-separated, relative to the scan root) — i.e. dirRel is in the
+// set exactly when some tracked path has the prefix dirRel+"/". The walk uses
+// it so an ignored directory is only skipped wholesale when nothing tracked
+// lives inside it; otherwise it must descend to preserve the tracked files
+// (git only ignores untracked paths). It is a set, built once, because the
+// walk asks for every directory, and answering by scanning every tracked
+// path each time made the walk quadratic.
+func trackedDirSet(tracked map[string]struct{}) map[string]struct{} {
+	dirs := map[string]struct{}{}
+	for p := range tracked {
+		for i := strings.LastIndexByte(p, '/'); i > 0; i = strings.LastIndexByte(p[:i], '/') {
+			if _, ok := dirs[p[:i]]; ok {
+				break // this directory's ancestors are already in
+			}
+			dirs[p[:i]] = struct{}{}
 		}
 	}
-	return false
+	return dirs
 }
 
 // Scan reads all regular files (and symlinks) under dir into a content map
@@ -1033,7 +1039,7 @@ type ignoreFrame struct {
 // An unreadable DIRECTORY (a ReadDir/stat failure reported mid-walk, #130) is
 // recorded on skip (warned, capped, added to skip.Paths with a trailing "/")
 // and skipped via filepath.SkipDir when no tracked path lies under it
-// (hasTrackedPrefix); if a tracked path DOES live under it, that's a hard
+// (trackedDirSet); if a tracked path DOES live under it, that's a hard
 // error (descending it is exactly how a tracked file would be found and
 // preserved, so silently skipping could lose it). The scan ROOT itself failing
 // is always a hard error regardless of tracked. skip is shared with fn's own
@@ -1049,13 +1055,30 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 	// root frame (depth 0) is never popped.
 	stack := []ignoreFrame{{depth: 0, patterns: rootPatterns, matcher: gitignore.NewMatcher(rootPatterns)}}
 
+	// Every directory that holds a tracked path, at any depth. Ignore rules
+	// only ever apply to UNTRACKED paths, so a tracked file, and a directory
+	// in this set, is kept whatever the patterns say — which means the
+	// patterns need not be consulted for it at all. On a clean checkout that
+	// is every entry in the walk, and matching each one against every
+	// pattern of every enclosing .gitignore was most of what a scan cost.
+	trackedDirs := trackedDirSet(tracked)
+	// WalkDir hands back dir joined with the entry's relative path, so the
+	// relative path is normally just what follows the prefix.
+	prefix := filepath.Clean(dir) + string(filepath.Separator)
+
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		rel, relErr := filepath.Rel(dir, path)
-		if relErr != nil {
-			if err != nil {
-				return err
+		var rel string
+		if strings.HasPrefix(path, prefix) {
+			rel = path[len(prefix):]
+		} else {
+			var relErr error
+			rel, relErr = filepath.Rel(dir, path)
+			if relErr != nil {
+				if err != nil {
+					return err
+				}
+				return relErr
 			}
-			return relErr
 		}
 		if rel == "." {
 			// The root dir; its frame is already on the stack. A non-nil err here
@@ -1070,18 +1093,16 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 			// failing directory's own path/DirEntry and this non-nil err (see
 			// filepath.WalkDir's docs). d may be nil in some failure modes, so
 			// don't rely on it here.
-			if hasTrackedPrefix(tracked, slashRel) {
+			if _, held := trackedDirs[slashRel]; held {
 				return fmt.Errorf("unreadable directory %s: %w", slashRel, err)
 			}
 			skip.skip(slashRel+"/", err)
 			return filepath.SkipDir
 		}
 
-		parts := strings.Split(slashRel, "/")
-
 		// Unwind frames for subtrees we have left: the applicable frame is the one
-		// for this entry's PARENT directory (depth == len(parts)-1).
-		parentDepth := len(parts) - 1
+		// for this entry's PARENT directory (depth == number of components - 1).
+		parentDepth := strings.Count(slashRel, "/")
 		for len(stack) > 1 && stack[len(stack)-1].depth > parentDepth {
 			stack = stack[:len(stack)-1]
 		}
@@ -1100,6 +1121,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 				// stray during the materialize deletion pass.
 				return filepath.SkipDir
 			}
+			parts := strings.Split(slashRel, "/")
 			for _, part := range parts {
 				if part == ".git" || part == ".cairn" {
 					return filepath.SkipDir
@@ -1108,7 +1130,8 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 			// Skip decision for this dir uses the PARENT matcher (a directory cannot
 			// ignore itself via its own .gitignore). Only skip when nothing tracked
 			// lives inside; otherwise descend so tracked files survive.
-			if top.matcher.Match(parts, true) && !hasTrackedPrefix(tracked, slashRel) {
+			_, holdsTracked := trackedDirs[slashRel]
+			if !holdsTracked && top.matcher.Match(parts, true) {
 				return filepath.SkipDir
 			}
 			// Descend: push this dir's frame (parent patterns ++ this dir's own).
@@ -1118,7 +1141,7 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 			// directly by WalkDir (#130).
 			dirPatterns, derr := loadDirPatterns(path, parts)
 			if derr != nil {
-				if hasTrackedPrefix(tracked, slashRel) {
+				if holdsTracked {
 					return fmt.Errorf("unreadable directory %s: %w", slashRel, derr)
 				}
 				skip.skip(slashRel+"/", derr)
@@ -1139,8 +1162,8 @@ func walkWorktree(dir string, tracked map[string]struct{}, gitlinks map[string]s
 
 		// File/symlink: skip if matched, but never drop a TRACKED path (git
 		// semantics — a committed-then-ignored path is not silently lost).
-		if top.matcher.Match(parts, false) {
-			if _, ok := tracked[slashRel]; !ok {
+		if _, ok := tracked[slashRel]; !ok {
+			if top.matcher.Match(strings.Split(slashRel, "/"), false) {
 				return nil
 			}
 		}

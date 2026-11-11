@@ -30,19 +30,27 @@ func (e *Engine) divergence(a, b string) (ahead, behind int, err error) {
 		}
 		return n, 0, err
 	}
-	w := newGraphWalk(e)
-	if err := w.paint(plumbing.NewHash(a), flagA); err != nil {
+	g := e.lockGraph()
+	defer e.cgMu.Unlock()
+	ia, err := g.id(plumbing.NewHash(a))
+	if err != nil {
 		return 0, 0, fmt.Errorf("change.divergence: %w", err)
 	}
-	if err := w.paint(plumbing.NewHash(b), flagB); err != nil {
+	ib, err := g.id(plumbing.NewHash(b))
+	if err != nil {
 		return 0, 0, fmt.Errorf("change.divergence: %w", err)
 	}
-	settled := func(f int) bool { return f&flagBoth == flagBoth }
-	if err := w.run(settled, func(f int) int { return f }); err != nil {
+	if err := g.flushGenerations(); err != nil {
+		return 0, 0, err
+	}
+	w := newGraphWalk(g, func(f int) bool { return f&flagBoth == flagBoth })
+	w.paint(ia, flagA)
+	w.paint(ib, flagB)
+	if err := w.run(func(f int) int { return f }); err != nil {
 		return 0, 0, fmt.Errorf("change.divergence: %w", err)
 	}
-	for _, f := range w.flags {
-		switch f & flagBoth {
+	for _, id := range w.touched {
+		switch w.flagsOf(id) & flagBoth {
 		case flagA:
 			ahead++
 		case flagB:
@@ -54,23 +62,15 @@ func (e *Engine) divergence(a, b string) (ahead, behind int, err error) {
 
 // countAncestors counts the commits reachable from sha, capped like the walk.
 func (e *Engine) countAncestors(sha string) (int, error) {
-	seen := map[plumbing.Hash]struct{}{}
-	stack := []plumbing.Hash{plumbing.NewHash(sha)}
-	for len(stack) > 0 {
-		h := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		if _, ok := seen[h]; ok {
-			continue
-		}
-		seen[h] = struct{}{}
-		if len(seen) > describeWalkCap {
-			return 0, fmt.Errorf("change.divergence: ancestry of %s exceeded %d commits", sha[:8], describeWalkCap)
-		}
-		c, err := e.git.CommitObject(h)
-		if err != nil {
-			return 0, fmt.Errorf("change.divergence: commit %s: %w", h, err)
-		}
-		stack = append(stack, c.ParentHashes...)
+	g := e.lockGraph()
+	defer e.cgMu.Unlock()
+	start, err := g.id(plumbing.NewHash(sha))
+	if err != nil {
+		return 0, fmt.Errorf("change.divergence: %w", err)
 	}
-	return len(seen), nil
+	n := len(g.ancestors(start, describeWalkCap))
+	if n > describeWalkCap {
+		return 0, fmt.Errorf("change.divergence: ancestry of %s exceeded %d commits", sha[:8], describeWalkCap)
+	}
+	return n, nil
 }

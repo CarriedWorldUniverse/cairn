@@ -231,65 +231,12 @@ func (e *Engine) readTreeRefs(treeHash string) (map[string]TreeEntry, error) {
 	if treeHash == "" {
 		return out, nil
 	}
-	if err := e.collectTreeRefs(treeHash, "", out); err != nil {
+	root := plumbing.NewHash(treeHash)
+	e.prefetchTrees(root)
+	if err := e.collectTreeRefs(root, "", out); err != nil {
 		return nil, err
 	}
 	return out, nil
-}
-
-func (e *Engine) collectTreeRefs(treeHash, prefix string, out map[string]TreeEntry) error {
-	tree, err := e.git.TreeObject(plumbing.NewHash(treeHash))
-	if err != nil {
-		return fmt.Errorf("change.readTreeRefs: tree %s: %w", treeHash, err)
-	}
-	// A name cannot legitimately appear twice at one tree level — as two
-	// entries with the same name (regardless of kind), or as both a leaf and
-	// a subtree. go-git's decoder does not enforce this on READ (only the
-	// write side, buildTree/writeTreeRefs, rejects it when cairn itself
-	// builds a tree), so a hostile remote can hand us an on-the-wire tree
-	// object with e.g. two "evil" entries — one a symlink, one a directory —
-	// and collectTreeRefs would silently yield both "evil" (as a symlink) and
-	// "evil/pwned" (walking into the directory), a collision fix A's
-	// materialize-side guard treats as defense in depth but that should never
-	// reach a consumer in the first place (#126). Reject outright at the read
-	// boundary, mirroring the write-side "file and directory at the same
-	// level" guard.
-	seen := make(map[string]struct{}, len(tree.Entries))
-	for _, ent := range tree.Entries {
-		if err := validTreeEntryName(ent.Name); err != nil {
-			return fmt.Errorf("change.readTreeRefs: %w", err)
-		}
-		if _, dup := seen[ent.Name]; dup {
-			return fmt.Errorf("change.readTreeRefs: tree %s has a duplicate entry name %q (invalid tree)", treeHash, ent.Name)
-		}
-		seen[ent.Name] = struct{}{}
-		path := ent.Name
-		if prefix != "" {
-			path = prefix + "/" + ent.Name
-		}
-		if ent.Mode == filemode.Dir {
-			if err := e.collectTreeRefs(ent.Hash.String(), path, out); err != nil {
-				return err
-			}
-			continue
-		}
-		mode := ModeRegular
-		switch ent.Mode {
-		case filemode.Executable:
-			mode = ModeExecutable
-		case filemode.Symlink:
-			mode = ModeSymlink
-		case filemode.Submodule:
-			// Gitlink: keep the entry, but mark it so no content path ever
-			// treats its commit SHA as a blob in this store (#140). Before
-			// this case existed it fell through to ModeRegular and the first
-			// materialize died on readBlob, taking every later command with
-			// it because materialize runs on all of them.
-			mode = ModeGitlink
-		}
-		out[path] = TreeEntry{SHA: ent.Hash.String(), Mode: mode}
-	}
-	return nil
 }
 
 // ReadBlob reads the contents of a git blob by hex sha. It is the exported

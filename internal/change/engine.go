@@ -21,8 +21,6 @@ import (
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	gitcache "github.com/go-git/go-git/v5/plumbing/cache"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 	_ "modernc.org/sqlite"
 )
 
@@ -54,10 +52,14 @@ type Engine struct {
 	idName   string
 	idEmail  string
 	progress io.Writer
-	// gens caches commit generation numbers in memory, backed by the
-	// commit_gen table (see generation.go).
-	genMu sync.Mutex
-	gens  map[plumbing.Hash]uint32
+	// store is the object store behind git when this engine owns it (Open);
+	// nil for OpenBare. Kept so Close can release its packfile descriptors.
+	store *objStore
+	// cg is the commit graph (commitgraph.go): parents, tree, time and
+	// generation of every commit a history query has reached, loaded on first
+	// use. cgMu guards it and is held for the length of a graph query.
+	cgMu sync.Mutex
+	cg   *commitGraph
 }
 
 // SetIdentity configures the author identity used for all commits this engine
@@ -113,12 +115,13 @@ func Open(dir string) (*Engine, error) {
 	// search-indexer handles and fails with "Access is denied" — near-certain at
 	// scale on Windows. On non-Windows the wrapper is a no-op pass-through.
 	gitDir := filepath.Join(dir, "objects.git")
-	store := filesystem.NewStorage(winretry.FS(osfs.New(gitDir)), gitcache.NewObjectLRUDefault())
+	store := newObjStore(winretry.FS(osfs.New(gitDir)), gitDir)
 	g, err := git.Open(store, nil)
 	if errors.Is(err, git.ErrRepositoryNotExists) {
 		g, err = git.Init(store, nil)
 	}
 	if err != nil {
+		_ = store.Close()
 		return nil, fmt.Errorf("change.Open: git: %w", err)
 	}
 
@@ -130,27 +133,48 @@ func Open(dir string) (*Engine, error) {
 	// parsed).
 	db, err := sql.Open("sqlite", filepath.Join(dir, "cairn.db")+"?_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)")
 	if err != nil {
+		_ = store.Close()
 		return nil, fmt.Errorf("change.Open: sqlite: %w", err)
 	}
 	if _, err := db.Exec(schemaSQL); err != nil {
 		_ = db.Close()
+		_ = store.Close()
 		return nil, fmt.Errorf("change.Open: schema: %w", err)
 	}
 	if err := migrate(db); err != nil {
 		_ = db.Close()
+		_ = store.Close()
 		return nil, err
 	}
 
-	e := &Engine{dir: dir, git: g, db: db, now: time.Now}
+	e := &Engine{dir: dir, git: g, db: db, now: time.Now, store: store}
 	if err := e.ensureRootLine(); err != nil {
-		_ = db.Close()
+		_ = e.Close()
 		return nil, err
 	}
 	return e, nil
 }
 
-// Close releases the database handle.
-func (e *Engine) Close() error { return e.db.Close() }
+// Close releases the database handle and the object store's open packfiles.
+func (e *Engine) Close() error {
+	// Generations computed by a query that could not write them at the time
+	// (see commitGraph.persist) go to the catalogue now.
+	e.cgMu.Lock()
+	var err error
+	if e.cg != nil {
+		err = e.cg.flushGenerations()
+	}
+	e.cgMu.Unlock()
+	if cerr := e.db.Close(); err == nil {
+		err = cerr
+	}
+	if e.store != nil {
+		if serr := e.store.Close(); err == nil {
+			err = serr
+		}
+	}
+	return err
+}
 
 func newID() string {
 	var b [16]byte

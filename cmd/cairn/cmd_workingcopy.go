@@ -395,7 +395,9 @@ func cmdTree(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	// No working-copy sync: the tree is drawn from sealed tips and tracking
+	// refs, which a snapshot of the folders cannot change.
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -521,7 +523,9 @@ func cmdLs(args []string) error {
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	r, err := openRepoSynced(*repo, *author)
+	// No working-copy sync: which branches are expressed, and where, is not
+	// something a snapshot of their folders can change.
+	r, err := openRepo(*repo, *author)
 	if err != nil {
 		return mapErr(err)
 	}

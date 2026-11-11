@@ -594,11 +594,11 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 		return nil, nil, fmt.Errorf("worktree.syncBranch: %w", serr)
 	}
 	cachePath := r.wcCachePath(branch)
-	cache, cachedHead, err := loadWCCache(cachePath)
+	cache, cachedHead, legacyCache, err := loadWCCacheEncoded(cachePath)
 	if err != nil {
 		// SELF-HEAL: corrupt cache → full rescan, and no recorded head, so the
 		// snapshot below runs unconditionally.
-		cache, cachedHead = map[string]wcCacheEntry{}, ""
+		cache, cachedHead, legacyCache = map[string]wcCacheEntry{}, "", false
 	}
 	scanStartNs := time.Now().UnixNano()
 	entries, newCache, cacheChanged, skipped, err := CachedScan(r.eng, dir, tracked, execModes(committed), gitlinks, cache, scanStartNs)
@@ -644,8 +644,10 @@ func (r *Repo) syncBranch(branch string, entry Entry) (map[string]wcCacheEntry, 
 	}
 	// Persist when the fingerprints changed OR when the recorded head is stale
 	// — the latter is what upgrades a pre-#155 cache, and what stops a skip
-	// from being decided against an out-of-date head next time.
-	if cacheChanged || head != cachedHead {
+	// from being decided against an out-of-date head next time — OR when the
+	// file is still in the JSON encoding, which costs every later command a
+	// slow parse until it is rewritten.
+	if cacheChanged || head != cachedHead || legacyCache {
 		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
 			return nil, nil, fmt.Errorf("worktree.syncBranch: %w", err)
 		}
@@ -1102,13 +1104,21 @@ func (r *Repo) Status(branch string) (StatusInfo, error) {
 	if err != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", err)
 	}
-	remoteName, states, rerr := r.remoteStates()
+	// Only this line's remote state is reported, so only this line's is
+	// computed (RemoteStateOf) — not every line's, as `tree` needs.
+	remoteName, rerr := r.TreeRemote()
 	if rerr != nil {
 		return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
 	}
 	var remote string
-	if st, ok := states[line.Name]; ok {
-		remote = remoteName + ": " + st.String()
+	if remoteName != "" {
+		st, ok, rerr := r.eng.RemoteStateOf(remoteName, line.Name)
+		if rerr != nil {
+			return StatusInfo{}, fmt.Errorf("worktree.Status: %w", rerr)
+		}
+		if ok {
+			remote = remoteName + ": " + st.String()
+		}
 	}
 	// Reuse the scan syncOne just did above, under this same lock — see
 	// workingDiffSynced. Calling the public WorkingDiff here re-scanned and

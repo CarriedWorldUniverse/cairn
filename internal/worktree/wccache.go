@@ -1,13 +1,17 @@
 package worktree
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io/fs"
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"github.com/CarriedWorldUniverse/cairn/internal/change"
 )
@@ -23,7 +27,8 @@ type wcCacheEntry struct {
 	Mode    change.EntryMode `json:"k"`
 }
 
-// wcCacheFile is the on-disk cache: the per-path fingerprints plus the working
+// wcCacheFile is the cache as it was stored when the file was JSON (it is
+// still read; see loadWCCache): the per-path fingerprints plus the working
 // commit those fingerprints were last snapshotted INTO.
 //
 // Head is what lets syncBranch skip re-snapshotting an unchanged branch (#155).
@@ -35,45 +40,168 @@ type wcCacheFile struct {
 	Head    string                  `json:"h"`
 }
 
-// loadWCCache reads the snapshot cache JSON at path, returning the per-path
+// wcCacheMagic opens a cache file in the binary encoding. The first byte can
+// never begin a JSON document, so the two encodings cannot be confused.
+const wcCacheMagic = "\x00cairn-wc-cache\x00v1\n"
+
+// loadWCCache reads the snapshot cache at path, returning the per-path
 // fingerprints and the working commit they were snapshotted into. A missing
 // file yields an empty map (not an error): a first-ever scan has no cache.
 //
-// It also reads the OLD format — a bare map with no recorded head — which is
-// what every cache written before #155 looks like. Those load with head "",
-// which fails the skip guard, so the first sync after an upgrade snapshots
-// exactly as it always did and records a head for next time. Degrading to the
-// slow-but-correct path is the only safe way to fail here.
+// The file is in one of three encodings, told apart by how it starts:
+//
+//   - binary (wcCacheMagic) — what saveWCCache writes. A branch's cache is
+//     read in full by every command that looks at the working copy, and at
+//     16,000 files the JSON it used to be took longer to parse than the whole
+//     tree took to stat;
+//   - JSON with a recorded head — what every cache written between #155 and
+//     the binary encoding looks like;
+//   - JSON as a bare map with no head — every cache written before #155.
+//     Those load with head "", which fails the skip guard, so the first sync
+//     after an upgrade snapshots exactly as it always did and records a head
+//     for next time.
+//
+// Whichever it was, the next save rewrites it as binary. A cairn too old to
+// know the binary encoding fails to parse it, which syncBranch already treats
+// as "no cache" — a full rescan that re-reads the tree and writes JSON again.
+// Degrading to the slow-but-correct path is the only safe way to fail here.
 func loadWCCache(path string) (map[string]wcCacheEntry, string, error) {
+	entries, head, _, err := loadWCCacheEncoded(path)
+	return entries, head, err
+}
+
+// loadWCCacheEncoded is loadWCCache that also reports whether the file was
+// in an older (JSON) encoding — so the one caller that owns the file can
+// rewrite it even when nothing in it changed, rather than leave a branch
+// that is never edited parsing JSON for ever.
+func loadWCCacheEncoded(path string) (entries map[string]wcCacheEntry, head string, legacy bool, err error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return map[string]wcCacheEntry{}, "", nil
+		return map[string]wcCacheEntry{}, "", false, nil
 	}
 	if err != nil {
-		return nil, "", fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
+	}
+	if bytes.HasPrefix(data, []byte(wcCacheMagic)) {
+		entries, head, err := decodeWCCache(data[len(wcCacheMagic):])
+		if err != nil {
+			return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
+		}
+		return entries, head, false, nil
 	}
 	var f wcCacheFile
 	if err := json.Unmarshal(data, &f); err == nil && f.Entries != nil {
-		return f.Entries, f.Head, nil
+		return f.Entries, f.Head, true, nil
 	}
 	// Pre-#155 format: a bare path→fingerprint map, no head.
 	out := map[string]wcCacheEntry{}
 	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, "", fmt.Errorf("worktree.loadWCCache: %w", err)
+		return nil, "", false, fmt.Errorf("worktree.loadWCCache: %w", err)
 	}
-	return out, "", nil
+	return out, "", true, nil
 }
 
-// saveWCCache writes the snapshot cache JSON to path atomically (temp + rename).
+// saveWCCache writes the snapshot cache to path atomically (temp + rename).
 func saveWCCache(path string, c map[string]wcCacheEntry, head string) error {
-	data, err := json.Marshal(wcCacheFile{Entries: c, Head: head})
-	if err != nil {
-		return fmt.Errorf("worktree.saveWCCache: %w", err)
-	}
-	if err := writeFileAtomic(path, data); err != nil {
+	if err := writeFileAtomic(path, encodeWCCache(c, head)); err != nil {
 		return fmt.Errorf("worktree.saveWCCache: %w", err)
 	}
 	return nil
+}
+
+// encodeWCCache renders the cache in the binary encoding: the magic, the
+// head, the entry count, then per entry the path, mtime, size, blob SHA and
+// mode. Strings are a uvarint length and the bytes; integers are varints.
+// A trailing CRC-32 covers everything after the magic.
+func encodeWCCache(c map[string]wcCacheEntry, head string) []byte {
+	buf := make([]byte, 0, len(wcCacheMagic)+len(head)+16+len(c)*96)
+	buf = append(buf, wcCacheMagic...)
+	str := func(s string) {
+		buf = binary.AppendUvarint(buf, uint64(len(s)))
+		buf = append(buf, s...)
+	}
+	str(head)
+	buf = binary.AppendUvarint(buf, uint64(len(c)))
+	for p, e := range c {
+		str(p)
+		buf = binary.AppendVarint(buf, e.MtimeNs)
+		buf = binary.AppendVarint(buf, e.Size)
+		str(e.BlobSHA)
+		buf = binary.AppendVarint(buf, int64(e.Mode))
+	}
+	return binary.LittleEndian.AppendUint32(buf, crc32.ChecksumIEEE(buf[len(wcCacheMagic):]))
+}
+
+var errWCCacheCorrupt = errors.New("corrupt cache")
+
+// decodeWCCache parses the binary encoding (after the magic). Any damage —
+// a bad checksum, a length running off the end, trailing bytes — is an
+// error, which the caller turns into a full rescan.
+func decodeWCCache(data []byte) (map[string]wcCacheEntry, string, error) {
+	if len(data) < 4 {
+		return nil, "", errWCCacheCorrupt
+	}
+	body, sum := data[:len(data)-4], binary.LittleEndian.Uint32(data[len(data)-4:])
+	if crc32.ChecksumIEEE(body) != sum {
+		return nil, "", errWCCacheCorrupt
+	}
+	// One conversion for the whole file: every path and SHA below is a
+	// substring of it rather than an allocation of its own.
+	text := string(body)
+	pos := 0
+	bad := false
+	uvarint := func() uint64 {
+		v, n := binary.Uvarint(body[pos:])
+		if n <= 0 {
+			bad = true
+			return 0
+		}
+		pos += n
+		return v
+	}
+	varint := func() int64 {
+		v, n := binary.Varint(body[pos:])
+		if n <= 0 {
+			bad = true
+			return 0
+		}
+		pos += n
+		return v
+	}
+	str := func() string {
+		n := uvarint()
+		if bad || n > uint64(len(body)-pos) {
+			bad = true
+			return ""
+		}
+		s := text[pos : pos+int(n)]
+		pos += int(n)
+		return s
+	}
+	head := str()
+	count := uvarint()
+	// Every entry is at least five bytes, which bounds a count worth
+	// believing before a map is sized by it.
+	if bad || count > uint64(len(body)-pos)/5+1 {
+		return nil, "", errWCCacheCorrupt
+	}
+	entries := make(map[string]wcCacheEntry, count)
+	for i := uint64(0); i < count; i++ {
+		p := str()
+		var e wcCacheEntry
+		e.MtimeNs = varint()
+		e.Size = varint()
+		e.BlobSHA = str()
+		e.Mode = change.EntryMode(varint())
+		if bad {
+			return nil, "", errWCCacheCorrupt
+		}
+		entries[p] = e
+	}
+	if pos != len(body) {
+		return nil, "", errWCCacheCorrupt
+	}
+	return entries, head, nil
 }
 
 // CachedScan walks dir (gitignore + tracked-set + symlink/exec, same as Scan)
@@ -102,41 +230,29 @@ func saveWCCache(path string, c map[string]wcCacheEntry, head string) error {
 // filesystem is authoritative, exactly as before. nil is fine.
 func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, trackedModes map[string]change.EntryMode, gitlinks map[string]struct{}, cache map[string]wcCacheEntry, scanStartNs int64) (map[string]change.TreeEntry, map[string]wcCacheEntry, bool, []string, error) {
 	execOK := execBitProbe(dir)
-	// scanItem is one surviving worktree entry plus its cheap stat fingerprint,
-	// collected by the (serial) directory walk. The slow per-file step — reading
-	// a cache-missed file's content — is then done in PARALLEL, because on Windows
-	// each file open is intercepted by the antivirus scanner and is latency- not
-	// CPU-bound, so concurrent reads hide that latency. The go-git blob writes
-	// stay serial below (the object store is not concurrency-safe).
+	// scanItem is one surviving worktree entry, collected by the (serial)
+	// directory walk. Everything per-file after that — the lstat that yields
+	// its fingerprint, and for a cache miss reading its content — is done in
+	// PARALLEL: on Windows each file open is intercepted by the antivirus
+	// scanner and is latency- not CPU-bound, so concurrent reads hide that
+	// latency, and everywhere the lstat of every file in the tree is the one
+	// cost a scan can never skip, so it is spread across the cores rather than
+	// paid one syscall at a time inside the walk. The go-git blob writes stay
+	// serial below (the object store is not concurrency-safe).
 	type scanItem struct {
 		slashRel string
 		path     string
+		d        fs.DirEntry
 		mtimeNs  int64
 		size     int64
 		symlink  bool
 		mode     change.EntryMode
+		statErr  error
 	}
 	var items []scanItem
 	skip := &skipTracker{}
 	if err := walkWorktree(dir, tracked, gitlinks, skip, func(slashRel, path string, d fs.DirEntry) error {
-		info, err := d.Info()
-		if err != nil {
-			return unreadableErr(tracked, slashRel, err, skip)
-		}
-		mode := change.ModeRegular
-		switch {
-		case execOK:
-			if info.Mode()&0o111 != 0 {
-				mode = change.ModeExecutable
-			}
-		case trackedModes[slashRel] == change.ModeExecutable:
-			mode = change.ModeExecutable
-		}
-		items = append(items, scanItem{
-			slashRel: slashRel, path: path,
-			mtimeNs: info.ModTime().UnixNano(), size: info.Size(),
-			symlink: d.Type()&os.ModeSymlink != 0, mode: mode,
-		})
+		items = append(items, scanItem{slashRel: slashRel, path: path, d: d, symlink: d.Type()&os.ModeSymlink != 0})
 		return nil
 	}); err != nil {
 		// Aborting on a hard error: the whole scan result is discarded, so
@@ -155,6 +271,20 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 	}
 	results := make([]scanResult, len(items))
 	resolve := func(i int) {
+		info, err := items[i].d.Info()
+		if err != nil {
+			items[i].statErr = err
+			return
+		}
+		items[i].mtimeNs, items[i].size = info.ModTime().UnixNano(), info.Size()
+		switch {
+		case execOK:
+			if info.Mode()&0o111 != 0 {
+				items[i].mode = change.ModeExecutable
+			}
+		case trackedModes[items[i].slashRel] == change.ModeExecutable:
+			items[i].mode = change.ModeExecutable
+		}
 		it := items[i]
 		prev, hadPrev := cache[it.slashRel]
 		mode := it.mode
@@ -185,6 +315,15 @@ func CachedScan(eng *change.Engine, dir string, tracked map[string]struct{}, tra
 	newCache := map[string]wcCacheEntry{}
 	changed := false
 	for i, it := range items {
+		if it.statErr != nil {
+			// The entry was listed but could not be stat'ed (it vanished, or
+			// its directory became unreadable, mid-scan). Fatal for a tracked
+			// path; an untracked one is recorded and left out of the scan.
+			if err := unreadableErr(tracked, it.slashRel, it.statErr, skip); err != nil {
+				return nil, nil, false, nil, fmt.Errorf("worktree.CachedScan: %w", err)
+			}
+			continue
+		}
 		r := results[i]
 		if r.err != nil {
 			if _, ok := tracked[it.slashRel]; ok {
@@ -245,22 +384,34 @@ func parallelFor(n int, fn func(i int)) {
 		}
 		return
 	}
-	var next int64
-	var mu sync.Mutex
+	// Indices are handed out in runs, so a scan of tens of thousands of
+	// already-cached files (each a single lstat) is not dominated by handing
+	// out indices; a short list — a handful of files to actually read — still
+	// goes out one at a time, to as many workers as there are files.
+	chunk := n / (workers * 8)
+	if chunk < 1 {
+		chunk = 1
+	} else if chunk > 64 {
+		chunk = 64
+	}
+	var next atomic.Int64
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for w := 0; w < workers; w++ {
 		go func() {
 			defer wg.Done()
 			for {
-				mu.Lock()
-				i := next
-				next++
-				mu.Unlock()
-				if int(i) >= n {
+				end := int(next.Add(int64(chunk)))
+				start := end - chunk
+				if start >= n {
 					return
 				}
-				fn(int(i))
+				if end > n {
+					end = n
+				}
+				for i := start; i < end; i++ {
+					fn(i)
+				}
 			}
 		}()
 	}
