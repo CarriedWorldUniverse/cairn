@@ -387,14 +387,14 @@ seq 1 30 | sed 's/^/deep /' > pkg/deep/d.txt
 seq 1 20 | sed 's/^/other /' > other.txt
 git add -A; git commit -q -m "add big files"
 git mv big.txt big2.txt
-sed -i 's/^line 20$/line twenty/; s/^line 21$/line twenty-one/' big2.txt
+sed 's/^line 20$/line twenty/; s/^line 21$/line twenty-one/' big2.txt > big2.tmp && mv big2.tmp big2.txt
 git mv pkg/deep/d.txt pkg/shallow/d.txt 2>/dev/null || { mkdir -p pkg/shallow; git mv pkg/deep/d.txt pkg/shallow/d.txt; }
 git mv other.txt moved/other.txt 2>/dev/null || { mkdir -p moved; git mv other.txt moved/other.txt; }
 git rm -q src/lib/lib.go
 git add -A; git commit -q -m "renames: edited, moved dir, moved file, delete"
 git mv moved/other.txt moved/other.sh; chmod +x moved/other.sh
 seq 1 5 | sed 's/^/tiny /' > tiny.txt; git add -A; git commit -q -m "rename plus exec bit"
-git mv tiny.txt tiny2.txt; sed -i 's/tiny 1/tiny one/; s/tiny 2/tiny two/; s/tiny 3/tiny three/' tiny2.txt
+git mv tiny.txt tiny2.txt; sed 's/tiny 1/tiny one/; s/tiny 2/tiny two/; s/tiny 3/tiny three/' tiny2.txt > tiny2.tmp && mv tiny2.tmp tiny2.txt
 git add -A; git commit -q -m "below the threshold"`)
 	})
 	for _, c := range []string{

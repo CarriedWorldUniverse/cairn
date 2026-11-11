@@ -617,7 +617,7 @@ func TestRefsInitFlags(t *testing.T) {
 		t.Fatalf("--bare: %v", err)
 	}
 	// init.defaultBranch from the global config.
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	isolateUserConfig(t)
 	mustRun(t, "config", "--global", "init.defaultBranch", "develop")
 	r2 := filepath.Join(t.TempDir(), "r2")
 	mustRun(t, "init", r2)

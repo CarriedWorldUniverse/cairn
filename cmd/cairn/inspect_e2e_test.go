@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -418,7 +419,13 @@ func TestE2E_InspectionMatchesGit(t *testing.T) {
 		// date formats
 		"log --date=format:%Z --format=%ad",
 		"log --date=format-local:%Z|%z --format=%ad",
-		"log --date=format:%a|%k|%l|%u|%w|%R|%r|%P|%c|%x|%X|%C|%e|%j --format=%ad",
+		// Portable conversions: git implements these itself or every libc agrees.
+		"log --date=format:%a|%k|%l|%u|%w|%R|%r|%X|%C|%e|%j --format=%ad",
+	}
+	// %P, %c and %x fall through to the platform strftime in git, and BSD
+	// libc (macOS) renders them differently from glibc; cairn follows glibc.
+	if runtime.GOOS == "linux" {
+		cases = append(cases, "log --date=format:%a|%k|%l|%u|%w|%R|%r|%P|%c|%x|%X|%C|%e|%j --format=%ad")
 	}
 	for _, c := range cases {
 		args := strings.Fields(c)
