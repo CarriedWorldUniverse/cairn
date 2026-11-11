@@ -16,6 +16,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # Many tests diff cairn's output against the installed git; its version
+      # decides what they expect, so every log shows which one ran.
+      - run: git --version
       - run: go build ./...
       - run: go test ./...
       - run: go vet ./...

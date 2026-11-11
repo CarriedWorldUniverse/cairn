@@ -18,7 +18,7 @@ func TestStatusRemoteStateMatchesTree(t *testing.T) {
 	}
 	root := t.TempDir()
 	bare := filepath.Join(t.TempDir(), "origin.git")
-	if out, err := exec.Command("git", "init", "-q", "--bare", bare).CombinedOutput(); err != nil {
+	if out, err := exec.Command("git", "init", "-q", "--bare", "--initial-branch=main", bare).CombinedOutput(); err != nil {
 		t.Fatalf("git init --bare: %v %s", err, out)
 	}
 	write := func(branch, name, content string) {
@@ -81,7 +81,7 @@ func TestStatusRemoteStateMatchesTree(t *testing.T) {
 	// Someone else pushes to main: after a fetch main is behind.
 	other := t.TempDir()
 	for _, args := range [][]string{
-		{"clone", "-q", bare, other},
+		{"clone", "-q", "--branch", "main", bare, other},
 		{"-C", other, "-c", "user.name=o", "-c", "user.email=o@o", "commit", "-q", "--allow-empty", "-m", "theirs"},
 		{"-C", other, "push", "-q", "origin", "HEAD:main"},
 	} {

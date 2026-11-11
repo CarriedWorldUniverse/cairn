@@ -76,7 +76,15 @@ func renderBlame(out io.Writer, lines []change.BlameLine, keep map[int]bool, isW
 	}
 	maxDigits, maxOrig := decimalWidth(maxFinal), decimalWidth(maxSrc)
 
-	hexLen := f.abbrev + 1
+	// newer git reserves the extra column for a boundary commit's "^" only
+	// when some line shown is a boundary; older git always added it.
+	hexLen := f.abbrev
+	for _, r := range rows {
+		if r.Boundary {
+			hexLen = f.abbrev + 1
+			break
+		}
+	}
 	if f.long {
 		hexLen = 40
 	}

@@ -612,8 +612,9 @@ func TestCommitAmend(t *testing.T) {
 	if got := w.porcelain("feat"); got != "" {
 		t.Errorf("working change after --amend = %q, want empty", got)
 	}
-	meta := strings.TrimSpace(w.store("log", "-1", "--format=%an|%ae|%aI|%cn", amended))
-	if meta != "Orig Inal|orig@example.org|2020-01-02T03:04:05+00:00|Tess Ter" {
+	// git before the change that prints a UTC offset as Z says +00:00 here.
+	meta := strings.ReplaceAll(strings.TrimSpace(w.store("log", "-1", "--format=%an|%ae|%aI|%cn", amended)), "+00:00", "Z")
+	if meta != "Orig Inal|orig@example.org|2020-01-02T03:04:05Z|Tess Ter" {
 		t.Errorf("amended commit author/committer = %q, want the original author kept", meta)
 	}
 

@@ -463,7 +463,8 @@ func formatDate(t time.Time, mode string, now time.Time) string {
 	case "iso", "iso8601":
 		return t.Format("2006-01-02 15:04:05 -0700")
 	case "iso-strict", "iso8601-strict":
-		return t.Format("2006-01-02T15:04:05-07:00")
+		// newer git prints a UTC offset of zero as "Z"
+		return t.Format("2006-01-02T15:04:05Z07:00")
 	case "short":
 		return t.Format("2006-01-02")
 	case "unix":
@@ -644,6 +645,9 @@ var (
 	lastRe = regexp.MustCompile(`^last[ .]+(second|minute|hour|day|week|month|year)$`)
 )
 
+// dateOnlyLayouts are the parseDateArg layouts that carry no time of day.
+var dateOnlyLayouts = map[string]bool{"2006-01-02": true, "2006/01/02": true, "01/02/2006": true, "Jan 2 2006": true, "2 Jan 2006": true}
+
 // parseDateArg reads a --since/--until value: a unix timestamp, an ISO or
 // RFC date (local time when it names no zone), or a relative phrase such as
 // "2 weeks ago", "3.days.ago", "yesterday", "last month".
@@ -695,6 +699,13 @@ func parseDateArg(s string, now time.Time) (time.Time, error) {
 		"Mon Jan 2 15:04:05 2006 -0700", "Mon Jan 2 15:04:05 2006", "Jan 2 2006", "2 Jan 2006",
 	} {
 		if t, err := time.ParseInLocation(layout, raw, now.Location()); err == nil {
+			if dateOnlyLayouts[layout] {
+				// git fills a date with no time of day from the clock, so
+				// --since=2026-01-04 means 2026-01-04 at the current time.
+				y, mo, d := t.Date()
+				h, mi, sec := now.Clock()
+				t = time.Date(y, mo, d, h, mi, sec, 0, now.Location())
+			}
 			return t, nil
 		}
 	}

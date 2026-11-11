@@ -121,9 +121,6 @@ func logLineRange(eng *change.Engine, lc lineContext, g *gitOpts, o change.WalkO
 		diff := ""
 		if showPatch {
 			diff = hit.Patch
-			if pp.f.kind == "oneline" {
-				diff = "\n" + diff
-			}
 		}
 		lw.write(pp.entry(c), diff, nil)
 		shown++

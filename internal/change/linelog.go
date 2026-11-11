@@ -3,6 +3,7 @@ package change
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,19 +20,39 @@ func (r LineRange) Empty() bool { return r.End < r.Start }
 // FileLines returns the lines of path at commit, each with its newline; ok is
 // false when the commit has no such file.
 func (e *Engine) FileLines(commit, path string) (lines []string, ok bool, err error) {
+	f, ok, err := e.fileAt(commit, path)
+	return f.lines, ok, err
+}
+
+// lineLogFile is a file as of one commit: its lines and the blob and mode
+// that name it in the diff header.
+type lineLogFile struct {
+	lines []string
+	sha   string
+	mode  string
+}
+
+func (e *Engine) fileAt(commit, path string) (lineLogFile, bool, error) {
 	c, err := e.git.CommitObject(plumbing.NewHash(commit))
 	if err != nil {
-		return nil, false, fmt.Errorf("change.FileLines: %w", err)
+		return lineLogFile{}, false, fmt.Errorf("change.FileLines: %w", err)
 	}
 	te, found, err := e.treePath(c.TreeHash, path)
 	if err != nil || !found {
-		return nil, false, err
+		return lineLogFile{}, false, err
 	}
 	data, err := e.readBlob(te.Hash.String())
 	if err != nil {
-		return nil, false, err
+		return lineLogFile{}, false, err
 	}
-	return splitKeepNL(data), true, nil
+	mode := "100644"
+	switch te.Mode {
+	case filemode.Executable:
+		mode = "100755"
+	case filemode.Symlink:
+		mode = "120000"
+	}
+	return lineLogFile{splitKeepNL(data), te.Hash.String(), mode}, true, nil
 }
 
 // ParseLineRange reads git's -L <start>,<end> (the part before ":<file>")
@@ -151,20 +172,22 @@ type LineLogStep struct {
 // LineLog compares the range with the parent's file. A parent without the
 // file means the range was born in this commit.
 func (e *Engine) LineLog(parent, commit, path string, r LineRange) (LineLogStep, error) {
-	newLines, ok, err := e.FileLines(commit, path)
+	nf, ok, err := e.fileAt(commit, path)
 	if err != nil || !ok {
 		return LineLogStep{}, err
 	}
-	var oldLines []string
+	newLines := nf.lines
+	var of lineLogFile
 	hadFile := false
 	if parent != "" {
-		if oldLines, hadFile, err = e.FileLines(parent, path); err != nil {
+		if of, hadFile, err = e.fileAt(parent, path); err != nil {
 			return LineLogStep{}, err
 		}
 	}
+	oldLines := of.lines
 	s0, e0 := r.Start-1, min(r.End, len(newLines))
 	if !hadFile {
-		return LineLogStep{Touched: true, Patch: lineLogPatch(path, nil, newLines[s0:e0], 0, s0, false)}, nil
+		return LineLogStep{Touched: true, Patch: lineLogPatch(path, of, nf, nil, newLines[s0:e0], 0, s0, false, e0-s0)}, nil
 	}
 	ops := diffOps(oldLines, newLines, nil, nil)
 	touched := false
@@ -208,7 +231,7 @@ func (e *Engine) LineLog(parent, commit, path string, r LineRange) (LineLogStep,
 	}
 	step := LineLogStep{Touched: touched, Parent: LineRange{ps + 1, pe}}
 	if touched {
-		step.Patch = lineLogPatch(path, oldLines[ps:pe], newLines[s0:e0], ps, s0, true)
+		step.Patch = lineLogPatch(path, of, nf, oldLines[ps:pe], newLines[s0:e0], ps, s0, true, e0-s0)
 	}
 	return step, nil
 }
@@ -216,18 +239,41 @@ func (e *Engine) LineLog(parent, commit, path string, r LineRange) (LineLogStep,
 var hunkHeader = regexp.MustCompile(`^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@.*$`)
 
 // lineLogPatch renders the difference of two slices of a file as git's
-// line-log does: a diff --git header with no index line, hunks that never
-// reach outside the slices (3 lines of context at most), and counts always
-// written.
-func lineLogPatch(path string, old, new []string, oldOff, newOff int, hadFile bool) string {
+// line-log does: a diff --git header with the mode and index lines, hunks that
+// never reach outside the slices, and counts always written. git diffs with
+// as many lines of context as the tracked range is long (at least 3), so a
+// touched range shows whole; each hunk's section heading is found in the
+// whole file's diff (see lineLogHeading).
+func lineLogPatch(path string, of, nf lineLogFile, old, new []string, oldOff, newOff int, hadFile bool, rangeLen int) string {
+	ctx := max(3, rangeLen)
 	ops := diffOps(old, new, nil, nil)
-	body := renderHunks(old, new, ops, 3)
+	body := renderHunks(old, new, ops, ctx)
+	heading := ""
+	if hadFile {
+		heading = lineLogHeading(of.lines, nf.lines, ctx, newOff, newOff+rangeLen)
+	}
 	var sb strings.Builder
 	from := "a/" + path
-	if !hadFile {
+	fmt.Fprintf(&sb, "diff --git %s %s\n", QuotePath("a/"+path), QuotePath("b/"+path))
+	switch {
+	case !hadFile:
 		from = "/dev/null"
+		fmt.Fprintf(&sb, "new file mode %s\n", nf.mode)
+	case of.mode != nf.mode:
+		fmt.Fprintf(&sb, "old mode %s\nnew mode %s\n", of.mode, nf.mode)
 	}
-	fmt.Fprintf(&sb, "diff --git %s %s\n--- %s\n+++ b/%s\n", QuotePath("a/"+path), QuotePath("b/"+path), from, path)
+	if of.sha != nf.sha {
+		oldID := strings.Repeat("0", 7)
+		if hadFile {
+			oldID = of.sha[:7]
+		}
+		fmt.Fprintf(&sb, "index %s..%s", oldID, nf.sha[:7])
+		if hadFile && of.mode == nf.mode {
+			sb.WriteString(" " + nf.mode)
+		}
+		sb.WriteByte('\n')
+	}
+	fmt.Fprintf(&sb, "--- %s\n+++ b/%s\n", from, path)
 	for _, ln := range strings.SplitAfter(body, "\n") {
 		if m := hunkHeader.FindStringSubmatch(strings.TrimSuffix(ln, "\n")); m != nil {
 			num := func(s string, def int) int {
@@ -237,10 +283,56 @@ func lineLogPatch(path string, old, new []string, oldOff, newOff int, hadFile bo
 				n, _ := strconv.Atoi(s)
 				return n
 			}
-			fmt.Fprintf(&sb, "@@ -%d,%d +%d,%d @@\n", num(m[1], 0)+oldOff, num(m[2], 1), num(m[3], 0)+newOff, num(m[4], 1))
+			fmt.Fprintf(&sb, "@@ -%d,%d +%d,%d @@%s\n", num(m[1], 0)+oldOff, num(m[2], 1), num(m[3], 0)+newOff, num(m[4], 1), heading)
 			continue
 		}
 		sb.WriteString(ln)
 	}
 	return sb.String()
+}
+
+// lineLogHeading is the section heading of the hunk git shows for the range
+// [s0, e0) of the new file. git diffs the two whole files with ctx lines of
+// context and cuts the hunks down to the range, so the heading belongs to
+// the whole-file hunk holding the range's first change (which may begin
+// well before the range, and merge in changes outside it): the nearest
+// earlier line of the old file that starts like a declaration (a letter,
+// '_' or '$'), as git's default funcname rule has it.
+func lineLogHeading(oldLines, newLines []string, ctx, s0, e0 int) string {
+	ops := diffOps(oldLines, newLines, nil, nil)
+	first, ingroup, found := 0, false, false
+	for _, op := range ops {
+		if op.tag == 'e' {
+			// a gap of more than 2*ctx unchanged lines ends the hunk
+			if found {
+				break
+			}
+			if op.i2-op.i1 > 2*ctx {
+				ingroup = false
+			}
+			continue
+		}
+		if !ingroup {
+			first, ingroup = op.i1, true
+		}
+		if op.j1 == op.j2 && s0 < op.j1 && op.j1 < e0 || op.j1 != op.j2 && op.j1 < e0 && op.j2 > s0 {
+			found = true
+		}
+	}
+	if !found {
+		return ""
+	}
+	for i := min(max(first-ctx, 0), len(oldLines)) - 1; i >= 0; i-- {
+		if c := oldLines[i][0]; c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || c == '$' {
+			h := strings.TrimRight(oldLines[i], " \t\r\n")
+			if len(h) > 80 {
+				h = h[:80]
+			}
+			if h == "" {
+				return ""
+			}
+			return " " + h
+		}
+	}
+	return ""
 }

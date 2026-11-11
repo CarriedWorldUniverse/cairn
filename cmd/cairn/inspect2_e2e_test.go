@@ -159,6 +159,7 @@ func compareWithGit(t *testing.T, gitDir, lineDir, c string) {
 	args := strings.Fields(c)
 	want, wantCode := gitRun(t, gitDir, args...)
 	got, gotCode := cairnRun(t, lineDir, args...)
+	got = normalizeCairnForOldGit(t, args, got)
 	if got != want {
 		t.Errorf("%s:\n--- cairn\n%s--- git\n%s", c, got, want)
 	}
@@ -352,6 +353,13 @@ func TestE2E_LogLMatchesGit(t *testing.T) {
 		"log -L 9,13:f.go -s --oneline",
 		"log -L 9,13:f.go -n 2 --oneline",
 		"log -L 9,13:f.go --format=%h|%s",
+		"log -L 1,13:f.go",
+		"log -L 8,19:f.go --oneline",
+		"log -L 14,17:f.go",
+		"log -L 14,18:f.go --oneline",
+		"log -L 10,17:f.go --oneline",
+		"log -L 4,17:f.go --oneline",
+		"log -L 15,17:f.go --oneline",
 		"log -L 2,4:src/a.txt",
 		"log -L 9,11:src/a.txt --oneline",
 	} {

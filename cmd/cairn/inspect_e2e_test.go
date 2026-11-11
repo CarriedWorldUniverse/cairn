@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -85,7 +87,96 @@ func gitRun(t *testing.T, dir string, args ...string) (string, int) {
 		}
 		code = ee.ExitCode()
 	}
-	return string(out), code
+	return normalizeOldGit(t, args, string(out)), code
+}
+
+var (
+	gitCaps     struct{ isoZ, blameTight, logLIndex bool }
+	gitCapsOnce sync.Once
+	isoUTCRe    = regexp.MustCompile(`(\d\d:\d\d:\d\d)\+00:00\b`)
+	blameHexRe  = regexp.MustCompile(`(?m)^([0-9a-f]{4,38})[0-9a-f]\b`)
+)
+
+// normalizeOldGit rewrites the output of an older git into the form current
+// git prints, for the version-dependent behaviours cairn follows current git
+// on. Current git is never normalized, so it is compared byte for byte.
+func normalizeOldGit(t *testing.T, args []string, out string) string {
+	t.Helper()
+	gitCapabilities(t)
+	if !gitCaps.isoZ {
+		out = isoUTCRe.ReplaceAllString(out, "${1}Z")
+	}
+	if !gitCaps.blameTight && len(args) > 0 && args[0] == "blame" && !strings.Contains(strings.Join(args, " "), "porcelain") && !strings.Contains(out, "\n^") && !strings.HasPrefix(out, "^") {
+		out = blameHexRe.ReplaceAllString(out, "$1")
+	}
+	return out
+}
+
+var (
+	logLIndexRe   = regexp.MustCompile(`(?m)^(new file mode|index ).*\n`)
+	logLHeadingRe = regexp.MustCompile(`(?m)^(@@ [-+,0-9 ]+ @@).*$`)
+	logLOnelineRe = regexp.MustCompile(`(?m)^([0-9a-f]{7,40} .*)\n(diff --git )`)
+)
+
+// normalizeCairnForOldGit rewrites cairn's output, for the cases where an
+// older git prints less than current git does, down to what that git prints.
+// Current git is compared as it is.
+func normalizeCairnForOldGit(t *testing.T, args []string, out string) string {
+	t.Helper()
+	gitCapabilities(t)
+	if !gitCaps.logLIndex && len(args) > 0 && args[0] == "log" && strings.Contains(strings.Join(args, " "), "-L") {
+		out = logLIndexRe.ReplaceAllString(out, "")
+		out = logLHeadingRe.ReplaceAllString(out, "$1")
+		if strings.Contains(strings.Join(args, " "), "--oneline") {
+			// older git also put a blank line between the subject and the patch
+			out = logLOnelineRe.ReplaceAllString(out, "$1\n\n$2")
+		}
+	}
+	return out
+}
+
+func gitCapabilities(t *testing.T) {
+	t.Helper()
+	gitCapsOnce.Do(func() {
+		dir := t.TempDir()
+		env := append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
+			"GIT_AUTHOR_NAME=a", "GIT_AUTHOR_EMAIL=a@b", "GIT_COMMITTER_NAME=a", "GIT_COMMITTER_EMAIL=a@b",
+			"GIT_AUTHOR_DATE=2026-01-01T00:00:00+0000", "GIT_COMMITTER_DATE=2026-01-01T00:00:00+0000")
+		for _, a := range [][]string{{"init", "-q"}, {"commit", "-q", "--allow-empty", "-m", "x"}} {
+			c := exec.Command("git", a...)
+			c.Dir, c.Env = dir, env
+			if b, err := c.CombinedOutput(); err != nil {
+				t.Fatalf("git %v: %v\n%s", a, err, b)
+			}
+		}
+		c := exec.Command("git", "log", "-1", "--format=%aI")
+		c.Dir, c.Env = dir, env
+		b, _ := c.Output()
+		gitCaps.isoZ = strings.TrimSpace(string(b)) == "2026-01-01T00:00:00Z"
+		if err := os.WriteFile(filepath.Join(dir, "f"), []byte("a\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		for _, a := range [][]string{{"add", "f"}, {"commit", "-q", "-m", "y"}} {
+			c := exec.Command("git", a...)
+			c.Dir, c.Env = dir, env
+			if b, err := c.CombinedOutput(); err != nil {
+				t.Fatalf("git %v: %v\n%s", a, err, b)
+			}
+		}
+		c = exec.Command("git", "blame", "--root", "f")
+		c.Dir, c.Env = dir, env
+		b, _ = c.Output()
+		// current git shows the bare abbrev width when no line is a boundary; older added a column
+		gitCaps.blameTight = len(strings.Fields(string(b))[0]) == 7
+		c = exec.Command("git", "log", "-L", "1,1:f")
+		c.Dir, c.Env = dir, env
+		b, _ = c.Output()
+		gitCaps.logLIndex = strings.Contains(string(b), "\nindex ")
+		if !gitCaps.isoZ || !gitCaps.blameTight || !gitCaps.logLIndex {
+			v, _ := exec.Command("git", "--version").Output()
+			t.Logf("%s predates current git: normalizing its iso-strict UTC offset (+00:00 -> Z), its extra blame abbrev column, and the diff header lines and hunk headings of log -L", strings.TrimSpace(string(v)))
+		}
+	})
 }
 
 // cairnRun runs a cairn command standing in dir, returning stdout and the
